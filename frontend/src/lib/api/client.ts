@@ -1,7 +1,8 @@
 import type { ApiErrorBody } from "@/lib/api/types";
-import { getAccessToken } from "@/lib/auth/session";
+import { clearSession, getAccessToken } from "@/lib/auth/session";
 
-const USE_MOCKS = import.meta.env.VITE_USE_MOCKS !== "false";
+/** Mocks are a dev convenience and default OFF — opt in with VITE_USE_MOCKS=true. */
+const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === "true";
 
 export class ApiError extends Error {
   readonly code: string;
@@ -52,6 +53,14 @@ export async function apiFetch<T>(
           correlation_id: "unknown",
         },
       };
+    }
+    // A 401 on a request that carried a bearer token means the session is dead
+    // (12h TTL, disabled membership, non-active tenant). Clear it and return to
+    // sign-in. Auth routes are exempt: a wrong password or expired challenge
+    // must not cause a redirect loop.
+    if (response.status === 401 && token && !path.startsWith("/auth/")) {
+      clearSession();
+      window.location.assign("/sign-in");
     }
     throw new ApiError(response.status, body);
   }
