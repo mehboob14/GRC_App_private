@@ -19,6 +19,9 @@ export type TableDensity = "comfortable" | "standard" | "compact";
 
 const TableDensityContext = createContext<TableDensity>("comfortable");
 
+/** TR renders in both sections; only body rows get row height and hover. */
+const TableSectionContext = createContext<"head" | "body">("body");
+
 const rowHeight: Record<TableDensity, string> = {
   comfortable: "h-14",
   standard: "h-12",
@@ -49,14 +52,16 @@ export function THead({
   ...props
 }: HTMLAttributes<HTMLTableSectionElement>) {
   return (
-    <thead
-      className={cn(
-        // Sticky within a scrolling wrapper; inert when the page scrolls.
-        "sticky top-0 z-sticky-table border-b border-border bg-surface-sunken",
-        className,
-      )}
-      {...props}
-    />
+    <TableSectionContext.Provider value="head">
+      <thead
+        className={cn(
+          // Sticky within a scrolling wrapper; inert when the page scrolls.
+          "sticky top-0 z-sticky-table border-b border-border bg-surface-sunken",
+          className,
+        )}
+        {...props}
+      />
+    </TableSectionContext.Provider>
   );
 }
 
@@ -65,7 +70,9 @@ export function TBody({
   ...props
 }: HTMLAttributes<HTMLTableSectionElement>) {
   return (
-    <tbody className={cn("divide-y divide-border", className)} {...props} />
+    <TableSectionContext.Provider value="body">
+      <tbody className={cn("divide-y divide-border", className)} {...props} />
+    </TableSectionContext.Provider>
   );
 }
 
@@ -75,6 +82,17 @@ export function TR({
   ...props
 }: HTMLAttributes<HTMLTableRowElement> & { selected?: boolean }) {
   const density = useContext(TableDensityContext);
+  const section = useContext(TableSectionContext);
+
+  if (section === "head") {
+    return (
+      <tr
+        className={cn(density === "compact" ? "h-9" : "h-10", className)}
+        {...props}
+      />
+    );
+  }
+
   return (
     <tr
       aria-selected={selected || undefined}

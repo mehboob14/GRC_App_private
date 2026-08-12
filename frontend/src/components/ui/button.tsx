@@ -97,10 +97,18 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         )}
         {...props}
       >
-        {loading ? (
-          <Icon name="spinner" className="size-3.5 animate-spin" />
-        ) : null}
-        {children}
+        {asChild ? (
+          // Slot requires exactly one element child — the spinner cannot be
+          // injected, so `loading` only disables when rendering asChild.
+          children
+        ) : (
+          <>
+            {loading ? (
+              <Icon name="spinner" className="size-3.5 animate-spin" />
+            ) : null}
+            {children}
+          </>
+        )}
       </Comp>
     );
   },
