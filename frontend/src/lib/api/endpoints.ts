@@ -1,17 +1,21 @@
 import { apiFetch } from "@/lib/api/client";
 import type {
+  AcceptInvitationRequest,
+  AcceptInvitationResponse,
   AuditEvent,
   CursorPage,
   Group,
+  InviteMemberRequest,
+  InviteMemberResponse,
   LoginPasswordRequest,
   LoginResponse,
   Member,
   MfaEnrollStartResponse,
   MfaVerifyRequest,
   Role,
-  SecurityPolicy,
   SignupRequest,
   SignupResponse,
+  TenantSummary,
   WorkspaceSummary,
 } from "@/lib/api/types";
 
@@ -55,16 +59,17 @@ export const authApi = {
         membership_id: membershipId,
       }),
     }),
+  acceptInvitation: (body: AcceptInvitationRequest) =>
+    apiFetch<AcceptInvitationResponse>("/auth/invitations/accept", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
 };
 
 export const iamApi = {
   listMembers: () => apiFetch<Member[]>("/members"),
-  inviteMember: (body: {
-    email: string;
-    full_name: string;
-    role_id: string;
-  }) =>
-    apiFetch<Member>("/members/invite", {
+  inviteMember: (body: InviteMemberRequest) =>
+    apiFetch<InviteMemberResponse>("/members/invite", {
       method: "POST",
       body: JSON.stringify(body),
     }),
@@ -92,12 +97,10 @@ export const iamApi = {
       method: "POST",
       body: JSON.stringify(body),
     }),
-  getSecurityPolicy: () => apiFetch<SecurityPolicy>("/security/policy"),
-  updateSecurityPolicy: (body: Partial<SecurityPolicy>) =>
-    apiFetch<SecurityPolicy>("/security/policy", {
-      method: "PATCH",
-      body: JSON.stringify(body),
-    }),
+};
+
+export const tenantApi = {
+  get: () => apiFetch<TenantSummary>("/tenant"),
 };
 
 export const auditApi = {

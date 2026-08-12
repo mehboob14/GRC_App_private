@@ -1,3 +1,4 @@
+import { PERMISSION_KEYS } from "@/lib/api/types";
 import type {
   AuditEvent,
   BuiltInRoleName,
@@ -5,23 +6,12 @@ import type {
   Member,
   PermissionKey,
   Role,
-  SecurityPolicy,
   SessionPrincipal,
   User,
   WorkspaceSummary,
 } from "@/lib/api/types";
 
-const ALL_PERMS: PermissionKey[] = [
-  "tenant:read",
-  "members:read",
-  "members:invite",
-  "members:disable",
-  "groups:read",
-  "groups:manage",
-  "roles:read",
-  "roles:manage",
-  "audit:read",
-];
+const ALL_PERMS: PermissionKey[] = [...PERMISSION_KEYS];
 
 export const DEMO_PASSWORD = "Password123!";
 export const DEMO_MFA_CODE = "123456";
@@ -132,7 +122,7 @@ export const groups: Group[] = [
   },
 ];
 
-export let members: Member[] = [
+export const members: Member[] = [
   {
     membership_id: "mem-alex-nw",
     user_id: "user-alex",
@@ -283,14 +273,6 @@ export function principalFromMembership(
   };
 }
 
-export let securityPolicy: SecurityPolicy = {
-  require_mfa: true,
-  enforce_sso: false,
-  ip_allowlist: false,
-  audit_log_export: false,
-  session_timeout_hours: 8,
-};
-
 export let auditEvents: AuditEvent[] = [
   {
     id: "aud-1",
@@ -371,6 +353,9 @@ export function findUserByEmail(email: string) {
     (u) => u.email.toLowerCase() === email.toLowerCase(),
   );
 }
+
+/** Outstanding one-time invite tokens → the invited membership id. */
+export const invites = new Map<string, string>();
 
 export function tokenFor(membershipId: string): string {
   return `mock-token:${membershipId}`;

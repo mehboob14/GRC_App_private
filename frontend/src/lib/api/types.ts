@@ -11,16 +11,23 @@ export type BuiltInRoleName =
   | "Employee"
   | "Auditor";
 
-export type PermissionKey =
-  | "tenant:read"
-  | "members:read"
-  | "members:invite"
-  | "members:disable"
-  | "groups:read"
-  | "groups:manage"
-  | "roles:read"
-  | "roles:manage"
-  | "audit:read";
+export const PERMISSION_KEYS = [
+  "tenant:read",
+  "members:read",
+  "members:invite",
+  "members:disable",
+  "groups:read",
+  "groups:manage",
+  "roles:read",
+  "roles:manage",
+  "audit:read",
+] as const;
+
+export type PermissionKey = (typeof PERMISSION_KEYS)[number];
+
+export function isPermissionKey(key: string): key is PermissionKey {
+  return (PERMISSION_KEYS as readonly string[]).includes(key);
+}
 
 export type MembershipStatus = "invited" | "active" | "disabled";
 
@@ -118,6 +125,42 @@ export type Member = {
   mfa_enabled: boolean;
 };
 
+export type InviteMemberRequest = {
+  email: string;
+  full_name: string;
+  role_id: string;
+};
+
+/**
+ * Week 1: email delivery is a notifications-module concern, so the one-time
+ * invite token and accept URL are returned once, here, for the inviter to
+ * hand over (week1-review-decisions.md #15). Removed when notifications land.
+ */
+export type InviteMemberResponse = {
+  member: Member;
+  /** Single-use invite token (typ='invite', 7-day TTL). Shown once. */
+  invite_token: string;
+  /** Absolute URL to /accept-invite?token=… for the invitee. */
+  accept_url: string;
+};
+
+/**
+ * POST /api/v1/auth/invitations/accept (public). New users supply
+ * full_name + password; existing users send the token alone. Accepting
+ * activates the membership and consumes the token; the user then signs in
+ * normally.
+ */
+export type AcceptInvitationRequest = {
+  token: string;
+  full_name?: string;
+  password?: string;
+};
+
+export type AcceptInvitationResponse = {
+  status: "accepted";
+  tenant_name: string;
+};
+
 export type Group = {
   id: string;
   name: string;
@@ -155,12 +198,18 @@ export type AuditEvent = {
   occurred_at: string;
 };
 
-export type SecurityPolicy = {
-  require_mfa: boolean;
-  enforce_sso: boolean;
-  ip_allowlist: boolean;
-  audit_log_export: boolean;
-  session_timeout_hours: number;
+export type TenantStatus =
+  | "provisioning"
+  | "active"
+  | "suspended"
+  | "terminated";
+
+/** GET /api/v1/tenant — the caller's current workspace. */
+export type TenantSummary = {
+  id: string;
+  name: string;
+  slug: string;
+  status: TenantStatus;
 };
 
 export type ApiErrorBody = {

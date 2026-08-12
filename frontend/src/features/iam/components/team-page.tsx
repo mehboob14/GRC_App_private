@@ -34,7 +34,7 @@ import {
 import { iamApi } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/auth-context";
-import type { Member } from "@/lib/api/types";
+import type { InviteMemberResponse, Member } from "@/lib/api/types";
 import { cn } from "@/lib/cn";
 
 const inviteSchema = z.object({
@@ -56,6 +56,12 @@ export function TeamPage() {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [inviteError, setInviteError] = useState<string | null>(null);
+  const [inviteResult, setInviteResult] = useState<InviteMemberResponse | null>(
+    null,
+  );
+  const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">(
+    "idle",
+  );
 
   const membersQuery = useQuery({
     queryKey: ["members", principal?.tenant_id],
@@ -73,9 +79,14 @@ export function TeamPage() {
 
   const inviteMutation = useMutation({
     mutationFn: (values: InviteValues) => iamApi.inviteMember(values),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["members"] });
-      setOpen(false);
+    onSuccess: async (result) => {
+      await queryClient.invalidateQueries({
+        queryKey: ["members", principal?.tenant_id],
+        exact: true,
+      });
+      // Keep the dialog open: the accept link is returned exactly once and
+      // the inviter must hand it over (no email delivery until notifications).
+      setInviteResult(result);
       form.reset({ full_name: "", email: "", role_id: "role-employee" });
       setInviteError(null);
     },
@@ -86,10 +97,33 @@ export function TeamPage() {
     },
   });
 
+  function handleDialogChange(next: boolean) {
+    setOpen(next);
+    if (!next) {
+      setInviteResult(null);
+      setInviteError(null);
+      setCopyState("idle");
+      form.reset({ full_name: "", email: "", role_id: "role-employee" });
+    }
+  }
+
+  async function copyAcceptLink() {
+    if (!inviteResult) return;
+    try {
+      await navigator.clipboard.writeText(inviteResult.accept_url);
+      setCopyState("copied");
+    } catch {
+      setCopyState("failed");
+    }
+  }
+
   const disableMutation = useMutation({
     mutationFn: (membershipId: string) => iamApi.disableMember(membershipId),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["members"] });
+      await queryClient.invalidateQueries({
+        queryKey: ["members", principal?.tenant_id],
+        exact: true,
+      });
     },
   });
 
@@ -98,36 +132,48 @@ export function TeamPage() {
   const canDisable = principal?.permissions.includes("members:disable");
 
   if (membersQuery.isLoading) {
-    return <Skeleton className="h-72 w-full rounded-xl" />;
+    return (
+      <div className="mx-auto max-w-[1200px]">
+        <Skeleton className="h-72 w-full rounded-xl" />
+      </div>
+    );
   }
 
   if (membersQuery.isError) {
     return (
-      <ErrorState
-        title="Couldn’t load team"
-        description={
-          membersQuery.error instanceof ApiError
-            ? membersQuery.error.message
-            : "Try again."
-        }
-        onRetry={() => void membersQuery.refetch()}
-      />
+      <div className="mx-auto max-w-[1200px]">
+        <ErrorState
+          title="Couldn’t load team"
+          description={
+            membersQuery.error instanceof ApiError
+              ? membersQuery.error.message
+              : "Try again."
+          }
+          onRetry={() => void membersQuery.refetch()}
+        />
+      </div>
     );
   }
 
   return (
-    <div className="rounded-xl border border-border bg-bg-elevated px-5 py-[18px] shadow-sm">
+    <div className="mx-auto max-w-[1200px]">
+      <h1 className="font-display text-heading-xl text-text">People</h1>
+      <p className="mb-5 mt-2 text-body-lg text-text-muted">
+        Everyone with a membership in this workspace — role, teams, and MFA
+        state.
+      </p>
+      <div className="rounded-xl border border-border bg-bg-elevated px-5 py-[18px] shadow-sm">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
-          <h2 className="font-display text-[16px] font-semibold leading-5 tracking-[-0.08px] text-text">
+          <h2 className="font-display text-title-md text-text">
             Team &amp; roles
           </h2>
-          <p className="mt-1 text-[12px] leading-4 text-text-faint">
+          <p className="mt-1 text-body-sm text-text-faint">
             {members.length} members · manage access to the Verity workspace
           </p>
         </div>
         {canInvite ? (
-          <Dialog open={open} onOpenChange={setOpen}>
+          <Dialog open={open} onOpenChange={handleDialogChange}>
             <DialogTrigger asChild>
               <Button className="h-9 shrink-0">
                 <Icon name="plus" className="size-4" />
@@ -135,67 +181,124 @@ export function TeamPage() {
               </Button>
             </DialogTrigger>
             <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Invite member</DialogTitle>
-                <DialogDescription>
-                  Sends an invite into this workspace with a built-in role.
-                </DialogDescription>
-              </DialogHeader>
-              <form
-                className="flex flex-col gap-2"
-                onSubmit={(e) =>
-                  void form.handleSubmit((values) =>
-                    inviteMutation.mutate(values),
-                  )(e)
-                }
-              >
-                <TextField
-                  label="Full name"
-                  error={form.formState.errors.full_name?.message}
-                  {...form.register("full_name")}
-                />
-                <TextField
-                  label="Work email"
-                  type="email"
-                  error={form.formState.errors.email?.message}
-                  {...form.register("email")}
-                />
-                <label className="mb-1 block text-label-sm text-text-muted">
-                  Role
-                </label>
-                <Select
-                  value={form.watch("role_id")}
-                  onValueChange={(value) =>
-                    form.setValue("role_id", value, { shouldValidate: true })
-                  }
-                >
-                  <SelectTrigger aria-label="Role" />
-                  <SelectContent>
-                    {(rolesQuery.data ?? []).map((role) => (
-                      <SelectItem key={role.id} value={role.id}>
-                        {role.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {inviteError ? (
-                  <p className="text-body-sm text-fail-fg" role="alert">
-                    {inviteError}
+              {inviteResult ? (
+                <>
+                  <DialogHeader>
+                    <DialogTitle>Invite created</DialogTitle>
+                    <DialogDescription>
+                      {inviteResult.member.full_name} can join this workspace
+                      with the one-time link below.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="rounded-lg border border-border bg-bg-sunken px-3 py-3">
+                    <p className="type-overline text-text-faint">
+                      One-time accept link
+                    </p>
+                    <div className="mt-1.5 flex items-center gap-2">
+                      <input
+                        readOnly
+                        aria-label="Invite accept link"
+                        value={inviteResult.accept_url}
+                        onFocus={(e) => e.currentTarget.select()}
+                        className="h-9 min-w-0 flex-1 rounded-lg border border-border bg-bg-elevated px-3 font-mono text-body-sm text-text"
+                      />
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        className="shrink-0"
+                        onClick={() => void copyAcceptLink()}
+                      >
+                        {copyState === "copied" ? "Copied" : "Copy link"}
+                      </Button>
+                    </div>
+                    {copyState === "failed" ? (
+                      <p className="mt-2 text-body-sm text-fail-fg" role="alert">
+                        Copy failed — select the link text and copy it manually.
+                      </p>
+                    ) : null}
+                  </div>
+                  <p className="mt-3 text-body-sm text-text-faint">
+                    Email delivery arrives with the notifications module — hand
+                    this link to the invitee yourself. It works once and
+                    expires in 7 days.
                   </p>
-                ) : null}
-                <DialogFooter>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={() => setOpen(false)}
+                  <DialogFooter>
+                    <Button
+                      type="button"
+                      onClick={() => handleDialogChange(false)}
+                    >
+                      Done
+                    </Button>
+                  </DialogFooter>
+                </>
+              ) : (
+                <>
+                  <DialogHeader>
+                    <DialogTitle>Invite member</DialogTitle>
+                    <DialogDescription>
+                      Creates an invited membership with a built-in role and a
+                      one-time accept link to hand over.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <form
+                    className="flex flex-col gap-2"
+                    onSubmit={(e) =>
+                      void form.handleSubmit((values) =>
+                        inviteMutation.mutate(values),
+                      )(e)
+                    }
                   >
-                    Cancel
-                  </Button>
-                  <Button type="submit" loading={inviteMutation.isPending}>
-                    Send invite
-                  </Button>
-                </DialogFooter>
-              </form>
+                    <TextField
+                      label="Full name"
+                      error={form.formState.errors.full_name?.message}
+                      {...form.register("full_name")}
+                    />
+                    <TextField
+                      label="Work email"
+                      type="email"
+                      error={form.formState.errors.email?.message}
+                      {...form.register("email")}
+                    />
+                    <label className="mb-1 block text-label-sm text-text-muted">
+                      Role
+                    </label>
+                    <Select
+                      value={form.watch("role_id")}
+                      onValueChange={(value) =>
+                        form.setValue("role_id", value, {
+                          shouldValidate: true,
+                        })
+                      }
+                    >
+                      <SelectTrigger aria-label="Role" />
+                      <SelectContent>
+                        {(rolesQuery.data ?? []).map((role) => (
+                          <SelectItem key={role.id} value={role.id}>
+                            {role.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {inviteError ? (
+                      <p className="text-body-sm text-fail-fg" role="alert">
+                        {inviteError}
+                      </p>
+                    ) : null}
+                    <DialogFooter>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => handleDialogChange(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button type="submit" loading={inviteMutation.isPending}>
+                        Create invite
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </>
+              )}
             </DialogContent>
           </Dialog>
         ) : null}
@@ -224,10 +327,10 @@ export function TeamPage() {
                   <div className="flex items-center gap-3">
                     <Avatar name={member.full_name} seed={member.email} />
                     <div>
-                      <p className="text-[13px] font-semibold text-text">
+                      <p className="text-body-md font-semibold text-text">
                         {member.full_name}
                       </p>
-                      <p className="text-[12px] text-text-faint">
+                      <p className="text-body-sm text-text-faint">
                         {member.email}
                       </p>
                     </div>
@@ -243,7 +346,7 @@ export function TeamPage() {
                   </div>
                 </TD>
                 <TD>
-                  <span className="text-[13px] text-text-muted">
+                  <span className="text-body-md text-text-muted">
                     {member.group_names.length
                       ? member.group_names.join(" · ")
                       : "—"}
@@ -251,12 +354,12 @@ export function TeamPage() {
                 </TD>
                 <TD>
                   {member.mfa_enabled ? (
-                    <span className="inline-flex items-center gap-1.5 text-[13px] text-text">
+                    <span className="inline-flex items-center gap-1.5 text-body-md text-text">
                       <Icon name="check" className="size-3.5 text-pass" />
                       On
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1.5 text-[13px] text-fail-fg">
+                    <span className="inline-flex items-center gap-1.5 text-body-md text-fail-fg">
                       <Icon name="alert" className="size-3.5" />
                       Off
                     </span>
@@ -292,6 +395,7 @@ export function TeamPage() {
           </TBody>
         </Table>
       )}
+      </div>
     </div>
   );
 }

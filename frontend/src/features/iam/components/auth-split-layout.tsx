@@ -1,6 +1,14 @@
 import { Link } from "react-router-dom";
 import type { ReactNode } from "react";
 import { Icon } from "@/components/ui";
+import { VENDOR_MARKS } from "@/lib/vendor-marks";
+
+const CONNECTOR_MARKS = [
+  VENDOR_MARKS.aws,
+  VENDOR_MARKS.okta,
+  VENDOR_MARKS.github,
+  VENDOR_MARKS.datadog,
+];
 
 /** Figma 8:20 — white left panel + brand gradient panel. */
 export function AuthSplitLayout({
@@ -21,24 +29,22 @@ export function AuthSplitLayout({
           <span className="flex size-[34px] items-center justify-center rounded-[10px] bg-accent text-accent-fg shadow-mark">
             <Icon name="check" className="size-5" />
           </span>
-          <span className="font-display text-[24px] font-bold leading-7 tracking-[-0.36px] text-text">
+          <span className="font-display text-heading-lg font-bold text-text">
             Verity
           </span>
         </Link>
 
         <div className="flex flex-1 flex-col justify-center py-10">
           <div className="w-full max-w-[360px]">
-            <h1 className="font-display text-[28px] font-extrabold leading-8 tracking-[-0.56px] text-text">
-              {title}
-            </h1>
-            <p className="mt-2 mb-7 text-[14px] leading-5 text-text-muted">
+            <h1 className="font-display text-heading-xl text-text">{title}</h1>
+            <p className="mt-2 mb-7 text-body-lg text-text-muted">
               {subtitle}
             </p>
             {children}
           </div>
         </div>
 
-        <p className="text-[12px] leading-4 text-text-faint">
+        <p className="text-body-sm text-text-faint">
           © 2026 Verity ·{" "}
           <span className="text-text-muted">Privacy</span>
           {" · "}
@@ -51,16 +57,16 @@ export function AuthSplitLayout({
         className="relative hidden flex-1 overflow-hidden lg:flex lg:flex-col lg:justify-center lg:px-[60px] lg:py-14"
         style={{
           backgroundImage:
-            "linear-gradient(150deg, rgb(11, 42, 61) 0%, rgb(14, 58, 82) 55%, rgb(10, 44, 65) 100%)",
+            "linear-gradient(150deg, rgb(var(--color-panel-1)) 0%, rgb(var(--color-panel-2)) 55%, rgb(var(--color-panel-3)) 100%)",
         }}
       >
-        <div className="pointer-events-none absolute left-[calc(100%-340px)] top-[-80px] size-[340px] rounded-full bg-[rgba(56,182,240,0.22)] blur-3xl" />
-        <div className="pointer-events-none absolute bottom-[-40px] left-[-60px] size-[360px] rounded-full bg-[rgba(56,182,240,0.12)] blur-3xl" />
+        <div className="pointer-events-none absolute left-[calc(100%-340px)] top-[-80px] size-[340px] rounded-full bg-panel-glow/[0.22] blur-3xl" />
+        <div className="pointer-events-none absolute bottom-[-40px] left-[-60px] size-[360px] rounded-full bg-panel-glow/[0.12] blur-3xl" />
         <div className="relative max-w-[440px] text-white">
-          <span className="inline-flex rounded-full border border-[rgba(56,182,240,0.25)] bg-[rgba(56,182,240,0.12)] px-3 py-[5px] text-[12px] font-semibold leading-4 text-[#7fd3f5]">
+          <span className="inline-flex rounded-full border border-panel-glow/25 bg-panel-glow/[0.12] px-3 py-[5px] text-body-sm font-semibold text-panel-accent">
             CONTINUOUS COMPLIANCE
           </span>
-          <h2 className="mt-6 font-display text-[28px] font-extrabold leading-8 tracking-[-0.56px]">
+          <h2 className="mt-6 font-display text-heading-xl">
             Audit-ready, every day of the year.
           </h2>
           <p className="mt-4 text-[16px] leading-6 text-white">
@@ -77,34 +83,28 @@ export function AuthSplitLayout({
                 key={label}
                 className="w-[137px] rounded-xl border border-white/25 bg-white/10 px-[18px] py-4 backdrop-blur-sm"
               >
-                <p className="font-display text-[28px] font-extrabold leading-8 tracking-[-0.56px] tabular text-white">
+                <p className="font-display text-heading-xl tabular text-white">
                   {value}
                 </p>
-                <p className="mt-[3px] text-[12px] leading-4 text-white/90">
-                  {label}
-                </p>
+                <p className="mt-[3px] text-body-sm text-white/90">{label}</p>
               </div>
             ))}
           </div>
           <div className="mt-[34px] flex items-center gap-3 border-t border-white/25 pt-[26px]">
             <div className="flex">
-              {[
-                ["AWS", "bg-[#f90]"],
-                ["OK", "bg-[#0a6dd8]"],
-                ["GH", "bg-[#1b1f24]"],
-                ["DD", "bg-[#632ca6]"],
-              ].map(([label, color], index, arr) => (
+              {CONNECTOR_MARKS.map((mark, index) => (
                 <span
-                  key={label}
-                  className={`flex size-8 items-center justify-center rounded-lg border-2 border-[#131720] text-[12px] font-medium text-white ${color} ${
-                    index < arr.length - 1 ? "-mr-1.5" : ""
+                  key={mark.label}
+                  className={`flex size-8 items-center justify-center rounded-lg border-2 border-panel-edge text-body-sm font-medium text-white ${
+                    index < CONNECTOR_MARKS.length - 1 ? "-mr-1.5" : ""
                   }`}
+                  style={{ backgroundColor: mark.color }}
                 >
-                  {label}
+                  {mark.label}
                 </span>
               ))}
             </div>
-            <p className="text-[12px] leading-4 text-white/90">
+            <p className="text-body-sm text-white/90">
               Trusted by security teams collecting evidence from 120+ systems
             </p>
           </div>

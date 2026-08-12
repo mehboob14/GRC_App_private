@@ -1,5 +1,10 @@
 import * as LabelPrimitive from "@radix-ui/react-label";
-import { forwardRef, type InputHTMLAttributes, type ReactNode } from "react";
+import {
+  forwardRef,
+  useId,
+  type InputHTMLAttributes,
+  type ReactNode,
+} from "react";
 import { cn } from "@/lib/cn";
 
 type TextFieldProps = InputHTMLAttributes<HTMLInputElement> & {
@@ -25,9 +30,12 @@ export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(
     },
     ref,
   ) => {
-    const fieldId = id ?? props.name;
-    const hintId = fieldId ? `${fieldId}-hint` : undefined;
-    const errorId = fieldId ? `${fieldId}-error` : undefined;
+    // The label must always point at the input: fall back to a generated id
+    // when the caller provides neither id nor name.
+    const generatedId = useId();
+    const fieldId = id ?? props.name ?? generatedId;
+    const hintId = `${fieldId}-hint`;
+    const errorId = `${fieldId}-error`;
 
     return (
       <div className="flex w-full flex-col gap-1.5">

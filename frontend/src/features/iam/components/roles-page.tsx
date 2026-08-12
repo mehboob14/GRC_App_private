@@ -57,7 +57,10 @@ export function RolesPage() {
     mutationFn: () =>
       iamApi.createRole({ name: name.trim(), permission_keys: keys }),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["roles"] });
+      await queryClient.invalidateQueries({
+        queryKey: ["roles", principal?.tenant_id],
+        exact: true,
+      });
       setOpen(false);
       setName("");
       setKeys(["tenant:read"]);
@@ -92,10 +95,10 @@ export function RolesPage() {
     <div className="mx-auto max-w-[1200px]">
       <div className="mb-5 flex items-start justify-between gap-3">
         <div>
-          <h1 className="font-display text-[28px] font-extrabold leading-8 tracking-[-0.56px] text-text">
+          <h1 className="font-display text-heading-xl text-text">
             Roles &amp; permissions
           </h1>
-          <p className="mt-2 text-[14px] leading-5 text-text-muted">
+          <p className="mt-2 text-body-lg text-text-muted">
             Permission diff — what a role adds and removes versus today.
           </p>
         </div>

@@ -40,7 +40,10 @@ export function GroupsPage() {
   const createMutation = useMutation({
     mutationFn: () => iamApi.createGroup(name.trim()),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["groups"] });
+      await queryClient.invalidateQueries({
+        queryKey: ["groups", principal?.tenant_id],
+        exact: true,
+      });
       setOpen(false);
       setName("");
       setError(null);
@@ -74,10 +77,8 @@ export function GroupsPage() {
     <div className="mx-auto max-w-[1200px]">
       <div className="mb-5 flex items-start justify-between gap-3">
         <div>
-          <h1 className="font-display text-[28px] font-extrabold leading-8 tracking-[-0.56px] text-text">
-            Groups
-          </h1>
-          <p className="mt-2 text-[14px] leading-5 text-text-muted">
+          <h1 className="font-display text-heading-xl text-text">Groups</h1>
+          <p className="mt-2 text-body-lg text-text-muted">
             The join between IdP group, Verity role, and access-review scope.
           </p>
         </div>

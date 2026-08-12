@@ -4,6 +4,7 @@
  * production Phase 1 will use httpOnly cookies (ADR-0006). Never localStorage.
  */
 
+import { isPermissionKey } from "@/lib/api/types";
 import type { SessionPrincipal, WorkspaceSummary } from "@/lib/api/types";
 
 const TOKEN_KEY = "verity.session.token";
@@ -55,7 +56,7 @@ export function hasPermission(
   principal: SessionPrincipal | null,
   key: string,
 ): boolean {
-  return Boolean(principal?.permissions.includes(key as never));
+  return isPermissionKey(key) && Boolean(principal?.permissions.includes(key));
 }
 
 export type AuthSnapshot = {

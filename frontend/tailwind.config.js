@@ -28,6 +28,7 @@ export default {
           DEFAULT: "rgb(var(--color-pass) / <alpha-value>)",
           fg: "rgb(var(--color-pass-fg) / <alpha-value>)",
           bg: "rgb(var(--color-pass-bg) / <alpha-value>)",
+          border: "rgb(var(--color-pass-border) / <alpha-value>)",
         },
         fail: {
           DEFAULT: "rgb(var(--color-fail) / <alpha-value>)",
@@ -42,6 +43,15 @@ export default {
         },
         pending: "rgb(var(--color-pending) / <alpha-value>)",
         "critical-fg": "rgb(var(--color-critical-fg) / <alpha-value>)",
+        // Auth marketing panel one-offs — see tokens.css for why these exist.
+        panel: {
+          1: "rgb(var(--color-panel-1) / <alpha-value>)",
+          2: "rgb(var(--color-panel-2) / <alpha-value>)",
+          3: "rgb(var(--color-panel-3) / <alpha-value>)",
+          glow: "rgb(var(--color-panel-glow) / <alpha-value>)",
+          accent: "rgb(var(--color-panel-accent) / <alpha-value>)",
+          edge: "rgb(var(--color-panel-edge) / <alpha-value>)",
+        },
         identity: {
           1: "rgb(var(--color-identity-1) / <alpha-value>)",
           2: "rgb(var(--color-identity-2) / <alpha-value>)",

@@ -25,6 +25,7 @@
     --color-pass: 46 106 79;
     --color-pass-fg: 35 89 66;
     --color-pass-bg: 237 243 239;
+    --color-pass-border: 199 233 217;
 
     --color-fail: 158 43 58;
     --color-fail-fg: 138 35 49;
@@ -37,6 +38,16 @@
 
     --color-pending: 70 83 107;
     --color-critical-fg: 107 22 34;
+
+    /* Auth marketing panel — the Figma panel navy is a deliberate one-off
+       (brand marketing surface, not tenant-themable UI). Held as dedicated
+       custom properties so no literal panel hexes live in components. */
+    --color-panel-1: 11 42 61;
+    --color-panel-2: 14 58 82;
+    --color-panel-3: 10 44 65;
+    --color-panel-glow: 56 182 240;
+    --color-panel-accent: 127 211 245;
+    --color-panel-edge: 19 23 32;
 
     --color-identity-1: 91 100 114;
     --color-identity-2: 110 106 120;

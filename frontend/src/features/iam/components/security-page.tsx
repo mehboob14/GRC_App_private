@@ -1,134 +1,84 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  ErrorState,
-  Skeleton,
-  Switch,
-} from "@/components/ui";
-import { iamApi } from "@/lib/api/endpoints";
-import { ApiError } from "@/lib/api/client";
+import { useQuery } from "@tanstack/react-query";
+import type { ReactNode } from "react";
+import { Badge } from "@/components/ui";
+import { tenantApi } from "@/lib/api/endpoints";
 import { useAuth } from "@/lib/auth/auth-context";
-import { cn } from "@/lib/cn";
 
 type PolicyRowProps = {
   title: string;
   description: string;
-  checked: boolean;
-  disabled?: boolean;
-  onCheckedChange?: (checked: boolean) => void;
+  status: ReactNode;
 };
 
-function PolicyRow({
-  title,
-  description,
-  checked,
-  disabled,
-  onCheckedChange,
-}: PolicyRowProps) {
+function PolicyRow({ title, description, status }: PolicyRowProps) {
   return (
     <div className="flex items-center gap-3 border-t border-border py-[11px]">
       <div className="min-w-0 flex-1">
-        <p className="text-[14px] font-semibold leading-5 text-text">{title}</p>
-        <p className="pt-px text-[12px] leading-4 text-text-faint">
-          {description}
-        </p>
+        <p className="text-body-lg font-semibold text-text">{title}</p>
+        <p className="pt-px text-body-sm text-text-faint">{description}</p>
       </div>
-      <Switch
-        checked={checked}
-        disabled={disabled}
-        onCheckedChange={onCheckedChange}
-        aria-label={title}
-        className={cn(disabled && "opacity-70")}
-      />
+      <div className="shrink-0">{status}</div>
     </div>
   );
 }
 
-/** Figma 43:5093 — Security policy card (white mode). */
+/**
+ * The security policy is the platform's, not the tenant's: nothing here is a
+ * workspace toggle (week1-review-decisions.md #19/#20). Rendered read-only
+ * from fixed platform facts plus GET /api/v1/tenant for the workspace name.
+ */
 export function SecurityPage() {
   const { principal } = useAuth();
-  const queryClient = useQueryClient();
 
-  const query = useQuery({
-    queryKey: ["security-policy", principal?.tenant_id],
-    queryFn: () => iamApi.getSecurityPolicy(),
+  const tenantQuery = useQuery({
+    queryKey: ["tenant", principal?.tenant_id],
+    queryFn: () => tenantApi.get(),
   });
 
-  const mutation = useMutation({
-    mutationFn: (require_mfa: boolean) =>
-      iamApi.updateSecurityPolicy({ require_mfa }),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["security-policy"] });
-    },
-  });
+  const scopeLine = tenantQuery.isLoading
+    ? "Loading workspace details…"
+    : tenantQuery.data
+      ? `Enforced by the platform for ${tenantQuery.data.name} — these protections are not configurable per workspace.`
+      : "Enforced by the platform for every workspace — these protections are not configurable per workspace.";
 
-  const isAdmin = principal?.role_names.includes("Admin");
-
-  if (query.isLoading) {
-    return <Skeleton className="h-72 w-full rounded-xl" />;
-  }
-
-  if (query.isError) {
-    return (
-      <ErrorState
-        title="Couldn’t load security policy"
-        description={
-          query.error instanceof ApiError ? query.error.message : "Try again."
-        }
-        onRetry={() => void query.refetch()}
-      />
-    );
-  }
-
-  const policy = query.data!;
+  const enforced = <Badge variant="statusPass">Enforced</Badge>;
 
   return (
     <div className="rounded-xl border border-border bg-bg-elevated px-5 py-[18px] shadow-sm">
-      <h2 className="font-display text-[16px] font-semibold leading-5 tracking-[-0.08px] text-text">
+      <p className="type-overline">Platform policy</p>
+      <h2 className="mt-1 font-display text-title-md text-text">
         Security policy
       </h2>
+      <p className="mt-1 text-body-sm text-text-faint">{scopeLine}</p>
       <div className="mt-[13px]">
         <PolicyRow
-          title="Enforce SSO"
-          description="Require Okta SSO for all workspace members"
-          checked={false}
-          disabled
+          title="Multi-factor authentication"
+          description="Required for Admin-role memberships and all platform administrators — always on, never a toggle"
+          status={enforced}
         />
         <PolicyRow
-          title="Require MFA"
-          description="Block sign-in without multi-factor"
-          checked={policy.require_mfa}
-          disabled={!isAdmin || mutation.isPending}
-          onCheckedChange={(checked) => mutation.mutate(checked)}
+          title="Session expiry"
+          description="Sessions end 12 hours after sign-in; MFA challenges expire after 5 minutes"
+          status={
+            <span className="text-body-md font-semibold text-text">
+              12 hours
+            </span>
+          }
         />
         <PolicyRow
-          title="Session timeout"
-          description={`Sign out after ${policy.session_timeout_hours} hours of inactivity`}
-          checked
-          disabled
+          title="Tenant isolation"
+          description="Workspace data is separated at the database with PostgreSQL row-level security"
+          status={enforced}
         />
         <PolicyRow
-          title="IP allowlist"
-          description="Restrict access to corporate IP ranges"
-          checked={false}
-          disabled
-        />
-        <PolicyRow
-          title="Audit log export"
-          description="Stream audit events to SIEM"
-          checked={false}
-          disabled
+          title="Audit trail"
+          description="State changes are recorded append-only — audit events are never updated or deleted"
+          status={enforced}
         />
       </div>
-      {mutation.isError ? (
-        <p className="mt-2 text-[12px] text-fail-fg" role="alert">
-          {mutation.error instanceof ApiError
-            ? mutation.error.message
-            : "Update failed."}
-        </p>
-      ) : null}
-      <p className="mt-3 text-[11px] text-text-faint">
-        Enforce SSO, IP allowlist, and SIEM export are Phase 3 — shown as in
-        Figma, disabled until then. Require MFA is live for Admins.
+      <p className="mt-3 text-caption text-text-faint">
+        Workspace-configurable controls (SSO enforcement, IP allowlists, SIEM
+        export) arrive in a later phase.
       </p>
     </div>
   );
