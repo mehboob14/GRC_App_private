@@ -9,11 +9,13 @@ import {
   Button,
   ErrorBanner,
   Icon,
+  identityBgClass,
   PasswordField,
   Skeleton,
   TextField,
   Tooltip,
 } from "@/components/ui";
+import { cn } from "@/lib/cn";
 import { authApi } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/auth-context";
@@ -142,8 +144,14 @@ export function SignInPage() {
               onClick={() => selectMutation.mutate(ws)}
               className="flex h-14 items-center gap-3 rounded-md border border-border px-3 text-left transition-colors duration-80 ease-state hover:bg-surface-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-accent disabled:opacity-45"
             >
-              <span className="flex size-9 items-center justify-center rounded-md bg-action-primary font-display text-title-sm text-action-primary-fg">
-                {ws.tenant_name.slice(0, 1)}
+              {/* Same workspace-mark anatomy as the topbar switcher. */}
+              <span
+                className={cn(
+                  "flex size-9 items-center justify-center rounded-md font-display text-title-sm font-extrabold text-text-inverse",
+                  identityBgClass(ws.tenant_id),
+                )}
+              >
+                {ws.tenant_name.slice(0, 1).toUpperCase()}
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block text-body-lg font-semibold text-text-primary">

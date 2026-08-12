@@ -49,6 +49,14 @@ export const users: Record<string, User & { password: string }> = {
     mfa_enabled: true,
     password: DEMO_PASSWORD,
   },
+  "user-priya": {
+    id: "user-priya",
+    email: "priya.raman@northwind.cloud",
+    full_name: "Priya Raman",
+    status: "active",
+    mfa_enabled: false,
+    password: DEMO_PASSWORD,
+  },
 };
 
 export const roles: Role[] = [
@@ -84,7 +92,8 @@ export const roles: Role[] = [
     name: "Employee" satisfies BuiltInRoleName,
     built_in: true,
     permission_keys: ["tenant:read"],
-    assignment_count: 1,
+    // Marcus (active) + Priya (invited).
+    assignment_count: 2,
   },
   {
     id: "role-auditor",
@@ -164,6 +173,16 @@ export const members: Member[] = [
     mfa_enabled: true,
   },
   {
+    membership_id: "mem-priya-nw",
+    user_id: "user-priya",
+    full_name: "Priya Raman",
+    email: "priya.raman@northwind.cloud",
+    status: "invited",
+    role_names: ["Employee"],
+    group_names: [],
+    mfa_enabled: false,
+  },
+  {
     membership_id: "mem-alex-acme",
     user_id: "user-alex",
     full_name: "Alex Okafor",
@@ -198,6 +217,11 @@ export const membershipTenants: Record<string, TenantRef> = {
     tenant_slug: "northwind",
   },
   "mem-dana-nw": {
+    tenant_id: "tenant-northwind",
+    tenant_name: "Northwind Cloud",
+    tenant_slug: "northwind",
+  },
+  "mem-priya-nw": {
     tenant_id: "tenant-northwind",
     tenant_name: "Northwind Cloud",
     tenant_slug: "northwind",
@@ -352,6 +376,12 @@ export function findUserByEmail(email: string) {
 
 /** Outstanding one-time invite tokens → the invited membership id. */
 export const invites = new Map<string, string>();
+
+// Stable demo invite: mock state is in-memory, so an ad-hoc invite dies on a
+// full page reload before it can be accepted. This one always exists — open
+// /accept-invite?token=invite-demo-priya while signed out to walk the
+// accept journey end to end.
+invites.set("invite-demo-priya", "mem-priya-nw");
 
 /**
  * Guest access windows keyed by membership id. The mock only stores them —

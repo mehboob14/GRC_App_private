@@ -13,6 +13,7 @@ import {
   Icon,
   identityBgClass,
   SearchInput,
+  Tooltip,
 } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { authApi } from "@/lib/api/endpoints";
@@ -166,18 +167,28 @@ export function Topbar() {
 
       <div className="flex-1" />
 
-      <Button variant="secondary" size="icon" aria-label="Help">
-        <Icon name="help" className="size-4 text-text-secondary" />
-      </Button>
+      {/* Docs are a later phase — same honest affordance as the sidebar. */}
+      <Tooltip content="Help & docs arrive in a later phase">
+        <button
+          type="button"
+          aria-label="Help — arrives in a later phase"
+          aria-disabled
+          className="flex size-9 cursor-not-allowed items-center justify-center rounded-sm border border-border bg-surface-primary"
+        >
+          <Icon name="help" className="size-4 text-text-subtle" />
+        </button>
+      </Tooltip>
 
       {/* Notifications ship in a later phase: no fake badge — an honest,
           empty popover (§7.2 bell + popover channel). */}
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="secondary" size="icon" aria-label="Notifications">
-            <Icon name="bell" className="size-4 text-text-secondary" />
-          </Button>
-        </DropdownMenuTrigger>
+        <Tooltip content="Notifications">
+          <DropdownMenuTrigger asChild>
+            <Button variant="secondary" size="icon" aria-label="Notifications">
+              <Icon name="bell" className="size-4 text-text-secondary" />
+            </Button>
+          </DropdownMenuTrigger>
+        </Tooltip>
         <DropdownMenuContent align="end" className="w-[320px]">
           <DropdownMenuLabel>Notifications</DropdownMenuLabel>
           <div className="flex flex-col items-center px-4 pb-4 pt-3 text-center">
@@ -198,19 +209,21 @@ export function Topbar() {
       <div className="mx-1 h-6 w-px bg-border" />
 
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button
-            type="button"
-            className="flex items-center gap-2 rounded-md p-0.5 transition-colors duration-80 ease-state hover:bg-surface-hover"
-            aria-label="User menu"
-          >
-            <Avatar
-              name={principal?.user.full_name ?? "User"}
-              seed={principal?.user.email}
-            />
-            <Icon name="chev" className="size-4 text-text-subtle" />
-          </button>
-        </DropdownMenuTrigger>
+        <Tooltip content="Account">
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className="flex items-center gap-2 rounded-md p-0.5 transition-colors duration-80 ease-state hover:bg-surface-hover"
+              aria-label="User menu"
+            >
+              <Avatar
+                name={principal?.user.full_name ?? "User"}
+                seed={principal?.user.email}
+              />
+              <Icon name="chev" className="size-4 text-text-subtle" />
+            </button>
+          </DropdownMenuTrigger>
+        </Tooltip>
         <DropdownMenuContent align="end">
           <DropdownMenuLabel>
             {principal?.user.full_name ?? "Account"}
