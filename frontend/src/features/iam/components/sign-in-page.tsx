@@ -40,17 +40,26 @@ export function SignInPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { applyLogin } = useAuth();
-  const [pending, setPending] = useState<LoginResponse | null>(null);
-  const [mfaCode, setMfaCode] = useState("");
 
   const state = location.state as {
     notice?: string;
     from?: { pathname?: string };
+    /**
+     * A workspace switch that needs another auth step (Admin → MFA) hands the
+     * login union off here so this surface can resume it — the switcher can't
+     * host the challenge itself. See Topbar.
+     */
+    pending?: LoginResponse;
   } | null;
   const notice = state?.notice ?? null;
   // RequireAuth stored the route the visitor was heading to — land there
   // after auth resolves instead of flashing the default dashboard.
   const destination = state?.from?.pathname ?? "/quick-start";
+
+  const [pending, setPending] = useState<LoginResponse | null>(
+    state?.pending ?? null,
+  );
+  const [mfaCode, setMfaCode] = useState("");
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
