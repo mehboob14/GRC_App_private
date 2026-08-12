@@ -29,9 +29,12 @@ even if the tests pass.
 
 1. **Every tenant-owned row carries `tenant_id`.** No exceptions in the tenant plane. Postgres
    RLS is the second wall; the app filter is the first. Never rely on only one.
-2. **The provider plane has no `tenant_id`.** Platform admins, the tenants register, branding,
-   provisioning, and all global content (frameworks, requirements, control templates, checks,
-   questionnaire banks, document and risk templates) sit above the tenant boundary.
+2. **The provider plane sits above the tenant boundary.** `platform_admins`, `tenants`, and all
+   global content (frameworks, requirements, control templates, checks, questionnaire banks,
+   document and risk templates) carry no `tenant_id`. `tenant_branding` and `tenant_provisioning`
+   *do* carry one — they reference their tenant, per the ER — and every provider-plane table is
+   RLS-protected, `tenants` on its own primary key (approved in
+   `openspec/changes/week1-review-decisions.md`, items 6 and 9).
 3. **Append-only tables are never updated or deleted from.** `audit_log`, `task_transitions`,
    `vuln_transitions`, `check_results`, `readiness_snapshots`, `kri_measurements`,
    `document_versions`. No `UPDATE`, no `DELETE`, ever.

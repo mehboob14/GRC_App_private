@@ -123,11 +123,38 @@ the application knows the difference. Two things to get right:
   Postgres already occupying 5432 is the usual reason the suite connects to the wrong cluster and
   reports that a role does not exist.
 
-## Seed
+## Seed the first platform admin
 
-Global content — frameworks, requirements, control templates, checks, risk and document templates
-— plus a demo tenant. Not built yet; it arrives with the first domain modules. Seeding will be
-idempotent and safe to re-run.
+The provider plane is unreachable until one operator exists, and operators are otherwise created
+through the provider panel — which needs an operator. The bootstrap:
+
+```bash
+cd backend
+uv run python -m verity.manage seed-platform-admin \
+    --email ops@example.com --name "Ops Admin" --role super_admin
+```
+
+- Refuses to run once **any** platform admin exists; further admins are managed through the
+  provider API by a `super_admin` (`platform_admins:manage`).
+- Prints a generated one-time password exactly once (or takes it from
+  `VERITY_SEED_ADMIN_PASSWORD` if set). It is printed, never logged — the logging pipeline
+  redacts anything password-shaped by design.
+- The admin is created **unenrolled**. TOTP is mandatory on the provider plane, so the first
+  login forces enrollment:
+  1. `POST /api/v1/provider/login` with the email and password → `next_step: "mfa_enroll"` and a
+     five-minute challenge token. No session is issued.
+  2. `POST /api/v1/provider/mfa/enroll` with the challenge → the TOTP secret and an
+     `otpauth://` URI to scan into an authenticator app.
+  3. `POST /api/v1/provider/mfa/confirm` with the challenge and a current code → the first
+     session token plus eight single-use recovery codes, shown once. Store them.
+  Subsequent logins are `login` → `mfa/verify` with a code (or one recovery code, which is
+  consumed by use).
+
+## Seed global content
+
+Frameworks, requirements, control templates, checks, risk and document templates — plus a demo
+tenant. Not built yet; it arrives with the first domain modules. Seeding will be idempotent and
+safe to re-run.
 
 ## Still to document
 

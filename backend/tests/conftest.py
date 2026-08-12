@@ -151,6 +151,48 @@ async def app_session(
 
 
 @pytest.fixture
+async def clean_tenancy(
+    settings: Settings,
+    app_engine: AsyncEngine,
+    assert_app_role_cannot_bypass_rls: None,
+) -> AsyncIterator[None]:
+    """The five tenancy tables exist, are empty on entry, and are emptied on exit.
+
+    The tenancy suites commit rows across planes — registration, auth attempts,
+    provisioning — so they cannot clean up by rolling back. ``TRUNCATE ... CASCADE``
+    as the owner is test-database bookkeeping, exactly like ``clean_audit_log``.
+    """
+    owner_engine = create_async_engine(settings.database.effective_migration_url, poolclass=None)
+    tables = (
+        "tenant_registration_keys",
+        "tenant_provisioning",
+        "tenant_branding",
+        "tenants",
+        "platform_admins",
+    )
+    truncate = text(f"TRUNCATE {', '.join(tables)} CASCADE")
+    try:
+        async with owner_engine.connect() as connection:
+            exists = (
+                await connection.execute(text("SELECT to_regclass('platform_admins')"))
+            ).scalar_one_or_none()
+        if exists is None:
+            pytest.fail(
+                "the tenancy tables do not exist in the test database; "
+                "run `alembic upgrade head` first (see docs/runbooks/local-setup.md)."
+            )
+        async with owner_engine.begin() as connection:
+            await connection.execute(truncate)
+        try:
+            yield
+        finally:
+            async with owner_engine.begin() as connection:
+                await connection.execute(truncate)
+    finally:
+        await owner_engine.dispose()
+
+
+@pytest.fixture
 async def clean_audit_log(
     settings: Settings,
     app_engine: AsyncEngine,

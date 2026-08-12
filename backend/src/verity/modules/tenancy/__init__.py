@@ -1,5 +1,7 @@
-"""Provider plane: tenants, branding, provisioning. No `tenant_id` anywhere in it.
+"""The provider plane: platform admins, the tenants register, branding, provisioning.
 
-Not implemented yet. See docs/product/delivery-plan.md for the phase this belongs to
-and backend/CLAUDE.md for the file layout a module uses.
+Other modules reach tenancy through ``verity.modules.tenancy.service`` — never its
+repository, models, or tables. The IAM module's two wiring points are
+``TenancyService.use_gates`` (the membership checks provisioning asks for) and
+``TenancyService.register_tenant`` (self-service signup builds on it).
 """

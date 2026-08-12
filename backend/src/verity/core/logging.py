@@ -54,6 +54,9 @@ _SENSITIVE_FRAGMENTS: Final[frozenset[str]] = frozenset(
         "session_key",
         "set-cookie",
         "signature",
+        # Covers smtp_config_ref (tenant mail credentials, add-provider-plane) in
+        # both plaintext-request and ciphertext-column shape.
+        "smtp",
         "totp",
         "_token",
         "token_",

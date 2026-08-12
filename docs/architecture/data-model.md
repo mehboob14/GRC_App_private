@@ -15,7 +15,15 @@ agents and engineers read. If the two disagree, the ER document wins and this fi
 
 ## Module notes that are easy to get wrong
 
-**Tenancy.** Two planes. Provider plane tables carry no `tenant_id`. A **user is a global identity**
+**Tenancy.** Two planes. `platform_admins` and `tenants` carry no `tenant_id`; `tenant_branding`
+(PK = `tenant_id`) and `tenant_provisioning` reference their tenant, and all of them are
+RLS-protected — `tenants` on its own primary key (week1-review-decisions.md, items 6 and 9).
+Platform-admin credentials live **on `platform_admins`** (`password_hash`,
+`mfa_secret_encrypted` AAD-bound to the row, `recovery_codes_encrypted` as argon2id hashes,
+`last_totp_counter` for replay protection) — approved deviation from the ER, item 5; the ER
+document correction is pending (the .docx is the signed original). `tenants.created_by` is
+nullable (self-signup has no admin, item 7); `tenant_provisioning` has no `failed` status — a
+failing step stays `pending` and is retried (item 8). A **user is a global identity**
 (`users`, `credentials`, `user_identities` carry no `tenant_id`; email is unique globally). Membership
 in a tenant is **`tenant_memberships`** — the many-to-many join; roles reach the person through
 `role_assignments`, which also carries the auditor time-box (`engagement_id`, `valid_from`,

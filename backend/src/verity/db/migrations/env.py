@@ -21,6 +21,7 @@ from verity.db.base import Base
 # compares it against the database, or autogenerate will confidently propose dropping
 # every table it cannot see. Import them here as modules land.
 from verity.modules.audit import models as _audit_models  # noqa: F401
+from verity.modules.tenancy import models as _tenancy_models  # noqa: F401
 
 target_metadata = Base.metadata
 

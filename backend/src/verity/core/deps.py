@@ -21,14 +21,18 @@ Three rules constrain what these can ever do:
 from __future__ import annotations
 
 import uuid
-from collections.abc import AsyncIterator, Callable, Coroutine
+from collections.abc import AsyncIterator, Callable, Coroutine, Mapping
 from dataclasses import dataclass, field
-from typing import Any, Final
+from typing import Annotated, Any, Final
 
 from fastapi import Depends
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from verity.core.db import session_scope
+from verity.core.db import provider_session_scope, session_scope
+from verity.core.errors import AuthenticationRequired, PermissionDenied
+from verity.core.security import decode_token
 
 WEEK_ONE: Final = (
     "not implemented in the foundation change; the IAM module implements it in Week 1 "
@@ -130,3 +134,108 @@ def require(permission: str) -> Callable[..., Coroutine[Any, Any, Principal]]:
         raise NotImplementedError(f"require({permission!r}) is {WEEK_ONE}")
 
     return dependency
+
+
+# ---------------------------------------------------------------------------
+# Provider plane (openspec/changes/add-provider-plane/design.md, "Authorization on
+# the provider plane"). The permissions/roles tables are tenant-scoped and cannot
+# hold a provider grant, so each platform_admins.role maps to its keys here, in
+# code. "Every route declares its permission" holds on both planes; only the
+# resolution differs.
+# ---------------------------------------------------------------------------
+
+_TENANT_MANAGEMENT_KEYS: Final = frozenset(
+    {"tenants:create", "tenants:read", "tenants:update", "tenants:brand", "tenants:provision"}
+)
+
+PROVIDER_ROLE_PERMISSIONS: Final[Mapping[str, frozenset[str]]] = {
+    "super_admin": _TENANT_MANAGEMENT_KEYS | {"platform_admins:manage"},
+    "onboarding": _TENANT_MANAGEMENT_KEYS,
+    "support": frozenset({"tenants:read"}),
+}
+
+
+@dataclass(frozen=True, slots=True)
+class PlatformAdminPrincipal:
+    """An authenticated operator. Deliberately not a :class:`Principal`: a platform
+    admin has no membership and never acts inside a tenant except through the
+    (future) audit-logged impersonation flow."""
+
+    id: uuid.UUID
+    role: str
+    status: str
+
+    def has(self, permission: str) -> bool:
+        return permission in PROVIDER_ROLE_PERMISSIONS.get(self.role, frozenset())
+
+
+_bearer = HTTPBearer(auto_error=False)
+
+# core cannot import a module's model — the layer contract is modules over core —
+# so the three columns this dependency needs are read by name. The tenancy module
+# owns the table; this query is part of its public shape.
+_PLATFORM_ADMIN_BY_ID = text("SELECT id, role, status FROM platform_admins WHERE id = :admin_id")
+
+_ACTIVE_PLATFORM_ADMIN_STATUS: Final = "active"
+
+
+async def get_current_platform_admin(
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(_bearer)] = None,
+) -> PlatformAdminPrincipal:
+    """Resolve the calling platform admin from a provider-plane session token.
+
+    Authorization is resolved per request from the database, never from the token
+    (decision 17): a disabled admin is 401 regardless of token validity. A
+    *tenant*-plane session token is 403, not 401 — the caller is authenticated,
+    just categorically not an operator — and the response discloses nothing about
+    the provider plane.
+    """
+    if credentials is None:
+        raise AuthenticationRequired(detail="no bearer token on a provider route")
+    claims = decode_token(credentials.credentials, expected_typ="session")
+    if claims.plane != "provider":
+        raise PermissionDenied(detail="tenant-plane session token on a provider route")
+    async with provider_session_scope() as session:
+        row = (
+            await session.execute(_PLATFORM_ADMIN_BY_ID, {"admin_id": claims.subject})
+        ).one_or_none()
+    if row is None or row.status != _ACTIVE_PLATFORM_ADMIN_STATUS:
+        raise AuthenticationRequired(
+            detail=f"platform admin {claims.subject} missing or not active"
+        )
+    return PlatformAdminPrincipal(id=row.id, role=row.role, status=row.status)
+
+
+def require_provider(
+    permission: str,
+) -> Callable[..., Coroutine[Any, Any, PlatformAdminPrincipal]]:
+    """Declare the permission a provider route requires; deny by default.
+
+    Returns the authenticated admin so a handler can name the actor in its audit
+    rows without a second dependency.
+    """
+
+    async def dependency(
+        admin: Annotated[PlatformAdminPrincipal, Depends(get_current_platform_admin)],
+    ) -> PlatformAdminPrincipal:
+        if not admin.has(permission):
+            raise PermissionDenied(
+                detail=f"{permission} is not granted to provider role {admin.role!r}"
+            )
+        return admin
+
+    return dependency
+
+
+async def get_provider_session(
+    _admin: Annotated[PlatformAdminPrincipal, Depends(get_current_platform_admin)],
+) -> AsyncIterator[AsyncSession]:
+    """A session whose transaction runs with provider-plane visibility.
+
+    Depends on the authenticated admin so the widened plane can never be bound for
+    an unauthenticated request; it binds ``app.provider_plane`` and **never** a
+    tenant — provider routes address tenants as resources, and acting *as* one is
+    a separate, audit-logged impersonation flow that does not exist yet.
+    """
+    async with provider_session_scope() as session:
+        yield session

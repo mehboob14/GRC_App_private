@@ -5,9 +5,14 @@ write another workspace's data, and this is proven by an automated test that run
 
 ## Two planes
 
-**Provider plane** — the internal panel where the team registers and manages customer companies.
-Tables here have **no `tenant_id`**: `platform_admins`, `tenants`, `tenant_branding`,
-`tenant_provisioning`. This is the deliberate exception to the rule below.
+**Provider plane** — the internal panel where the team registers and manages customer companies:
+`platform_admins`, `tenants`, `tenant_branding`, `tenant_provisioning` (and the
+`tenant_registration_keys` idempotency record). Only `platform_admins` and `tenants` carry no
+`tenant_id` — branding and provisioning reference their tenant, per the ER, and **every one of
+the five is RLS-protected** (see the policy table below). Provider-plane requests run under
+`app.provider_plane`, bound by `core.db.provider_session_scope` for an authenticated platform
+admin only, and never bind a tenant: provider routes address a tenant *as a resource*
+(`/provider/tenants/{tenant_id}`), which is not the acting-tenant parameter `api.md` forbids.
 
 **Tenant plane** — the application each customer company uses. Every operational table carries
 `tenant_id`.
@@ -108,6 +113,29 @@ influence. It is honestly a switch that widens visibility and is only as strong 
 sets it — the same property `app.tenant_id` already has. The GUC approach (over a dedicated
 database role with its own pool) was approved in `openspec/changes/week1-review-decisions.md`,
 item 4, to be revisited when the provider admin panel grows real tenant-data reads.
+
+## The provider plane's own tables
+
+The tenancy migration polices all five provider-plane tables with the same two settings
+(`add-provider-plane/design.md`; each policy `FOR ALL ... WITH CHECK` on the provider side,
+`FOR SELECT` only on the tenant side):
+
+| Table | Tenant plane | Provider plane |
+|---|---|---|
+| `platform_admins` | no policy — invisible | full |
+| `tenants` | `SELECT` where `id` = bound tenant | full |
+| `tenant_branding` | `SELECT` where `tenant_id` = bound tenant | full |
+| `tenant_provisioning` | `SELECT` where `tenant_id` = bound tenant | full |
+| `tenant_registration_keys` | no policy — invisible | full |
+
+Two properties are deliberate. **`tenants` is RLS-protected on its own primary key** — it carries
+no `tenant_id`, so its policy reads `id = NULLIF(current_setting('app.tenant_id', true), '')::uuid`.
+A strengthening of ADR-0007: without it, one missing `WHERE` clause in any tenant-plane query
+against the register lists every customer company by legal name. **The tenant plane gets `SELECT`
+only, everywhere.** Lifecycle, plan, branding, and provisioning are written from the provider
+plane; a tenant changing its own plan is a business-logic hole the database itself closes. With
+no tenant-side INSERT/UPDATE/DELETE policy, writes match nothing or are refused outright —
+`tests/isolation/test_tenancy_isolation.py` proves both directions.
 
 ## Rules
 
