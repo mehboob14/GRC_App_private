@@ -6,15 +6,22 @@ import {
   type ReactNode,
 } from "react";
 import { cn } from "@/lib/cn";
+import { Icon } from "@/components/ui/icon";
 
-type TextFieldProps = InputHTMLAttributes<HTMLInputElement> & {
+type TextFieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, "size"> & {
   label: string;
   hint?: string;
   error?: string;
   optional?: boolean;
   trailing?: ReactNode;
+  /** md = 36 default · lg = 44 auth screens (DS §4.6). */
+  size?: "md" | "lg";
 };
 
+/**
+ * DS §5.4 form control anatomy: label 6px above, control h36/h44 radius sm,
+ * helper 6px below. Never floating labels; placeholders are example values.
+ */
 export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(
   (
     {
@@ -26,6 +33,7 @@ export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(
       trailing,
       className,
       disabled,
+      size = "md",
       ...props
     },
     ref,
@@ -41,7 +49,7 @@ export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(
       <div className="flex w-full flex-col gap-1.5">
         <LabelPrimitive.Root
           htmlFor={fieldId}
-          className="font-sans text-label-sm text-text"
+          className="font-sans text-label-sm text-text-secondary"
         >
           {label}
           {optional ? (
@@ -56,10 +64,14 @@ export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(
             aria-invalid={Boolean(error) || undefined}
             aria-describedby={error ? errorId : hint ? hintId : undefined}
             className={cn(
-              "h-9 w-full rounded-lg border bg-bg-elevated px-3 font-sans text-body-md text-text",
-              "placeholder:text-text-faint",
-              "disabled:cursor-not-allowed disabled:bg-bg-sunken disabled:text-text-faint",
-              error ? "border-fail" : "border-border",
+              "w-full rounded-sm border bg-surface-primary px-3 font-sans text-body-md text-text-primary",
+              "transition-colors duration-150 ease-state placeholder:text-text-faint",
+              size === "lg" ? "h-11" : "h-9",
+              "focus:outline-none focus-visible:outline-none",
+              "disabled:cursor-not-allowed disabled:bg-surface-sunken disabled:text-text-faint",
+              error
+                ? "border-status-danger-base shadow-input-error"
+                : "border-border focus:border-action-accent focus:shadow-input-focus",
               trailing && "pr-10",
               className,
             )}
@@ -72,11 +84,15 @@ export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(
           ) : null}
         </div>
         {error ? (
-          <p id={errorId} className="text-body-sm text-fail-fg">
+          <p
+            id={errorId}
+            className="flex items-start gap-1 text-body-sm text-status-danger-text"
+          >
+            <Icon name="alert" className="mt-px size-3.5 shrink-0" />
             {error}
           </p>
         ) : hint ? (
-          <p id={hintId} className="text-body-sm text-text-faint">
+          <p id={hintId} className="text-body-sm text-text-subtle">
             {hint}
           </p>
         ) : null}

@@ -129,6 +129,13 @@ export type InviteMemberRequest = {
   email: string;
   full_name: string;
   role_id: string;
+  /**
+   * Optional access window for guest auditors/consultants (ISO dates,
+   * YYYY-MM-DD). The backend models the window on the role assignment;
+   * an omitted bound means open-ended on that side.
+   */
+  valid_from?: string;
+  valid_until?: string;
 };
 
 /**

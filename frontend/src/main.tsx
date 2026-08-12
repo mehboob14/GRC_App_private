@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AppRoutes } from "@/app/routes";
-import { TooltipProvider } from "@/components/ui";
+import { ToastProvider, TooltipProvider } from "@/components/ui";
 import { ThemeProvider } from "@/lib/theme";
 import { AuthProvider } from "@/lib/auth/auth-context";
 import { mocksEnabled } from "@/lib/api/client";
@@ -29,11 +29,23 @@ const queryClient = new QueryClient({
 
 async function enableMocks() {
   if (!mocksEnabled()) return;
-  const { worker } = await import("@/mocks/browser");
-  await worker.start({
-    onUnhandledRequest: "bypass",
-    serviceWorker: { url: "/mockServiceWorker.js" },
-  });
+  const { startWorker } = await import("@/mocks/browser");
+  await startWorker();
+
+  // The browser can terminate an idle service worker; a restarted MSW
+  // worker has lost its active-client set, so it silently passes every
+  // request through to the Vite proxy, which 500s (no real backend behind
+  // mocks). Ping a mock endpoint to keep the worker alive and re-handshake
+  // whenever a ping slips through anyway. apiFetch carries the same
+  // self-heal for requests that hit the dead window between pings.
+  window.setInterval(() => {
+    fetch("/api/v1/_mock/health")
+      .then((res) => {
+        if (!res.ok) return startWorker().then(() => undefined);
+        return undefined;
+      })
+      .catch(() => undefined);
+  }, 15_000);
 }
 
 const root = document.getElementById("root");
@@ -46,13 +58,15 @@ void enableMocks().then(() => {
     <StrictMode>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
-          <TooltipProvider>
-            <BrowserRouter>
-              <AuthProvider>
-                <AppRoutes />
-              </AuthProvider>
-            </BrowserRouter>
-          </TooltipProvider>
+          <ToastProvider>
+            <TooltipProvider>
+              <BrowserRouter>
+                <AuthProvider>
+                  <AppRoutes />
+                </AuthProvider>
+              </BrowserRouter>
+            </TooltipProvider>
+          </ToastProvider>
         </ThemeProvider>
       </QueryClientProvider>
     </StrictMode>,

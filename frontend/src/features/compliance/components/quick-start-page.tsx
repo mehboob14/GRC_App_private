@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Button, Icon, Skeleton } from "@/components/ui";
+import { Button, Icon, Skeleton, StatusPill } from "@/components/ui";
 import { iamApi } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/auth-context";
@@ -25,20 +25,29 @@ function messageFrom(error: unknown, fallback: string): string {
   return error instanceof ApiError ? error.message : fallback;
 }
 
-function StepMark({ status }: { status: StepStatus }) {
+/** 22px circle: solid success check when done, numbered outline otherwise. */
+function StepMark({
+  status,
+  index,
+  isNext,
+}: {
+  status: StepStatus;
+  index: number;
+  isNext: boolean;
+}) {
   if (status.kind === "done") {
     return (
-      <span className="flex size-[18px] shrink-0 items-center justify-center rounded-full bg-pass text-text-inverse">
-        <Icon name="check" className="size-3" strokeWidth={2.5} />
+      <span className="flex size-[22px] shrink-0 items-center justify-center rounded-full bg-status-success-base text-text-inverse">
+        <Icon name="check" className="size-[13px]" strokeWidth={2.5} />
       </span>
     );
   }
   if (status.kind === "loading") {
-    return <Skeleton className="size-[18px] shrink-0 rounded-full" />;
+    return <Skeleton className="size-[22px] shrink-0 rounded-full" />;
   }
   if (status.kind === "error") {
     return (
-      <span className="flex size-[18px] shrink-0 items-center justify-center text-fail-fg">
+      <span className="flex size-[22px] shrink-0 items-center justify-center text-status-danger-text">
         <Icon name="alert" className="size-4" />
       </span>
     );
@@ -46,30 +55,42 @@ function StepMark({ status }: { status: StepStatus }) {
   return (
     <span
       className={cn(
-        "size-[18px] shrink-0 rounded-full border-2",
-        status.kind === "todo" ? "border-accent" : "border-border-strong",
+        "flex size-[22px] shrink-0 items-center justify-center rounded-full border-1.5 font-sans text-caption font-bold tabular",
+        isNext
+          ? "border-action-accent text-action-accent"
+          : "border-border-strong text-text-subtle",
       )}
-    />
+    >
+      {index}
+    </span>
   );
 }
 
-function StepRow({ step }: { step: Step }) {
+function StepRow({
+  step,
+  index,
+  isNext,
+}: {
+  step: Step;
+  index: number;
+  isNext: boolean;
+}) {
   const muted = step.status.kind === "unavailable";
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-border bg-bg-elevated px-[18px] py-[14px]">
-      <StepMark status={step.status} />
+    <div className="flex items-center gap-3 rounded-lg border border-border bg-surface-primary px-4 py-3">
+      <StepMark status={step.status} index={index} isNext={isNext} />
       <div className="min-w-0 flex-1">
         <p
           className={cn(
             "text-body-lg font-semibold",
-            muted ? "text-text-muted" : "text-text",
+            muted ? "text-text-secondary" : "text-text-primary",
           )}
         >
           {step.title}
         </p>
-        <p className="mt-0.5 text-body-sm text-text-faint">{step.why}</p>
+        <p className="mt-0.5 text-body-sm text-text-subtle">{step.why}</p>
         {step.status.kind === "error" ? (
-          <p className="mt-1 text-body-sm text-fail-fg" role="alert">
+          <p className="mt-1 text-body-sm text-status-danger-text" role="alert">
             {step.status.message}{" "}
             <button
               type="button"
@@ -81,17 +102,22 @@ function StepRow({ step }: { step: Step }) {
           </p>
         ) : null}
         {step.status.kind === "unavailable" ? (
-          <p className="mt-1 text-body-sm text-text-faint">
+          <p className="mt-1 text-body-sm text-text-subtle">
             {step.status.note}
           </p>
         ) : null}
       </div>
       {step.status.kind === "done" ? (
-        <span className="shrink-0 text-body-sm font-semibold text-pass-fg">
-          Done
-        </span>
+        <StatusPill status="success" label="Complete" className="shrink-0" />
       ) : step.cta && step.status.kind === "todo" ? (
-        <Button asChild size="sm" className="ml-2 h-8 shrink-0 px-3">
+        // One primary on the page: the next incomplete step's CTA. Later
+        // steps stay reachable as secondary actions.
+        <Button
+          asChild
+          variant={isNext ? "primary" : "secondary"}
+          size="sm"
+          className="ml-2 shrink-0"
+        >
           <Link to={step.cta.to}>{step.cta.label}</Link>
         </Button>
       ) : null}
@@ -227,19 +253,51 @@ export function QuickStartPage() {
   const doneCount = completable.filter(
     (step) => step.status.kind === "done",
   ).length;
+  const nextStepId = steps.find((step) => step.status.kind === "todo")?.id;
 
   return (
     <div className="mx-auto max-w-[840px]">
       <p className="type-overline mb-2">Overview</p>
-      <h1 className="font-display text-heading-xl text-text">Quick start</h1>
-      <p className="mt-2 text-body-lg text-text-muted">
-        First-run checklist for your workspace — {doneCount} of{" "}
-        {completable.length} setup steps complete.
+      <h1 className="font-display text-heading-lg text-text-primary">
+        Quick start
+      </h1>
+      <p className="mt-2 text-body-lg text-text-secondary">
+        First-run checklist for your workspace — every step reflects live
+        workspace data.
       </p>
 
-      <div className="mt-6 space-y-[10px]">
-        {steps.map((step) => (
-          <StepRow key={step.id} step={step} />
+      {/* DS §6.4 progress pattern: 150×7 track + tabular value */}
+      <div className="mt-5 flex items-center gap-3">
+        <span className="font-display text-numeral-sm tabular text-text-primary">
+          {doneCount}
+          <span className="text-text-subtle">/{completable.length}</span>
+        </span>
+        <span
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={completable.length}
+          aria-valuenow={doneCount}
+          aria-label="Setup steps complete"
+          className="h-[7px] w-[150px] overflow-hidden rounded-full border border-border bg-surface-sunken"
+        >
+          <span
+            className="block h-full rounded-full bg-status-success-base"
+            style={{ width: `${(doneCount / completable.length) * 100}%` }}
+          />
+        </span>
+        <span className="text-label-sm text-text-secondary">
+          setup steps complete
+        </span>
+      </div>
+
+      <div className="mt-6 space-y-2">
+        {steps.map((step, index) => (
+          <StepRow
+            key={step.id}
+            step={step}
+            index={index + 1}
+            isNext={step.id === nextStepId}
+          />
         ))}
       </div>
     </div>

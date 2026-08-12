@@ -5,10 +5,21 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AuthSplitLayout } from "@/features/iam/components/auth-split-layout";
-import { Button, Icon, PasswordField, TextField } from "@/components/ui";
+import {
+  Button,
+  ErrorBanner,
+  Icon,
+  identityBgClass,
+  PasswordField,
+  Skeleton,
+  TextField,
+  Tooltip,
+} from "@/components/ui";
+import { cn } from "@/lib/cn";
 import { authApi } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/auth-context";
+import { useAlertFocus } from "@/features/iam/hooks/use-alert-focus";
 import { VENDOR_MARKS } from "@/lib/vendor-marks";
 import type { LoginResponse, WorkspaceSummary } from "@/lib/api/types";
 
@@ -32,8 +43,14 @@ export function SignInPage() {
   const [pending, setPending] = useState<LoginResponse | null>(null);
   const [mfaCode, setMfaCode] = useState("");
 
-  const notice =
-    (location.state as { notice?: string } | null)?.notice ?? null;
+  const state = location.state as {
+    notice?: string;
+    from?: { pathname?: string };
+  } | null;
+  const notice = state?.notice ?? null;
+  // RequireAuth stored the route the visitor was heading to — land there
+  // after auth resolves instead of flashing the default dashboard.
+  const destination = state?.from?.pathname ?? "/quick-start";
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -44,7 +61,7 @@ export function SignInPage() {
   function finishAuth(response: LoginResponse) {
     if (response.status === "authenticated") {
       applyLogin(response);
-      navigate("/quick-start", { replace: true });
+      navigate(destination, { replace: true });
       return;
     }
     setPending(response);
@@ -81,6 +98,10 @@ export function SignInPage() {
     onSuccess: finishAuth,
   });
 
+  const loginAlertRef = useAlertFocus(loginMutation.isError);
+  const verifyAlertRef = useAlertFocus(verifyMutation.isError);
+  const selectAlertRef = useAlertFocus(selectMutation.isError);
+
   useEffect(() => {
     if (pending?.status === "mfa_enrollment_required") {
       navigate(`/mfa/enroll?challenge=${pending.challenge_token}`, {
@@ -103,7 +124,7 @@ export function SignInPage() {
         title="Set up authenticator"
         subtitle="Redirecting to enrollment…"
       >
-        <div className="h-10 animate-pulse rounded-lg bg-na-bg" />
+        <Skeleton className="h-11 w-full" />
       </AuthSplitLayout>
     );
   }
@@ -121,35 +142,48 @@ export function SignInPage() {
               type="button"
               disabled={selectMutation.isPending}
               onClick={() => selectMutation.mutate(ws)}
-              className="flex h-[52px] items-center gap-3 rounded-[10px] border border-border px-3 text-left hover:bg-bg-sunken"
+              className="flex h-14 items-center gap-3 rounded-md border border-border px-3 text-left transition-colors duration-80 ease-state hover:bg-surface-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-accent disabled:opacity-45"
             >
-              <span className="flex size-9 items-center justify-center rounded-lg bg-accent font-display text-title-sm text-accent-fg">
-                {ws.tenant_name.slice(0, 1)}
+              {/* Same workspace-mark anatomy as the topbar switcher. */}
+              <span
+                className={cn(
+                  "flex size-9 items-center justify-center rounded-md font-display text-title-sm font-extrabold text-text-inverse",
+                  identityBgClass(ws.tenant_id),
+                )}
+              >
+                {ws.tenant_name.slice(0, 1).toUpperCase()}
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block text-body-lg font-semibold text-text">
+                <span className="block text-body-lg font-semibold text-text-primary">
                   {ws.tenant_name}
                 </span>
-                <span className="block text-body-sm text-text-faint">
+                <span className="block text-body-sm text-text-subtle">
                   {ws.role_name}
                 </span>
               </span>
-              <Icon name="chevr" className="size-4 text-text-faint" />
+              <Icon name="chevr" className="size-4 text-text-subtle" />
             </button>
           ))}
         </div>
         {selectMutation.isError ? (
-          <p className="mt-3 text-body-sm text-fail-fg" role="alert">
-            {messageFrom(selectMutation.error, "Could not open workspace.")}
-          </p>
+          <ErrorBanner
+            ref={selectAlertRef}
+            className="mt-3"
+            title="Couldn't open the workspace"
+          >
+            {messageFrom(
+              selectMutation.error,
+              "The selection didn't reach the server — check your connection and try again.",
+            )}
+          </ErrorBanner>
         ) : null}
-        <button
-          type="button"
-          className="mt-4 text-body-md font-medium text-accent"
+        <Button
+          variant="link"
+          className="mt-4 self-start"
           onClick={backToSignIn}
         >
           Back to sign in
-        </button>
+        </Button>
       </AuthSplitLayout>
     );
   }
@@ -160,41 +194,54 @@ export function SignInPage() {
         title="Enter your MFA code"
         subtitle="Admin sign-in requires a 6-digit authenticator code."
       >
-        <TextField
-          label="Authenticator code"
-          inputMode="numeric"
-          autoComplete="one-time-code"
-          placeholder="000000"
-          value={mfaCode}
-          onChange={(e) =>
-            setMfaCode(e.target.value.replace(/\D/g, "").slice(0, 6))
-          }
-        />
         {verifyMutation.isError ? (
-          <p className="mt-2 text-body-sm text-fail-fg" role="alert">
+          <ErrorBanner
+            ref={verifyAlertRef}
+            className="mb-4"
+            title="Couldn't verify the code"
+          >
             {messageFrom(
               verifyMutation.error,
-              "That code is incorrect or expired.",
+              "That code didn't match — check your authenticator app and try again.",
             )}
-          </p>
+          </ErrorBanner>
         ) : null}
-        <Button
-          className="mt-4 h-[46px] w-full rounded-[10px]"
-          size="lg"
-          loading={verifyMutation.isPending}
-          disabled={mfaCode.length !== 6}
-          onClick={() => verifyMutation.mutate(mfaCode)}
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (mfaCode.length === 6) verifyMutation.mutate(mfaCode);
+          }}
+          noValidate
         >
-          Verify and continue
-          <Icon name="arrowr" className="size-4" />
-        </Button>
-        <button
-          type="button"
-          className="mt-4 text-body-md font-medium text-accent"
+          <TextField
+            label="Authenticator code"
+            size="lg"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            placeholder="000000"
+            value={mfaCode}
+            onChange={(e) =>
+              setMfaCode(e.target.value.replace(/\D/g, "").slice(0, 6))
+            }
+          />
+          <Button
+            type="submit"
+            className="mt-4 w-full"
+            size="lg"
+            loading={verifyMutation.isPending}
+            disabled={mfaCode.length !== 6}
+          >
+            Verify and continue
+            <Icon name="arrowr" className="size-4" />
+          </Button>
+        </form>
+        <Button
+          variant="link"
+          className="mt-4 self-start"
           onClick={backToSignIn}
         >
           Back to sign in
-        </button>
+        </Button>
       </AuthSplitLayout>
     );
   }
@@ -206,80 +253,79 @@ export function SignInPage() {
     >
       {notice ? (
         <div
-          className="mb-4 flex items-center gap-2 rounded-lg border border-pass-border bg-pass-bg px-[13px] py-[11px]"
+          className="mb-4 flex items-center gap-2 rounded-md border border-status-success-border bg-status-success-bg px-3.5 py-3"
           role="status"
         >
-          <Icon name="check" className="size-[15px] text-pass-fg" />
-          <p className="text-body-sm font-semibold text-pass-fg">{notice}</p>
+          <Icon name="check" className="size-4 text-status-success-text" />
+          <p className="text-body-sm font-semibold text-status-success-text">
+            {notice}
+          </p>
         </div>
       ) : null}
 
-      <Button
-        type="button"
-        variant="secondary"
-        size="lg"
-        className="h-[46px] w-full rounded-[10px] border-border-strong font-semibold"
-        disabled
-        aria-disabled
-        title="Coming soon — federation is Phase 3"
-      >
-        <span
-          className="flex size-5 items-center justify-center rounded-sm text-body-sm font-medium text-white"
-          style={{ backgroundColor: VENDOR_MARKS.okta.color }}
-        >
-          {VENDOR_MARKS.okta.label}
+      {/* Honest later-phase affordance: disabled, and the tooltip says when. */}
+      <Tooltip content="Okta SSO arrives with identity federation in a later phase">
+        <span tabIndex={0} className="block w-full rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-accent">
+          <Button
+            type="button"
+            variant="secondary"
+            size="lg"
+            className="w-full"
+            disabled
+          >
+            <span
+              className="flex size-5 items-center justify-center rounded-xs text-caption font-semibold text-white"
+              style={{ backgroundColor: VENDOR_MARKS.okta.color }}
+            >
+              {VENDOR_MARKS.okta.label}
+            </span>
+            Continue with Okta SSO
+          </Button>
         </span>
-        Continue with Okta SSO
-      </Button>
+      </Tooltip>
 
-      <div className="my-[18px] flex items-center gap-3">
+      <div className="my-4 flex items-center gap-3">
         <span className="h-px flex-1 bg-border" />
-        <span className="text-body-sm font-medium text-text-faint">
+        <span className="text-body-sm font-medium text-text-subtle">
           or sign in with email
         </span>
         <span className="h-px flex-1 bg-border" />
       </div>
 
       <form
-        className="flex flex-col"
+        className="flex flex-col gap-3"
         onSubmit={(e) =>
           void form.handleSubmit((values) => loginMutation.mutate(values))(e)
         }
         noValidate
       >
+        {loginMutation.isError ? (
+          <ErrorBanner ref={loginAlertRef} title="Sign-in failed">
+            {messageFrom(
+              loginMutation.error,
+              "The request didn't reach the server — check your connection and try again.",
+            )}
+          </ErrorBanner>
+        ) : null}
         <TextField
           label="Work email"
+          size="lg"
           type="email"
           autoComplete="username"
           placeholder="name@company.com"
-          className="h-11 rounded-[9px]"
           error={form.formState.errors.email?.message}
           {...form.register("email")}
         />
-        <div className="mb-1.5 mt-1 flex items-center justify-between">
-          <span className="text-body-sm font-semibold text-text-muted">
-            Password
-          </span>
-          <span className="text-body-sm font-semibold text-accent">
-            Forgot?
-          </span>
-        </div>
         <PasswordField
-          label=""
-          aria-label="Password"
+          label="Password"
+          size="lg"
           placeholder="••••••••••••"
-          className="h-11 rounded-[9px]"
           error={form.formState.errors.password?.message}
           {...form.register("password")}
         />
-        {loginMutation.isError ? (
-          <p className="mt-2 text-body-sm text-fail-fg" role="alert">
-            {messageFrom(loginMutation.error, "Sign in failed. Try again.")}
-          </p>
-        ) : null}
         <Button
           type="submit"
-          className="mt-1 h-[46px] w-full rounded-[10px]"
+          className="mt-1 w-full"
           size="lg"
           loading={loginMutation.isPending}
         >
@@ -288,16 +334,16 @@ export function SignInPage() {
         </Button>
       </form>
 
-      <div className="mt-[22px] flex items-center gap-2 rounded-[9px] border border-pass-border bg-pass-bg px-[13px] py-[11px]">
-        <Icon name="shield" className="size-[15px] text-pass-fg" />
-        <p className="text-body-sm font-semibold text-pass-fg">
+      <div className="mt-5 flex items-center gap-2 rounded-md border border-status-success-border bg-status-success-bg px-3.5 py-3">
+        <Icon name="shield" className="size-4 text-status-success-text" />
+        <p className="text-body-sm font-semibold text-status-success-text">
           Protected by SSO &amp; enforced MFA · SOC 2 Type II
         </p>
       </div>
 
-      <p className="mt-6 text-body-md text-text-muted">
+      <p className="mt-6 text-body-md text-text-secondary">
         New here?{" "}
-        <Link className="font-semibold text-accent" to="/sign-up">
+        <Link className="font-semibold text-text-link" to="/sign-up">
           Start a trial
         </Link>
       </p>

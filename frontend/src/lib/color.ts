@@ -22,12 +22,33 @@ export function initials(name: string): string {
 
 /** Convert #RRGGBB to "R G B" for CSS custom properties. */
 export function hexToRgbChannels(hex: string): string {
+  return parseHex(hex).join(" ");
+}
+
+/**
+ * Mix two hex colours in sRGB and return "R G B" channels.
+ * `weightB` is the share of `hexB` (0 → pure A, 1 → pure B). Used to derive
+ * tenant-accent hover/tint/border shades in both themes.
+ */
+export function mixHexChannels(
+  hexA: string,
+  hexB: string,
+  weightB: number,
+): string {
+  const a = parseHex(hexA);
+  const b = parseHex(hexB);
+  const w = Math.min(1, Math.max(0, weightB));
+  return a.map((ch, i) => Math.round(ch * (1 - w) + (b[i] ?? 0) * w)).join(" ");
+}
+
+function parseHex(hex: string): [number, number, number] {
   const cleaned = hex.replace("#", "").trim();
   if (cleaned.length !== 6) {
     throw new Error(`Expected #RRGGBB, got ${hex}`);
   }
-  const r = Number.parseInt(cleaned.slice(0, 2), 16);
-  const g = Number.parseInt(cleaned.slice(2, 4), 16);
-  const b = Number.parseInt(cleaned.slice(4, 6), 16);
-  return `${r} ${g} ${b}`;
+  return [
+    Number.parseInt(cleaned.slice(0, 2), 16),
+    Number.parseInt(cleaned.slice(2, 4), 16),
+    Number.parseInt(cleaned.slice(4, 6), 16),
+  ];
 }

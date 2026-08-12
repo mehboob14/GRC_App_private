@@ -11,6 +11,15 @@ const toneClass: Record<IdentityTone, string> = {
   6: "bg-identity-6",
 };
 
+/**
+ * Deterministic identity-ramp fill for non-person marks that share the
+ * avatar vocabulary (workspace tiles in the switcher). Identity colours are
+ * per-entity hashes, never semantic tokens.
+ */
+export function identityBgClass(seed: string): string {
+  return toneClass[identityTone(seed)];
+}
+
 type AvatarProps = {
   name: string;
   seed?: string;
@@ -19,9 +28,10 @@ type AvatarProps = {
   className?: string;
 };
 
+/** DS: owner-cell avatar 24 · skeleton/list avatar 32 · card avatar 36. */
 const sizeClass = {
   sm: "size-6 text-[10px]",
-  md: "size-[30px] text-[11.5px]",
+  md: "size-8 text-caption",
   lg: "size-9 text-label-sm",
 } as const;
 

@@ -16,7 +16,7 @@ export function DropdownMenuContent({
       <DropdownMenuPrimitive.Content
         sideOffset={sideOffset}
         className={cn(
-          "z-50 min-w-[220px] overflow-hidden rounded-lg border border-border bg-bg-elevated p-1 shadow-md",
+          "z-dropdown min-w-[220px] overflow-hidden rounded-md border border-border bg-surface-primary p-1 shadow-2",
           className,
         )}
         {...props}
@@ -28,15 +28,20 @@ export function DropdownMenuContent({
 export function DropdownMenuItem({
   className,
   inset,
+  variant = "default",
   ...props
 }: ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Item> & {
   inset?: boolean;
+  /** danger — destructive rows; place them last in the menu (§7.1). */
+  variant?: "default" | "danger";
 }) {
   return (
     <DropdownMenuPrimitive.Item
       className={cn(
-        "relative flex cursor-pointer select-none items-center gap-2 rounded-md px-2.5 py-2 text-body-md outline-none",
-        "text-text data-[highlighted]:bg-accent-tint data-[highlighted]:text-accent",
+        "relative flex h-8 cursor-pointer select-none items-center gap-2 rounded-xs px-2.5 text-body-md outline-none",
+        variant === "danger"
+          ? "text-status-danger-text data-[highlighted]:bg-action-danger-tint"
+          : "text-text-primary data-[highlighted]:bg-surface-hover",
         "data-[disabled]:pointer-events-none data-[disabled]:text-text-faint",
         inset && "pl-8",
         className,

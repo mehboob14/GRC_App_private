@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import type { ReactNode } from "react";
-import { Badge } from "@/components/ui";
+import { StatusPill, statusFamilyFor } from "@/components/ui";
 import { tenantApi } from "@/lib/api/endpoints";
 import { useAuth } from "@/lib/auth/auth-context";
 
@@ -12,10 +12,10 @@ type PolicyRowProps = {
 
 function PolicyRow({ title, description, status }: PolicyRowProps) {
   return (
-    <div className="flex items-center gap-3 border-t border-border py-[11px]">
+    <div className="flex items-center gap-3 border-t border-border py-3">
       <div className="min-w-0 flex-1">
-        <p className="text-body-lg font-semibold text-text">{title}</p>
-        <p className="pt-px text-body-sm text-text-faint">{description}</p>
+        <p className="text-body-lg font-semibold text-text-primary">{title}</p>
+        <p className="text-body-sm text-text-subtle">{description}</p>
       </div>
       <div className="shrink-0">{status}</div>
     </div>
@@ -41,16 +41,21 @@ export function SecurityPage() {
       ? `Enforced by the platform for ${tenantQuery.data.name} — these protections are not configurable per workspace.`
       : "Enforced by the platform for every workspace — these protections are not configurable per workspace.";
 
-  const enforced = <Badge variant="statusPass">Enforced</Badge>;
+  const enforced = (
+    <StatusPill
+      status={statusFamilyFor("Enforced") ?? "unknown"}
+      label="Enforced"
+    />
+  );
 
   return (
-    <div className="rounded-xl border border-border bg-bg-elevated px-5 py-[18px] shadow-sm">
+    <div className="rounded-lg border border-border bg-surface-primary px-5 py-4">
       <p className="type-overline">Platform policy</p>
-      <h2 className="mt-1 font-display text-title-md text-text">
+      <h2 className="mt-1 font-display text-heading-sm text-text-primary">
         Security policy
       </h2>
-      <p className="mt-1 text-body-sm text-text-faint">{scopeLine}</p>
-      <div className="mt-[13px]">
+      <p className="mt-1 text-body-sm text-text-subtle">{scopeLine}</p>
+      <div className="mt-3">
         <PolicyRow
           title="Multi-factor authentication"
           description="Required for Admin-role memberships and all platform administrators — always on, never a toggle"
@@ -60,7 +65,7 @@ export function SecurityPage() {
           title="Session expiry"
           description="Sessions end 12 hours after sign-in; MFA challenges expire after 5 minutes"
           status={
-            <span className="text-body-md font-semibold text-text">
+            <span className="tabular text-body-md font-semibold text-text-primary">
               12 hours
             </span>
           }
@@ -76,7 +81,7 @@ export function SecurityPage() {
           status={enforced}
         />
       </div>
-      <p className="mt-3 text-caption text-text-faint">
+      <p className="mt-3 text-caption text-text-subtle">
         Workspace-configurable controls (SSO enforcement, IP allowlists, SIEM
         export) arrive in a later phase.
       </p>

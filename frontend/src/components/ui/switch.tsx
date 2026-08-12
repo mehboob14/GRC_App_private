@@ -11,6 +11,9 @@ type SwitchProps = {
   className?: string;
 };
 
+/**
+ * DS §5.5 — toggle 38×22, instant effect only (never a deferred form input).
+ */
 export function Switch({
   checked,
   defaultChecked,
@@ -29,17 +32,17 @@ export function Switch({
       disabled={disabled}
       aria-label={ariaLabel}
       className={cn(
-        "peer inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border border-transparent transition-colors",
-        "bg-border data-[state=checked]:bg-accent",
-        "disabled:cursor-not-allowed disabled:opacity-50",
-        "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
+        "peer inline-flex h-[22px] w-[38px] shrink-0 cursor-pointer items-center rounded-full border border-transparent",
+        "bg-border-strong transition-colors duration-150 ease-state data-[state=checked]:bg-action-accent",
+        "disabled:cursor-not-allowed disabled:opacity-45",
+        "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-accent",
         className,
       )}
     >
       <SwitchPrimitive.Thumb
         className={cn(
-          "pointer-events-none block size-4 rounded-full bg-bg-elevated shadow-sm transition-transform",
-          "translate-x-0.5 data-[state=checked]:translate-x-[18px]",
+          "pointer-events-none block size-[18px] rounded-full bg-white shadow-1 transition-transform duration-150 ease-state",
+          "translate-x-px data-[state=checked]:translate-x-[17px]",
         )}
       />
     </SwitchPrimitive.Root>

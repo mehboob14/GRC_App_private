@@ -2,53 +2,83 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Verity Design System v1.0 — semantic tokens.
+ * Source of truth: docs/design-system.md + src/styles/ds-tokens.json.
+ * Values are RGB channel triplets so Tailwind can compose alpha
+ * (`rgb(var(--color-…) / <alpha-value>)`).
+ *
+ * Dark values marked "derived" have no stated value on the Figma board
+ * (ds-tokens.json "dark" holds the stated set); they are derived per the
+ * board's rules (hover lightens, text on tints uses the dark -base) and
+ * contrast-checked at authoring time. CI contrast tooling should verify
+ * every pair (board instruction).
+ */
+
 @layer base {
-  /* Light (white) mode only — Figma MaJ0JAker7oSIiAK6HqgO7 has no dark theme. */
   :root {
-    --color-bg: 245 246 248;
-    --color-bg-elevated: 255 255 255;
-    --color-bg-sunken: 250 251 252;
-    --color-accent-tint: 239 243 248;
-    --color-na-bg: 241 242 244;
+    /* Surfaces & borders */
+    --color-surface-canvas: 231 233 238; /* #E7E9EE — outside the app frame only */
+    --color-surface-page: 244 245 247; /* #F4F5F7 */
+    --color-surface-primary: 255 255 255; /* #FFFFFF */
+    --color-surface-sunken: 251 252 253; /* #FBFCFD */
+    --color-surface-hover: 242 244 247; /* #F2F4F7 */
+    --color-surface-inverse: 16 24 40; /* #101828 — bulk bar, tooltips, toasts */
+    --color-border-default: 228 231 236; /* #E4E7EC */
+    --color-border-strong: 208 213 221; /* #D0D5DD */
 
-    --color-border: 226 229 234;
-    --color-border-strong: 201 207 216;
-
-    --color-text: 19 23 32;
-    --color-text-muted: 75 85 99;
-    --color-text-faint: 102 112 133;
+    /* Text */
+    --color-text-primary: 16 24 40; /* #101828 */
+    --color-text-secondary: 71 84 103; /* #475467 */
+    --color-text-subtle: 102 112 133; /* #667085 — timestamps, helpers (F2) */
+    --color-text-faint: 152 162 179; /* #98A2B3 — decorative only (F2) */
+    --color-text-link: 3 105 161; /* #0369A1 (F1) */
     --color-text-inverse: 255 255 255;
 
-    --color-accent: 28 78 128;
-    --color-accent-fg: 255 255 255;
+    /* Actions (F1: fills/links sky-700; sky-600 is the accent) */
+    --color-action-primary: 3 105 161; /* #0369A1 */
+    --color-action-primary-hover: 7 89 133; /* #075985 */
+    --color-action-primary-fg: 255 255 255;
+    --color-action-accent: 2 132 199; /* #0284C7 — selected, focus, charts */
+    --color-action-accent-tint: 234 244 251; /* #EAF4FB */
+    --color-action-accent-border: 203 227 243; /* #CBE3F3 */
+    --color-action-danger: 192 23 65; /* #C01741 */
+    --color-action-danger-hover: 155 28 52; /* #9B1C34 */
+    --color-action-danger-fg: 255 255 255;
+    --color-action-danger-tint: 253 238 241; /* #FDEEF1 */
 
-    --color-pass: 46 106 79;
-    --color-pass-fg: 35 89 66;
-    --color-pass-bg: 237 243 239;
-    --color-pass-border: 199 233 217;
+    /* Status triads (F7/F8). -border is a derived semantic alias of the
+       matching 200 primitive, used by banners and -2 buttons. */
+    --color-status-success-base: 5 150 105; /* #059669 */
+    --color-status-success-text: 8 121 79; /* #08794F */
+    --color-status-success-bg: 231 245 239; /* #E7F5EF */
+    --color-status-success-border: 199 233 217; /* green-200 #C7E9D9 */
+    --color-status-danger-base: 225 29 72; /* #E11D48 */
+    --color-status-danger-text: 192 23 65; /* #C01741 */
+    --color-status-danger-bg: 253 238 241; /* #FDEEF1 */
+    --color-status-danger-border: 246 207 216; /* rose-200 #F6CFD8 */
+    --color-status-warning-base: 217 119 6; /* #D97706 */
+    --color-status-warning-text: 178 94 9; /* #B25E09 */
+    --color-status-warning-bg: 251 241 228; /* #FBF1E4 */
+    --color-status-warning-border: 240 217 180; /* amber-200 #F0D9B4 */
+    --color-status-progress-base: 2 132 199; /* #0284C7 */
+    --color-status-progress-text: 3 105 161; /* #0369A1 */
+    --color-status-progress-bg: 234 244 251; /* #EAF4FB */
+    --color-status-pending-base: 91 114 179; /* #5B72B3 */
+    --color-status-pending-text: 74 90 160; /* #4A5AA0 */
+    --color-status-pending-bg: 238 241 250; /* #EEF1FA */
+    --color-status-neutral-base: 100 116 139; /* #64748B */
+    --color-status-neutral-text: 86 96 114; /* #566072 */
+    --color-status-neutral-bg: 240 242 245; /* #F0F2F5 */
 
-    --color-fail: 158 43 58;
-    --color-fail-fg: 138 35 49;
-    --color-fail-bg: 248 237 238;
-    --color-fail-border: 230 210 213;
+    /* Severity — a separate axis from status (F12) */
+    --color-severity-critical: 180 35 24; /* #B42318 */
+    --color-severity-high: 225 29 72; /* #E11D48 */
+    --color-severity-medium: 217 119 6; /* #D97706 */
+    --color-severity-low: 100 116 139; /* #64748B */
 
-    --color-review: 133 83 22;
-    --color-review-fg: 110 68 18;
-    --color-review-bg: 245 241 232;
-
-    --color-pending: 70 83 107;
-    --color-critical-fg: 107 22 34;
-
-    /* Auth marketing panel — the Figma panel navy is a deliberate one-off
-       (brand marketing surface, not tenant-themable UI). Held as dedicated
-       custom properties so no literal panel hexes live in components. */
-    --color-panel-1: 11 42 61;
-    --color-panel-2: 14 58 82;
-    --color-panel-3: 10 44 65;
-    --color-panel-glow: 56 182 240;
-    --color-panel-accent: 127 211 245;
-    --color-panel-edge: 19 23 32;
-
+    /* Identity ramp — per-person hashes for avatars, not semantic status.
+       Not enumerated on the v1.0 board; carried from the shipped set. */
     --color-identity-1: 91 100 114;
     --color-identity-2: 110 106 120;
     --color-identity-3: 79 96 104;
@@ -56,16 +86,107 @@
     --color-identity-5: 99 89 107;
     --color-identity-6: 99 89 107;
 
-    --radius-sm: 5px;
-    --radius-md: 8px;
-    --radius-lg: 9px;
-    --radius-xl: 12px;
+    /* Auth marketing panel — deliberate one-off dark surface, identical in
+       both themes and never tenant-themed. Re-expressed with the DS
+       dark-mode palette (§2.2/§2.3/§2.4 dark columns) so the panel and the
+       dark theme share one vocabulary. */
+    --color-panel-1: 10 14 22; /* = dark surface-canvas #0A0E16 */
+    --color-panel-2: 21 29 43; /* = dark surface-primary #151D2B */
+    --color-panel-3: 15 22 34; /* = dark surface-page #0F1622 */
+    --color-panel-glow: 56 182 240; /* = dark action-accent #38B6F0 */
+    --color-panel-accent: 95 197 244; /* = dark action-primary-hover #5FC5F4 */
+    --color-panel-edge: 10 14 22; /* = dark surface-canvas */
+    --color-panel-border: 40 52 75; /* = dark border-default #28344B */
+    --color-panel-muted: 154 167 189; /* = dark text-secondary #9AA7BD */
 
-    --shadow-sm: 0 1px 2px rgb(19 23 32 / 0.04);
-    --shadow-md: 0 4px 12px rgb(19 23 32 / 0.08);
-    --shadow-mark: 0 2px 3px rgb(28 78 128 / 0.35);
+    /* Radius — closed scale (F4) */
+    --radius-2xs: 4px;
+    --radius-xs: 6px;
+    --radius-sm: 8px; /* buttons & inputs */
+    --radius-md: 10px; /* inner panels, icon tiles */
+    --radius-lg: 12px; /* cards & tables */
+    --radius-xl: 16px; /* modals */
+
+    /* Elevation — shadows mean "floating" */
+    --shadow-1: 0 1px 2px 0 rgb(16 24 40 / 0.05);
+    --shadow-2: 0 6px 16px -8px rgb(16 24 40 / 0.18);
+    --shadow-3: 0 30px 60px -20px rgb(16 24 40 / 0.4);
+    --shadow-4: 0 40px 80px -24px rgb(16 24 40 / 0.5);
+    --shadow-toast: 0 8px 24px -8px rgb(16 24 40 / 0.4);
+
+    /* Input focus/error rings (§5.4) — follow the theme via channels */
+    --ring-input-focus: 0 0 0 3px rgb(var(--color-action-accent) / 0.15);
+    --ring-input-error: 0 0 0 3px rgb(var(--color-status-danger-base) / 0.15);
+
+    /* Motion (§7.6) */
+    --ease-state: cubic-bezier(0.2, 0, 0, 1);
+    --ease-enter: cubic-bezier(0, 0, 0, 1);
 
     color-scheme: light;
+  }
+
+  .dark {
+    /* Stated dark values (ds-tokens.json "dark") */
+    --color-surface-canvas: 10 14 22; /* #0A0E16 */
+    --color-surface-page: 15 22 34; /* #0F1622 */
+    --color-surface-primary: 21 29 43; /* #151D2B */
+    --color-surface-sunken: 26 36 52; /* #1A2434 */
+    --color-border-default: 40 52 75; /* #28344B */
+    --color-border-strong: 54 69 95; /* #36455F */
+    --color-text-primary: 231 235 243; /* #E7EBF3 */
+    --color-text-secondary: 154 167 189; /* #9AA7BD */
+    --color-text-faint: 105 120 146; /* #697892 */
+    --color-action-accent: 56 182 240; /* #38B6F0 */
+    --color-action-accent-tint: 18 42 61; /* #122A3D */
+    --color-status-success-base: 52 200 138; /* #34C88A */
+    --color-status-success-bg: 15 46 34; /* #0F2E22 */
+    --color-status-danger-base: 242 86 110; /* #F2566E */
+    --color-status-danger-bg: 48 22 32; /* #301620 */
+    --color-status-warning-base: 233 162 59; /* #E9A23B */
+    --color-status-warning-bg: 46 35 15; /* #2E230F */
+    --color-status-pending-base: 138 154 214; /* #8A9AD6 */
+    --color-status-pending-bg: 26 34 56; /* #1A2238 */
+    --color-status-neutral-base: 133 147 168; /* #8593A8 */
+    --color-status-neutral-bg: 31 40 57; /* #1F2839 */
+
+    /* Derived dark values — no stated value on the board.
+       Hover direction inverts (lightens); text on tints = dark -base. */
+    --color-surface-hover: 31 42 60; /* #1F2A3C */
+    --color-surface-inverse: 53 65 90; /* #35415A — toasts/tooltips lift off dark */
+    --color-text-subtle: 130 145 169; /* #8291A9 — 5.3:1 on surface-primary */
+    --color-text-link: 56 182 240; /* follows action-accent */
+    --color-text-inverse: 255 255 255;
+    /* F1 holds in dark: a light fill needs a dark label to reach 4.5:1 */
+    --color-action-primary: 56 182 240; /* #38B6F0, 7.9:1 with dark label */
+    --color-action-primary-hover: 95 197 244; /* #5FC5F4 — lightens */
+    --color-action-primary-fg: 15 22 34; /* #0F1622 */
+    --color-action-accent-border: 30 74 104; /* #1E4A68 */
+    --color-action-danger: 242 86 110; /* #F2566E, 5.0:1 with dark label */
+    --color-action-danger-hover: 245 121 140; /* #F5798C — lightens */
+    --color-action-danger-fg: 48 22 32; /* #301620 */
+    --color-action-danger-tint: 48 22 32; /* #301620 */
+    --color-status-success-text: 52 200 138; /* 6.8:1 on success-bg */
+    --color-status-success-border: 30 71 53; /* #1E4735 */
+    --color-status-danger-text: 242 86 110; /* 5.0:1 on danger-bg */
+    --color-status-danger-border: 76 34 48; /* #4C2230 */
+    --color-status-warning-text: 233 162 59; /* 7.1:1 on warning-bg */
+    --color-status-warning-border: 74 58 28; /* #4A3A1C */
+    /* Progress triad follows action-accent in dark (flagged derivation) */
+    --color-status-progress-base: 56 182 240;
+    --color-status-progress-text: 56 182 240; /* 6.4:1 on progress-bg */
+    --color-status-progress-bg: 18 42 61;
+    --color-status-pending-text: 138 154 214; /* 5.8:1 on pending-bg */
+    --color-status-neutral-text: 133 147 168; /* 4.7:1 on neutral-bg */
+    /* Severity fills keep their light values: solid chips with white text
+       read identically on both themes. */
+
+    --shadow-1: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+    --shadow-2: 0 6px 16px -8px rgb(0 0 0 / 0.5);
+    --shadow-3: 0 30px 60px -20px rgb(0 0 0 / 0.65);
+    --shadow-4: 0 40px 80px -24px rgb(0 0 0 / 0.7);
+    --shadow-toast: 0 8px 24px -8px rgb(0 0 0 / 0.6);
+
+    color-scheme: dark;
   }
 
   html,
@@ -74,17 +195,13 @@
     @apply h-full;
   }
 
-  html {
-    /* Clear any previously persisted dark class */
-    color-scheme: light;
-  }
-
   body {
-    @apply bg-bg font-sans text-body-md text-text antialiased;
+    @apply bg-surface-page font-sans text-body-md text-text-primary antialiased;
   }
 
+  /* F9 — focus-visible: 2px solid action-accent outline, 2px offset */
   *:focus-visible {
-    @apply outline outline-2 outline-offset-2 outline-accent;
+    @apply outline outline-2 outline-offset-2 outline-action-accent;
   }
 }
 
@@ -95,5 +212,111 @@
 
   .type-overline {
     @apply font-sans text-overline uppercase text-text-faint;
+  }
+
+  /* Skeleton shimmer (§7.4): 1.4s linear; reduced motion → static bone */
+  .animate-shimmer {
+    background-size: 200% 100%;
+    animation: shimmer 1.4s linear infinite;
+  }
+
+  @keyframes shimmer {
+    from {
+      background-position: 200% 0;
+    }
+    to {
+      background-position: -200% 0;
+    }
+  }
+
+  /* Overlay motion (§7.6): 250ms in / 200ms out, entering easing;
+     reduced-motion collapses everything to ≤50ms fades. */
+  .animate-toast-in {
+    animation: ds-rise-in 200ms var(--ease-enter);
+  }
+
+  .animate-overlay-in {
+    animation: ds-fade-in 250ms var(--ease-enter);
+  }
+
+  .animate-overlay-out {
+    animation: ds-fade-out 200ms var(--ease-state);
+  }
+
+  .animate-modal-in {
+    animation: ds-modal-in 250ms var(--ease-enter);
+  }
+
+  .animate-modal-out {
+    animation: ds-fade-out 200ms var(--ease-state);
+  }
+
+  .animate-drawer-in {
+    animation: ds-drawer-in 250ms var(--ease-enter);
+  }
+
+  .animate-drawer-out {
+    animation: ds-drawer-out 200ms var(--ease-state);
+  }
+
+  @keyframes ds-fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes ds-fade-out {
+    to {
+      opacity: 0;
+    }
+  }
+
+  @keyframes ds-rise-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+  }
+
+  @keyframes ds-modal-in {
+    from {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.97);
+    }
+    to {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+  }
+
+  @keyframes ds-drawer-in {
+    from {
+      transform: translateX(100%);
+    }
+  }
+
+  @keyframes ds-drawer-out {
+    to {
+      transform: translateX(100%);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-shimmer {
+      animation: none;
+    }
+
+    .animate-toast-in,
+    .animate-overlay-in,
+    .animate-modal-in,
+    .animate-drawer-in {
+      animation: ds-fade-in 50ms linear;
+    }
+
+    .animate-overlay-out,
+    .animate-modal-out,
+    .animate-drawer-out {
+      animation: ds-fade-out 50ms linear;
+    }
   }
 }

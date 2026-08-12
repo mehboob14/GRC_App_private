@@ -15,4 +15,9 @@ export const VENDOR_MARKS = {
   aws: { label: "AWS", color: "#ff9900" },
   github: { label: "GH", color: "#1b1f24" },
   datadog: { label: "DD", color: "#632ca6" },
+  gws: { label: "GW", color: "#0a6dd8" },
+  snowflake: { label: "SF", color: "#29b5e8" },
+  crowdstrike: { label: "CS", color: "#ec0000" },
+  jira: { label: "JI", color: "#0052cc" },
+  cloudflare: { label: "CF", color: "#f6821f" },
 } as const satisfies Record<string, VendorMark>;

@@ -8,7 +8,8 @@ export function Card({
   return (
     <div
       className={cn(
-        "rounded-xl border border-border bg-bg-elevated shadow-sm",
+        // Static cards are border-only — shadows mean "floating" (§4.4).
+        "rounded-lg border border-border bg-surface-primary",
         className,
       )}
       {...props}
@@ -29,7 +30,7 @@ export function CardTitle({
 }: HTMLAttributes<HTMLHeadingElement>) {
   return (
     <h3
-      className={cn("font-sans text-title-md text-text", className)}
+      className={cn("font-sans text-title-md text-text-primary", className)}
       {...props}
     />
   );
@@ -40,7 +41,7 @@ export function CardDescription({
   ...props
 }: HTMLAttributes<HTMLParagraphElement>) {
   return (
-    <p className={cn("text-body-sm text-text-muted", className)} {...props} />
+    <p className={cn("text-body-sm text-text-secondary", className)} {...props} />
   );
 }
 
