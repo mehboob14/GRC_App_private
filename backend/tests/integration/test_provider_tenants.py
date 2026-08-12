@@ -29,7 +29,6 @@ from verity.modules.tenancy.models import Tenant, TenantBranding
 from verity.modules.tenancy.repository import PlatformAdminRepository, TenantRepository
 from verity.modules.tenancy.service import (
     AllProvisioningGates,
-    NoMembershipsYet,
     tenancy_service,
 )
 
@@ -441,13 +440,13 @@ async def test_when_every_gate_passes_the_tenant_activates_in_the_same_run(
     tenant = (
         await client.post(TENANTS_URL, json=registration_payload("acme"), headers=onboarding)
     ).json()
-    tenancy_service.use_gates(AllProvisioningGates())
+    previous_gates = tenancy_service.use_gates(AllProvisioningGates())
     try:
         run = (
             await client.post(f"{TENANTS_URL}/{tenant['id']}/provision", headers=onboarding)
         ).json()
     finally:
-        tenancy_service.use_gates(NoMembershipsYet())
+        tenancy_service.use_gates(previous_gates)
 
     assert run["remaining"] == []
     assert run["tenant_status"] == "active"

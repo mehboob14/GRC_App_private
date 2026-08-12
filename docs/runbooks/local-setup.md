@@ -53,8 +53,9 @@ versioning on it.
 make migrate    # uv --directory backend run alembic upgrade head
 ```
 
-Alembic connects as `DATABASE_MIGRATION_URL` (the owner), never as the application role. There
-are no domain migrations yet, so on a fresh database this creates `alembic_version` and stops.
+Alembic connects as `DATABASE_MIGRATION_URL` (the owner), never as the application role. On a
+fresh database this creates the audit, tenancy, and identity tables — with their row-level
+security policies — and seeds the Week 1 permission keys.
 
 ## 4. Run
 
@@ -150,11 +151,38 @@ uv run python -m verity.manage seed-platform-admin \
   Subsequent logins are `login` → `mfa/verify` with a code (or one recovery code, which is
   consumed by use).
 
+## Sign up the first workspace
+
+Self-service signup needs no operator at all — it is one transaction that creates the company,
+the first user, and their Admin membership, and leaves the tenant `active`:
+
+```bash
+curl -s -X POST localhost:8000/api/v1/auth/signup \
+  -H 'Content-Type: application/json' \
+  -d '{"company_name": "Acme Compliance", "full_name": "Founding Admin",
+       "email": "founder@acme.example", "password": "orbit-mango-quartz-42"}'
+```
+
+The response is `{"status": "mfa_enrollment_required", "challenge_token": ...}` — the first user
+holds Admin, and Admin means TOTP before any session exists:
+
+1. `POST /api/v1/auth/mfa/enroll` with the challenge token → the TOTP secret and an
+   `otpauth://` URI to scan into an authenticator app.
+2. `POST /api/v1/auth/mfa/confirm` with the challenge and a current code → the first session
+   (`status: "authenticated"`, `access_token`, the principal with its permissions) plus eight
+   single-use recovery codes, shown once.
+
+Everyone the admin invites (`POST /api/v1/members/invite`) receives the one-time invite link in
+the invite response — email delivery is a notifications-module concern, so in Week 1 the inviter
+hands the link over — and accepts at `POST /api/v1/auth/invitations/accept`. Non-admin members
+sign in with password alone. The full sequence, including the provider-plane path and one person
+across two workspaces, is [week1-demo.md](week1-demo.md).
+
 ## Seed global content
 
 Frameworks, requirements, control templates, checks, risk and document templates — plus a demo
 tenant. Not built yet; it arrives with the first domain modules. Seeding will be idempotent and
-safe to re-run.
+safe to re-run. (The Week 1 permission keys are already seeded by the iam migration.)
 
 ## Still to document
 

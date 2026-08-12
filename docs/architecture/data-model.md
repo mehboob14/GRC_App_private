@@ -40,6 +40,15 @@ decoupled from how they authenticate, so any identity provider is added behind t
 seam **additively, never a schema rewrite**. Authorization (roles, groups, permissions, object-scoped)
 always lives in the platform, never in the IdP. See
 [ADR-0006](../adr/0006-keycloak-as-identity-provider.md).
+Two **approved derived columns** have no source in the ER prose and are design, not drift
+(week1-review-decisions.md, item 11): `credentials.last_totp_counter` (TOTP replay protection —
+a code at or before the stored counter is refused) and `user_identities.provider_type` (OIDC vs
+SAML, required by ADR-0006). `permissions` is global content like frameworks: the Week 1
+`module:action` keys are seeded by the migration that creates the table (item 14), and the
+built-in Admin role's grant is "every key that exists", resolved at check time (item 13). The ER
+document's identity diagrams still show the pre-ADR-0011 shape (`USERS.tenant_id`, no
+`tenant_memberships`); regenerating them is **pending** — the .docx is the signed original and is
+corrected under its own change control.
 
 **Audit.** `audit_log` is append-only and serves both planes. `tenant_id` is **the stream the
 event belongs to, not the actor's tenant** — a platform admin provisioning tenant X writes into

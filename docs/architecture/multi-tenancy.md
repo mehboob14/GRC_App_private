@@ -82,8 +82,9 @@ nothing while appearing to prove everything.
 
 ## Dual-plane tables and `app.provider_plane`
 
-A few tables serve **both planes** — today only `audit_log`, whose `tenant_id` is the stream an
-event belongs to and is NULL for provider-plane events. One tenant policy cannot express "each
+A few tables serve **both planes** — `audit_log`, whose `tenant_id` is the stream an
+event belongs to and is NULL for provider-plane events, and the four identity-resolution
+tables described below. One tenant policy cannot express "each
 tenant sees its stream *and* an authenticated operator sees every stream", so a dual-plane table
 carries **four policies**, keyed on two settings:
 
@@ -107,12 +108,37 @@ command, the command matches nothing.
 
 `app.provider_plane` is a second transaction-local setting, bound through the same
 `set_config(..., true)` primitive as the tenant id, by **exactly one code path**:
-`verity.core.db.provider_session_scope`, entered only on behalf of an authenticated platform
-admin. It is never derived from a request parameter, a header, or a token claim a tenant user can
+`verity.core.db.provider_session_scope`, entered on behalf of an authenticated platform
+admin or by the iam module's authentication flows for identity resolution (below). It is never
+derived from a request parameter, a header, or a token claim a tenant user can
 influence. It is honestly a switch that widens visibility and is only as strong as the code that
 sets it — the same property `app.tenant_id` already has. The GUC approach (over a dedicated
 database role with its own pool) was approved in `openspec/changes/week1-review-decisions.md`,
 item 4, to be revisited when the provider admin panel grows real tenant-data reads.
+
+## Identity resolution runs before any tenant is bound
+
+Authentication cannot start from a tenant: a login knows an email, a session or invite token
+knows a membership id, and only the membership row knows which tenant it belongs to. Two
+mechanisms make that resolution safe (`add-identity-and-access`):
+
+- **The global identity tables carry no RLS at all.** `users`, `credentials`,
+  `user_identities`, and the global `permissions` catalogue have no `tenant_id` and no tenant
+  policy, so the login-by-email lookup succeeds regardless of which tenants the person belongs
+  to — and regardless of any tenant a buggy pooled connection might still think is bound,
+  because the lookup never consults `app.tenant_id`.
+- **The four tenant-scoped tables that answer the rest of the resolution** —
+  `tenant_memberships`, `group_members`, `roles`, `role_assignments` — carry an additional
+  **SELECT-only** policy keyed on `app.provider_plane`. The iam auth flows and
+  `core.deps.get_current_principal` run those reads inside `provider_session_scope`; there is
+  deliberately no INSERT/UPDATE/DELETE policy on that plane, so every write still requires the
+  bound tenant. Signup is the sanctioned exception that needs both: it writes the tenant
+  register under the provider setting and then binds the new tenant *in the same transaction*
+  to write the first membership — one transaction, no partials.
+
+The route's own tenant-bound session is opened only after the membership has named its tenant
+(`get_tenant_session`), and the tenant is taken from the membership row — never from a request
+parameter, and never from the token beyond the membership id it names.
 
 ## The provider plane's own tables
 

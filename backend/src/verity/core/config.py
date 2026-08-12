@@ -194,6 +194,11 @@ class Settings(_Section):
 
     cors_allow_origins: tuple[str, ...] = ()
 
+    frontend_base_url: str = "http://localhost:5173"
+    """Where the web app lives, for links the API mints (the invite accept URL).
+    Week 1 returns that link in the invite response — decision 15 — so the base
+    must be configurable per deployment."""
+
     auth: AuthSettings = Field(default_factory=AuthSettings)
     database: DatabaseSettings = Field(default_factory=DatabaseSettings)
     redis: RedisSettings = Field(default_factory=RedisSettings)

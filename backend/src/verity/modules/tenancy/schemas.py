@@ -16,7 +16,14 @@ import uuid
 from datetime import UTC, date, datetime
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, PlainSerializer, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    PlainSerializer,
+    computed_field,
+    model_validator,
+)
 
 
 def _iso_utc_z(value: datetime) -> str:
@@ -175,6 +182,8 @@ class TenantProfileResponse(_Response):
 
     Deliberately narrower than :class:`TenantResponse`: ``created_by`` and ``notes``
     are provider-plane bookkeeping about the customer, not for the customer.
+    ``name`` is the display name the frontend renders — the trading name where
+    one exists, the legal name otherwise.
     """
 
     id: uuid.UUID
@@ -197,6 +206,11 @@ class TenantProfileResponse(_Response):
     onboarded_at: date | None
     created_at: UtcDateTime
     updated_at: UtcDateTime
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def name(self) -> str:
+        return self.trading_name or self.legal_name
 
 
 TenantStatusFilter = Literal["provisioning", "active", "suspended", "terminated"]

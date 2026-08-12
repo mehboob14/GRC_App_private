@@ -220,12 +220,24 @@ class TenantRegistrationKey(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
 
     __tablename__ = "tenant_registration_keys"
 
-    platform_admin_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("platform_admins.id"))
+    # NULL = self-service signup (no platform admin acts; week1-review-decisions.md
+    # decision 7 made tenants.created_by nullable for the same reason). Uniqueness
+    # for that population comes from the partial index below, because a UNIQUE
+    # constraint treats NULLs as distinct and would not deduplicate at all.
+    platform_admin_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("platform_admins.id"), default=None
+    )
     idempotency_key: Mapped[str]
     request_hash: Mapped[str]
 
     __table_args__ = (
         UniqueConstraint("platform_admin_id", "idempotency_key"),
+        Index(
+            "uq_tenant_registration_keys__self_service_key",
+            "idempotency_key",
+            unique=True,
+            postgresql_where=text("platform_admin_id IS NULL"),
+        ),
         # Serves the ON DELETE CASCADE from tenants at teardown; Postgres does not
         # index the referencing side of a foreign key by itself.
         Index("ix_tenant_registration_keys__tenant_id", "tenant_id"),

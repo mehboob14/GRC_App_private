@@ -45,7 +45,7 @@ from verity.core.security import (
     verify_password,
     verify_totp,
 )
-from verity.modules.audit.service import AuditService, System, audit_service
+from verity.modules.audit.service import Actor, AuditService, System, audit_service
 from verity.modules.audit.service import PlatformAdmin as PlatformAdminActor
 from verity.modules.tenancy.exceptions import (
     CustomDomainConflict,
@@ -626,9 +626,15 @@ class TenancyService:
         self._audit = audit or audit_service
         self._gates: MembershipGates = gates or NoMembershipsYet()
 
-    def use_gates(self, gates: MembershipGates) -> None:
-        """Swap in the real membership checks. Called once by the IAM module's wiring."""
+    def use_gates(self, gates: MembershipGates) -> MembershipGates:
+        """Swap in the real membership checks. Called once by the IAM module's wiring.
+
+        Returns the gates being replaced, so a caller substituting a test double
+        can restore whatever was wired — not what it assumes was wired.
+        """
+        previous = self._gates
         self._gates = gates
+        return previous
 
     # -- registration -------------------------------------------------------
 
@@ -636,7 +642,7 @@ class TenancyService:
         self,
         session: AsyncSession,
         *,
-        actor_admin_id: uuid.UUID,
+        actor_admin_id: uuid.UUID | None,
         profile: TenantRegistration,
         idempotency_key: str | None = None,
     ) -> Tenant:
@@ -646,6 +652,11 @@ class TenancyService:
         is the step. A repeated ``Idempotency-Key`` with the same body returns the
         original tenant; with a different body it is a 409. The slug's unique
         constraint is the backstop when no key is supplied.
+
+        ``actor_admin_id=None`` is the self-service signup path (decision 7): no
+        operator acts, so ``created_by`` stays NULL and the audit actor is ``system``
+        — the first membership does not exist yet when the tenant row is written, so
+        there is no membership to attribute the creation to.
         """
         body_hash = _request_hash(profile)
         if idempotency_key is not None:
@@ -680,7 +691,7 @@ class TenancyService:
                 ) from exc
             raise
 
-        actor = PlatformAdminActor(actor_admin_id)
+        actor: Actor = System() if actor_admin_id is None else PlatformAdminActor(actor_admin_id)
         await self._audit.record(
             session,
             action="create",
@@ -898,8 +909,9 @@ class TenancyService:
         self,
         session: AsyncSession,
         *,
-        actor_admin_id: uuid.UUID,
         tenant_id: uuid.UUID,
+        actor_admin_id: uuid.UUID | None = None,
+        actor: Actor | None = None,
     ) -> tuple[Tenant, list[TenantProvisioningStep]]:
         """Complete every pending step that can complete; flip to active on the last.
 
@@ -907,10 +919,19 @@ class TenancyService:
         a completed step is never re-run, and a run that completes nothing writes
         nothing — including no audit rows, because no state changed. Week 1 step
         semantics are decision 10; the membership-dependent steps ask ``self._gates``.
+
+        The actor is either the operator (``actor_admin_id``, the provider route) or
+        an explicit audit actor (``actor`` — the IAM flows pass the membership whose
+        signup or acceptance completed the step). Exactly one must be given.
         """
+        if actor is None:
+            if actor_admin_id is None:
+                raise ValueError("exactly one of actor_admin_id and actor is required")
+            actor = PlatformAdminActor(actor_admin_id)
+        elif actor_admin_id is not None:
+            raise ValueError("exactly one of actor_admin_id and actor is required")
         tenant = await self.get_tenant(session, tenant_id)
         steps = await self._tenants.get_steps(session, tenant_id)
-        actor = PlatformAdminActor(actor_admin_id)
 
         by_name = {step.step: step for step in steps}
         for step in steps:

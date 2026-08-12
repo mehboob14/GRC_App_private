@@ -193,6 +193,52 @@ async def clean_tenancy(
 
 
 @pytest.fixture
+async def clean_iam(
+    settings: Settings,
+    app_engine: AsyncEngine,
+    assert_app_role_cannot_bypass_rls: None,
+) -> AsyncIterator[None]:
+    """The IAM tables exist, are empty on entry, and are emptied on exit.
+
+    ``permissions`` is deliberately **not** truncated: its rows are seeded by the
+    migration (decision 14) and truncating them here would leave the database in
+    a state no application path can repair.
+    """
+    owner_engine = create_async_engine(settings.database.effective_migration_url, poolclass=None)
+    tables = (
+        "role_assignments",
+        "role_permissions",
+        "roles",
+        "group_members",
+        "groups",
+        "tenant_memberships",
+        "user_identities",
+        "credentials",
+        "users",
+    )
+    truncate = text(f"TRUNCATE {', '.join(tables)} CASCADE")
+    try:
+        async with owner_engine.connect() as connection:
+            exists = (
+                await connection.execute(text("SELECT to_regclass('tenant_memberships')"))
+            ).scalar_one_or_none()
+        if exists is None:
+            pytest.fail(
+                "the iam tables do not exist in the test database; "
+                "run `alembic upgrade head` first (see docs/runbooks/local-setup.md)."
+            )
+        async with owner_engine.begin() as connection:
+            await connection.execute(truncate)
+        try:
+            yield
+        finally:
+            async with owner_engine.begin() as connection:
+                await connection.execute(truncate)
+    finally:
+        await owner_engine.dispose()
+
+
+@pytest.fixture
 async def clean_audit_log(
     settings: Settings,
     app_engine: AsyncEngine,

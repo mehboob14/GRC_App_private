@@ -100,11 +100,18 @@ class TenantRepository:
         return steps
 
     async def get_registration_key(
-        self, session: AsyncSession, *, platform_admin_id: uuid.UUID, idempotency_key: str
+        self, session: AsyncSession, *, platform_admin_id: uuid.UUID | None, idempotency_key: str
     ) -> TenantRegistrationKey | None:
+        """``platform_admin_id=None`` addresses the self-service population, whose
+        keys are deduplicated by the partial unique index rather than the pair."""
+        admin_predicate = (
+            TenantRegistrationKey.platform_admin_id.is_(None)
+            if platform_admin_id is None
+            else TenantRegistrationKey.platform_admin_id == platform_admin_id
+        )
         result = await session.execute(
             select(TenantRegistrationKey).where(
-                TenantRegistrationKey.platform_admin_id == platform_admin_id,
+                admin_predicate,
                 TenantRegistrationKey.idempotency_key == idempotency_key,
             )
         )

@@ -409,6 +409,17 @@ forbidden_modules = [
 name = "iam reaches no other module's data"
 type = "forbidden"
 source_modules = ["verity.modules.iam"]
+# iam calls AuditService and the tenancy service — the sanctioned service
+# interfaces — and each of those uses its own repository and models internally.
+# Those edges are the owning module's private business, not iam reaching its
+# data; every other path into another module's repository or models stays
+# forbidden.
+ignore_imports = [
+    "verity.modules.audit.service -> verity.modules.audit.repository",
+    "verity.modules.audit.service -> verity.modules.audit.models",
+    "verity.modules.tenancy.service -> verity.modules.tenancy.repository",
+    "verity.modules.tenancy.service -> verity.modules.tenancy.models",
+]
 forbidden_modules = [
     "verity.modules.ai.repository", "verity.modules.ai.models",
     "verity.modules.approvals.repository", "verity.modules.approvals.models",

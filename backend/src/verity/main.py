@@ -25,6 +25,13 @@ from verity.core.middleware import (
     SecurityHeadersMiddleware,
 )
 from verity.modules.audit.router import router as audit_router
+from verity.modules.iam.router import (
+    auth_router,
+    groups_router,
+    members_router,
+    roles_router,
+)
+from verity.modules.iam.router import provider_router as iam_provider_router
 from verity.modules.tenancy.provider_auth import router as provider_auth_router
 from verity.modules.tenancy.router import provider_tenants_router, tenant_router
 
@@ -108,6 +115,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     install_exception_handlers(app)
     app.include_router(health_router)
     app.include_router(audit_router, prefix=API_PREFIX)
+    app.include_router(auth_router, prefix=API_PREFIX)
+    app.include_router(members_router, prefix=API_PREFIX)
+    app.include_router(groups_router, prefix=API_PREFIX)
+    app.include_router(roles_router, prefix=API_PREFIX)
+    app.include_router(iam_provider_router, prefix=API_PREFIX)
     app.include_router(provider_auth_router, prefix=API_PREFIX)
     app.include_router(provider_tenants_router, prefix=API_PREFIX)
     app.include_router(tenant_router, prefix=API_PREFIX)
