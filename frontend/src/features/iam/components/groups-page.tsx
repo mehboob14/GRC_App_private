@@ -40,7 +40,10 @@ export function GroupsPage() {
   const createMutation = useMutation({
     mutationFn: () => iamApi.createGroup(name.trim()),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["groups"] });
+      await queryClient.invalidateQueries({
+        queryKey: ["groups", principal?.tenant_id],
+        exact: true,
+      });
       setOpen(false);
       setName("");
       setError(null);

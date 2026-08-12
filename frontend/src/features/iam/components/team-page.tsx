@@ -74,7 +74,10 @@ export function TeamPage() {
   const inviteMutation = useMutation({
     mutationFn: (values: InviteValues) => iamApi.inviteMember(values),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["members"] });
+      await queryClient.invalidateQueries({
+        queryKey: ["members", principal?.tenant_id],
+        exact: true,
+      });
       setOpen(false);
       form.reset({ full_name: "", email: "", role_id: "role-employee" });
       setInviteError(null);
@@ -89,7 +92,10 @@ export function TeamPage() {
   const disableMutation = useMutation({
     mutationFn: (membershipId: string) => iamApi.disableMember(membershipId),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["members"] });
+      await queryClient.invalidateQueries({
+        queryKey: ["members", principal?.tenant_id],
+        exact: true,
+      });
     },
   });
 
@@ -98,31 +104,43 @@ export function TeamPage() {
   const canDisable = principal?.permissions.includes("members:disable");
 
   if (membersQuery.isLoading) {
-    return <Skeleton className="h-72 w-full rounded-xl" />;
+    return (
+      <div className="mx-auto max-w-[1200px]">
+        <Skeleton className="h-72 w-full rounded-xl" />
+      </div>
+    );
   }
 
   if (membersQuery.isError) {
     return (
-      <ErrorState
-        title="Couldn’t load team"
-        description={
-          membersQuery.error instanceof ApiError
-            ? membersQuery.error.message
-            : "Try again."
-        }
-        onRetry={() => void membersQuery.refetch()}
-      />
+      <div className="mx-auto max-w-[1200px]">
+        <ErrorState
+          title="Couldn’t load team"
+          description={
+            membersQuery.error instanceof ApiError
+              ? membersQuery.error.message
+              : "Try again."
+          }
+          onRetry={() => void membersQuery.refetch()}
+        />
+      </div>
     );
   }
 
   return (
-    <div className="rounded-xl border border-border bg-bg-elevated px-5 py-[18px] shadow-sm">
+    <div className="mx-auto max-w-[1200px]">
+      <h1 className="font-display text-heading-xl text-text">People</h1>
+      <p className="mb-5 mt-2 text-body-lg text-text-muted">
+        Everyone with a membership in this workspace — role, teams, and MFA
+        state.
+      </p>
+      <div className="rounded-xl border border-border bg-bg-elevated px-5 py-[18px] shadow-sm">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
-          <h2 className="font-display text-[16px] font-semibold leading-5 tracking-[-0.08px] text-text">
+          <h2 className="font-display text-title-md text-text">
             Team &amp; roles
           </h2>
-          <p className="mt-1 text-[12px] leading-4 text-text-faint">
+          <p className="mt-1 text-body-sm text-text-faint">
             {members.length} members · manage access to the Verity workspace
           </p>
         </div>
@@ -224,10 +242,10 @@ export function TeamPage() {
                   <div className="flex items-center gap-3">
                     <Avatar name={member.full_name} seed={member.email} />
                     <div>
-                      <p className="text-[13px] font-semibold text-text">
+                      <p className="text-body-md font-semibold text-text">
                         {member.full_name}
                       </p>
-                      <p className="text-[12px] text-text-faint">
+                      <p className="text-body-sm text-text-faint">
                         {member.email}
                       </p>
                     </div>
@@ -243,7 +261,7 @@ export function TeamPage() {
                   </div>
                 </TD>
                 <TD>
-                  <span className="text-[13px] text-text-muted">
+                  <span className="text-body-md text-text-muted">
                     {member.group_names.length
                       ? member.group_names.join(" · ")
                       : "—"}
@@ -251,12 +269,12 @@ export function TeamPage() {
                 </TD>
                 <TD>
                   {member.mfa_enabled ? (
-                    <span className="inline-flex items-center gap-1.5 text-[13px] text-text">
+                    <span className="inline-flex items-center gap-1.5 text-body-md text-text">
                       <Icon name="check" className="size-3.5 text-pass" />
                       On
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1.5 text-[13px] text-fail-fg">
+                    <span className="inline-flex items-center gap-1.5 text-body-md text-fail-fg">
                       <Icon name="alert" className="size-3.5" />
                       Off
                     </span>
@@ -292,6 +310,7 @@ export function TeamPage() {
           </TBody>
         </Table>
       )}
+      </div>
     </div>
   );
 }

@@ -57,7 +57,10 @@ export function RolesPage() {
     mutationFn: () =>
       iamApi.createRole({ name: name.trim(), permission_keys: keys }),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["roles"] });
+      await queryClient.invalidateQueries({
+        queryKey: ["roles", principal?.tenant_id],
+        exact: true,
+      });
       setOpen(false);
       setName("");
       setKeys(["tenant:read"]);

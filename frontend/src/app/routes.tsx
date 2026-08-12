@@ -6,7 +6,7 @@ import { SignInPage } from "@/features/iam/components/sign-in-page";
 import { SignUpPage } from "@/features/iam/components/sign-up-page";
 import { MfaEnrollPage } from "@/features/iam/components/mfa-enroll-page";
 import { SettingsLayout } from "@/features/iam/components/settings-layout";
-import { PeoplePage } from "@/features/iam/components/people-page";
+import { TeamPage } from "@/features/iam/components/team-page";
 import { GroupsPage } from "@/features/iam/components/groups-page";
 import { RolesPage } from "@/features/iam/components/roles-page";
 import { SecurityPage } from "@/features/iam/components/security-page";
@@ -28,7 +28,7 @@ export function AppRoutes() {
           <Route index element={<Navigate to="/quick-start" replace />} />
           <Route path="quick-start" element={<QuickStartPage />} />
           <Route path="connectors" element={<ConnectionsPage />} />
-          <Route path="people" element={<PeoplePage />} />
+          <Route path="people" element={<TeamPage />} />
           <Route path="settings" element={<SettingsLayout />}>
             <Route index element={<Navigate to="security" replace />} />
             <Route path="team" element={<Navigate to="/people" replace />} />
