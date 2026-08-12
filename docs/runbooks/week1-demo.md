@@ -5,6 +5,19 @@ a customer company, a trial signs itself up, people land in groups and roles, on
 across two organisations, and the audit log shows every step. Each step names the integration
 test that pins it, so this script cannot rot silently — if the test is green, the step works.
 
+**One command.** For the self-service path end to end (two organisations, admin MFA, the same
+external auditor as a time-boxed guest in both, sign-in, workspace switch, and both audit trails),
+run the automated version against a running API:
+
+```bash
+uv --directory backend run python backend/scripts/week1_demo.py
+```
+
+It prints a labelled transcript and exits non-zero on any failure. Each run uses fresh unique
+emails, so it is safe to re-run. **Caveat on this dev machine:** the app and the test suite share
+one database — running `pytest` truncates tenant data, so do not run the suite while demoing the
+live UI against the same database, or seed again afterwards.
+
 Prerequisites: the stack is up and migrated ([local-setup.md](local-setup.md)), one platform
 admin is seeded and enrolled (`seed-platform-admin`), and `jq` is on the path. The API port is
 8000 by default (8001 on machines where 8000 is taken — see week1-review-decisions.md, item 21).
