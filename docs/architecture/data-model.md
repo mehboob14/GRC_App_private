@@ -17,8 +17,9 @@ agents and engineers read. If the two disagree, the ER document wins and this fi
 
 **Tenancy.** Two planes. Provider plane tables carry no `tenant_id`. A **user is a global identity**
 (`users`, `credentials`, `user_identities` carry no `tenant_id`; email is unique globally). Membership
-in a tenant is **`tenant_memberships`** — the many-to-many join carrying that tenant's roles and the
-auditor time-box. Every in-tenant reference to a person (owner, approver, assignee, group member) FKs to
+in a tenant is **`tenant_memberships`** — the many-to-many join; roles reach the person through
+`role_assignments`, which also carries the auditor time-box (`engagement_id`, `valid_from`,
+`valid_until`). Every in-tenant reference to a person (owner, approver, assignee, group member) FKs to
 the **membership**, never to `users`. Phase 1 defaults to one membership per user; global users (a person
 across several tenants) is the same schema with more rows, no rewrite — see
 [ADR-0011](../adr/0011-tenant-membership-model.md).

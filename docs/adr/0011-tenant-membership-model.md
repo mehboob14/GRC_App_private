@@ -1,6 +1,7 @@
 # ADR-0011: Users are global identities; membership is `tenant_memberships`
 
-**Status: Accepted**
+**Status: Accepted** (amended 2026-08-12: the auditor time-box lives on the role assignment, not the
+membership — see decision 2)
 **Date:** 2026-08-10
 
 ## Context
@@ -17,9 +18,14 @@ now, while it is still on paper, costs one join table and defaults to the same s
 1. **A user is a global identity.** `users` (and `credentials`, `user_identities`) carry no
    `tenant_id`; email is unique globally. The row is the person, independent of any organisation.
 
-2. **`tenant_memberships` is the tenant-scoped person.** A many-to-many join of user × tenant, carrying
-   that tenant's role assignments and the auditor time-box columns (`engagement_id`, `valid_from`,
-   `valid_until`). It carries `tenant_id` and sits under RLS like any tenant-owned row.
+2. **`tenant_memberships` is the tenant-scoped person.** A many-to-many join of user × tenant. It
+   carries `tenant_id` and sits under RLS like any tenant-owned row. Roles reach the person through
+   `role_assignments`, and the auditor time-box (`engagement_id`, `valid_from`, `valid_until`) lives
+   **on the role assignment, not on the membership** *(amended 2026-08-12; originally these columns
+   were described on the membership)*. Rationale: the window scopes the auditor **grant**, not the
+   person's existence in the tenant — one person can hold a permanent membership and a separately
+   time-boxed auditor role, and a second engagement is a second assignment rather than a second
+   membership.
 
 3. **Every in-tenant reference to a person is a FK to `tenant_memberships`, never to `users`.** Asset
    owner, control owner, approver, assignee, group member. This is what stops a person who is in two
