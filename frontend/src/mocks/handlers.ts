@@ -1,6 +1,7 @@
 import { http, HttpResponse, delay } from "msw";
 import {
   DEMO_MFA_CODE,
+  accessWindows,
   auditEvents,
   findUserByEmail,
   groups,
@@ -426,11 +427,20 @@ export const handlers = [
       email?: string;
       full_name?: string;
       role_id?: string;
+      valid_from?: string;
+      valid_until?: string;
     };
     const role = roles.find((r) => r.id === body.role_id);
     if (!role) return err(422, "validation_error", "Choose a role.");
     if (!body.email || !body.full_name) {
       return err(422, "validation_error", "Name and work email are required.");
+    }
+    if (body.valid_from && body.valid_until && body.valid_until <= body.valid_from) {
+      return err(
+        422,
+        "invalid_access_window",
+        "Access must end after it starts — check the window dates.",
+      );
     }
 
     const email = body.email.toLowerCase();
@@ -478,6 +488,14 @@ export const handlers = [
       mfa_enabled: user.mfa_enabled,
     };
     members.push(newMember);
+    if (body.valid_from || body.valid_until) {
+      // Stored only — the mock enforces nothing; the real backend models the
+      // window on the role assignment (see lib/api/types.ts).
+      accessWindows.set(membershipIdNew, {
+        valid_from: body.valid_from,
+        valid_until: body.valid_until,
+      });
+    }
     const inviteToken = `invite-${crypto.randomUUID()}`;
     invites.set(inviteToken, membershipIdNew);
     pushAudit({
@@ -780,9 +798,16 @@ export const handlers = [
     if (!principal.permissions.includes("audit:read")) {
       return err(403, "permission_denied", "Missing permission: audit:read");
     }
-    const items = auditEvents.filter(
-      (e) => e.tenant_id === principal.tenant_id,
-    );
-    return HttpResponse.json({ items, next_cursor: null });
+    // Cursor pagination: the cursor is the id of the last event of the
+    // previous page (matches the backend's keyset contract).
+    const PAGE_SIZE = 15;
+    const all = auditEvents.filter((e) => e.tenant_id === principal.tenant_id);
+    const cursor = new URL(request.url).searchParams.get("cursor");
+    const start = cursor ? all.findIndex((e) => e.id === cursor) + 1 : 0;
+    const items = all.slice(start, start + PAGE_SIZE);
+    const lastItem = items[items.length - 1];
+    const next_cursor =
+      lastItem && start + PAGE_SIZE < all.length ? lastItem.id : null;
+    return HttpResponse.json({ items, next_cursor });
   }),
 ];

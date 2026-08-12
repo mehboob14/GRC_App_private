@@ -52,7 +52,7 @@ export {
   SelectValue,
 } from "./select";
 export { KevBadge, SeverityChip, severityTextClass, type Severity } from "./severity";
-export { Skeleton } from "./skeleton";
+export { Skeleton, TableSkeleton } from "./skeleton";
 export {
   StatusPill,
   STATUS_WORD_FAMILY,

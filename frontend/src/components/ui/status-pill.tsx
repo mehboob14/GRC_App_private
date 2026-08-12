@@ -59,6 +59,12 @@ export const STATUS_WORD_FAMILY: Readonly<Record<string, StatusFamily>> = {
   archived: "neutral",
   "not applicable": "neutral",
   "not configured": "neutral",
+  // Week 1 IAM words, mapped once here so every screen renders them alike:
+  // membership lifecycle (invited → active → disabled) and MFA enrollment.
+  invited: "pending",
+  disabled: "neutral",
+  enrolled: "success",
+  "not enrolled": "warning",
 };
 
 /** Family for a canonical status word, or undefined for unmapped words. */

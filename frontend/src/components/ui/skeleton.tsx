@@ -28,3 +28,57 @@ export function Skeleton({ className, tone = "block" }: SkeletonProps) {
     />
   );
 }
+
+type TableSkeletonProps = {
+  rows?: number;
+  /** Must match the density of the table that replaces it — no layout shift. */
+  density?: "comfortable" | "standard" | "compact";
+  className?: string;
+};
+
+/** DS §7.4 — bones mirror the real table: sunken header, row-height blocks. */
+export function TableSkeleton({
+  rows = 8,
+  density = "comfortable",
+  className,
+}: TableSkeletonProps) {
+  const rowHeight = {
+    comfortable: "h-14",
+    standard: "h-12",
+    compact: "h-10",
+  }[density];
+  return (
+    <div
+      aria-hidden
+      className={cn(
+        "overflow-hidden rounded-lg border border-border bg-surface-primary",
+        className,
+      )}
+    >
+      <div
+        className={cn(
+          "flex items-center gap-8 border-b border-border bg-surface-sunken px-4",
+          density === "compact" ? "h-9" : "h-10",
+        )}
+      >
+        <Skeleton tone="bar" className="w-24" />
+        <Skeleton tone="bar" className="w-16" />
+        <Skeleton tone="bar" className="w-20" />
+      </div>
+      {Array.from({ length: rows }, (_, index) => (
+        <div
+          key={index}
+          className={cn(
+            "flex items-center gap-4 border-b border-border px-4 last:border-b-0",
+            rowHeight,
+          )}
+        >
+          <Skeleton className="size-6 rounded-full" />
+          <Skeleton className="h-3 w-40" />
+          <Skeleton className="h-5 w-20 rounded-full" />
+          <Skeleton className="ml-auto h-3 w-28" />
+        </div>
+      ))}
+    </div>
+  );
+}
