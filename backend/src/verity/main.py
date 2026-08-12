@@ -24,6 +24,7 @@ from verity.core.middleware import (
     CorrelationIdMiddleware,
     SecurityHeadersMiddleware,
 )
+from verity.modules.audit.router import router as audit_router
 
 logger = get_logger(__name__)
 
@@ -104,6 +105,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     install_exception_handlers(app)
     app.include_router(health_router)
+    app.include_router(audit_router, prefix=API_PREFIX)
     return app
 
 

@@ -115,6 +115,7 @@ classmethod-decorators = ["sqlalchemy.orm.declared_attr", "declared_attr"]
     "S101",    # assert is the point
     "PLR2004", # a literal in an assertion is clearer than a named constant
     "ARG001",  # a fixture is requested by name and not always referenced
+    "ARG002",  # a fake honours the real method signature without using every argument
 ]
 "tests/isolation/test_rls_policy.py" = [
     # The table name is a module constant in this file, not input. The test has to

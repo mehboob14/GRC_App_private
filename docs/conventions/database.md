@@ -8,6 +8,8 @@ design and are binding.
 - `id` — **UUIDv7** primary key (time-ordered). Not integers: identifiers must survive CSV import,
   cross-system sync, and merges without collision. See [ADR-0002](../adr/0002-uuidv7-primary-keys.md).
 - `created_at`, `updated_at` — `timestamptz`, always. Store UTC, never naive datetimes.
+  **Exception:** append-only tables (below) carry their event timestamp alone — `audit_log` has
+  `occurred_at` — because an `updated_at` on a table that refuses `UPDATE` could only ever lie.
 - `tenant_id` — on every tenant-owned table, and the **leading column of every composite index**.
   Exceptions: provider plane and global content tables (see
   [multi-tenancy.md](../architecture/multi-tenancy.md)).
@@ -40,7 +42,10 @@ today — assets, vulnerabilities, tasks, users, vendors, discovered apps.
 `audit_log`, `task_transitions`, `vuln_transitions`, `check_results`, `readiness_snapshots`,
 `kri_measurements`, `document_versions`.
 
-Insert only. No `UPDATE`, no `DELETE`, ever — enforced by a revoked grant, not by convention alone.
+Insert only. No `UPDATE`, no `DELETE`, ever — enforced by a revoked grant **and** a
+`BEFORE UPDATE OR DELETE` trigger (`verity.db.rls.make_append_only` emits both), not by convention
+alone. Two layers because each covers what the other misses: the revoke does not bind the table's
+owner, and the trigger holds even for a session that could bypass row-level security.
 Immutability is a feature this product sells, and appending is the cheapest thing a database does.
 
 ## Partitioning

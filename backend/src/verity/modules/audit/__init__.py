@@ -1,5 +1,7 @@
 """The append-only audit log. Never updated, never deleted from.
 
-Not implemented yet. See docs/product/delivery-plan.md for the phase this belongs to
-and backend/CLAUDE.md for the file layout a module uses.
+Every other module reaches the trail through ``verity.modules.audit.service`` —
+``AuditService.record`` on the caller's own session — never through the repository
+or the table. The module deliberately has no other public surface
+(openspec/changes/add-audit-trail/proposal.md).
 """

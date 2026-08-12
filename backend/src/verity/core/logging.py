@@ -35,13 +35,20 @@ _SENSITIVE_FRAGMENTS: Final[frozenset[str]] = frozenset(
         "client_secret",
         "cookie",
         "credential",
+        # "_enc" covers the "_encrypted" column suffix too; "hash" covers
+        # "password_hash". All three arrived with the audit snapshot deny-list
+        # (add-audit-trail/design.md), which imports this list so a new secret
+        # column is covered in logs and audit snapshots at once.
+        "_enc",
         "encryption_key",
+        "hash",
         "master_key",
         "mfa",
         "passphrase",
         "password",
         "passwd",
         "private_key",
+        "recovery_code",
         "refresh_token",
         "secret",
         "session_key",

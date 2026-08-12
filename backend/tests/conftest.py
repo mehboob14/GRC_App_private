@@ -19,7 +19,13 @@ from collections.abc import AsyncIterator, Iterator
 
 import pytest
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine, AsyncSession, async_sessionmaker
+from sqlalchemy.ext.asyncio import (
+    AsyncConnection,
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 
 from verity.core.config import Settings, get_settings, reset_settings_cache
 from verity.core.crypto import reset_secret_box_cache
@@ -142,3 +148,40 @@ async def app_session(
             yield session
         finally:
             await session.rollback()
+
+
+@pytest.fixture
+async def clean_audit_log(
+    settings: Settings,
+    app_engine: AsyncEngine,
+    assert_app_role_cannot_bypass_rls: None,
+) -> AsyncIterator[None]:
+    """``audit_log`` exists, is empty on entry, and is emptied again on exit.
+
+    The audit suites commit rows across planes to prove visibility between separate
+    sessions, so they cannot clean up by rolling back. The table refuses ``UPDATE``
+    and ``DELETE`` for every role — that is its point — but ``TRUNCATE`` fires no
+    row-level trigger and stays available to the owner (the application role has it
+    revoked). Emptying a *test* database between tests is bookkeeping, not a path
+    the application could take.
+    """
+    owner_engine = create_async_engine(settings.database.effective_migration_url, poolclass=None)
+    try:
+        async with owner_engine.connect() as connection:
+            exists = (
+                await connection.execute(text("SELECT to_regclass('audit_log')"))
+            ).scalar_one_or_none()
+        if exists is None:
+            pytest.fail(
+                "audit_log does not exist in the test database; "
+                "run `alembic upgrade head` first (see docs/runbooks/local-setup.md)."
+            )
+        async with owner_engine.begin() as connection:
+            await connection.execute(text("TRUNCATE audit_log"))
+        try:
+            yield
+        finally:
+            async with owner_engine.begin() as connection:
+                await connection.execute(text("TRUNCATE audit_log"))
+    finally:
+        await owner_engine.dispose()

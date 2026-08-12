@@ -33,6 +33,18 @@ seam **additively, never a schema rewrite**. Authorization (roles, groups, permi
 always lives in the platform, never in the IdP. See
 [ADR-0006](../adr/0006-keycloak-as-identity-provider.md).
 
+**Audit.** `audit_log` is append-only and serves both planes. `tenant_id` is **the stream the
+event belongs to, not the actor's tenant** — a platform admin provisioning tenant X writes into
+X's stream so the event appears in X's history; NULL means provider plane. The actor is the
+polymorphic pair `actor_type` (`membership | platform_admin | system`) + `actor_id` (NULL exactly
+when `system`), because one foreign key cannot point at `tenant_memberships`, `platform_admins`,
+and nothing at once. Neither `tenant_id` nor `actor_id` carries an FK, deliberately: every FK
+action (`CASCADE`, `SET NULL`, `RESTRICT`) is an `UPDATE` or `DELETE` the append-only trigger
+refuses, and the record of a tenant teardown is precisely the record that must outlive the
+tenant. The table carries `occurred_at` alone — the append-only exception to
+`created_at`/`updated_at`. All four ER deviations approved in
+`openspec/changes/week1-review-decisions.md`, item 1.
+
 **Compliance.** `readiness_snapshots` is append-only and written on a schedule. Live readiness is
 computed from the maps; history comes from snapshots, because mappings and evidence mutate in place
 and past values could not otherwise be reconstructed.
@@ -77,8 +89,9 @@ connection + resource, so a check failing on three buckets raises three findings
 
 ## Conventions
 
-`id` is UUIDv7. `created_at` / `updated_at` on every table. Status fields are text with CHECK
-constraints, never enums. `tenant_id` leads every composite index. Full detail in
+`id` is UUIDv7. `created_at` / `updated_at` on every table — append-only tables are the
+documented exception and carry their event timestamp (`occurred_at`) alone. Status fields are
+text with CHECK constraints, never enums. `tenant_id` leads every composite index. Full detail in
 [../conventions/database.md](../conventions/database.md).
 
 ## Scheduled jobs the model depends on

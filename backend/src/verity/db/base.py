@@ -28,6 +28,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import DeclarativeBase, Mapped, declared_attr, mapped_column
+from sqlalchemy.sql.elements import conv
 
 from verity.shared.ids import uuid7
 
@@ -172,8 +173,11 @@ def status_check(table_name: str, column_name: str, allowed: Sequence[str]) -> C
     _validate_identifier(table_name, what="table name")
     _validate_identifier(column_name, what="column name")
     # Built through the expression language, so the values are rendered as literals by
-    # the DDL compiler rather than pasted into a string.
+    # the DDL compiler rather than pasted into a string. ``conv`` marks the name as
+    # already convention-shaped: the ``ck`` naming convention contains
+    # ``%(constraint_name)s``, so an unmarked explicit name would be wrapped again at
+    # table-attach time and come out ``ck_<table>__ck_<table>__...``.
     return CheckConstraint(
         column(column_name).in_(list(allowed)),
-        name=f"ck_{table_name}__{column_name}_valid",
+        name=conv(f"ck_{table_name}__{column_name}_valid"),
     )

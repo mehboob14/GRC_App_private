@@ -19,7 +19,9 @@ from verity.db.base import Base
 
 # Every module's models must be registered on Base.metadata before autogenerate
 # compares it against the database, or autogenerate will confidently propose dropping
-# every table it cannot see. Import them here as modules land. Nothing to import yet.
+# every table it cannot see. Import them here as modules land.
+from verity.modules.audit import models as _audit_models  # noqa: F401
+
 target_metadata = Base.metadata
 
 config = context.config

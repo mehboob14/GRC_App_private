@@ -75,6 +75,40 @@ suite runs in CI on every change and is a merge blocker. It connects as the appl
 refuses to run at all if that role can bypass a policy — a suite running as a superuser proves
 nothing while appearing to prove everything.
 
+## Dual-plane tables and `app.provider_plane`
+
+A few tables serve **both planes** — today only `audit_log`, whose `tenant_id` is the stream an
+event belongs to and is NULL for provider-plane events. One tenant policy cannot express "each
+tenant sees its stream *and* an authenticated operator sees every stream", so a dual-plane table
+carries **four policies**, keyed on two settings:
+
+```sql
+CREATE POLICY <t>_tenant_select   ON <t> FOR SELECT
+  USING      (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
+CREATE POLICY <t>_tenant_insert   ON <t> FOR INSERT
+  WITH CHECK (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid);
+CREATE POLICY <t>_provider_select ON <t> FOR SELECT
+  USING      (NULLIF(current_setting('app.provider_plane', true), '') = 'on');
+CREATE POLICY <t>_provider_insert ON <t> FOR INSERT
+  WITH CHECK (NULLIF(current_setting('app.provider_plane', true), '') = 'on');
+```
+
+Postgres combines permissive policies with `OR`, which is what lets the provider plane read across
+streams without weakening the tenant predicate. A row with `tenant_id IS NULL` never satisfies the
+tenant predicate — `NULL = anything` is not true — so provider-plane rows are invisible to every
+tenant session **by construction**, and an unbound session sees nothing at all. On an append-only
+table there is deliberately no UPDATE or DELETE policy: with RLS enabled and no policy for a
+command, the command matches nothing.
+
+`app.provider_plane` is a second transaction-local setting, bound through the same
+`set_config(..., true)` primitive as the tenant id, by **exactly one code path**:
+`verity.core.db.provider_session_scope`, entered only on behalf of an authenticated platform
+admin. It is never derived from a request parameter, a header, or a token claim a tenant user can
+influence. It is honestly a switch that widens visibility and is only as strong as the code that
+sets it — the same property `app.tenant_id` already has. The GUC approach (over a dedicated
+database role with its own pool) was approved in `openspec/changes/week1-review-decisions.md`,
+item 4, to be revisited when the provider admin panel grows real tenant-data reads.
+
 ## Rules
 
 - The application connects as a role **without** `BYPASSRLS`. Migrations use a separate role.

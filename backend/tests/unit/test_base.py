@@ -93,3 +93,18 @@ def test_status_check_renders_a_check_constraint_not_an_enum() -> None:
 def test_status_check_rejects_an_empty_value_list() -> None:
     with pytest.raises(ValueError, match="at least one allowed value"):
         status_check("controls", "status", [])
+
+
+def test_status_check_name_survives_attachment_to_a_convention_bearing_table() -> None:
+    """The ``ck`` naming convention contains ``%(constraint_name)s``, so an explicit
+    name that is not marked ``conv`` gets wrapped a second time at table-attach and
+    comes out ``ck_controls__ck_controls__status_valid`` — a name the hand-written
+    migration does not use, which autogenerate would then flag forever."""
+    constraint = status_check("controls", "status", ["draft", "active"])
+    Table(
+        "controls",
+        MetaData(naming_convention=NAMING_CONVENTION),
+        Column("status", Text),
+        constraint,
+    )
+    assert constraint.name == "ck_controls__status_valid"
