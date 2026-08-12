@@ -11,6 +11,15 @@ const toneClass: Record<IdentityTone, string> = {
   6: "bg-identity-6",
 };
 
+/**
+ * Deterministic identity-ramp fill for non-person marks that share the
+ * avatar vocabulary (workspace tiles in the switcher). Identity colours are
+ * per-entity hashes, never semantic tokens.
+ */
+export function identityBgClass(seed: string): string {
+  return toneClass[identityTone(seed)];
+}
+
 type AvatarProps = {
   name: string;
   seed?: string;

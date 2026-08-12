@@ -47,8 +47,9 @@ export function AppRoutes() {
             path="*"
             element={
               <ComingSoonPage
+                notFound
                 title="Page not found"
-                description="That route is not part of the current shell."
+                description="That route is not part of the current shell — check the address, or head back to the dashboard."
               />
             }
           />

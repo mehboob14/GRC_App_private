@@ -65,6 +65,7 @@ export const STATUS_WORD_FAMILY: Readonly<Record<string, StatusFamily>> = {
   disabled: "neutral",
   enrolled: "success",
   "not enrolled": "warning",
+  enforced: "success",
 };
 
 /** Family for a canonical status word, or undefined for unmapped words. */

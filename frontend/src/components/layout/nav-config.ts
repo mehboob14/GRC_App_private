@@ -5,6 +5,7 @@ export type NavItem = {
   label: string;
   icon: IconName;
   to?: string;
+  /** Live count sourced from real data — never on comingSoon items. */
   count?: number;
   countTone?: "fail" | "review";
   comingSoon?: boolean;
@@ -21,10 +22,15 @@ export type RailItem = {
   label: string;
   icon: IconName;
   sectionId: string;
-  dot?: boolean;
+  /** First enabled route of the section; absent → later-phase, disabled. */
+  to?: string;
 };
 
-/** Nav from Figma Screens · Onboarding & Admin (121:5769). */
+/**
+ * Nav from Figma Screens · Onboarding & Admin (121:5769). Later-phase modules
+ * are listed for orientation but carry an explicit "Soon" affordance —
+ * never a fake count or a dead link.
+ */
 export const NAV_SECTIONS: NavSection[] = [
   {
     id: "overview",
@@ -38,22 +44,8 @@ export const NAV_SECTIONS: NavSection[] = [
     label: "Compliance",
     items: [
       { id: "frameworks", label: "Frameworks", icon: "shield", comingSoon: true },
-      {
-        id: "controls",
-        label: "Controls",
-        icon: "controls",
-        count: 3,
-        countTone: "fail",
-        comingSoon: true,
-      },
-      {
-        id: "evidence",
-        label: "Evidence",
-        icon: "doc",
-        count: 4,
-        countTone: "review",
-        comingSoon: true,
-      },
+      { id: "controls", label: "Controls", icon: "controls", comingSoon: true },
+      { id: "evidence", label: "Evidence", icon: "doc", comingSoon: true },
       { id: "policies", label: "Policies & Docs", icon: "book", comingSoon: true },
     ],
   },
@@ -62,19 +54,13 @@ export const NAV_SECTIONS: NavSection[] = [
     label: "Monitoring",
     items: [
       { id: "checks", label: "Checks", icon: "activity", comingSoon: true },
-      {
-        id: "findings",
-        label: "Findings",
-        icon: "alert",
-        count: 5,
-        countTone: "fail",
-        comingSoon: true,
-      },
+      { id: "findings", label: "Findings", icon: "alert", comingSoon: true },
       {
         id: "connectors",
         label: "Connectors",
         icon: "plug",
-        count: 1,
+        // Matches the two down connections on the Connections screen.
+        count: 2,
         countTone: "fail",
         to: "/connectors",
       },
@@ -94,14 +80,7 @@ export const NAV_SECTIONS: NavSection[] = [
     label: "Inventory",
     items: [
       { id: "assets", label: "Assets", icon: "box", comingSoon: true },
-      {
-        id: "vulnerabilities",
-        label: "Vulnerabilities",
-        icon: "bug",
-        count: 12,
-        countTone: "fail",
-        comingSoon: true,
-      },
+      { id: "vulnerabilities", label: "Vulnerabilities", icon: "bug", comingSoon: true },
     ],
   },
   {
@@ -118,29 +97,12 @@ export const NAV_SECTIONS: NavSection[] = [
 ];
 
 export const RAIL_ITEMS: RailItem[] = [
-  { id: "overview", label: "Overview", icon: "grid", sectionId: "overview" },
-  {
-    id: "compliance",
-    label: "Compliance",
-    icon: "shield",
-    sectionId: "compliance",
-    dot: true,
-  },
-  {
-    id: "monitoring",
-    label: "Monitoring",
-    icon: "activity",
-    sectionId: "monitoring",
-    dot: true,
-  },
-  { id: "risk", label: "Risk", icon: "risk", sectionId: "risk", dot: true },
+  { id: "overview", label: "Overview", icon: "grid", sectionId: "overview", to: "/quick-start" },
+  { id: "compliance", label: "Compliance", icon: "shield", sectionId: "compliance" },
+  { id: "monitoring", label: "Monitoring", icon: "activity", sectionId: "monitoring", to: "/connectors" },
+  { id: "risk", label: "Risk", icon: "risk", sectionId: "risk" },
   { id: "inventory", label: "Inventory", icon: "box", sectionId: "inventory" },
-  {
-    id: "access-audit",
-    label: "Access & Audit",
-    icon: "audit",
-    sectionId: "access-audit",
-  },
+  { id: "access-audit", label: "Access & Audit", icon: "audit", sectionId: "access-audit", to: "/people" },
 ];
 
 export const FOOTER_ITEMS: NavItem[] = [

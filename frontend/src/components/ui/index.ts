@@ -1,4 +1,4 @@
-export { Avatar } from "./avatar";
+export { Avatar, identityBgClass } from "./avatar";
 export { Badge, type BadgeVariant } from "./badge";
 export { BulkActionBar } from "./bulk-action-bar";
 export { Button, type ButtonSize, type ButtonVariant } from "./button";

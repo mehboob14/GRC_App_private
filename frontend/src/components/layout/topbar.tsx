@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Avatar,
   Button,
@@ -11,16 +11,55 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   Icon,
+  identityBgClass,
   SearchInput,
 } from "@/components/ui";
+import { cn } from "@/lib/cn";
 import { authApi } from "@/lib/api/endpoints";
 import { useAuth } from "@/lib/auth/auth-context";
+
+/** Workspace tile — identity-ramp mark, same vocabulary as person avatars. */
+function WorkspaceMark({
+  tenantId,
+  name,
+  className,
+}: {
+  tenantId: string;
+  name: string;
+  className?: string;
+}) {
+  return (
+    <span
+      className={cn(
+        "flex items-center justify-center rounded-sm font-display font-extrabold text-text-inverse",
+        identityBgClass(tenantId),
+        className,
+      )}
+    >
+      {name.slice(0, 1).toUpperCase()}
+    </span>
+  );
+}
 
 export function Topbar() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { principal, switchWorkspace, signOut } = useAuth();
   const [switching, setSwitching] = useState(false);
+  const searchRef = useRef<HTMLInputElement | null>(null);
+
+  // ⌘K / Ctrl+K focuses global search. The full command palette is a later
+  // phase; the shortcut contract starts now so the reflex carries over.
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        searchRef.current?.focus();
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
 
   const workspacesQuery = useQuery({
     queryKey: ["workspaces", principal?.user.id],
@@ -39,8 +78,8 @@ export function Topbar() {
     onSettled: () => setSwitching(false),
   });
 
+  const workspaces = workspacesQuery.data ?? [];
   const activeName = principal?.tenant_name ?? "Workspace";
-  const mark = activeName.slice(0, 1).toUpperCase();
 
   return (
     <header className="flex h-topbar shrink-0 items-center gap-3.5 border-b border-border bg-surface-primary px-5">
@@ -48,13 +87,15 @@ export function Topbar() {
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            className="flex items-center gap-2.5 rounded-md border border-border py-[5px] pl-1.5 pr-2.5 hover:bg-surface-hover"
+            className="flex items-center gap-2.5 rounded-md border border-border py-1 pl-1.5 pr-2.5 transition-colors duration-80 ease-state hover:bg-surface-hover"
             aria-label="Switch workspace"
             disabled={switching}
           >
-            <span className="flex size-[26px] items-center justify-center rounded-sm bg-action-primary font-display text-body-sm font-extrabold text-action-primary-fg">
-              {mark}
-            </span>
+            <WorkspaceMark
+              tenantId={principal?.tenant_id ?? activeName}
+              name={activeName}
+              className="size-7 text-body-sm"
+            />
             <span className="flex flex-col items-start">
               <span className="text-label-md font-bold text-text-primary">
                 {activeName}
@@ -63,63 +104,96 @@ export function Topbar() {
                 {principal?.role_names[0] ?? "Member"}
               </span>
             </span>
-            <Icon name="chev" className="size-[15px] text-text-subtle" />
+            <Icon name="chev" className="size-4 text-text-subtle" />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-[280px]">
           <DropdownMenuLabel>Workspaces</DropdownMenuLabel>
-          {(workspacesQuery.data ?? []).map((ws) => {
+          {workspaces.map((ws) => {
             const active = ws.membership_id === principal?.membership_id;
             return (
               <DropdownMenuItem
                 key={ws.membership_id}
-                disabled={active || switching}
+                disabled={switching}
+                aria-current={active || undefined}
                 onSelect={() => {
                   if (!active) switchMutation.mutate(ws.membership_id);
                 }}
+                className="h-auto py-1.5"
               >
-                <span className="flex size-7 items-center justify-center rounded-sm bg-action-primary text-caption font-extrabold text-action-primary-fg">
-                  {ws.tenant_name.slice(0, 1)}
-                </span>
-                <span className="flex flex-col">
-                  <span className="text-body-md font-semibold">
+                <WorkspaceMark
+                  tenantId={ws.tenant_id}
+                  name={ws.tenant_name}
+                  className="size-7 text-caption"
+                />
+                <span className="flex min-w-0 flex-1 flex-col">
+                  <span className="truncate text-body-md font-semibold">
                     {ws.tenant_name}
                   </span>
                   <span className="text-caption text-text-subtle">
                     {ws.role_name}
-                    {active ? " · current" : ""}
                   </span>
                 </span>
+                {active ? (
+                  <Icon
+                    name="check"
+                    aria-label="Current workspace"
+                    className="size-4 shrink-0 text-action-accent"
+                  />
+                ) : null}
               </DropdownMenuItem>
             );
           })}
-          <DropdownMenuSeparator />
-          <DropdownMenuItem disabled>Manage workspaces — soon</DropdownMenuItem>
+          {workspaces.length > 1 ? (
+            <p className="px-2.5 pb-1 pt-1.5 text-caption text-text-subtle">
+              Signed in across{" "}
+              <span className="tabular">{workspaces.length}</span> workspaces —
+              switching is audited
+            </p>
+          ) : null}
         </DropdownMenuContent>
       </DropdownMenu>
 
       <SearchInput
+        ref={searchRef}
         className="max-w-[460px] flex-1"
         placeholder="Search controls, evidence, risks, vendors…"
         shortcut="⌘K"
         readOnly
         aria-label="Global search"
+        title="Search arrives with the compliance modules — ⌘K already focuses it"
       />
 
       <div className="flex-1" />
 
       <Button variant="secondary" size="icon" aria-label="Help">
-        <Icon name="help" className="size-[17px] text-text-secondary" />
+        <Icon name="help" className="size-4 text-text-secondary" />
       </Button>
 
-      <div className="relative">
-        <Button variant="secondary" size="icon" aria-label="Notifications">
-          <Icon name="bell" className="size-[17px] text-text-secondary" />
-        </Button>
-        <span className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full border-2 border-surface-primary bg-status-danger-base text-overline text-text-inverse">
-          3
-        </span>
-      </div>
+      {/* Notifications ship in a later phase: no fake badge — an honest,
+          empty popover (§7.2 bell + popover channel). */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="secondary" size="icon" aria-label="Notifications">
+            <Icon name="bell" className="size-4 text-text-secondary" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-[320px]">
+          <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+          <div className="flex flex-col items-center px-4 pb-4 pt-3 text-center">
+            <span className="flex size-10 items-center justify-center rounded-md bg-surface-hover">
+              <Icon name="bell" className="size-5 text-text-subtle" />
+            </span>
+            <p className="mt-2 font-display text-title-sm text-text-primary">
+              Nothing here yet
+            </p>
+            <p className="mt-1 text-body-sm text-text-subtle">
+              Alerts on failing checks and expiring evidence arrive with the
+              notifications module in a later phase.
+            </p>
+          </div>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       <div className="mx-1 h-6 w-px bg-border" />
 
@@ -127,21 +201,20 @@ export function Topbar() {
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            className="flex items-center gap-2 rounded-md p-0.5 hover:bg-surface-hover"
+            className="flex items-center gap-2 rounded-md p-0.5 transition-colors duration-80 ease-state hover:bg-surface-hover"
             aria-label="User menu"
           >
             <Avatar
               name={principal?.user.full_name ?? "User"}
               seed={principal?.user.email}
             />
-            <Icon name="chev" className="size-[15px] text-text-subtle" />
+            <Icon name="chev" className="size-4 text-text-subtle" />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuLabel>
             {principal?.user.full_name ?? "Account"}
           </DropdownMenuLabel>
-          <DropdownMenuItem disabled>Profile</DropdownMenuItem>
           <DropdownMenuItem onSelect={() => navigate("/settings/security")}>
             Security
           </DropdownMenuItem>

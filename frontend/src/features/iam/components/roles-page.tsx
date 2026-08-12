@@ -12,10 +12,11 @@ import {
   DialogTitle,
   DialogTrigger,
   EmptyState,
+  ErrorBanner,
   ErrorState,
   Icon,
-  Skeleton,
   Table,
+  TableSkeleton,
   TBody,
   TD,
   TH,
@@ -26,6 +27,7 @@ import {
 import { iamApi } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/auth-context";
+import { useAlertFocus } from "@/features/iam/hooks/use-alert-focus";
 import type { PermissionKey } from "@/lib/api/types";
 
 const PERMISSIONS: { key: PermissionKey; label: string }[] = [
@@ -47,6 +49,7 @@ export function RolesPage() {
   const [name, setName] = useState("");
   const [keys, setKeys] = useState<PermissionKey[]>(["tenant:read"]);
   const [error, setError] = useState<string | null>(null);
+  const alertRef = useAlertFocus(error !== null);
 
   const query = useQuery({
     queryKey: ["roles", principal?.tenant_id],
@@ -67,14 +70,18 @@ export function RolesPage() {
       setError(null);
     },
     onError: (err: unknown) => {
-      setError(err instanceof ApiError ? err.message : "Could not create role.");
+      setError(
+        err instanceof ApiError
+          ? err.message
+          : "The role didn't reach the server — check your connection and try again.",
+      );
     },
   });
 
   const canManage = principal?.permissions.includes("roles:manage");
 
   if (query.isLoading) {
-    return <Skeleton className="h-64 w-full" />;
+    return <TableSkeleton rows={4} density="standard" />;
   }
 
   if (query.isError) {
@@ -82,7 +89,14 @@ export function RolesPage() {
       <ErrorState
         title="Couldn’t load roles"
         description={
-          query.error instanceof ApiError ? query.error.message : "Try again."
+          query.error instanceof ApiError
+            ? query.error.message
+            : "The request failed. Retry, or contact support if it keeps happening."
+        }
+        referenceId={
+          query.error instanceof ApiError
+            ? query.error.correlationId
+            : undefined
         }
         onRetry={() => void query.refetch()}
       />
@@ -92,22 +106,23 @@ export function RolesPage() {
   const roles = query.data ?? [];
 
   return (
-    <div className="mx-auto max-w-[1200px]">
-      <div className="mb-5 flex items-start justify-between gap-3">
+    <div>
+      <div className="mb-4 flex items-start justify-between gap-3">
         <div>
-          <h1 className="font-display text-heading-xl text-text-primary">
+          <h2 className="font-display text-heading-sm text-text-primary">
             Roles &amp; permissions
-          </h1>
-          <p className="mt-2 text-body-lg text-text-secondary">
-            Permission diff — what a role adds and removes versus today.
+          </h2>
+          <p className="mt-1 text-body-md text-text-secondary">
+            Built-in roles are fixed by the platform; custom roles pick from
+            the same permission keys.
           </p>
         </div>
         {canManage ? (
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button>
+              <Button className="shrink-0">
                 <Icon name="plus" className="size-4" />
-                Custom role
+                New custom role
               </Button>
             </DialogTrigger>
             <DialogContent className="max-h-[90vh] overflow-y-auto">
@@ -118,68 +133,88 @@ export function RolesPage() {
                   platform.
                 </DialogDescription>
               </DialogHeader>
-              <TextField
-                label="Role name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-              <fieldset className="mt-3 space-y-2">
-                <legend className="mb-2 text-label-sm text-text-secondary">
-                  Permissions
-                </legend>
-                {PERMISSIONS.map((perm) => {
-                  const checked = keys.includes(perm.key);
-                  return (
-                    <label
-                      key={perm.key}
-                      className="flex items-center gap-2 text-body-md text-text-primary"
-                    >
-                      <Checkbox
-                        checked={checked}
-                        onCheckedChange={(value) => {
-                          setKeys((prev) =>
-                            value
-                              ? [...prev, perm.key]
-                              : prev.filter((k) => k !== perm.key),
-                          );
-                        }}
-                      />
-                      {perm.label}
-                    </label>
-                  );
-                })}
-              </fieldset>
-              {error ? (
-                <p className="mt-2 text-body-sm text-status-danger-text" role="alert">
-                  {error}
-                </p>
-              ) : null}
-              <DialogFooter>
-                <Button variant="secondary" onClick={() => setOpen(false)}>
-                  Cancel
-                </Button>
-                <Button
-                  loading={createMutation.isPending}
-                  disabled={!name.trim()}
-                  onClick={() => void createMutation.mutate()}
-                >
-                  Create role
-                </Button>
-              </DialogFooter>
+              <form
+                className="flex flex-col gap-3"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (name.trim()) createMutation.mutate();
+                }}
+                noValidate
+              >
+                {error ? (
+                  <ErrorBanner ref={alertRef} title="Couldn't create the role">
+                    {error}
+                  </ErrorBanner>
+                ) : null}
+                <TextField
+                  label="Role name"
+                  placeholder="Compliance analyst"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+                <fieldset>
+                  <legend className="mb-2 font-sans text-label-sm text-text-secondary">
+                    Permissions
+                  </legend>
+                  <div className="space-y-2">
+                    {PERMISSIONS.map((perm) => {
+                      const checked = keys.includes(perm.key);
+                      return (
+                        <label
+                          key={perm.key}
+                          className="flex items-center gap-2 text-body-md text-text-primary"
+                        >
+                          <Checkbox
+                            checked={checked}
+                            onCheckedChange={(value) => {
+                              setKeys((prev) =>
+                                value
+                                  ? [...prev, perm.key]
+                                  : prev.filter((k) => k !== perm.key),
+                              );
+                            }}
+                          />
+                          {perm.label}
+                        </label>
+                      );
+                    })}
+                  </div>
+                </fieldset>
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => setOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    loading={createMutation.isPending}
+                    disabled={!name.trim()}
+                  >
+                    Create role
+                  </Button>
+                </DialogFooter>
+              </form>
             </DialogContent>
           </Dialog>
         ) : null}
       </div>
 
       {roles.length === 0 ? (
-        <EmptyState title="No roles" description="Unexpected empty role list." />
+        <EmptyState
+          icon="shield"
+          title="No roles to show"
+          description="Built-in roles should always exist — retry, or contact support if this persists."
+        />
       ) : (
-        <Table>
+        <Table density="standard">
           <THead>
             <TR>
               <TH>Role</TH>
-              <TH>Permissions</TH>
-              <TH>Assignments</TH>
+              <TH numeric>Permissions</TH>
+              <TH numeric>Assignments</TH>
             </TR>
           </THead>
           <TBody>
@@ -195,12 +230,8 @@ export function RolesPage() {
                     )}
                   </div>
                 </TD>
-                <TD>
-                  <span className="text-text-secondary">
-                    {role.permission_keys.length} keys
-                  </span>
-                </TD>
-                <TD>{role.assignment_count}</TD>
+                <TD numeric>{role.permission_keys.length}</TD>
+                <TD numeric>{role.assignment_count}</TD>
               </TR>
             ))}
           </TBody>

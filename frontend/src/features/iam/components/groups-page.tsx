@@ -10,10 +10,11 @@ import {
   DialogTitle,
   DialogTrigger,
   EmptyState,
+  ErrorBanner,
   ErrorState,
   Icon,
-  Skeleton,
   Table,
+  TableSkeleton,
   TBody,
   TD,
   TH,
@@ -24,6 +25,7 @@ import {
 import { iamApi } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/auth-context";
+import { useAlertFocus } from "@/features/iam/hooks/use-alert-focus";
 
 export function GroupsPage() {
   const { principal } = useAuth();
@@ -31,6 +33,7 @@ export function GroupsPage() {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const alertRef = useAlertFocus(error !== null);
 
   const query = useQuery({
     queryKey: ["groups", principal?.tenant_id],
@@ -49,14 +52,18 @@ export function GroupsPage() {
       setError(null);
     },
     onError: (err: unknown) => {
-      setError(err instanceof ApiError ? err.message : "Could not create group.");
+      setError(
+        err instanceof ApiError
+          ? err.message
+          : "The group didn't reach the server — check your connection and try again.",
+      );
     },
   });
 
   const canManage = principal?.permissions.includes("groups:manage");
 
   if (query.isLoading) {
-    return <Skeleton className="h-64 w-full" />;
+    return <TableSkeleton rows={4} density="standard" />;
   }
 
   if (query.isError) {
@@ -64,7 +71,14 @@ export function GroupsPage() {
       <ErrorState
         title="Couldn’t load groups"
         description={
-          query.error instanceof ApiError ? query.error.message : "Try again."
+          query.error instanceof ApiError
+            ? query.error.message
+            : "The request failed. Retry, or contact support if it keeps happening."
+        }
+        referenceId={
+          query.error instanceof ApiError
+            ? query.error.correlationId
+            : undefined
         }
         onRetry={() => void query.refetch()}
       />
@@ -74,18 +88,20 @@ export function GroupsPage() {
   const groups = query.data ?? [];
 
   return (
-    <div className="mx-auto max-w-[1200px]">
-      <div className="mb-5 flex items-start justify-between gap-3">
+    <div>
+      <div className="mb-4 flex items-start justify-between gap-3">
         <div>
-          <h1 className="font-display text-heading-xl text-text-primary">Groups</h1>
-          <p className="mt-2 text-body-lg text-text-secondary">
+          <h2 className="font-display text-heading-sm text-text-primary">
+            Groups
+          </h2>
+          <p className="mt-1 text-body-md text-text-secondary">
             The join between IdP group, Verity role, and access-review scope.
           </p>
         </div>
         {canManage ? (
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button>
+              <Button className="shrink-0">
                 <Icon name="plus" className="size-4" />
                 New group
               </Button>
@@ -94,31 +110,45 @@ export function GroupsPage() {
               <DialogHeader>
                 <DialogTitle>Create group</DialogTitle>
                 <DialogDescription>
-                  Name a group, then add memberships from Team.
+                  Name a group, then add memberships from People.
                 </DialogDescription>
               </DialogHeader>
-              <TextField
-                label="Group name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-              {error ? (
-                <p className="mt-2 text-body-sm text-status-danger-text" role="alert">
-                  {error}
-                </p>
-              ) : null}
-              <DialogFooter>
-                <Button variant="secondary" onClick={() => setOpen(false)}>
-                  Cancel
-                </Button>
-                <Button
-                  loading={createMutation.isPending}
-                  disabled={!name.trim()}
-                  onClick={() => void createMutation.mutate()}
-                >
-                  Create
-                </Button>
-              </DialogFooter>
+              <form
+                className="flex flex-col gap-3"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (name.trim()) createMutation.mutate();
+                }}
+                noValidate
+              >
+                {error ? (
+                  <ErrorBanner ref={alertRef} title="Couldn't create the group">
+                    {error}
+                  </ErrorBanner>
+                ) : null}
+                <TextField
+                  label="Group name"
+                  placeholder="Engineering"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => setOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    loading={createMutation.isPending}
+                    disabled={!name.trim()}
+                  >
+                    Create group
+                  </Button>
+                </DialogFooter>
+              </form>
             </DialogContent>
           </Dialog>
         ) : null}
@@ -126,22 +156,23 @@ export function GroupsPage() {
 
       {groups.length === 0 ? (
         <EmptyState
+          icon="users"
           title="No groups yet"
-          description="Create a group to assign people together."
+          description="Create a group to assign people together — reviews and role changes then move group-by-group."
         />
       ) : (
-        <Table>
+        <Table density="standard">
           <THead>
             <TR>
               <TH>Name</TH>
-              <TH>Members</TH>
+              <TH numeric>Members</TH>
             </TR>
           </THead>
           <TBody>
             {groups.map((group) => (
               <TR key={group.id}>
                 <TD className="font-semibold">{group.name}</TD>
-                <TD>{group.member_count}</TD>
+                <TD numeric>{group.member_count}</TD>
               </TR>
             ))}
           </TBody>

@@ -10,8 +10,14 @@ const TABS = [
 export function SettingsLayout() {
   return (
     <div className="mx-auto max-w-[1200px]">
+      <h1 className="font-display text-heading-lg text-text-primary">
+        Settings
+      </h1>
+      <p className="mt-2 text-body-lg text-text-secondary">
+        Workspace access structure and the platform security policy.
+      </p>
       <nav
-        className="mb-5 flex gap-1 border-b border-border"
+        className="mb-5 mt-4 flex gap-1 border-b border-border"
         aria-label="Settings sections"
       >
         {TABS.map((tab) => (
@@ -20,8 +26,10 @@ export function SettingsLayout() {
             to={tab.to}
             className={({ isActive }) =>
               cn(
-                "relative -mb-px px-3 py-2.5 text-[13px] font-medium text-text-secondary hover:text-text-primary",
-                isActive && "text-action-accent",
+                "relative -mb-px px-3 py-2.5 text-label-md transition-colors duration-150 ease-state",
+                isActive
+                  ? "text-action-accent"
+                  : "text-text-secondary hover:text-text-primary",
               )
             }
           >
