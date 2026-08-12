@@ -86,14 +86,18 @@
     --color-identity-5: 99 89 107;
     --color-identity-6: 99 89 107;
 
-    /* Auth marketing panel — deliberate one-off brand surface (not tenant
-       themable, identical in both themes). */
-    --color-panel-1: 11 42 61;
-    --color-panel-2: 14 58 82;
-    --color-panel-3: 10 44 65;
-    --color-panel-glow: 56 182 240;
-    --color-panel-accent: 127 211 245;
-    --color-panel-edge: 19 23 32;
+    /* Auth marketing panel — deliberate one-off dark surface, identical in
+       both themes and never tenant-themed. Re-expressed with the DS
+       dark-mode palette (§2.2/§2.3/§2.4 dark columns) so the panel and the
+       dark theme share one vocabulary. */
+    --color-panel-1: 10 14 22; /* = dark surface-canvas #0A0E16 */
+    --color-panel-2: 21 29 43; /* = dark surface-primary #151D2B */
+    --color-panel-3: 15 22 34; /* = dark surface-page #0F1622 */
+    --color-panel-glow: 56 182 240; /* = dark action-accent #38B6F0 */
+    --color-panel-accent: 95 197 244; /* = dark action-primary-hover #5FC5F4 */
+    --color-panel-edge: 10 14 22; /* = dark surface-canvas */
+    --color-panel-border: 40 52 75; /* = dark border-default #28344B */
+    --color-panel-muted: 154 167 189; /* = dark text-secondary #9AA7BD */
 
     /* Radius — closed scale (F4) */
     --radius-2xs: 4px;

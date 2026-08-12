@@ -100,6 +100,8 @@ export default {
           glow: "rgb(var(--color-panel-glow) / <alpha-value>)",
           accent: "rgb(var(--color-panel-accent) / <alpha-value>)",
           edge: "rgb(var(--color-panel-edge) / <alpha-value>)",
+          border: "rgb(var(--color-panel-border) / <alpha-value>)",
+          muted: "rgb(var(--color-panel-muted) / <alpha-value>)",
         },
       },
       fontFamily: {

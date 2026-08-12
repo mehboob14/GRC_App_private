@@ -8,12 +8,14 @@ import { AuthSplitLayout } from "@/features/iam/components/auth-split-layout";
 import {
   Button,
   Checkbox,
+  ErrorBanner,
   Icon,
   PasswordField,
   TextField,
 } from "@/components/ui";
 import { authApi } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/client";
+import { useAlertFocus } from "@/features/iam/hooks/use-alert-focus";
 import type { AcceptInvitationRequest } from "@/lib/api/types";
 
 const newUserSchema = z.object({
@@ -54,13 +56,15 @@ export function AcceptInvitePage() {
     },
   });
 
+  const alertRef = useAlertFocus(acceptMutation.isError);
+
   if (!token) {
     return (
       <AuthSplitLayout
         title="Join your workspace"
         subtitle="This invite link is missing its token. Open the full link you were given, or ask a workspace admin to send a new one."
       >
-        <Link className="text-text-link" to="/sign-in">
+        <Link className="font-semibold text-text-link" to="/sign-in">
           Back to sign in
         </Link>
       </AuthSplitLayout>
@@ -77,7 +81,7 @@ export function AcceptInvitePage() {
       subtitle="Accept your invitation to finish setting up access. You'll sign in right after."
     >
       <form
-        className="flex flex-col gap-2"
+        className="flex flex-col gap-3"
         onSubmit={(e) => {
           if (existingAccount) {
             e.preventDefault();
@@ -88,7 +92,15 @@ export function AcceptInvitePage() {
         }}
         noValidate
       >
-        <label className="mb-1 flex items-center gap-2 text-body-md text-text-primary">
+        {acceptMutation.isError ? (
+          <ErrorBanner ref={alertRef} title="Couldn't accept the invitation">
+            {messageFrom(
+              acceptMutation.error,
+              "The invite may be expired or already used — ask a workspace admin to send a new one.",
+            )}
+          </ErrorBanner>
+        ) : null}
+        <label className="flex items-center gap-2 text-body-md text-text-primary">
           <Checkbox
             checked={existingAccount}
             onCheckedChange={setExistingAccount}
@@ -97,7 +109,7 @@ export function AcceptInvitePage() {
         </label>
 
         {existingAccount ? (
-          <p className="mb-1 text-body-sm text-text-secondary">
+          <p className="text-body-sm text-text-secondary">
             We'll attach this workspace to your existing account. Sign in with
             your usual email and password afterwards.
           </p>
@@ -105,6 +117,7 @@ export function AcceptInvitePage() {
           <>
             <TextField
               label="Full name"
+              size="lg"
               autoComplete="name"
               placeholder="Your name as teammates will see it"
               error={form.formState.errors.full_name?.message}
@@ -112,6 +125,7 @@ export function AcceptInvitePage() {
             />
             <PasswordField
               label="Password"
+              size="lg"
               autoComplete="new-password"
               placeholder="At least 10 characters"
               error={form.formState.errors.password?.message}
@@ -120,18 +134,9 @@ export function AcceptInvitePage() {
           </>
         )}
 
-        {acceptMutation.isError ? (
-          <p className="mt-1 text-body-sm text-status-danger-text" role="alert">
-            {messageFrom(
-              acceptMutation.error,
-              "Could not accept the invitation. Open the full link you were given, or ask a workspace admin to send a new one.",
-            )}
-          </p>
-        ) : null}
-
         <Button
           type="submit"
-          className="mt-3 w-full"
+          className="mt-1 w-full"
           size="lg"
           loading={acceptMutation.isPending}
         >
