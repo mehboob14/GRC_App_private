@@ -28,6 +28,7 @@ export default {
           DEFAULT: "rgb(var(--color-pass) / <alpha-value>)",
           fg: "rgb(var(--color-pass-fg) / <alpha-value>)",
           bg: "rgb(var(--color-pass-bg) / <alpha-value>)",
+          border: "rgb(var(--color-pass-border) / <alpha-value>)",
         },
         fail: {
           DEFAULT: "rgb(var(--color-fail) / <alpha-value>)",
