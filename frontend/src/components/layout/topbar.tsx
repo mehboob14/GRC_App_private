@@ -56,10 +56,10 @@ export function Topbar() {
               {mark}
             </span>
             <span className="flex flex-col items-start">
-              <span className="text-[12.5px] font-bold leading-[14.4px] text-text">
+              <span className="text-label-md font-bold text-text">
                 {activeName}
               </span>
-              <span className="text-[10px] leading-[11.5px] text-text-faint">
+              <span className="text-caption text-text-faint">
                 {principal?.role_names[0] ?? "Member"}
               </span>
             </span>
@@ -78,7 +78,7 @@ export function Topbar() {
                   if (!active) switchMutation.mutate(ws.membership_id);
                 }}
               >
-                <span className="flex size-7 items-center justify-center rounded-md bg-accent text-[11px] font-extrabold text-accent-fg">
+                <span className="flex size-7 items-center justify-center rounded-md bg-accent text-caption font-extrabold text-accent-fg">
                   {ws.tenant_name.slice(0, 1)}
                 </span>
                 <span className="flex flex-col">
