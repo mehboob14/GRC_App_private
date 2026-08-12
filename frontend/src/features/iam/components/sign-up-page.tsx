@@ -1,5 +1,5 @@
-import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -21,8 +21,6 @@ type FormValues = z.infer<typeof schema>;
 export function SignUpPage() {
   const navigate = useNavigate();
   const { applyLogin } = useAuth();
-  const [serverError, setServerError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -35,11 +33,9 @@ export function SignUpPage() {
     mode: "onBlur",
   });
 
-  async function onSubmit(values: FormValues) {
-    setServerError(null);
-    setBusy(true);
-    try {
-      const response = await authApi.signup(values);
+  const signupMutation = useMutation({
+    mutationFn: (values: FormValues) => authApi.signup(values),
+    onSuccess: (response) => {
       if (response.status === "mfa_enrollment_required") {
         navigate(`/mfa/enroll?challenge=${response.challenge_token}`, {
           replace: true,
@@ -50,16 +46,8 @@ export function SignUpPage() {
         applyLogin(response);
         navigate("/quick-start", { replace: true });
       }
-    } catch (error) {
-      setServerError(
-        error instanceof ApiError
-          ? error.message
-          : "Could not start your trial.",
-      );
-    } finally {
-      setBusy(false);
-    }
-  }
+    },
+  });
 
   return (
     <AuthSplitLayout
@@ -68,18 +56,20 @@ export function SignUpPage() {
     >
       <form
         className="flex flex-col gap-1"
-        onSubmit={(e) => void form.handleSubmit(onSubmit)(e)}
+        onSubmit={(e) =>
+          void form.handleSubmit((values) => signupMutation.mutate(values))(e)
+        }
         noValidate
       >
         <TextField
           label="Company name"
-          placeholder="Northwind Cloud"
+          placeholder="Acme Inc."
           error={form.formState.errors.company_name?.message}
           {...form.register("company_name")}
         />
         <TextField
           label="Your full name"
-          placeholder="Alex Okafor"
+          placeholder="Jordan Lee"
           error={form.formState.errors.full_name?.message}
           {...form.register("full_name")}
         />
@@ -87,7 +77,7 @@ export function SignUpPage() {
           label="Work email"
           type="email"
           autoComplete="username"
-          placeholder="you@company.com"
+          placeholder="name@company.com"
           error={form.formState.errors.email?.message}
           {...form.register("email")}
         />
@@ -98,12 +88,19 @@ export function SignUpPage() {
           error={form.formState.errors.password?.message}
           {...form.register("password")}
         />
-        {serverError ? (
+        {signupMutation.isError ? (
           <p className="mt-2 text-body-sm text-fail-fg" role="alert">
-            {serverError}
+            {signupMutation.error instanceof ApiError
+              ? signupMutation.error.message
+              : "Could not start your trial."}
           </p>
         ) : null}
-        <Button type="submit" className="mt-3 w-full" size="lg" loading={busy}>
+        <Button
+          type="submit"
+          className="mt-3 w-full"
+          size="lg"
+          loading={signupMutation.isPending}
+        >
           Create workspace
           <Icon name="arrowr" className="size-4" />
         </Button>

@@ -1,3 +1,4 @@
+import { PERMISSION_KEYS } from "@/lib/api/types";
 import type {
   AuditEvent,
   BuiltInRoleName,
@@ -10,17 +11,7 @@ import type {
   WorkspaceSummary,
 } from "@/lib/api/types";
 
-const ALL_PERMS: PermissionKey[] = [
-  "tenant:read",
-  "members:read",
-  "members:invite",
-  "members:disable",
-  "groups:read",
-  "groups:manage",
-  "roles:read",
-  "roles:manage",
-  "audit:read",
-];
+const ALL_PERMS: PermissionKey[] = [...PERMISSION_KEYS];
 
 export const DEMO_PASSWORD = "Password123!";
 export const DEMO_MFA_CODE = "123456";
@@ -131,7 +122,7 @@ export const groups: Group[] = [
   },
 ];
 
-export let members: Member[] = [
+export const members: Member[] = [
   {
     membership_id: "mem-alex-nw",
     user_id: "user-alex",

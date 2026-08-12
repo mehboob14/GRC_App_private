@@ -11,16 +11,23 @@ export type BuiltInRoleName =
   | "Employee"
   | "Auditor";
 
-export type PermissionKey =
-  | "tenant:read"
-  | "members:read"
-  | "members:invite"
-  | "members:disable"
-  | "groups:read"
-  | "groups:manage"
-  | "roles:read"
-  | "roles:manage"
-  | "audit:read";
+export const PERMISSION_KEYS = [
+  "tenant:read",
+  "members:read",
+  "members:invite",
+  "members:disable",
+  "groups:read",
+  "groups:manage",
+  "roles:read",
+  "roles:manage",
+  "audit:read",
+] as const;
+
+export type PermissionKey = (typeof PERMISSION_KEYS)[number];
+
+export function isPermissionKey(key: string): key is PermissionKey {
+  return (PERMISSION_KEYS as readonly string[]).includes(key);
+}
 
 export type MembershipStatus = "invited" | "active" | "disabled";
 

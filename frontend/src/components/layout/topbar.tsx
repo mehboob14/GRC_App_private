@@ -52,7 +52,7 @@ export function Topbar() {
             aria-label="Switch workspace"
             disabled={switching}
           >
-            <span className="flex size-[26px] items-center justify-center rounded-md bg-gradient-to-br from-sky-500 to-sky-700 font-display text-[12px] font-extrabold text-white">
+            <span className="flex size-[26px] items-center justify-center rounded-md bg-accent font-display text-body-sm font-extrabold text-accent-fg">
               {mark}
             </span>
             <span className="flex flex-col items-start">
@@ -116,7 +116,7 @@ export function Topbar() {
         <Button variant="secondary" size="icon" aria-label="Notifications">
           <Icon name="bell" className="size-[17px] text-text-muted" />
         </Button>
-        <span className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full border-2 border-bg-elevated bg-[#e11d48] text-[9.5px] font-bold text-white">
+        <span className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full border-2 border-bg-elevated bg-fail text-overline text-text-inverse">
           3
         </span>
       </div>

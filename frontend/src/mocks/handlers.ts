@@ -16,6 +16,7 @@ import {
   users,
   workspacesForUser,
 } from "@/mocks/fixtures";
+import { isPermissionKey } from "@/lib/api/types";
 import type {
   AcceptInvitationResponse,
   InviteMemberResponse,
@@ -71,14 +72,15 @@ export const handlers = [
     }
 
     const workspaces = workspacesForUser(user.id);
-    if (workspaces.length === 0) {
+    const firstWorkspace = workspaces[0];
+    if (!firstWorkspace) {
       return err(401, "no_membership", "No active workspace membership.");
     }
 
     if (workspaces.length > 1) {
       const selection_token = crypto.randomUUID();
       challenges.set(selection_token, {
-        membershipId: workspaces[0]!.membership_id,
+        membershipId: firstWorkspace.membership_id,
         kind: "select",
         userId: user.id,
       });
@@ -89,11 +91,11 @@ export const handlers = [
       } satisfies LoginResponse);
     }
 
-    const membershipId = workspaces[0]!.membership_id;
-    const member = members.find((m) => m.membership_id === membershipId)!;
+    const membershipId = firstWorkspace.membership_id;
+    const member = members.find((m) => m.membership_id === membershipId);
     // MFA is required for Admin-role memberships, always — platform policy,
     // not a tenant toggle (week1-review-decisions.md #19/#20).
-    const isAdmin = member.role_names.includes("Admin");
+    const isAdmin = member?.role_names.includes("Admin") ?? false;
 
     if (isAdmin) {
       if (!user.mfa_enabled) {
@@ -122,7 +124,10 @@ export const handlers = [
       } satisfies LoginResponse);
     }
 
-    const result = successFromMembership(membershipId)!;
+    const result = successFromMembership(membershipId);
+    if (!result) {
+      return err(401, "no_membership", "No active workspace membership.");
+    }
     pushAudit({
       actor_type: "membership",
       actor_id: membershipId,
@@ -144,7 +149,8 @@ export const handlers = [
       selection_token?: string;
       membership_id?: string;
     };
-    const challenge = challenges.get(body.selection_token ?? "");
+    const selectionToken = body.selection_token ?? "";
+    const challenge = challenges.get(selectionToken);
     if (!challenge || challenge.kind !== "select") {
       return err(401, "invalid_challenge", "Workspace selection expired.");
     }
@@ -154,8 +160,11 @@ export const handlers = [
     );
     if (!allowed) return err(404, "membership_not_found", "Membership not found.");
 
-    const member = members.find((m) => m.membership_id === membershipId)!;
-    const user = users[challenge.userId]!;
+    const member = members.find((m) => m.membership_id === membershipId);
+    const user = users[challenge.userId];
+    if (!member || !user) {
+      return err(404, "membership_not_found", "Membership not found.");
+    }
     if (member.role_names.includes("Admin")) {
       const challenge_token = crypto.randomUUID();
       challenges.set(challenge_token, {
@@ -163,7 +172,7 @@ export const handlers = [
         kind: user.mfa_enabled ? "mfa" : "enroll",
         userId: user.id,
       });
-      challenges.delete(body.selection_token!);
+      challenges.delete(selectionToken);
       return HttpResponse.json(
         user.mfa_enabled
           ? {
@@ -179,8 +188,12 @@ export const handlers = [
       );
     }
 
-    challenges.delete(body.selection_token!);
-    return HttpResponse.json(successFromMembership(membershipId));
+    challenges.delete(selectionToken);
+    const result = successFromMembership(membershipId);
+    if (!result) {
+      return err(404, "membership_not_found", "Membership not found.");
+    }
+    return HttpResponse.json(result);
   }),
 
   http.post("/api/v1/auth/mfa/verify", async ({ request }) => {
@@ -189,15 +202,19 @@ export const handlers = [
       challenge_token?: string;
       code?: string;
     };
-    const challenge = challenges.get(body.challenge_token ?? "");
+    const challengeToken = body.challenge_token ?? "";
+    const challenge = challenges.get(challengeToken);
     if (!challenge || challenge.kind !== "mfa") {
       return err(401, "invalid_challenge", "MFA challenge expired.");
     }
     if (body.code !== DEMO_MFA_CODE) {
       return err(401, "invalid_mfa_code", "That code is incorrect or expired.");
     }
-    challenges.delete(body.challenge_token!);
-    const result = successFromMembership(challenge.membershipId)!;
+    challenges.delete(challengeToken);
+    const result = successFromMembership(challenge.membershipId);
+    if (!result) {
+      return err(404, "membership_not_found", "Membership not found.");
+    }
     pushAudit({
       actor_type: "membership",
       actor_id: challenge.membershipId,
@@ -235,7 +252,8 @@ export const handlers = [
       challenge_token?: string;
       code?: string;
     };
-    const challenge = challenges.get(body.challenge_token ?? "");
+    const challengeToken = body.challenge_token ?? "";
+    const challenge = challenges.get(challengeToken);
     if (!challenge || challenge.kind !== "enroll") {
       return err(401, "invalid_challenge", "Enrollment challenge expired.");
     }
@@ -246,8 +264,12 @@ export const handlers = [
     if (user) user.mfa_enabled = true;
     const member = members.find((m) => m.membership_id === challenge.membershipId);
     if (member) member.mfa_enabled = true;
-    challenges.delete(body.challenge_token!);
-    return HttpResponse.json(successFromMembership(challenge.membershipId));
+    challenges.delete(challengeToken);
+    const result = successFromMembership(challenge.membershipId);
+    if (!result) {
+      return err(404, "membership_not_found", "Membership not found.");
+    }
+    return HttpResponse.json(result);
   }),
 
   http.post("/api/v1/auth/signup", async ({ request }) => {
@@ -355,7 +377,10 @@ export const handlers = [
     );
     if (!allowed) return err(404, "membership_not_found", "Membership not found.");
 
-    const result = successFromMembership(target)!;
+    const result = successFromMembership(target);
+    if (!result) {
+      return err(404, "membership_not_found", "Membership not found.");
+    }
     pushAudit({
       actor_type: "membership",
       actor_id: target,
@@ -720,7 +745,7 @@ export const handlers = [
       id: `role-${crypto.randomUUID().slice(0, 6)}`,
       name: body.name.trim(),
       built_in: false,
-      permission_keys: (body.permission_keys ?? []) as never[],
+      permission_keys: (body.permission_keys ?? []).filter(isPermissionKey),
       assignment_count: 0,
     };
     roles.push(role);

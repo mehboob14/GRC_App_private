@@ -8,14 +8,16 @@ export function identityTone(seed: string): IdentityTone {
   for (let i = 0; i < seed.length; i += 1) {
     hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
   }
-  return IDENTITY_KEYS[hash % IDENTITY_KEYS.length]!;
+  return IDENTITY_KEYS[hash % IDENTITY_KEYS.length] ?? 1;
 }
 
 export function initials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "?";
-  if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase();
-  return `${parts[0]![0] ?? ""}${parts[1]![0] ?? ""}`.toUpperCase();
+  const first = parts[0];
+  if (!first) return "?";
+  if (parts.length === 1) return first.slice(0, 2).toUpperCase();
+  const second = parts[1] ?? "";
+  return `${first.charAt(0)}${second.charAt(0)}`.toUpperCase();
 }
 
 /** Convert #RRGGBB to "R G B" for CSS custom properties. */
