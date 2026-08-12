@@ -12,6 +12,10 @@ type CheckboxProps = {
   className?: string;
 };
 
+/**
+ * DS §5.5 — 16×16, radius 4, resting border 1.5 border-strong; checked fill
+ * action-accent with white check; indeterminate shows a white 8×2 bar.
+ */
 export function Checkbox({
   checked,
   defaultChecked,
@@ -30,15 +34,23 @@ export function Checkbox({
       disabled={disabled}
       aria-label={ariaLabel}
       className={cn(
-        "flex size-4 shrink-0 items-center justify-center rounded border border-border bg-surface-primary",
-        "data-[state=checked]:border-action-accent data-[state=checked]:bg-action-primary data-[state=checked]:text-action-primary-fg",
+        "flex size-4 shrink-0 items-center justify-center rounded-2xs border-1.5 border-border-strong bg-surface-primary",
+        "transition-colors duration-150 ease-state",
+        "data-[state=checked]:border-action-accent data-[state=checked]:bg-action-accent",
+        "data-[state=indeterminate]:border-action-accent data-[state=indeterminate]:bg-action-accent",
         "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-accent",
-        "disabled:cursor-not-allowed disabled:opacity-50",
+        "disabled:cursor-not-allowed disabled:opacity-45",
         className,
       )}
     >
-      <CheckboxPrimitive.Indicator>
-        <Icon name="check" className="size-3" strokeWidth={2.5} />
+      {/* action-primary-fg keeps the glyph legible when the accent fill
+          lightens in dark mode. */}
+      <CheckboxPrimitive.Indicator className="text-action-primary-fg">
+        {checked === "indeterminate" ? (
+          <span className="block h-0.5 w-2 rounded-full bg-action-primary-fg" />
+        ) : (
+          <Icon name="check" className="size-[11px]" strokeWidth={3} />
+        )}
       </CheckboxPrimitive.Indicator>
     </CheckboxPrimitive.Root>
   );

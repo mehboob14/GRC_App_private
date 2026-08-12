@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AppRoutes } from "@/app/routes";
-import { TooltipProvider } from "@/components/ui";
+import { ToastProvider, TooltipProvider } from "@/components/ui";
 import { ThemeProvider } from "@/lib/theme";
 import { AuthProvider } from "@/lib/auth/auth-context";
 import { mocksEnabled } from "@/lib/api/client";
@@ -46,13 +46,15 @@ void enableMocks().then(() => {
     <StrictMode>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
-          <TooltipProvider>
-            <BrowserRouter>
-              <AuthProvider>
-                <AppRoutes />
-              </AuthProvider>
-            </BrowserRouter>
-          </TooltipProvider>
+          <ToastProvider>
+            <TooltipProvider>
+              <BrowserRouter>
+                <AuthProvider>
+                  <AppRoutes />
+                </AuthProvider>
+              </BrowserRouter>
+            </TooltipProvider>
+          </ToastProvider>
         </ThemeProvider>
       </QueryClientProvider>
     </StrictMode>,

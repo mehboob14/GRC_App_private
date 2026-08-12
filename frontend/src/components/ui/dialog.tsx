@@ -4,23 +4,47 @@ import { cn } from "@/lib/cn";
 import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 
+/**
+ * DS §7.1 modal — focused create/edit and confirmations ("commit").
+ * Fixed widths 480/600/720; beyond 720 or 70vh the content wants a page.
+ */
 export const Dialog = DialogPrimitive.Root;
 export const DialogTrigger = DialogPrimitive.Trigger;
 export const DialogClose = DialogPrimitive.Close;
 
+const widths = {
+  sm: "w-[min(480px,calc(100vw-2rem))]",
+  md: "w-[min(600px,calc(100vw-2rem))]",
+  lg: "w-[min(720px,calc(100vw-2rem))]",
+} as const;
+
+type DialogContentProps = ComponentPropsWithoutRef<
+  typeof DialogPrimitive.Content
+> & {
+  size?: keyof typeof widths;
+};
+
 export function DialogContent({
   className,
   children,
+  size = "sm",
   ...props
-}: ComponentPropsWithoutRef<typeof DialogPrimitive.Content>) {
+}: DialogContentProps) {
   return (
     <DialogPrimitive.Portal>
-      <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-surface-inverse/50" />
+      <DialogPrimitive.Overlay
+        className={cn(
+          "fixed inset-0 z-modal bg-black/50 backdrop-blur-sm",
+          "data-[state=open]:animate-overlay-in data-[state=closed]:animate-overlay-out",
+        )}
+      />
       <DialogPrimitive.Content
         className={cn(
-          "fixed left-1/2 top-1/2 z-50 w-[min(480px,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2",
-          "rounded-lg border border-border bg-surface-primary p-6 shadow-2",
+          "fixed left-1/2 top-1/2 z-modal -translate-x-1/2 -translate-y-1/2",
+          "max-h-[70vh] overflow-y-auto rounded-xl border border-border bg-surface-primary p-6 shadow-4",
           "focus:outline-none",
+          "data-[state=open]:animate-modal-in data-[state=closed]:animate-modal-out",
+          widths[size],
           className,
         )}
         {...props}
@@ -45,7 +69,9 @@ export function DialogHeader({
   className,
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("mb-4 flex flex-col gap-1 pr-8", className)} {...props} />;
+  return (
+    <div className={cn("mb-4 flex flex-col gap-1 pr-8", className)} {...props} />
+  );
 }
 
 export function DialogTitle({
@@ -80,6 +106,8 @@ export function DialogFooter({
   children: ReactNode;
 }) {
   return (
-    <div className={cn("mt-6 flex justify-end gap-2", className)}>{children}</div>
+    <div className={cn("mt-6 flex justify-end gap-2", className)}>
+      {children}
+    </div>
   );
 }

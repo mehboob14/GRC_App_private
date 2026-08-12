@@ -13,6 +13,7 @@ type SearchInputProps = {
   readOnly?: boolean;
 };
 
+/** DS §5.4 — leading icon, example-value placeholder, input focus ring. */
 export function SearchInput({
   value,
   defaultValue,
@@ -27,8 +28,9 @@ export function SearchInput({
   return (
     <label
       className={cn(
-        "flex h-9 w-full items-center gap-2.5 rounded-md border border-border bg-surface-sunken px-2.5",
-        "focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-action-accent",
+        "flex h-9 w-full items-center gap-2.5 rounded-sm border border-border bg-surface-sunken px-2.5",
+        "transition-colors duration-150 ease-state",
+        "focus-within:border-action-accent focus-within:shadow-input-focus",
         className,
       )}
     >
@@ -42,10 +44,10 @@ export function SearchInput({
         placeholder={placeholder}
         onFocus={onFocus}
         onChange={(event) => onChange?.(event.target.value)}
-        className="min-w-0 flex-1 bg-transparent font-sans text-body-md text-text-primary placeholder:text-text-subtle outline-none"
+        className="min-w-0 flex-1 bg-transparent font-sans text-body-md text-text-primary placeholder:text-text-faint focus:outline-none focus-visible:outline-none"
       />
       {shortcut ? (
-        <kbd className="rounded-xs border border-border bg-surface-primary px-1.5 py-0.5 font-sans text-[11px] font-semibold text-text-subtle">
+        <kbd className="rounded-xs border border-border bg-surface-primary px-1.5 py-0.5 font-sans text-caption font-semibold text-text-subtle">
           {shortcut}
         </kbd>
       ) : null}

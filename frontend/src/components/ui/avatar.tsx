@@ -19,9 +19,10 @@ type AvatarProps = {
   className?: string;
 };
 
+/** DS: owner-cell avatar 24 · skeleton/list avatar 32 · card avatar 36. */
 const sizeClass = {
   sm: "size-6 text-[10px]",
-  md: "size-[30px] text-[11.5px]",
+  md: "size-8 text-caption",
   lg: "size-9 text-label-sm",
 } as const;
 

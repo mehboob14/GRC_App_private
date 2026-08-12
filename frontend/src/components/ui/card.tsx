@@ -8,7 +8,8 @@ export function Card({
   return (
     <div
       className={cn(
-        "rounded-lg border border-border bg-surface-primary shadow-1",
+        // Static cards are border-only — shadows mean "floating" (§4.4).
+        "rounded-lg border border-border bg-surface-primary",
         className,
       )}
       {...props}

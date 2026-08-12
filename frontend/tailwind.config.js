@@ -171,6 +171,7 @@ export default {
       borderWidth: {
         1.5: "1.5px",
         3: "3px",
+        4.5: "4.5px", // selected radio ring (§5.5)
       },
       // DS §4.4 — plus input focus/error rings (§5.4) and toast shadow (§7.2)
       boxShadow: {

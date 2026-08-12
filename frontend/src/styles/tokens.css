@@ -225,9 +225,94 @@
     }
   }
 
+  /* Overlay motion (§7.6): 250ms in / 200ms out, entering easing;
+     reduced-motion collapses everything to ≤50ms fades. */
+  .animate-toast-in {
+    animation: ds-rise-in 200ms var(--ease-enter);
+  }
+
+  .animate-overlay-in {
+    animation: ds-fade-in 250ms var(--ease-enter);
+  }
+
+  .animate-overlay-out {
+    animation: ds-fade-out 200ms var(--ease-state);
+  }
+
+  .animate-modal-in {
+    animation: ds-modal-in 250ms var(--ease-enter);
+  }
+
+  .animate-modal-out {
+    animation: ds-fade-out 200ms var(--ease-state);
+  }
+
+  .animate-drawer-in {
+    animation: ds-drawer-in 250ms var(--ease-enter);
+  }
+
+  .animate-drawer-out {
+    animation: ds-drawer-out 200ms var(--ease-state);
+  }
+
+  @keyframes ds-fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes ds-fade-out {
+    to {
+      opacity: 0;
+    }
+  }
+
+  @keyframes ds-rise-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+  }
+
+  @keyframes ds-modal-in {
+    from {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.97);
+    }
+    to {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+  }
+
+  @keyframes ds-drawer-in {
+    from {
+      transform: translateX(100%);
+    }
+  }
+
+  @keyframes ds-drawer-out {
+    to {
+      transform: translateX(100%);
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .animate-shimmer {
       animation: none;
+    }
+
+    .animate-toast-in,
+    .animate-overlay-in,
+    .animate-modal-in,
+    .animate-drawer-in {
+      animation: ds-fade-in 50ms linear;
+    }
+
+    .animate-overlay-out,
+    .animate-modal-out,
+    .animate-drawer-out {
+      animation: ds-fade-out 50ms linear;
     }
   }
 }
