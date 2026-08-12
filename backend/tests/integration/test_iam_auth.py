@@ -586,6 +586,118 @@ async def test_a_provider_created_tenant_activates_when_its_admin_accepts(
 
 
 # ---------------------------------------------------------------------------
+# The role window at login — the guest-auditor expiry (spec: "The membership is
+# disabled or outside its window" → 401)
+# ---------------------------------------------------------------------------
+
+
+async def test_a_sole_out_of_window_membership_refuses_login(
+    client: httpx.AsyncClient,
+) -> None:
+    """A new user whose only role assignment has expired must not obtain a session
+    with empty roles: login is 401, indistinguishable from an unknown email."""
+    host = await signup_workspace(company="Bravo Assurance", email="founder@bravo.example")
+    today = datetime.now(UTC).date()
+    invited = await invite_directly(
+        host,
+        email="expired@guest.example",
+        full_name="Expired Guest",
+        role_name="Auditor",
+        valid_from=today - timedelta(days=30),
+        valid_until=today - timedelta(days=1),
+    )
+    accept = await client.post(
+        ACCEPT_URL,
+        json={
+            "token": invited.invite_token,
+            "full_name": "Expired Guest",
+            "password": INVITEE_PASSWORD,
+        },
+    )
+    assert accept.status_code == 200
+
+    login = await client.post(
+        LOGIN_URL, json={"email": "expired@guest.example", "password": INVITEE_PASSWORD}
+    )
+    assert login.status_code == 401, "an expired sole membership yields no session"
+    unknown = await client.post(
+        LOGIN_URL, json={"email": "ghost@nowhere.example", "password": INVITEE_PASSWORD}
+    )
+    assert login.json()["error"]["code"] == unknown.json()["error"]["code"]
+    # Decision 3: the refusal is recorded as no_active_membership, never a session.
+    assert "no_active_membership" in _attempt_outcomes(await _stream(None))
+
+
+async def test_an_in_window_sole_membership_still_logs_in(
+    client: httpx.AsyncClient,
+) -> None:
+    """The other side of the guard: an in-window guest still gets a session."""
+    host = await signup_workspace(company="Bravo Assurance", email="founder@bravo.example")
+    today = datetime.now(UTC).date()
+    invited = await invite_directly(
+        host,
+        email="current@guest.example",
+        full_name="Current Guest",
+        role_name="Auditor",
+        valid_from=today - timedelta(days=1),
+        valid_until=today + timedelta(days=30),
+    )
+    await client.post(
+        ACCEPT_URL,
+        json={
+            "token": invited.invite_token,
+            "full_name": "Current Guest",
+            "password": INVITEE_PASSWORD,
+        },
+    )
+    login = await client.post(
+        LOGIN_URL, json={"email": "current@guest.example", "password": INVITEE_PASSWORD}
+    )
+    assert login.status_code == 200
+    assert login.json()["status"] == "authenticated"
+    assert login.json()["principal"]["role_names"] == ["Auditor"]
+
+
+async def test_login_lists_only_in_window_workspaces(
+    client: httpx.AsyncClient,
+) -> None:
+    """A member in-window in A but expired-only in B is offered A alone: the
+    expired workspace is not part of the resolved memberships."""
+    a = await signup_workspace(company="Acme Compliance", email="founder-a@acme.example")
+    b = await signup_workspace(company="Bravo Assurance", email="founder-b@bravo.example")
+    today = datetime.now(UTC).date()
+
+    in_a = await invite_directly(
+        a, email="dual@guest.example", full_name="Dual Guest", role_name="Employee"
+    )
+    await client.post(
+        ACCEPT_URL,
+        json={
+            "token": in_a.invite_token,
+            "full_name": "Dual Guest",
+            "password": INVITEE_PASSWORD,
+        },
+    )
+    in_b = await invite_directly(
+        b,
+        email="dual@guest.example",
+        full_name="Dual Guest",
+        role_name="Auditor",
+        valid_from=today - timedelta(days=30),
+        valid_until=today - timedelta(days=1),
+    )
+    assert (await client.post(ACCEPT_URL, json={"token": in_b.invite_token})).status_code == 200
+
+    login = await client.post(
+        LOGIN_URL, json={"email": "dual@guest.example", "password": INVITEE_PASSWORD}
+    )
+    assert login.status_code == 200
+    body = login.json()
+    assert body["status"] == "authenticated", "only A is usable, so login binds A directly"
+    assert {w["tenant_name"] for w in body["workspaces"]} == {"Acme Compliance"}
+
+
+# ---------------------------------------------------------------------------
 # Token matrix at the routes, and the seam's unique key
 # ---------------------------------------------------------------------------
 

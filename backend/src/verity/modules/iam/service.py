@@ -814,6 +814,12 @@ class IamAuthService:
             raise AuthenticationRequired(detail=f"user {user_id} missing or disabled")
         if not await self._tenant_is_active(session, membership.tenant_id):
             raise NotFound(detail=f"tenant {membership.tenant_id} is not active")
+        if not await self._has_active_role(session, membership):
+            # The membership's only role assignment is out of window (the expired
+            # guest-auditor): not usable, and absent rather than forbidden.
+            raise NotFound(
+                detail=f"membership {membership_id} holds no in-window role for user {user_id}"
+            )
         credentials = await self._users.get_credentials(session, user.id)
         return await self._post_password_step(session, membership, user, credentials)
 
@@ -1042,8 +1048,14 @@ class IamAuthService:
     async def _active_memberships(
         self, session: AsyncSession, user: User
     ) -> list[TenantMembership]:
-        """The memberships a session could bind: active rows in active tenants
-        (decision 10 — a provisioning or suspended tenant refuses login)."""
+        """The memberships a session could bind: active rows, in active tenants,
+        that hold at least one in-window role assignment.
+
+        The role-window check is the guest-auditor expiry guard (spec: "The
+        membership is disabled or outside its window" → 401): a membership whose
+        sole role assignment has expired grants nothing, so it must not yield a
+        session with empty roles. The window logic is core.deps', resolved against
+        today (decision 10 — a provisioning or suspended tenant also refuses login)."""
         memberships = [
             m
             for m in await self._memberships.list_for_user(session, user.id)
@@ -1051,9 +1063,28 @@ class IamAuthService:
         ]
         usable: list[TenantMembership] = []
         for membership in memberships:
-            if await self._tenant_is_active(session, membership.tenant_id):
-                usable.append(membership)
+            if not await self._tenant_is_active(session, membership.tenant_id):
+                continue
+            if not await self._has_active_role(session, membership):
+                continue
+            usable.append(membership)
         return usable
+
+    async def _has_active_role(self, session: AsyncSession, membership: TenantMembership) -> bool:
+        """Whether the membership holds at least one role assignment inside its
+        window right now — direct or via a group (core.deps' resolution). An
+        empty result is the expired guest-auditor: the membership grants nothing."""
+        grants, group_ids = await fetch_grants_for_membership(
+            session, tenant_id=membership.tenant_id, membership_id=membership.id
+        )
+        return bool(
+            active_role_ids(
+                grants,
+                membership_id=membership.id,
+                group_ids=group_ids,
+                today=datetime.now(UTC).date(),
+            )
+        )
 
     async def _tenant_is_active(self, session: AsyncSession, tenant_id: uuid.UUID) -> bool:
         tenant = await tenancy_service.get_tenant(session, tenant_id)
