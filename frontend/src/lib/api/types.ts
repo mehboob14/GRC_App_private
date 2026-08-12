@@ -191,12 +191,18 @@ export type AuditEvent = {
   occurred_at: string;
 };
 
-export type SecurityPolicy = {
-  require_mfa: boolean;
-  enforce_sso: boolean;
-  ip_allowlist: boolean;
-  audit_log_export: boolean;
-  session_timeout_hours: number;
+export type TenantStatus =
+  | "provisioning"
+  | "active"
+  | "suspended"
+  | "terminated";
+
+/** GET /api/v1/tenant — the caller's current workspace. */
+export type TenantSummary = {
+  id: string;
+  name: string;
+  slug: string;
+  status: TenantStatus;
 };
 
 export type ApiErrorBody = {

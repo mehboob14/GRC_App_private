@@ -13,9 +13,9 @@ import type {
   MfaEnrollStartResponse,
   MfaVerifyRequest,
   Role,
-  SecurityPolicy,
   SignupRequest,
   SignupResponse,
+  TenantSummary,
   WorkspaceSummary,
 } from "@/lib/api/types";
 
@@ -97,12 +97,10 @@ export const iamApi = {
       method: "POST",
       body: JSON.stringify(body),
     }),
-  getSecurityPolicy: () => apiFetch<SecurityPolicy>("/security/policy"),
-  updateSecurityPolicy: (body: Partial<SecurityPolicy>) =>
-    apiFetch<SecurityPolicy>("/security/policy", {
-      method: "PATCH",
-      body: JSON.stringify(body),
-    }),
+};
+
+export const tenantApi = {
+  get: () => apiFetch<TenantSummary>("/tenant"),
 };
 
 export const auditApi = {

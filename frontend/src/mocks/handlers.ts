@@ -12,7 +12,6 @@ import {
   principalFromMembership,
   pushAudit,
   roles,
-  securityPolicy,
   tokenFor,
   users,
   workspacesForUser,
@@ -23,6 +22,7 @@ import type {
   LoginResponse,
   Member,
   SignupRequest,
+  TenantSummary,
 } from "@/lib/api/types";
 
 function err(status: number, code: string, message: string) {
@@ -91,9 +91,11 @@ export const handlers = [
 
     const membershipId = workspaces[0]!.membership_id;
     const member = members.find((m) => m.membership_id === membershipId)!;
+    // MFA is required for Admin-role memberships, always — platform policy,
+    // not a tenant toggle (week1-review-decisions.md #19/#20).
     const isAdmin = member.role_names.includes("Admin");
 
-    if (isAdmin && securityPolicy.require_mfa) {
+    if (isAdmin) {
       if (!user.mfa_enabled) {
         const challenge_token = crypto.randomUUID();
         challenges.set(challenge_token, {
@@ -154,7 +156,7 @@ export const handlers = [
 
     const member = members.find((m) => m.membership_id === membershipId)!;
     const user = users[challenge.userId]!;
-    if (member.role_names.includes("Admin") && securityPolicy.require_mfa) {
+    if (member.role_names.includes("Admin")) {
       const challenge_token = crypto.randomUUID();
       challenges.set(challenge_token, {
         membershipId,
@@ -725,18 +727,7 @@ export const handlers = [
     return HttpResponse.json(role, { status: 201 });
   }),
 
-  http.get("/api/v1/security/policy", ({ request }) => {
-    const membershipId = membershipFromToken(
-      request.headers.get("Authorization"),
-    );
-    if (!membershipId || !principalFromMembership(membershipId)) {
-      return err(401, "unauthenticated", "Sign in to continue.");
-    }
-    return HttpResponse.json(securityPolicy);
-  }),
-
-  http.patch("/api/v1/security/policy", async ({ request }) => {
-    await delay(150);
+  http.get("/api/v1/tenant", ({ request }) => {
     const membershipId = membershipFromToken(
       request.headers.get("Authorization"),
     );
@@ -744,28 +735,13 @@ export const handlers = [
       ? principalFromMembership(membershipId)
       : null;
     if (!principal) return err(401, "unauthenticated", "Sign in to continue.");
-    if (!principal.role_names.includes("Admin")) {
-      return err(403, "permission_denied", "Only admins can change security policy.");
-    }
-    const body = (await request.json()) as Partial<typeof securityPolicy>;
-    // Only require_mfa is mutable in Week 1
-    if (typeof body.require_mfa === "boolean") {
-      const before = { ...securityPolicy };
-      securityPolicy.require_mfa = body.require_mfa;
-      pushAudit({
-        actor_type: "membership",
-        actor_id: principal.membership_id,
-        actor_label: principal.user.full_name,
-        action: "update",
-        object_type: "security_policy",
-        object_id: principal.tenant_id,
-        object_label: "Require MFA",
-        before: { require_mfa: before.require_mfa },
-        after: { require_mfa: securityPolicy.require_mfa },
-        tenant_id: principal.tenant_id,
-      });
-    }
-    return HttpResponse.json(securityPolicy);
+    const tenant = membershipTenants[principal.membership_id];
+    return HttpResponse.json({
+      id: principal.tenant_id,
+      name: principal.tenant_name,
+      slug: tenant?.tenant_slug ?? principal.tenant_id,
+      status: "active",
+    } satisfies TenantSummary);
   }),
 
   http.get("/api/v1/audit-log", ({ request }) => {

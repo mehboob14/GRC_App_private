@@ -5,7 +5,6 @@ import type {
   Member,
   PermissionKey,
   Role,
-  SecurityPolicy,
   SessionPrincipal,
   User,
   WorkspaceSummary,
@@ -282,14 +281,6 @@ export function principalFromMembership(
     role_names: member.role_names,
   };
 }
-
-export let securityPolicy: SecurityPolicy = {
-  require_mfa: true,
-  enforce_sso: false,
-  ip_allowlist: false,
-  audit_log_export: false,
-  session_timeout_hours: 8,
-};
 
 export let auditEvents: AuditEvent[] = [
   {
