@@ -118,6 +118,42 @@ export type Member = {
   mfa_enabled: boolean;
 };
 
+export type InviteMemberRequest = {
+  email: string;
+  full_name: string;
+  role_id: string;
+};
+
+/**
+ * Week 1: email delivery is a notifications-module concern, so the one-time
+ * invite token and accept URL are returned once, here, for the inviter to
+ * hand over (week1-review-decisions.md #15). Removed when notifications land.
+ */
+export type InviteMemberResponse = {
+  member: Member;
+  /** Single-use invite token (typ='invite', 7-day TTL). Shown once. */
+  invite_token: string;
+  /** Absolute URL to /accept-invite?token=… for the invitee. */
+  accept_url: string;
+};
+
+/**
+ * POST /api/v1/auth/invitations/accept (public). New users supply
+ * full_name + password; existing users send the token alone. Accepting
+ * activates the membership and consumes the token; the user then signs in
+ * normally.
+ */
+export type AcceptInvitationRequest = {
+  token: string;
+  full_name?: string;
+  password?: string;
+};
+
+export type AcceptInvitationResponse = {
+  status: "accepted";
+  tenant_name: string;
+};
+
 export type Group = {
   id: string;
   name: string;

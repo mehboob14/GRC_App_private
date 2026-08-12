@@ -1,8 +1,12 @@
 import { apiFetch } from "@/lib/api/client";
 import type {
+  AcceptInvitationRequest,
+  AcceptInvitationResponse,
   AuditEvent,
   CursorPage,
   Group,
+  InviteMemberRequest,
+  InviteMemberResponse,
   LoginPasswordRequest,
   LoginResponse,
   Member,
@@ -55,16 +59,17 @@ export const authApi = {
         membership_id: membershipId,
       }),
     }),
+  acceptInvitation: (body: AcceptInvitationRequest) =>
+    apiFetch<AcceptInvitationResponse>("/auth/invitations/accept", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
 };
 
 export const iamApi = {
   listMembers: () => apiFetch<Member[]>("/members"),
-  inviteMember: (body: {
-    email: string;
-    full_name: string;
-    role_id: string;
-  }) =>
-    apiFetch<Member>("/members/invite", {
+  inviteMember: (body: InviteMemberRequest) =>
+    apiFetch<InviteMemberResponse>("/members/invite", {
       method: "POST",
       body: JSON.stringify(body),
     }),

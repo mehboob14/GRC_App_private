@@ -5,6 +5,7 @@ import { PublicOnly, RequireAuth } from "@/app/auth-gates";
 import { SignInPage } from "@/features/iam/components/sign-in-page";
 import { SignUpPage } from "@/features/iam/components/sign-up-page";
 import { MfaEnrollPage } from "@/features/iam/components/mfa-enroll-page";
+import { AcceptInvitePage } from "@/features/iam/components/accept-invite-page";
 import { SettingsLayout } from "@/features/iam/components/settings-layout";
 import { TeamPage } from "@/features/iam/components/team-page";
 import { GroupsPage } from "@/features/iam/components/groups-page";
@@ -21,6 +22,7 @@ export function AppRoutes() {
         <Route path="/sign-in" element={<SignInPage />} />
         <Route path="/sign-up" element={<SignUpPage />} />
         <Route path="/mfa/enroll" element={<MfaEnrollPage />} />
+        <Route path="/accept-invite" element={<AcceptInvitePage />} />
       </Route>
 
       <Route element={<RequireAuth />}>

@@ -372,6 +372,9 @@ export function findUserByEmail(email: string) {
   );
 }
 
+/** Outstanding one-time invite tokens → the invited membership id. */
+export const invites = new Map<string, string>();
+
 export function tokenFor(membershipId: string): string {
   return `mock-token:${membershipId}`;
 }

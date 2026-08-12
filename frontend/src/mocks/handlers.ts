@@ -1,10 +1,10 @@
 import { http, HttpResponse, delay } from "msw";
 import {
   DEMO_MFA_CODE,
-  DEMO_PASSWORD,
   auditEvents,
   findUserByEmail,
   groups,
+  invites,
   members,
   membersForTenant,
   membershipFromToken,
@@ -18,6 +18,8 @@ import {
   workspacesForUser,
 } from "@/mocks/fixtures";
 import type {
+  AcceptInvitationResponse,
+  InviteMemberResponse,
   LoginResponse,
   Member,
   SignupRequest,
@@ -404,11 +406,16 @@ export const handlers = [
       return err(422, "validation_error", "Name and work email are required.");
     }
 
+    const email = body.email.toLowerCase();
     const existing = membersForTenant(principal.tenant_id).find(
-      (m) => m.email.toLowerCase() === body.email!.toLowerCase(),
+      (m) => m.email.toLowerCase() === email,
     );
     if (existing) {
-      return HttpResponse.json(existing);
+      return err(
+        409,
+        "already_member",
+        "That person already has a membership in this workspace.",
+      );
     }
 
     let user = findUserByEmail(body.email);
@@ -416,14 +423,16 @@ export const handlers = [
       const userId = `user-${crypto.randomUUID().slice(0, 8)}`;
       users[userId] = {
         id: userId,
-        email: body.email.toLowerCase(),
+        email,
         full_name: body.full_name,
         status: "active",
         mfa_enabled: false,
-        password: DEMO_PASSWORD,
+        // Unusable until the invitee sets a password on accept.
+        password: crypto.randomUUID(),
       };
       user = users[userId];
     }
+    if (!user) return err(500, "internal", "Could not create the user.");
     const membershipIdNew = `mem-${crypto.randomUUID().slice(0, 8)}`;
     const tenantMeta = membershipTenants[principal.membership_id] ?? {
       tenant_id: principal.tenant_id,
@@ -433,15 +442,17 @@ export const handlers = [
     membershipTenants[membershipIdNew] = { ...tenantMeta };
     const newMember: Member = {
       membership_id: membershipIdNew,
-      user_id: user!.id,
+      user_id: user.id,
       full_name: body.full_name,
-      email: body.email.toLowerCase(),
+      email,
       status: "invited",
       role_names: [role.name],
       group_names: [],
-      mfa_enabled: user!.mfa_enabled,
+      mfa_enabled: user.mfa_enabled,
     };
     members.push(newMember);
+    const inviteToken = `invite-${crypto.randomUUID()}`;
+    invites.set(inviteToken, membershipIdNew);
     pushAudit({
       actor_type: "membership",
       actor_id: principal.membership_id,
@@ -454,7 +465,78 @@ export const handlers = [
       after: { email: newMember.email, role: role.name },
       tenant_id: principal.tenant_id,
     });
-    return HttpResponse.json(newMember, { status: 201 });
+    return HttpResponse.json(
+      {
+        member: newMember,
+        invite_token: inviteToken,
+        accept_url: `${window.location.origin}/accept-invite?token=${inviteToken}`,
+      } satisfies InviteMemberResponse,
+      { status: 201 },
+    );
+  }),
+
+  http.post("/api/v1/auth/invitations/accept", async ({ request }) => {
+    await delay(200);
+    const body = (await request.json()) as {
+      token?: string;
+      full_name?: string;
+      password?: string;
+    };
+    const token = body.token ?? "";
+    const membershipId = invites.get(token);
+    if (!membershipId) {
+      return err(
+        401,
+        "invalid_invite",
+        "This invite link is invalid or has expired. Ask a workspace admin to send a new one.",
+      );
+    }
+    const member = members.find((m) => m.membership_id === membershipId);
+    const user = member ? users[member.user_id] : undefined;
+    if (!member || !user) {
+      return err(404, "not_found", "Membership not found.");
+    }
+    if (member.status !== "invited") {
+      invites.delete(token);
+      return err(
+        409,
+        "invite_already_accepted",
+        "This invitation was already accepted. Sign in with your email and password.",
+      );
+    }
+    if (body.password !== undefined && body.password.length < 10) {
+      return err(
+        422,
+        "weak_password",
+        "Use at least 10 characters for your password.",
+      );
+    }
+    if (body.password) {
+      user.password = body.password;
+    }
+    if (body.full_name?.trim()) {
+      user.full_name = body.full_name.trim();
+      member.full_name = user.full_name;
+    }
+    member.status = "active";
+    invites.delete(token);
+    const tenant = membershipTenants[membershipId];
+    pushAudit({
+      actor_type: "membership",
+      actor_id: membershipId,
+      actor_label: member.full_name,
+      action: "update",
+      object_type: "tenant_membership",
+      object_id: membershipId,
+      object_label: member.full_name,
+      before: { status: "invited" },
+      after: { status: "active" },
+      tenant_id: tenant?.tenant_id,
+    });
+    return HttpResponse.json({
+      status: "accepted",
+      tenant_name: tenant?.tenant_name ?? "your workspace",
+    } satisfies AcceptInvitationResponse);
   }),
 
   http.post("/api/v1/members/:id/disable", async ({ params, request }) => {
