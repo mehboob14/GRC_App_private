@@ -23,7 +23,7 @@ export {
 } from "./dropdown-menu";
 export { EmptyState } from "./empty-state";
 export { ErrorState } from "./error-state";
-export { Icon } from "./icon";
+export { Icon, type IconName } from "./icon";
 export { PasswordField } from "./password-field";
 export { SearchInput } from "./search-input";
 export {

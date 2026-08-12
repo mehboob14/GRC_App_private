@@ -4,6 +4,22 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Verity</title>
+    <script>
+      // Apply the stored theme before first paint so dark mode never
+      // flashes light. Must match lib/theme.tsx (key: verity.theme).
+      (function () {
+        try {
+          var mode = window.localStorage.getItem("verity.theme");
+          var dark =
+            mode === "dark" ||
+            (mode !== "light" &&
+              window.matchMedia("(prefers-color-scheme: dark)").matches);
+          document.documentElement.classList.toggle("dark", dark);
+        } catch (e) {
+          /* default to light */
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

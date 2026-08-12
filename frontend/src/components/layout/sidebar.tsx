@@ -8,6 +8,7 @@ import {
   RAIL_ITEMS,
   type NavItem,
 } from "@/components/layout/nav-config";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
 
 type SidebarProps = {
   collapsed?: boolean;
@@ -202,27 +203,30 @@ export function Sidebar({ collapsed = false, onToggleCollapsed }: SidebarProps) 
                 active={item.id === "settings" ? settingsActive : false}
               />
             ))}
-            <button
-              type="button"
-              className="mt-2 flex w-full items-center gap-2 rounded-md border border-border bg-surface-sunken px-2 py-2 text-left hover:bg-surface-hover"
-            >
-              <Avatar
-                name={principal?.user.full_name ?? "User"}
-                seed={principal?.user.email}
-                size="md"
-              />
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-[12.5px] font-semibold text-text-primary">
-                  {principal?.user.full_name ?? "User"}
+            <div className="mt-2 flex items-center gap-1.5">
+              <button
+                type="button"
+                className="flex min-w-0 flex-1 items-center gap-2 rounded-md border border-border bg-surface-sunken px-2 py-2 text-left hover:bg-surface-hover"
+              >
+                <Avatar
+                  name={principal?.user.full_name ?? "User"}
+                  seed={principal?.user.email}
+                  size="md"
+                />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[12.5px] font-semibold text-text-primary">
+                    {principal?.user.full_name ?? "User"}
+                  </span>
+                  <span className="block truncate text-[10px] text-text-subtle">
+                    {(principal?.role_names[0] ?? "Member") === "Admin"
+                      ? "Security Lead · Admin"
+                      : principal?.role_names[0] ?? "Member"}
+                  </span>
                 </span>
-                <span className="block truncate text-[10px] text-text-subtle">
-                  {(principal?.role_names[0] ?? "Member") === "Admin"
-                    ? "Security Lead · Admin"
-                    : principal?.role_names[0] ?? "Member"}
-                </span>
-              </span>
-              <Icon name="chev" className="size-[15px] text-text-subtle" />
-            </button>
+                <Icon name="chev" className="size-[15px] text-text-subtle" />
+              </button>
+              <ThemeToggle />
+            </div>
           </div>
         </div>
       ) : null}
