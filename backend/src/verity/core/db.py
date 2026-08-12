@@ -30,7 +30,7 @@ from sqlalchemy.ext.asyncio import (
 )
 
 from verity.core.config import Settings, get_settings
-from verity.core.rls import bind_tenant_context
+from verity.core.rls import bind_provider_plane, bind_tenant_context
 
 
 def create_engine_from_settings(settings: Settings, **overrides: object) -> AsyncEngine:
@@ -102,6 +102,20 @@ async def session_scope(tenant_id: uuid.UUID | None = None) -> AsyncIterator[Asy
     """
     async with get_sessionmaker()() as session, session.begin():
         await bind_tenant_context(session, tenant_id)
+        yield session
+
+
+@asynccontextmanager
+async def provider_session_scope() -> AsyncIterator[AsyncSession]:
+    """One provider-plane unit of work: no tenant bound, ``app.provider_plane`` on.
+
+    ``session_scope(None)`` with the provider-plane setting bound inside the same
+    transaction, so dual-plane tables (``audit_log``) become visible across streams.
+    Entered only on behalf of an authenticated platform admin — nothing here checks
+    who is asking, which is exactly why no other code path may use it.
+    """
+    async with session_scope(None) as session:
+        await bind_provider_plane(session)
         yield session
 
 

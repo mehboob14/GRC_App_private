@@ -1,11 +1,17 @@
-"""The policy predicate the whole isolation story rests on."""
+"""The policy predicate the whole isolation story rests on, and the append-only DDL."""
 
 from __future__ import annotations
 
 import pytest
 
 from verity.core.rls import TENANT_ID_SETTING
-from verity.db.rls import tenant_policy_predicate
+from verity.db.rls import (
+    APPEND_ONLY_FUNCTION_NAME,
+    append_only_function_ddl,
+    append_only_trigger_ddl,
+    append_only_trigger_name,
+    tenant_policy_predicate,
+)
 
 
 def test_predicate_reads_the_documented_setting() -> None:
@@ -39,3 +45,55 @@ def test_predicate_rejects_anything_that_is_not_an_identifier(column: str) -> No
     """Identifiers cannot be bound parameters, so every one is validated first."""
     with pytest.raises(ValueError, match="snake_case identifier"):
         tenant_policy_predicate(column)
+
+
+# ---------------------------------------------------------------------------
+# Append-only: the trigger half of make_append_only, as designed in the
+# add-audit-trail change under "Append-only enforcement".
+# ---------------------------------------------------------------------------
+
+
+def test_the_guard_function_is_created_idempotently() -> None:
+    """Every append-only migration emits it; the second emit must be a no-op."""
+    assert append_only_function_ddl().startswith(
+        f"CREATE OR REPLACE FUNCTION {APPEND_ONLY_FUNCTION_NAME}() RETURNS trigger"
+    )
+
+
+def test_the_guard_function_names_the_append_only_rule() -> None:
+    ddl = append_only_function_ddl()
+    assert "RAISE EXCEPTION" in ddl
+    assert "append-only" in ddl
+    assert "docs/conventions/database.md" in ddl
+
+
+def test_the_guard_function_is_table_agnostic() -> None:
+    """One shared function serves every append-only table, so the message must name
+    the table dynamically rather than baking one in."""
+    assert "TG_TABLE_NAME" in append_only_function_ddl()
+    assert "TG_OP" in append_only_function_ddl()
+
+
+def test_the_trigger_name_follows_the_convention() -> None:
+    assert append_only_trigger_name("audit_log") == "trg_audit_log__append_only"
+
+
+def test_the_trigger_fires_before_update_or_delete_per_row() -> None:
+    ddl = append_only_trigger_ddl("audit_log")
+    assert "BEFORE UPDATE OR DELETE ON audit_log" in ddl
+    assert "FOR EACH ROW" in ddl
+    assert f"EXECUTE FUNCTION {APPEND_ONLY_FUNCTION_NAME}()" in ddl
+
+
+def test_the_trigger_is_replaced_rather_than_duplicated() -> None:
+    assert append_only_trigger_ddl("audit_log").startswith(
+        "CREATE OR REPLACE TRIGGER trg_audit_log__append_only "
+    )
+
+
+@pytest.mark.parametrize("table", ["Audit_Log", "audit-log", "audit_log; DROP TABLE x", ""])
+def test_the_trigger_ddl_rejects_anything_that_is_not_an_identifier(table: str) -> None:
+    with pytest.raises(ValueError, match="snake_case identifier"):
+        append_only_trigger_ddl(table)
+    with pytest.raises(ValueError, match="snake_case identifier"):
+        append_only_trigger_name(table)

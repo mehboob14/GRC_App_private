@@ -39,6 +39,13 @@ NO_TENANT: Final = ""
 """``set_config`` has no NULL. An empty string means "no tenant bound", and the policy
 predicate in verity.db.rls turns it into NULL so that nothing matches."""
 
+PROVIDER_PLANE_SETTING: Final = "app.provider_plane"
+"""The session variable the provider-plane policies on dual-plane tables read
+(openspec/changes/add-audit-trail/design.md). Changing it is a policy migration."""
+
+PROVIDER_PLANE_ON: Final = "on"
+"""The only value that satisfies a provider-plane policy predicate."""
+
 _BIND = text("SELECT set_config(:setting, :value, true)")
 _READ = text("SELECT current_setting(:setting, true)")
 
@@ -71,6 +78,34 @@ async def bind_tenant_context(session: AsyncSession, tenant_id: uuid.UUID | None
         )
     value = NO_TENANT if tenant_id is None else str(tenant_id)
     await session.execute(_BIND, {"setting": TENANT_ID_SETTING, "value": value})
+
+
+async def bind_provider_plane(session: AsyncSession) -> None:
+    """Widen this transaction to provider-plane visibility.
+
+    Honestly a switch that widens what RLS shows, so it is set from exactly one
+    place — ``core.db.provider_session_scope``, entered only for an authenticated
+    platform admin — and never derived from a request parameter, header, or claim a
+    tenant user can influence (add-audit-trail/design.md, decision 4 in the Week 1
+    review record).
+
+    Raises:
+        TenantContextError: if no transaction is open. The setting is
+            transaction-local and would be discarded, leaving the caller silently
+            reading nothing across streams.
+    """
+    if not session.in_transaction():
+        raise TenantContextError(
+            "bind_provider_plane requires an open transaction: the setting is "
+            "transaction-local and would be discarded. Use core.db.provider_session_scope."
+        )
+    await session.execute(_BIND, {"setting": PROVIDER_PLANE_SETTING, "value": PROVIDER_PLANE_ON})
+
+
+async def is_provider_plane_bound(session: AsyncSession) -> bool:
+    """Whether this transaction is running with provider-plane visibility."""
+    result = await session.execute(_READ, {"setting": PROVIDER_PLANE_SETTING})
+    return bool(result.scalar_one_or_none() == PROVIDER_PLANE_ON)
 
 
 async def current_tenant_id(session: AsyncSession) -> uuid.UUID | None:

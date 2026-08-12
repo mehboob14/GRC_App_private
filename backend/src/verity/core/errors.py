@@ -65,6 +65,18 @@ class AuthenticationRequired(VerityError):
     message = "Authentication is required."
 
 
+class InvalidToken(AuthenticationRequired):
+    """A signed token failed validation — expired, tampered, wrong type, wrong plane.
+
+    One code and one message for every failure mode. Which check failed belongs in
+    ``detail`` for the log; telling the caller would let a client probe token
+    structure one distinguishable error at a time.
+    """
+
+    code = "invalid_token"
+    message = "The provided token is invalid or has expired."
+
+
 class PermissionDenied(VerityError):
     code = "permission_denied"
     http_status = status.HTTP_403_FORBIDDEN

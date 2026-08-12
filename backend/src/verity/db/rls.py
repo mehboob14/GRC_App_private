@@ -21,6 +21,12 @@ from verity.core.config import get_settings
 from verity.core.rls import TENANT_ID_SETTING
 
 DEFAULT_POLICY_NAME: Final = "tenant_isolation"
+
+APPEND_ONLY_FUNCTION_NAME: Final = "audit_log_append_only"
+"""The shared guard function every append-only trigger executes. Named in
+openspec/changes/add-audit-trail/design.md for the first table that needed it;
+``TG_TABLE_NAME`` makes the one body serve every append-only table."""
+
 _IDENTIFIER: Final = re.compile(r"^[a-z_][a-z0-9_]*$")
 
 
@@ -109,13 +115,53 @@ def grant_crud(table_name: str, *, role: str | None = None) -> None:
     op.execute(sql_text(f"GRANT SELECT, INSERT, UPDATE, DELETE ON {table_name} TO {role}"))
 
 
+def append_only_function_ddl() -> str:
+    """The shared trigger function that refuses ``UPDATE`` and ``DELETE``.
+
+    ``CREATE OR REPLACE`` so every append-only migration can emit it and the second
+    one is an idempotent no-op rather than a failure. Exposed as text so a unit test
+    can assert the DDL without a database.
+    """
+    return (
+        f"CREATE OR REPLACE FUNCTION {APPEND_ONLY_FUNCTION_NAME}() RETURNS trigger\n"
+        "LANGUAGE plpgsql AS $$\n"
+        "BEGIN\n"
+        "    RAISE EXCEPTION '% is append-only: % is not permitted "
+        "(docs/conventions/database.md)', TG_TABLE_NAME, TG_OP;\n"
+        "END;\n"
+        "$$"
+    )
+
+
+def append_only_trigger_name(table_name: str) -> str:
+    """The per-table trigger name, following the ``<prefix>_<table>__<rule>`` shape."""
+    _identifier(table_name, what="table name")
+    return f"trg_{table_name}__append_only"
+
+
+def append_only_trigger_ddl(table_name: str) -> str:
+    """Attach the shared guard to ``table_name``, replacing any earlier attachment."""
+    _identifier(table_name, what="table name")
+    return (
+        f"CREATE OR REPLACE TRIGGER {append_only_trigger_name(table_name)} "
+        f"BEFORE UPDATE OR DELETE ON {table_name} "
+        f"FOR EACH ROW EXECUTE FUNCTION {APPEND_ONLY_FUNCTION_NAME}()"
+    )
+
+
 def make_append_only(table_name: str, *, role: str | None = None) -> None:
-    """Revoke ``UPDATE``, ``DELETE``, and ``TRUNCATE`` from the application role.
+    """Enforce insert-only on a table, by revoked grant **and** trigger.
 
     Rule 3: ``audit_log``, ``task_transitions``, ``vuln_transitions``,
     ``check_results``, ``readiness_snapshots``, ``kri_measurements``, and
     ``document_versions`` are insert-only, and docs/conventions/database.md requires
-    that to be enforced by a revoked grant rather than by convention alone.
+    that to be enforced rather than promised. Two of the three layers live here
+    (add-audit-trail/design.md, "Append-only enforcement"); the third is the model's
+    ORM listeners:
+
+    1. The revoke stops the application role — but does not bind the table's owner.
+    2. The ``BEFORE UPDATE OR DELETE`` trigger binds the owner too, which is what
+       migrations run as.
 
     Immutability is a property this product sells to auditors. A convention is not
     evidence; a refused ``UPDATE`` is.
@@ -124,3 +170,18 @@ def make_append_only(table_name: str, *, role: str | None = None) -> None:
     _identifier(table_name, what="table name")
     _identifier(role, what="role name")
     op.execute(sql_text(f"REVOKE UPDATE, DELETE, TRUNCATE ON {table_name} FROM {role}"))
+    op.execute(sql_text(append_only_function_ddl()))
+    op.execute(sql_text(append_only_trigger_ddl(table_name)))
+
+
+def drop_append_only(table_name: str) -> None:
+    """Reverse the trigger half of :func:`make_append_only`. For a downgrade only.
+
+    The guard function stays: it is shared by every append-only table, and dropping
+    it here would break the others. The revoke needs no reversal either — a
+    downgrade drops the table, and a recreate re-grants explicitly.
+    """
+    _identifier(table_name, what="table name")
+    op.execute(
+        sql_text(f"DROP TRIGGER IF EXISTS {append_only_trigger_name(table_name)} ON {table_name}")
+    )

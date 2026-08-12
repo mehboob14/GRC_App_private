@@ -21,11 +21,18 @@ Environment = Literal["local", "test", "ci", "staging", "production"]
 
 DEPLOYED_ENVIRONMENTS: Final[frozenset[str]] = frozenset({"staging", "production"})
 
+MIN_SECRET_KEY_BYTES: Final = 32
+"""HS256's hash width. A deployed SECRET_KEY shorter than this is refused: it signs
+every session token, and a short key is brute-forceable offline from one capture."""
+
 # Values that are fine on a laptop and must never reach a deployed environment. The
 # validator below refuses to construct Settings if one of them survives into staging
 # or production, because "we forgot to set the key" should be a failed deploy and not
 # a quiet downgrade of every secret in the database to a published constant.
-DEV_SECRET_KEY: Final = "dev-only-secret-change-me"  # noqa: S105
+# At least 32 bytes: SECRET_KEY signs HS256 tokens, and PyJWT (correctly) warns on
+# anything shorter than the hash width. The dev value satisfies that so the warning
+# stays meaningful — if it ever fires, a real deployment has a genuinely weak key.
+DEV_SECRET_KEY: Final = "dev-only-secret-change-me-before-deploying"  # noqa: S105
 DEV_APP_ENCRYPTION_KEY: Final = (
     "dev:" + base64.urlsafe_b64encode(b"verity-local-development-key-32b").decode()
 )
@@ -147,6 +154,26 @@ class LangSmithSettings(_Section):
     endpoint: str = "https://api.smith.langchain.com"
 
 
+class AuthSettings(_Section):
+    """Token lifetimes (openspec/changes/week1-review-decisions.md, decision 17).
+
+    Only lifetimes live here. The cryptographic parameters — argon2id costs, the
+    TOTP window, the JWT algorithm — are pinned in ``core.security`` deliberately,
+    so a deployment cannot quietly weaken them.
+    """
+
+    model_config = SettingsConfigDict(env_prefix="AUTH_")
+
+    session_ttl_hours: int = Field(default=12, ge=1)
+    challenge_ttl_minutes: int = Field(default=5, ge=1)
+    """The MFA challenge issued between the password step and the code step."""
+
+    selection_ttl_minutes: int = Field(default=5, ge=1)
+    """The workspace-selection token issued on multi-membership login."""
+
+    invite_ttl_days: int = Field(default=7, ge=1)
+
+
 class Settings(_Section):
     env: Environment = "local"
     service_name: str = "verity-api"
@@ -167,6 +194,7 @@ class Settings(_Section):
 
     cors_allow_origins: tuple[str, ...] = ()
 
+    auth: AuthSettings = Field(default_factory=AuthSettings)
     database: DatabaseSettings = Field(default_factory=DatabaseSettings)
     redis: RedisSettings = Field(default_factory=RedisSettings)
     celery: CelerySettings = Field(default_factory=CelerySettings)
@@ -180,6 +208,12 @@ class Settings(_Section):
             return self
         if self.secret_key.get_secret_value() == DEV_SECRET_KEY:
             raise ValueError(f"SECRET_KEY still holds its development default in ENV={self.env}")
+        if len(self.secret_key.get_secret_value().encode()) < MIN_SECRET_KEY_BYTES:
+            raise ValueError(
+                f"SECRET_KEY must be at least {MIN_SECRET_KEY_BYTES} bytes in "
+                f"ENV={self.env}: it signs HS256 session tokens, and a short key is "
+                f"brute-forceable offline from any captured token."
+            )
         if self.app_encryption_key.get_secret_value() == DEV_APP_ENCRYPTION_KEY:
             raise ValueError(
                 f"APP_ENCRYPTION_KEY still holds its development default in ENV={self.env}. "
