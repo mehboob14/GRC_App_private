@@ -195,11 +195,17 @@ export type AuditEvent = {
   tenant_id: string;
   actor_type: "membership" | "platform_admin" | "system";
   actor_id: string | null;
-  actor_label: string;
+  /**
+   * Best-effort humanised label from the backend (e.g. "Membership ·
+   * 019ff785"). Treated as possibly-absent: the UI composes a fallback from
+   * actor_type + short actor_id when it is missing or empty.
+   */
+  actor_label?: string | null;
   action: AuditAction;
   object_type: string;
   object_id: string;
-  object_label: string;
+  /** Best-effort humanised label; see actor_label. Possibly-absent. */
+  object_label?: string | null;
   before: Record<string, unknown> | null;
   after: Record<string, unknown> | null;
   occurred_at: string;

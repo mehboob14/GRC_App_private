@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import {
   Avatar,
-  Badge,
   Button,
   Drawer,
   DrawerBody,
@@ -14,6 +13,7 @@ import {
   ErrorState,
   FilterFacet,
   Icon,
+  StatusPill,
   Table,
   TableIconButton,
   TableSkeleton,
@@ -23,19 +23,73 @@ import {
   THead,
   TR,
   type FilterFacetOption,
+  type StatusFamily,
 } from "@/components/ui";
 import { auditApi } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/auth-context";
-import type { AuditEvent } from "@/lib/api/types";
+import type { AuditAction, AuditEvent } from "@/lib/api/types";
 
-const ACTION_OPTIONS: FilterFacetOption[] = [
-  { value: "create", label: "Create" },
-  { value: "update", label: "Update" },
-  { value: "delete", label: "Delete" },
-  { value: "transition", label: "Transition" },
-  { value: "approve", label: "Approve" },
-];
+/**
+ * Audit actions reuse the StatusPill anatomy (DS §6.2). This map is the single
+ * source of truth for both the pill and the Action facet, so the word and its
+ * colour stay in lockstep across the screen.
+ */
+const ACTION_META: Record<AuditAction, { label: string; family: StatusFamily }> =
+  {
+    create: { label: "Create", family: "success" },
+    update: { label: "Update", family: "progress" },
+    transition: { label: "Transition", family: "progress" },
+    approve: { label: "Approve", family: "success" },
+    delete: { label: "Delete", family: "danger" },
+  };
+
+const ACTION_OPTIONS: FilterFacetOption[] = (
+  Object.keys(ACTION_META) as AuditAction[]
+).map((value) => ({ value, label: ACTION_META[value].label }));
+
+/** actor_type is a closed set present on every row — safe to filter on. */
+const ACTOR_TYPE_LABEL: Record<AuditEvent["actor_type"], string> = {
+  membership: "Membership",
+  platform_admin: "Platform admin",
+  system: "System",
+};
+
+const ACTOR_TYPE_OPTIONS: FilterFacetOption[] = (
+  Object.keys(ACTOR_TYPE_LABEL) as AuditEvent["actor_type"][]
+).map((value) => ({ value, label: ACTOR_TYPE_LABEL[value] }));
+
+function shortId(id: string | null | undefined): string {
+  return id ? id.slice(0, 8) : "";
+}
+
+function humanizeType(type: string): string {
+  const spaced = type.replace(/_/g, " ").trim();
+  if (!spaced) return "Object";
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+}
+
+/**
+ * actor_label / object_label are best-effort humanised strings and may be
+ * absent or empty. Compose a stable fallback from the fields that always
+ * exist so the page never renders `undefined` or blanks an avatar seed.
+ */
+function actorLabelOf(event: AuditEvent): string {
+  const label = event.actor_label?.trim();
+  if (label) return label;
+  if (event.actor_type === "system") return "System";
+  const base = ACTOR_TYPE_LABEL[event.actor_type];
+  const short = shortId(event.actor_id);
+  return short ? `${base} · ${short}` : base;
+}
+
+function objectLabelOf(event: AuditEvent): string {
+  const label = event.object_label?.trim();
+  if (label) return label;
+  const base = humanizeType(event.object_type);
+  const short = shortId(event.object_id);
+  return short ? `${base} · ${short}` : base;
+}
 
 function formatWhen(iso: string) {
   try {
@@ -84,7 +138,7 @@ function SnapshotBlock({
 
 export function AuditLogPage() {
   const { principal } = useAuth();
-  const [actorFilter, setActorFilter] = useState<string[]>([]);
+  const [actorTypeFilter, setActorTypeFilter] = useState<string[]>([]);
   const [actionFilter, setActionFilter] = useState<string[]>([]);
   const [typeFilter, setTypeFilter] = useState<string[]>([]);
   const [selected, setSelected] = useState<AuditEvent | null>(null);
@@ -101,45 +155,47 @@ export function AuditLogPage() {
     [query.data],
   );
 
-  // Actor and object-type are open sets, so their facet options come from
-  // the events loaded so far.
-  const actorOptions = useMemo<FilterFacetOption[]>(
-    () =>
-      [...new Set(events.map((e) => e.actor_label))]
-        .sort()
-        .map((label) => ({ value: label, label })),
-    [events],
-  );
+  // object_type is an open set, so its facet options come from the events
+  // loaded so far; actor_type and action are closed sets with fixed options.
   const typeOptions = useMemo<FilterFacetOption[]>(
     () =>
       [...new Set(events.map((e) => e.object_type))]
         .sort()
-        .map((type) => ({ value: type, label: type })),
+        .map((type) => ({ value: type, label: humanizeType(type) })),
     [events],
   );
 
   // Week 1: facets filter client-side over the pages loaded so far — the
-  // audit endpoint only takes a cursor. Server-side filter params arrive
-  // with the fuller audit search in a later phase.
+  // audit endpoint only takes a cursor. Server-side filter params arrive with
+  // the fuller audit search in a later phase. Every predicate reads a field
+  // that exists on every row (actor_type, action, object_type).
   const filtered = events.filter(
     (event) =>
-      (actorFilter.length === 0 || actorFilter.includes(event.actor_label)) &&
+      (actorTypeFilter.length === 0 ||
+        actorTypeFilter.includes(event.actor_type)) &&
       (actionFilter.length === 0 || actionFilter.includes(event.action)) &&
       (typeFilter.length === 0 || typeFilter.includes(event.object_type)),
   );
 
   const hasFilters =
-    actorFilter.length > 0 || actionFilter.length > 0 || typeFilter.length > 0;
+    actorTypeFilter.length > 0 ||
+    actionFilter.length > 0 ||
+    typeFilter.length > 0;
   const activeFilterNames = [
-    ...actorFilter,
-    ...actionFilter.map(
-      (a) => ACTION_OPTIONS.find((o) => o.value === a)?.label ?? a,
+    ...actorTypeFilter.map(
+      (value) => ACTOR_TYPE_OPTIONS.find((o) => o.value === value)?.label ?? value,
     ),
-    ...typeFilter,
+    ...actionFilter.map(
+      (value) => ACTION_OPTIONS.find((o) => o.value === value)?.label ?? value,
+    ),
+    ...typeFilter.map(
+      (value) =>
+        typeOptions.find((o) => o.value === value)?.label ?? humanizeType(value),
+    ),
   ];
 
   function clearFilters() {
-    setActorFilter([]);
+    setActorTypeFilter([]);
     setActionFilter([]);
     setTypeFilter([]);
   }
@@ -156,10 +212,10 @@ export function AuditLogPage() {
 
       <div className="mb-3 mt-5 flex flex-wrap items-center gap-2">
         <FilterFacet
-          label="Actor"
-          options={actorOptions}
-          values={actorFilter}
-          onChange={setActorFilter}
+          label="Actor type"
+          options={ACTOR_TYPE_OPTIONS}
+          values={actorTypeFilter}
+          onChange={setActorTypeFilter}
         />
         <FilterFacet
           label="Action"
@@ -228,53 +284,56 @@ export function AuditLogPage() {
               </TR>
             </THead>
             <TBody>
-              {filtered.map((event) => (
-                <TR
-                  key={event.id}
-                  className="cursor-pointer"
-                  onClick={() => setSelected(event)}
-                >
-                  <TD>
-                    <span className="flex items-center gap-2">
-                      <Avatar
-                        name={event.actor_label}
-                        seed={event.actor_id ?? event.actor_label}
-                        size="sm"
-                      />
-                      <span className="text-body-sm text-text-secondary">
-                        {event.actor_label}
+              {filtered.map((event) => {
+                const actor = actorLabelOf(event);
+                const object = objectLabelOf(event);
+                const action = ACTION_META[event.action];
+                return (
+                  <TR
+                    key={event.id}
+                    className="cursor-pointer"
+                    onClick={() => setSelected(event)}
+                  >
+                    <TD>
+                      <span className="flex items-center gap-2">
+                        <Avatar
+                          name={actor}
+                          seed={event.actor_id ?? actor}
+                          size="sm"
+                        />
+                        <span className="text-body-sm text-text-secondary">
+                          {actor}
+                        </span>
                       </span>
-                    </span>
-                  </TD>
-                  <TD>
-                    <Badge variant="neutral" className="capitalize">
-                      {event.action}
-                    </Badge>
-                  </TD>
-                  <TD>
-                    <span className="flex items-center gap-2">
-                      <ObjectTypeChip type={event.object_type} />
-                      <span className="truncate text-body-md text-text-primary">
-                        {event.object_label}
+                    </TD>
+                    <TD>
+                      <StatusPill status={action.family} label={action.label} />
+                    </TD>
+                    <TD>
+                      <span className="flex items-center gap-2">
+                        <ObjectTypeChip type={event.object_type} />
+                        <span className="truncate text-body-md text-text-primary">
+                          {object}
+                        </span>
                       </span>
-                    </span>
-                  </TD>
-                  <TD className="tabular whitespace-nowrap text-right text-body-sm text-text-subtle">
-                    {formatWhen(event.occurred_at)}
-                  </TD>
-                  <TD className="w-10">
-                    <TableIconButton
-                      aria-label={`View details of ${event.action} on ${event.object_label}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelected(event);
-                      }}
-                    >
-                      <Icon name="chevr" className="size-4" />
-                    </TableIconButton>
-                  </TD>
-                </TR>
-              ))}
+                    </TD>
+                    <TD className="tabular whitespace-nowrap text-right text-body-sm text-text-subtle">
+                      {formatWhen(event.occurred_at)}
+                    </TD>
+                    <TD className="w-10">
+                      <TableIconButton
+                        aria-label={`View details of ${action.label} on ${object}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelected(event);
+                        }}
+                      >
+                        <Icon name="chevr" className="size-4" />
+                      </TableIconButton>
+                    </TD>
+                  </TR>
+                );
+              })}
             </TBody>
           </Table>
 
@@ -309,11 +368,11 @@ export function AuditLogPage() {
             <>
               <DrawerHeader>
                 <DrawerTitle className="flex items-center gap-2">
-                  <span className="capitalize">{selected.action}</span>
+                  <span>{ACTION_META[selected.action].label}</span>
                   <ObjectTypeChip type={selected.object_type} />
                 </DrawerTitle>
                 <DrawerDescription>
-                  {selected.object_label} · by {selected.actor_label} ·{" "}
+                  {objectLabelOf(selected)} · by {actorLabelOf(selected)} ·{" "}
                   <span className="tabular">
                     {formatWhen(selected.occurred_at)}
                   </span>
@@ -342,7 +401,7 @@ export function AuditLogPage() {
                     <div className="flex justify-between gap-4">
                       <dt className="text-text-subtle">Actor type</dt>
                       <dd className="text-text-secondary">
-                        {selected.actor_type}
+                        {ACTOR_TYPE_LABEL[selected.actor_type]}
                       </dd>
                     </div>
                     <div className="flex justify-between gap-4">
