@@ -1,0 +1,546 @@
+[project]
+name = "verity"
+version = "0.1.0"
+description = "Verity — multi-tenant SOC 2 / GRC compliance platform"
+requires-python = ">=3.12,<3.13"
+
+# Every dependency here is justified in
+# openspec/changes/add-backend-foundation/design.md. Exact pins, lockfile committed:
+# docs/security/baseline.md.
+dependencies = [
+    "fastapi==0.141.1",
+    "uvicorn[standard]==0.52.1",
+    "sqlalchemy[asyncio]==2.0.51",
+    "asyncpg==0.31.0",
+    "alembic==1.19.1",
+    "pydantic==2.13.4",
+    "pydantic-settings==2.15.0",
+    "celery[redis]==5.6.3",
+    "redis==6.4.0",
+    "httpx==0.28.1",
+    "structlog==26.1.0",
+    "orjson==3.11.9",
+    "cryptography==50.0.0",
+    "argon2-cffi==25.1.0",
+    "pyotp==2.10.0",
+    "pyjwt==2.13.0",
+    "boto3==1.43.68",
+    "tenacity==9.1.4",
+    "langchain==1.3.14",
+    "langchain-openai==1.4.3",
+    "langsmith==0.10.17",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff==0.16.2",
+    "mypy==2.3.0",
+    "pytest==9.1.1",
+    "pytest-asyncio==1.4.0",
+    "pytest-cov==7.1.0",
+    "import-linter==2.13",
+    "types-boto3==1.43.68",
+    "celery-types==0.26.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/verity"]
+
+[tool.uv]
+package = true
+
+# ---------------------------------------------------------------------------
+# ruff — lint and format. Replaces black, isort, and flake8.
+# ---------------------------------------------------------------------------
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "F",      # pyflakes
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "I",      # import sorting
+    "N",      # pep8 naming
+    "UP",     # pyupgrade
+    "ANN",    # missing annotations — mypy strict needs them anyway
+    "ASYNC",  # blocking calls in async functions
+    "S",      # bandit: security
+    "B",      # bugbear
+    "A",      # shadowing builtins
+    "C4",     # comprehensions
+    "DTZ",    # naive datetimes — every timestamp in this product is tz-aware
+    "T20",    # print
+    "PT",     # pytest style
+    "Q",      # quotes
+    "RET",    # return simplification
+    "SIM",    # simplification
+    "TID",    # tidy imports
+    "ARG",    # unused arguments
+    "PTH",    # pathlib over os.path
+    "ERA",    # commented-out code
+    "PL",     # pylint subset
+    "TRY",    # exception antipatterns
+    "RUF",    # ruff-specific
+]
+ignore = [
+    # TRY003's "no long messages outside the exception class" fights the readable
+    # guard clauses in core/rls.py, core/config.py, and db/base.py, where the message
+    # is the whole value of the check.
+    "TRY003",
+    # `Depends(...)` in a default argument is how FastAPI declares a dependency.
+    "B008",
+    # backend/CLAUDE.md names domain exceptions without an Error suffix
+    # (`EvidenceNotFound`, `ApprovalRequired`), so N818 contradicts the documented
+    # convention. The base class is `VerityError`; its subclasses read as conditions.
+    "N818",
+]
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+[tool.ruff.lint.pep8-naming]
+# SQLAlchemy's declared_attr takes `cls`, not `self`.
+classmethod-decorators = ["sqlalchemy.orm.declared_attr", "declared_attr"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = [
+    "S101",    # assert is the point
+    "PLR2004", # a literal in an assertion is clearer than a named constant
+    "ARG001",  # a fixture is requested by name and not always referenced
+]
+"tests/isolation/test_rls_policy.py" = [
+    # The table name is a module constant in this file, not input. The test has to
+    # build DDL and DML against it, which is what it is testing.
+    "S608",
+]
+"src/verity/core/logging.py" = [
+    # CLAUDE.md places `logging` in core/. Absolute imports mean this does not shadow
+    # the stdlib module for anything that imports it.
+    "A005",
+]
+"src/verity/db/migrations/**" = [
+    "INP001",  # alembic loads env.py by path, not as a package member
+]
+
+[tool.ruff.format]
+quote-style = "double"
+
+# ---------------------------------------------------------------------------
+# mypy — strict. Untyped code is how a tenant filter goes missing quietly.
+# ---------------------------------------------------------------------------
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unreachable = true
+warn_no_return = true
+disallow_any_unimported = true
+disallow_any_generics = true
+no_implicit_reexport = true
+show_error_codes = true
+plugins = ["pydantic.mypy"]
+mypy_path = "src"
+files = ["src", "tests"]
+# redis-py ships py.typed but leaves its `from_url` constructors unannotated, and
+# `strict` forbids calling an unannotated function. Silencing the one call site would
+# hide the same mistake in ours, so the exemption names the library instead.
+untyped_calls_exclude = ["redis"]
+
+[[tool.mypy.overrides]]
+# Ships no type information and has no stub package.
+module = ["pyotp.*"]
+ignore_missing_imports = true
+
+# ---------------------------------------------------------------------------
+# pytest
+# ---------------------------------------------------------------------------
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+# Both scopes are the session, and they have to match. The engine and its connection pool
+# are session-scoped; if tests ran on a loop per test, a pooled asyncpg connection opened
+# on the fixture's loop would be handed to a test running on a different one, which fails
+# as "attached to a different loop" — a confusing failure that has nothing to do with what
+# the test asserts.
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
+addopts = "--strict-markers --strict-config -ra"
+markers = [
+    "integration: needs a real Postgres, connecting as the application role",
+    "isolation: proves a tenant-isolation property; a merge blocker (docs/conventions/testing.md)",
+]
+filterwarnings = ["error"]
+
+[tool.coverage.run]
+source = ["src/verity"]
+branch = true
+
+# ---------------------------------------------------------------------------
+# import-linter — the module boundaries in backend/CLAUDE.md, checked by the
+# build rather than by review. See design.md for why `db` sits above `core`.
+# ---------------------------------------------------------------------------
+
+[tool.importlinter]
+root_packages = ["verity"]
+include_external_packages = false
+
+[[tool.importlinter.contracts]]
+name = "Package layers: modules over db over core over shared"
+type = "layers"
+layers = [
+    "verity.modules",
+    "verity.db",
+    "verity.core",
+    "verity.shared",
+]
+
+[[tool.importlinter.contracts]]
+name = "Vertical slice: router over service over repository over models"
+type = "layers"
+layers = ["(router)", "(service)", "(repository)", "(models)"]
+containers = [
+    "verity.modules.approvals",
+    "verity.modules.assets",
+    "verity.modules.audit",
+    "verity.modules.ai",
+    "verity.modules.compliance",
+    "verity.modules.connectors",
+    "verity.modules.documents",
+    "verity.modules.evidence",
+    "verity.modules.iam",
+    "verity.modules.notifications",
+    "verity.modules.risk",
+    "verity.modules.tasks",
+    "verity.modules.tenancy",
+    "verity.modules.vendors",
+    "verity.modules.vulnerabilities",
+]
+
+# One contract per module: a module may import another module's service interface,
+# never its repository, models, or tables. import-linter wildcards cannot express
+# "any module's repository except my own", so these are enumerated. Adding a module
+# means adding its contract here.
+
+[[tool.importlinter.contracts]]
+name = "ai reaches no other module's data"
+type = "forbidden"
+source_modules = ["verity.modules.ai"]
+forbidden_modules = [
+    "verity.modules.approvals.repository", "verity.modules.approvals.models",
+    "verity.modules.assets.repository", "verity.modules.assets.models",
+    "verity.modules.audit.repository", "verity.modules.audit.models",
+    "verity.modules.compliance.repository", "verity.modules.compliance.models",
+    "verity.modules.connectors.repository", "verity.modules.connectors.models",
+    "verity.modules.documents.repository", "verity.modules.documents.models",
+    "verity.modules.evidence.repository", "verity.modules.evidence.models",
+    "verity.modules.iam.repository", "verity.modules.iam.models",
+    "verity.modules.notifications.repository", "verity.modules.notifications.models",
+    "verity.modules.risk.repository", "verity.modules.risk.models",
+    "verity.modules.tasks.repository", "verity.modules.tasks.models",
+    "verity.modules.tenancy.repository", "verity.modules.tenancy.models",
+    "verity.modules.vendors.repository", "verity.modules.vendors.models",
+    "verity.modules.vulnerabilities.repository", "verity.modules.vulnerabilities.models",
+]
+
+[[tool.importlinter.contracts]]
+name = "approvals reaches no other module's data"
+type = "forbidden"
+source_modules = ["verity.modules.approvals"]
+forbidden_modules = [
+    "verity.modules.ai.repository", "verity.modules.ai.models",
+    "verity.modules.assets.repository", "verity.modules.assets.models",
+    "verity.modules.audit.repository", "verity.modules.audit.models",
+    "verity.modules.compliance.repository", "verity.modules.compliance.models",
+    "verity.modules.connectors.repository", "verity.modules.connectors.models",
+    "verity.modules.documents.repository", "verity.modules.documents.models",
+    "verity.modules.evidence.repository", "verity.modules.evidence.models",
+    "verity.modules.iam.repository", "verity.modules.iam.models",
+    "verity.modules.notifications.repository", "verity.modules.notifications.models",
+    "verity.modules.risk.repository", "verity.modules.risk.models",
+    "verity.modules.tasks.repository", "verity.modules.tasks.models",
+    "verity.modules.tenancy.repository", "verity.modules.tenancy.models",
+    "verity.modules.vendors.repository", "verity.modules.vendors.models",
+    "verity.modules.vulnerabilities.repository", "verity.modules.vulnerabilities.models",
+]
+
+[[tool.importlinter.contracts]]
+name = "assets reaches no other module's data"
+type = "forbidden"
+source_modules = ["verity.modules.assets"]
+forbidden_modules = [
+    "verity.modules.ai.repository", "verity.modules.ai.models",
+    "verity.modules.approvals.repository", "verity.modules.approvals.models",
+    "verity.modules.audit.repository", "verity.modules.audit.models",
+    "verity.modules.compliance.repository", "verity.modules.compliance.models",
+    "verity.modules.connectors.repository", "verity.modules.connectors.models",
+    "verity.modules.documents.repository", "verity.modules.documents.models",
+    "verity.modules.evidence.repository", "verity.modules.evidence.models",
+    "verity.modules.iam.repository", "verity.modules.iam.models",
+    "verity.modules.notifications.repository", "verity.modules.notifications.models",
+    "verity.modules.risk.repository", "verity.modules.risk.models",
+    "verity.modules.tasks.repository", "verity.modules.tasks.models",
+    "verity.modules.tenancy.repository", "verity.modules.tenancy.models",
+    "verity.modules.vendors.repository", "verity.modules.vendors.models",
+    "verity.modules.vulnerabilities.repository", "verity.modules.vulnerabilities.models",
+]
+
+[[tool.importlinter.contracts]]
+name = "audit reaches no other module's data"
+type = "forbidden"
+source_modules = ["verity.modules.audit"]
+forbidden_modules = [
+    "verity.modules.ai.repository", "verity.modules.ai.models",
+    "verity.modules.approvals.repository", "verity.modules.approvals.models",
+    "verity.modules.assets.repository", "verity.modules.assets.models",
+    "verity.modules.compliance.repository", "verity.modules.compliance.models",
+    "verity.modules.connectors.repository", "verity.modules.connectors.models",
+    "verity.modules.documents.repository", "verity.modules.documents.models",
+    "verity.modules.evidence.repository", "verity.modules.evidence.models",
+    "verity.modules.iam.repository", "verity.modules.iam.models",
+    "verity.modules.notifications.repository", "verity.modules.notifications.models",
+    "verity.modules.risk.repository", "verity.modules.risk.models",
+    "verity.modules.tasks.repository", "verity.modules.tasks.models",
+    "verity.modules.tenancy.repository", "verity.modules.tenancy.models",
+    "verity.modules.vendors.repository", "verity.modules.vendors.models",
+    "verity.modules.vulnerabilities.repository", "verity.modules.vulnerabilities.models",
+]
+
+[[tool.importlinter.contracts]]
+name = "compliance reaches no other module's data"
+type = "forbidden"
+source_modules = ["verity.modules.compliance"]
+forbidden_modules = [
+    "verity.modules.ai.repository", "verity.modules.ai.models",
+    "verity.modules.approvals.repository", "verity.modules.approvals.models",
+    "verity.modules.assets.repository", "verity.modules.assets.models",
+    "verity.modules.audit.repository", "verity.modules.audit.models",
+    "verity.modules.connectors.repository", "verity.modules.connectors.models",
+    "verity.modules.documents.repository", "verity.modules.documents.models",
+    "verity.modules.evidence.repository", "verity.modules.evidence.models",
+    "verity.modules.iam.repository", "verity.modules.iam.models",
+    "verity.modules.notifications.repository", "verity.modules.notifications.models",
+    "verity.modules.risk.repository", "verity.modules.risk.models",
+    "verity.modules.tasks.repository", "verity.modules.tasks.models",
+    "verity.modules.tenancy.repository", "verity.modules.tenancy.models",
+    "verity.modules.vendors.repository", "verity.modules.vendors.models",
+    "verity.modules.vulnerabilities.repository", "verity.modules.vulnerabilities.models",
+]
+
+[[tool.importlinter.contracts]]
+name = "connectors reaches no other module's data"
+type = "forbidden"
+source_modules = ["verity.modules.connectors"]
+forbidden_modules = [
+    "verity.modules.ai.repository", "verity.modules.ai.models",
+    "verity.modules.approvals.repository", "verity.modules.approvals.models",
+    "verity.modules.assets.repository", "verity.modules.assets.models",
+    "verity.modules.audit.repository", "verity.modules.audit.models",
+    "verity.modules.compliance.repository", "verity.modules.compliance.models",
+    "verity.modules.documents.repository", "verity.modules.documents.models",
+    "verity.modules.evidence.repository", "verity.modules.evidence.models",
+    "verity.modules.iam.repository", "verity.modules.iam.models",
+    "verity.modules.notifications.repository", "verity.modules.notifications.models",
+    "verity.modules.risk.repository", "verity.modules.risk.models",
+    "verity.modules.tasks.repository", "verity.modules.tasks.models",
+    "verity.modules.tenancy.repository", "verity.modules.tenancy.models",
+    "verity.modules.vendors.repository", "verity.modules.vendors.models",
+    "verity.modules.vulnerabilities.repository", "verity.modules.vulnerabilities.models",
+]
+
+[[tool.importlinter.contracts]]
+name = "documents reaches no other module's data"
+type = "forbidden"
+source_modules = ["verity.modules.documents"]
+forbidden_modules = [
+    "verity.modules.ai.repository", "verity.modules.ai.models",
+    "verity.modules.approvals.repository", "verity.modules.approvals.models",
+    "verity.modules.assets.repository", "verity.modules.assets.models",
+    "verity.modules.audit.repository", "verity.modules.audit.models",
+    "verity.modules.compliance.repository", "verity.modules.compliance.models",
+    "verity.modules.connectors.repository", "verity.modules.connectors.models",
+    "verity.modules.evidence.repository", "verity.modules.evidence.models",
+    "verity.modules.iam.repository", "verity.modules.iam.models",
+    "verity.modules.notifications.repository", "verity.modules.notifications.models",
+    "verity.modules.risk.repository", "verity.modules.risk.models",
+    "verity.modules.tasks.repository", "verity.modules.tasks.models",
+    "verity.modules.tenancy.repository", "verity.modules.tenancy.models",
+    "verity.modules.vendors.repository", "verity.modules.vendors.models",
+    "verity.modules.vulnerabilities.repository", "verity.modules.vulnerabilities.models",
+]
+
+[[tool.importlinter.contracts]]
+name = "evidence reaches no other module's data"
+type = "forbidden"
+source_modules = ["verity.modules.evidence"]
+forbidden_modules = [
+    "verity.modules.ai.repository", "verity.modules.ai.models",
+    "verity.modules.approvals.repository", "verity.modules.approvals.models",
+    "verity.modules.assets.repository", "verity.modules.assets.models",
+    "verity.modules.audit.repository", "verity.modules.audit.models",
+    "verity.modules.compliance.repository", "verity.modules.compliance.models",
+    "verity.modules.connectors.repository", "verity.modules.connectors.models",
+    "verity.modules.documents.repository", "verity.modules.documents.models",
+    "verity.modules.iam.repository", "verity.modules.iam.models",
+    "verity.modules.notifications.repository", "verity.modules.notifications.models",
+    "verity.modules.risk.repository", "verity.modules.risk.models",
+    "verity.modules.tasks.repository", "verity.modules.tasks.models",
+    "verity.modules.tenancy.repository", "verity.modules.tenancy.models",
+    "verity.modules.vendors.repository", "verity.modules.vendors.models",
+    "verity.modules.vulnerabilities.repository", "verity.modules.vulnerabilities.models",
+]
+
+[[tool.importlinter.contracts]]
+name = "iam reaches no other module's data"
+type = "forbidden"
+source_modules = ["verity.modules.iam"]
+forbidden_modules = [
+    "verity.modules.ai.repository", "verity.modules.ai.models",
+    "verity.modules.approvals.repository", "verity.modules.approvals.models",
+    "verity.modules.assets.repository", "verity.modules.assets.models",
+    "verity.modules.audit.repository", "verity.modules.audit.models",
+    "verity.modules.compliance.repository", "verity.modules.compliance.models",
+    "verity.modules.connectors.repository", "verity.modules.connectors.models",
+    "verity.modules.documents.repository", "verity.modules.documents.models",
+    "verity.modules.evidence.repository", "verity.modules.evidence.models",
+    "verity.modules.notifications.repository", "verity.modules.notifications.models",
+    "verity.modules.risk.repository", "verity.modules.risk.models",
+    "verity.modules.tasks.repository", "verity.modules.tasks.models",
+    "verity.modules.tenancy.repository", "verity.modules.tenancy.models",
+    "verity.modules.vendors.repository", "verity.modules.vendors.models",
+    "verity.modules.vulnerabilities.repository", "verity.modules.vulnerabilities.models",
+]
+
+[[tool.importlinter.contracts]]
+name = "notifications reaches no other module's data"
+type = "forbidden"
+source_modules = ["verity.modules.notifications"]
+forbidden_modules = [
+    "verity.modules.ai.repository", "verity.modules.ai.models",
+    "verity.modules.approvals.repository", "verity.modules.approvals.models",
+    "verity.modules.assets.repository", "verity.modules.assets.models",
+    "verity.modules.audit.repository", "verity.modules.audit.models",
+    "verity.modules.compliance.repository", "verity.modules.compliance.models",
+    "verity.modules.connectors.repository", "verity.modules.connectors.models",
+    "verity.modules.documents.repository", "verity.modules.documents.models",
+    "verity.modules.evidence.repository", "verity.modules.evidence.models",
+    "verity.modules.iam.repository", "verity.modules.iam.models",
+    "verity.modules.risk.repository", "verity.modules.risk.models",
+    "verity.modules.tasks.repository", "verity.modules.tasks.models",
+    "verity.modules.tenancy.repository", "verity.modules.tenancy.models",
+    "verity.modules.vendors.repository", "verity.modules.vendors.models",
+    "verity.modules.vulnerabilities.repository", "verity.modules.vulnerabilities.models",
+]
+
+[[tool.importlinter.contracts]]
+name = "risk reaches no other module's data"
+type = "forbidden"
+source_modules = ["verity.modules.risk"]
+forbidden_modules = [
+    "verity.modules.ai.repository", "verity.modules.ai.models",
+    "verity.modules.approvals.repository", "verity.modules.approvals.models",
+    "verity.modules.assets.repository", "verity.modules.assets.models",
+    "verity.modules.audit.repository", "verity.modules.audit.models",
+    "verity.modules.compliance.repository", "verity.modules.compliance.models",
+    "verity.modules.connectors.repository", "verity.modules.connectors.models",
+    "verity.modules.documents.repository", "verity.modules.documents.models",
+    "verity.modules.evidence.repository", "verity.modules.evidence.models",
+    "verity.modules.iam.repository", "verity.modules.iam.models",
+    "verity.modules.notifications.repository", "verity.modules.notifications.models",
+    "verity.modules.tasks.repository", "verity.modules.tasks.models",
+    "verity.modules.tenancy.repository", "verity.modules.tenancy.models",
+    "verity.modules.vendors.repository", "verity.modules.vendors.models",
+    "verity.modules.vulnerabilities.repository", "verity.modules.vulnerabilities.models",
+]
+
+[[tool.importlinter.contracts]]
+name = "tasks reaches no other module's data"
+type = "forbidden"
+source_modules = ["verity.modules.tasks"]
+forbidden_modules = [
+    "verity.modules.ai.repository", "verity.modules.ai.models",
+    "verity.modules.approvals.repository", "verity.modules.approvals.models",
+    "verity.modules.assets.repository", "verity.modules.assets.models",
+    "verity.modules.audit.repository", "verity.modules.audit.models",
+    "verity.modules.compliance.repository", "verity.modules.compliance.models",
+    "verity.modules.connectors.repository", "verity.modules.connectors.models",
+    "verity.modules.documents.repository", "verity.modules.documents.models",
+    "verity.modules.evidence.repository", "verity.modules.evidence.models",
+    "verity.modules.iam.repository", "verity.modules.iam.models",
+    "verity.modules.notifications.repository", "verity.modules.notifications.models",
+    "verity.modules.risk.repository", "verity.modules.risk.models",
+    "verity.modules.tenancy.repository", "verity.modules.tenancy.models",
+    "verity.modules.vendors.repository", "verity.modules.vendors.models",
+    "verity.modules.vulnerabilities.repository", "verity.modules.vulnerabilities.models",
+]
+
+[[tool.importlinter.contracts]]
+name = "tenancy reaches no other module's data"
+type = "forbidden"
+source_modules = ["verity.modules.tenancy"]
+forbidden_modules = [
+    "verity.modules.ai.repository", "verity.modules.ai.models",
+    "verity.modules.approvals.repository", "verity.modules.approvals.models",
+    "verity.modules.assets.repository", "verity.modules.assets.models",
+    "verity.modules.audit.repository", "verity.modules.audit.models",
+    "verity.modules.compliance.repository", "verity.modules.compliance.models",
+    "verity.modules.connectors.repository", "verity.modules.connectors.models",
+    "verity.modules.documents.repository", "verity.modules.documents.models",
+    "verity.modules.evidence.repository", "verity.modules.evidence.models",
+    "verity.modules.iam.repository", "verity.modules.iam.models",
+    "verity.modules.notifications.repository", "verity.modules.notifications.models",
+    "verity.modules.risk.repository", "verity.modules.risk.models",
+    "verity.modules.tasks.repository", "verity.modules.tasks.models",
+    "verity.modules.vendors.repository", "verity.modules.vendors.models",
+    "verity.modules.vulnerabilities.repository", "verity.modules.vulnerabilities.models",
+]
+
+[[tool.importlinter.contracts]]
+name = "vendors reaches no other module's data"
+type = "forbidden"
+source_modules = ["verity.modules.vendors"]
+forbidden_modules = [
+    "verity.modules.ai.repository", "verity.modules.ai.models",
+    "verity.modules.approvals.repository", "verity.modules.approvals.models",
+    "verity.modules.assets.repository", "verity.modules.assets.models",
+    "verity.modules.audit.repository", "verity.modules.audit.models",
+    "verity.modules.compliance.repository", "verity.modules.compliance.models",
+    "verity.modules.connectors.repository", "verity.modules.connectors.models",
+    "verity.modules.documents.repository", "verity.modules.documents.models",
+    "verity.modules.evidence.repository", "verity.modules.evidence.models",
+    "verity.modules.iam.repository", "verity.modules.iam.models",
+    "verity.modules.notifications.repository", "verity.modules.notifications.models",
+    "verity.modules.risk.repository", "verity.modules.risk.models",
+    "verity.modules.tasks.repository", "verity.modules.tasks.models",
+    "verity.modules.tenancy.repository", "verity.modules.tenancy.models",
+    "verity.modules.vulnerabilities.repository", "verity.modules.vulnerabilities.models",
+]
+
+[[tool.importlinter.contracts]]
+name = "vulnerabilities reaches no other module's data"
+type = "forbidden"
+source_modules = ["verity.modules.vulnerabilities"]
+forbidden_modules = [
+    "verity.modules.ai.repository", "verity.modules.ai.models",
+    "verity.modules.approvals.repository", "verity.modules.approvals.models",
+    "verity.modules.assets.repository", "verity.modules.assets.models",
+    "verity.modules.audit.repository", "verity.modules.audit.models",
+    "verity.modules.compliance.repository", "verity.modules.compliance.models",
+    "verity.modules.connectors.repository", "verity.modules.connectors.models",
+    "verity.modules.documents.repository", "verity.modules.documents.models",
+    "verity.modules.evidence.repository", "verity.modules.evidence.models",
+    "verity.modules.iam.repository", "verity.modules.iam.models",
+    "verity.modules.notifications.repository", "verity.modules.notifications.models",
+    "verity.modules.risk.repository", "verity.modules.risk.models",
+    "verity.modules.tasks.repository", "verity.modules.tasks.models",
+    "verity.modules.tenancy.repository", "verity.modules.tenancy.models",
+    "verity.modules.vendors.repository", "verity.modules.vendors.models",
+]

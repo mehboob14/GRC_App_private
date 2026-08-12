@@ -1,0 +1,129 @@
+name: backend
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - "backend/**"
+      - "infra/docker/postgres/**"
+      - ".github/workflows/backend-ci.yml"
+
+concurrency:
+  group: backend-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  UV_VERSION: "0.12.3"
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  check:
+    name: lint, types, boundaries
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+
+      - name: Install
+        working-directory: backend
+        run: uv sync --frozen --extra dev
+
+      - name: Format
+        working-directory: backend
+        run: uv run ruff format --check .
+
+      - name: Lint
+        working-directory: backend
+        run: uv run ruff check --output-format=github .
+
+      - name: Types
+        working-directory: backend
+        run: uv run mypy
+
+      - name: Module boundaries
+        working-directory: backend
+        # router -> service -> repository -> models, and no module reaching into
+        # another module's repository or models (backend/CLAUDE.md).
+        run: uv run lint-imports --config pyproject.toml
+
+  test:
+    name: tests including isolation
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        # The owner role. The application role is created below with NOBYPASSRLS; the
+        # suite refuses to run if the role it connects as can bypass a policy.
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: verity_owner
+          POSTGRES_PASSWORD: verity_owner
+          POSTGRES_DB: verity
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U verity_owner -d verity"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+
+    env:
+      ENV: ci
+      # An unreachable database fails the run instead of skipping the suite. A silently
+      # skipped isolation suite is the failure mode docs/conventions/git.md calls never
+      # acceptable.
+      VERITY_REQUIRE_DB: "1"
+      DATABASE_URL: postgresql+asyncpg://verity_app:verity_app@localhost:5432/verity
+      DATABASE_MIGRATION_URL: postgresql+asyncpg://verity_owner:verity_owner@localhost:5432/verity
+      REDIS_URL: redis://localhost:6379/0
+      LANGSMITH_TRACING: "false"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+
+      - name: Install
+        working-directory: backend
+        run: uv sync --frozen --extra dev
+
+      - name: Create the database roles
+        # The same script the compose stack runs, so CI and a laptop cannot drift apart
+        # on the one thing that decides whether RLS is enforced at all.
+        env:
+          PGPASSWORD: verity_owner
+          POSTGRES_USER: verity_owner
+          POSTGRES_DB: verity
+          PGHOST: localhost
+          PGPORT: "5432"
+        run: bash infra/docker/postgres/init/01-roles.sh
+
+      - name: Apply migrations
+        working-directory: backend
+        run: uv run alembic upgrade head
+
+      - name: Tests
+        working-directory: backend
+        run: uv run pytest --cov --cov-report=term-missing
+
+      - name: Isolation suite, on its own, so a failure here is unmistakable
+        working-directory: backend
+        run: uv run pytest tests/isolation -v

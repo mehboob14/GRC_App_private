@@ -1,0 +1,88 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* Light (white) mode only — Figma MaJ0JAker7oSIiAK6HqgO7 has no dark theme. */
+  :root {
+    --color-bg: 245 246 248;
+    --color-bg-elevated: 255 255 255;
+    --color-bg-sunken: 250 251 252;
+    --color-accent-tint: 239 243 248;
+    --color-na-bg: 241 242 244;
+
+    --color-border: 226 229 234;
+    --color-border-strong: 201 207 216;
+
+    --color-text: 19 23 32;
+    --color-text-muted: 75 85 99;
+    --color-text-faint: 102 112 133;
+    --color-text-inverse: 255 255 255;
+
+    --color-accent: 28 78 128;
+    --color-accent-fg: 255 255 255;
+
+    --color-pass: 46 106 79;
+    --color-pass-fg: 35 89 66;
+    --color-pass-bg: 237 243 239;
+
+    --color-fail: 158 43 58;
+    --color-fail-fg: 138 35 49;
+    --color-fail-bg: 248 237 238;
+    --color-fail-border: 230 210 213;
+
+    --color-review: 133 83 22;
+    --color-review-fg: 110 68 18;
+    --color-review-bg: 245 241 232;
+
+    --color-pending: 70 83 107;
+    --color-critical-fg: 107 22 34;
+
+    --color-identity-1: 91 100 114;
+    --color-identity-2: 110 106 120;
+    --color-identity-3: 79 96 104;
+    --color-identity-4: 107 97 84;
+    --color-identity-5: 99 89 107;
+    --color-identity-6: 99 89 107;
+
+    --radius-sm: 5px;
+    --radius-md: 8px;
+    --radius-lg: 9px;
+    --radius-xl: 12px;
+
+    --shadow-sm: 0 1px 2px rgb(19 23 32 / 0.04);
+    --shadow-md: 0 4px 12px rgb(19 23 32 / 0.08);
+    --shadow-mark: 0 2px 3px rgb(28 78 128 / 0.35);
+
+    color-scheme: light;
+  }
+
+  html,
+  body,
+  #root {
+    @apply h-full;
+  }
+
+  html {
+    /* Clear any previously persisted dark class */
+    color-scheme: light;
+  }
+
+  body {
+    @apply bg-bg font-sans text-body-md text-text antialiased;
+  }
+
+  *:focus-visible {
+    @apply outline outline-2 outline-offset-2 outline-accent;
+  }
+}
+
+@layer utilities {
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .type-overline {
+    @apply font-sans text-overline uppercase text-text-faint;
+  }
+}

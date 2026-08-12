@@ -1,0 +1,103 @@
+# Local development stack. Postgres 16, Redis, and MinIO for evidence files.
+#
+# No Keycloak. Phase 1 ships native auth; the customer's external Keycloak-based IdP
+# federates in later behind the identity seam (ADR-0006). Adding it now would be
+# building a Phase 3 dependency into a Phase 1 laptop.
+#
+# Run from the repository root so the root `.env` is picked up:
+#   docker compose --env-file .env -f infra/docker/docker-compose.yml up -d
+
+name: verity
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      # This is the schema owner and the role migrations run as. It is a superuser
+      # because the official image makes POSTGRES_USER one; the application never
+      # connects with it. The application role is created by the init script below
+      # with NOSUPERUSER and NOBYPASSRLS.
+      POSTGRES_USER: ${DATABASE_OWNER_USER:-verity_owner}
+      POSTGRES_PASSWORD: ${DATABASE_OWNER_PASSWORD:-verity_owner}
+      POSTGRES_DB: ${DATABASE_NAME:-verity}
+      VERITY_APP_USER: ${DATABASE_APP_USER:-verity_app}
+      VERITY_APP_PASSWORD: ${DATABASE_APP_PASSWORD:-verity_app}
+      VERITY_READONLY_USER: ${DATABASE_READONLY_USER:-verity_readonly}
+      VERITY_READONLY_PASSWORD: ${DATABASE_READONLY_PASSWORD:-verity_readonly}
+    ports:
+      - "${DATABASE_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      # Runs once, on an empty data directory. Re-running it by hand against an
+      # existing cluster is safe; every statement is guarded.
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U ${DATABASE_OWNER_USER:-verity_owner} -d ${DATABASE_NAME:-verity}
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes", "--save", ""]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    restart: unless-stopped
+
+  minio:
+    image: minio/minio:latest
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY_ID:-verity-minio}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_ACCESS_KEY:-verity-minio-secret}
+    ports:
+      - "${S3_PORT:-9000}:9000"
+      - "${S3_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+
+  # One-shot: creates the evidence bucket and exits. Idempotent.
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      S3_BUCKET: ${S3_BUCKET:-verity-evidence}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-verity-minio}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-verity-minio-secret}
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        set -e
+        mc alias set verity http://minio:9000 "$$S3_ACCESS_KEY_ID" "$$S3_SECRET_ACCESS_KEY"
+        mc mb --ignore-existing "verity/$$S3_BUCKET"
+        # Evidence is served through short-lived signed URLs, never public reads.
+        mc anonymous set none "verity/$$S3_BUCKET"
+        # Retention defaults to audit period + 1 year; legal_hold exempts an item.
+        # Versioning so an overwritten evidence file is still recoverable.
+        mc version enable "verity/$$S3_BUCKET"
+        echo "bucket $$S3_BUCKET ready"
+    restart: "no"
+
+volumes:
+  postgres-data:
+  redis-data:
+  minio-data:

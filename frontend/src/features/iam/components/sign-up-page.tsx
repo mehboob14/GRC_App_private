@@ -1,0 +1,119 @@
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { AuthSplitLayout } from "@/features/iam/components/auth-split-layout";
+import { Button, Icon, PasswordField, TextField } from "@/components/ui";
+import { authApi } from "@/lib/api/endpoints";
+import { ApiError } from "@/lib/api/client";
+import { useAuth } from "@/lib/auth/auth-context";
+
+const schema = z.object({
+  company_name: z.string().min(2, "Enter your company name."),
+  full_name: z.string().min(2, "Enter your full name."),
+  email: z.string().email("Enter a work email."),
+  password: z.string().min(10, "Use at least 10 characters."),
+});
+
+type FormValues = z.infer<typeof schema>;
+
+export function SignUpPage() {
+  const navigate = useNavigate();
+  const { applyLogin } = useAuth();
+  const [serverError, setServerError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: {
+      company_name: "",
+      full_name: "",
+      email: "",
+      password: "",
+    },
+    mode: "onBlur",
+  });
+
+  async function onSubmit(values: FormValues) {
+    setServerError(null);
+    setBusy(true);
+    try {
+      const response = await authApi.signup(values);
+      if (response.status === "mfa_enrollment_required") {
+        navigate(`/mfa/enroll?challenge=${response.challenge_token}`, {
+          replace: true,
+        });
+        return;
+      }
+      if (response.status === "authenticated") {
+        applyLogin(response);
+        navigate("/quick-start", { replace: true });
+      }
+    } catch (error) {
+      setServerError(
+        error instanceof ApiError
+          ? error.message
+          : "Could not start your trial.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <AuthSplitLayout
+      title="Start your trial"
+      subtitle="Create a workspace. You’ll enroll MFA as the first Admin."
+    >
+      <form
+        className="flex flex-col gap-1"
+        onSubmit={(e) => void form.handleSubmit(onSubmit)(e)}
+        noValidate
+      >
+        <TextField
+          label="Company name"
+          placeholder="Northwind Cloud"
+          error={form.formState.errors.company_name?.message}
+          {...form.register("company_name")}
+        />
+        <TextField
+          label="Your full name"
+          placeholder="Alex Okafor"
+          error={form.formState.errors.full_name?.message}
+          {...form.register("full_name")}
+        />
+        <TextField
+          label="Work email"
+          type="email"
+          autoComplete="username"
+          placeholder="you@company.com"
+          error={form.formState.errors.email?.message}
+          {...form.register("email")}
+        />
+        <PasswordField
+          label="Password"
+          autoComplete="new-password"
+          placeholder="At least 10 characters"
+          error={form.formState.errors.password?.message}
+          {...form.register("password")}
+        />
+        {serverError ? (
+          <p className="mt-2 text-body-sm text-fail-fg" role="alert">
+            {serverError}
+          </p>
+        ) : null}
+        <Button type="submit" className="mt-3 w-full" size="lg" loading={busy}>
+          Create workspace
+          <Icon name="arrowr" className="size-4" />
+        </Button>
+      </form>
+      <p className="mt-6 text-body-sm text-text-muted">
+        Already have an account?{" "}
+        <Link className="font-semibold text-accent" to="/sign-in">
+          Sign in
+        </Link>
+      </p>
+    </AuthSplitLayout>
+  );
+}

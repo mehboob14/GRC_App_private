@@ -1,0 +1,102 @@
+schema: spec-driven
+
+context: |
+  Verity — multi-tenant SOC 2 / GRC compliance platform. Sold one account per company; several
+  customer companies run isolated on one deployment. Delivered in three phases: Phase 1 core
+  platform on manual data, Phase 2 connectors and continuous monitoring, Phase 3 ERM and the
+  remaining connectors.
+
+  Stack: React + TypeScript + Tailwind + Vite (TanStack Query). Python 3.12 + FastAPI +
+  SQLAlchemy 2.0 async + Pydantic v2. PostgreSQL 16 with row-level security. Alembic migrations.
+  Native auth in Phase 1 behind an IdP-agnostic seam; the customer's external Keycloak-based OIDC/SAML
+  IdP federates in later (Phase 3). Redis + Celery for jobs and scheduling. S3-compatible object
+  storage for evidence files.
+
+  Architecture: modular monolith. Backend modules under backend/src/verity/modules/ as vertical
+  slices (router, schemas, models, service, repository). A module may call another module's
+  service; never its repository, models, or tables. Frontend features under frontend/src/features/
+  mirror backend modules one-for-one.
+
+  Modules: tenancy, iam, compliance, evidence, tasks, documents, risk, vendors, assets,
+  vulnerabilities, connectors, approvals, audit, ai, notifications.
+
+  NON-NEGOTIABLE RULES — violating one is a bug even if tests pass:
+  - Every tenant-owned row carries tenant_id, and tenant_id leads every composite index. RLS is a
+    second wall, never the only one. The provider plane (platform admins, tenants, branding,
+    provisioning) and global content (frameworks, requirements, control templates, checks,
+    question banks, document and risk templates) carry no tenant_id.
+  - The tenant is never a path or query parameter. It is resolved from the session and verified
+    against actual membership.
+  - A user is a global identity (users, credentials, user_identities carry no tenant_id; email is
+    unique globally). Membership in a tenant is tenant_memberships. Every in-tenant reference to a
+    person (owner, approver, assignee, group member) FKs to the membership, never to users.
+  - Append-only tables are never updated or deleted from: audit_log, task_transitions,
+    vuln_transitions, check_results, readiness_snapshots, kri_measurements, document_versions.
+  - Compliance objects (controls, risks, documents, vendors) are disabled with a recorded
+    justification, never deleted.
+  - Every state-changing action writes audit_log with actor, timestamp, and before/after snapshots.
+  - Secrets (connector credentials, MFA secrets, portal tokens) are encrypted at the application
+    layer and never appear in logs, exceptions, or __repr__.
+  - "error" is a distinct state from "fail". A broken connector must never look like a failed
+    control.
+  - AI drafts; humans decide. AI never publishes, approves, or changes state. AI-authored content
+    is marked origin=ai_draft and passes the same approval gate as human content.
+  - Cross-tenant resources return 404, never 403 — a 403 confirms the resource exists.
+
+  DATA MODEL: defined in docs/architecture/data-model.md (working summary) and the ER Design
+  document (source of truth). Never invent a table or column. If what you need is not there, say so
+  and stop. Conventions: UUIDv7 primary keys, created_at/updated_at on every table, status fields
+  are text with CHECK constraints (never enums), and source/external_id/synced_at on every table
+  that could ever receive rows from an outside system.
+
+  DECISIONS ALREADY MADE: see docs/adr/. Do not re-litigate them. ADR-0006 is ACCEPTED — Phase 1
+  ships native auth (the credentials table stays: password hash + encrypted MFA secret) behind an
+  IdP-agnostic seam; user_identities is the provider-agnostic federation seam, built now and used
+  later; the customer's external Keycloak (or a future in-house one) federates in additively, never a
+  schema rewrite; authorization always lives in the platform. ADR-0011 is ACCEPTED — a user is a
+  global identity and membership in a tenant is tenant_memberships; every in-tenant reference to a
+  person FKs to the membership, never to users.
+
+rules:
+  proposal:
+    - State which phase and deliverable this belongs to. Do not propose Phase 2 or 3 work during Phase 1.
+    - Include a Non-goals section.
+    - Name every module the change touches, and flag explicitly if it crosses a module boundary.
+    - Flag explicitly if the change touches tenant isolation, authentication, authorization, the
+      audit trail, or an append-only table. These need the closest review.
+    - If the change needs a table or column not in the data model, stop and say so rather than
+      inventing schema.
+  spec:
+    - Write requirements as observable behaviour, not implementation.
+    - Every requirement has at least one scenario, including the failure and permission-denied paths.
+    - State the required permission key (module:action) for every new route.
+    - State whether object-scoped filtering applies (control owner, time-boxed auditor) — the flat
+      permission model does not provide row-level scoping.
+    - State what gets written to the audit trail.
+  design:
+    - Include the migration plan — new tables, RLS policy, and indexes with tenant_id leading.
+    - State how the change behaves when a dependency is slow or down. Every external call has a
+      timeout.
+    - Ask and answer explicitly — what happens if this runs twice? Mutating and connector-facing
+      paths must be idempotent.
+  tasks:
+    - Chunks of at most 2 hours.
+    - A migration adding a tenant-owned table enables RLS and adds the policy in the same migration —
+      never a follow-up task.
+    - Every module change includes its isolation test in the same change set.
+    - Include a task to update the affected docs. A change that makes a doc wrong is not done.
+
+operations:
+  apply:
+    guidance:
+      - Implement to the approved spec. Divergence is a spec change, not an implementation detail —
+        stop and update the spec first.
+      - Never disable RLS, never use a BYPASSRLS role, and never bypass the tenant filter to make a
+        test pass.
+      - Run the isolation suite before declaring the change complete.
+  archive:
+    guidance:
+      - Record any decision made during implementation that a future engineer would otherwise have
+        to reverse-engineer.
+      - If the change settled something expensive to reverse, write an ADR rather than leaving it in
+        the archived spec.

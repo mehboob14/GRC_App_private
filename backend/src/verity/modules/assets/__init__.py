@@ -1,0 +1,5 @@
+"""Inventory, merge, relationships, software, policies, violations.
+
+Not implemented yet. See docs/product/delivery-plan.md for the phase this belongs to
+and backend/CLAUDE.md for the file layout a module uses.
+"""

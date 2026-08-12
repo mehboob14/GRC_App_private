@@ -1,0 +1,705 @@
+import { http, HttpResponse, delay } from "msw";
+import {
+  DEMO_MFA_CODE,
+  DEMO_PASSWORD,
+  auditEvents,
+  findUserByEmail,
+  groups,
+  members,
+  membersForTenant,
+  membershipFromToken,
+  membershipTenants,
+  principalFromMembership,
+  pushAudit,
+  roles,
+  securityPolicy,
+  tokenFor,
+  users,
+  workspacesForUser,
+} from "@/mocks/fixtures";
+import type {
+  LoginResponse,
+  Member,
+  SignupRequest,
+} from "@/lib/api/types";
+
+function err(status: number, code: string, message: string) {
+  return HttpResponse.json(
+    {
+      error: {
+        code,
+        message,
+        correlation_id: crypto.randomUUID(),
+      },
+    },
+    { status },
+  );
+}
+
+function successFromMembership(
+  membershipId: string,
+): Extract<LoginResponse, { status: "authenticated" }> | null {
+  const principal = principalFromMembership(membershipId);
+  if (!principal) return null;
+  return {
+    status: "authenticated",
+    access_token: tokenFor(membershipId),
+    principal,
+    workspaces: workspacesForUser(principal.user.id),
+  };
+}
+
+const challenges = new Map<
+  string,
+  { membershipId: string; kind: "mfa" | "enroll" | "select"; userId: string }
+>();
+
+export const handlers = [
+  http.post("/api/v1/auth/login", async ({ request }) => {
+    await delay(250);
+    const body = (await request.json()) as {
+      email?: string;
+      password?: string;
+    };
+    const user = findUserByEmail(body.email ?? "");
+    // Constant-time-ish path for missing user
+    if (!user || body.password !== user.password) {
+      await delay(40);
+      return err(401, "invalid_credentials", "Email or password is incorrect.");
+    }
+
+    const workspaces = workspacesForUser(user.id);
+    if (workspaces.length === 0) {
+      return err(401, "no_membership", "No active workspace membership.");
+    }
+
+    if (workspaces.length > 1) {
+      const selection_token = crypto.randomUUID();
+      challenges.set(selection_token, {
+        membershipId: workspaces[0]!.membership_id,
+        kind: "select",
+        userId: user.id,
+      });
+      return HttpResponse.json({
+        status: "select_workspace",
+        selection_token,
+        workspaces,
+      } satisfies LoginResponse);
+    }
+
+    const membershipId = workspaces[0]!.membership_id;
+    const member = members.find((m) => m.membership_id === membershipId)!;
+    const isAdmin = member.role_names.includes("Admin");
+
+    if (isAdmin && securityPolicy.require_mfa) {
+      if (!user.mfa_enabled) {
+        const challenge_token = crypto.randomUUID();
+        challenges.set(challenge_token, {
+          membershipId,
+          kind: "enroll",
+          userId: user.id,
+        });
+        return HttpResponse.json({
+          status: "mfa_enrollment_required",
+          challenge_token,
+          membership_id: membershipId,
+        } satisfies LoginResponse);
+      }
+      const challenge_token = crypto.randomUUID();
+      challenges.set(challenge_token, {
+        membershipId,
+        kind: "mfa",
+        userId: user.id,
+      });
+      return HttpResponse.json({
+        status: "mfa_required",
+        challenge_token,
+        membership_id: membershipId,
+      } satisfies LoginResponse);
+    }
+
+    const result = successFromMembership(membershipId)!;
+    pushAudit({
+      actor_type: "membership",
+      actor_id: membershipId,
+      actor_label: user.full_name,
+      action: "create",
+      object_type: "session",
+      object_id: crypto.randomUUID(),
+      object_label: "Session",
+      before: null,
+      after: { membership_id: membershipId },
+      tenant_id: result.principal.tenant_id,
+    });
+    return HttpResponse.json(result);
+  }),
+
+  http.post("/api/v1/auth/workspaces/select", async ({ request }) => {
+    await delay(150);
+    const body = (await request.json()) as {
+      selection_token?: string;
+      membership_id?: string;
+    };
+    const challenge = challenges.get(body.selection_token ?? "");
+    if (!challenge || challenge.kind !== "select") {
+      return err(401, "invalid_challenge", "Workspace selection expired.");
+    }
+    const membershipId = body.membership_id ?? "";
+    const allowed = workspacesForUser(challenge.userId).some(
+      (w) => w.membership_id === membershipId,
+    );
+    if (!allowed) return err(404, "membership_not_found", "Membership not found.");
+
+    const member = members.find((m) => m.membership_id === membershipId)!;
+    const user = users[challenge.userId]!;
+    if (member.role_names.includes("Admin") && securityPolicy.require_mfa) {
+      const challenge_token = crypto.randomUUID();
+      challenges.set(challenge_token, {
+        membershipId,
+        kind: user.mfa_enabled ? "mfa" : "enroll",
+        userId: user.id,
+      });
+      challenges.delete(body.selection_token!);
+      return HttpResponse.json(
+        user.mfa_enabled
+          ? {
+              status: "mfa_required",
+              challenge_token,
+              membership_id: membershipId,
+            }
+          : {
+              status: "mfa_enrollment_required",
+              challenge_token,
+              membership_id: membershipId,
+            },
+      );
+    }
+
+    challenges.delete(body.selection_token!);
+    return HttpResponse.json(successFromMembership(membershipId));
+  }),
+
+  http.post("/api/v1/auth/mfa/verify", async ({ request }) => {
+    await delay(200);
+    const body = (await request.json()) as {
+      challenge_token?: string;
+      code?: string;
+    };
+    const challenge = challenges.get(body.challenge_token ?? "");
+    if (!challenge || challenge.kind !== "mfa") {
+      return err(401, "invalid_challenge", "MFA challenge expired.");
+    }
+    if (body.code !== DEMO_MFA_CODE) {
+      return err(401, "invalid_mfa_code", "That code is incorrect or expired.");
+    }
+    challenges.delete(body.challenge_token!);
+    const result = successFromMembership(challenge.membershipId)!;
+    pushAudit({
+      actor_type: "membership",
+      actor_id: challenge.membershipId,
+      actor_label: result.principal.user.full_name,
+      action: "create",
+      object_type: "session",
+      object_id: crypto.randomUUID(),
+      object_label: "Session",
+      before: null,
+      after: { mfa: true },
+      tenant_id: result.principal.tenant_id,
+    });
+    return HttpResponse.json(result);
+  }),
+
+  http.post("/api/v1/auth/mfa/enroll", async ({ request }) => {
+    await delay(150);
+    const body = (await request.json()) as { challenge_token?: string };
+    const challenge = challenges.get(body.challenge_token ?? "");
+    if (!challenge || challenge.kind !== "enroll") {
+      return err(401, "invalid_challenge", "Enrollment challenge expired.");
+    }
+    const secret = "JBSWY3DPEHPK3PXP";
+    const email = users[challenge.userId]?.email ?? "user@verity.local";
+    return HttpResponse.json({
+      challenge_token: body.challenge_token,
+      secret,
+      otpauth_url: `otpauth://totp/Verity:${encodeURIComponent(email)}?secret=${secret}&issuer=Verity`,
+    });
+  }),
+
+  http.post("/api/v1/auth/mfa/confirm", async ({ request }) => {
+    await delay(200);
+    const body = (await request.json()) as {
+      challenge_token?: string;
+      code?: string;
+    };
+    const challenge = challenges.get(body.challenge_token ?? "");
+    if (!challenge || challenge.kind !== "enroll") {
+      return err(401, "invalid_challenge", "Enrollment challenge expired.");
+    }
+    if (body.code !== DEMO_MFA_CODE) {
+      return err(401, "invalid_mfa_code", "Enter the 6-digit code from your authenticator.");
+    }
+    const user = users[challenge.userId];
+    if (user) user.mfa_enabled = true;
+    const member = members.find((m) => m.membership_id === challenge.membershipId);
+    if (member) member.mfa_enabled = true;
+    challenges.delete(body.challenge_token!);
+    return HttpResponse.json(successFromMembership(challenge.membershipId));
+  }),
+
+  http.post("/api/v1/auth/signup", async ({ request }) => {
+    await delay(300);
+    const body = (await request.json()) as SignupRequest;
+    if (findUserByEmail(body.email)) {
+      return err(409, "email_taken", "That work email is already registered.");
+    }
+    if (!body.company_name?.trim() || !body.full_name?.trim()) {
+      return err(422, "validation_error", "Company name and full name are required.");
+    }
+    if ((body.password?.length ?? 0) < 10) {
+      return err(
+        422,
+        "weak_password",
+        "Use at least 10 characters for your password.",
+      );
+    }
+
+    const userId = `user-${crypto.randomUUID().slice(0, 8)}`;
+    const membershipId = `mem-${crypto.randomUUID().slice(0, 8)}`;
+    const tenantId = `tenant-${crypto.randomUUID().slice(0, 8)}`;
+    const slug = body.company_name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "")
+      .slice(0, 32);
+    users[userId] = {
+      id: userId,
+      email: body.email.toLowerCase(),
+      full_name: body.full_name,
+      status: "active",
+      mfa_enabled: false,
+      password: body.password,
+    };
+    membershipTenants[membershipId] = {
+      tenant_id: tenantId,
+      tenant_name: body.company_name.trim(),
+      tenant_slug: slug || tenantId,
+    };
+    members.push({
+      membership_id: membershipId,
+      user_id: userId,
+      full_name: body.full_name,
+      email: body.email.toLowerCase(),
+      status: "active",
+      role_names: ["Admin"],
+      group_names: [],
+      mfa_enabled: false,
+    });
+
+    // Force MFA enroll for new admin
+    const challenge_token = crypto.randomUUID();
+    challenges.set(challenge_token, {
+      membershipId,
+      kind: "enroll",
+      userId,
+    });
+
+    pushAudit({
+      actor_type: "membership",
+      actor_id: membershipId,
+      actor_label: body.full_name,
+      action: "create",
+      object_type: "tenant",
+      object_id: tenantId,
+      object_label: body.company_name,
+      before: null,
+      after: { name: body.company_name, status: "provisioning" },
+      tenant_id: tenantId,
+    });
+
+    return HttpResponse.json({
+      status: "mfa_enrollment_required",
+      challenge_token,
+      membership_id: membershipId,
+    });
+  }),
+
+  http.get("/api/v1/auth/workspaces", ({ request }) => {
+    const membershipId = membershipFromToken(
+      request.headers.get("Authorization"),
+    );
+    const principal = membershipId
+      ? principalFromMembership(membershipId)
+      : null;
+    if (!principal) return err(401, "unauthenticated", "Sign in to continue.");
+    return HttpResponse.json(workspacesForUser(principal.user.id));
+  }),
+
+  http.post("/api/v1/auth/workspaces/switch", async ({ request }) => {
+    await delay(200);
+    const membershipId = membershipFromToken(
+      request.headers.get("Authorization"),
+    );
+    const current = membershipId
+      ? principalFromMembership(membershipId)
+      : null;
+    if (!current) return err(401, "unauthenticated", "Sign in to continue.");
+
+    const body = (await request.json()) as { membership_id?: string };
+    const target = body.membership_id ?? "";
+    const allowed = workspacesForUser(current.user.id).some(
+      (w) => w.membership_id === target,
+    );
+    if (!allowed) return err(404, "membership_not_found", "Membership not found.");
+
+    const result = successFromMembership(target)!;
+    pushAudit({
+      actor_type: "membership",
+      actor_id: target,
+      actor_label: current.user.full_name,
+      action: "create",
+      object_type: "session",
+      object_id: crypto.randomUUID(),
+      object_label: "Workspace switch",
+      before: { membership_id: membershipId },
+      after: { membership_id: target },
+      tenant_id: result.principal.tenant_id,
+    });
+    return HttpResponse.json(result);
+  }),
+
+  http.get("/api/v1/members", ({ request }) => {
+    const membershipId = membershipFromToken(
+      request.headers.get("Authorization"),
+    );
+    const principal = membershipId
+      ? principalFromMembership(membershipId)
+      : null;
+    if (!principal) return err(401, "unauthenticated", "Sign in to continue.");
+    if (!principal.permissions.includes("members:read")) {
+      return err(403, "permission_denied", "Missing permission: members:read");
+    }
+    return HttpResponse.json(membersForTenant(principal.tenant_id));
+  }),
+
+  http.post("/api/v1/members/invite", async ({ request }) => {
+    await delay(200);
+    const membershipId = membershipFromToken(
+      request.headers.get("Authorization"),
+    );
+    const principal = membershipId
+      ? principalFromMembership(membershipId)
+      : null;
+    if (!principal) return err(401, "unauthenticated", "Sign in to continue.");
+    if (!principal.permissions.includes("members:invite")) {
+      return err(403, "permission_denied", "Missing permission: members:invite");
+    }
+    const body = (await request.json()) as {
+      email?: string;
+      full_name?: string;
+      role_id?: string;
+    };
+    const role = roles.find((r) => r.id === body.role_id);
+    if (!role) return err(422, "validation_error", "Choose a role.");
+    if (!body.email || !body.full_name) {
+      return err(422, "validation_error", "Name and work email are required.");
+    }
+
+    const existing = membersForTenant(principal.tenant_id).find(
+      (m) => m.email.toLowerCase() === body.email!.toLowerCase(),
+    );
+    if (existing) {
+      return HttpResponse.json(existing);
+    }
+
+    let user = findUserByEmail(body.email);
+    if (!user) {
+      const userId = `user-${crypto.randomUUID().slice(0, 8)}`;
+      users[userId] = {
+        id: userId,
+        email: body.email.toLowerCase(),
+        full_name: body.full_name,
+        status: "active",
+        mfa_enabled: false,
+        password: DEMO_PASSWORD,
+      };
+      user = users[userId];
+    }
+    const membershipIdNew = `mem-${crypto.randomUUID().slice(0, 8)}`;
+    const tenantMeta = membershipTenants[principal.membership_id] ?? {
+      tenant_id: principal.tenant_id,
+      tenant_name: principal.tenant_name,
+      tenant_slug: principal.tenant_id.replace(/^tenant-/, ""),
+    };
+    membershipTenants[membershipIdNew] = { ...tenantMeta };
+    const newMember: Member = {
+      membership_id: membershipIdNew,
+      user_id: user!.id,
+      full_name: body.full_name,
+      email: body.email.toLowerCase(),
+      status: "invited",
+      role_names: [role.name],
+      group_names: [],
+      mfa_enabled: user!.mfa_enabled,
+    };
+    members.push(newMember);
+    pushAudit({
+      actor_type: "membership",
+      actor_id: principal.membership_id,
+      actor_label: principal.user.full_name,
+      action: "create",
+      object_type: "tenant_membership",
+      object_id: newMember.membership_id,
+      object_label: newMember.full_name,
+      before: null,
+      after: { email: newMember.email, role: role.name },
+      tenant_id: principal.tenant_id,
+    });
+    return HttpResponse.json(newMember, { status: 201 });
+  }),
+
+  http.post("/api/v1/members/:id/disable", async ({ params, request }) => {
+    await delay(150);
+    const membershipId = membershipFromToken(
+      request.headers.get("Authorization"),
+    );
+    const principal = membershipId
+      ? principalFromMembership(membershipId)
+      : null;
+    if (!principal) return err(401, "unauthenticated", "Sign in to continue.");
+    if (!principal.permissions.includes("members:disable")) {
+      return err(403, "permission_denied", "Missing permission: members:disable");
+    }
+    const member = members.find((m) => m.membership_id === params.id);
+    if (!member) return err(404, "not_found", "Member not found.");
+    const before = { ...member };
+    member.status = "disabled";
+    pushAudit({
+      actor_type: "membership",
+      actor_id: principal.membership_id,
+      actor_label: principal.user.full_name,
+      action: "update",
+      object_type: "tenant_membership",
+      object_id: member.membership_id,
+      object_label: member.full_name,
+      before: { status: before.status },
+      after: { status: "disabled" },
+      tenant_id: principal.tenant_id,
+    });
+    return HttpResponse.json(member);
+  }),
+
+  http.put("/api/v1/members/:id/roles", async ({ params, request }) => {
+    await delay(150);
+    const membershipId = membershipFromToken(
+      request.headers.get("Authorization"),
+    );
+    const principal = membershipId
+      ? principalFromMembership(membershipId)
+      : null;
+    if (!principal) return err(401, "unauthenticated", "Sign in to continue.");
+    if (!principal.permissions.includes("roles:manage")) {
+      return err(403, "permission_denied", "Missing permission: roles:manage");
+    }
+    const body = (await request.json()) as { role_id?: string };
+    const role = roles.find((r) => r.id === body.role_id);
+    const member = members.find((m) => m.membership_id === params.id);
+    if (!member || !role) return err(404, "not_found", "Member or role not found.");
+    const before = [...member.role_names];
+    member.role_names = [role.name];
+    pushAudit({
+      actor_type: "membership",
+      actor_id: principal.membership_id,
+      actor_label: principal.user.full_name,
+      action: "update",
+      object_type: "role_assignment",
+      object_id: member.membership_id,
+      object_label: `${member.full_name} → ${role.name}`,
+      before: { roles: before },
+      after: { roles: member.role_names },
+      tenant_id: principal.tenant_id,
+    });
+    return HttpResponse.json(member);
+  }),
+
+  http.get("/api/v1/groups", ({ request }) => {
+    const membershipId = membershipFromToken(
+      request.headers.get("Authorization"),
+    );
+    const principal = membershipId
+      ? principalFromMembership(membershipId)
+      : null;
+    if (!principal) return err(401, "unauthenticated", "Sign in to continue.");
+    if (!principal.permissions.includes("groups:read")) {
+      return err(403, "permission_denied", "Missing permission: groups:read");
+    }
+    return HttpResponse.json(groups);
+  }),
+
+  http.post("/api/v1/groups", async ({ request }) => {
+    await delay(150);
+    const membershipId = membershipFromToken(
+      request.headers.get("Authorization"),
+    );
+    const principal = membershipId
+      ? principalFromMembership(membershipId)
+      : null;
+    if (!principal) return err(401, "unauthenticated", "Sign in to continue.");
+    if (!principal.permissions.includes("groups:manage")) {
+      return err(403, "permission_denied", "Missing permission: groups:manage");
+    }
+    const body = (await request.json()) as { name?: string };
+    if (!body.name?.trim()) {
+      return err(422, "validation_error", "Group name is required.");
+    }
+    const group = {
+      id: `group-${crypto.randomUUID().slice(0, 6)}`,
+      name: body.name.trim(),
+      member_count: 0,
+      member_ids: [] as string[],
+    };
+    groups.push(group);
+    pushAudit({
+      actor_type: "membership",
+      actor_id: principal.membership_id,
+      actor_label: principal.user.full_name,
+      action: "create",
+      object_type: "group",
+      object_id: group.id,
+      object_label: group.name,
+      before: null,
+      after: { name: group.name },
+      tenant_id: principal.tenant_id,
+    });
+    return HttpResponse.json(group, { status: 201 });
+  }),
+
+  http.post("/api/v1/groups/:id/members", async ({ params, request }) => {
+    await delay(150);
+    const membershipId = membershipFromToken(
+      request.headers.get("Authorization"),
+    );
+    const principal = membershipId
+      ? principalFromMembership(membershipId)
+      : null;
+    if (!principal) return err(401, "unauthenticated", "Sign in to continue.");
+    if (!principal.permissions.includes("groups:manage")) {
+      return err(403, "permission_denied", "Missing permission: groups:manage");
+    }
+    const body = (await request.json()) as { membership_id?: string };
+    const group = groups.find((g) => g.id === params.id);
+    const member = members.find((m) => m.membership_id === body.membership_id);
+    if (!group || !member) return err(404, "not_found", "Group or member not found.");
+    if (!group.member_ids.includes(member.membership_id)) {
+      group.member_ids.push(member.membership_id);
+      group.member_count = group.member_ids.length;
+      if (!member.group_names.includes(group.name)) {
+        member.group_names = [...member.group_names, group.name];
+      }
+    }
+    return HttpResponse.json(group);
+  }),
+
+  http.get("/api/v1/roles", ({ request }) => {
+    const membershipId = membershipFromToken(
+      request.headers.get("Authorization"),
+    );
+    const principal = membershipId
+      ? principalFromMembership(membershipId)
+      : null;
+    if (!principal) return err(401, "unauthenticated", "Sign in to continue.");
+    if (!principal.permissions.includes("roles:read")) {
+      return err(403, "permission_denied", "Missing permission: roles:read");
+    }
+    return HttpResponse.json(roles);
+  }),
+
+  http.post("/api/v1/roles", async ({ request }) => {
+    await delay(150);
+    const membershipId = membershipFromToken(
+      request.headers.get("Authorization"),
+    );
+    const principal = membershipId
+      ? principalFromMembership(membershipId)
+      : null;
+    if (!principal) return err(401, "unauthenticated", "Sign in to continue.");
+    if (!principal.permissions.includes("roles:manage")) {
+      return err(403, "permission_denied", "Missing permission: roles:manage");
+    }
+    const body = (await request.json()) as {
+      name?: string;
+      permission_keys?: string[];
+    };
+    if (!body.name?.trim()) {
+      return err(422, "validation_error", "Role name is required.");
+    }
+    const role = {
+      id: `role-${crypto.randomUUID().slice(0, 6)}`,
+      name: body.name.trim(),
+      built_in: false,
+      permission_keys: (body.permission_keys ?? []) as never[],
+      assignment_count: 0,
+    };
+    roles.push(role);
+    return HttpResponse.json(role, { status: 201 });
+  }),
+
+  http.get("/api/v1/security/policy", ({ request }) => {
+    const membershipId = membershipFromToken(
+      request.headers.get("Authorization"),
+    );
+    if (!membershipId || !principalFromMembership(membershipId)) {
+      return err(401, "unauthenticated", "Sign in to continue.");
+    }
+    return HttpResponse.json(securityPolicy);
+  }),
+
+  http.patch("/api/v1/security/policy", async ({ request }) => {
+    await delay(150);
+    const membershipId = membershipFromToken(
+      request.headers.get("Authorization"),
+    );
+    const principal = membershipId
+      ? principalFromMembership(membershipId)
+      : null;
+    if (!principal) return err(401, "unauthenticated", "Sign in to continue.");
+    if (!principal.role_names.includes("Admin")) {
+      return err(403, "permission_denied", "Only admins can change security policy.");
+    }
+    const body = (await request.json()) as Partial<typeof securityPolicy>;
+    // Only require_mfa is mutable in Week 1
+    if (typeof body.require_mfa === "boolean") {
+      const before = { ...securityPolicy };
+      securityPolicy.require_mfa = body.require_mfa;
+      pushAudit({
+        actor_type: "membership",
+        actor_id: principal.membership_id,
+        actor_label: principal.user.full_name,
+        action: "update",
+        object_type: "security_policy",
+        object_id: principal.tenant_id,
+        object_label: "Require MFA",
+        before: { require_mfa: before.require_mfa },
+        after: { require_mfa: securityPolicy.require_mfa },
+        tenant_id: principal.tenant_id,
+      });
+    }
+    return HttpResponse.json(securityPolicy);
+  }),
+
+  http.get("/api/v1/audit-log", ({ request }) => {
+    const membershipId = membershipFromToken(
+      request.headers.get("Authorization"),
+    );
+    const principal = membershipId
+      ? principalFromMembership(membershipId)
+      : null;
+    if (!principal) return err(401, "unauthenticated", "Sign in to continue.");
+    if (!principal.permissions.includes("audit:read")) {
+      return err(403, "permission_denied", "Missing permission: audit:read");
+    }
+    const items = auditEvents.filter(
+      (e) => e.tenant_id === principal.tenant_id,
+    );
+    return HttpResponse.json({ items, next_cursor: null });
+  }),
+];
