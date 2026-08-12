@@ -21,12 +21,10 @@ export function AuthSplitLayout({
   title,
   subtitle,
   children,
-  footer,
 }: {
   title: string;
   subtitle: string;
   children: ReactNode;
-  footer?: ReactNode;
 }) {
   return (
     <div className="flex min-h-full bg-surface-primary">
@@ -35,7 +33,8 @@ export function AuthSplitLayout({
           <span className="flex size-9 items-center justify-center rounded-md bg-action-primary text-action-primary-fg">
             <Icon name="check" className="size-5" />
           </span>
-          <span className="font-display text-heading-lg text-text-primary">
+          {/* Wordmark, not a heading — same style as the sidebar wordmark. */}
+          <span className="font-display text-heading-sm text-text-primary">
             Verity
           </span>
         </Link>
@@ -57,7 +56,6 @@ export function AuthSplitLayout({
           <span className="text-text-secondary">Privacy</span>
           {" · "}
           <span className="text-text-secondary">Terms</span>
-          {footer}
         </p>
       </div>
 

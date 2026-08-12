@@ -36,10 +36,21 @@ export async function apiFetch<T>(
     headers.set("Authorization", `Bearer ${token}`);
   }
 
-  const response = await fetch(`/api/v1${path}`, {
+  let response = await fetch(`/api/v1${path}`, {
     ...init,
     headers,
   });
+
+  // Dev-mocks self-heal: when the browser restarts the MSW service worker
+  // it forgets this client, and requests fall through to the Vite proxy
+  // (which has no backend and 500s). Re-handshake and retry once. Never
+  // taken in production — VITE_USE_MOCKS is a dev-only flag, and no mock
+  // handler responds with a 5xx.
+  if (USE_MOCKS && response.status >= 500) {
+    const { startWorker } = await import("@/mocks/browser");
+    await startWorker();
+    response = await fetch(`/api/v1${path}`, { ...init, headers });
+  }
 
   if (!response.ok) {
     let body: ApiErrorBody;

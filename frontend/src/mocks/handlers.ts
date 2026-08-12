@@ -59,6 +59,11 @@ const challenges = new Map<
 >();
 
 export const handlers = [
+  // Keepalive target for main.tsx: pinged so the browser never idle-kills
+  // the MSW service worker (a restarted worker forgets its clients and
+  // passes requests through to the dev proxy, which has no backend).
+  http.get("/api/v1/_mock/health", () => HttpResponse.json({ ok: true })),
+
   http.post("/api/v1/auth/login", async ({ request }) => {
     await delay(250);
     const body = (await request.json()) as {
