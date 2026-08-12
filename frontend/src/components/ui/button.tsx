@@ -4,25 +4,25 @@ import { cn } from "@/lib/cn";
 
 const variants = {
   primary:
-    "bg-accent text-accent-fg hover:brightness-110 disabled:bg-accent/40",
+    "bg-action-primary text-action-primary-fg hover:brightness-110 disabled:bg-action-primary/40",
   secondary:
-    "bg-bg-elevated text-text border border-border hover:bg-bg-sunken disabled:text-text-faint",
-  ghost: "bg-transparent text-text-muted hover:bg-bg-sunken hover:text-text",
+    "bg-surface-primary text-text-primary border border-border hover:bg-surface-hover disabled:text-text-subtle",
+  ghost: "bg-transparent text-text-secondary hover:bg-surface-hover hover:text-text-primary",
   destructive:
-    "bg-fail text-text-inverse hover:brightness-110 disabled:bg-fail/40",
+    "bg-status-danger-base text-text-inverse hover:brightness-110 disabled:bg-status-danger-base/40",
   "destructive-2":
-    "bg-transparent text-fail-fg border border-fail-border hover:bg-fail-bg",
+    "bg-transparent text-status-danger-text border border-status-danger-border hover:bg-status-danger-bg",
   "success-2":
-    "bg-pass-bg text-pass-fg border border-pass/20 hover:brightness-95",
-  link: "bg-transparent text-accent underline-offset-4 hover:underline px-0 h-auto",
+    "bg-status-success-bg text-status-success-text border border-status-success-base/20 hover:brightness-95",
+  link: "bg-transparent text-action-accent underline-offset-4 hover:underline px-0 h-auto",
 } as const;
 
 const sizes = {
-  sm: "h-7 px-2.5 text-label-sm rounded-md gap-1.5",
-  md: "h-9 px-3.5 text-label-md rounded-lg gap-2",
-  lg: "h-11 px-5 text-label-md rounded-lg gap-2",
-  icon: "size-9 rounded-lg p-0",
-  "icon-sm": "size-7 rounded-md p-0",
+  sm: "h-7 px-2.5 text-label-sm rounded-sm gap-1.5",
+  md: "h-9 px-3.5 text-label-md rounded-md gap-2",
+  lg: "h-11 px-5 text-label-md rounded-md gap-2",
+  icon: "size-9 rounded-md p-0",
+  "icon-sm": "size-7 rounded-sm p-0",
 } as const;
 
 export type ButtonVariant = keyof typeof variants;
@@ -60,7 +60,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         className={cn(
           "inline-flex items-center justify-center font-sans font-semibold transition-colors",
           "disabled:pointer-events-none disabled:opacity-60",
-          "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
+          "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-accent",
           variants[variant],
           sizes[size],
           loading && "relative",

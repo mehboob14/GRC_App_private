@@ -41,11 +41,11 @@ export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(
       <div className="flex w-full flex-col gap-1.5">
         <LabelPrimitive.Root
           htmlFor={fieldId}
-          className="font-sans text-label-sm text-text"
+          className="font-sans text-label-sm text-text-primary"
         >
           {label}
           {optional ? (
-            <span className="ml-1 font-normal text-text-faint">(optional)</span>
+            <span className="ml-1 font-normal text-text-subtle">(optional)</span>
           ) : null}
         </LabelPrimitive.Root>
         <div className="relative">
@@ -56,10 +56,10 @@ export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(
             aria-invalid={Boolean(error) || undefined}
             aria-describedby={error ? errorId : hint ? hintId : undefined}
             className={cn(
-              "h-9 w-full rounded-lg border bg-bg-elevated px-3 font-sans text-body-md text-text",
-              "placeholder:text-text-faint",
-              "disabled:cursor-not-allowed disabled:bg-bg-sunken disabled:text-text-faint",
-              error ? "border-fail" : "border-border",
+              "h-9 w-full rounded-md border bg-surface-primary px-3 font-sans text-body-md text-text-primary",
+              "placeholder:text-text-subtle",
+              "disabled:cursor-not-allowed disabled:bg-surface-sunken disabled:text-text-subtle",
+              error ? "border-status-danger-base" : "border-border",
               trailing && "pr-10",
               className,
             )}
@@ -72,11 +72,11 @@ export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(
           ) : null}
         </div>
         {error ? (
-          <p id={errorId} className="text-body-sm text-fail-fg">
+          <p id={errorId} className="text-body-sm text-status-danger-text">
             {error}
           </p>
         ) : hint ? (
-          <p id={hintId} className="text-body-sm text-text-faint">
+          <p id={hintId} className="text-body-sm text-text-subtle">
             {hint}
           </p>
         ) : null}

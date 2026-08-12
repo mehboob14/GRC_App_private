@@ -43,27 +43,27 @@ export function Topbar() {
   const mark = activeName.slice(0, 1).toUpperCase();
 
   return (
-    <header className="flex h-topbar shrink-0 items-center gap-3.5 border-b border-border bg-bg-elevated px-5">
+    <header className="flex h-topbar shrink-0 items-center gap-3.5 border-b border-border bg-surface-primary px-5">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            className="flex items-center gap-2.5 rounded-lg border border-border py-[5px] pl-1.5 pr-2.5 hover:bg-bg-sunken"
+            className="flex items-center gap-2.5 rounded-md border border-border py-[5px] pl-1.5 pr-2.5 hover:bg-surface-hover"
             aria-label="Switch workspace"
             disabled={switching}
           >
-            <span className="flex size-[26px] items-center justify-center rounded-md bg-accent font-display text-body-sm font-extrabold text-accent-fg">
+            <span className="flex size-[26px] items-center justify-center rounded-sm bg-action-primary font-display text-body-sm font-extrabold text-action-primary-fg">
               {mark}
             </span>
             <span className="flex flex-col items-start">
-              <span className="text-label-md font-bold text-text">
+              <span className="text-label-md font-bold text-text-primary">
                 {activeName}
               </span>
-              <span className="text-caption text-text-faint">
+              <span className="text-caption text-text-subtle">
                 {principal?.role_names[0] ?? "Member"}
               </span>
             </span>
-            <Icon name="chev" className="size-[15px] text-text-faint" />
+            <Icon name="chev" className="size-[15px] text-text-subtle" />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-[280px]">
@@ -78,14 +78,14 @@ export function Topbar() {
                   if (!active) switchMutation.mutate(ws.membership_id);
                 }}
               >
-                <span className="flex size-7 items-center justify-center rounded-md bg-accent text-caption font-extrabold text-accent-fg">
+                <span className="flex size-7 items-center justify-center rounded-sm bg-action-primary text-caption font-extrabold text-action-primary-fg">
                   {ws.tenant_name.slice(0, 1)}
                 </span>
                 <span className="flex flex-col">
                   <span className="text-body-md font-semibold">
                     {ws.tenant_name}
                   </span>
-                  <span className="text-caption text-text-faint">
+                  <span className="text-caption text-text-subtle">
                     {ws.role_name}
                     {active ? " · current" : ""}
                   </span>
@@ -109,14 +109,14 @@ export function Topbar() {
       <div className="flex-1" />
 
       <Button variant="secondary" size="icon" aria-label="Help">
-        <Icon name="help" className="size-[17px] text-text-muted" />
+        <Icon name="help" className="size-[17px] text-text-secondary" />
       </Button>
 
       <div className="relative">
         <Button variant="secondary" size="icon" aria-label="Notifications">
-          <Icon name="bell" className="size-[17px] text-text-muted" />
+          <Icon name="bell" className="size-[17px] text-text-secondary" />
         </Button>
-        <span className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full border-2 border-bg-elevated bg-fail text-overline text-text-inverse">
+        <span className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full border-2 border-surface-primary bg-status-danger-base text-overline text-text-inverse">
           3
         </span>
       </div>
@@ -127,14 +127,14 @@ export function Topbar() {
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            className="flex items-center gap-2 rounded-lg p-0.5 hover:bg-bg-sunken"
+            className="flex items-center gap-2 rounded-md p-0.5 hover:bg-surface-hover"
             aria-label="User menu"
           >
             <Avatar
               name={principal?.user.full_name ?? "User"}
               seed={principal?.user.email}
             />
-            <Icon name="chev" className="size-[15px] text-text-faint" />
+            <Icon name="chev" className="size-[15px] text-text-subtle" />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">

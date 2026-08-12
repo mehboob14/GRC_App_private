@@ -27,12 +27,12 @@ export function SearchInput({
   return (
     <label
       className={cn(
-        "flex h-9 w-full items-center gap-2.5 rounded-lg border border-border bg-bg-sunken px-2.5",
-        "focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-accent",
+        "flex h-9 w-full items-center gap-2.5 rounded-md border border-border bg-surface-sunken px-2.5",
+        "focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-action-accent",
         className,
       )}
     >
-      <Icon name="search" className="size-4 text-text-faint" aria-hidden />
+      <Icon name="search" className="size-4 text-text-subtle" aria-hidden />
       <input
         type="search"
         value={value}
@@ -42,10 +42,10 @@ export function SearchInput({
         placeholder={placeholder}
         onFocus={onFocus}
         onChange={(event) => onChange?.(event.target.value)}
-        className="min-w-0 flex-1 bg-transparent font-sans text-body-md text-text placeholder:text-text-faint outline-none"
+        className="min-w-0 flex-1 bg-transparent font-sans text-body-md text-text-primary placeholder:text-text-subtle outline-none"
       />
       {shortcut ? (
-        <kbd className="rounded-sm border border-border bg-bg-elevated px-1.5 py-0.5 font-sans text-[11px] font-semibold text-text-faint">
+        <kbd className="rounded-xs border border-border bg-surface-primary px-1.5 py-0.5 font-sans text-[11px] font-semibold text-text-subtle">
           {shortcut}
         </kbd>
       ) : null}

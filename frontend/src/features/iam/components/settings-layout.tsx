@@ -20,8 +20,8 @@ export function SettingsLayout() {
             to={tab.to}
             className={({ isActive }) =>
               cn(
-                "relative -mb-px px-3 py-2.5 text-[13px] font-medium text-text-muted hover:text-text",
-                isActive && "text-accent",
+                "relative -mb-px px-3 py-2.5 text-[13px] font-medium text-text-secondary hover:text-text-primary",
+                isActive && "text-action-accent",
               )
             }
           >
@@ -29,7 +29,7 @@ export function SettingsLayout() {
               <>
                 {tab.label}
                 {isActive ? (
-                  <span className="absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-accent" />
+                  <span className="absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-action-accent" />
                 ) : null}
               </>
             )}

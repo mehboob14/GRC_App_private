@@ -15,11 +15,11 @@ export function DialogContent({
 }: ComponentPropsWithoutRef<typeof DialogPrimitive.Content>) {
   return (
     <DialogPrimitive.Portal>
-      <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-text/40" />
+      <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-surface-inverse/50" />
       <DialogPrimitive.Content
         className={cn(
           "fixed left-1/2 top-1/2 z-50 w-[min(480px,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2",
-          "rounded-xl border border-border bg-bg-elevated p-6 shadow-md",
+          "rounded-lg border border-border bg-surface-primary p-6 shadow-2",
           "focus:outline-none",
           className,
         )}
@@ -33,7 +33,7 @@ export function DialogContent({
             className="absolute right-3 top-3"
             aria-label="Close"
           >
-            <Icon name="x" className="size-4 text-text-faint" />
+            <Icon name="x" className="size-4 text-text-subtle" />
           </Button>
         </DialogPrimitive.Close>
       </DialogPrimitive.Content>
@@ -54,7 +54,7 @@ export function DialogTitle({
 }: ComponentPropsWithoutRef<typeof DialogPrimitive.Title>) {
   return (
     <DialogPrimitive.Title
-      className={cn("font-display text-heading-md text-text", className)}
+      className={cn("font-display text-heading-md text-text-primary", className)}
       {...props}
     />
   );
@@ -66,7 +66,7 @@ export function DialogDescription({
 }: ComponentPropsWithoutRef<typeof DialogPrimitive.Description>) {
   return (
     <DialogPrimitive.Description
-      className={cn("text-body-md text-text-muted", className)}
+      className={cn("text-body-md text-text-secondary", className)}
       {...props}
     />
   );

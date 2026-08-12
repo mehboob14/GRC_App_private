@@ -116,15 +116,15 @@ const HEALTHY: HealthyConnection[] = [
 export function ConnectionsPage() {
   return (
     <div className="mx-auto max-w-[1200px]">
-      <h1 className="font-display text-[28px] font-extrabold leading-8 tracking-[-0.56px] text-text">
+      <h1 className="font-display text-[28px] font-extrabold leading-8 tracking-[-0.56px] text-text-primary">
         Connection health &amp; impact
       </h1>
-      <p className="mt-2 text-[14px] leading-5 text-text-muted">
+      <p className="mt-2 text-[14px] leading-5 text-text-secondary">
         Every connector shows the controls, checks and evidence it feeds.
       </p>
 
-      <div className="mt-5 flex items-center gap-2 rounded-xl border border-fail-border bg-fail-bg px-4 py-3 text-[13px] font-medium text-fail-fg">
-        <span className="size-1.5 rounded-full bg-fail" />
+      <div className="mt-5 flex items-center gap-2 rounded-lg border border-status-danger-border bg-status-danger-bg px-4 py-3 text-[13px] font-medium text-status-danger-text">
+        <span className="size-1.5 rounded-full bg-status-danger-base" />
         2 connections down · breaking 3 controls · 23 evidence items now stale
       </div>
 
@@ -132,42 +132,42 @@ export function ConnectionsPage() {
         {DOWN.map((row) => (
           <div
             key={row.id}
-            className="flex items-center gap-3 rounded-xl border border-border bg-bg-elevated px-4 py-3.5"
+            className="flex items-center gap-3 rounded-lg border border-border bg-surface-primary px-4 py-3.5"
           >
             <span
-              className={`flex size-9 items-center justify-center rounded-lg text-[11px] font-bold text-white ${row.markColor}`}
+              className={`flex size-9 items-center justify-center rounded-md text-[11px] font-bold text-white ${row.markColor}`}
             >
               {row.mark}
             </span>
             <div className="min-w-0 flex-1">
-              <p className="text-[14px] font-semibold text-text">{row.name}</p>
-              <p className="text-[12px] text-text-faint">{row.status}</p>
-              <p className="mt-1 text-[12px] font-medium text-fail-fg">{row.impact}</p>
+              <p className="text-[14px] font-semibold text-text-primary">{row.name}</p>
+              <p className="text-[12px] text-text-subtle">{row.status}</p>
+              <p className="mt-1 text-[12px] font-medium text-status-danger-text">{row.impact}</p>
             </div>
             <Button size="sm">Reconnect</Button>
           </div>
         ))}
       </div>
 
-      <h2 className="mb-3 mt-8 text-[14px] font-semibold text-text">
+      <h2 className="mb-3 mt-8 text-[14px] font-semibold text-text-primary">
         Healthy connections
       </h2>
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
         {HEALTHY.map((row) => (
           <div
             key={row.id}
-            className="rounded-xl border border-border bg-bg-elevated p-4"
+            className="rounded-lg border border-border bg-surface-primary p-4"
           >
             <div className="flex items-center gap-2.5">
               <span
-                className={`flex size-8 items-center justify-center rounded-lg text-[10px] font-bold text-white ${row.markColor}`}
+                className={`flex size-8 items-center justify-center rounded-md text-[10px] font-bold text-white ${row.markColor}`}
               >
                 {row.mark}
               </span>
               <div>
-                <p className="text-[13px] font-semibold text-text">{row.name}</p>
-                <p className="flex items-center gap-1.5 text-[12px] text-pass-fg">
-                  <span className="size-1.5 rounded-full bg-pass" />
+                <p className="text-[13px] font-semibold text-text-primary">{row.name}</p>
+                <p className="flex items-center gap-1.5 text-[12px] text-status-success-text">
+                  <span className="size-1.5 rounded-full bg-status-success-base" />
                   {row.synced}
                 </p>
               </div>
@@ -187,8 +187,8 @@ export function ConnectionsPage() {
 function Metric({ label, value }: { label: string; value: number }) {
   return (
     <div>
-      <p className="font-display text-[18px] font-bold tabular text-text">{value}</p>
-      <p className="text-[11px] text-text-faint">{label}</p>
+      <p className="font-display text-[18px] font-bold tabular text-text-primary">{value}</p>
+      <p className="text-[11px] text-text-subtle">{label}</p>
     </div>
   );
 }

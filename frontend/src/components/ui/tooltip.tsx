@@ -31,12 +31,12 @@ export function Tooltip({
           side={side}
           sideOffset={6}
           className={cn(
-            "z-50 rounded-md bg-text px-2 py-1 font-sans text-caption text-text-inverse shadow-md",
+            "z-50 rounded-sm bg-surface-inverse px-2 py-1 font-sans text-caption text-text-inverse shadow-2",
             className,
           )}
         >
           {content}
-          <TooltipPrimitive.Arrow className="fill-text" />
+          <TooltipPrimitive.Arrow className="fill-surface-inverse" />
         </TooltipPrimitive.Content>
       </TooltipPrimitive.Portal>
     </TooltipPrimitive.Root>

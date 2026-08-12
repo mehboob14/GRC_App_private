@@ -30,9 +30,9 @@ export function Checkbox({
       disabled={disabled}
       aria-label={ariaLabel}
       className={cn(
-        "flex size-4 shrink-0 items-center justify-center rounded border border-border bg-bg-elevated",
-        "data-[state=checked]:border-accent data-[state=checked]:bg-accent data-[state=checked]:text-accent-fg",
-        "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
+        "flex size-4 shrink-0 items-center justify-center rounded border border-border bg-surface-primary",
+        "data-[state=checked]:border-action-accent data-[state=checked]:bg-action-primary data-[state=checked]:text-action-primary-fg",
+        "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-accent",
         "disabled:cursor-not-allowed disabled:opacity-50",
         className,
       )}

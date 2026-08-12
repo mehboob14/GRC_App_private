@@ -60,7 +60,7 @@ export function AcceptInvitePage() {
         title="Join your workspace"
         subtitle="This invite link is missing its token. Open the full link you were given, or ask a workspace admin to send a new one."
       >
-        <Link className="text-accent" to="/sign-in">
+        <Link className="text-text-link" to="/sign-in">
           Back to sign in
         </Link>
       </AuthSplitLayout>
@@ -88,7 +88,7 @@ export function AcceptInvitePage() {
         }}
         noValidate
       >
-        <label className="mb-1 flex items-center gap-2 text-body-md text-text">
+        <label className="mb-1 flex items-center gap-2 text-body-md text-text-primary">
           <Checkbox
             checked={existingAccount}
             onCheckedChange={setExistingAccount}
@@ -97,7 +97,7 @@ export function AcceptInvitePage() {
         </label>
 
         {existingAccount ? (
-          <p className="mb-1 text-body-sm text-text-muted">
+          <p className="mb-1 text-body-sm text-text-secondary">
             We'll attach this workspace to your existing account. Sign in with
             your usual email and password afterwards.
           </p>
@@ -121,7 +121,7 @@ export function AcceptInvitePage() {
         )}
 
         {acceptMutation.isError ? (
-          <p className="mt-1 text-body-sm text-fail-fg" role="alert">
+          <p className="mt-1 text-body-sm text-status-danger-text" role="alert">
             {messageFrom(
               acceptMutation.error,
               "Could not accept the invitation. Open the full link you were given, or ask a workspace admin to send a new one.",
@@ -140,9 +140,9 @@ export function AcceptInvitePage() {
         </Button>
       </form>
 
-      <p className="mt-6 text-body-sm text-text-muted">
+      <p className="mt-6 text-body-sm text-text-secondary">
         Already a member of this workspace?{" "}
-        <Link className="font-semibold text-accent" to="/sign-in">
+        <Link className="font-semibold text-text-link" to="/sign-in">
           Sign in
         </Link>
       </p>

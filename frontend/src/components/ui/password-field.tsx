@@ -25,7 +25,7 @@ export const PasswordField = forwardRef<HTMLInputElement, PasswordFieldProps>(
             aria-label={visible ? "Hide password" : "Show password"}
             onClick={() => setVisible((v) => !v)}
           >
-            <span className="text-[11px] font-semibold text-text-faint">
+            <span className="text-[11px] font-semibold text-text-subtle">
               {visible ? "Hide" : "Show"}
             </span>
           </Button>

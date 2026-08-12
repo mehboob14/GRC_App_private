@@ -134,7 +134,7 @@ export function TeamPage() {
   if (membersQuery.isLoading) {
     return (
       <div className="mx-auto max-w-[1200px]">
-        <Skeleton className="h-72 w-full rounded-xl" />
+        <Skeleton className="h-72 w-full rounded-lg" />
       </div>
     );
   }
@@ -157,18 +157,18 @@ export function TeamPage() {
 
   return (
     <div className="mx-auto max-w-[1200px]">
-      <h1 className="font-display text-heading-xl text-text">People</h1>
-      <p className="mb-5 mt-2 text-body-lg text-text-muted">
+      <h1 className="font-display text-heading-xl text-text-primary">People</h1>
+      <p className="mb-5 mt-2 text-body-lg text-text-secondary">
         Everyone with a membership in this workspace — role, teams, and MFA
         state.
       </p>
-      <div className="rounded-xl border border-border bg-bg-elevated px-5 py-[18px] shadow-sm">
+      <div className="rounded-lg border border-border bg-surface-primary px-5 py-[18px] shadow-1">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
-          <h2 className="font-display text-title-md text-text">
+          <h2 className="font-display text-title-md text-text-primary">
             Team &amp; roles
           </h2>
-          <p className="mt-1 text-body-sm text-text-faint">
+          <p className="mt-1 text-body-sm text-text-subtle">
             {members.length} members · manage access to the Verity workspace
           </p>
         </div>
@@ -190,8 +190,8 @@ export function TeamPage() {
                       with the one-time link below.
                     </DialogDescription>
                   </DialogHeader>
-                  <div className="rounded-lg border border-border bg-bg-sunken px-3 py-3">
-                    <p className="type-overline text-text-faint">
+                  <div className="rounded-md border border-border bg-surface-sunken px-3 py-3">
+                    <p className="type-overline text-text-subtle">
                       One-time accept link
                     </p>
                     <div className="mt-1.5 flex items-center gap-2">
@@ -200,7 +200,7 @@ export function TeamPage() {
                         aria-label="Invite accept link"
                         value={inviteResult.accept_url}
                         onFocus={(e) => e.currentTarget.select()}
-                        className="h-9 min-w-0 flex-1 rounded-lg border border-border bg-bg-elevated px-3 font-mono text-body-sm text-text"
+                        className="h-9 min-w-0 flex-1 rounded-md border border-border bg-surface-primary px-3 font-mono text-body-sm text-text-primary"
                       />
                       <Button
                         type="button"
@@ -212,12 +212,12 @@ export function TeamPage() {
                       </Button>
                     </div>
                     {copyState === "failed" ? (
-                      <p className="mt-2 text-body-sm text-fail-fg" role="alert">
+                      <p className="mt-2 text-body-sm text-status-danger-text" role="alert">
                         Copy failed — select the link text and copy it manually.
                       </p>
                     ) : null}
                   </div>
-                  <p className="mt-3 text-body-sm text-text-faint">
+                  <p className="mt-3 text-body-sm text-text-subtle">
                     Email delivery arrives with the notifications module — hand
                     this link to the invitee yourself. It works once and
                     expires in 7 days.
@@ -259,7 +259,7 @@ export function TeamPage() {
                       error={form.formState.errors.email?.message}
                       {...form.register("email")}
                     />
-                    <label className="mb-1 block text-label-sm text-text-muted">
+                    <label className="mb-1 block text-label-sm text-text-secondary">
                       Role
                     </label>
                     <Select
@@ -280,7 +280,7 @@ export function TeamPage() {
                       </SelectContent>
                     </Select>
                     {inviteError ? (
-                      <p className="text-body-sm text-fail-fg" role="alert">
+                      <p className="text-body-sm text-status-danger-text" role="alert">
                         {inviteError}
                       </p>
                     ) : null}
@@ -327,10 +327,10 @@ export function TeamPage() {
                   <div className="flex items-center gap-3">
                     <Avatar name={member.full_name} seed={member.email} />
                     <div>
-                      <p className="text-body-md font-semibold text-text">
+                      <p className="text-body-md font-semibold text-text-primary">
                         {member.full_name}
                       </p>
-                      <p className="text-body-sm text-text-faint">
+                      <p className="text-body-sm text-text-subtle">
                         {member.email}
                       </p>
                     </div>
@@ -346,7 +346,7 @@ export function TeamPage() {
                   </div>
                 </TD>
                 <TD>
-                  <span className="text-body-md text-text-muted">
+                  <span className="text-body-md text-text-secondary">
                     {member.group_names.length
                       ? member.group_names.join(" · ")
                       : "—"}
@@ -354,12 +354,12 @@ export function TeamPage() {
                 </TD>
                 <TD>
                   {member.mfa_enabled ? (
-                    <span className="inline-flex items-center gap-1.5 text-body-md text-text">
-                      <Icon name="check" className="size-3.5 text-pass" />
+                    <span className="inline-flex items-center gap-1.5 text-body-md text-text-primary">
+                      <Icon name="check" className="size-3.5 text-status-success-base" />
                       On
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1.5 text-body-md text-fail-fg">
+                    <span className="inline-flex items-center gap-1.5 text-body-md text-status-danger-text">
                       <Icon name="alert" className="size-3.5" />
                       Off
                     </span>

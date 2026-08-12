@@ -6,7 +6,7 @@ export function Table({ className, ...props }: HTMLAttributes<HTMLTableElement>)
   return (
     <div
       className={cn(
-        "w-full overflow-x-auto rounded-xl border border-border bg-bg-elevated",
+        "w-full overflow-x-auto rounded-lg border border-border bg-surface-primary",
         className,
       )}
     >
@@ -29,7 +29,7 @@ export function TBody({ className, ...props }: HTMLAttributes<HTMLTableSectionEl
 }
 
 export function TR({ className, ...props }: HTMLAttributes<HTMLTableRowElement>) {
-  return <tr className={cn("hover:bg-bg-sunken/60", className)} {...props} />;
+  return <tr className={cn("hover:bg-surface-hover/60", className)} {...props} />;
 }
 
 export function TH({
@@ -45,7 +45,7 @@ export function TH({
   onSort?: () => void;
 }) {
   const content = (
-    <span className="inline-flex items-center gap-1 type-overline text-text-faint">
+    <span className="inline-flex items-center gap-1 type-overline text-text-subtle">
       {children}
       {sortable ? (
         <Icon
@@ -66,7 +66,7 @@ export function TH({
         <button
           type="button"
           onClick={onSort}
-          className="inline-flex items-center gap-1 hover:text-text"
+          className="inline-flex items-center gap-1 hover:text-text-primary"
         >
           {content}
         </button>
@@ -84,7 +84,7 @@ export function TH({
 export function TD({ className, ...props }: HTMLAttributes<HTMLTableCellElement>) {
   return (
     <td
-      className={cn("px-4 py-3.5 align-middle text-body-md text-text", className)}
+      className={cn("px-4 py-3.5 align-middle text-body-md text-text-primary", className)}
       {...props}
     />
   );
@@ -98,7 +98,7 @@ export function TableIconButton({
     <button
       type="button"
       className={cn(
-        "inline-flex size-7 items-center justify-center rounded-md text-text-faint hover:bg-bg-sunken hover:text-text",
+        "inline-flex size-7 items-center justify-center rounded-sm text-text-subtle hover:bg-surface-hover hover:text-text-primary",
         className,
       )}
       {...props}
@@ -109,7 +109,7 @@ export function TableIconButton({
 export function TableEmpty({ children }: { children: ReactNode }) {
   return (
     <tr>
-      <td colSpan={99} className="px-4 py-12 text-center text-body-md text-text-muted">
+      <td colSpan={99} className="px-4 py-12 text-center text-body-md text-text-secondary">
         {children}
       </td>
     </tr>

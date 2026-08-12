@@ -103,7 +103,7 @@ export function SignInPage() {
         title="Set up authenticator"
         subtitle="Redirecting to enrollment…"
       >
-        <div className="h-10 animate-pulse rounded-lg bg-na-bg" />
+        <div className="h-10 animate-pulse rounded-md bg-status-neutral-bg" />
       </AuthSplitLayout>
     );
   }
@@ -121,31 +121,31 @@ export function SignInPage() {
               type="button"
               disabled={selectMutation.isPending}
               onClick={() => selectMutation.mutate(ws)}
-              className="flex h-[52px] items-center gap-3 rounded-[10px] border border-border px-3 text-left hover:bg-bg-sunken"
+              className="flex h-[52px] items-center gap-3 rounded-md border border-border px-3 text-left hover:bg-surface-hover"
             >
-              <span className="flex size-9 items-center justify-center rounded-lg bg-accent font-display text-title-sm text-accent-fg">
+              <span className="flex size-9 items-center justify-center rounded-md bg-action-primary font-display text-title-sm text-action-primary-fg">
                 {ws.tenant_name.slice(0, 1)}
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block text-body-lg font-semibold text-text">
+                <span className="block text-body-lg font-semibold text-text-primary">
                   {ws.tenant_name}
                 </span>
-                <span className="block text-body-sm text-text-faint">
+                <span className="block text-body-sm text-text-subtle">
                   {ws.role_name}
                 </span>
               </span>
-              <Icon name="chevr" className="size-4 text-text-faint" />
+              <Icon name="chevr" className="size-4 text-text-subtle" />
             </button>
           ))}
         </div>
         {selectMutation.isError ? (
-          <p className="mt-3 text-body-sm text-fail-fg" role="alert">
+          <p className="mt-3 text-body-sm text-status-danger-text" role="alert">
             {messageFrom(selectMutation.error, "Could not open workspace.")}
           </p>
         ) : null}
         <button
           type="button"
-          className="mt-4 text-body-md font-medium text-accent"
+          className="mt-4 text-body-md font-medium text-text-link"
           onClick={backToSignIn}
         >
           Back to sign in
@@ -171,7 +171,7 @@ export function SignInPage() {
           }
         />
         {verifyMutation.isError ? (
-          <p className="mt-2 text-body-sm text-fail-fg" role="alert">
+          <p className="mt-2 text-body-sm text-status-danger-text" role="alert">
             {messageFrom(
               verifyMutation.error,
               "That code is incorrect or expired.",
@@ -179,7 +179,7 @@ export function SignInPage() {
           </p>
         ) : null}
         <Button
-          className="mt-4 h-[46px] w-full rounded-[10px]"
+          className="mt-4 h-[46px] w-full rounded-md"
           size="lg"
           loading={verifyMutation.isPending}
           disabled={mfaCode.length !== 6}
@@ -190,7 +190,7 @@ export function SignInPage() {
         </Button>
         <button
           type="button"
-          className="mt-4 text-body-md font-medium text-accent"
+          className="mt-4 text-body-md font-medium text-text-link"
           onClick={backToSignIn}
         >
           Back to sign in
@@ -206,11 +206,11 @@ export function SignInPage() {
     >
       {notice ? (
         <div
-          className="mb-4 flex items-center gap-2 rounded-lg border border-pass-border bg-pass-bg px-[13px] py-[11px]"
+          className="mb-4 flex items-center gap-2 rounded-md border border-status-success-border bg-status-success-bg px-[13px] py-[11px]"
           role="status"
         >
-          <Icon name="check" className="size-[15px] text-pass-fg" />
-          <p className="text-body-sm font-semibold text-pass-fg">{notice}</p>
+          <Icon name="check" className="size-[15px] text-status-success-text" />
+          <p className="text-body-sm font-semibold text-status-success-text">{notice}</p>
         </div>
       ) : null}
 
@@ -218,13 +218,13 @@ export function SignInPage() {
         type="button"
         variant="secondary"
         size="lg"
-        className="h-[46px] w-full rounded-[10px] border-border-strong font-semibold"
+        className="h-[46px] w-full rounded-md border-border-strong font-semibold"
         disabled
         aria-disabled
         title="Coming soon — federation is Phase 3"
       >
         <span
-          className="flex size-5 items-center justify-center rounded-sm text-body-sm font-medium text-white"
+          className="flex size-5 items-center justify-center rounded-xs text-body-sm font-medium text-white"
           style={{ backgroundColor: VENDOR_MARKS.okta.color }}
         >
           {VENDOR_MARKS.okta.label}
@@ -234,7 +234,7 @@ export function SignInPage() {
 
       <div className="my-[18px] flex items-center gap-3">
         <span className="h-px flex-1 bg-border" />
-        <span className="text-body-sm font-medium text-text-faint">
+        <span className="text-body-sm font-medium text-text-subtle">
           or sign in with email
         </span>
         <span className="h-px flex-1 bg-border" />
@@ -252,15 +252,15 @@ export function SignInPage() {
           type="email"
           autoComplete="username"
           placeholder="name@company.com"
-          className="h-11 rounded-[9px]"
+          className="h-11 rounded-md"
           error={form.formState.errors.email?.message}
           {...form.register("email")}
         />
         <div className="mb-1.5 mt-1 flex items-center justify-between">
-          <span className="text-body-sm font-semibold text-text-muted">
+          <span className="text-body-sm font-semibold text-text-secondary">
             Password
           </span>
-          <span className="text-body-sm font-semibold text-accent">
+          <span className="text-body-sm font-semibold text-text-link">
             Forgot?
           </span>
         </div>
@@ -268,18 +268,18 @@ export function SignInPage() {
           label=""
           aria-label="Password"
           placeholder="••••••••••••"
-          className="h-11 rounded-[9px]"
+          className="h-11 rounded-md"
           error={form.formState.errors.password?.message}
           {...form.register("password")}
         />
         {loginMutation.isError ? (
-          <p className="mt-2 text-body-sm text-fail-fg" role="alert">
+          <p className="mt-2 text-body-sm text-status-danger-text" role="alert">
             {messageFrom(loginMutation.error, "Sign in failed. Try again.")}
           </p>
         ) : null}
         <Button
           type="submit"
-          className="mt-1 h-[46px] w-full rounded-[10px]"
+          className="mt-1 h-[46px] w-full rounded-md"
           size="lg"
           loading={loginMutation.isPending}
         >
@@ -288,16 +288,16 @@ export function SignInPage() {
         </Button>
       </form>
 
-      <div className="mt-[22px] flex items-center gap-2 rounded-[9px] border border-pass-border bg-pass-bg px-[13px] py-[11px]">
-        <Icon name="shield" className="size-[15px] text-pass-fg" />
-        <p className="text-body-sm font-semibold text-pass-fg">
+      <div className="mt-[22px] flex items-center gap-2 rounded-md border border-status-success-border bg-status-success-bg px-[13px] py-[11px]">
+        <Icon name="shield" className="size-[15px] text-status-success-text" />
+        <p className="text-body-sm font-semibold text-status-success-text">
           Protected by SSO &amp; enforced MFA · SOC 2 Type II
         </p>
       </div>
 
-      <p className="mt-6 text-body-md text-text-muted">
+      <p className="mt-6 text-body-md text-text-secondary">
         New here?{" "}
-        <Link className="font-semibold text-accent" to="/sign-up">
+        <Link className="font-semibold text-text-link" to="/sign-up">
           Start a trial
         </Link>
       </p>

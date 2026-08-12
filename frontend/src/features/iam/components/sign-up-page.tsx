@@ -89,7 +89,7 @@ export function SignUpPage() {
           {...form.register("password")}
         />
         {signupMutation.isError ? (
-          <p className="mt-2 text-body-sm text-fail-fg" role="alert">
+          <p className="mt-2 text-body-sm text-status-danger-text" role="alert">
             {signupMutation.error instanceof ApiError
               ? signupMutation.error.message
               : "Could not start your trial."}
@@ -105,9 +105,9 @@ export function SignUpPage() {
           <Icon name="arrowr" className="size-4" />
         </Button>
       </form>
-      <p className="mt-6 text-body-sm text-text-muted">
+      <p className="mt-6 text-body-sm text-text-secondary">
         Already have an account?{" "}
-        <Link className="font-semibold text-accent" to="/sign-in">
+        <Link className="font-semibold text-text-link" to="/sign-in">
           Sign in
         </Link>
       </p>

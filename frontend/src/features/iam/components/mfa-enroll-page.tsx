@@ -44,7 +44,7 @@ export function MfaEnrollPage() {
         title="MFA enrollment"
         subtitle="This enrollment link is missing its challenge. Sign in again to restart."
       >
-        <Link className="text-accent" to="/sign-in">
+        <Link className="text-text-link" to="/sign-in">
           Back to sign in
         </Link>
       </AuthSplitLayout>
@@ -56,23 +56,23 @@ export function MfaEnrollPage() {
       title="Set up authenticator"
       subtitle="Admins must enroll MFA before accessing the workspace."
     >
-      <ol className="mb-5 list-decimal space-y-2 pl-4 text-body-md text-text-muted">
+      <ol className="mb-5 list-decimal space-y-2 pl-4 text-body-md text-text-secondary">
         <li>Open your authenticator app.</li>
         <li>Add a new account with the secret below.</li>
         <li>Enter the 6-digit code to confirm.</li>
       </ol>
 
-      <div className="mb-4 rounded-lg border border-border bg-bg-sunken px-3 py-3">
-        <p className="type-overline text-text-faint">Manual secret</p>
+      <div className="mb-4 rounded-md border border-border bg-surface-sunken px-3 py-3">
+        <p className="type-overline text-text-subtle">Manual secret</p>
         {enrollQuery.isError ? (
-          <p className="mt-1 text-body-sm text-fail-fg" role="alert">
+          <p className="mt-1 text-body-sm text-status-danger-text" role="alert">
             {messageFrom(
               enrollQuery.error,
               "Could not start MFA enrollment. Sign in again to get a fresh challenge.",
             )}
           </p>
         ) : (
-          <p className="mt-1 font-mono text-body-md text-text">
+          <p className="mt-1 font-mono text-body-md text-text-primary">
             {enrollQuery.data?.secret ?? "Loading…"}
           </p>
         )}
@@ -87,7 +87,7 @@ export function MfaEnrollPage() {
         onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
       />
       {confirmMutation.isError ? (
-        <p className="mt-2 text-body-sm text-fail-fg" role="alert">
+        <p className="mt-2 text-body-sm text-status-danger-text" role="alert">
           {messageFrom(
             confirmMutation.error,
             "Enter the 6-digit code from your authenticator.",

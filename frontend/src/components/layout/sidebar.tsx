@@ -21,7 +21,7 @@ function NavRow({ item, active }: { item: NavItem; active?: boolean }) {
         name={item.icon}
         className={cn(
           "size-[17px]",
-          active ? "text-accent" : "text-text-muted",
+          active ? "text-action-accent" : "text-text-secondary",
           item.comingSoon && "opacity-60",
         )}
       />
@@ -29,8 +29,8 @@ function NavRow({ item, active }: { item: NavItem; active?: boolean }) {
         className={cn(
           "min-w-0 flex-1 truncate text-[12.5px] leading-[12.5px]",
           active
-            ? "font-semibold text-accent"
-            : "font-medium text-text-muted",
+            ? "font-semibold text-action-accent"
+            : "font-medium text-text-secondary",
           item.comingSoon && "opacity-70",
         )}
       >
@@ -42,7 +42,7 @@ function NavRow({ item, active }: { item: NavItem; active?: boolean }) {
         </Badge>
       ) : null}
       {item.comingSoon && !item.count ? (
-        <span className="text-[9px] font-bold uppercase tracking-wide text-text-faint">
+        <span className="text-[9px] font-bold uppercase tracking-wide text-text-subtle">
           Soon
         </span>
       ) : null}
@@ -50,8 +50,8 @@ function NavRow({ item, active }: { item: NavItem; active?: boolean }) {
   );
 
   const className = cn(
-    "flex w-full items-center gap-2.5 rounded-md px-2.5 py-[7px] text-left transition-colors",
-    active ? "bg-accent-tint" : "hover:bg-bg-sunken",
+    "flex w-full items-center gap-2.5 rounded-sm px-2.5 py-[7px] text-left transition-colors",
+    active ? "bg-action-accent-tint" : "hover:bg-surface-hover",
     item.comingSoon && "cursor-not-allowed",
   );
 
@@ -71,7 +71,7 @@ function NavRow({ item, active }: { item: NavItem; active?: boolean }) {
       className={({ isActive }) =>
         cn(
           className,
-          isActive && "bg-accent-tint",
+          isActive && "bg-action-accent-tint",
         )
       }
     >
@@ -81,15 +81,15 @@ function NavRow({ item, active }: { item: NavItem; active?: boolean }) {
             name={item.icon}
             className={cn(
               "size-[17px]",
-              isActive || active ? "text-accent" : "text-text-muted",
+              isActive || active ? "text-action-accent" : "text-text-secondary",
             )}
           />
           <span
             className={cn(
               "min-w-0 flex-1 truncate text-[12.5px] leading-[12.5px]",
               isActive || active
-                ? "font-semibold text-accent"
-                : "font-medium text-text-muted",
+                ? "font-semibold text-action-accent"
+                : "font-medium text-text-secondary",
             )}
           >
             {item.label}
@@ -108,15 +108,15 @@ export function Sidebar({ collapsed = false, onToggleCollapsed }: SidebarProps) 
   return (
     <aside
       className={cn(
-        "flex h-full shrink-0 border-r border-border bg-bg-elevated",
+        "flex h-full shrink-0 border-r border-border bg-surface-primary",
         collapsed ? "w-12" : "w-sidebar",
       )}
       aria-label="Primary"
     >
       {/* Icon rail — Figma Sidebar Rail 48px */}
-      <div className="flex w-12 shrink-0 flex-col items-center justify-between border-r border-border bg-bg px-2 py-2.5">
+      <div className="flex w-12 shrink-0 flex-col items-center justify-between border-r border-border bg-surface-page px-2 py-2.5">
         <div className="flex flex-col items-center gap-1.5">
-          <div className="flex size-[30px] items-center justify-center rounded-lg bg-accent text-accent-fg shadow-mark">
+          <div className="flex size-[30px] items-center justify-center rounded-md bg-action-primary text-action-primary-fg">
             <Icon name="check" className="size-[17px]" aria-hidden />
           </div>
           <div className="h-px w-6 bg-border" />
@@ -125,11 +125,11 @@ export function Sidebar({ collapsed = false, onToggleCollapsed }: SidebarProps) 
               <button
                 type="button"
                 aria-label={item.label}
-                className="relative flex size-8 items-center justify-center rounded-md text-text-muted hover:bg-bg-elevated hover:text-text"
+                className="relative flex size-8 items-center justify-center rounded-sm text-text-secondary hover:bg-surface-primary hover:text-text-primary"
               >
                 <Icon name={item.icon} className="size-[17px]" />
                 {item.dot ? (
-                  <span className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-fail" />
+                  <span className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-status-danger-base" />
                 ) : null}
               </button>
             </Tooltip>
@@ -141,8 +141,8 @@ export function Sidebar({ collapsed = false, onToggleCollapsed }: SidebarProps) 
               to="/settings/security"
               aria-label="Settings"
               className={cn(
-                "flex size-8 items-center justify-center rounded-md text-text-muted hover:bg-bg-elevated hover:text-text",
-                settingsActive && "bg-bg-elevated text-accent",
+                "flex size-8 items-center justify-center rounded-sm text-text-secondary hover:bg-surface-primary hover:text-text-primary",
+                settingsActive && "bg-surface-primary text-action-accent",
               )}
             >
               <Icon name="gear" className="size-[17px]" />
@@ -164,13 +164,13 @@ export function Sidebar({ collapsed = false, onToggleCollapsed }: SidebarProps) 
       {!collapsed ? (
         <div className="flex min-w-0 flex-1 flex-col px-3 pb-3 pt-[15px]">
           <div className="mb-4 flex items-center gap-2.5 px-2 pt-1">
-            <div className="flex size-[30px] items-center justify-center rounded-lg bg-accent text-accent-fg shadow-mark">
+            <div className="flex size-[30px] items-center justify-center rounded-md bg-action-primary text-action-primary-fg">
               <Icon name="check" className="size-[18px]" aria-hidden />
             </div>
-            <span className="font-display text-[18px] font-extrabold tracking-[-0.36px] text-text">
+            <span className="font-display text-[18px] font-extrabold tracking-[-0.36px] text-text-primary">
               Verity
             </span>
-            <span className="ml-auto rounded-sm border border-border px-[5px] py-0.5 text-[9px] font-bold tracking-[0.36px] text-text-faint">
+            <span className="ml-auto rounded-xs border border-border px-[5px] py-0.5 text-[9px] font-bold tracking-[0.36px] text-text-subtle">
               GRC
             </span>
           </div>
@@ -204,7 +204,7 @@ export function Sidebar({ collapsed = false, onToggleCollapsed }: SidebarProps) 
             ))}
             <button
               type="button"
-              className="mt-2 flex w-full items-center gap-2 rounded-lg border border-border bg-bg-sunken px-2 py-2 text-left hover:bg-bg"
+              className="mt-2 flex w-full items-center gap-2 rounded-md border border-border bg-surface-sunken px-2 py-2 text-left hover:bg-surface-hover"
             >
               <Avatar
                 name={principal?.user.full_name ?? "User"}
@@ -212,16 +212,16 @@ export function Sidebar({ collapsed = false, onToggleCollapsed }: SidebarProps) 
                 size="md"
               />
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-[12.5px] font-semibold text-text">
+                <span className="block truncate text-[12.5px] font-semibold text-text-primary">
                   {principal?.user.full_name ?? "User"}
                 </span>
-                <span className="block truncate text-[10px] text-text-faint">
+                <span className="block truncate text-[10px] text-text-subtle">
                   {(principal?.role_names[0] ?? "Member") === "Admin"
                     ? "Security Lead · Admin"
                     : principal?.role_names[0] ?? "Member"}
                 </span>
               </span>
-              <Icon name="chev" className="size-[15px] text-text-faint" />
+              <Icon name="chev" className="size-[15px] text-text-subtle" />
             </button>
           </div>
         </div>

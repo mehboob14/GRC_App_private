@@ -23,32 +23,32 @@ export function AuthSplitLayout({
   footer?: ReactNode;
 }) {
   return (
-    <div className="flex min-h-full bg-bg-elevated">
+    <div className="flex min-h-full bg-surface-primary">
       <div className="flex w-full max-w-[512px] flex-col px-8 py-12 sm:px-14 sm:py-12">
         <Link to="/sign-in" className="flex items-center gap-[11px]">
-          <span className="flex size-[34px] items-center justify-center rounded-[10px] bg-accent text-accent-fg shadow-mark">
+          <span className="flex size-[34px] items-center justify-center rounded-md bg-action-primary text-action-primary-fg">
             <Icon name="check" className="size-5" />
           </span>
-          <span className="font-display text-heading-lg font-bold text-text">
+          <span className="font-display text-heading-lg font-bold text-text-primary">
             Verity
           </span>
         </Link>
 
         <div className="flex flex-1 flex-col justify-center py-10">
           <div className="w-full max-w-[360px]">
-            <h1 className="font-display text-heading-xl text-text">{title}</h1>
-            <p className="mt-2 mb-7 text-body-lg text-text-muted">
+            <h1 className="font-display text-heading-xl text-text-primary">{title}</h1>
+            <p className="mt-2 mb-7 text-body-lg text-text-secondary">
               {subtitle}
             </p>
             {children}
           </div>
         </div>
 
-        <p className="text-body-sm text-text-faint">
+        <p className="text-body-sm text-text-subtle">
           © 2026 Verity ·{" "}
-          <span className="text-text-muted">Privacy</span>
+          <span className="text-text-secondary">Privacy</span>
           {" · "}
-          <span className="text-text-muted">Terms</span>
+          <span className="text-text-secondary">Terms</span>
           {footer}
         </p>
       </div>
@@ -81,7 +81,7 @@ export function AuthSplitLayout({
             ].map(([value, label]) => (
               <div
                 key={label}
-                className="w-[137px] rounded-xl border border-white/25 bg-white/10 px-[18px] py-4 backdrop-blur-sm"
+                className="w-[137px] rounded-lg border border-white/25 bg-white/10 px-[18px] py-4 backdrop-blur-sm"
               >
                 <p className="font-display text-heading-xl tabular text-white">
                   {value}
@@ -95,7 +95,7 @@ export function AuthSplitLayout({
               {CONNECTOR_MARKS.map((mark, index) => (
                 <span
                   key={mark.label}
-                  className={`flex size-8 items-center justify-center rounded-lg border-2 border-panel-edge text-body-sm font-medium text-white ${
+                  className={`flex size-8 items-center justify-center rounded-md border-2 border-panel-edge text-body-sm font-medium text-white ${
                     index < CONNECTOR_MARKS.length - 1 ? "-mr-1.5" : ""
                   }`}
                   style={{ backgroundColor: mark.color }}

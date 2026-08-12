@@ -95,10 +95,10 @@ export function RolesPage() {
     <div className="mx-auto max-w-[1200px]">
       <div className="mb-5 flex items-start justify-between gap-3">
         <div>
-          <h1 className="font-display text-heading-xl text-text">
+          <h1 className="font-display text-heading-xl text-text-primary">
             Roles &amp; permissions
           </h1>
-          <p className="mt-2 text-body-lg text-text-muted">
+          <p className="mt-2 text-body-lg text-text-secondary">
             Permission diff — what a role adds and removes versus today.
           </p>
         </div>
@@ -124,7 +124,7 @@ export function RolesPage() {
                 onChange={(e) => setName(e.target.value)}
               />
               <fieldset className="mt-3 space-y-2">
-                <legend className="mb-2 text-label-sm text-text-muted">
+                <legend className="mb-2 text-label-sm text-text-secondary">
                   Permissions
                 </legend>
                 {PERMISSIONS.map((perm) => {
@@ -132,7 +132,7 @@ export function RolesPage() {
                   return (
                     <label
                       key={perm.key}
-                      className="flex items-center gap-2 text-body-md text-text"
+                      className="flex items-center gap-2 text-body-md text-text-primary"
                     >
                       <Checkbox
                         checked={checked}
@@ -150,7 +150,7 @@ export function RolesPage() {
                 })}
               </fieldset>
               {error ? (
-                <p className="mt-2 text-body-sm text-fail-fg" role="alert">
+                <p className="mt-2 text-body-sm text-status-danger-text" role="alert">
                   {error}
                 </p>
               ) : null}
@@ -196,7 +196,7 @@ export function RolesPage() {
                   </div>
                 </TD>
                 <TD>
-                  <span className="text-text-muted">
+                  <span className="text-text-secondary">
                     {role.permission_keys.length} keys
                   </span>
                 </TD>

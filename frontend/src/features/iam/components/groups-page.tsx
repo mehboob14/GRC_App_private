@@ -77,8 +77,8 @@ export function GroupsPage() {
     <div className="mx-auto max-w-[1200px]">
       <div className="mb-5 flex items-start justify-between gap-3">
         <div>
-          <h1 className="font-display text-heading-xl text-text">Groups</h1>
-          <p className="mt-2 text-body-lg text-text-muted">
+          <h1 className="font-display text-heading-xl text-text-primary">Groups</h1>
+          <p className="mt-2 text-body-lg text-text-secondary">
             The join between IdP group, Verity role, and access-review scope.
           </p>
         </div>
@@ -103,7 +103,7 @@ export function GroupsPage() {
                 onChange={(e) => setName(e.target.value)}
               />
               {error ? (
-                <p className="mt-2 text-body-sm text-fail-fg" role="alert">
+                <p className="mt-2 text-body-sm text-status-danger-text" role="alert">
                   {error}
                 </p>
               ) : null}

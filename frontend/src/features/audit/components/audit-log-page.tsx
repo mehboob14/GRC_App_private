@@ -62,8 +62,8 @@ export function AuditLogPage() {
   return (
     <div className="mx-auto max-w-5xl">
       <p className="type-overline mb-2">Access &amp; Audit</p>
-      <h1 className="font-display text-heading-lg text-text">Audit log</h1>
-      <p className="mt-1 mb-6 text-body-md text-text-muted">
+      <h1 className="font-display text-heading-lg text-text-primary">Audit log</h1>
+      <p className="mt-1 mb-6 text-body-md text-text-secondary">
         Append-only trail for this workspace. Never updated or deleted.
       </p>
 
@@ -85,7 +85,7 @@ export function AuditLogPage() {
           <TBody>
             {items.map((event) => (
               <TR key={event.id}>
-                <TD className="whitespace-nowrap text-text-muted">
+                <TD className="whitespace-nowrap text-text-secondary">
                   {formatWhen(event.occurred_at)}
                 </TD>
                 <TD>{event.actor_label}</TD>
@@ -94,8 +94,8 @@ export function AuditLogPage() {
                 </TD>
                 <TD>
                   <div>
-                    <p className="font-semibold text-text">{event.object_label}</p>
-                    <p className="text-body-sm text-text-faint">
+                    <p className="font-semibold text-text-primary">{event.object_label}</p>
+                    <p className="text-body-sm text-text-subtle">
                       {event.object_type}
                     </p>
                   </div>

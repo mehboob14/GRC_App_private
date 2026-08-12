@@ -28,7 +28,7 @@ function messageFrom(error: unknown, fallback: string): string {
 function StepMark({ status }: { status: StepStatus }) {
   if (status.kind === "done") {
     return (
-      <span className="flex size-[18px] shrink-0 items-center justify-center rounded-full bg-pass text-text-inverse">
+      <span className="flex size-[18px] shrink-0 items-center justify-center rounded-full bg-status-success-base text-text-inverse">
         <Icon name="check" className="size-3" strokeWidth={2.5} />
       </span>
     );
@@ -38,7 +38,7 @@ function StepMark({ status }: { status: StepStatus }) {
   }
   if (status.kind === "error") {
     return (
-      <span className="flex size-[18px] shrink-0 items-center justify-center text-fail-fg">
+      <span className="flex size-[18px] shrink-0 items-center justify-center text-status-danger-text">
         <Icon name="alert" className="size-4" />
       </span>
     );
@@ -47,7 +47,7 @@ function StepMark({ status }: { status: StepStatus }) {
     <span
       className={cn(
         "size-[18px] shrink-0 rounded-full border-2",
-        status.kind === "todo" ? "border-accent" : "border-border-strong",
+        status.kind === "todo" ? "border-action-accent" : "border-border-strong",
       )}
     />
   );
@@ -56,20 +56,20 @@ function StepMark({ status }: { status: StepStatus }) {
 function StepRow({ step }: { step: Step }) {
   const muted = step.status.kind === "unavailable";
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-border bg-bg-elevated px-[18px] py-[14px]">
+    <div className="flex items-center gap-3 rounded-lg border border-border bg-surface-primary px-[18px] py-[14px]">
       <StepMark status={step.status} />
       <div className="min-w-0 flex-1">
         <p
           className={cn(
             "text-body-lg font-semibold",
-            muted ? "text-text-muted" : "text-text",
+            muted ? "text-text-secondary" : "text-text-primary",
           )}
         >
           {step.title}
         </p>
-        <p className="mt-0.5 text-body-sm text-text-faint">{step.why}</p>
+        <p className="mt-0.5 text-body-sm text-text-subtle">{step.why}</p>
         {step.status.kind === "error" ? (
-          <p className="mt-1 text-body-sm text-fail-fg" role="alert">
+          <p className="mt-1 text-body-sm text-status-danger-text" role="alert">
             {step.status.message}{" "}
             <button
               type="button"
@@ -81,13 +81,13 @@ function StepRow({ step }: { step: Step }) {
           </p>
         ) : null}
         {step.status.kind === "unavailable" ? (
-          <p className="mt-1 text-body-sm text-text-faint">
+          <p className="mt-1 text-body-sm text-text-subtle">
             {step.status.note}
           </p>
         ) : null}
       </div>
       {step.status.kind === "done" ? (
-        <span className="shrink-0 text-body-sm font-semibold text-pass-fg">
+        <span className="shrink-0 text-body-sm font-semibold text-status-success-text">
           Done
         </span>
       ) : step.cta && step.status.kind === "todo" ? (
@@ -231,8 +231,8 @@ export function QuickStartPage() {
   return (
     <div className="mx-auto max-w-[840px]">
       <p className="type-overline mb-2">Overview</p>
-      <h1 className="font-display text-heading-xl text-text">Quick start</h1>
-      <p className="mt-2 text-body-lg text-text-muted">
+      <h1 className="font-display text-heading-xl text-text-primary">Quick start</h1>
+      <p className="mt-2 text-body-lg text-text-secondary">
         First-run checklist for your workspace — {doneCount} of{" "}
         {completable.length} setup steps complete.
       </p>

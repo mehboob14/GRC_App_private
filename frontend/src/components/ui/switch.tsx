@@ -30,15 +30,15 @@ export function Switch({
       aria-label={ariaLabel}
       className={cn(
         "peer inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border border-transparent transition-colors",
-        "bg-border data-[state=checked]:bg-accent",
+        "bg-border data-[state=checked]:bg-action-primary",
         "disabled:cursor-not-allowed disabled:opacity-50",
-        "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
+        "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-accent",
         className,
       )}
     >
       <SwitchPrimitive.Thumb
         className={cn(
-          "pointer-events-none block size-4 rounded-full bg-bg-elevated shadow-sm transition-transform",
+          "pointer-events-none block size-4 rounded-full bg-surface-primary shadow-1 transition-transform",
           "translate-x-0.5 data-[state=checked]:translate-x-[18px]",
         )}
       />
