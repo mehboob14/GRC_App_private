@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,6 +15,7 @@ import {
 } from "@/components/ui";
 import { authApi } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/client";
+import { useAuth } from "@/lib/auth/auth-context";
 import { useAlertFocus } from "@/features/iam/hooks/use-alert-focus";
 import type { AcceptInvitationRequest } from "@/lib/api/types";
 
@@ -33,7 +34,12 @@ export function AcceptInvitePage() {
   const [params] = useSearchParams();
   const token = params.get("token") ?? "";
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+  const queryClient = useQueryClient();
   const [existingAccount, setExistingAccount] = useState(false);
+  // A signed-in visitor is definitionally an existing user joining a second
+  // workspace: no new-user fields, and they stay in the app afterwards.
+  const asExistingUser = existingAccount || isAuthenticated;
 
   const form = useForm<NewUserValues>({
     resolver: zodResolver(newUserSchema),
@@ -45,6 +51,12 @@ export function AcceptInvitePage() {
     mutationFn: (body: AcceptInvitationRequest) =>
       authApi.acceptInvitation(body),
     onSuccess: (result) => {
+      if (isAuthenticated) {
+        // Their session already knows them; refresh the switcher's workspace list
+        // so the new one appears, and show a success state rather than bouncing.
+        void queryClient.invalidateQueries({ queryKey: ["workspaces"] });
+        return;
+      }
       navigate("/sign-in", {
         replace: true,
         state: {
@@ -57,6 +69,25 @@ export function AcceptInvitePage() {
   });
 
   const alertRef = useAlertFocus(acceptMutation.isError);
+
+  if (isAuthenticated && acceptMutation.isSuccess && acceptMutation.data) {
+    const joined = acceptMutation.data.tenant_name;
+    return (
+      <AuthSplitLayout
+        title="You're in"
+        subtitle={`You've joined ${joined}. It's now in your workspace switcher — top left — so you can jump between organisations.`}
+      >
+        <Button
+          className="w-full"
+          size="lg"
+          onClick={() => navigate("/quick-start", { replace: true })}
+        >
+          Continue to Verity
+          <Icon name="arrowr" className="size-4" />
+        </Button>
+      </AuthSplitLayout>
+    );
+  }
 
   if (!token) {
     return (
@@ -83,7 +114,7 @@ export function AcceptInvitePage() {
       <form
         className="flex flex-col gap-3"
         onSubmit={(e) => {
-          if (existingAccount) {
+          if (asExistingUser) {
             e.preventDefault();
             acceptMutation.mutate({ token });
             return;
@@ -100,18 +131,21 @@ export function AcceptInvitePage() {
             )}
           </ErrorBanner>
         ) : null}
-        <label className="flex items-center gap-2 text-body-md text-text-primary">
-          <Checkbox
-            checked={existingAccount}
-            onCheckedChange={setExistingAccount}
-          />
-          I already have a Verity account
-        </label>
+        {isAuthenticated ? null : (
+          <label className="flex items-center gap-2 text-body-md text-text-primary">
+            <Checkbox
+              checked={existingAccount}
+              onCheckedChange={setExistingAccount}
+            />
+            I already have a Verity account
+          </label>
+        )}
 
-        {existingAccount ? (
+        {asExistingUser ? (
           <p className="text-body-sm text-text-secondary">
-            We'll attach this workspace to your existing account. Sign in with
-            your usual email and password afterwards.
+            {isAuthenticated
+              ? "You're signed in — accepting attaches this workspace to your account."
+              : "We'll attach this workspace to your existing account. Sign in with your usual email and password afterwards."}
           </p>
         ) : (
           <>

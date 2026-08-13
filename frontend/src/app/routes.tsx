@@ -22,8 +22,12 @@ export function AppRoutes() {
         <Route path="/sign-in" element={<SignInPage />} />
         <Route path="/sign-up" element={<SignUpPage />} />
         <Route path="/mfa/enroll" element={<MfaEnrollPage />} />
-        <Route path="/accept-invite" element={<AcceptInvitePage />} />
       </Route>
+
+      {/* Reachable whether or not you are signed in: an existing user accepting a
+          second workspace is already authenticated, and PublicOnly would bounce
+          them off, dropping the token (review finding 24). */}
+      <Route path="/accept-invite" element={<AcceptInvitePage />} />
 
       <Route element={<RequireAuth />}>
         <Route element={<AppLayout />}>
