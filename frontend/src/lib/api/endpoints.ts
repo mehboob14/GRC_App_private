@@ -45,6 +45,7 @@ export const authApi = {
       method: "POST",
       body: JSON.stringify(body),
     }),
+  logout: () => apiFetch<void>("/auth/logout", { method: "POST" }),
   listWorkspaces: () => apiFetch<WorkspaceSummary[]>("/auth/workspaces"),
   switchWorkspace: (membershipId: string) =>
     apiFetch<LoginResponse>("/auth/workspaces/switch", {

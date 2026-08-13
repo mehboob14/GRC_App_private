@@ -67,6 +67,9 @@ export type LoginSuccess = {
   access_token: string;
   principal: SessionPrincipal;
   workspaces: WorkspaceSummary[];
+  /** Present only on the enrollment-confirm response — the plaintext recovery
+      codes leave the server exactly once, here. */
+  recovery_codes?: string[];
 };
 
 export type LoginMfaChallenge = {
@@ -105,7 +108,10 @@ export type SignupResponse = LoginMfaEnroll | LoginSuccess;
 
 export type MfaVerifyRequest = {
   challenge_token: string;
-  code: string;
+  /** Exactly one of these: the 6-digit authenticator code, or a single-use
+      recovery code. Enrollment confirmation always uses `code`. */
+  code?: string;
+  recovery_code?: string;
 };
 
 export type MfaEnrollStartResponse = {
@@ -195,11 +201,17 @@ export type AuditEvent = {
   tenant_id: string;
   actor_type: "membership" | "platform_admin" | "system";
   actor_id: string | null;
-  actor_label: string;
+  /**
+   * Best-effort humanised label from the backend (e.g. "Membership ·
+   * 019ff785"). Treated as possibly-absent: the UI composes a fallback from
+   * actor_type + short actor_id when it is missing or empty.
+   */
+  actor_label?: string | null;
   action: AuditAction;
   object_type: string;
   object_id: string;
-  object_label: string;
+  /** Best-effort humanised label; see actor_label. Possibly-absent. */
+  object_label?: string | null;
   before: Record<string, unknown> | null;
   after: Record<string, unknown> | null;
   occurred_at: string;

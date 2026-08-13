@@ -20,7 +20,13 @@ type AuthContextValue = {
   token: string | null;
   isAuthenticated: boolean;
   applyLogin: (response: LoginResponse) => SessionPrincipal | null;
-  switchWorkspace: (membershipId: string) => Promise<void>;
+  /**
+   * Switching is the SAME discriminated union as login: a target membership
+   * that holds Admin comes back as `mfa_required` (challenge_token) rather than
+   * a session. The session is applied only for `authenticated`; every caller
+   * must route the other branches. Returns the raw response so it can.
+   */
+  switchWorkspace: (membershipId: string) => Promise<LoginResponse>;
   signOut: () => void;
   refreshPrincipal: () => void;
 };
@@ -51,17 +57,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return next;
   }, []);
 
-  const switchWorkspace = useCallback(async (membershipId: string) => {
-    const response = await authApi.switchWorkspace(membershipId);
-    if (response.status !== "authenticated") {
-      throw new Error("Workspace switch did not complete.");
-    }
-    applySuccess(response);
-    setPrincipal(response.principal);
-    setToken(response.access_token);
-  }, []);
+  const switchWorkspace = useCallback(
+    async (membershipId: string): Promise<LoginResponse> => {
+      const response = await authApi.switchWorkspace(membershipId);
+      if (response.status === "authenticated") {
+        applySuccess(response);
+        setPrincipal(response.principal);
+        setToken(response.access_token);
+      }
+      // Non-authenticated branches (mfa_required, mfa_enrollment_required,
+      // select_workspace) are routed by the caller — see Topbar.
+      return response;
+    },
+    [],
+  );
 
   const signOut = useCallback(() => {
+    // Record the sign-out in the audit trail (best-effort). apiFetch reads the
+    // bearer token synchronously, so this captures it before clearSession runs;
+    // a failed call must never block the user from signing out.
+    void authApi.logout().catch(() => {});
     clearSession();
     setPrincipal(null);
     setToken(null);

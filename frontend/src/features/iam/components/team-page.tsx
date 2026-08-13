@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -64,7 +64,7 @@ const inviteSchema = z
     full_name: z.string().min(2, "Enter a name."),
     email: z.string().email("Enter a work email."),
     invite_as: z.enum(["member", "guest"]),
-    role_id: z.string().min(1, "Choose a role."),
+    role_id: z.string(),
     valid_from: z.string(),
     valid_until: z.string(),
   })
@@ -89,7 +89,10 @@ const INVITE_DEFAULTS: InviteValues = {
   full_name: "",
   email: "",
   invite_as: "member",
-  role_id: "role-employee",
+  // No hard-coded role id: the built-in "Employee" role is resolved by name
+  // from the roles query once it loads (see TeamPage). A literal like
+  // "role-employee" is not a valid UUID and matches no option → 422.
+  role_id: "",
   valid_from: "",
   valid_until: "",
 };
@@ -135,6 +138,7 @@ export function TeamPage() {
 
   const roles = rolesQuery.data ?? [];
   const auditorRole = roles.find((role) => role.name === "Auditor");
+  const employeeRole = roles.find((role) => role.name === "Employee");
 
   const form = useForm<InviteValues>({
     resolver: zodResolver(inviteSchema),
@@ -142,6 +146,21 @@ export function TeamPage() {
     mode: "onBlur",
   });
   const inviteAs = form.watch("invite_as");
+  const memberRoleId = form.watch("role_id");
+
+  // Preselect the tenant's built-in "Employee" role once roles load, resolved
+  // by name rather than a hard-coded id. If it can't be resolved the field
+  // stays unset and the submit is disabled until a role is chosen.
+  useEffect(() => {
+    if (open && inviteAs === "member" && !memberRoleId && employeeRole) {
+      form.setValue("role_id", employeeRole.id);
+    }
+  }, [open, inviteAs, memberRoleId, employeeRole, form]);
+
+  // The role actually submitted: guests always get Auditor, members the picked
+  // role. Always a real role UUID from the roles query — never a literal.
+  const submitRoleId = inviteAs === "guest" ? auditorRole?.id : memberRoleId;
+  const canSubmitInvite = Boolean(submitRoleId);
 
   const inviteMutation = useMutation({
     mutationFn: (body: InviteMemberRequest) => iamApi.inviteMember(body),
@@ -167,10 +186,19 @@ export function TeamPage() {
 
   function submitInvite(values: InviteValues) {
     const guest = values.invite_as === "guest";
+    const roleId = guest ? auditorRole?.id : values.role_id;
+    if (!roleId) {
+      setInviteError(
+        guest
+          ? "The Auditor role isn't available in this workspace yet — ask an admin to add it, then try again."
+          : "Choose a role for this member before sending the invite.",
+      );
+      return;
+    }
     const body: InviteMemberRequest = {
       full_name: values.full_name,
       email: values.email,
-      role_id: guest ? (auditorRole?.id ?? values.role_id) : values.role_id,
+      role_id: roleId,
     };
     if (guest && values.valid_from) body.valid_from = values.valid_from;
     if (guest && values.valid_until) body.valid_until = values.valid_until;
@@ -438,7 +466,7 @@ export function TeamPage() {
                       ) : (
                         <SelectField label="Role">
                           <Select
-                            value={form.watch("role_id")}
+                            value={memberRoleId}
                             onValueChange={(value) =>
                               form.setValue("role_id", value, {
                                 shouldValidate: true,
@@ -466,7 +494,11 @@ export function TeamPage() {
                         >
                           Cancel
                         </Button>
-                        <Button type="submit" loading={inviteMutation.isPending}>
+                        <Button
+                          type="submit"
+                          loading={inviteMutation.isPending}
+                          disabled={!canSubmitInvite}
+                        >
                           Create invite
                         </Button>
                       </DialogFooter>

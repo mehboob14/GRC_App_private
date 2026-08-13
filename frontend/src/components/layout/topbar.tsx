@@ -18,6 +18,7 @@ import {
 import { cn } from "@/lib/cn";
 import { authApi } from "@/lib/api/endpoints";
 import { useAuth } from "@/lib/auth/auth-context";
+import { resumePendingAuth } from "@/lib/auth/resume-auth";
 
 /** Workspace tile — identity-ramp mark, same vocabulary as person avatars. */
 function WorkspaceMark({
@@ -69,12 +70,22 @@ export function Topbar() {
   });
 
   const switchMutation = useMutation({
-    mutationFn: async (membershipId: string) => {
+    mutationFn: (membershipId: string) => {
       setSwitching(true);
-      await switchWorkspace(membershipId);
+      return switchWorkspace(membershipId);
     },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries();
+    onSuccess: async (response) => {
+      if (response.status === "authenticated") {
+        // New session applied in place — refresh all workspace-scoped data.
+        await queryClient.invalidateQueries();
+        return;
+      }
+      // The target workspace needs another auth step (Admin memberships
+      // require MFA). Those steps live on PublicOnly routes, and the current
+      // session isn't valid for the target — so drop it and hand off to the
+      // sign-in surface, which owns the challenge / enrollment / choice UI.
+      signOut();
+      resumePendingAuth(response, navigate);
     },
     onSettled: () => setSwitching(false),
   });
