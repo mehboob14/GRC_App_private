@@ -30,6 +30,16 @@ export const authApi = {
       method: "POST",
       body: JSON.stringify(body),
     }),
+  verifyEmail: (token: string) =>
+    apiFetch<LoginResponse>("/auth/verify-email", {
+      method: "POST",
+      body: JSON.stringify({ token }),
+    }),
+  resendVerification: (email: string) =>
+    apiFetch<void>("/auth/verify-email/resend", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }),
   verifyMfa: (body: MfaVerifyRequest) =>
     apiFetch<LoginResponse>("/auth/mfa/verify", {
       method: "POST",

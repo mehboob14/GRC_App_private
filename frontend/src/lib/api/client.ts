@@ -76,7 +76,9 @@ export async function apiFetch<T>(
     throw new ApiError(response.status, body);
   }
 
-  if (response.status === 204) {
+  // 202 (verification resend — accepted, no body) and 204 carry no payload;
+  // calling response.json() on an empty body throws, so short-circuit both.
+  if (response.status === 202 || response.status === 204) {
     return undefined as T;
   }
 

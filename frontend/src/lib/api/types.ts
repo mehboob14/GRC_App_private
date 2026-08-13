@@ -90,21 +90,42 @@ export type LoginWorkspaceChoice = {
   workspaces: WorkspaceSummary[];
 };
 
+/**
+ * The address hasn't been verified yet — signup always lands here, and login
+ * does too when the user signed up but never clicked the emailed link. A real
+ * verification email points at /verify-email?token=…; no session is issued
+ * until that token is redeemed.
+ */
+export type LoginEmailVerification = {
+  status: "email_verification_required";
+  email: string;
+};
+
 export type LoginResponse =
   | LoginSuccess
   | LoginMfaChallenge
   | LoginMfaEnroll
-  | LoginWorkspaceChoice;
+  | LoginWorkspaceChoice
+  | LoginEmailVerification;
 
 export type SignupRequest = {
   company_name: string;
   full_name: string;
   email: string;
   password: string;
+  /** Must be true — the backend rejects signup without an accepted terms box. */
+  accept_terms: boolean;
 };
 
-/** Signup creates a tenant + Admin membership, then requires MFA enrollment. */
-export type SignupResponse = LoginMfaEnroll | LoginSuccess;
+/**
+ * Signup is verify-first: it creates the tenant + Admin membership, mails a
+ * verification link, and returns `email_verification_required`. MFA enrollment
+ * happens after the emailed token is redeemed at /verify-email.
+ */
+export type SignupResponse =
+  | LoginEmailVerification
+  | LoginMfaEnroll
+  | LoginSuccess;
 
 export type MfaVerifyRequest = {
   challenge_token: string;
