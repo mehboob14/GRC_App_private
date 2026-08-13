@@ -21,6 +21,7 @@ export const PERMISSION_KEYS = [
   "roles:read",
   "roles:manage",
   "audit:read",
+  "security:manage",
 ] as const;
 
 export type PermissionKey = (typeof PERMISSION_KEYS)[number];
@@ -250,6 +251,10 @@ export type TenantSummary = {
   name: string;
   slug: string;
   status: TenantStatus;
+};
+
+export type SecuritySettings = {
+  require_admin_mfa: boolean;
 };
 
 export type ApiErrorBody = {

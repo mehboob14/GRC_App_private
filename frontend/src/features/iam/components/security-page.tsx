@@ -1,6 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ReactNode } from "react";
-import { StatusPill, statusFamilyFor } from "@/components/ui";
+import { StatusPill, Switch, statusFamilyFor } from "@/components/ui";
 import { tenantApi } from "@/lib/api/endpoints";
 import { useAuth } from "@/lib/auth/auth-context";
 
@@ -23,23 +23,35 @@ function PolicyRow({ title, description, status }: PolicyRowProps) {
 }
 
 /**
- * The security policy is the platform's, not the tenant's: nothing here is a
- * workspace toggle (week1-review-decisions.md #19/#20). Rendered read-only
- * from fixed platform facts plus GET /api/v1/tenant for the workspace name.
+ * Admin MFA is a per-tenant toggle (off by default); the other protections are
+ * platform-enforced facts, shown read-only. Only a member holding security:manage
+ * can flip the toggle — everyone else sees its current state.
  */
 export function SecurityPage() {
   const { principal } = useAuth();
+  const queryClient = useQueryClient();
+  const canManage = principal?.permissions.includes("security:manage") ?? false;
 
   const tenantQuery = useQuery({
     queryKey: ["tenant", principal?.tenant_id],
     queryFn: () => tenantApi.get(),
   });
+  const securityQuery = useQuery({
+    queryKey: ["security", principal?.tenant_id],
+    queryFn: () => tenantApi.getSecurity(),
+  });
+  const mfaMutation = useMutation({
+    mutationFn: (value: boolean) => tenantApi.setRequireAdminMfa(value),
+    onSuccess: () =>
+      queryClient.invalidateQueries({
+        queryKey: ["security", principal?.tenant_id],
+        exact: true,
+      }),
+  });
 
-  const scopeLine = tenantQuery.isLoading
-    ? "Loading workspace details…"
-    : tenantQuery.data
-      ? `Enforced by the platform for ${tenantQuery.data.name} — these protections are not configurable per workspace.`
-      : "Enforced by the platform for every workspace — these protections are not configurable per workspace.";
+  const scopeLine = tenantQuery.data
+    ? `Access controls for ${tenantQuery.data.name}.`
+    : "Access controls for this workspace.";
 
   const enforced = (
     <StatusPill
@@ -48,18 +60,35 @@ export function SecurityPage() {
     />
   );
 
+  const requireMfa = securityQuery.data?.require_admin_mfa ?? false;
+
   return (
     <div className="rounded-lg border border-border bg-surface-primary px-5 py-4">
-      <p className="type-overline">Platform policy</p>
+      <p className="type-overline">Security</p>
       <h2 className="mt-1 font-display text-heading-sm text-text-primary">
         Security policy
       </h2>
       <p className="mt-1 text-body-sm text-text-subtle">{scopeLine}</p>
       <div className="mt-3">
         <PolicyRow
-          title="Multi-factor authentication"
-          description="Required for Admin-role memberships and all platform administrators — always on, never a toggle"
-          status={enforced}
+          title="Require MFA for admins"
+          description="When on, Admin-role members must set up an authenticator app before they can sign in. Off by default."
+          status={
+            securityQuery.isError ? (
+              <span className="text-body-sm text-status-danger-text">
+                Couldn't load
+              </span>
+            ) : (
+              <Switch
+                checked={requireMfa}
+                onCheckedChange={(value) => mfaMutation.mutate(value)}
+                disabled={
+                  !canManage || securityQuery.isLoading || mfaMutation.isPending
+                }
+                aria-label="Require MFA for admins"
+              />
+            )
+          }
         />
         <PolicyRow
           title="Session expiry"
@@ -81,10 +110,11 @@ export function SecurityPage() {
           status={enforced}
         />
       </div>
-      <p className="mt-3 text-caption text-text-subtle">
-        Workspace-configurable controls (SSO enforcement, IP allowlists, SIEM
-        export) arrive in a later phase.
-      </p>
+      {!canManage ? (
+        <p className="mt-3 text-caption text-text-subtle">
+          Only workspace admins can change these settings.
+        </p>
+      ) : null}
     </div>
   );
 }

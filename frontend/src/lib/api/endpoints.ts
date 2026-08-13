@@ -15,6 +15,7 @@ import type {
   Role,
   SignupRequest,
   SignupResponse,
+  SecuritySettings,
   TenantSummary,
   WorkspaceSummary,
 } from "@/lib/api/types";
@@ -112,6 +113,12 @@ export const iamApi = {
 
 export const tenantApi = {
   get: () => apiFetch<TenantSummary>("/tenant"),
+  getSecurity: () => apiFetch<SecuritySettings>("/tenant/security"),
+  setRequireAdminMfa: (require_admin_mfa: boolean) =>
+    apiFetch<SecuritySettings>("/tenant/security", {
+      method: "PATCH",
+      body: JSON.stringify({ require_admin_mfa }),
+    }),
 };
 
 export const auditApi = {

@@ -63,6 +63,9 @@ const challenges = new Map<
 // In-memory only, like the rest of the mock — it does not survive a reload.
 let pendingVerification: { membershipId: string; userId: string } | null = null;
 
+// Per-tenant admin-MFA toggle, off by default. In-memory, like the rest.
+const requireAdminMfa: Record<string, boolean> = {};
+
 export const handlers = [
   // Keepalive target for main.tsx: pinged so the browser never idle-kills
   // the MSW service worker (a restarted worker forgets its clients and
@@ -845,6 +848,28 @@ export const handlers = [
       slug: tenant?.tenant_slug ?? principal.tenant_id,
       status: "active",
     } satisfies TenantSummary);
+  }),
+
+  http.get("/api/v1/tenant/security", ({ request }) => {
+    const membershipId = membershipFromToken(request.headers.get("Authorization"));
+    const principal = membershipId ? principalFromMembership(membershipId) : null;
+    if (!principal) return err(401, "unauthenticated", "Sign in to continue.");
+    return HttpResponse.json({
+      require_admin_mfa: requireAdminMfa[principal.tenant_id] ?? false,
+    });
+  }),
+
+  http.patch("/api/v1/tenant/security", async ({ request }) => {
+    const membershipId = membershipFromToken(request.headers.get("Authorization"));
+    const principal = membershipId ? principalFromMembership(membershipId) : null;
+    if (!principal) return err(401, "unauthenticated", "Sign in to continue.");
+    if (!principal.permissions.includes("security:manage"))
+      return err(403, "permission_denied", "You can't change security settings.");
+    const body = (await request.json()) as { require_admin_mfa: boolean };
+    requireAdminMfa[principal.tenant_id] = Boolean(body.require_admin_mfa);
+    return HttpResponse.json({
+      require_admin_mfa: requireAdminMfa[principal.tenant_id],
+    });
   }),
 
   http.get("/api/v1/audit-log", ({ request }) => {
