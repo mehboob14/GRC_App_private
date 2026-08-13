@@ -7,6 +7,7 @@ from collections.abc import AsyncIterator
 import httpx
 import pytest
 from fastapi import APIRouter, FastAPI, HTTPException
+from fastapi.exceptions import RequestValidationError
 from pydantic import BaseModel
 from starlette.middleware import Middleware
 
@@ -16,6 +17,7 @@ from verity.core.errors import (
     NotFound,
     PermissionDenied,
     VerityError,
+    _redact_validation_errors,
     install_exception_handlers,
 )
 from verity.core.middleware import CORRELATION_ID_HEADER, CorrelationIdMiddleware
@@ -118,10 +120,6 @@ async def test_validation_failure_is_422_with_a_stable_code(client: httpx.AsyncC
 
 def test_redacted_validation_errors_drop_the_submitted_input() -> None:
     """A rejected field's value (a TOTP code, a password) must never be logged."""
-    from fastapi.exceptions import RequestValidationError
-
-    from verity.core.errors import _redact_validation_errors
-
     exc = RequestValidationError(
         [
             {

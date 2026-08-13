@@ -7,7 +7,7 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, computed_field, field_serializer
+from pydantic import BaseModel, ConfigDict, field_serializer, model_validator
 
 from verity.modules.audit.models import ActorType, AuditAction
 
@@ -30,27 +30,24 @@ class AuditLogEntry(BaseModel):
     before: dict[str, Any] | None
     after: dict[str, Any] | None
     occurred_at: datetime
+    # The UI renders these; they are derived (below) from the fields above, in-module —
+    # resolving the actor's real name needs the iam module and is a deliberate follow-up.
+    # The default lets from_attributes build the model from an ORM row that has neither.
+    actor_label: str = ""
+    object_label: str = ""
 
-    @computed_field
-    @property
-    def actor_label(self) -> str:
-        """A human label for the actor, resolved in-module (no cross-module lookup).
-
-        ``System`` for jobs; otherwise the humanised actor kind plus the id's short
-        prefix, e.g. ``Membership · 019ff785``. Resolving the actor's *name* needs the
-        iam module and is a deliberate follow-up; the id keeps rows distinguishable now.
-        """
+    @model_validator(mode="after")
+    def _derive_labels(self) -> AuditLogEntry:
+        """A human label for the actor (``System`` for jobs; else the humanised kind plus
+        the id's short prefix, e.g. ``Membership · 019ff785``) and for the object
+        (``Tenant membership · 019ff7a4``). Distinguishes rows without a cross-module lookup."""
         if self.actor_type == "system":
-            return "System"
-        suffix = f" · {str(self.actor_id)[:8]}" if self.actor_id is not None else ""
-        return f"{_humanize(self.actor_type)}{suffix}"
-
-    @computed_field
-    @property
-    def object_label(self) -> str:
-        """The humanised object kind plus the id's short prefix, e.g.
-        ``Tenant membership · 019ff7a4``."""
-        return f"{_humanize(self.object_type)} · {str(self.object_id)[:8]}"
+            self.actor_label = "System"
+        else:
+            suffix = f" · {str(self.actor_id)[:8]}" if self.actor_id is not None else ""
+            self.actor_label = f"{_humanize(self.actor_type)}{suffix}"
+        self.object_label = f"{_humanize(self.object_type)} · {str(self.object_id)[:8]}"
+        return self
 
     @field_serializer("occurred_at")
     def _iso_utc_z(self, value: datetime) -> str:

@@ -322,6 +322,17 @@ async def get_current_principal(
     )
 
 
+async def get_session_token(
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(_bearer)] = None,
+) -> str:
+    """The raw bearer token, for the rare route that needs its identity (its ``jti``)
+    rather than only the resolved principal — sign-out, which records the session end.
+    Pair it with ``get_current_principal`` so the token is still fully validated."""
+    if credentials is None:
+        raise AuthenticationRequired(detail="no bearer token")
+    return credentials.credentials
+
+
 async def get_tenant_context(
     principal: Annotated[Principal, Depends(get_current_principal)],
 ) -> TenantContext:
@@ -585,6 +596,7 @@ __all__ = [
     "get_current_platform_admin",
     "get_current_principal",
     "get_provider_session",
+    "get_session_token",
     "get_tenant_context",
     "get_tenant_session",
     "require",

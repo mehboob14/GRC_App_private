@@ -72,9 +72,7 @@ def create_org(client: httpx.Client, company: str, email: str) -> dict:
     started = post(client, "/auth/mfa/enroll", json={"challenge_token": challenge})
     secret = started["secret"]
     code = pyotp.TOTP(secret).now()
-    confirmed = post(
-        client, "/auth/mfa/confirm", json={"challenge_token": challenge, "code": code}
-    )
+    confirmed = post(client, "/auth/mfa/confirm", json={"challenge_token": challenge, "code": code})
     assert confirmed["status"] == "authenticated", confirmed
     ok(f"MFA enrolled + first session issued ({len(confirmed['recovery_codes'])} recovery codes)")
     return {
@@ -166,8 +164,10 @@ def main() -> None:
     ok(f"entered workspace A as {sess_a['principal']['role_names']}")
 
     workspaces = get(client, "/auth/workspaces", token=sess_a["access_token"])
-    ok(f"GET /auth/workspaces from A session lists both: "
-       f"{sorted(w['tenant_name'] for w in workspaces)}")  # type: ignore[index]
+    ok(
+        f"GET /auth/workspaces from A session lists both: "
+        f"{sorted(w['tenant_name'] for w in workspaces)}"
+    )  # type: ignore[index]
 
     sess_b = post(
         client,
@@ -176,7 +176,7 @@ def main() -> None:
         json={"membership_id": wb["membership_id"]},
     )
     assert sess_b["status"] == "authenticated"
-    ok(f"switched to workspace B — new session bound to the B membership")
+    ok("switched to workspace B — new session bound to the B membership")
 
     step("7. Audit trail — every action is recorded, per tenant stream")
     for label, admin in (("A", a), ("B", b)):

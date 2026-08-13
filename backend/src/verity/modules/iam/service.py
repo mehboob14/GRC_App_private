@@ -866,7 +866,21 @@ class IamAuthService:
                     raise InvalidInput(detail="a new user must set a password on accept")
                 validate_password(password)
                 if full_name is not None and full_name.strip():
+                    # The global users row changes; it is a state change and is audited
+                    # like every other write here, in this tenant's stream.
+                    user_before = AuditService.snapshot(user, fields=_USER_SNAPSHOT)
                     user.full_name = full_name.strip()
+                    await session.flush([user])
+                    await self._audit.record(
+                        session,
+                        action="update",
+                        object_type="user",
+                        object_id=user.id,
+                        actor=actor,
+                        tenant_id=membership.tenant_id,
+                        before=user_before,
+                        after=AuditService.snapshot(user, fields=_USER_SNAPSHOT),
+                    )
                 credentials = Credentials(user_id=user.id, password_hash=hash_password(password))
                 await self._users.add_credentials(session, credentials)
                 await self._record_create(
@@ -903,6 +917,28 @@ class IamAuthService:
             tenant = await tenancy_service.get_tenant(session, membership.tenant_id)
             return InvitationAccepted(
                 tenant_name=tenant_display_name(tenant.legal_name, tenant.trading_name)
+            )
+
+    async def logout(self, *, token: str, membership_id: uuid.UUID, tenant_id: uuid.UUID) -> None:
+        """Record a sign-out as ``delete`` on the session object (decisions 2 and 17).
+
+        Sessions are stateless — there is no server-side token to revoke — so this
+        writes the audit row and nothing else: the trail is the point. The ``jti`` in
+        the presented token is the session's identity and the object_id, matching the
+        ``create``-on-``session`` written when it was issued.
+        """
+        claims = decode_token(token, expected_typ="session", expected_plane="tenant")
+        async with provider_session_scope() as session:
+            await bind_tenant_context(session, tenant_id)
+            await self._audit.record(
+                session,
+                action="delete",
+                object_type="session",
+                object_id=claims.jti,
+                actor=MembershipActor(membership_id),
+                tenant_id=tenant_id,
+                before={"membership_id": str(membership_id)},
+                after=None,
             )
 
     # -- shared internals -----------------------------------------------------------

@@ -431,6 +431,39 @@ async def test_invite_accept_login_for_a_new_user(client: httpx.AsyncClient) -> 
     assert login.json()["status"] == "authenticated", "a non-admin needs no TOTP in Week 1"
     assert login.json()["principal"]["role_names"] == ["Employee"]
 
+    # A new user setting their name on accept is a state change on the global users
+    # row and is audited like every other write in that flow (review finding 4).
+    user_updates = [
+        entry
+        for entry in await _stream(workspace.tenant_id)
+        if entry.object_type == "user" and entry.action == "update"
+    ]
+    assert any(
+        entry.after is not None and entry.after.get("full_name") == "Plain Employee"
+        for entry in user_updates
+    )
+
+
+async def test_logout_is_recorded_as_delete_on_the_session(client: httpx.AsyncClient) -> None:
+    """Decisions 2 and 17: sign-out writes a delete/'session' row keyed on the token's
+    jti, matching the create written when the session was issued."""
+    workspace = await signup_workspace(email="dana@acme.example")
+    headers = {"Authorization": f"Bearer {workspace.session_token}"}
+    jti = decode_token(workspace.session_token, expected_typ="session", expected_plane="tenant").jti
+
+    response = await client.post("/api/v1/auth/logout", headers=headers)
+    assert response.status_code == 204
+
+    deletes = [
+        entry
+        for entry in await _stream(workspace.tenant_id)
+        if entry.object_type == "session" and entry.action == "delete"
+    ]
+    assert jti in {entry.object_id for entry in deletes}
+
+    unauth = await client.post("/api/v1/auth/logout")
+    assert unauth.status_code == 401
+
 
 async def test_accept_refuses_garbage_tokens_and_weak_passwords(
     client: httpx.AsyncClient,

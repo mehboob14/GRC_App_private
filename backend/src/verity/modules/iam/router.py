@@ -27,6 +27,7 @@ from verity.core.deps import (
     TenantContext,
     get_current_principal,
     get_provider_session,
+    get_session_token,
     get_tenant_context,
     get_tenant_session,
     require,
@@ -273,6 +274,22 @@ async def switch_workspace(
         user_id=principal.user_id, membership_id=body.membership_id
     )
     return _login_response(outcome)
+
+
+@auth_router.post(
+    "/logout",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="End the current session — recorded in the audit trail (decisions 2, 17)",
+)
+async def logout(
+    principal: Annotated[Principal, Depends(get_current_principal)],
+    token: Annotated[str, Depends(get_session_token)],
+) -> None:
+    assert principal.membership_id is not None  # noqa: S101 — guaranteed by the dependency
+    assert principal.tenant_id is not None  # noqa: S101
+    await iam_auth_service.logout(
+        token=token, membership_id=principal.membership_id, tenant_id=principal.tenant_id
+    )
 
 
 @auth_router.post(

@@ -133,6 +133,11 @@ classmethod-decorators = ["sqlalchemy.orm.declared_attr", "declared_attr"]
     # everything else it prints is CLI output, which is what a CLI is for.
     "T201",
 ]
+"scripts/**" = [
+    "T201",    # a runnable demo script prints its transcript — that is its output
+    "S101",    # the script asserts the flow's invariants as it goes
+    "PLR2004", # a literal in an assertion is clearer than a named constant
+]
 "src/verity/db/migrations/**" = [
     "INP001",  # alembic loads env.py by path, not as a package member
 ]
