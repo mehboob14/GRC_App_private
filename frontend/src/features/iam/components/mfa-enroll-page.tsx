@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { QRCodeSVG } from "qrcode.react";
 import { AuthSplitLayout } from "@/features/iam/components/auth-split-layout";
 import { RecoveryCodesPanel } from "@/features/iam/components/recovery-codes-panel";
 import { Button, ErrorBanner, Icon, Skeleton, TextField } from "@/components/ui";
@@ -106,21 +107,41 @@ export function MfaEnrollPage() {
       ) : null}
 
       <ol className="mb-5 list-decimal space-y-2 pl-4 text-body-md text-text-secondary">
-        <li>Open your authenticator app.</li>
-        <li>Add a new account with the secret below.</li>
-        <li>Enter the 6-digit code to confirm.</li>
+        <li>Open your authenticator app (Google Authenticator, Authy, 1Password…).</li>
+        <li>Scan the QR code below.</li>
+        <li>Enter the 6-digit code it shows to confirm.</li>
       </ol>
 
-      <div className="mb-4 rounded-md border border-border bg-surface-sunken px-3 py-3">
-        <p className="type-overline text-text-subtle">Manual secret</p>
+      <div className="mb-4 flex flex-col items-center gap-3">
         {enrollQuery.data ? (
-          <p className="mt-1 font-mono text-body-md text-text-primary">
-            {enrollQuery.data.secret}
-          </p>
+          // QR encodes the otpauth:// URL; rendered locally, never leaves the page.
+          <div className="rounded-lg border border-border bg-white p-3">
+            <QRCodeSVG
+              value={enrollQuery.data.otpauth_url}
+              size={168}
+              level="M"
+              aria-label="Authenticator setup QR code"
+            />
+          </div>
         ) : (
-          // Bone matches the secret's line height — no shift when it lands.
-          <Skeleton className="mt-1 h-5 w-56 max-w-full" />
+          <Skeleton className="size-[186px] rounded-lg" />
         )}
+
+        <details className="w-full">
+          <summary className="cursor-pointer text-body-sm text-text-link">
+            Can't scan? Enter the key manually
+          </summary>
+          <div className="mt-2 rounded-md border border-border bg-surface-sunken px-3 py-2">
+            <p className="type-overline text-text-subtle">Setup key</p>
+            {enrollQuery.data ? (
+              <p className="mt-1 select-all font-mono text-body-md tracking-wide text-text-primary">
+                {enrollQuery.data.secret}
+              </p>
+            ) : (
+              <Skeleton className="mt-1 h-5 w-56 max-w-full" />
+            )}
+          </div>
+        </details>
       </div>
 
       {confirmMutation.isError ? (
