@@ -186,11 +186,26 @@ async def _handle_verity_error(request: Request, exc: Exception) -> JSONResponse
     return _response(request, error.http_status, error.code, error.message)
 
 
+def _redact_validation_errors(exc: RequestValidationError) -> list[dict[str, Any]]:
+    """Field errors reduced to ``type``/``loc``/``msg`` — never the submitted value.
+
+    Pydantic's ``input`` (and any value-bearing ``ctx``) is dropped so a rejected
+    password or TOTP code cannot reach the logs.
+    """
+    return [
+        {"type": error.get("type"), "loc": error.get("loc"), "msg": error.get("msg")}
+        for error in exc.errors()
+    ]
+
+
 async def _handle_validation_error(request: Request, exc: Exception) -> JSONResponse:
-    # The per-field detail is genuinely useful and stays in the log. The envelope in
-    # docs/conventions/api.md has no field for it; widening the envelope is an API
-    # convention change and belongs in its own spec.
-    errors = exc.errors() if isinstance(exc, RequestValidationError) else None
+    # The per-field location and message are genuinely useful and stay in the log. The
+    # submitted value never does: Pydantic's error dicts carry the offending `input`
+    # (and sometimes `ctx`), which for a route like /auth/mfa/verify is a live TOTP or
+    # recovery code, and for a login is a password. Keep type/loc/msg only — user input
+    # is never logged verbatim. The envelope in docs/conventions/api.md has no field for
+    # this detail; widening it is an API convention change and belongs in its own spec.
+    errors = _redact_validation_errors(exc) if isinstance(exc, RequestValidationError) else None
     logger.info(
         "request.invalid",
         correlation_id=correlation_id_of(request),

@@ -116,6 +116,30 @@ async def test_validation_failure_is_422_with_a_stable_code(client: httpx.AsyncC
     assert response.json()["error"]["code"] == "validation_error"
 
 
+def test_redacted_validation_errors_drop_the_submitted_input() -> None:
+    """A rejected field's value (a TOTP code, a password) must never be logged."""
+    from fastapi.exceptions import RequestValidationError
+
+    from verity.core.errors import _redact_validation_errors
+
+    exc = RequestValidationError(
+        [
+            {
+                "type": "string_type",
+                "loc": ("body", "code"),
+                "msg": "Input should be a valid string",
+                "input": "482913",  # a live TOTP code — must not survive
+                "ctx": {"secret": "482913"},
+            }
+        ]
+    )
+    redacted = _redact_validation_errors(exc)
+    assert redacted == [
+        {"type": "string_type", "loc": ("body", "code"), "msg": "Input should be a valid string"}
+    ]
+    assert "482913" not in str(redacted)
+
+
 async def test_correlation_id_is_echoed_and_matches_the_body(client: httpx.AsyncClient) -> None:
     response = await client.get("/not-found", headers={CORRELATION_ID_HEADER: "req-abc-123"})
     assert response.headers[CORRELATION_ID_HEADER] == "req-abc-123"
