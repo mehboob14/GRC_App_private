@@ -190,38 +190,6 @@ def normalize_email(email: str) -> str:
     return email.strip().lower()
 
 
-# Free consumer-mail providers blocked on self-service signup — a trial is for a
-# company. Not exhaustive; the common ones cover the intent.
-_CONSUMER_EMAIL_DOMAINS: Final = frozenset(
-    {
-        "gmail.com",
-        "googlemail.com",
-        "yahoo.com",
-        "ymail.com",
-        "hotmail.com",
-        "outlook.com",
-        "live.com",
-        "msn.com",
-        "aol.com",
-        "icloud.com",
-        "me.com",
-        "mac.com",
-        "proton.me",
-        "protonmail.com",
-        "gmx.com",
-        "mail.com",
-        "yandex.com",
-    }
-)
-
-
-def reject_consumer_email(email: str) -> None:
-    """Signup is for a work address. The message is the one the client shows."""
-    domain = email.rpartition("@")[2]
-    if domain in _CONSUMER_EMAIL_DOMAINS:
-        raise InvalidInput("Enter a work email — personal domains aren't allowed.")
-
-
 def validate_password(password: str) -> None:
     """The platform password policy. Raised as ``weak_password`` so the client
     gets the stable code it switches on rather than a generic 422."""
@@ -482,7 +450,6 @@ class IamAuthService:
         if not accept_terms:
             raise InvalidInput(detail="the Terms and Privacy Policy must be accepted")
         email_n = normalize_email(email)
-        reject_consumer_email(email_n)
         validate_password(password)
         base_slug, fallback_slug = derive_slug_candidates(company_name.strip(), email_n)
 

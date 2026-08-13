@@ -274,12 +274,6 @@ async def test_admin_can_require_mfa_which_then_enrolls_with_recovery_codes(
     assert body["principal"]["user"]["mfa_enabled"] is True
 
 
-async def test_consumer_email_is_rejected_on_signup(client: httpx.AsyncClient) -> None:
-    response = await client.post(SIGNUP_URL, json=_signup_body("Acme", "founder@gmail.com"))
-    assert response.status_code == 422
-    assert "work email" in response.json()["error"]["message"].lower()
-
-
 async def test_a_duplicate_email_signup_is_409_with_zero_partial_rows(
     client: httpx.AsyncClient,
 ) -> None:
