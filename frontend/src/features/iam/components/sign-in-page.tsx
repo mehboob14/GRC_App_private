@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AuthSplitLayout } from "@/features/iam/components/auth-split-layout";
+import { CheckEmailPanel } from "@/features/iam/components/check-email-panel";
 import {
   Button,
   ErrorBanner,
@@ -136,6 +137,18 @@ export function SignInPage() {
         subtitle="Redirecting to enrollment…"
       >
         <Skeleton className="h-11 w-full" />
+      </AuthSplitLayout>
+    );
+  }
+
+  if (pending?.status === "email_verification_required") {
+    // Signed up but never clicked the link — same check-email surface as signup.
+    return (
+      <AuthSplitLayout
+        title="Check your email"
+        subtitle="Confirm your address to finish setting up your workspace."
+      >
+        <CheckEmailPanel email={pending.email} />
       </AuthSplitLayout>
     );
   }
