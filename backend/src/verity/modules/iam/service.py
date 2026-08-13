@@ -95,6 +95,7 @@ from verity.modules.iam.repository import (
     GroupRepository,
     MembershipRepository,
     RoleRepository,
+    TenantSettingsRepository,
     UserRepository,
 )
 from verity.modules.tenancy.exceptions import SlugConflict
@@ -187,6 +188,38 @@ _ASSIGNMENT_SNAPSHOT: Final = (
 
 def normalize_email(email: str) -> str:
     return email.strip().lower()
+
+
+# Free consumer-mail providers blocked on self-service signup — a trial is for a
+# company. Not exhaustive; the common ones cover the intent.
+_CONSUMER_EMAIL_DOMAINS: Final = frozenset(
+    {
+        "gmail.com",
+        "googlemail.com",
+        "yahoo.com",
+        "ymail.com",
+        "hotmail.com",
+        "outlook.com",
+        "live.com",
+        "msn.com",
+        "aol.com",
+        "icloud.com",
+        "me.com",
+        "mac.com",
+        "proton.me",
+        "protonmail.com",
+        "gmx.com",
+        "mail.com",
+        "yandex.com",
+    }
+)
+
+
+def reject_consumer_email(email: str) -> None:
+    """Signup is for a work address. The message is the one the client shows."""
+    domain = email.rpartition("@")[2]
+    if domain in _CONSUMER_EMAIL_DOMAINS:
+        raise InvalidInput("Enter a work email — personal domains aren't allowed.")
 
 
 def validate_password(password: str) -> None:
@@ -422,6 +455,7 @@ class IamAuthService:
         self._memberships = memberships or MembershipRepository()
         self._groups = groups or GroupRepository()
         self._roles = roles or RoleRepository()
+        self._settings = TenantSettingsRepository()
         self._audit = audit or audit_service
         self._mailer = mailer or get_mailer()
 
@@ -448,6 +482,7 @@ class IamAuthService:
         if not accept_terms:
             raise InvalidInput(detail="the Terms and Privacy Policy must be accepted")
         email_n = normalize_email(email)
+        reject_consumer_email(email_n)
         validate_password(password)
         base_slug, fallback_slug = derive_slug_candidates(company_name.strip(), email_n)
 
@@ -613,7 +648,9 @@ class IamAuthService:
                 )
 
             credentials = await self._users.get_credentials(session, user.id)
-            return self._mfa_step(membership, user, credentials)
+            # Verifying the email is the login: a session unless the tenant
+            # requires admin MFA, in which case the enrollment/challenge step.
+            return await self._post_password_step(session, membership, user, credentials)
 
     async def resend_verification(self, *, email: str) -> None:
         """Re-mail the verification link. Best-effort and quiet: it does the same
@@ -1115,8 +1152,11 @@ class IamAuthService:
         )
 
     async def _requires_mfa(self, session: AsyncSession, membership: TenantMembership) -> bool:
-        """Decision 19: TOTP is required for memberships holding the built-in
-        Admin role; everyone else is password-only in Week 1."""
+        """TOTP is required only when the tenant has turned it on *and* the
+        membership holds the built-in Admin role. Off by default — a trial admin
+        signs up with email verification alone and enables MFA later if they want."""
+        if not await self._settings.require_admin_mfa(session, membership.tenant_id):
+            return False
         grants, group_ids = await fetch_grants_for_membership(
             session, tenant_id=membership.tenant_id, membership_id=membership.id
         )
@@ -1386,7 +1426,39 @@ class IamService:
         self._memberships = memberships or MembershipRepository()
         self._groups = groups or GroupRepository()
         self._roles = roles or RoleRepository()
+        self._settings = TenantSettingsRepository()
         self._audit = audit or audit_service
+
+    # -- security settings ------------------------------------------------------
+
+    async def get_require_admin_mfa(self, session: AsyncSession, tenant_id: uuid.UUID) -> bool:
+        return await self._settings.require_admin_mfa(session, tenant_id)
+
+    async def set_require_admin_mfa(
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor_membership_id: uuid.UUID,
+        value: bool,
+    ) -> bool:
+        """Turn the admin-MFA requirement on or off. Audited; a no-op change
+        writes nothing."""
+        before = await self._settings.require_admin_mfa(session, tenant_id)
+        if before == value:
+            return value
+        row = await self._settings.set_require_admin_mfa(session, tenant_id, value)
+        await self._audit.record(
+            session,
+            action="update",
+            object_type="tenant_settings",
+            object_id=tenant_id,
+            actor=MembershipActor(actor_membership_id),
+            tenant_id=tenant_id,
+            before={"require_admin_mfa": before},
+            after={"require_admin_mfa": row.require_admin_mfa},
+        )
+        return row.require_admin_mfa
 
     # -- built-in roles ---------------------------------------------------------
 

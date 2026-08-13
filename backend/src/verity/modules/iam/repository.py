@@ -33,8 +33,32 @@ from verity.modules.iam.models import (
     RoleAssignment,
     RolePermission,
     TenantMembership,
+    TenantSettings,
     User,
 )
+
+
+class TenantSettingsRepository:
+    """Per-tenant auth policy. Absent row = defaults (no admin MFA)."""
+
+    async def get(self, session: AsyncSession, tenant_id: uuid.UUID) -> TenantSettings | None:
+        return await session.get(TenantSettings, tenant_id)
+
+    async def require_admin_mfa(self, session: AsyncSession, tenant_id: uuid.UUID) -> bool:
+        row = await session.get(TenantSettings, tenant_id)
+        return bool(row and row.require_admin_mfa)
+
+    async def set_require_admin_mfa(
+        self, session: AsyncSession, tenant_id: uuid.UUID, value: bool
+    ) -> TenantSettings:
+        row = await session.get(TenantSettings, tenant_id)
+        if row is None:
+            row = TenantSettings(tenant_id=tenant_id, require_admin_mfa=value)
+            session.add(row)
+        else:
+            row.require_admin_mfa = value
+        await session.flush([row])
+        return row
 
 
 class UserRepository:

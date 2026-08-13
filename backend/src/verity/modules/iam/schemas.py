@@ -298,3 +298,16 @@ class RoleAssignmentOut(_Response):
     valid_from: date | None
     valid_until: date | None
     created_at: UtcDateTime
+
+
+# ---------------------------------------------------------------------------
+# Tenant security settings
+# ---------------------------------------------------------------------------
+
+
+class SecuritySettingsOut(_Response):
+    require_admin_mfa: bool
+
+
+class SecuritySettingsPatch(_Request):
+    require_admin_mfa: bool

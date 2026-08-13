@@ -108,6 +108,23 @@ class Credentials(Timestamped, Base):
         return f"Credentials(user_id={self.user_id!r})"
 
 
+class TenantSettings(Timestamped, Base):
+    """Per-tenant auth policy. One row per tenant; absent means the defaults.
+
+    ``require_admin_mfa`` defaults off — a trial admin signs up with email
+    verification alone and turns TOTP on later if they want it (only Admin-role
+    memberships are ever prompted). Read at login (provider plane), so it carries
+    the same tenant + provider SELECT policies as the other tenant-owned tables.
+    """
+
+    __tablename__ = "tenant_settings"
+
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), primary_key=True
+    )
+    require_admin_mfa: Mapped[bool] = mapped_column(server_default=text("false"), default=False)
+
+
 class UserIdentity(UUIDPrimaryKey, Timestamped, Base):
     """The federation seam (ADR-0006). Created now, used by nothing until Phase 3.
 

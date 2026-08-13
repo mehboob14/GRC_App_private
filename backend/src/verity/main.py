@@ -30,6 +30,7 @@ from verity.modules.iam.router import (
     groups_router,
     members_router,
     roles_router,
+    security_router,
 )
 from verity.modules.iam.router import provider_router as iam_provider_router
 from verity.modules.tenancy.provider_auth import router as provider_auth_router
@@ -119,6 +120,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(members_router, prefix=API_PREFIX)
     app.include_router(groups_router, prefix=API_PREFIX)
     app.include_router(roles_router, prefix=API_PREFIX)
+    app.include_router(security_router, prefix=API_PREFIX)
     app.include_router(iam_provider_router, prefix=API_PREFIX)
     app.include_router(provider_auth_router, prefix=API_PREFIX)
     app.include_router(provider_tenants_router, prefix=API_PREFIX)

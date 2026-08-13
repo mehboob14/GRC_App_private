@@ -38,7 +38,9 @@ from tests.support.iam import (
     SIGNUP_PASSWORD,
     Workspace,
     invite_directly,
+    set_require_admin_mfa,
     signup_workspace,
+    tenant_id_for,
     verify_signup_email,
 )
 from verity.core.db import dispose_engine, provider_session_scope, session_scope
@@ -287,6 +289,8 @@ async def test_an_admin_without_totp_never_obtains_a_session(tenants: TwoTenants
         accept_terms=True,
     )
     assert isinstance(outcome, EmailVerificationRequired)
+    # MFA is off by default; require it so an admin without TOTP is actually gated.
+    await set_require_admin_mfa(await tenant_id_for("founder@charlie.example"))
     # Verifying the email is what opens enrollment — still no session.
     challenge = await verify_signup_email("founder@charlie.example")
     assert challenge.next_step == "mfa_enrollment_required"

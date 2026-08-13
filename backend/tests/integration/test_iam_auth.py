@@ -87,6 +87,7 @@ ALL_WEEK1_KEYS = {
     "roles:read",
     "roles:manage",
     "audit:read",
+    "security:manage",
 }
 
 
@@ -182,30 +183,24 @@ async def _enroll_and_confirm(
 # ---------------------------------------------------------------------------
 
 
-async def test_signup_requires_verification_then_enrollment_and_activates_the_tenant(
-    client: httpx.AsyncClient,
-) -> None:
-    """Signup mails a verification link rather than buying anything; decision 10:
-    the tenant still reaches `active` inside the signup transaction; decision 19:
-    the first user holds Admin, so a session appears only after email verification
-    and TOTP enrollment."""
+async def test_signup_verifies_then_logs_in_without_mfa(client: httpx.AsyncClient) -> None:
+    """Default flow: signup mails a link, and verifying it logs the admin straight
+    in — MFA is off by default. Decision 10: the tenant is active in the signup txn."""
     response = await client.post(SIGNUP_URL, json=_signup_body("Acme", "founder@acme.example"))
     assert response.status_code == 201
     body = response.json()
     assert body["status"] == "email_verification_required"
     assert body["email"] == "founder@acme.example"
     assert "access_token" not in body, "a password alone must never buy a session"
-    assert "challenge_token" not in body, "MFA opens only after the email is verified"
 
-    # Verifying the mailed link is what opens MFA enrollment.
+    # Verifying the mailed link is the login — a session, no MFA prompt.
     verified = await _verify_email(client, "founder@acme.example")
-    assert verified["status"] == "mfa_enrollment_required"
-    assert verified["challenge_token"]
+    assert verified["status"] == "authenticated"
+    assert verified["access_token"]
+    assert verified["principal"]["role_names"] == ["Admin"]
 
-    tenant_id = await _tenant_of_membership(verified["membership_id"])
+    tenant_id = uuid.UUID(verified["principal"]["tenant_id"])
     assert await _tenant_status(tenant_id) == "active"
-
-    # Every creation is in the new tenant's stream, in the same transaction.
     object_types = {entry.object_type for entry in await _stream(tenant_id)}
     assert {"tenant", "user", "credentials", "tenant_membership", "role", "role_assignment"} <= (
         object_types
@@ -218,22 +213,25 @@ async def test_signup_requires_verification_then_enrollment_and_activates_the_te
         ).scalar_one()
     assert seam_rows == 0
 
+    # A later login also goes straight to a session — no MFA required.
+    login = await client.post(
+        LOGIN_URL, json={"email": "founder@acme.example", "password": SIGNUP_PASSWORD}
+    )
+    assert login.json()["status"] == "authenticated"
+
 
 async def test_full_signup_matches_the_frontend_contract(client: httpx.AsyncClient) -> None:
     signup = await client.post(SIGNUP_URL, json=_signup_body("Acme", "founder@acme.example"))
     assert signup.json()["status"] == "email_verification_required"
-    verified = await _verify_email(client, "founder@acme.example")
-    body, _secret = await _enroll_and_confirm(client, verified["challenge_token"])
+    body = await _verify_email(client, "founder@acme.example")  # authenticated (no MFA)
 
     assert body["status"] == "authenticated"
     assert body["access_token"]
     assert body["expires_at"].endswith("Z")
-    assert body["recovery_codes"], "enrollment confirmation mints the recovery codes"
 
     principal = body["principal"]
     assert set(principal) >= PRINCIPAL_FIELDS
     assert principal["user"]["email"] == "founder@acme.example"
-    assert principal["user"]["mfa_enabled"] is True
     assert principal["tenant_name"] == "Acme"
     assert principal["role_names"] == ["Admin"]
     # Decision 13: Admin is every key that exists at check time.
@@ -245,11 +243,41 @@ async def test_full_signup_matches_the_frontend_contract(client: httpx.AsyncClie
     claims = decode_token(body["access_token"], expected_typ="session", expected_plane="tenant")
     assert str(claims.subject) == principal["membership_id"]
 
-    # Secrets never leave the server (spec scenario) — the one deliberate
-    # exception is the plaintext recovery codes in this single response.
     for marker in ("password_hash", "mfa_secret", "recovery_codes_encrypted"):
         assert marker not in signup.text
-        assert marker not in str(body)
+
+
+async def test_admin_can_require_mfa_which_then_enrolls_with_recovery_codes(
+    client: httpx.AsyncClient,
+) -> None:
+    """The admin turns on admin-MFA; the next login then demands TOTP enrollment,
+    whose confirmation issues the one-time recovery codes."""
+    await client.post(SIGNUP_URL, json=_signup_body("Acme", "founder@acme.example"))
+    session = await _verify_email(client, "founder@acme.example")
+    headers = {"Authorization": f"Bearer {session['access_token']}"}
+
+    settings = await client.get("/api/v1/tenant/security", headers=headers)
+    assert settings.json()["require_admin_mfa"] is False
+    patched = await client.patch(
+        "/api/v1/tenant/security", json={"require_admin_mfa": True}, headers=headers
+    )
+    assert patched.status_code == 200
+    assert patched.json()["require_admin_mfa"] is True
+
+    login = await client.post(
+        LOGIN_URL, json={"email": "founder@acme.example", "password": SIGNUP_PASSWORD}
+    )
+    assert login.json()["status"] == "mfa_enrollment_required"
+    body, _secret = await _enroll_and_confirm(client, login.json()["challenge_token"])
+    assert body["status"] == "authenticated"
+    assert body["recovery_codes"], "enrollment confirmation mints the recovery codes"
+    assert body["principal"]["user"]["mfa_enabled"] is True
+
+
+async def test_consumer_email_is_rejected_on_signup(client: httpx.AsyncClient) -> None:
+    response = await client.post(SIGNUP_URL, json=_signup_body("Acme", "founder@gmail.com"))
+    assert response.status_code == 422
+    assert "work email" in response.json()["error"]["message"].lower()
 
 
 async def test_a_duplicate_email_signup_is_409_with_zero_partial_rows(
@@ -603,7 +631,7 @@ async def test_a_provider_created_tenant_activates_when_its_admin_accepts(
     client: httpx.AsyncClient,
 ) -> None:
     """Decision 10 end to end: register (provider) → admin-invite → accept →
-    active. The invited admin then hits the Admin TOTP wall at first login."""
+    active. The invited admin then logs straight in (MFA is off by default)."""
     operator = await seed_admin()
     tenant = await register_tenant_directly(operator.id, "delta")
     assert await _tenant_status(tenant.id) == "provisioning"
@@ -632,7 +660,7 @@ async def test_a_provider_created_tenant_activates_when_its_admin_accepts(
         LOGIN_URL, json={"email": "admin@delta.example", "password": INVITEE_PASSWORD}
     )
     assert login.status_code == 200
-    assert login.json()["status"] == "mfa_enrollment_required"
+    assert login.json()["status"] == "authenticated"
 
 
 # ---------------------------------------------------------------------------

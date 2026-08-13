@@ -14,7 +14,11 @@ from datetime import date
 from tests.support.tenancy import totp_code
 from verity.core.db import provider_session_scope, session_scope
 from verity.core.security import issue_token
-from verity.modules.iam.repository import UserRepository
+from verity.modules.iam.repository import (
+    MembershipRepository,
+    TenantSettingsRepository,
+    UserRepository,
+)
 from verity.modules.iam.service import (
     ChallengeIssued,
     EmailVerificationRequired,
@@ -23,6 +27,22 @@ from verity.modules.iam.service import (
     iam_auth_service,
     iam_service,
 )
+
+
+async def set_require_admin_mfa(tenant_id: uuid.UUID, value: bool = True) -> None:
+    """Flip a tenant's admin-MFA requirement directly, for tests that need the
+    MFA flow (it is off by default now)."""
+    async with session_scope(tenant_id) as session:
+        await TenantSettingsRepository().set_require_admin_mfa(session, tenant_id, value)
+
+
+async def tenant_id_for(email: str) -> uuid.UUID:
+    async with provider_session_scope() as session:
+        user = await UserRepository().get_by_email(session, email.strip().lower())
+        assert user is not None, email
+        memberships = await MembershipRepository().list_for_user(session, user.id)
+    assert memberships, email
+    return memberships[0].tenant_id
 
 
 async def verify_signup_email(email: str) -> ChallengeIssued:
@@ -73,6 +93,9 @@ async def signup_workspace(
         accept_terms=True,
     )
     assert isinstance(outcome, EmailVerificationRequired), outcome
+    # MFA is off by default now; this helper's contract is an enrolled admin, so
+    # require it for this tenant before verifying (verify then yields a challenge).
+    await set_require_admin_mfa(await tenant_id_for(email), value=True)
     challenge = await verify_signup_email(email)
     assert challenge.next_step == "mfa_enrollment_required"
     started = await iam_auth_service.start_enrollment(challenge_token=challenge.challenge_token)

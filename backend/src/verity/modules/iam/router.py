@@ -61,6 +61,8 @@ from verity.modules.iam.schemas import (
     RoleAssignmentOut,
     RoleCreate,
     RoleOut,
+    SecuritySettingsOut,
+    SecuritySettingsPatch,
     SelectWorkspaceResponse,
     SignupRequest,
     UserOut,
@@ -84,6 +86,7 @@ auth_router = APIRouter(prefix="/auth", tags=["auth"])
 members_router = APIRouter(prefix="/members", tags=["members"])
 groups_router = APIRouter(prefix="/groups", tags=["groups"])
 roles_router = APIRouter(prefix="/roles", tags=["roles"])
+security_router = APIRouter(prefix="/tenant/security", tags=["tenant security"])
 provider_router = APIRouter(prefix="/provider/tenants", tags=["provider tenants"])
 
 # Named rather than inlined so tests can target the exact dependency objects.
@@ -94,6 +97,8 @@ require_groups_read = require("groups:read")
 require_groups_manage = require("groups:manage")
 require_roles_read = require("roles:read")
 require_roles_manage = require("roles:manage")
+require_security_read = require("tenant:read")
+require_security_manage = require("security:manage")
 
 require_provider_admin_invite = require_provider("tenants:provision")
 
@@ -585,6 +590,40 @@ async def delete_role_assignment(
         role_id=role_id,
         assignment_id=assignment_id,
     )
+
+
+# ---------------------------------------------------------------------------
+# Tenant security settings
+# ---------------------------------------------------------------------------
+
+
+@security_router.get("", response_model=SecuritySettingsOut, summary="The tenant's security policy")
+async def get_security(
+    _principal: Annotated[Principal, Depends(require_security_read)],
+    context: Annotated[TenantContext, Depends(get_tenant_context)],
+    session: Annotated[AsyncSession, Depends(get_tenant_session)],
+) -> SecuritySettingsOut:
+    value = await iam_service.get_require_admin_mfa(session, context.tenant_id)
+    return SecuritySettingsOut(require_admin_mfa=value)
+
+
+@security_router.patch(
+    "", response_model=SecuritySettingsOut, summary="Update the security policy (Admin)"
+)
+async def patch_security(
+    body: SecuritySettingsPatch,
+    principal: Annotated[Principal, Depends(require_security_manage)],
+    context: Annotated[TenantContext, Depends(get_tenant_context)],
+    session: Annotated[AsyncSession, Depends(get_tenant_session)],
+) -> SecuritySettingsOut:
+    assert principal.membership_id is not None  # noqa: S101 — guaranteed by the dependency
+    value = await iam_service.set_require_admin_mfa(
+        session,
+        tenant_id=context.tenant_id,
+        actor_membership_id=principal.membership_id,
+        value=body.require_admin_mfa,
+    )
+    return SecuritySettingsOut(require_admin_mfa=value)
 
 
 # ---------------------------------------------------------------------------
