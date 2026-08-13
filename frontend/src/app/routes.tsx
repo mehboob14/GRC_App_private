@@ -6,6 +6,7 @@ import { SignInPage } from "@/features/iam/components/sign-in-page";
 import { SignUpPage } from "@/features/iam/components/sign-up-page";
 import { MfaEnrollPage } from "@/features/iam/components/mfa-enroll-page";
 import { AcceptInvitePage } from "@/features/iam/components/accept-invite-page";
+import { VerifyEmailPage } from "@/features/iam/components/verify-email-page";
 import { SettingsLayout } from "@/features/iam/components/settings-layout";
 import { TeamPage } from "@/features/iam/components/team-page";
 import { GroupsPage } from "@/features/iam/components/groups-page";
@@ -28,6 +29,11 @@ export function AppRoutes() {
           second workspace is already authenticated, and PublicOnly would bounce
           them off, dropping the token (review finding 24). */}
       <Route path="/accept-invite" element={<AcceptInvitePage />} />
+
+      {/* Verify-first signup lands here from the emailed link — reachable
+          whether or not signed in, and it drops any stale session before
+          resuming MFA / workspace selection (see verify-email-page). */}
+      <Route path="/verify-email" element={<VerifyEmailPage />} />
 
       <Route element={<RequireAuth />}>
         <Route element={<AppLayout />}>
