@@ -253,7 +253,9 @@ class ProviderAuthService:
 
         grant: SessionGrant | None = None
         async with provider_session_scope() as session:
-            admin = await self._admins.get(session, claims.subject)
+            # Lock the admin row: the counter/recovery guard-then-update below must be
+            # serialized so a replayed code cannot mint two sessions (FIX 3).
+            admin = await self._admins.get_for_update(session, claims.subject)
             if admin is None:
                 await self._record_attempt(
                     session, actor=System(), outcome="failed_totp", reason="unknown_admin"
@@ -488,6 +490,15 @@ _TENANT_PROFILE_FIELDS: Final = (
     "notes",
 )
 
+_TENANT_AUDIT_FIELDS: Final = tuple(
+    field for field in _TENANT_PROFILE_FIELDS if field not in {"created_by", "notes"}
+)
+"""The tenant snapshot for **tenant-stream** audit rows. ``created_by`` and ``notes``
+are provider-plane bookkeeping that ``TenantProfileResponse`` deliberately withholds
+from the customer (schemas.py); since these rows land in the tenant's own stream —
+readable by the tenant's Admin/Compliance-Manager/Auditor via GET /audit-log — the
+same two fields must be excluded here too, or the withholding leaks through the trail."""
+
 _STEP_SNAPSHOT_FIELDS: Final = ("id", "tenant_id", "step", "status", "completed_at")
 
 BRANDING_SNAPSHOT_FIELDS: Final = (
@@ -699,7 +710,7 @@ class TenancyService:
             object_id=tenant.id,
             actor=actor,
             tenant_id=tenant.id,
-            after=AuditService.snapshot(tenant, fields=_TENANT_PROFILE_FIELDS),
+            after=AuditService.snapshot(tenant, fields=_TENANT_AUDIT_FIELDS),
         )
 
         branding = TenantBranding(tenant_id=tenant.id)
@@ -791,11 +802,14 @@ class TenancyService:
         data = changes.model_dump(exclude_unset=True)
         if not data:
             return tenant
-        before = AuditService.snapshot(tenant, fields=_TENANT_PROFILE_FIELDS)
+        # Change-detection spans the full profile — so a notes-only edit still
+        # flushes and is audited — while the recorded snapshots are the narrower
+        # tenant-stream set that withholds created_by and notes (_TENANT_AUDIT_FIELDS).
+        full_before = AuditService.snapshot(tenant, fields=_TENANT_PROFILE_FIELDS)
+        audit_before = AuditService.snapshot(tenant, fields=_TENANT_AUDIT_FIELDS)
         for name, value in data.items():
             setattr(tenant, name, value)
-        after = AuditService.snapshot(tenant, fields=_TENANT_PROFILE_FIELDS)
-        if after == before:
+        if AuditService.snapshot(tenant, fields=_TENANT_PROFILE_FIELDS) == full_before:
             return tenant
         await session.flush([tenant])
         # The UPDATE expires the onupdate-computed updated_at; reload it here, on
@@ -808,8 +822,8 @@ class TenancyService:
             object_id=tenant.id,
             actor=PlatformAdminActor(actor_admin_id),
             tenant_id=tenant.id,
-            before=before,
-            after=after,
+            before=audit_before,
+            after=AuditService.snapshot(tenant, fields=_TENANT_AUDIT_FIELDS),
         )
         return tenant
 
@@ -956,7 +970,7 @@ class TenancyService:
 
         all_done = all(step.status == PROVISIONING_STATUS_DONE for step in steps)
         if all_done and tenant.status == TENANT_STATUS_PROVISIONING:
-            before = AuditService.snapshot(tenant, fields=_TENANT_PROFILE_FIELDS)
+            before = AuditService.snapshot(tenant, fields=_TENANT_AUDIT_FIELDS)
             tenant.status = TENANT_STATUS_ACTIVE
             await session.flush([tenant])
             await self._audit.record(
@@ -967,7 +981,7 @@ class TenancyService:
                 actor=actor,
                 tenant_id=tenant.id,
                 before=before,
-                after=AuditService.snapshot(tenant, fields=_TENANT_PROFILE_FIELDS),
+                after=AuditService.snapshot(tenant, fields=_TENANT_AUDIT_FIELDS),
             )
         return tenant, steps
 

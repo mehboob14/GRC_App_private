@@ -601,7 +601,9 @@ class IamAuthService:
 
         grant: SessionIssued | None = None
         async with provider_session_scope() as session:
-            loaded = await self._load_challenge_subject(session, claims.subject)
+            # Lock the credentials row: the counter/recovery guard-then-update below
+            # must be serialized so a replayed code cannot mint two sessions (FIX 3).
+            loaded = await self._load_challenge_subject(session, claims.subject, for_update=True)
             if loaded is None:
                 await self._record_attempt(
                     session,
@@ -1091,10 +1093,13 @@ class IamAuthService:
         return bool(tenant.status == _TENANT_STATUS_ACTIVE)
 
     async def _load_challenge_subject(
-        self, session: AsyncSession, membership_id: uuid.UUID
+        self, session: AsyncSession, membership_id: uuid.UUID, *, for_update: bool = False
     ) -> tuple[TenantMembership, User, Credentials] | None:
         """The rows behind a challenge token, or ``None`` when any of them no
-        longer permits authentication — checked per request, not per token."""
+        longer permits authentication — checked per request, not per token.
+
+        ``for_update`` takes a row lock on the credentials row (the verify path),
+        so the TOTP-counter / recovery-code guard-then-update is serialized."""
         membership = await self._memberships.get(session, membership_id)
         if membership is None or membership.status != MEMBERSHIP_STATUS_ACTIVE:
             return None
@@ -1103,7 +1108,11 @@ class IamAuthService:
         user = await self._users.get(session, membership.user_id)
         if user is None or user.status != USER_STATUS_ACTIVE:
             return None
-        credentials = await self._users.get_credentials(session, user.id)
+        credentials = (
+            await self._users.get_credentials_for_update(session, user.id)
+            if for_update
+            else await self._users.get_credentials(session, user.id)
+        )
         if credentials is None:
             return None
         return membership, user, credentials

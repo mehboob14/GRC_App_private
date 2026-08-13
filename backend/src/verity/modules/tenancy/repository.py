@@ -33,6 +33,20 @@ class PlatformAdminRepository:
     async def get(self, session: AsyncSession, admin_id: uuid.UUID) -> PlatformAdmin | None:
         return await session.get(PlatformAdmin, admin_id)
 
+    async def get_for_update(
+        self, session: AsyncSession, admin_id: uuid.UUID
+    ) -> PlatformAdmin | None:
+        """Like :meth:`get`, but takes a row lock (SELECT ... FOR UPDATE).
+
+        The MFA verify path reads ``last_totp_counter`` / ``recovery_codes_encrypted``,
+        then writes the advanced counter or the consumed recovery list. Locking the row
+        first serializes that guard-then-update, so a second concurrent submission of a
+        captured code blocks, re-reads the advanced counter, and refuses the replay."""
+        result = await session.execute(
+            select(PlatformAdmin).where(PlatformAdmin.id == admin_id).with_for_update()
+        )
+        return result.scalar_one_or_none()
+
     async def get_by_email(self, session: AsyncSession, email: str) -> PlatformAdmin | None:
         result = await session.execute(select(PlatformAdmin).where(PlatformAdmin.email == email))
         return result.scalar_one_or_none()

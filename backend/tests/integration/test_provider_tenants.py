@@ -262,6 +262,42 @@ async def test_patch_updates_the_profile_and_audits_both_snapshots(
     assert update.after["city"] == "Sydney"
 
 
+async def test_provider_only_fields_never_reach_the_tenants_audit_stream(
+    client: httpx.AsyncClient, onboarding: dict[str, str]
+) -> None:
+    """created_by and notes are provider-plane bookkeeping withheld from the tenant
+    (TenantProfileResponse). Tenant audit rows land in the tenant's own stream, so
+    their before/after snapshots must exclude both fields — and the operator remark
+    itself must never appear."""
+    created = await client.post(
+        TENANTS_URL,
+        json=registration_payload("acme", notes="operator-only remark"),
+        headers=onboarding,
+    )
+    assert created.status_code == 201
+    assert created.json()["created_by"] is not None
+    tenant_id = uuid.UUID(created.json()["id"])
+
+    patched = await client.patch(
+        f"{TENANTS_URL}/{tenant_id}",
+        json={"notes": "revised operator remark", "city": "Sydney"},
+        headers=onboarding,
+    )
+    assert patched.status_code == 200
+
+    stream = await _tenant_stream(tenant_id)
+    tenant_rows = [e for e in stream if e.object_type == "tenant"]
+    assert tenant_rows, "the create and the patch both wrote tenant rows"
+    for entry in tenant_rows:
+        for snapshot in (entry.before, entry.after):
+            if snapshot is None:
+                continue
+            assert "created_by" not in snapshot, "created_by must not reach the tenant's stream"
+            assert "notes" not in snapshot, "notes must not reach the tenant's stream"
+    assert "operator-only remark" not in str(stream)
+    assert "revised operator remark" not in str(stream)
+
+
 async def test_status_and_slug_are_not_writable_through_patch(
     client: httpx.AsyncClient, onboarding: dict[str, str]
 ) -> None:

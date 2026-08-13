@@ -66,6 +66,21 @@ class UserRepository:
     ) -> Credentials | None:
         return await session.get(Credentials, user_id)
 
+    async def get_credentials_for_update(
+        self, session: AsyncSession, user_id: uuid.UUID
+    ) -> Credentials | None:
+        """Like :meth:`get_credentials`, but takes a row lock (SELECT ... FOR UPDATE).
+
+        The MFA verify path reads ``last_totp_counter`` / ``recovery_codes_encrypted``,
+        then writes the advanced counter or the consumed recovery list. Locking the row
+        first serializes that guard-then-update: a second concurrent submission of one
+        captured code blocks, then re-reads the advanced counter and correctly refuses
+        the replay rather than minting a second session."""
+        result = await session.execute(
+            select(Credentials).where(Credentials.user_id == user_id).with_for_update()
+        )
+        return result.scalar_one_or_none()
+
 
 class MembershipRepository:
     async def add(self, session: AsyncSession, membership: TenantMembership) -> None:
