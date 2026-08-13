@@ -39,6 +39,7 @@ from tests.support.iam import (
     Workspace,
     invite_directly,
     signup_workspace,
+    verify_signup_email,
 )
 from verity.core.db import dispose_engine, provider_session_scope, session_scope
 from verity.core.errors import InvalidToken, NotFound
@@ -53,6 +54,7 @@ from verity.modules.iam.models import (
 )
 from verity.modules.iam.service import (
     ChallengeIssued,
+    EmailVerificationRequired,
     SessionIssued,
     iam_auth_service,
     iam_service,
@@ -282,9 +284,12 @@ async def test_an_admin_without_totp_never_obtains_a_session(tenants: TwoTenants
         full_name="Charlie Founder",
         email="founder@charlie.example",
         password=SIGNUP_PASSWORD,
+        accept_terms=True,
     )
-    assert isinstance(outcome, ChallengeIssued)
-    assert outcome.next_step == "mfa_enrollment_required"
+    assert isinstance(outcome, EmailVerificationRequired)
+    # Verifying the email is what opens enrollment — still no session.
+    challenge = await verify_signup_email("founder@charlie.example")
+    assert challenge.next_step == "mfa_enrollment_required"
 
     retry = await iam_auth_service.login(email="founder@charlie.example", password=SIGNUP_PASSWORD)
     assert isinstance(retry, ChallengeIssued)

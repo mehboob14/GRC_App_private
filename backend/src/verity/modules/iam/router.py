@@ -38,6 +38,7 @@ from verity.modules.iam.schemas import (
     AcceptInvitationResponse,
     AdminInviteRequest,
     AuthenticatedResponse,
+    EmailVerificationRequiredResponse,
     EnrollmentConfirmedResponse,
     GroupCreate,
     GroupMemberAdd,
@@ -55,6 +56,7 @@ from verity.modules.iam.schemas import (
     MfaRequiredResponse,
     MfaVerifyRequest,
     PrincipalOut,
+    ResendVerificationRequest,
     RoleAssignmentCreate,
     RoleAssignmentOut,
     RoleCreate,
@@ -62,6 +64,7 @@ from verity.modules.iam.schemas import (
     SelectWorkspaceResponse,
     SignupRequest,
     UserOut,
+    VerifyEmailRequest,
     WorkspaceOut,
     WorkspaceSelectRequest,
     WorkspaceSwitchRequest,
@@ -69,6 +72,7 @@ from verity.modules.iam.schemas import (
 from verity.modules.iam.service import (
     AuthOutcome,
     ChallengeIssued,
+    EmailVerificationRequired,
     InviteResult,
     SelectionIssued,
     SessionIssued,
@@ -116,6 +120,8 @@ def _login_response(outcome: AuthOutcome) -> LoginResponse:
             expires_at=outcome.expires_at,
             workspaces=[WorkspaceOut.model_validate(entry) for entry in outcome.workspaces],
         )
+    if isinstance(outcome, EmailVerificationRequired):
+        return EmailVerificationRequiredResponse(email=outcome.email)
     raise TypeError(f"unexpected auth outcome {type(outcome).__name__}")  # pragma: no cover
 
 
@@ -186,9 +192,29 @@ async def signup(
         full_name=body.full_name,
         email=body.email,
         password=body.password,
+        accept_terms=body.accept_terms,
         idempotency_key=idempotency_key,
     )
     return _login_response(outcome)
+
+
+@auth_router.post(
+    "/verify-email",
+    response_model=LoginResponse,
+    summary="Confirm a work email from the signup link, then open MFA enrollment",
+)
+async def verify_email(body: VerifyEmailRequest) -> LoginResponse:
+    outcome = await iam_auth_service.verify_email(token=body.token)
+    return _login_response(outcome)
+
+
+@auth_router.post(
+    "/verify-email/resend",
+    status_code=status.HTTP_202_ACCEPTED,
+    summary="Re-mail the verification link (always the same response — no disclosure)",
+)
+async def resend_verification(body: ResendVerificationRequest) -> None:
+    await iam_auth_service.resend_verification(email=body.email)
 
 
 @auth_router.post(

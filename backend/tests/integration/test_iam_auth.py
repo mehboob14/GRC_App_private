@@ -40,11 +40,12 @@ from tests.support.tenancy import (
 )
 from verity.core.config import Settings
 from verity.core.db import dispose_engine, provider_session_scope
-from verity.core.security import decode_token
+from verity.core.security import decode_token, issue_token
 from verity.main import create_app
 from verity.modules.audit.models import AuditLog
 from verity.modules.audit.service import audit_service
 from verity.modules.iam.models import TenantMembership, User, UserIdentity
+from verity.modules.iam.repository import UserRepository
 from verity.modules.tenancy.service import tenancy_service
 from verity.shared.ids import uuid7
 
@@ -110,13 +111,28 @@ async def client(app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
         yield http_client
 
 
-def _signup_body(company: str, email: str, password: str = SIGNUP_PASSWORD) -> dict[str, str]:
+def _signup_body(company: str, email: str, password: str = SIGNUP_PASSWORD) -> dict[str, object]:
     return {
         "company_name": company,
         "full_name": "Founding Admin",
         "email": email,
         "password": password,
+        "accept_terms": True,
     }
+
+
+async def _verify_email(client: httpx.AsyncClient, email: str) -> dict[str, Any]:
+    """Confirm the work email the way the mailed link would, and return the
+    resulting body — the MFA-enrollment challenge that verifying unlocks. The
+    token is minted from the user id, exactly as the real link carries it."""
+    async with provider_session_scope() as session:
+        user = await UserRepository().get_by_email(session, email.strip().lower())
+    assert user is not None, email
+    token = issue_token(subject=user.id, plane="tenant", typ="email_verify").token
+    response = await client.post("/api/v1/auth/verify-email", json={"token": token})
+    assert response.status_code == 200, response.text
+    body: dict[str, Any] = response.json()
+    return body
 
 
 async def _stream(tenant_id: uuid.UUID | None) -> list[AuditLog]:
@@ -166,20 +182,27 @@ async def _enroll_and_confirm(
 # ---------------------------------------------------------------------------
 
 
-async def test_signup_returns_the_enrollment_challenge_and_activates_the_tenant(
+async def test_signup_requires_verification_then_enrollment_and_activates_the_tenant(
     client: httpx.AsyncClient,
 ) -> None:
-    """Decision 10: a self-signup tenant reaches `active` inside the signup
-    transaction; decision 19: the first user holds Admin, so no session exists
-    until TOTP enrollment is confirmed."""
+    """Signup mails a verification link rather than buying anything; decision 10:
+    the tenant still reaches `active` inside the signup transaction; decision 19:
+    the first user holds Admin, so a session appears only after email verification
+    and TOTP enrollment."""
     response = await client.post(SIGNUP_URL, json=_signup_body("Acme", "founder@acme.example"))
     assert response.status_code == 201
     body = response.json()
-    assert body["status"] == "mfa_enrollment_required"
-    assert body["challenge_token"]
+    assert body["status"] == "email_verification_required"
+    assert body["email"] == "founder@acme.example"
     assert "access_token" not in body, "a password alone must never buy a session"
+    assert "challenge_token" not in body, "MFA opens only after the email is verified"
 
-    tenant_id = await _tenant_of_membership(body["membership_id"])
+    # Verifying the mailed link is what opens MFA enrollment.
+    verified = await _verify_email(client, "founder@acme.example")
+    assert verified["status"] == "mfa_enrollment_required"
+    assert verified["challenge_token"]
+
+    tenant_id = await _tenant_of_membership(verified["membership_id"])
     assert await _tenant_status(tenant_id) == "active"
 
     # Every creation is in the new tenant's stream, in the same transaction.
@@ -198,7 +221,9 @@ async def test_signup_returns_the_enrollment_challenge_and_activates_the_tenant(
 
 async def test_full_signup_matches_the_frontend_contract(client: httpx.AsyncClient) -> None:
     signup = await client.post(SIGNUP_URL, json=_signup_body("Acme", "founder@acme.example"))
-    body, _secret = await _enroll_and_confirm(client, signup.json()["challenge_token"])
+    assert signup.json()["status"] == "email_verification_required"
+    verified = await _verify_email(client, "founder@acme.example")
+    body, _secret = await _enroll_and_confirm(client, verified["challenge_token"])
 
     assert body["status"] == "authenticated"
     assert body["access_token"]
@@ -259,8 +284,8 @@ async def test_signup_replays_idempotently_under_the_same_key(
     replay = await client.post(SIGNUP_URL, json=body, headers=headers)
     assert first.status_code == 201
     assert replay.status_code == 201
-    assert replay.json()["status"] == "mfa_enrollment_required"
-    assert replay.json()["membership_id"] == first.json()["membership_id"]
+    assert replay.json()["status"] == "email_verification_required"
+    assert replay.json()["email"] == first.json()["email"]
 
     async with provider_session_scope() as session:
         tenants, _ = await tenancy_service.list_tenants(session, limit=10)
@@ -341,32 +366,24 @@ async def test_an_enrolled_admin_gets_a_challenge_and_a_totp_replay_is_refused(
     assert login.status_code == 200
     assert login.json()["status"] == "mfa_required"
 
-    # The code the enrollment confirmation consumed is still inside its ±1-step
-    # acceptance window — only the persisted counter stands between it and a
-    # second session.
-    replay = await client.post(
-        VERIFY_URL,
-        json={
-            "challenge_token": login.json()["challenge_token"],
-            "code": totp_code(workspace.totp_secret),
-        },
+    # A code one step ahead of enrollment's: comfortably inside the ±1 window and
+    # past the enrolled counter, so this login succeeds and advances the counter.
+    code = totp_code(workspace.totp_secret, step_offset=1)
+    first = await client.post(
+        VERIFY_URL, json={"challenge_token": login.json()["challenge_token"], "code": code}
     )
-    assert replay.status_code == 401
-    assert "failed_totp" in _attempt_outcomes(await _stream(workspace.tenant_id))
+    assert first.status_code == 200
+    assert first.json()["status"] == "authenticated"
 
-    # The *next* window's code is fine — the guard is the counter, not a lockout.
+    # Replaying that exact code against a fresh challenge is refused by the stored
+    # counter — deterministically, since the code is captured rather than regenerated
+    # for the current window (a replay whose window has passed is refused just the same).
     challenge = (
         await client.post(LOGIN_URL, json={"email": workspace.email, "password": SIGNUP_PASSWORD})
     ).json()["challenge_token"]
-    fresh = await client.post(
-        VERIFY_URL,
-        json={
-            "challenge_token": challenge,
-            "code": totp_code(workspace.totp_secret, step_offset=1),
-        },
-    )
-    assert fresh.status_code == 200
-    assert fresh.json()["status"] == "authenticated"
+    replay = await client.post(VERIFY_URL, json={"challenge_token": challenge, "code": code})
+    assert replay.status_code == 401
+    assert "failed_totp" in _attempt_outcomes(await _stream(workspace.tenant_id))
 
 
 async def test_a_completed_login_writes_a_session_row_in_the_tenant_stream(

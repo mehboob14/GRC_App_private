@@ -30,6 +30,7 @@ from sqlalchemy.ext.asyncio import (
 from verity.core.config import Settings, get_settings, reset_settings_cache
 from verity.core.crypto import reset_secret_box_cache
 from verity.core.db import create_engine_from_settings
+from verity.core.email import reset_mailer_cache
 
 DB_REQUIRED_ENV_VAR = "VERITY_REQUIRE_DB"
 
@@ -47,8 +48,14 @@ _TEST_ENVIRONMENT = {
 def pytest_configure(config: pytest.Config) -> None:
     for key, value in _TEST_ENVIRONMENT.items():
         os.environ.setdefault(key, value)
+    # The mailer must never reach a real server from a test: an ambient .env with
+    # SMTP credentials would otherwise send actual mail. Force it off — an empty
+    # host makes the mailer a no-op — regardless of what the environment holds.
+    os.environ["SMTP_HOST"] = ""
+    os.environ["SMTP_FROM_EMAIL"] = ""
     reset_settings_cache()
     reset_secret_box_cache()
+    reset_mailer_cache()
 
 
 @pytest.fixture(scope="session")

@@ -67,6 +67,12 @@ class User(UUIDPrimaryKey, Timestamped, Base):
     # Denormalised convenience flag from the ER diagram; the secret itself lives
     # on credentials, encrypted.
     mfa_enabled: Mapped[bool] = mapped_column(server_default=text("false"), default=False)
+    # NULL until the work email is confirmed via the link mailed at signup; a user
+    # with no verification cannot obtain a session.
+    email_verified_at: Mapped[datetime | None] = mapped_column(default=None)
+    # When the account holder accepted the Terms & Privacy at signup — a recorded
+    # fact for a compliance product, not just a client-side checkbox.
+    terms_accepted_at: Mapped[datetime | None] = mapped_column(default=None)
 
     __table_args__ = (status_check("users", "status", USER_STATUSES),)
 

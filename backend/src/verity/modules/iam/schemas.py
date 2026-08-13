@@ -54,6 +54,18 @@ class SignupRequest(_Request):
     """Length is policy, not shape: the service raises ``weak_password`` so the
     client gets the stable code rather than a generic validation envelope."""
 
+    accept_terms: bool = False
+    """Must be true — the service refuses signup otherwise. Recorded as
+    ``users.terms_accepted_at`` for a compliance product's own paper trail."""
+
+
+class VerifyEmailRequest(_Request):
+    token: str
+
+
+class ResendVerificationRequest(_Request):
+    email: str = Field(min_length=3, max_length=320)
+
 
 class UserOut(_Response):
     id: uuid.UUID
@@ -110,11 +122,19 @@ class SelectWorkspaceResponse(_Response):
     workspaces: list[WorkspaceOut]
 
 
+class EmailVerificationRequiredResponse(_Response):
+    status: Literal["email_verification_required"] = "email_verification_required"
+    email: str
+    """The address a verification link was mailed to — shown so the UI can say
+    which inbox to check. Never a credential."""
+
+
 LoginResponse = Annotated[
     AuthenticatedResponse
     | MfaRequiredResponse
     | MfaEnrollmentRequiredResponse
-    | SelectWorkspaceResponse,
+    | SelectWorkspaceResponse
+    | EmailVerificationRequiredResponse,
     Field(discriminator="status"),
 ]
 

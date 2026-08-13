@@ -12,15 +12,31 @@ from dataclasses import dataclass
 from datetime import date
 
 from tests.support.tenancy import totp_code
-from verity.core.db import session_scope
+from verity.core.db import provider_session_scope, session_scope
 from verity.core.security import issue_token
+from verity.modules.iam.repository import UserRepository
 from verity.modules.iam.service import (
     ChallengeIssued,
+    EmailVerificationRequired,
     InviteResult,
     SessionIssued,
     iam_auth_service,
     iam_service,
 )
+
+
+async def verify_signup_email(email: str) -> ChallengeIssued:
+    """Confirm a fresh signup's email the way the mailed link would, and return
+    the MFA-enrollment challenge that verifying unlocks. The token is minted here
+    rather than parsed out of an email, exactly as the real link carries it."""
+    async with provider_session_scope() as session:
+        user = await UserRepository().get_by_email(session, email.strip().lower())
+    assert user is not None, email
+    token = issue_token(subject=user.id, plane="tenant", typ="email_verify").token
+    outcome = await iam_auth_service.verify_email(token=token)
+    assert isinstance(outcome, ChallengeIssued), outcome
+    return outcome
+
 
 SIGNUP_PASSWORD = "orbit-mango-quartz-42"  # noqa: S105 — test credential
 INVITEE_PASSWORD = "delta-crimson-otter-77"  # noqa: S105 — test credential
@@ -50,13 +66,18 @@ async def signup_workspace(
     for the next code this admin submits.
     """
     outcome = await iam_auth_service.signup(
-        company_name=company, full_name="Founding Admin", email=email, password=password
+        company_name=company,
+        full_name="Founding Admin",
+        email=email,
+        password=password,
+        accept_terms=True,
     )
-    assert isinstance(outcome, ChallengeIssued), outcome
-    assert outcome.next_step == "mfa_enrollment_required"
-    started = await iam_auth_service.start_enrollment(challenge_token=outcome.challenge_token)
+    assert isinstance(outcome, EmailVerificationRequired), outcome
+    challenge = await verify_signup_email(email)
+    assert challenge.next_step == "mfa_enrollment_required"
+    started = await iam_auth_service.start_enrollment(challenge_token=challenge.challenge_token)
     issued = await iam_auth_service.confirm_enrollment(
-        challenge_token=outcome.challenge_token, code=totp_code(started.secret)
+        challenge_token=challenge.challenge_token, code=totp_code(started.secret)
     )
     assert isinstance(issued, SessionIssued)
     return Workspace(

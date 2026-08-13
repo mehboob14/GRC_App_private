@@ -29,6 +29,7 @@ dependencies = [
     "langchain==1.3.14",
     "langchain-openai==1.4.3",
     "langsmith==0.10.17",
+    "aiosmtplib>=3.0",
 ]
 
 [project.optional-dependencies]
@@ -137,6 +138,7 @@ classmethod-decorators = ["sqlalchemy.orm.declared_attr", "declared_attr"]
     "T201",    # a runnable demo script prints its transcript — that is its output
     "S101",    # the script asserts the flow's invariants as it goes
     "PLR2004", # a literal in an assertion is clearer than a named constant
+    "PLC0415", # a helper's DB/verity imports stay local; the script is mostly HTTP
 ]
 "src/verity/db/migrations/**" = [
     "INP001",  # alembic loads env.py by path, not as a package member

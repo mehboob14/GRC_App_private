@@ -173,6 +173,31 @@ class AuthSettings(_Section):
 
     invite_ttl_days: int = Field(default=7, ge=1)
 
+    email_verify_ttl_hours: int = Field(default=24, ge=1)
+    """The verification link mailed on signup, before the account can be used."""
+
+
+class EmailSettings(_Section):
+    """Outbound email over SMTP. When ``host`` (or ``from_email``) is unset the mailer
+    is a no-op: local and test environments never reach for a server that isn't there,
+    and a missing configuration disables sending rather than crashing a request."""
+
+    model_config = SettingsConfigDict(env_prefix="SMTP_")
+
+    host: str | None = None
+    port: int = Field(default=587, ge=1)
+    user: str | None = None
+    password: SecretStr | None = None
+    from_email: str | None = None
+    from_name: str = "Verity"
+    use_tls: bool = True
+    """STARTTLS, the submission default on port 587."""
+    timeout_seconds: float = Field(default=15.0, gt=0)
+
+    @property
+    def enabled(self) -> bool:
+        return bool(self.host and self.from_email)
+
 
 class Settings(_Section):
     env: Environment = "local"
@@ -200,6 +225,7 @@ class Settings(_Section):
     must be configurable per deployment."""
 
     auth: AuthSettings = Field(default_factory=AuthSettings)
+    email: EmailSettings = Field(default_factory=EmailSettings)
     database: DatabaseSettings = Field(default_factory=DatabaseSettings)
     redis: RedisSettings = Field(default_factory=RedisSettings)
     celery: CelerySettings = Field(default_factory=CelerySettings)

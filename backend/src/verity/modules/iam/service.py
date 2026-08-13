@@ -47,6 +47,7 @@ from verity.core.deps import (
     fetch_grants_for_membership,
     resolve_effective_permissions,
 )
+from verity.core.email import Mailer, OutboundEmail, get_mailer
 from verity.core.errors import AuthenticationRequired, InvalidInput, InvalidToken, NotFound
 from verity.core.rls import bind_tenant_context
 from verity.core.security import (
@@ -285,7 +286,16 @@ class SelectionIssued:
     workspaces: list[WorkspaceEntry]
 
 
-AuthOutcome = SessionIssued | ChallengeIssued | SelectionIssued
+@dataclass(frozen=True, slots=True)
+class EmailVerificationRequired:
+    """The work email is not confirmed yet. No session, no MFA step — the caller
+    must click the link mailed to ``email`` first. Carries the email only so the
+    UI can say which address to check; it is never a credential."""
+
+    email: str
+
+
+AuthOutcome = SessionIssued | ChallengeIssued | SelectionIssued | EmailVerificationRequired
 
 
 @dataclass(frozen=True, slots=True)
@@ -369,6 +379,28 @@ class IamMembershipGates:
 # ---------------------------------------------------------------------------
 
 
+def _verification_message(email: str, link: str) -> OutboundEmail:
+    """The signup email-verification message. Plain and unbranded for Week 1 —
+    real templates and per-tenant from-addresses land with the notifications
+    module. The link carries a single-purpose ``email_verify`` token."""
+    subject = "Confirm your email for Verity"
+    text = (
+        "Welcome to Verity.\n\n"
+        "Confirm this email address to finish setting up your workspace:\n"
+        f"{link}\n\n"
+        "The link expires in 24 hours. If you did not start a Verity trial, "
+        "you can ignore this message."
+    )
+    html = (
+        "<p>Welcome to Verity.</p>"
+        "<p>Confirm this email address to finish setting up your workspace:</p>"
+        f'<p><a href="{link}">Confirm my email</a></p>'
+        "<p>The link expires in 24 hours. If you did not start a Verity trial, "
+        "you can ignore this message.</p>"
+    )
+    return OutboundEmail(to=email, subject=subject, text=text, html=html)
+
+
 class IamAuthService:
     """Signup, login, MFA, workspaces, and invitation acceptance.
 
@@ -377,42 +409,51 @@ class IamAuthService:
     refusal (the ``ProviderAuthService`` pattern).
     """
 
-    def __init__(
+    def __init__(  # noqa: PLR0913, PLR0917 — injectable collaborators, all optional
         self,
         users: UserRepository | None = None,
         memberships: MembershipRepository | None = None,
         groups: GroupRepository | None = None,
         roles: RoleRepository | None = None,
         audit: AuditService | None = None,
+        mailer: Mailer | None = None,
     ) -> None:
         self._users = users or UserRepository()
         self._memberships = memberships or MembershipRepository()
         self._groups = groups or GroupRepository()
         self._roles = roles or RoleRepository()
         self._audit = audit or audit_service
+        self._mailer = mailer or get_mailer()
 
     # -- signup ----------------------------------------------------------------
 
-    async def signup(
+    async def signup(  # noqa: PLR0913 — the signup contract's fields, all keyword-only
         self,
         *,
         company_name: str,
         full_name: str,
         email: str,
         password: str,
+        accept_terms: bool = False,
         idempotency_key: str | None = None,
     ) -> AuthOutcome:
         """Trial signup: tenant, user, credentials, Admin membership, built-in
         roles, and a completed provisioning run — one transaction, no partials.
 
-        The first user holds Admin, and Admin means TOTP before any session
-        exists (decision 19), so the outcome is always an enrollment challenge —
-        or, on an idempotent replay, whatever MFA step the account is now at.
+        The work email is unverified at this point, so the outcome is an
+        email-verification step: a link is mailed, and clicking it is what opens
+        MFA enrollment (the real order — verify the address, then set up the second
+        factor). An idempotent replay returns the account's current step instead.
         """
+        if not accept_terms:
+            raise InvalidInput(detail="the Terms and Privacy Policy must be accepted")
         email_n = normalize_email(email)
         validate_password(password)
         base_slug, fallback_slug = derive_slug_candidates(company_name.strip(), email_n)
 
+        outcome: AuthOutcome
+        # (user_id, email) to mail a verification link to, sent after the commit.
+        verify: tuple[uuid.UUID, str] | None = None
         async with provider_session_scope() as session:
             existing_user = await self._users.get_by_email(session, email_n)
             try:
@@ -449,72 +490,152 @@ class IamAuthService:
                     # A different signup owns this email. Raising rolls the
                     # whole transaction back — including the tenant row above.
                     raise EmailTaken(detail=f"user {existing_user.id} already exists")
-                # Idempotent replay of this same signup: nothing to create, the
-                # caller just needs the next MFA step again.
-                credentials = await self._users.get_credentials(session, existing_user.id)
-                return self._mfa_step(membership, existing_user, credentials)
+                # Idempotent replay: return the step the account is actually at —
+                # still verify the email, or move on to MFA if it is done.
+                if existing_user.email_verified_at is None:
+                    verify = (existing_user.id, email_n)
+                    outcome = EmailVerificationRequired(email=email_n)
+                else:
+                    credentials = await self._users.get_credentials(session, existing_user.id)
+                    outcome = self._mfa_step(membership, existing_user, credentials)
+            else:
+                now = datetime.now(UTC)
+                user = User(
+                    id=uuid7(),
+                    email=email_n,
+                    full_name=full_name.strip(),
+                    terms_accepted_at=now,
+                )
+                await self._users.add(session, user)
+                credentials = Credentials(user_id=user.id, password_hash=hash_password(password))
+                await self._users.add_credentials(session, credentials)
 
-            user = User(id=uuid7(), email=email_n, full_name=full_name.strip())
-            await self._users.add(session, user)
-            credentials = Credentials(user_id=user.id, password_hash=hash_password(password))
-            await self._users.add_credentials(session, credentials)
+                membership = TenantMembership(
+                    id=uuid7(),
+                    tenant_id=tenant.id,
+                    user_id=user.id,
+                    status=MEMBERSHIP_STATUS_ACTIVE,
+                    accepted_at=now,
+                )
+                await self._memberships.add(session, membership)
 
-            now = datetime.now(UTC)
-            membership = TenantMembership(
-                id=uuid7(),
-                tenant_id=tenant.id,
-                user_id=user.id,
-                status=MEMBERSHIP_STATUS_ACTIVE,
-                accepted_at=now,
-            )
-            await self._memberships.add(session, membership)
+                actor = MembershipActor(membership.id)
+                await self._record_create(
+                    session, actor, tenant.id, "user", user.id, user, _USER_SNAPSHOT
+                )
+                await self._record_create(
+                    session,
+                    actor,
+                    tenant.id,
+                    "credentials",
+                    user.id,
+                    credentials,
+                    _CREDENTIALS_SNAPSHOT,
+                )
+                await self._record_create(
+                    session,
+                    actor,
+                    tenant.id,
+                    "tenant_membership",
+                    membership.id,
+                    membership,
+                    _MEMBERSHIP_SNAPSHOT,
+                )
 
-            actor = MembershipActor(membership.id)
-            await self._record_create(
-                session, actor, tenant.id, "user", user.id, user, _USER_SNAPSHOT
-            )
-            await self._record_create(
-                session,
-                actor,
-                tenant.id,
-                "credentials",
-                user.id,
-                credentials,
-                _CREDENTIALS_SNAPSHOT,
-            )
-            await self._record_create(
-                session,
-                actor,
-                tenant.id,
-                "tenant_membership",
-                membership.id,
-                membership,
-                _MEMBERSHIP_SNAPSHOT,
-            )
+                roles = await iam_service.seed_built_in_roles(
+                    session, tenant_id=tenant.id, actor=actor
+                )
+                assignment = RoleAssignment(
+                    id=uuid7(),
+                    tenant_id=tenant.id,
+                    role_id=roles[ADMIN_ROLE_NAME].id,
+                    assignee_type=ASSIGNEE_TYPE_MEMBERSHIP,
+                    assignee_id=membership.id,
+                )
+                await self._roles.add_assignment(session, assignment)
+                await self._record_create(
+                    session,
+                    actor,
+                    tenant.id,
+                    "role_assignment",
+                    assignment.id,
+                    assignment,
+                    _ASSIGNMENT_SNAPSHOT,
+                )
 
-            roles = await iam_service.seed_built_in_roles(session, tenant_id=tenant.id, actor=actor)
-            assignment = RoleAssignment(
-                id=uuid7(),
-                tenant_id=tenant.id,
-                role_id=roles[ADMIN_ROLE_NAME].id,
-                assignee_type=ASSIGNEE_TYPE_MEMBERSHIP,
-                assignee_id=membership.id,
-            )
-            await self._roles.add_assignment(session, assignment)
-            await self._record_create(
-                session,
-                actor,
-                tenant.id,
-                "role_assignment",
-                assignment.id,
-                assignment,
-                _ASSIGNMENT_SNAPSHOT,
-            )
+                # Decision 10: a self-signup tenant reaches `active` inside the
+                # signup transaction — the gates above are now satisfied.
+                await tenancy_service.run_provisioning(session, tenant_id=tenant.id, actor=actor)
+                verify = (user.id, email_n)
+                outcome = EmailVerificationRequired(email=email_n)
 
-            # Decision 10: a self-signup tenant reaches `active` inside the
-            # signup transaction — the gates above are now satisfied.
-            await tenancy_service.run_provisioning(session, tenant_id=tenant.id, actor=actor)
+        # External call after commit: a slow mail server must never hold the
+        # signup transaction open, and a failed send is recoverable by resend.
+        if verify is not None:
+            await self._send_verification_email(*verify)
+        return outcome
+
+    async def verify_email(self, *, token: str) -> AuthOutcome:
+        """Confirm a work email from the signup link, then open MFA enrollment.
+
+        Single-use in effect: the flip to ``email_verified_at`` is idempotent, so
+        a second click simply returns the next step. Verifying is what lets the
+        account reach a session at all.
+        """
+        try:
+            claims = decode_token(token, expected_typ="email_verify", expected_plane="tenant")
+        except InvalidToken as exc:
+            raise InvalidInput(detail="verification token failed validation") from exc
+
+        async with provider_session_scope() as session:
+            user = await self._users.get(session, claims.subject)
+            if user is None or user.status != USER_STATUS_ACTIVE:
+                raise InvalidInput(detail=f"user {claims.subject} is gone or disabled")
+            memberships = await self._active_memberships(session, user)
+            if not memberships:
+                raise InvalidInput(detail=f"user {user.id} has no membership to verify into")
+            membership = memberships[0]
+            await bind_tenant_context(session, membership.tenant_id)
+
+            if user.email_verified_at is None:
+                before = AuditService.snapshot(user, fields=_USER_SNAPSHOT)
+                user.email_verified_at = datetime.now(UTC)
+                await session.flush([user])
+                await self._audit.record(
+                    session,
+                    action="update",
+                    object_type="user",
+                    object_id=user.id,
+                    actor=MembershipActor(membership.id),
+                    tenant_id=membership.tenant_id,
+                    before=before,
+                    after=AuditService.snapshot(user, fields=_USER_SNAPSHOT),
+                )
+
+            credentials = await self._users.get_credentials(session, user.id)
             return self._mfa_step(membership, user, credentials)
+
+    async def resend_verification(self, *, email: str) -> None:
+        """Re-mail the verification link. Best-effort and quiet: it does the same
+        observable thing whether or not an unverified account exists, so it never
+        discloses which addresses are registered."""
+        email_n = normalize_email(email)
+        target: tuple[uuid.UUID, str] | None = None
+        async with provider_session_scope() as session:
+            user = await self._users.get_by_email(session, email_n)
+            if (
+                user is not None
+                and user.status == USER_STATUS_ACTIVE
+                and user.email_verified_at is None
+            ):
+                target = (user.id, email_n)
+        if target is not None:
+            await self._send_verification_email(*target)
+
+    async def _send_verification_email(self, user_id: uuid.UUID, email: str) -> None:
+        token = issue_token(subject=user_id, plane="tenant", typ="email_verify").token
+        link = f"{get_settings().frontend_base_url}/verify-email?token={token}"
+        await self._mailer.send(_verification_message(email, link))
 
     # -- login -------------------------------------------------------------------
 
@@ -527,6 +648,7 @@ class IamAuthService:
         """
         email_n = normalize_email(email)
         outcome: AuthOutcome | None = None
+        resend: tuple[uuid.UUID, str] | None = None
         async with provider_session_scope() as session:
             user = await self._users.get_by_email(session, email_n)
             credentials = (
@@ -553,6 +675,15 @@ class IamAuthService:
                 await self._record_attempt(
                     session, actor=actor, tenant_id=stream, outcome="user_disabled"
                 )
+            elif user.email_verified_at is None:
+                # No session until the work email is confirmed. Re-mail the link so
+                # a user who lost the first one can still get in.
+                actor, stream = await self._attempt_attribution(session, user)
+                await self._record_attempt(
+                    session, actor=actor, tenant_id=stream, outcome="email_unverified"
+                )
+                resend = (user.id, email_n)
+                outcome = EmailVerificationRequired(email=email_n)
             else:
                 if verification.needs_rehash:
                     # The credential is unchanged; its parameters caught up with
@@ -577,6 +708,8 @@ class IamAuthService:
                     outcome = await self._post_password_step(
                         session, memberships[0], user, credentials
                     )
+        if resend is not None:
+            await self._send_verification_email(*resend)
         if outcome is None:
             raise AuthenticationRequired(detail=_UNIFORM_LOGIN_DETAIL)
         return outcome
@@ -865,6 +998,10 @@ class IamAuthService:
                 if password is None:
                     raise InvalidInput(detail="a new user must set a password on accept")
                 validate_password(password)
+                # Accepting an invitation proves control of the address it was
+                # issued for, so a new invited user is email-verified by that act —
+                # no separate verification step, unlike self-service signup.
+                user.email_verified_at = datetime.now(UTC)
                 if full_name is not None and full_name.strip():
                     # The global users row changes; it is a state change and is audited
                     # like every other write here, in this tenant's stream.

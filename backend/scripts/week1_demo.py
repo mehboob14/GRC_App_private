@@ -53,8 +53,35 @@ def get(client: httpx.Client, path: str, *, token: str | None = None) -> object:
     return r.json()
 
 
+def verify_email(client: httpx.Client, email: str) -> dict:
+    """Confirm the work email the way the mailed link would. Signup sends a real
+    email; this script runs in the backend venv, so it mints the same
+    ``email_verify`` token the link carries (looking up the user id directly)
+    rather than reading an inbox."""
+    import asyncio
+
+    import asyncpg
+
+    from verity.core.config import get_settings
+    from verity.core.security import issue_token
+
+    async def _user_id() -> object:
+        dsn = get_settings().database.url.replace("+asyncpg", "")
+        conn = await asyncpg.connect(dsn)
+        try:
+            return await conn.fetchval(
+                "SELECT id FROM users WHERE email = $1", email.strip().lower()
+            )
+        finally:
+            await conn.close()
+
+    token = issue_token(subject=asyncio.run(_user_id()), plane="tenant", typ="email_verify").token
+    return post(client, "/auth/verify-email", json={"token": token})
+
+
 def create_org(client: httpx.Client, company: str, email: str) -> dict:
-    """Self-service signup + TOTP enrollment. Returns the admin's session state."""
+    """Self-service signup + email verification + TOTP enrollment. Returns the
+    admin's session state."""
     res = post(
         client,
         "/auth/signup",
@@ -63,11 +90,15 @@ def create_org(client: httpx.Client, company: str, email: str) -> dict:
             "full_name": "Founding Admin",
             "email": email,
             "password": PW_ADMIN,
+            "accept_terms": True,
         },
     )
-    assert res["status"] == "mfa_enrollment_required", res
-    ok(f"signed up '{company}' — admin {email} must enroll MFA (Admin role)")
-    challenge = res["challenge_token"]
+    assert res["status"] == "email_verification_required", res
+    ok(f"signed up '{company}' — a verification email was sent to {email}")
+    verified = verify_email(client, email)
+    assert verified["status"] == "mfa_enrollment_required", verified
+    ok("email verified — admin must now enroll MFA (Admin role)")
+    challenge = verified["challenge_token"]
 
     started = post(client, "/auth/mfa/enroll", json={"challenge_token": challenge})
     secret = started["secret"]
