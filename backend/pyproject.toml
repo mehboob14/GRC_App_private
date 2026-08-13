@@ -192,7 +192,14 @@ markers = [
     "integration: needs a real Postgres, connecting as the application role",
     "isolation: proves a tenant-isolation property; a merge blocker (docs/conventions/testing.md)",
 ]
-filterwarnings = ["error"]
+filterwarnings = [
+    "error",
+    # Windows ProactorEventLoop logs this at GC even when the transport was closed
+    # correctly (note the "closing fd=" in the message). With `error` above it turns
+    # into a spurious failure attributed to whichever test the GC happened to run in.
+    # Narrowly ignored so every other warning still fails the build.
+    "ignore:unclosed transport <_ProactorSocketTransport:ResourceWarning",
+]
 
 [tool.coverage.run]
 source = ["src/verity"]

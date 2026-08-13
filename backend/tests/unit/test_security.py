@@ -332,7 +332,7 @@ def test_every_failure_mode_shares_one_uniform_error() -> None:
 
 def test_the_documented_planes_and_types_are_the_only_ones() -> None:
     assert {"tenant", "provider"} == TOKEN_PLANES
-    assert {"session", "challenge", "selection", "invite"} == TOKEN_TYPES
+    assert {"session", "challenge", "selection", "invite", "email_verify"} == TOKEN_TYPES
 
 
 def _valid_payload(iat: int | None = None, exp: int | None = None) -> dict[str, object]:
