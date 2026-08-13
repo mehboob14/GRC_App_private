@@ -16,7 +16,10 @@ const ALL_PERMS: PermissionKey[] = [...PERMISSION_KEYS];
 export const DEMO_PASSWORD = "Password123!";
 export const DEMO_MFA_CODE = "123456";
 
-export const users: Record<string, User & { password: string }> = {
+export const users: Record<
+  string,
+  User & { password: string; email_verified: boolean }
+> = {
   "user-alex": {
     id: "user-alex",
     email: "alex.okafor@northwind.cloud",
@@ -24,6 +27,8 @@ export const users: Record<string, User & { password: string }> = {
     status: "active",
     mfa_enabled: true,
     password: DEMO_PASSWORD,
+    // Stable demo accounts are pre-verified so existing mock sign-in still works.
+    email_verified: true,
   },
   "user-jordan": {
     id: "user-jordan",
@@ -32,6 +37,8 @@ export const users: Record<string, User & { password: string }> = {
     status: "active",
     mfa_enabled: true,
     password: DEMO_PASSWORD,
+    // Stable demo accounts are pre-verified so existing mock sign-in still works.
+    email_verified: true,
   },
   "user-marcus": {
     id: "user-marcus",
@@ -40,6 +47,8 @@ export const users: Record<string, User & { password: string }> = {
     status: "active",
     mfa_enabled: false,
     password: DEMO_PASSWORD,
+    // Stable demo accounts are pre-verified so existing mock sign-in still works.
+    email_verified: true,
   },
   "user-dana": {
     id: "user-dana",
@@ -48,6 +57,8 @@ export const users: Record<string, User & { password: string }> = {
     status: "active",
     mfa_enabled: true,
     password: DEMO_PASSWORD,
+    // Stable demo accounts are pre-verified so existing mock sign-in still works.
+    email_verified: true,
   },
   "user-priya": {
     id: "user-priya",
@@ -56,6 +67,8 @@ export const users: Record<string, User & { password: string }> = {
     status: "active",
     mfa_enabled: false,
     password: DEMO_PASSWORD,
+    // Stable demo accounts are pre-verified so existing mock sign-in still works.
+    email_verified: true,
   },
 };
 

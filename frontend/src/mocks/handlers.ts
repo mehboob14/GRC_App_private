@@ -58,6 +58,11 @@ const challenges = new Map<
   { membershipId: string; kind: "mfa" | "enroll" | "select"; userId: string }
 >();
 
+// The most recent verify-first signup awaiting its emailed link. The mock has
+// no real inbox, so verify-email accepts any non-empty token and redeems this.
+// In-memory only, like the rest of the mock — it does not survive a reload.
+let pendingVerification: { membershipId: string; userId: string } | null = null;
+
 export const handlers = [
   // Keepalive target for main.tsx: pinged so the browser never idle-kills
   // the MSW service worker (a restarted worker forgets its clients and
@@ -75,6 +80,15 @@ export const handlers = [
     if (!user || body.password !== user.password) {
       await delay(40);
       return err(401, "invalid_credentials", "Email or password is incorrect.");
+    }
+
+    // Verify-first: an unverified account never reaches a session, it is sent
+    // back to the check-email surface (matches the backend's login gating).
+    if (!user.email_verified) {
+      return HttpResponse.json({
+        status: "email_verification_required",
+        email: user.email,
+      } satisfies LoginResponse);
     }
 
     const workspaces = workspacesForUser(user.id);
@@ -310,6 +324,8 @@ export const handlers = [
       status: "active",
       mfa_enabled: false,
       password: body.password,
+      // Verify-first: unverified until the emailed link is redeemed.
+      email_verified: false,
     };
     membershipTenants[membershipId] = {
       tenant_id: tenantId,
@@ -327,13 +343,9 @@ export const handlers = [
       mfa_enabled: false,
     });
 
-    // Force MFA enroll for new admin
-    const challenge_token = crypto.randomUUID();
-    challenges.set(challenge_token, {
-      membershipId,
-      kind: "enroll",
-      userId,
-    });
+    // Verify-first: mail a link (mocked) and wait. MFA enrollment happens after
+    // the token is redeemed at /verify-email, not here.
+    pendingVerification = { membershipId, userId };
 
     pushAudit({
       actor_type: "membership",
@@ -349,10 +361,49 @@ export const handlers = [
     });
 
     return HttpResponse.json({
+      status: "email_verification_required",
+      email: body.email.toLowerCase(),
+    } satisfies LoginResponse);
+  }),
+
+  http.post("/api/v1/auth/verify-email", async ({ request }) => {
+    await delay(200);
+    const body = (await request.json()) as { token?: string };
+    const token = (body.token ?? "").trim();
+    // No inbox in the mock: any non-empty token redeems the pending signup.
+    // "bad"/"invalid"/"expired" model the failed link so the error path is testable.
+    if (!token || ["bad", "invalid", "expired"].includes(token.toLowerCase())) {
+      return err(
+        422,
+        "invalid_input",
+        "This verification link is invalid or has expired.",
+      );
+    }
+    if (!pendingVerification) {
+      return err(
+        422,
+        "invalid_input",
+        "This verification link is invalid or has expired.",
+      );
+    }
+    const { membershipId, userId } = pendingVerification;
+    const user = users[userId];
+    if (user) user.email_verified = true;
+    pendingVerification = null;
+    // A fresh Admin enrolls MFA next — hand over an enroll challenge.
+    const challenge_token = crypto.randomUUID();
+    challenges.set(challenge_token, { membershipId, kind: "enroll", userId });
+    return HttpResponse.json({
       status: "mfa_enrollment_required",
       challenge_token,
       membership_id: membershipId,
-    });
+    } satisfies LoginResponse);
+  }),
+
+  http.post("/api/v1/auth/verify-email/resend", async () => {
+    await delay(150);
+    // Always 202 with no body — no account disclosure.
+    return new HttpResponse(null, { status: 202 });
   }),
 
   http.get("/api/v1/auth/workspaces", ({ request }) => {
@@ -471,6 +522,8 @@ export const handlers = [
         mfa_enabled: false,
         // Unusable until the invitee sets a password on accept.
         password: crypto.randomUUID(),
+        // Invited users are verified by accepting the invitation, not by email.
+        email_verified: false,
       };
       user = users[userId];
     }
@@ -568,6 +621,8 @@ export const handlers = [
       user.full_name = body.full_name.trim();
       member.full_name = user.full_name;
     }
+    // Accepting the invitation verifies the address (no separate email step).
+    user.email_verified = true;
     member.status = "active";
     invites.delete(token);
     const tenant = membershipTenants[membershipId];
