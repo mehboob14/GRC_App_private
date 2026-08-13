@@ -18,6 +18,7 @@ import {
 import { cn } from "@/lib/cn";
 import { authApi } from "@/lib/api/endpoints";
 import { useAuth } from "@/lib/auth/auth-context";
+import { resumePendingAuth } from "@/lib/auth/resume-auth";
 
 /** Workspace tile — identity-ramp mark, same vocabulary as person avatars. */
 function WorkspaceMark({
@@ -84,15 +85,7 @@ export function Topbar() {
       // session isn't valid for the target — so drop it and hand off to the
       // sign-in surface, which owns the challenge / enrollment / choice UI.
       signOut();
-      if (response.status === "mfa_enrollment_required") {
-        navigate(`/mfa/enroll?challenge=${response.challenge_token}`, {
-          replace: true,
-        });
-      } else {
-        // mfa_required carries a challenge_token; select_workspace a
-        // selection_token — the sign-in page resumes either from nav state.
-        navigate("/sign-in", { replace: true, state: { pending: response } });
-      }
+      resumePendingAuth(response, navigate);
     },
     onSettled: () => setSwitching(false),
   });
