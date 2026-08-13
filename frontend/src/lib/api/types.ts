@@ -67,6 +67,9 @@ export type LoginSuccess = {
   access_token: string;
   principal: SessionPrincipal;
   workspaces: WorkspaceSummary[];
+  /** Present only on the enrollment-confirm response — the plaintext recovery
+      codes leave the server exactly once, here. */
+  recovery_codes?: string[];
 };
 
 export type LoginMfaChallenge = {
@@ -105,7 +108,10 @@ export type SignupResponse = LoginMfaEnroll | LoginSuccess;
 
 export type MfaVerifyRequest = {
   challenge_token: string;
-  code: string;
+  /** Exactly one of these: the 6-digit authenticator code, or a single-use
+      recovery code. Enrollment confirmation always uses `code`. */
+  code?: string;
+  recovery_code?: string;
 };
 
 export type MfaEnrollStartResponse = {

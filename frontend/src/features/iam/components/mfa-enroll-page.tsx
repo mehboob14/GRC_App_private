@@ -2,11 +2,13 @@ import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { AuthSplitLayout } from "@/features/iam/components/auth-split-layout";
+import { RecoveryCodesPanel } from "@/features/iam/components/recovery-codes-panel";
 import { Button, ErrorBanner, Icon, Skeleton, TextField } from "@/components/ui";
 import { authApi } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/auth-context";
 import { useAlertFocus } from "@/features/iam/hooks/use-alert-focus";
+import type { LoginSuccess } from "@/lib/api/types";
 
 function messageFrom(error: unknown, fallback: string): string {
   return error instanceof ApiError ? error.message : fallback;
@@ -18,6 +20,12 @@ export function MfaEnrollPage() {
   const navigate = useNavigate();
   const { applyLogin } = useAuth();
   const [code, setCode] = useState("");
+  const [saved, setSaved] = useState<LoginSuccess | null>(null);
+
+  function enterApp(session: LoginSuccess) {
+    applyLogin(session);
+    navigate("/quick-start", { replace: true });
+  }
 
   const enrollQuery = useQuery({
     queryKey: ["mfa-enroll", challengeToken],
@@ -32,15 +40,33 @@ export function MfaEnrollPage() {
     mutationFn: () =>
       authApi.confirmMfaEnroll({ challenge_token: challengeToken, code }),
     onSuccess: (response) => {
-      if (response.status === "authenticated") {
-        applyLogin(response);
-        navigate("/quick-start", { replace: true });
+      if (response.status !== "authenticated") return;
+      // The plaintext recovery codes are returned exactly here, once. Hold the
+      // session and make the user acknowledge them before entering the app.
+      if (response.recovery_codes && response.recovery_codes.length > 0) {
+        setSaved(response);
+      } else {
+        enterApp(response);
       }
     },
   });
 
   const enrollAlertRef = useAlertFocus(enrollQuery.isError);
   const confirmAlertRef = useAlertFocus(confirmMutation.isError);
+
+  if (saved?.recovery_codes) {
+    return (
+      <AuthSplitLayout
+        title="Save your recovery codes"
+        subtitle="Each code works once, if you lose your authenticator. This is the only time they're shown — store them somewhere safe."
+      >
+        <RecoveryCodesPanel
+          codes={saved.recovery_codes}
+          onContinue={() => enterApp(saved)}
+        />
+      </AuthSplitLayout>
+    );
+  }
 
   if (!challengeToken) {
     return (

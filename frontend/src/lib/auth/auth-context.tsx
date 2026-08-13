@@ -73,6 +73,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const signOut = useCallback(() => {
+    // Record the sign-out in the audit trail (best-effort). apiFetch reads the
+    // bearer token synchronously, so this captures it before clearSession runs;
+    // a failed call must never block the user from signing out.
+    void authApi.logout().catch(() => {});
     clearSession();
     setPrincipal(null);
     setToken(null);

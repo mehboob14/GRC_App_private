@@ -60,6 +60,8 @@ export function SignInPage() {
     state?.pending ?? null,
   );
   const [mfaCode, setMfaCode] = useState("");
+  const [recoveryMode, setRecoveryMode] = useState(false);
+  const [recoveryCode, setRecoveryCode] = useState("");
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -82,13 +84,13 @@ export function SignInPage() {
   });
 
   const verifyMutation = useMutation({
-    mutationFn: (code: string) => {
+    mutationFn: (payload: { code?: string; recovery_code?: string }) => {
       if (pending?.status !== "mfa_required") {
         return Promise.reject(new Error("No MFA challenge in progress."));
       }
       return authApi.verifyMfa({
         challenge_token: pending.challenge_token,
-        code,
+        ...payload,
       });
     },
     onSuccess: finishAuth,
@@ -200,53 +202,106 @@ export function SignInPage() {
   if (pending?.status === "mfa_required") {
     return (
       <AuthSplitLayout
-        title="Enter your MFA code"
-        subtitle="Admin sign-in requires a 6-digit authenticator code."
+        title={recoveryMode ? "Enter a recovery code" : "Enter your MFA code"}
+        subtitle={
+          recoveryMode
+            ? "Use one of the single-use codes you saved when you enrolled."
+            : "Admin sign-in requires a 6-digit authenticator code."
+        }
       >
         {verifyMutation.isError ? (
           <ErrorBanner
             ref={verifyAlertRef}
             className="mb-4"
-            title="Couldn't verify the code"
+            title={
+              recoveryMode
+                ? "Couldn't verify that recovery code"
+                : "Couldn't verify the code"
+            }
           >
             {messageFrom(
               verifyMutation.error,
-              "That code didn't match — check your authenticator app and try again.",
+              recoveryMode
+                ? "That recovery code didn't match, or it's already been used — try another."
+                : "That code didn't match — check your authenticator app and try again.",
             )}
           </ErrorBanner>
         ) : null}
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (mfaCode.length === 6) verifyMutation.mutate(mfaCode);
-          }}
-          noValidate
-        >
-          <TextField
-            label="Authenticator code"
-            size="lg"
-            inputMode="numeric"
-            autoComplete="one-time-code"
-            placeholder="000000"
-            value={mfaCode}
-            onChange={(e) =>
-              setMfaCode(e.target.value.replace(/\D/g, "").slice(0, 6))
-            }
-          />
-          <Button
-            type="submit"
-            className="mt-4 w-full"
-            size="lg"
-            loading={verifyMutation.isPending}
-            disabled={mfaCode.length !== 6}
+        {recoveryMode ? (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (recoveryCode.trim())
+                verifyMutation.mutate({ recovery_code: recoveryCode.trim() });
+            }}
+            noValidate
           >
-            Verify and continue
-            <Icon name="arrowr" className="size-4" />
-          </Button>
-        </form>
+            <TextField
+              label="Recovery code"
+              size="lg"
+              autoComplete="one-time-code"
+              placeholder="xxxxx-xxxxx"
+              value={recoveryCode}
+              onChange={(e) => setRecoveryCode(e.target.value)}
+            />
+            <Button
+              type="submit"
+              className="mt-4 w-full"
+              size="lg"
+              loading={verifyMutation.isPending}
+              disabled={!recoveryCode.trim()}
+            >
+              Verify and continue
+              <Icon name="arrowr" className="size-4" />
+            </Button>
+          </form>
+        ) : (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (mfaCode.length === 6)
+                verifyMutation.mutate({ code: mfaCode });
+            }}
+            noValidate
+          >
+            <TextField
+              label="Authenticator code"
+              size="lg"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              placeholder="000000"
+              value={mfaCode}
+              onChange={(e) =>
+                setMfaCode(e.target.value.replace(/\D/g, "").slice(0, 6))
+              }
+            />
+            <Button
+              type="submit"
+              className="mt-4 w-full"
+              size="lg"
+              loading={verifyMutation.isPending}
+              disabled={mfaCode.length !== 6}
+            >
+              Verify and continue
+              <Icon name="arrowr" className="size-4" />
+            </Button>
+          </form>
+        )}
         <Button
           variant="link"
           className="mt-4 self-start"
+          onClick={() => {
+            verifyMutation.reset();
+            setRecoveryMode((on) => !on);
+          }}
+        >
+          {recoveryMode
+            ? "Use an authenticator code instead"
+            : "Use a recovery code instead"}
+        </Button>
+        <Button
+          variant="link"
+          className="mt-1 self-start"
           onClick={backToSignIn}
         >
           Back to sign in
