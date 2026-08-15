@@ -107,16 +107,7 @@ export function RolesPage() {
 
   return (
     <div>
-      <div className="mb-4 flex items-start justify-between gap-3">
-        <div>
-          <h2 className="font-display text-heading-sm text-text-primary">
-            Roles &amp; permissions
-          </h2>
-          <p className="mt-1 text-body-md text-text-secondary">
-            Built-in roles are fixed by the platform; custom roles pick from
-            the same permission keys.
-          </p>
-        </div>
+      <div className="mb-4 flex justify-end gap-3">
         {canManage ? (
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>

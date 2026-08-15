@@ -275,10 +275,12 @@ _bearer = HTTPBearer(auto_error=False)
 
 _MEMBERSHIP_FOR_SESSION = text(
     "SELECT m.id AS membership_id, m.tenant_id, m.user_id, "
-    "m.status AS membership_status, u.status AS user_status, t.status AS tenant_status "
+    "m.status AS membership_status, u.status AS user_status, t.status AS tenant_status, "
+    "c.credentials_changed_at AS credentials_changed_at "
     "FROM tenant_memberships m "
     "JOIN users u ON u.id = m.user_id "
     "JOIN tenants t ON t.id = m.tenant_id "
+    "LEFT JOIN credentials c ON c.user_id = m.user_id "
     "WHERE m.id = :membership_id"
 )
 
@@ -310,6 +312,13 @@ async def get_current_principal(
         if row.tenant_status != _ACTIVE:
             raise AuthenticationRequired(
                 detail=f"tenant {row.tenant_id} is {row.tenant_status}, not active"
+            )
+        # Revocation: a password change/reset bumps credentials_changed_at, and
+        # any session token minted before that instant is dead (decision 17 —
+        # authorization is per-request DB state, not token contents).
+        if row.credentials_changed_at is not None and claims.issued_at < row.credentials_changed_at:
+            raise AuthenticationRequired(
+                detail="session predates a credential change; sign in again"
             )
         permissions = await resolve_effective_permissions(
             session, tenant_id=row.tenant_id, membership_id=row.membership_id

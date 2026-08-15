@@ -116,11 +116,12 @@ export const handlers = [
 
     const membershipId = firstWorkspace.membership_id;
     const member = members.find((m) => m.membership_id === membershipId);
-    // MFA is required for Admin-role memberships, always — platform policy,
-    // not a tenant toggle (week1-review-decisions.md #19/#20).
+    // Admin MFA is opt-in per tenant (default off). Only when the tenant has
+    // turned it on does an Admin sign-in step up to enrol or verify a code.
     const isAdmin = member?.role_names.includes("Admin") ?? false;
+    const mfaRequired = isAdmin && (requireAdminMfa[firstWorkspace.tenant_id] ?? false);
 
-    if (isAdmin) {
+    if (mfaRequired) {
       if (!user.mfa_enabled) {
         const challenge_token = crypto.randomUUID();
         challenges.set(challenge_token, {
@@ -344,6 +345,7 @@ export const handlers = [
       role_names: ["Admin"],
       group_names: [],
       mfa_enabled: false,
+      last_login_at: new Date().toISOString(),
     });
 
     // Verify-first: mail a link (mocked) and wait. MFA enrollment happens after
@@ -393,14 +395,13 @@ export const handlers = [
     const user = users[userId];
     if (user) user.email_verified = true;
     pendingVerification = null;
-    // A fresh Admin enrolls MFA next — hand over an enroll challenge.
-    const challenge_token = crypto.randomUUID();
-    challenges.set(challenge_token, { membershipId, kind: "enroll", userId });
-    return HttpResponse.json({
-      status: "mfa_enrollment_required",
-      challenge_token,
-      membership_id: membershipId,
-    } satisfies LoginResponse);
+    // MFA is opt-in and off for a brand-new workspace, so verification grants a
+    // session outright — mirrors the backend's verify-email post-password step.
+    const result = successFromMembership(membershipId);
+    if (!result) {
+      return err(401, "no_membership", "No active workspace membership.");
+    }
+    return HttpResponse.json(result);
   }),
 
   http.post("/api/v1/auth/verify-email/resend", async () => {
@@ -547,6 +548,7 @@ export const handlers = [
       role_names: [role.name],
       group_names: [],
       mfa_enabled: user.mfa_enabled,
+      last_login_at: null,
     };
     members.push(newMember);
     if (body.valid_from || body.valid_until) {

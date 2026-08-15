@@ -7,6 +7,8 @@ import { SignUpPage } from "@/features/iam/components/sign-up-page";
 import { MfaEnrollPage } from "@/features/iam/components/mfa-enroll-page";
 import { AcceptInvitePage } from "@/features/iam/components/accept-invite-page";
 import { VerifyEmailPage } from "@/features/iam/components/verify-email-page";
+import { ForgotPasswordPage } from "@/features/iam/components/forgot-password-page";
+import { ResetPasswordPage } from "@/features/iam/components/reset-password-page";
 import { SettingsLayout } from "@/features/iam/components/settings-layout";
 import { TeamPage } from "@/features/iam/components/team-page";
 import { GroupsPage } from "@/features/iam/components/groups-page";
@@ -14,6 +16,7 @@ import { RolesPage } from "@/features/iam/components/roles-page";
 import { SecurityPage } from "@/features/iam/components/security-page";
 import { AuditLogPage } from "@/features/audit/components/audit-log-page";
 import { QuickStartPage } from "@/features/compliance/components/quick-start-page";
+import { CompanyProfilePage } from "@/features/tenancy/company-profile-page";
 import { ConnectionsPage } from "@/features/connectors/components/connections-page";
 
 export function AppRoutes() {
@@ -23,6 +26,7 @@ export function AppRoutes() {
         <Route path="/sign-in" element={<SignInPage />} />
         <Route path="/sign-up" element={<SignUpPage />} />
         <Route path="/mfa/enroll" element={<MfaEnrollPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       </Route>
 
       {/* Reachable whether or not you are signed in: an existing user accepting a
@@ -35,15 +39,26 @@ export function AppRoutes() {
           resuming MFA / workspace selection (see verify-email-page). */}
       <Route path="/verify-email" element={<VerifyEmailPage />} />
 
+      {/* Reset link is reachable whether or not signed in — a signed-in user's
+          reset revokes their current session by construction. */}
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
+
       <Route element={<RequireAuth />}>
         <Route element={<AppLayout />}>
           <Route index element={<Navigate to="/quick-start" replace />} />
           <Route path="quick-start" element={<QuickStartPage />} />
           <Route path="connectors" element={<ConnectionsPage />} />
-          <Route path="people" element={<TeamPage />} />
+          {/* People and Company profile live under Settings; keep old paths working. */}
+          <Route path="people" element={<Navigate to="/settings/people" replace />} />
+          <Route
+            path="company-profile"
+            element={<Navigate to="/settings/company" replace />}
+          />
           <Route path="settings" element={<SettingsLayout />}>
-            <Route index element={<Navigate to="security" replace />} />
-            <Route path="team" element={<Navigate to="/people" replace />} />
+            <Route index element={<Navigate to="people" replace />} />
+            <Route path="team" element={<Navigate to="/settings/people" replace />} />
+            <Route path="people" element={<TeamPage />} />
+            <Route path="company" element={<CompanyProfilePage />} />
             <Route path="groups" element={<GroupsPage />} />
             <Route path="roles" element={<RolesPage />} />
             <Route path="security" element={<SecurityPage />} />

@@ -33,6 +33,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from verity.core.crypto import CryptoError, get_secret_box
 from verity.core.db import provider_session_scope
+from verity.core.email import OutboundEmail, SmtpCredentials, send_with
 from verity.core.errors import AuthenticationRequired, Conflict, InvalidInput, NotFound
 from verity.core.security import (
     IssuedToken,
@@ -46,6 +47,7 @@ from verity.core.security import (
     verify_totp,
 )
 from verity.modules.audit.service import Actor, AuditService, System, audit_service
+from verity.modules.audit.service import Membership as MembershipActor
 from verity.modules.audit.service import PlatformAdmin as PlatformAdminActor
 from verity.modules.tenancy.exceptions import (
     CustomDomainConflict,
@@ -64,14 +66,27 @@ from verity.modules.tenancy.models import (
     STEP_VERIFY,
     TENANT_STATUS_ACTIVE,
     TENANT_STATUS_PROVISIONING,
+    CompanyProfile,
     PlatformAdmin,
     Tenant,
     TenantBranding,
     TenantProvisioningStep,
     TenantRegistrationKey,
+    TenantSmtp,
 )
-from verity.modules.tenancy.repository import PlatformAdminRepository, TenantRepository
-from verity.modules.tenancy.schemas import BrandingPut, TenantRegistration, TenantUpdate
+from verity.modules.tenancy.repository import (
+    CompanyProfileRepository,
+    PlatformAdminRepository,
+    TenantRepository,
+    TenantSmtpRepository,
+)
+from verity.modules.tenancy.schemas import (
+    BrandingPut,
+    CompanyProfileUpdate,
+    SmtpConfigUpdate,
+    TenantRegistration,
+    TenantUpdate,
+)
 from verity.shared.ids import uuid7
 
 __all__ = [
@@ -632,10 +647,13 @@ class TenancyService:
         tenants: TenantRepository | None = None,
         audit: AuditService | None = None,
         gates: MembershipGates | None = None,
+        profiles: CompanyProfileRepository | None = None,
     ) -> None:
         self._tenants = tenants or TenantRepository()
         self._audit = audit or audit_service
         self._gates: MembershipGates = gates or NoMembershipsYet()
+        self._profiles = profiles or CompanyProfileRepository()
+        self._smtp = TenantSmtpRepository()
 
     def use_gates(self, gates: MembershipGates) -> MembershipGates:
         """Swap in the real membership checks. Called once by the IAM module's wiring.
@@ -1023,6 +1041,151 @@ class TenancyService:
 
     async def get_own_branding(self, session: AsyncSession, tenant_id: uuid.UUID) -> TenantBranding:
         return await self.get_branding(session, tenant_id)
+
+    # -- company profile (tenant self-service) ------------------------------
+
+    def _seed_profile(self, tenant_id: uuid.UUID, tenant: Tenant | None) -> CompanyProfile:
+        """A fresh profile pre-filled from the registration record, so the form
+        starts from what's already known. Not added to the session."""
+        return CompanyProfile(
+            tenant_id=tenant_id,
+            legal_name=tenant.legal_name if tenant else None,
+            display_name=tenant.trading_name if tenant else None,
+            registration_number=tenant.registration_number if tenant else None,
+            industry=tenant.industry if tenant else None,
+        )
+
+    async def get_own_company_profile(
+        self, session: AsyncSession, tenant_id: uuid.UUID
+    ) -> CompanyProfile:
+        """The tenant's own profile. If it has never been saved, return an
+        unsaved instance seeded from the registration record — a read persists
+        nothing."""
+        profile = await self._profiles.get(session, tenant_id)
+        if profile is not None:
+            return profile
+        return self._seed_profile(tenant_id, await self._tenants.get(session, tenant_id))
+
+    async def update_own_company_profile(
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor_membership_id: uuid.UUID,
+        changes: CompanyProfileUpdate,
+    ) -> CompanyProfile:
+        """Upsert the tenant's own profile. Only fields sent are written; the
+        first save seeds the rest from the registration record. Audited on the
+        tenant's stream, actor = the acting membership."""
+        data = changes.model_dump(exclude_unset=True)
+        profile = await self._profiles.get(session, tenant_id)
+        created = profile is None
+        if not data and profile is not None:
+            return profile  # nothing sent, nothing existed to reshape
+        fields = tuple(CompanyProfileUpdate.model_fields.keys())
+        if profile is None:
+            profile = self._seed_profile(tenant_id, await self._tenants.get(session, tenant_id))
+        before = None if created else AuditService.snapshot(profile, fields=fields)
+        for name, value in data.items():
+            setattr(profile, name, value)
+        if created:
+            await self._profiles.add(session, profile)
+        else:
+            await session.flush([profile])
+        await session.refresh(profile)
+        await self._audit.record(
+            session,
+            action="create" if created else "update",
+            object_type="company_profile",
+            object_id=tenant_id,
+            actor=MembershipActor(actor_membership_id),
+            tenant_id=tenant_id,
+            before=before,
+            after=AuditService.snapshot(profile, fields=fields),
+        )
+        return profile
+
+    # -- outbound email (tenant SMTP) ---------------------------------------
+
+    async def get_own_smtp(self, session: AsyncSession, tenant_id: uuid.UUID) -> TenantSmtp | None:
+        """The tenant's SMTP config, or None if never configured. The password
+        stays in the row — callers surface only whether one is set."""
+        return await self._smtp.get(session, tenant_id)
+
+    async def update_own_smtp(
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor_membership_id: uuid.UUID,
+        changes: SmtpConfigUpdate,
+    ) -> TenantSmtp:
+        """Upsert the tenant's SMTP config. ``password`` is write-only: a non-empty
+        value is envelope-encrypted (AAD-bound to the tenant); omitting it keeps
+        the stored one. Audited without ever snapshotting the secret."""
+        data = changes.model_dump(exclude_unset=True)
+        new_password = data.pop("password", None)
+        smtp = await self._smtp.get(session, tenant_id)
+        created = smtp is None
+        if smtp is None:
+            smtp = TenantSmtp(tenant_id=tenant_id)
+        fields = ("host", "port", "username", "from_name", "from_address", "use_tls", "enabled")
+        before = None if created else AuditService.snapshot(smtp, fields=fields)
+        for name, value in data.items():
+            setattr(smtp, name, value)
+        if new_password:  # non-empty → (re)encrypt; empty/omitted → keep existing
+            smtp.password_encrypted = get_secret_box().encrypt(
+                new_password, aad=f"tenant_smtp:{tenant_id}"
+            )
+        if created:
+            await self._smtp.add(session, smtp)
+        else:
+            await session.flush([smtp])
+        await session.refresh(smtp)
+        await self._audit.record(
+            session,
+            action="create" if created else "update",
+            object_type="tenant_smtp",
+            object_id=tenant_id,
+            actor=MembershipActor(actor_membership_id),
+            tenant_id=tenant_id,
+            before=before,
+            after=AuditService.snapshot(smtp, fields=fields),
+        )
+        return smtp
+
+    async def send_test_smtp(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, to_email: str
+    ) -> tuple[bool, str]:
+        """Send a test message through the tenant's own SMTP so an admin can
+        confirm the settings before relying on them. Returns ``(ok, detail)``."""
+        smtp = await self._smtp.get(session, tenant_id)
+        if smtp is None or not smtp.host or not smtp.from_address:
+            return False, "Set a host and a from-address first."
+        password: str | None = None
+        if smtp.password_encrypted is not None:
+            try:
+                password = get_secret_box().decrypt(
+                    smtp.password_encrypted, aad=f"tenant_smtp:{tenant_id}"
+                )
+            except CryptoError:
+                return False, "Stored password could not be decrypted — re-enter it."
+        creds = SmtpCredentials(
+            host=smtp.host,
+            port=smtp.port,
+            username=smtp.username,
+            password=password,
+            from_name=smtp.from_name or "Verity",
+            from_address=smtp.from_address,
+            use_tls=smtp.use_tls,
+        )
+        message = OutboundEmail(
+            to=to_email,
+            subject="Verity SMTP test",
+            text="This is a test message from Verity — your SMTP settings work.",
+            html="<p>This is a test message from Verity — your SMTP settings work.</p>",
+        )
+        return await send_with(creds, message)
 
 
 provider_auth_service: Final = ProviderAuthService()

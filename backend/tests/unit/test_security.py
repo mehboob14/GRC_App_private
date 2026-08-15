@@ -231,6 +231,7 @@ def test_the_jti_is_a_uuid7_for_the_audit_stream() -> None:
         ("challenge", timedelta(minutes=5)),
         ("selection", timedelta(minutes=5)),
         ("invite", timedelta(days=7)),
+        ("password_reset", timedelta(minutes=45)),
     ],
 )
 def test_each_type_gets_its_configured_lifetime(typ: str, ttl: timedelta) -> None:
@@ -332,7 +333,14 @@ def test_every_failure_mode_shares_one_uniform_error() -> None:
 
 def test_the_documented_planes_and_types_are_the_only_ones() -> None:
     assert {"tenant", "provider"} == TOKEN_PLANES
-    assert {"session", "challenge", "selection", "invite", "email_verify"} == TOKEN_TYPES
+    assert {
+        "session",
+        "challenge",
+        "selection",
+        "invite",
+        "email_verify",
+        "password_reset",
+    } == TOKEN_TYPES
 
 
 def _valid_payload(iat: int | None = None, exp: int | None = None) -> dict[str, object]:

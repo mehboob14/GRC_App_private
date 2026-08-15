@@ -290,6 +290,25 @@ export function QuickStartPage() {
         </span>
       </div>
 
+      <Link
+        to="/settings/company"
+        className="mt-6 flex items-center gap-3 rounded-lg border border-border bg-surface-primary px-4 py-3.5 transition-colors hover:border-action-accent hover:bg-action-accent-tint/40"
+      >
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-action-accent-tint text-action-accent">
+          <Icon name="box" className="size-4" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-body-md font-semibold text-text-primary">
+            Complete your company profile
+          </span>
+          <span className="block text-body-sm text-text-subtle">
+            Name, industry, website, description and policy URLs — feeds reports
+            and evidence.
+          </span>
+        </span>
+        <Icon name="arrowr" className="size-4 shrink-0 text-text-subtle" />
+      </Link>
+
       <div className="mt-6 space-y-2">
         {steps.map((step, index) => (
           <StepRow

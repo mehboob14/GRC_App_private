@@ -81,6 +81,49 @@ class SmtpMailer:
         return True
 
 
+@dataclass(frozen=True, slots=True)
+class SmtpCredentials:
+    """An explicit SMTP server to send through — a tenant's own, or any override."""
+
+    host: str
+    port: int
+    username: str | None
+    password: str | None
+    from_name: str
+    from_address: str
+    use_tls: bool
+    timeout_seconds: float = 15.0
+
+
+async def send_with(creds: SmtpCredentials, message: OutboundEmail) -> tuple[bool, str]:
+    """Send one message through an explicit SMTP server. Returns ``(ok, detail)``;
+    ``detail`` carries the error class + message on failure so a self-service
+    "send test email" can tell the tenant what to fix on *their* server. Never
+    raises."""
+    mail = EmailMessage()
+    mail["From"] = f"{creds.from_name} <{creds.from_address}>"
+    mail["To"] = message.to
+    mail["Subject"] = message.subject
+    mail.set_content(message.text)
+    if message.html is not None:
+        mail.add_alternative(message.html, subtype="html")
+    try:
+        await aiosmtplib.send(
+            mail,
+            hostname=creds.host,
+            port=creds.port,
+            username=creds.username,
+            password=creds.password,
+            start_tls=creds.use_tls,
+            timeout=creds.timeout_seconds,
+        )
+    except (aiosmtplib.SMTPException, OSError, ValueError) as exc:
+        logger.warning("email.test_failed", subject=message.subject, error=type(exc).__name__)
+        return False, f"{type(exc).__name__}: {exc}"
+    logger.info("email.test_sent", subject=message.subject)
+    return True, "Sent"
+
+
 @lru_cache(maxsize=1)
 def get_mailer() -> SmtpMailer:
     return SmtpMailer(get_settings())

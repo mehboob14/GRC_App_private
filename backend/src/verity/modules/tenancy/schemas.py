@@ -218,6 +218,88 @@ TenantStatusFilter = Literal["provisioning", "active", "suspended", "terminated"
 
 
 # ---------------------------------------------------------------------------
+# Company profile (tenant self-service)
+# ---------------------------------------------------------------------------
+
+
+class _CompanyProfileFields(_Request):
+    legal_name: str | None = Field(default=None, max_length=200)
+    display_name: str | None = Field(default=None, max_length=200)
+    registration_number: str | None = Field(default=None, max_length=100)
+    industry: str | None = Field(default=None, max_length=100)
+    company_size: str | None = Field(default=None, max_length=50)
+    description: str | None = Field(default=None, max_length=2000)
+    website: str | None = Field(default=None, max_length=300)
+    domain: str | None = Field(default=None, max_length=253)
+    headquarters: str | None = Field(default=None, max_length=200)
+    regulatory_scope: str | None = Field(default=None, max_length=500)
+    privacy_policy_url: str | None = Field(default=None, max_length=300)
+    terms_url: str | None = Field(default=None, max_length=300)
+
+
+class CompanyProfileUpdate(_CompanyProfileFields):
+    """Patch semantics: only fields present are written; the rest are untouched.
+    Send an explicit empty string to clear a field."""
+
+
+class CompanyProfileResponse(_Response):
+    tenant_id: uuid.UUID
+    legal_name: str | None
+    display_name: str | None
+    registration_number: str | None
+    industry: str | None
+    company_size: str | None
+    description: str | None
+    website: str | None
+    domain: str | None
+    headquarters: str | None
+    regulatory_scope: str | None
+    privacy_policy_url: str | None
+    terms_url: str | None
+
+
+# ---------------------------------------------------------------------------
+# Outbound email (tenant SMTP)
+# ---------------------------------------------------------------------------
+
+
+class SmtpConfigUpdate(_Request):
+    """Patch semantics: only fields present are written. ``password`` is
+    write-only — omit it (or send empty) to keep the stored one unchanged."""
+
+    host: str | None = Field(default=None, max_length=253)
+    port: int | None = Field(default=None, ge=1, le=65535)
+    username: str | None = Field(default=None, max_length=320)
+    password: str | None = Field(default=None, max_length=1024)
+    from_name: str | None = Field(default=None, max_length=200)
+    from_address: str | None = Field(default=None, max_length=320)
+    use_tls: bool | None = None
+    enabled: bool | None = None
+
+
+class SmtpConfigResponse(_Response):
+    """The stored config, never the password — only whether one is set."""
+
+    host: str | None
+    port: int
+    username: str | None
+    from_name: str | None
+    from_address: str | None
+    use_tls: bool
+    enabled: bool
+    has_password: bool
+
+
+class SmtpTestRequest(_Request):
+    to_email: str = Field(min_length=3, max_length=320)
+
+
+class SmtpTestResponse(_Response):
+    ok: bool
+    detail: str
+
+
+# ---------------------------------------------------------------------------
 # Branding
 # ---------------------------------------------------------------------------
 

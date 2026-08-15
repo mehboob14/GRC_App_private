@@ -79,7 +79,7 @@ export function SignUpPage() {
         title="Check your email"
         subtitle="Confirm your address to finish setting up your workspace."
       >
-        <CheckEmailPanel email={sentTo} />
+        <CheckEmailPanel email={sentTo} password={form.getValues("password")} />
       </AuthSplitLayout>
     );
   }
@@ -87,7 +87,7 @@ export function SignUpPage() {
   return (
     <AuthSplitLayout
       title="Start your trial"
-      subtitle="Create a workspace. You’ll verify your email, then enroll MFA as the first Admin."
+      subtitle="Start setting up your GRC workspace"
     >
       <form
         className="flex flex-col gap-3"
@@ -161,7 +161,7 @@ export function SignUpPage() {
 
         <Button
           type="submit"
-          className="mt-1 w-full"
+          className="auth-cta mt-1 w-full rounded-full bg-gradient-to-r from-action-accent via-action-primary to-action-primary-hover"
           size="lg"
           loading={signupMutation.isPending}
         >

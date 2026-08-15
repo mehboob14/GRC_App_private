@@ -63,6 +63,10 @@ export const STATUS_WORD_FAMILY: Readonly<Record<string, StatusFamily>> = {
   // membership lifecycle (invited → active → disabled) and MFA enrollment.
   invited: "pending",
   disabled: "neutral",
+  // Connector catalogue: a provider with no credential configured. Sits beside
+  // the map's own "not configured" in the neutral family — it is a fact, not a
+  // failure, and it must never render as danger or warning.
+  "not connected": "neutral",
   enrolled: "success",
   "not enrolled": "warning",
   enforced: "success",

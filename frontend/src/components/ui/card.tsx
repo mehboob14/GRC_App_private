@@ -1,12 +1,20 @@
+import { Slot } from "@radix-ui/react-slot";
 import { cn } from "@/lib/cn";
 import type { HTMLAttributes } from "react";
 
+/**
+ * `asChild` renders the card chrome onto the child element — a card that is
+ * itself the click target becomes a real <button>, so Enter/Space, focus and
+ * keyboard reach come from the platform rather than a keydown handler.
+ */
 export function Card({
   className,
+  asChild = false,
   ...props
-}: HTMLAttributes<HTMLDivElement>) {
+}: HTMLAttributes<HTMLDivElement> & { asChild?: boolean }) {
+  const Comp = asChild ? Slot : "div";
   return (
-    <div
+    <Comp
       className={cn(
         // Static cards are border-only — shadows mean "floating" (§4.4).
         "rounded-lg border border-border bg-surface-primary",

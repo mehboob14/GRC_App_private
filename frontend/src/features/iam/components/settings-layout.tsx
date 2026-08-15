@@ -2,6 +2,8 @@ import { NavLink, Outlet } from "react-router-dom";
 import { cn } from "@/lib/cn";
 
 const TABS = [
+  { to: "/settings/people", label: "People" },
+  { to: "/settings/company", label: "Company" },
   { to: "/settings/groups", label: "Groups" },
   { to: "/settings/roles", label: "Roles & permissions" },
   { to: "/settings/security", label: "Security" },

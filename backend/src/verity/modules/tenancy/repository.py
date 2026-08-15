@@ -15,14 +15,40 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from verity.modules.tenancy.models import (
     PROVISIONING_STEPS,
+    CompanyProfile,
     PlatformAdmin,
     Tenant,
     TenantBranding,
     TenantProvisioningStep,
     TenantRegistrationKey,
+    TenantSmtp,
 )
 
 _STEP_ORDER = {step: position for position, step in enumerate(PROVISIONING_STEPS)}
+
+
+class CompanyProfileRepository:
+    """The tenant's own organisation profile. Tenant-owned: RLS bounds every
+    query to the acting tenant, so there is no tenant_id filter to apply here."""
+
+    async def get(self, session: AsyncSession, tenant_id: uuid.UUID) -> CompanyProfile | None:
+        return await session.get(CompanyProfile, tenant_id)
+
+    async def add(self, session: AsyncSession, profile: CompanyProfile) -> None:
+        session.add(profile)
+        await session.flush([profile])
+
+
+class TenantSmtpRepository:
+    """The tenant's own SMTP config. Tenant-owned: RLS bounds every query to the
+    acting tenant, so there is no tenant_id filter to apply here."""
+
+    async def get(self, session: AsyncSession, tenant_id: uuid.UUID) -> TenantSmtp | None:
+        return await session.get(TenantSmtp, tenant_id)
+
+    async def add(self, session: AsyncSession, smtp: TenantSmtp) -> None:
+        session.add(smtp)
+        await session.flush([smtp])
 
 
 class PlatformAdminRepository:

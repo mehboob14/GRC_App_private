@@ -15,7 +15,12 @@ import type {
   Role,
   SignupRequest,
   SignupResponse,
+  CompanyProfile,
+  CompanyProfilePatch,
   SecuritySettings,
+  SmtpConfig,
+  SmtpConfigUpdate,
+  SmtpTestResult,
   TenantSummary,
   WorkspaceSummary,
 } from "@/lib/api/types";
@@ -40,6 +45,16 @@ export const authApi = {
     apiFetch<void>("/auth/verify-email/resend", {
       method: "POST",
       body: JSON.stringify({ email }),
+    }),
+  requestPasswordReset: (email: string) =>
+    apiFetch<void>("/auth/password-reset", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }),
+  confirmPasswordReset: (token: string, new_password: string) =>
+    apiFetch<void>("/auth/password-reset/confirm", {
+      method: "POST",
+      body: JSON.stringify({ token, new_password }),
     }),
   verifyMfa: (body: MfaVerifyRequest) =>
     apiFetch<LoginResponse>("/auth/mfa/verify", {
@@ -118,6 +133,23 @@ export const tenantApi = {
     apiFetch<SecuritySettings>("/tenant/security", {
       method: "PATCH",
       body: JSON.stringify({ require_admin_mfa }),
+    }),
+  getCompanyProfile: () => apiFetch<CompanyProfile>("/tenant/profile"),
+  updateCompanyProfile: (patch: CompanyProfilePatch) =>
+    apiFetch<CompanyProfile>("/tenant/profile", {
+      method: "PATCH",
+      body: JSON.stringify(patch),
+    }),
+  getSmtp: () => apiFetch<SmtpConfig>("/tenant/smtp"),
+  updateSmtp: (patch: SmtpConfigUpdate) =>
+    apiFetch<SmtpConfig>("/tenant/smtp", {
+      method: "PUT",
+      body: JSON.stringify(patch),
+    }),
+  testSmtp: (to_email: string) =>
+    apiFetch<SmtpTestResult>("/tenant/smtp/test", {
+      method: "POST",
+      body: JSON.stringify({ to_email }),
     }),
 };
 

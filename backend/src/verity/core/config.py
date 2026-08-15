@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import base64
 from functools import lru_cache
+from pathlib import Path
 from typing import Final, Literal
 
 from pydantic import Field, SecretStr, model_validator
@@ -126,6 +127,29 @@ class S3Settings(_Section):
     max_attempts: int = Field(default=3, ge=1)
 
 
+class StorageSettings(_Section):
+    """The object-storage seam in ``core.storage``.
+
+    Which backing store holds evidence files is a deployment choice, so it is one
+    setting and not a code path: everything above works against the ``ObjectStore``
+    protocol. ``S3Settings`` above stays the *credentials* for the s3 driver; these
+    are the properties of the seam itself, which the local driver needs too.
+    """
+
+    model_config = SettingsConfigDict(env_prefix="STORAGE_")
+
+    driver: Literal["local", "s3"] = "local"
+
+    local_root: Path = Path(".data/objects")
+    """Filesystem root for the local driver. Development and test only — a container
+    filesystem is not durable, and two API replicas do not share one."""
+
+    max_upload_mb: int = Field(default=25, ge=1)
+    """Refused above this while reading, before the bytes are written anywhere."""
+
+    signed_url_ttl_seconds: int = Field(default=900, ge=1)
+
+
 class AISettings(_Section):
     model_config = SettingsConfigDict(env_prefix="AI_")
 
@@ -175,6 +199,11 @@ class AuthSettings(_Section):
 
     email_verify_ttl_hours: int = Field(default=24, ge=1)
     """The verification link mailed on signup, before the account can be used."""
+
+    password_reset_ttl_minutes: int = Field(default=45, ge=5)
+    """The password-reset link mailed on request. Short-lived, and single-use in
+    effect: a reset bumps ``credentials_changed_at``, which the link is checked
+    against, so a used or superseded link no longer validates."""
 
 
 class EmailSettings(_Section):
@@ -230,6 +259,7 @@ class Settings(_Section):
     redis: RedisSettings = Field(default_factory=RedisSettings)
     celery: CelerySettings = Field(default_factory=CelerySettings)
     s3: S3Settings = Field(default_factory=S3Settings)
+    storage: StorageSettings = Field(default_factory=StorageSettings)
     ai: AISettings = Field(default_factory=AISettings)
     langsmith: LangSmithSettings = Field(default_factory=LangSmithSettings)
 

@@ -21,6 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from verity.core.deps import (
     PlatformAdminPrincipal,
+    Principal,
     TenantContext,
     get_provider_session,
     get_tenant_context,
@@ -32,12 +33,19 @@ from verity.modules.tenancy.models import (
     PROVISIONING_STATUS_PENDING,
     Tenant,
     TenantProvisioningStep,
+    TenantSmtp,
 )
 from verity.modules.tenancy.schemas import (
     BrandingPut,
     BrandingResponse,
+    CompanyProfileResponse,
+    CompanyProfileUpdate,
     ProvisioningResponse,
     ProvisioningStepResponse,
+    SmtpConfigResponse,
+    SmtpConfigUpdate,
+    SmtpTestRequest,
+    SmtpTestResponse,
     TenantPage,
     TenantProfileResponse,
     TenantRegistration,
@@ -64,6 +72,9 @@ require_tenant_read = require("tenant:read")
 """The tenant-plane permission dependency. ``core.deps.require`` is a Week 1
 placeholder until IAM lands; tests override this exact object, and nothing here
 changes when the real implementation arrives (the audit module set the pattern)."""
+
+require_tenant_manage = require("tenant:manage")
+"""Editing the company profile is an Admin action (holds every key at check time)."""
 
 
 def _provisioning_response(
@@ -257,3 +268,113 @@ async def read_own_branding(
 ) -> BrandingResponse:
     branding = await tenancy_service.get_own_branding(session, context.tenant_id)
     return BrandingResponse.model_validate(branding)
+
+
+@tenant_router.get(
+    "/profile",
+    response_model=CompanyProfileResponse,
+    summary="The calling tenant's own company profile (seeded from registration)",
+    dependencies=[Depends(require_tenant_read)],
+)
+async def read_own_company_profile(
+    context: Annotated[TenantContext, Depends(get_tenant_context)],
+    session: Annotated[AsyncSession, Depends(get_tenant_session)],
+) -> CompanyProfileResponse:
+    profile = await tenancy_service.get_own_company_profile(session, context.tenant_id)
+    return CompanyProfileResponse.model_validate(profile)
+
+
+@tenant_router.patch(
+    "/profile",
+    response_model=CompanyProfileResponse,
+    summary="Update the calling tenant's company profile (Admin)",
+)
+async def update_own_company_profile(
+    body: CompanyProfileUpdate,
+    principal: Annotated[Principal, Depends(require_tenant_manage)],
+    context: Annotated[TenantContext, Depends(get_tenant_context)],
+    session: Annotated[AsyncSession, Depends(get_tenant_session)],
+) -> CompanyProfileResponse:
+    assert principal.membership_id is not None  # noqa: S101 — tenant plane always has one
+    profile = await tenancy_service.update_own_company_profile(
+        session,
+        tenant_id=context.tenant_id,
+        actor_membership_id=principal.membership_id,
+        changes=body,
+    )
+    return CompanyProfileResponse.model_validate(profile)
+
+
+def _smtp_response(smtp: TenantSmtp | None) -> SmtpConfigResponse:
+    if smtp is None:
+        return SmtpConfigResponse(
+            host=None,
+            port=587,
+            username=None,
+            from_name=None,
+            from_address=None,
+            use_tls=True,
+            enabled=False,
+            has_password=False,
+        )
+    return SmtpConfigResponse(
+        host=smtp.host,
+        port=smtp.port,
+        username=smtp.username,
+        from_name=smtp.from_name,
+        from_address=smtp.from_address,
+        use_tls=smtp.use_tls,
+        enabled=smtp.enabled,
+        has_password=smtp.password_encrypted is not None,
+    )
+
+
+@tenant_router.get(
+    "/smtp",
+    response_model=SmtpConfigResponse,
+    summary="The calling tenant's SMTP config (never the password)",
+    dependencies=[Depends(require_tenant_read)],
+)
+async def read_own_smtp(
+    context: Annotated[TenantContext, Depends(get_tenant_context)],
+    session: Annotated[AsyncSession, Depends(get_tenant_session)],
+) -> SmtpConfigResponse:
+    return _smtp_response(await tenancy_service.get_own_smtp(session, context.tenant_id))
+
+
+@tenant_router.put(
+    "/smtp",
+    response_model=SmtpConfigResponse,
+    summary="Configure the calling tenant's own SMTP server (Admin)",
+)
+async def update_own_smtp(
+    body: SmtpConfigUpdate,
+    principal: Annotated[Principal, Depends(require_tenant_manage)],
+    context: Annotated[TenantContext, Depends(get_tenant_context)],
+    session: Annotated[AsyncSession, Depends(get_tenant_session)],
+) -> SmtpConfigResponse:
+    assert principal.membership_id is not None  # noqa: S101 — tenant plane always has one
+    smtp = await tenancy_service.update_own_smtp(
+        session,
+        tenant_id=context.tenant_id,
+        actor_membership_id=principal.membership_id,
+        changes=body,
+    )
+    return _smtp_response(smtp)
+
+
+@tenant_router.post(
+    "/smtp/test",
+    response_model=SmtpTestResponse,
+    summary="Send a test email through the tenant's SMTP (Admin)",
+    dependencies=[Depends(require_tenant_manage)],
+)
+async def test_own_smtp(
+    body: SmtpTestRequest,
+    context: Annotated[TenantContext, Depends(get_tenant_context)],
+    session: Annotated[AsyncSession, Depends(get_tenant_session)],
+) -> SmtpTestResponse:
+    ok, detail = await tenancy_service.send_test_smtp(
+        session, tenant_id=context.tenant_id, to_email=body.to_email
+    )
+    return SmtpTestResponse(ok=ok, detail=detail)

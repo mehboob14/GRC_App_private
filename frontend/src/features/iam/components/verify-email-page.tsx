@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useEffect } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -9,8 +9,7 @@ import { CheckEmailPanel } from "@/features/iam/components/check-email-panel";
 import { Button, ErrorBanner, Icon, TextField } from "@/components/ui";
 import { authApi } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/client";
-import { useAuth } from "@/lib/auth/auth-context";
-import { resumePendingAuth } from "@/lib/auth/resume-auth";
+import { announceEmailVerified } from "@/lib/auth/verify-signal";
 import { useAlertFocus } from "@/features/iam/hooks/use-alert-focus";
 
 const resendSchema = z.object({
@@ -26,14 +25,9 @@ function messageFrom(error: unknown, fallback: string): string {
 export function VerifyEmailPage() {
   const [params] = useSearchParams();
   const token = params.get("token") ?? "";
-  const navigate = useNavigate();
-  const { applyLogin, signOut } = useAuth();
-  // Set once a resend from the error path succeeds — hands off to CheckEmailPanel.
-  const [resentTo, setResentTo] = useState<string | null>(null);
 
   // Redeem the token exactly once: a single-use, short-lived credential must
-  // never refetch or retry. TanStack Query owns the request state — no
-  // useEffect+fetch here.
+  // never refetch or retry. TanStack Query owns the request state.
   const verifyQuery = useQuery({
     queryKey: ["verify-email", token],
     queryFn: () => authApi.verifyEmail(token),
@@ -47,53 +41,19 @@ export function VerifyEmailPage() {
     defaultValues: { email: "" },
     mode: "onBlur",
   });
-
   const resendMutation = useMutation({
     mutationFn: (values: ResendValues) =>
       authApi.resendVerification(values.email),
-    onSuccess: (_data, values) => setResentTo(values.email),
   });
 
-  const data = verifyQuery.data;
-
-  // Route the terminal branches by the SAME logic login/switch use. This side
-  // effect reacts to already-fetched query data; it does not fetch.
+  // Verified: this tab does NOT enter the app. It tells the sign-up tab (which
+  // holds the credentials) to continue, and shows a done state to close.
   useEffect(() => {
-    if (!data) return;
-    if (data.status === "authenticated") {
-      applyLogin(data);
-      navigate("/quick-start", { replace: true });
-      return;
-    }
-    if (data.status === "mfa_enrollment_required") {
-      navigate(`/mfa/enroll?challenge=${data.challenge_token}`, {
-        replace: true,
-      });
-      return;
-    }
-    if (data.status === "mfa_required" || data.status === "select_workspace") {
-      // Both resume on the sign-in surface behind PublicOnly — drop any session
-      // first (signOut also resets in-memory auth) or that gate bounces us back.
-      signOut();
-      resumePendingAuth(data, navigate);
-    }
-    // email_verification_required is handled in render (shouldn't reach here).
-  }, [data, applyLogin, navigate, signOut]);
+    if (verifyQuery.isSuccess) announceEmailVerified();
+  }, [verifyQuery.isSuccess]);
 
   const verifyAlertRef = useAlertFocus(verifyQuery.isError);
   const resendAlertRef = useAlertFocus(resendMutation.isError);
-
-  // A resend succeeded from the error path — show the standard check-email body.
-  if (resentTo) {
-    return (
-      <AuthSplitLayout
-        title="Check your email"
-        subtitle="Confirm your address to finish setting up your workspace."
-      >
-        <CheckEmailPanel email={resentTo} />
-      </AuthSplitLayout>
-    );
-  }
 
   if (!token) {
     return (
@@ -108,7 +68,46 @@ export function VerifyEmailPage() {
     );
   }
 
+  if (verifyQuery.isSuccess) {
+    return (
+      <AuthSplitLayout
+        title="Email verified"
+        subtitle="You're all set."
+      >
+        <div className="flex flex-col gap-4">
+          <div
+            className="flex items-center gap-2 rounded-md border border-status-success-border bg-status-success-bg px-3.5 py-3"
+            role="status"
+          >
+            <Icon name="check" className="size-5 text-status-success-text" />
+            <p className="text-body-md font-semibold text-status-success-text">
+              Your email is verified.
+            </p>
+          </div>
+          <p className="text-body-md text-text-secondary">
+            You can close this tab and return to the window where you signed up —
+            it continues automatically. Or{" "}
+            <Link className="font-semibold text-text-link" to="/sign-in">
+              sign in here
+            </Link>
+            .
+          </p>
+        </div>
+      </AuthSplitLayout>
+    );
+  }
+
   if (verifyQuery.isError) {
+    if (resendMutation.isSuccess) {
+      return (
+        <AuthSplitLayout
+          title="Check your email"
+          subtitle="Confirm your address to finish setting up your workspace."
+        >
+          <CheckEmailPanel email={resendForm.getValues("email")} />
+        </AuthSplitLayout>
+      );
+    }
     return (
       <AuthSplitLayout
         title="Verify your email"
@@ -157,32 +156,14 @@ export function VerifyEmailPage() {
             <Icon name="arrowr" className="size-4" />
           </Button>
         </form>
-        <p className="mt-6 text-body-sm text-text-secondary">
-          Already verified?{" "}
-          <Link className="font-semibold text-text-link" to="/sign-in">
-            Sign in
-          </Link>
-        </p>
       </AuthSplitLayout>
     );
   }
 
-  if (data?.status === "email_verification_required") {
-    return (
-      <AuthSplitLayout
-        title="Check your email"
-        subtitle="Confirm your address to finish setting up your workspace."
-      >
-        <CheckEmailPanel email={data.email} />
-      </AuthSplitLayout>
-    );
-  }
-
-  // Verifying, or a terminal status whose effect is navigating away.
   return (
     <AuthSplitLayout
       title="Verifying your email"
-      subtitle="One moment while we confirm your link and set up your session."
+      subtitle="One moment while we confirm your link."
     >
       <div
         className="flex items-center gap-3 text-body-md text-text-secondary"

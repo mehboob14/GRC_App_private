@@ -102,6 +102,10 @@ class Credentials(Timestamped, Base):
     last_login_at: Mapped[datetime | None] = mapped_column(default=None)
     mfa_enrolled_at: Mapped[datetime | None] = mapped_column(default=None)
     last_totp_counter: Mapped[int | None] = mapped_column(BigInteger, default=None)
+    # Bumped to now() on every password change/reset. A session (or reset link)
+    # whose token was issued before this instant is rejected — the one primitive
+    # that revokes stateless JWT sessions and makes a reset link single-use.
+    credentials_changed_at: Mapped[datetime | None] = mapped_column(default=None)
 
     def __repr__(self) -> str:
         # Deliberately no credential columns.

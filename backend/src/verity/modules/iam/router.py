@@ -55,6 +55,8 @@ from verity.modules.iam.schemas import (
     MfaEnrollStartResponse,
     MfaRequiredResponse,
     MfaVerifyRequest,
+    PasswordResetConfirm,
+    PasswordResetRequest,
     PrincipalOut,
     ResendVerificationRequest,
     RoleAssignmentCreate,
@@ -220,6 +222,24 @@ async def verify_email(body: VerifyEmailRequest) -> LoginResponse:
 )
 async def resend_verification(body: ResendVerificationRequest) -> None:
     await iam_auth_service.resend_verification(email=body.email)
+
+
+@auth_router.post(
+    "/password-reset",
+    status_code=status.HTTP_202_ACCEPTED,
+    summary="Mail a password-reset link (always the same response — no disclosure)",
+)
+async def request_password_reset(body: PasswordResetRequest) -> None:
+    await iam_auth_service.request_password_reset(email=body.email)
+
+
+@auth_router.post(
+    "/password-reset/confirm",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Set a new password from a reset link; revokes all existing sessions",
+)
+async def confirm_password_reset(body: PasswordResetConfirm) -> None:
+    await iam_auth_service.reset_password(token=body.token, new_password=body.new_password)
 
 
 @auth_router.post(

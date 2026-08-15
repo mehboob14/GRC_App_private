@@ -34,6 +34,7 @@ import re
 import uuid
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime
+from html import escape as _html_escape
 from typing import Final, Literal
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -321,6 +322,8 @@ class MemberView:
     role_names: list[str]
     group_names: list[str]
     mfa_enabled: bool
+    # Last successful sign-in (credentials.last_login_at); None until they log in.
+    last_login_at: datetime | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -400,6 +403,68 @@ def _verification_message(email: str, link: str) -> OutboundEmail:
         "you can ignore this message.</p>"
     )
     return OutboundEmail(to=email, subject=subject, text=text, html=html)
+
+
+def _password_reset_message(email: str, link: str) -> OutboundEmail:
+    """The reset-link email. Plain and unbranded for Week 1, like verification."""
+    subject = "Reset your Verity password"
+    text = (
+        "We received a request to reset your Verity password.\n\n"
+        "Set a new password here:\n"
+        f"{link}\n\n"
+        "The link expires soon and works once. If you did not request this, you "
+        "can ignore this message — your password stays unchanged."
+    )
+    html = (
+        "<p>We received a request to reset your Verity password.</p>"
+        f'<p><a href="{link}">Set a new password</a></p>'
+        "<p>The link expires soon and works once. If you did not request this, "
+        "you can ignore this message — your password stays unchanged.</p>"
+    )
+    return OutboundEmail(to=email, subject=subject, text=text, html=html)
+
+
+def _password_changed_message(email: str) -> OutboundEmail:
+    """Security notice after a successful reset, so a victim of email compromise
+    notices a change they did not make."""
+    subject = "Your Verity password was changed"
+    text = (
+        "Your Verity password was just changed, and any signed-in sessions were "
+        "logged out.\n\nIf this was you, nothing more is needed. If it wasn't, "
+        "contact your administrator immediately."
+    )
+    html = (
+        "<p>Your Verity password was just changed, and any signed-in sessions "
+        "were logged out.</p><p>If this was you, nothing more is needed. If it "
+        "wasn't, contact your administrator immediately.</p>"
+    )
+    return OutboundEmail(to=email, subject=subject, text=text, html=html)
+
+
+def _invite_message(to_email: str, invitee_name: str, accept_url: str) -> OutboundEmail:
+    """The membership-invitation email, so an admin never has to hand the accept
+    link over by hand. Plain and unbranded for Week 1 — real templates and
+    per-tenant from-addresses arrive with the notifications module. The link
+    carries a single-use ``invite`` token (7-day expiry)."""
+    name = invitee_name.strip() or "there"
+    subject = "You've been invited to Verity"
+    text = (
+        f"Hi {name},\n\n"
+        "You've been invited to a workspace on Verity. Accept your invitation "
+        "to get started:\n"
+        f"{accept_url}\n\n"
+        "The link expires in 7 days. If you weren't expecting this, you can "
+        "ignore this message."
+    )
+    html = (
+        f"<p>Hi {_html_escape(name)},</p>"
+        "<p>You've been invited to a workspace on Verity. "
+        "Accept your invitation to get started:</p>"
+        f'<p><a href="{accept_url}">Accept invitation</a></p>'
+        "<p>The link expires in 7 days. If you weren't expecting this, you can "
+        "ignore this message.</p>"
+    )
+    return OutboundEmail(to=to_email, subject=subject, text=text, html=html)
 
 
 class IamAuthService:
@@ -641,6 +706,79 @@ class IamAuthService:
         link = f"{get_settings().frontend_base_url}/verify-email?token={token}"
         await self._mailer.send(_verification_message(email, link))
 
+    # -- password reset ------------------------------------------------------------
+
+    async def request_password_reset(self, *, email: str) -> None:
+        """Mail a reset link. Quiet by design: it does the same observable thing
+        whether or not a resettable local account exists, so it never discloses
+        which addresses are registered. A user with no local password (federated
+        via their IdP) is silently skipped — their reset lives on that IdP."""
+        email_n = normalize_email(email)
+        target: tuple[uuid.UUID, str] | None = None
+        async with provider_session_scope() as session:
+            user = await self._users.get_by_email(session, email_n)
+            if user is not None and user.status == USER_STATUS_ACTIVE:
+                credentials = await self._users.get_credentials(session, user.id)
+                if credentials is not None:
+                    target = (user.id, email_n)
+        # After the read closes; a slow mail server never holds a transaction.
+        if target is not None:
+            await self._send_password_reset_email(*target)
+
+    async def _send_password_reset_email(self, user_id: uuid.UUID, email: str) -> None:
+        token = issue_token(subject=user_id, plane="tenant", typ="password_reset").token
+        base = get_settings().frontend_base_url.rstrip("/")
+        link = f"{base}/reset-password?token={token}"
+        await self._mailer.send(_password_reset_message(email, link))
+
+    async def reset_password(self, *, token: str, new_password: str) -> None:
+        """Redeem a reset link and set a new password. Bumping
+        ``credentials_changed_at`` both revokes every existing session and makes
+        the link single-use — a link issued before the last change is spent. MFA
+        is untouched: the user still completes it at next sign-in."""
+        try:
+            claims = decode_token(token, expected_typ="password_reset", expected_plane="tenant")
+        except InvalidToken as exc:
+            raise InvalidInput(detail="password-reset token failed validation") from exc
+        validate_password(new_password)
+
+        notify: str | None = None
+        async with provider_session_scope() as session:
+            user = await self._users.get(session, claims.subject)
+            if user is None or user.status != USER_STATUS_ACTIVE:
+                raise InvalidInput(detail="this reset link is no longer valid")
+            credentials = await self._users.get_credentials_for_update(session, user.id)
+            if credentials is None:
+                raise InvalidInput(detail="this account has no password to reset")
+            if (
+                credentials.credentials_changed_at is not None
+                and claims.issued_at < credentials.credentials_changed_at
+            ):
+                raise InvalidInput(detail="this reset link has already been used")
+
+            credentials.password_hash = hash_password(new_password)
+            credentials.credentials_changed_at = datetime.now(UTC)
+            # Clicking an emailed link proves the address: a never-verified user
+            # who resets is verified by construction.
+            if user.email_verified_at is None:
+                user.email_verified_at = datetime.now(UTC)
+                await session.flush([user])
+            membership = next(iter(await self._active_memberships(session, user)), None)
+            if membership is not None:
+                await self._audit.record(
+                    session,
+                    action="update",
+                    object_type="credentials",
+                    object_id=user.id,
+                    actor=MembershipActor(membership.id),
+                    tenant_id=membership.tenant_id,
+                    before=None,
+                    after={"event": "password_reset"},
+                )
+            notify = user.email
+        if notify is not None:
+            await self._mailer.send(_password_changed_message(notify))
+
     # -- login -------------------------------------------------------------------
 
     async def login(self, *, email: str, password: str) -> AuthOutcome:
@@ -652,7 +790,6 @@ class IamAuthService:
         """
         email_n = normalize_email(email)
         outcome: AuthOutcome | None = None
-        resend: tuple[uuid.UUID, str] | None = None
         async with provider_session_scope() as session:
             user = await self._users.get_by_email(session, email_n)
             credentials = (
@@ -680,13 +817,13 @@ class IamAuthService:
                     session, actor=actor, tenant_id=stream, outcome="user_disabled"
                 )
             elif user.email_verified_at is None:
-                # No session until the work email is confirmed. Re-mail the link so
-                # a user who lost the first one can still get in.
+                # No session until the work email is confirmed. The link was mailed
+                # at signup; a lost one is re-sent via the explicit resend, not here
+                # — so the client can poll login without spawning an email each time.
                 actor, stream = await self._attempt_attribution(session, user)
                 await self._record_attempt(
                     session, actor=actor, tenant_id=stream, outcome="email_unverified"
                 )
-                resend = (user.id, email_n)
                 outcome = EmailVerificationRequired(email=email_n)
             else:
                 if verification.needs_rehash:
@@ -712,8 +849,6 @@ class IamAuthService:
                     outcome = await self._post_password_step(
                         session, memberships[0], user, credentials
                     )
-        if resend is not None:
-            await self._send_verification_email(*resend)
         if outcome is None:
             raise AuthenticationRequired(detail=_UNIFORM_LOGIN_DETAIL)
         return outcome
@@ -1381,13 +1516,14 @@ class IamService:
     explicitly, so a cross-tenant identifier reads as absent — 404, never 403.
     """
 
-    def __init__(
+    def __init__(  # noqa: PLR0913, PLR0917 — injectable collaborators, all optional
         self,
         users: UserRepository | None = None,
         memberships: MembershipRepository | None = None,
         groups: GroupRepository | None = None,
         roles: RoleRepository | None = None,
         audit: AuditService | None = None,
+        mailer: Mailer | None = None,
     ) -> None:
         self._users = users or UserRepository()
         self._memberships = memberships or MembershipRepository()
@@ -1395,6 +1531,7 @@ class IamService:
         self._roles = roles or RoleRepository()
         self._settings = TenantSettingsRepository()
         self._audit = audit or audit_service
+        self._mailer = mailer or get_mailer()
 
     # -- security settings ------------------------------------------------------
 
@@ -1473,6 +1610,7 @@ class IamService:
         }
         role_names = await self._roles.direct_role_names_by_membership(session, tenant_id)
         group_names = await self._groups.group_names_by_membership(session, tenant_id)
+        last_login = await self._users.last_login_by_users(session, list(users))
         views: list[MemberView] = []
         for membership in memberships:
             user = users.get(membership.user_id)
@@ -1484,6 +1622,7 @@ class IamService:
                     user,
                     role_names.get(membership.id, []),
                     group_names.get(membership.id, []),
+                    last_login.get(user.id),
                 )
             )
         return views
@@ -1601,6 +1740,11 @@ class IamService:
             f"{get_settings().frontend_base_url.rstrip('/')}/accept-invite?token={issued.token}"
         )
         member = await self._member_view_for(session, tenant_id, membership, user)
+        # Email the accept link so the admin never has to hand it over by hand.
+        # Best-effort: the mailer never raises and no-ops without SMTP; the link
+        # is still returned as a fallback and for the "copy link" affordance.
+        # ponytail: in-transaction send; move to the notifications outbox later.
+        await self._mailer.send(_invite_message(email_n, full_name, accept_url))
         return InviteResult(member=member, invite_token=issued.token, accept_url=accept_url)
 
     async def disable_member(
@@ -2015,6 +2159,8 @@ class IamService:
             f"{get_settings().frontend_base_url.rstrip('/')}/accept-invite?token={issued.token}"
         )
         member = await self._member_view_for(session, tenant.id, membership, user)
+        # Same best-effort accept-link email as invite_member (see there).
+        await self._mailer.send(_invite_message(email_n, full_name, accept_url))
         return InviteResult(member=member, invite_token=issued.token, accept_url=accept_url)
 
     # -- internals ------------------------------------------------------------------------
@@ -2116,6 +2262,7 @@ class IamService:
         user: User,
         role_names: list[str],
         group_names: list[str],
+        last_login_at: datetime | None = None,
     ) -> MemberView:
         return MemberView(
             membership_id=membership.id,
@@ -2126,6 +2273,7 @@ class IamService:
             role_names=role_names,
             group_names=group_names,
             mfa_enabled=user.mfa_enabled,
+            last_login_at=last_login_at,
         )
 
     @staticmethod

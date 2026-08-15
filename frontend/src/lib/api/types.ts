@@ -22,6 +22,7 @@ export const PERMISSION_KEYS = [
   "roles:manage",
   "audit:read",
   "security:manage",
+  "tenant:manage",
 ] as const;
 
 export type PermissionKey = (typeof PERMISSION_KEYS)[number];
@@ -151,6 +152,8 @@ export type Member = {
   role_names: string[];
   group_names: string[];
   mfa_enabled: boolean;
+  /** Last successful sign-in (ISO), or null if they never have. */
+  last_login_at: string | null;
 };
 
 export type InviteMemberRequest = {
@@ -256,6 +259,50 @@ export type TenantSummary = {
 export type SecuritySettings = {
   require_admin_mfa: boolean;
 };
+
+export type CompanyProfile = {
+  tenant_id: string;
+  legal_name: string | null;
+  display_name: string | null;
+  registration_number: string | null;
+  industry: string | null;
+  company_size: string | null;
+  description: string | null;
+  website: string | null;
+  domain: string | null;
+  headquarters: string | null;
+  regulatory_scope: string | null;
+  privacy_policy_url: string | null;
+  terms_url: string | null;
+};
+
+export type CompanyProfilePatch = Partial<Omit<CompanyProfile, "tenant_id">>;
+
+export type SmtpConfig = {
+  host: string | null;
+  port: number;
+  username: string | null;
+  from_name: string | null;
+  from_address: string | null;
+  use_tls: boolean;
+  enabled: boolean;
+  /** Whether a password is stored — the password itself is never returned. */
+  has_password: boolean;
+};
+
+export type SmtpConfigUpdate = {
+  host?: string | null;
+  port?: number | null;
+  username?: string | null;
+  /** Write-only. Omit (or empty) to keep the stored one. */
+  password?: string | null;
+  from_name?: string | null;
+  from_address?: string | null;
+  use_tls?: boolean | null;
+  enabled?: boolean | null;
+};
+
+export type SmtpTestResult = { ok: boolean; detail: string };
 
 export type ApiErrorBody = {
   error: {

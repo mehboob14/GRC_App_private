@@ -179,7 +179,9 @@ def verify_totp(secret: str, code: str, last_counter: int | None) -> TotpVerific
 # ---------------------------------------------------------------------------
 
 TOKEN_PLANES: Final = frozenset({"tenant", "provider"})
-TOKEN_TYPES: Final = frozenset({"session", "challenge", "selection", "invite", "email_verify"})
+TOKEN_TYPES: Final = frozenset(
+    {"session", "challenge", "selection", "invite", "email_verify", "password_reset"}
+)
 
 _JWT_ALGORITHM: Final = "HS256"
 _REQUIRED_CLAIMS: Final = ("sub", "plane", "typ", "iat", "exp", "jti")
@@ -214,6 +216,7 @@ def _token_ttl(typ: str) -> timedelta:
         "selection": timedelta(minutes=auth.selection_ttl_minutes),
         "invite": timedelta(days=auth.invite_ttl_days),
         "email_verify": timedelta(hours=auth.email_verify_ttl_hours),
+        "password_reset": timedelta(minutes=auth.password_reset_ttl_minutes),
     }
     return ttls[typ]
 

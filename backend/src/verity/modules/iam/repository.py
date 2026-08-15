@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import Iterable, Sequence
+from datetime import datetime
 
 from sqlalchemy import exists, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -89,6 +90,19 @@ class UserRepository:
         self, session: AsyncSession, user_id: uuid.UUID
     ) -> Credentials | None:
         return await session.get(Credentials, user_id)
+
+    async def last_login_by_users(
+        self, session: AsyncSession, user_ids: Sequence[uuid.UUID]
+    ) -> dict[uuid.UUID, datetime | None]:
+        """Batch the members list's last-active column: one query, not one per row."""
+        if not user_ids:
+            return {}
+        result = await session.execute(
+            select(Credentials.user_id, Credentials.last_login_at).where(
+                Credentials.user_id.in_(user_ids)
+            )
+        )
+        return {row.user_id: row.last_login_at for row in result}
 
     async def get_credentials_for_update(
         self, session: AsyncSession, user_id: uuid.UUID

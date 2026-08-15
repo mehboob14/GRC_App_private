@@ -21,7 +21,6 @@ import { authApi } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/auth-context";
 import { useAlertFocus } from "@/features/iam/hooks/use-alert-focus";
-import { VENDOR_MARKS } from "@/lib/vendor-marks";
 import type { LoginResponse, WorkspaceSummary } from "@/lib/api/types";
 
 const schema = z.object({
@@ -148,7 +147,10 @@ export function SignInPage() {
         title="Check your email"
         subtitle="Confirm your address to finish setting up your workspace."
       >
-        <CheckEmailPanel email={pending.email} />
+        <CheckEmailPanel
+          email={pending.email}
+          password={form.getValues("password")}
+        />
       </AuthSplitLayout>
     );
   }
@@ -341,22 +343,22 @@ export function SignInPage() {
       ) : null}
 
       {/* Honest later-phase affordance: disabled, and the tooltip says when. */}
-      <Tooltip content="Okta SSO arrives with identity federation in a later phase">
+      <Tooltip content="Microsoft SSO arrives with identity federation in a later phase">
         <span tabIndex={0} className="block w-full rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-accent">
           <Button
             type="button"
             variant="secondary"
             size="lg"
-            className="w-full"
+            className="w-full rounded-full"
             disabled
           >
-            <span
-              className="flex size-5 items-center justify-center rounded-xs text-caption font-semibold text-white"
-              style={{ backgroundColor: VENDOR_MARKS.okta.color }}
-            >
-              {VENDOR_MARKS.okta.label}
+            <span className="grid size-4 grid-cols-2 gap-px" aria-hidden>
+              <span className="bg-[#F25022]" />
+              <span className="bg-[#7FBA00]" />
+              <span className="bg-[#00A4EF]" />
+              <span className="bg-[#FFB900]" />
             </span>
-            Continue with Okta SSO
+            Continue with Microsoft
           </Button>
         </span>
       </Tooltip>
@@ -400,9 +402,17 @@ export function SignInPage() {
           error={form.formState.errors.password?.message}
           {...form.register("password")}
         />
+        <div className="-mt-1 flex justify-end">
+          <Link
+            to="/forgot-password"
+            className="text-body-sm font-semibold text-text-link"
+          >
+            Forgot password?
+          </Link>
+        </div>
         <Button
           type="submit"
-          className="mt-1 w-full"
+          className="auth-cta mt-1 w-full rounded-full bg-gradient-to-r from-action-accent via-action-primary to-action-primary-hover"
           size="lg"
           loading={loginMutation.isPending}
         >
@@ -414,7 +424,7 @@ export function SignInPage() {
       <div className="mt-5 flex items-center gap-2 rounded-md border border-status-success-border bg-status-success-bg px-3.5 py-3">
         <Icon name="shield" className="size-4 text-status-success-text" />
         <p className="text-body-sm font-semibold text-status-success-text">
-          Protected by SSO &amp; enforced MFA · SOC 2 Type II
+          Protected by enterprise SSO · SOC 2 Type II
         </p>
       </div>
 

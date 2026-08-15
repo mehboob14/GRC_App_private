@@ -16,7 +16,10 @@
  */
 
 @layer base {
-  :root {
+  /* `.light` re-asserts the light values so a subtree can force light even
+     under a `.dark` root — the auth screens use it (always white). */
+  :root,
+  .light {
     /* Surfaces & borders */
     --color-surface-canvas: 231 233 238; /* #E7E9EE — outside the app frame only */
     --color-surface-page: 244 245 247; /* #F4F5F7 */
@@ -319,4 +322,68 @@
       animation: ds-fade-out 50ms linear;
     }
   }
+}
+
+/* ── Auth screens (login / signup) ─────────────────────────────────────────
+   Motion for the Complyverse-style shell: fade-up entrances, floating
+   background blobs, and the counter-scrolling module / framework marquees.
+   Class names match the auth components. ────────────────────────────────── */
+@keyframes authFadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes authFloat {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%      { transform: translate(22px, -28px) scale(1.08); }
+}
+@keyframes authFloatAlt {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%      { transform: translate(-28px, 20px) scale(1.1); }
+}
+@keyframes authMarquee {
+  from { transform: translateX(-50%); }
+  to   { transform: translateX(0); }
+}
+@keyframes authShimmer {
+  0%   { transform: translateX(-160%) skewX(-16deg); }
+  100% { transform: translateX(320%) skewX(-16deg); }
+}
+
+.auth-fade-up { opacity: 0; animation: authFadeUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.auth-blob-1  { animation: authFloat 16s ease-in-out infinite; }
+.auth-blob-2  { animation: authFloatAlt 20s ease-in-out infinite; }
+.auth-blob-3  { animation: authFloat 24s ease-in-out infinite 2.5s; }
+.auth-marquee-track { animation: authMarquee 55s linear infinite; }
+.auth-marquee-track:hover { animation-play-state: paused; }
+.auth-marquee-track-reverse { animation: authMarquee 38s linear infinite reverse; }
+.auth-marquee-track-reverse:hover { animation-play-state: paused; }
+
+.auth-no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+.auth-no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* Shimmer sweep across a primary CTA on hover. */
+.auth-cta { position: relative; overflow: hidden; isolation: isolate; }
+.auth-cta > * { position: relative; z-index: 1; }
+.auth-cta::after {
+  content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  width: 45%; transform: translateX(-160%) skewX(-16deg);
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.38), transparent);
+}
+.auth-cta:hover::after { animation: authShimmer 0.85s ease; }
+
+/* Autofilled inputs paint pale yellow in Chrome/Edge — repaint white to keep
+   the card clean. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px #fff inset;
+  box-shadow: 0 0 0 1000px #fff inset;
+  -webkit-text-fill-color: #0f172a;
+  transition: background-color 999999s ease-in-out 0s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-marquee-track, .auth-marquee-track-reverse { animation: none; }
+  .auth-fade-up { animation: none; opacity: 1; }
+  .auth-blob-1, .auth-blob-2, .auth-blob-3 { animation: none; }
 }

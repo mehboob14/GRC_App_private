@@ -17,7 +17,7 @@ moment plaintext codes leave the system.
 from __future__ import annotations
 
 import uuid
-from datetime import date
+from datetime import date, datetime
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -65,6 +65,15 @@ class VerifyEmailRequest(_Request):
 
 class ResendVerificationRequest(_Request):
     email: str = Field(min_length=3, max_length=320)
+
+
+class PasswordResetRequest(_Request):
+    email: str = Field(min_length=3, max_length=320)
+
+
+class PasswordResetConfirm(_Request):
+    token: str
+    new_password: str = Field(min_length=MIN_PASSWORD_LENGTH, max_length=200)
 
 
 class UserOut(_Response):
@@ -208,6 +217,8 @@ class MemberOut(_Response):
     role_names: list[str]
     group_names: list[str]
     mfa_enabled: bool
+    # Last successful sign-in; null until the member logs in for the first time.
+    last_login_at: datetime | None = None
 
 
 class InviteMemberRequest(_Request):

@@ -15,6 +15,11 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
   EmptyState,
   ErrorBanner,
   ErrorState,
@@ -26,7 +31,6 @@ import {
   SelectField,
   SelectItem,
   SelectTrigger,
-  Skeleton,
   StatusPill,
   statusFamilyFor,
   Table,
@@ -57,6 +61,26 @@ function formatDate(iso: string) {
   } catch {
     return iso;
   }
+}
+
+/** "3 hours ago" / "98 days ago" / "Never" — native, locale-aware. */
+function timeAgo(iso: string | null): string {
+  if (!iso) return "Never";
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return "—";
+  const diffMs = then - Date.now();
+  const rtf = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
+  const units: [Intl.RelativeTimeFormatUnit, number][] = [
+    ["year", 31_536_000_000],
+    ["month", 2_592_000_000],
+    ["day", 86_400_000],
+    ["hour", 3_600_000],
+    ["minute", 60_000],
+  ];
+  for (const [unit, ms] of units) {
+    if (Math.abs(diffMs) >= ms) return rtf.format(Math.round(diffMs / ms), unit);
+  }
+  return "just now";
 }
 
 const inviteSchema = z
@@ -125,6 +149,10 @@ export function TeamPage() {
   );
   const [copyFailed, setCopyFailed] = useState(false);
   const [toDisable, setToDisable] = useState<Member | null>(null);
+  const [roleEdit, setRoleEdit] = useState<Member | null>(null);
+  const [roleChoice, setRoleChoice] = useState("");
+  const [groupAdd, setGroupAdd] = useState<Member | null>(null);
+  const [groupChoice, setGroupChoice] = useState("");
   const inviteAlertRef = useAlertFocus(inviteError !== null);
 
   const membersQuery = useQuery({
@@ -136,7 +164,16 @@ export function TeamPage() {
     queryFn: () => iamApi.listRoles(),
   });
 
+  const groupsQuery = useQuery({
+    queryKey: ["groups", principal?.tenant_id],
+    queryFn: () => iamApi.listGroups(),
+    // Adding to a group is the only reason this page reads groups; skip the
+    // request (and its 403) for anyone who can't manage them.
+    enabled: Boolean(principal?.permissions.includes("groups:manage")),
+  });
+
   const roles = rolesQuery.data ?? [];
+  const groups = groupsQuery.data ?? [];
   const auditorRole = roles.find((role) => role.name === "Auditor");
   const employeeRole = roles.find((role) => role.name === "Employee");
 
@@ -254,46 +291,101 @@ export function TeamPage() {
   const members = useMemo(() => membersQuery.data ?? [], [membersQuery.data]);
   const canInvite = principal?.permissions.includes("members:invite");
   const canDisable = principal?.permissions.includes("members:disable");
+  const canManageRoles = principal?.permissions.includes("roles:manage");
+  const canManageGroups = principal?.permissions.includes("groups:manage");
+
+  const roleMutation = useMutation({
+    mutationFn: (vars: { membershipId: string; roleId: string }) =>
+      iamApi.assignRole(vars.membershipId, vars.roleId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["members", principal?.tenant_id],
+        exact: true,
+      });
+      setRoleEdit(null);
+      toast({ title: "Role updated", tone: "success" });
+    },
+    onError: (error: unknown) => {
+      toast({
+        title:
+          error instanceof ApiError
+            ? error.message
+            : "Couldn't update the role — try again.",
+        tone: "danger",
+      });
+    },
+  });
+
+  const groupMutation = useMutation({
+    mutationFn: (vars: { groupId: string; membershipId: string }) =>
+      iamApi.addGroupMember(vars.groupId, vars.membershipId),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["members", principal?.tenant_id],
+          exact: true,
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["groups", principal?.tenant_id],
+          exact: true,
+        }),
+      ]);
+      setGroupAdd(null);
+      toast({ title: "Added to group", tone: "success" });
+    },
+    onError: (error: unknown) => {
+      toast({
+        title:
+          error instanceof ApiError
+            ? error.message
+            : "Couldn't add to the group — try again.",
+        tone: "danger",
+      });
+    },
+  });
+
+  // Groups this member isn't in yet — add is idempotent, but offering a group
+  // they already hold is just noise.
+  const availableGroups = groupAdd
+    ? groups.filter((group) => !groupAdd.group_names.includes(group.name))
+    : [];
+
+  function openRoleEdit(member: Member) {
+    const current = roles.find((role) => member.role_names.includes(role.name));
+    setRoleChoice(current?.id ?? "");
+    setRoleEdit(member);
+  }
+
+  function openGroupAdd(member: Member) {
+    setGroupChoice("");
+    setGroupAdd(member);
+  }
 
   if (membersQuery.isLoading) {
-    // Bones mirror the real layout: title, description, member table.
-    return (
-      <div className="mx-auto max-w-[1200px]">
-        <Skeleton className="h-[30px] w-40" />
-        <Skeleton className="mb-5 mt-3 h-4 w-96 max-w-full" />
-        <TableSkeleton rows={4} density="comfortable" />
-      </div>
-    );
+    return <TableSkeleton rows={4} density="comfortable" />;
   }
 
   if (membersQuery.isError) {
     return (
-      <div className="mx-auto max-w-[1200px]">
-        <ErrorState
-          title="Couldn’t load team"
-          description={
-            membersQuery.error instanceof ApiError
-              ? membersQuery.error.message
-              : "The request failed. Retry, or contact support if it keeps happening."
-          }
-          referenceId={
-            membersQuery.error instanceof ApiError
-              ? membersQuery.error.correlationId
-              : undefined
-          }
-          onRetry={() => void membersQuery.refetch()}
-        />
-      </div>
+      <ErrorState
+        title="Couldn’t load team"
+        description={
+          membersQuery.error instanceof ApiError
+            ? membersQuery.error.message
+            : "The request failed. Retry, or contact support if it keeps happening."
+        }
+        referenceId={
+          membersQuery.error instanceof ApiError
+            ? membersQuery.error.correlationId
+            : undefined
+        }
+        onRetry={() => void membersQuery.refetch()}
+      />
     );
   }
 
   return (
-    <div className="mx-auto max-w-[1200px]">
-      <h1 className="font-display text-heading-lg text-text-primary">People</h1>
-      <p className="mb-5 mt-2 text-body-lg text-text-secondary">
-        Everyone with a membership in this workspace — role, teams, and MFA
-        state.
-      </p>
+    <div>
       <div className="rounded-lg border border-border bg-surface-primary px-5 py-4">
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
@@ -319,8 +411,11 @@ export function TeamPage() {
                     <DialogHeader>
                       <DialogTitle>Invite created</DialogTitle>
                       <DialogDescription>
-                        {inviteResult.member.full_name} can join this workspace
-                        with the one-time link below.
+                        We emailed an invite to{" "}
+                        <span className="font-semibold text-text-primary">
+                          {inviteResult.member.email}
+                        </span>
+                        . The one-time link is below as a backup.
                       </DialogDescription>
                     </DialogHeader>
                     <div className="rounded-md border border-border bg-surface-sunken px-3 py-3">
@@ -355,8 +450,8 @@ export function TeamPage() {
                       ) : null}
                     </div>
                     <p className="mt-3 text-body-sm text-text-subtle">
-                      Email delivery arrives with the notifications module —
-                      hand this link to the invitee yourself. It works once and
+                      The invite was emailed automatically. Share this link
+                      directly if it doesn&apos;t arrive — it works once and
                       expires in 7 days.
                     </p>
                     <DialogFooter>
@@ -374,8 +469,8 @@ export function TeamPage() {
                     <DialogHeader>
                       <DialogTitle>Invite member</DialogTitle>
                       <DialogDescription>
-                        Creates an invited membership and a one-time accept
-                        link to hand over.
+                        Creates an invited membership and emails them a one-time
+                        accept link.
                       </DialogDescription>
                     </DialogHeader>
                     <form
@@ -522,72 +617,138 @@ export function TeamPage() {
               <TR>
                 <TH>Member</TH>
                 <TH>Role</TH>
-                <TH>Teams</TH>
+                <TH>Groups</TH>
                 <TH>MFA</TH>
+                <TH>Background</TH>
+                <TH>Documents</TH>
+                <TH>Last active</TH>
                 <TH>
                   <span className="sr-only">Actions</span>
                 </TH>
               </TR>
             </THead>
             <TBody>
-              {members.map((member: Member) => (
-                <TR key={member.membership_id}>
-                  <TD>
-                    <div className="flex items-center gap-3">
-                      <Avatar name={member.full_name} seed={member.email} />
-                      <div className="min-w-0">
-                        <p className="flex items-center gap-2 text-body-md font-semibold text-text-primary">
-                          {member.full_name}
-                          <MemberStatusPill status={member.status} />
-                        </p>
-                        <p className="truncate text-body-sm text-text-subtle">
-                          {member.email}
-                        </p>
+              {members.map((member: Member) => {
+                const isSelf =
+                  member.membership_id === principal?.membership_id;
+                const active = member.status !== "disabled";
+                const canChangeRole = canManageRoles && active && !isSelf;
+                const canAddToGroup = canManageGroups && active;
+                const canDisableMember = canDisable && active && !isSelf;
+                const hasActions =
+                  canChangeRole || canAddToGroup || canDisableMember;
+                return (
+                  <TR key={member.membership_id}>
+                    <TD>
+                      <div className="flex items-center gap-3">
+                        <Avatar name={member.full_name} seed={member.email} />
+                        <div className="min-w-0">
+                          <p className="flex items-center gap-2 text-body-md font-semibold text-text-primary">
+                            {member.full_name}
+                            <MemberStatusPill status={member.status} />
+                          </p>
+                          <p className="truncate text-body-sm text-text-subtle">
+                            {member.email}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  </TD>
-                  <TD>
-                    <div className="flex flex-wrap gap-1">
-                      {member.role_names.map((role) => (
-                        <Badge key={role} variant={roleBadgeVariant(role)}>
-                          {role}
-                        </Badge>
-                      ))}
-                    </div>
-                  </TD>
-                  <TD>
-                    <span className="text-body-md text-text-secondary">
-                      {member.group_names.length
-                        ? member.group_names.join(" · ")
-                        : "—"}
-                    </span>
-                  </TD>
-                  <TD>
-                    <StatusPill
-                      kind="inline"
-                      status={
-                        statusFamilyFor(
-                          member.mfa_enabled ? "Enrolled" : "Not enrolled",
-                        ) ?? "unknown"
-                      }
-                      label={member.mfa_enabled ? "Enrolled" : "Not enrolled"}
-                    />
-                  </TD>
-                  <TD className="text-right">
-                    {canDisable &&
-                    member.status !== "disabled" &&
-                    member.membership_id !== principal?.membership_id ? (
-                      <Button
-                        variant="destructive-2"
-                        size="sm"
-                        onClick={() => setToDisable(member)}
-                      >
-                        Disable
-                      </Button>
-                    ) : null}
-                  </TD>
-                </TR>
-              ))}
+                    </TD>
+                    <TD>
+                      <div className="flex flex-wrap gap-1">
+                        {member.role_names.map((role) => (
+                          <Badge key={role} variant={roleBadgeVariant(role)}>
+                            {role}
+                          </Badge>
+                        ))}
+                      </div>
+                    </TD>
+                    <TD>
+                      <span className="text-body-md text-text-secondary">
+                        {member.group_names.length
+                          ? member.group_names.join(" · ")
+                          : "—"}
+                      </span>
+                    </TD>
+                    <TD>
+                      <StatusPill
+                        kind="inline"
+                        status={member.mfa_enabled ? "success" : "warning"}
+                        label={member.mfa_enabled ? "Enabled" : "No MFA"}
+                      />
+                    </TD>
+                    {/* Background checks & document acknowledgement aren't tracked
+                        yet (no module) — honest "Unknown", never a fabricated pass. */}
+                    <TD>
+                      <StatusPill kind="inline" status="unknown" label="Unknown" />
+                    </TD>
+                    <TD>
+                      <StatusPill kind="inline" status="unknown" label="Unknown" />
+                    </TD>
+                    <TD>
+                      <span className="text-body-md text-text-secondary">
+                        {timeAgo(member.last_login_at)}
+                      </span>
+                    </TD>
+                    <TD className="text-right">
+                      {hasActions ? (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              aria-label={`Actions for ${member.full_name}`}
+                            >
+                              <Icon name="more" className="size-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            {canChangeRole ? (
+                              <DropdownMenuItem
+                                onSelect={() =>
+                                  window.setTimeout(
+                                    () => openRoleEdit(member),
+                                    0,
+                                  )
+                                }
+                              >
+                                Change role
+                              </DropdownMenuItem>
+                            ) : null}
+                            {canAddToGroup ? (
+                              <DropdownMenuItem
+                                onSelect={() =>
+                                  window.setTimeout(
+                                    () => openGroupAdd(member),
+                                    0,
+                                  )
+                                }
+                              >
+                                Add to group
+                              </DropdownMenuItem>
+                            ) : null}
+                            {canDisableMember ? (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  variant="danger"
+                                  onSelect={() =>
+                                    window.setTimeout(
+                                      () => setToDisable(member),
+                                      0,
+                                    )
+                                  }
+                                >
+                                  Disable member
+                                </DropdownMenuItem>
+                              </>
+                            ) : null}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      ) : null}
+                    </TD>
+                  </TR>
+                );
+              })}
             </TBody>
           </Table>
         )}
@@ -614,6 +775,120 @@ export function TeamPage() {
           if (toDisable) disableMutation.mutate(toDisable);
         }}
       />
+
+      {/* Change a member's single direct role (roles:manage). */}
+      <Dialog
+        open={roleEdit !== null}
+        onOpenChange={(next) => {
+          if (!next) setRoleEdit(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Change role</DialogTitle>
+            <DialogDescription>
+              {roleEdit?.full_name}&rsquo;s access is set by their role.
+              Replacing it takes effect immediately.
+            </DialogDescription>
+          </DialogHeader>
+          <SelectField label="Role">
+            <Select value={roleChoice} onValueChange={setRoleChoice}>
+              <SelectTrigger aria-label="Role" />
+              <SelectContent>
+                {roles.map((role) => (
+                  <SelectItem key={role.id} value={role.id}>
+                    {role.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </SelectField>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setRoleEdit(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              loading={roleMutation.isPending}
+              disabled={!roleChoice}
+              onClick={() => {
+                if (roleEdit && roleChoice)
+                  roleMutation.mutate({
+                    membershipId: roleEdit.membership_id,
+                    roleId: roleChoice,
+                  });
+              }}
+            >
+              Save role
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add a member to a group (groups:manage). Add-only — no remove yet. */}
+      <Dialog
+        open={groupAdd !== null}
+        onOpenChange={(next) => {
+          if (!next) setGroupAdd(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add to group</DialogTitle>
+            <DialogDescription>
+              Add {groupAdd?.full_name} to a group. Groups scope access reviews
+              and role changes.
+            </DialogDescription>
+          </DialogHeader>
+          {availableGroups.length === 0 ? (
+            <p className="text-body-sm text-text-subtle">
+              {groups.length === 0
+                ? "No groups yet — create one in Settings → Groups first."
+                : `${groupAdd?.full_name ?? "This member"} is already in every group.`}
+            </p>
+          ) : (
+            <SelectField label="Group">
+              <Select value={groupChoice} onValueChange={setGroupChoice}>
+                <SelectTrigger aria-label="Group" />
+                <SelectContent>
+                  {availableGroups.map((group) => (
+                    <SelectItem key={group.id} value={group.id}>
+                      {group.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </SelectField>
+          )}
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setGroupAdd(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              loading={groupMutation.isPending}
+              disabled={!groupChoice}
+              onClick={() => {
+                if (groupAdd && groupChoice)
+                  groupMutation.mutate({
+                    groupId: groupChoice,
+                    membershipId: groupAdd.membership_id,
+                  });
+              }}
+            >
+              Add to group
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

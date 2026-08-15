@@ -175,6 +175,62 @@ class TenantBranding(Timestamped, Base):
         return f"TenantBranding(tenant_id={self.tenant_id!r})"
 
 
+class CompanyProfile(Timestamped, Base):
+    """The tenant's self-maintained organisation profile — what an admin fills in
+    from Get Started. Distinct from ``tenants`` (the provider's registration
+    record): this one the tenant plane freely reads and writes, so it is
+    tenant-owned with the standard RLS policy. Every field is optional and
+    completed over time. The primary key *is* the tenant, one row per tenant.
+    """
+
+    __tablename__ = "company_profile"
+
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), primary_key=True
+    )
+    legal_name: Mapped[str | None] = mapped_column(default=None)
+    display_name: Mapped[str | None] = mapped_column(default=None)
+    registration_number: Mapped[str | None] = mapped_column(default=None)
+    industry: Mapped[str | None] = mapped_column(default=None)
+    company_size: Mapped[str | None] = mapped_column(default=None)
+    description: Mapped[str | None] = mapped_column(default=None)
+    website: Mapped[str | None] = mapped_column(default=None)
+    domain: Mapped[str | None] = mapped_column(default=None)
+    headquarters: Mapped[str | None] = mapped_column(default=None)
+    regulatory_scope: Mapped[str | None] = mapped_column(default=None)
+    privacy_policy_url: Mapped[str | None] = mapped_column(default=None)
+    terms_url: Mapped[str | None] = mapped_column(default=None)
+
+    def __repr__(self) -> str:
+        return f"CompanyProfile(tenant_id={self.tenant_id!r})"
+
+
+class TenantSmtp(Timestamped, Base):
+    """A tenant's own outbound-email (SMTP) server, so it can send from its own
+    domain. Tenant-owned; the tenant plane reads and writes it. ``password_encrypted``
+    holds application-layer ciphertext only — AAD-bound to ``tenant_smtp:<tenant_id>``
+    before insert, excluded from every response. One row per tenant.
+    """
+
+    __tablename__ = "tenant_smtp"
+
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), primary_key=True
+    )
+    host: Mapped[str | None] = mapped_column(default=None)
+    port: Mapped[int] = mapped_column(server_default=text("587"), default=587)
+    username: Mapped[str | None] = mapped_column(default=None)
+    password_encrypted: Mapped[str | None] = mapped_column(default=None)
+    from_name: Mapped[str | None] = mapped_column(default=None)
+    from_address: Mapped[str | None] = mapped_column(default=None)
+    use_tls: Mapped[bool] = mapped_column(server_default=text("true"), default=True)
+    enabled: Mapped[bool] = mapped_column(server_default=text("false"), default=False)
+
+    def __repr__(self) -> str:
+        # Deliberately no credential column, even though it is ciphertext.
+        return f"TenantSmtp(tenant_id={self.tenant_id!r}, enabled={self.enabled!r})"
+
+
 class TenantProvisioningStep(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
     """One provisioning step for one tenant.
 

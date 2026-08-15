@@ -144,6 +144,8 @@ export const groups: Group[] = [
   },
 ];
 
+const hoursAgo = (h: number) => new Date(Date.now() - h * 3_600_000).toISOString();
+
 export const members: Member[] = [
   {
     membership_id: "mem-alex-nw",
@@ -154,6 +156,7 @@ export const members: Member[] = [
     role_names: ["Admin"],
     group_names: ["Security", "Engineering"],
     mfa_enabled: true,
+    last_login_at: hoursAgo(3),
   },
   {
     membership_id: "mem-jordan-nw",
@@ -164,6 +167,7 @@ export const members: Member[] = [
     role_names: ["Compliance Manager"],
     group_names: ["Infrastructure"],
     mfa_enabled: true,
+    last_login_at: hoursAgo(28),
   },
   {
     membership_id: "mem-marcus-nw",
@@ -174,6 +178,7 @@ export const members: Member[] = [
     role_names: ["Employee"],
     group_names: ["Engineering"],
     mfa_enabled: false,
+    last_login_at: hoursAgo(5),
   },
   {
     membership_id: "mem-dana-nw",
@@ -184,6 +189,7 @@ export const members: Member[] = [
     role_names: ["Auditor"],
     group_names: ["External"],
     mfa_enabled: true,
+    last_login_at: hoursAgo(24 * 40),
   },
   {
     membership_id: "mem-priya-nw",
@@ -194,6 +200,7 @@ export const members: Member[] = [
     role_names: ["Employee"],
     group_names: [],
     mfa_enabled: false,
+    last_login_at: null,
   },
   {
     membership_id: "mem-alex-acme",
@@ -204,6 +211,7 @@ export const members: Member[] = [
     role_names: ["Admin"],
     group_names: [],
     mfa_enabled: true,
+    last_login_at: hoursAgo(3),
   },
 ];
 
