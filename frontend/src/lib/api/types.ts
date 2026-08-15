@@ -316,3 +316,70 @@ export type CursorPage<T> = {
   items: T[];
   next_cursor: string | null;
 };
+
+// ---------------------------------------------------------------------------
+// Compliance — shipped global content (frameworks, criteria, control templates)
+// ---------------------------------------------------------------------------
+
+export type FrameworkVersion = {
+  id: string;
+  version: string;
+  published_at: string;
+  is_current: boolean;
+  requirement_count: number;
+};
+
+export type Framework = {
+  id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  built_in: boolean;
+  versions: FrameworkVersion[];
+};
+
+export type Requirement = {
+  id: string;
+  requirement_key: string;
+  code: string;
+  name: string;
+  description: string | null;
+  category: string;
+  trust_services_category: string;
+  is_always_in_scope: boolean;
+  /** How many shipped control templates satisfy this criterion. */
+  template_count: number;
+};
+
+export type ControlTemplate = {
+  id: string;
+  code: string;
+  canonical_key: string;
+  name: string;
+  description: string;
+  implementation_guidance: string | null;
+  category: string;
+  control_type: string;
+  control_sub_type: string | null;
+  importance: string;
+  built_in: boolean;
+};
+
+export type ControlTemplateDetail = ControlTemplate & {
+  requirements: Requirement[];
+};
+
+export type ControlTemplatePage = {
+  items: ControlTemplate[];
+  total: number;
+};
+
+export type ControlTemplateQuery = {
+  framework_id?: string;
+  category?: string;
+  control_type?: string;
+  importance?: string;
+  search?: string;
+  limit?: number;
+  offset?: number;
+};

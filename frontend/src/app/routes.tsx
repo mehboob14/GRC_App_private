@@ -16,6 +16,8 @@ import { RolesPage } from "@/features/iam/components/roles-page";
 import { SecurityPage } from "@/features/iam/components/security-page";
 import { AuditLogPage } from "@/features/audit/components/audit-log-page";
 import { QuickStartPage } from "@/features/compliance/components/quick-start-page";
+import { FrameworksPage } from "@/features/compliance/components/frameworks-page";
+import { FrameworkDetailPage } from "@/features/compliance/components/framework-detail-page";
 import { CompanyProfilePage } from "@/features/tenancy/company-profile-page";
 import { ConnectionsPage } from "@/features/connectors/components/connections-page";
 
@@ -47,6 +49,8 @@ export function AppRoutes() {
         <Route element={<AppLayout />}>
           <Route index element={<Navigate to="/quick-start" replace />} />
           <Route path="quick-start" element={<QuickStartPage />} />
+          <Route path="frameworks" element={<FrameworksPage />} />
+          <Route path="frameworks/:frameworkId" element={<FrameworkDetailPage />} />
           <Route path="connectors" element={<ConnectionsPage />} />
           {/* People and Company profile live under Settings; keep old paths working. */}
           <Route path="people" element={<Navigate to="/settings/people" replace />} />

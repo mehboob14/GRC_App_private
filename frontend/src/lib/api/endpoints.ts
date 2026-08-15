@@ -3,7 +3,11 @@ import type {
   AcceptInvitationRequest,
   AcceptInvitationResponse,
   AuditEvent,
+  ControlTemplateDetail,
+  ControlTemplatePage,
+  ControlTemplateQuery,
   CursorPage,
+  Framework,
   Group,
   InviteMemberRequest,
   InviteMemberResponse,
@@ -12,6 +16,7 @@ import type {
   Member,
   MfaEnrollStartResponse,
   MfaVerifyRequest,
+  Requirement,
   Role,
   SignupRequest,
   SignupResponse,
@@ -124,6 +129,16 @@ export const iamApi = {
       method: "POST",
       body: JSON.stringify(body),
     }),
+  updateRole: (
+    roleId: string,
+    body: { name?: string; permission_keys?: string[] },
+  ) =>
+    apiFetch<Role>(`/roles/${roleId}`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
+  deleteRole: (roleId: string) =>
+    apiFetch<void>(`/roles/${roleId}`, { method: "DELETE" }),
 };
 
 export const tenantApi = {
@@ -158,4 +173,22 @@ export const auditApi = {
     const qs = cursor ? `?cursor=${encodeURIComponent(cursor)}` : "";
     return apiFetch<CursorPage<AuditEvent>>(`/audit-log${qs}`);
   },
+};
+
+export const complianceApi = {
+  listFrameworks: () => apiFetch<Framework[]>("/frameworks"),
+  listRequirements: (frameworkId: string, versionId?: string) => {
+    const qs = versionId ? `?version_id=${encodeURIComponent(versionId)}` : "";
+    return apiFetch<Requirement[]>(`/frameworks/${frameworkId}/requirements${qs}`);
+  },
+  listControlTemplates: (query: ControlTemplateQuery = {}) => {
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(query)) {
+      if (value !== undefined && value !== "") params.set(key, String(value));
+    }
+    const qs = params.toString();
+    return apiFetch<ControlTemplatePage>(`/control-templates${qs ? `?${qs}` : ""}`);
+  },
+  getControlTemplate: (templateId: string) =>
+    apiFetch<ControlTemplateDetail>(`/control-templates/${templateId}`),
 };
