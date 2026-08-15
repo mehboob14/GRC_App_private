@@ -1,0 +1,6 @@
+{
+  "code": "SOC2",
+  "description": "AICPA Trust Services Criteria (2017, rev. 2022): Security (Common Criteria), Availability, Confidentiality, Processing Integrity, Privacy.",
+  "name": "SOC 2",
+  "version": "2017 TSC (2022 revision)"
+}

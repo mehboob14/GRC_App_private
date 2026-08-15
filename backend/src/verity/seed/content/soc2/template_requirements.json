@@ -1,0 +1,602 @@
+[
+  {
+    "requirement_key": "SOC2:CC1.1",
+    "template_code": "code-of-conduct"
+  },
+  {
+    "requirement_key": "SOC2:CC1.1",
+    "template_code": "disciplinary-process"
+  },
+  {
+    "requirement_key": "SOC2:CC1.5",
+    "template_code": "disciplinary-process"
+  },
+  {
+    "requirement_key": "SOC2:CC1.3",
+    "template_code": "security-org-structure"
+  },
+  {
+    "requirement_key": "SOC2:CC1.3",
+    "template_code": "designate-security-officer"
+  },
+  {
+    "requirement_key": "SOC2:CC1.5",
+    "template_code": "designate-security-officer"
+  },
+  {
+    "requirement_key": "SOC2:CC1.2",
+    "template_code": "board-security-oversight"
+  },
+  {
+    "requirement_key": "SOC2:CC1.2",
+    "template_code": "management-review"
+  },
+  {
+    "requirement_key": "SOC2:CC4.2",
+    "template_code": "management-review"
+  },
+  {
+    "requirement_key": "SOC2:CC1.5",
+    "template_code": "define-roles-responsibilities"
+  },
+  {
+    "requirement_key": "SOC2:CC1.3",
+    "template_code": "define-roles-responsibilities"
+  },
+  {
+    "requirement_key": "SOC2:CC3.1",
+    "template_code": "system-description"
+  },
+  {
+    "requirement_key": "SOC2:CC3.1",
+    "template_code": "risk-assessment"
+  },
+  {
+    "requirement_key": "SOC2:CC3.2",
+    "template_code": "risk-assessment"
+  },
+  {
+    "requirement_key": "SOC2:CC3.2",
+    "template_code": "risk-register"
+  },
+  {
+    "requirement_key": "SOC2:CC5.1",
+    "template_code": "risk-register"
+  },
+  {
+    "requirement_key": "SOC2:CC3.2",
+    "template_code": "risk-treatment-plan"
+  },
+  {
+    "requirement_key": "SOC2:CC9.1",
+    "template_code": "risk-treatment-plan"
+  },
+  {
+    "requirement_key": "SOC2:CC3.3",
+    "template_code": "fraud-risk"
+  },
+  {
+    "requirement_key": "SOC2:CC3.4",
+    "template_code": "change-risk-review"
+  },
+  {
+    "requirement_key": "SOC2:CC5.1",
+    "template_code": "control-risk-mapping"
+  },
+  {
+    "requirement_key": "SOC2:CC5.2",
+    "template_code": "it-general-controls"
+  },
+  {
+    "requirement_key": "SOC2:CC5.3",
+    "template_code": "policy-suite"
+  },
+  {
+    "requirement_key": "SOC2:CC5.3",
+    "template_code": "annual-policy-review"
+  },
+  {
+    "requirement_key": "SOC2:CC4.1",
+    "template_code": "continuous-monitoring"
+  },
+  {
+    "requirement_key": "SOC2:CC4.1",
+    "template_code": "penetration-test"
+  },
+  {
+    "requirement_key": "SOC2:CC7.1",
+    "template_code": "penetration-test"
+  },
+  {
+    "requirement_key": "SOC2:CC4.1",
+    "template_code": "internal-audit"
+  },
+  {
+    "requirement_key": "SOC2:CC4.2",
+    "template_code": "deficiency-tracking"
+  },
+  {
+    "requirement_key": "SOC2:CC2.3",
+    "template_code": "compliance-register"
+  },
+  {
+    "requirement_key": "SOC2:CC2.2",
+    "template_code": "publish-policies"
+  },
+  {
+    "requirement_key": "SOC2:CC2.2",
+    "template_code": "incident-reporting-channel"
+  },
+  {
+    "requirement_key": "SOC2:CC1.1",
+    "template_code": "whistleblower"
+  },
+  {
+    "requirement_key": "SOC2:CC2.2",
+    "template_code": "whistleblower"
+  },
+  {
+    "requirement_key": "SOC2:CC2.3",
+    "template_code": "external-commitments"
+  },
+  {
+    "requirement_key": "SOC2:CC2.3",
+    "template_code": "breach-notification-commitment"
+  },
+  {
+    "requirement_key": "SOC2:CC1.1",
+    "template_code": "background-checks"
+  },
+  {
+    "requirement_key": "SOC2:CC1.4",
+    "template_code": "security-training"
+  },
+  {
+    "requirement_key": "SOC2:CC2.2",
+    "template_code": "security-training"
+  },
+  {
+    "requirement_key": "SOC2:CC1.4",
+    "template_code": "job-descriptions"
+  },
+  {
+    "requirement_key": "SOC2:CC1.4",
+    "template_code": "onboarding-checklist"
+  },
+  {
+    "requirement_key": "SOC2:CC6.2",
+    "template_code": "onboarding-checklist"
+  },
+  {
+    "requirement_key": "SOC2:CC6.2",
+    "template_code": "offboarding-checklist"
+  },
+  {
+    "requirement_key": "SOC2:CC1.1",
+    "template_code": "confidentiality-agreements"
+  },
+  {
+    "requirement_key": "SOC2:C1.1",
+    "template_code": "confidentiality-agreements"
+  },
+  {
+    "requirement_key": "SOC2:CC1.4",
+    "template_code": "performance-reviews"
+  },
+  {
+    "requirement_key": "SOC2:CC6.2",
+    "template_code": "contractor-management"
+  },
+  {
+    "requirement_key": "SOC2:CC9.2",
+    "template_code": "contractor-management"
+  },
+  {
+    "requirement_key": "SOC2:CC6.1",
+    "template_code": "enforce-sso"
+  },
+  {
+    "requirement_key": "SOC2:CC6.1",
+    "template_code": "enforce-mfa"
+  },
+  {
+    "requirement_key": "SOC2:CC6.1",
+    "template_code": "password-policy"
+  },
+  {
+    "requirement_key": "SOC2:CC6.1",
+    "template_code": "password-manager"
+  },
+  {
+    "requirement_key": "SOC2:CC6.1",
+    "template_code": "rbac-least-privilege"
+  },
+  {
+    "requirement_key": "SOC2:CC6.3",
+    "template_code": "rbac-least-privilege"
+  },
+  {
+    "requirement_key": "SOC2:CC6.2",
+    "template_code": "access-approval"
+  },
+  {
+    "requirement_key": "SOC2:CC6.2",
+    "template_code": "timely-deprovisioning"
+  },
+  {
+    "requirement_key": "SOC2:CC6.3",
+    "template_code": "access-reviews"
+  },
+  {
+    "requirement_key": "SOC2:CC6.3",
+    "template_code": "privileged-access"
+  },
+  {
+    "requirement_key": "SOC2:CC6.3",
+    "template_code": "segregation-of-duties"
+  },
+  {
+    "requirement_key": "SOC2:CC6.1",
+    "template_code": "service-account-inventory"
+  },
+  {
+    "requirement_key": "SOC2:CC6.3",
+    "template_code": "service-account-inventory"
+  },
+  {
+    "requirement_key": "SOC2:CC6.1",
+    "template_code": "session-management"
+  },
+  {
+    "requirement_key": "SOC2:CC6.1",
+    "template_code": "encryption-at-rest"
+  },
+  {
+    "requirement_key": "SOC2:CC6.7",
+    "template_code": "encryption-in-transit"
+  },
+  {
+    "requirement_key": "SOC2:CC6.1",
+    "template_code": "key-management"
+  },
+  {
+    "requirement_key": "SOC2:CC6.1",
+    "template_code": "secrets-management"
+  },
+  {
+    "requirement_key": "SOC2:CC6.1",
+    "template_code": "network-segmentation"
+  },
+  {
+    "requirement_key": "SOC2:CC6.6",
+    "template_code": "network-segmentation"
+  },
+  {
+    "requirement_key": "SOC2:CC6.6",
+    "template_code": "firewall-default-deny"
+  },
+  {
+    "requirement_key": "SOC2:CC6.6",
+    "template_code": "no-public-admin-ports"
+  },
+  {
+    "requirement_key": "SOC2:CC6.6",
+    "template_code": "waf-ddos"
+  },
+  {
+    "requirement_key": "SOC2:CC6.6",
+    "template_code": "zero-trust-access"
+  },
+  {
+    "requirement_key": "SOC2:CC6.8",
+    "template_code": "infra-malware-detection"
+  },
+  {
+    "requirement_key": "SOC2:CC6.1",
+    "template_code": "hardening-baselines"
+  },
+  {
+    "requirement_key": "SOC2:CC7.1",
+    "template_code": "hardening-baselines"
+  },
+  {
+    "requirement_key": "SOC2:CC6.5",
+    "template_code": "endpoint-encryption"
+  },
+  {
+    "requirement_key": "SOC2:CC6.7",
+    "template_code": "endpoint-encryption"
+  },
+  {
+    "requirement_key": "SOC2:CC6.8",
+    "template_code": "endpoint-edr"
+  },
+  {
+    "requirement_key": "SOC2:CC6.5",
+    "template_code": "mdm-enrollment"
+  },
+  {
+    "requirement_key": "SOC2:CC6.8",
+    "template_code": "mdm-enrollment"
+  },
+  {
+    "requirement_key": "SOC2:CC6.8",
+    "template_code": "patch-management"
+  },
+  {
+    "requirement_key": "SOC2:CC7.1",
+    "template_code": "patch-management"
+  },
+  {
+    "requirement_key": "SOC2:CC6.5",
+    "template_code": "remote-wipe"
+  },
+  {
+    "requirement_key": "SOC2:CC6.1",
+    "template_code": "screen-lock"
+  },
+  {
+    "requirement_key": "SOC2:C1.1",
+    "template_code": "data-classification"
+  },
+  {
+    "requirement_key": "SOC2:C1.1",
+    "template_code": "data-inventory"
+  },
+  {
+    "requirement_key": "SOC2:C1.2",
+    "template_code": "data-retention"
+  },
+  {
+    "requirement_key": "SOC2:P4.2",
+    "template_code": "data-retention"
+  },
+  {
+    "requirement_key": "SOC2:C1.2",
+    "template_code": "secure-disposal"
+  },
+  {
+    "requirement_key": "SOC2:CC6.5",
+    "template_code": "secure-disposal"
+  },
+  {
+    "requirement_key": "SOC2:P4.3",
+    "template_code": "secure-disposal"
+  },
+  {
+    "requirement_key": "SOC2:C1.1",
+    "template_code": "no-prod-in-lower-envs"
+  },
+  {
+    "requirement_key": "SOC2:P1.1",
+    "template_code": "privacy-notice"
+  },
+  {
+    "requirement_key": "SOC2:P2.1",
+    "template_code": "consent-management"
+  },
+  {
+    "requirement_key": "SOC2:P3.2",
+    "template_code": "consent-management"
+  },
+  {
+    "requirement_key": "SOC2:P3.1",
+    "template_code": "data-minimization"
+  },
+  {
+    "requirement_key": "SOC2:P4.1",
+    "template_code": "limit-pi-use"
+  },
+  {
+    "requirement_key": "SOC2:P5.1",
+    "template_code": "dsar-process"
+  },
+  {
+    "requirement_key": "SOC2:P6.7",
+    "template_code": "dsar-process"
+  },
+  {
+    "requirement_key": "SOC2:P5.2",
+    "template_code": "data-correction"
+  },
+  {
+    "requirement_key": "SOC2:P7.1",
+    "template_code": "data-correction"
+  },
+  {
+    "requirement_key": "SOC2:P6.1",
+    "template_code": "disclosure-controls"
+  },
+  {
+    "requirement_key": "SOC2:P6.2",
+    "template_code": "disclosure-controls"
+  },
+  {
+    "requirement_key": "SOC2:P6.3",
+    "template_code": "breach-record"
+  },
+  {
+    "requirement_key": "SOC2:P6.4",
+    "template_code": "dpa-with-vendors"
+  },
+  {
+    "requirement_key": "SOC2:CC9.2",
+    "template_code": "dpa-with-vendors"
+  },
+  {
+    "requirement_key": "SOC2:P6.5",
+    "template_code": "vendor-breach-terms"
+  },
+  {
+    "requirement_key": "SOC2:P6.6",
+    "template_code": "breach-notification-process"
+  },
+  {
+    "requirement_key": "SOC2:P8.1",
+    "template_code": "privacy-complaints"
+  },
+  {
+    "requirement_key": "SOC2:CC8.1",
+    "template_code": "peer-code-review"
+  },
+  {
+    "requirement_key": "SOC2:CC8.1",
+    "template_code": "ci-testing"
+  },
+  {
+    "requirement_key": "SOC2:PI1.3",
+    "template_code": "ci-testing"
+  },
+  {
+    "requirement_key": "SOC2:CC8.1",
+    "template_code": "separate-environments"
+  },
+  {
+    "requirement_key": "SOC2:CC8.1",
+    "template_code": "change-approval"
+  },
+  {
+    "requirement_key": "SOC2:CC8.1",
+    "template_code": "emergency-change"
+  },
+  {
+    "requirement_key": "SOC2:CC8.1",
+    "template_code": "sdlc-policy"
+  },
+  {
+    "requirement_key": "SOC2:CC6.8",
+    "template_code": "dependency-scanning"
+  },
+  {
+    "requirement_key": "SOC2:CC7.1",
+    "template_code": "dependency-scanning"
+  },
+  {
+    "requirement_key": "SOC2:CC6.8",
+    "template_code": "secret-scanning"
+  },
+  {
+    "requirement_key": "SOC2:PI1.2",
+    "template_code": "input-validation"
+  },
+  {
+    "requirement_key": "SOC2:PI1.1",
+    "template_code": "processing-specs"
+  },
+  {
+    "requirement_key": "SOC2:PI1.3",
+    "template_code": "processing-reconciliation"
+  },
+  {
+    "requirement_key": "SOC2:PI1.4",
+    "template_code": "processing-reconciliation"
+  },
+  {
+    "requirement_key": "SOC2:PI1.5",
+    "template_code": "pipeline-storage-integrity"
+  },
+  {
+    "requirement_key": "SOC2:CC7.2",
+    "template_code": "centralized-logging"
+  },
+  {
+    "requirement_key": "SOC2:CC2.1",
+    "template_code": "centralized-logging"
+  },
+  {
+    "requirement_key": "SOC2:CC2.1",
+    "template_code": "asset-inventory"
+  },
+  {
+    "requirement_key": "SOC2:CC7.2",
+    "template_code": "security-alerting"
+  },
+  {
+    "requirement_key": "SOC2:CC7.2",
+    "template_code": "on-call"
+  },
+  {
+    "requirement_key": "SOC2:CC7.1",
+    "template_code": "vulnerability-management"
+  },
+  {
+    "requirement_key": "SOC2:CC7.1",
+    "template_code": "config-drift-detection"
+  },
+  {
+    "requirement_key": "SOC2:CC7.3",
+    "template_code": "event-triage"
+  },
+  {
+    "requirement_key": "SOC2:CC7.4",
+    "template_code": "incident-response-plan"
+  },
+  {
+    "requirement_key": "SOC2:CC7.4",
+    "template_code": "incident-postmortems"
+  },
+  {
+    "requirement_key": "SOC2:CC7.5",
+    "template_code": "incident-postmortems"
+  },
+  {
+    "requirement_key": "SOC2:CC7.4",
+    "template_code": "tabletop-exercise"
+  },
+  {
+    "requirement_key": "SOC2:CC7.5",
+    "template_code": "incident-recovery"
+  },
+  {
+    "requirement_key": "SOC2:CC9.1",
+    "template_code": "bcdr-plan"
+  },
+  {
+    "requirement_key": "SOC2:A1.2",
+    "template_code": "bcdr-plan"
+  },
+  {
+    "requirement_key": "SOC2:A1.1",
+    "template_code": "capacity-monitoring"
+  },
+  {
+    "requirement_key": "SOC2:A1.2",
+    "template_code": "automated-backups"
+  },
+  {
+    "requirement_key": "SOC2:CC9.1",
+    "template_code": "automated-backups"
+  },
+  {
+    "requirement_key": "SOC2:A1.3",
+    "template_code": "backup-restore-test"
+  },
+  {
+    "requirement_key": "SOC2:CC9.2",
+    "template_code": "vendor-inventory"
+  },
+  {
+    "requirement_key": "SOC2:CC9.2",
+    "template_code": "vendor-security-review"
+  },
+  {
+    "requirement_key": "SOC2:CC9.2",
+    "template_code": "shadow-it-detection"
+  },
+  {
+    "requirement_key": "SOC2:CC9.2",
+    "template_code": "subprocessor-list"
+  },
+  {
+    "requirement_key": "SOC2:P6.1",
+    "template_code": "subprocessor-list"
+  },
+  {
+    "requirement_key": "SOC2:CC6.4",
+    "template_code": "cloud-physical-inherited"
+  },
+  {
+    "requirement_key": "SOC2:CC6.4",
+    "template_code": "office-physical-access"
+  }
+]

@@ -1,0 +1,38 @@
+{
+  "counts": {
+    "control_templates": 114,
+    "frameworks": 1,
+    "requirements": 61,
+    "template_requirements": 150
+  },
+  "generated": [
+    {
+      "path": "framework.json",
+      "sha256": "4ee1254908e210fe545888e675c7422658a7f2d62ac676e04da7e728ce1fea4f"
+    },
+    {
+      "path": "requirements.json",
+      "sha256": "cc755c09023ca4176a3a4226a5f1badf821c0e9cb610bc3850314927214cb853"
+    },
+    {
+      "path": "control_templates.json",
+      "sha256": "df40385b37d2780cfdca27704411f6e0db952e221cf67fc51b1937d5ef417361"
+    },
+    {
+      "path": "template_requirements.json",
+      "sha256": "ac0f3c53439d5248a465ab99b2a0d8d49f917b513ccc0b28127d4e6d7231678c"
+    }
+  ],
+  "note": "Vendored from the grc-s prototype on 2026-08-15 by backend/scripts/vendor_soc2_content.py; re-run it to regenerate.",
+  "sources": [
+    {
+      "path": "C:\\Users\\HP\\OneDrive\\Desktop\\Platform\\grc-s\\backend\\app\\control_library.json",
+      "sha256": "e7b8135f2eb62f7218311aa7e17f6c1265af05d6068caaa1cd09279238127957"
+    },
+    {
+      "path": "C:\\Users\\HP\\OneDrive\\Desktop\\Platform\\grc-s\\backend\\data\\soc2_controls.json",
+      "sha256": "82b1653ccf418e0acd40dc271ac56e4228e5321081e211b378f60d2d5c2be984"
+    }
+  ],
+  "vendored_on": "2026-08-15"
+}

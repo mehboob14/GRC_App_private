@@ -35,6 +35,7 @@ from verity.modules.tenancy.models import (
     PlatformAdmin,
 )
 from verity.modules.tenancy.repository import PlatformAdminRepository
+from verity.seed.loader import load_all
 
 SEED_PASSWORD_ENV: Final = "VERITY_SEED_ADMIN_PASSWORD"  # noqa: S105 — the variable's name
 _GENERATED_PASSWORD_BYTES: Final = 24
@@ -100,7 +101,19 @@ def _build_parser() -> argparse.ArgumentParser:
     seed.add_argument("--email", required=True)
     seed.add_argument("--name", required=True, dest="full_name")
     seed.add_argument("--role", choices=PLATFORM_ADMIN_ROLES, default="super_admin")
+
+    commands.add_parser(
+        "seed-content",
+        help="load the shipped global content packs (frameworks, requirements, control templates)",
+    )
     return parser
+
+
+async def _seed_content() -> int:
+    result = await load_all()
+    print(result.summary())
+    print("no changes — content already current." if not result.changed else "content updated.")
+    return 0
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -109,6 +122,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return asyncio.run(
             _seed_platform_admin(arguments.email, arguments.full_name, arguments.role)
         )
+    if arguments.command == "seed-content":
+        return asyncio.run(_seed_content())
     raise AssertionError("argparse guarantees a known command")
 
 
