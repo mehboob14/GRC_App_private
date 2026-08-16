@@ -12,7 +12,10 @@ import type {
   ControlTemplateQuery,
   ControlUpdateRequest,
   ControlVocabulary,
+  Coverage,
   CursorPage,
+  Engagement,
+  EngagementPut,
   Framework,
   Group,
   InviteMemberRequest,
@@ -24,6 +27,7 @@ import type {
   MfaVerifyRequest,
   Requirement,
   Role,
+  ScopeCriterion,
   SignupRequest,
   SignupResponse,
   CompanyProfile,
@@ -235,4 +239,15 @@ export const controlsApi = {
     }),
   enable: (controlId: string) =>
     apiFetch<Control>(`/controls/${controlId}/enable`, { method: "POST" }),
+};
+
+export const engagementApi = {
+  get: () => apiFetch<Engagement | null>("/engagement"),
+  put: (body: EngagementPut) =>
+    apiFetch<Engagement>("/engagement", {
+      method: "PUT",
+      body: JSON.stringify(body),
+    }),
+  scope: () => apiFetch<ScopeCriterion[]>("/engagement/scope"),
+  coverage: () => apiFetch<Coverage>("/engagement/coverage"),
 };

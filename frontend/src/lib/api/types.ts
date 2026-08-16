@@ -461,3 +461,66 @@ export type AdoptLibraryResult = {
   already_present: number;
   mappings_created: number;
 };
+
+// --- Engagement, scope and coverage -----------------------------------------
+
+export type AuditType = "type_1" | "type_2";
+
+export type Engagement = {
+  id: string;
+  name: string;
+  framework_version_id: string;
+  audit_type: AuditType;
+  status: "draft" | "active" | "closed";
+  window_start: string | null;
+  window_end: string | null;
+  categories_in_scope: string[];
+};
+
+export type EngagementPut = {
+  name: string;
+  framework_version_id: string;
+  audit_type: AuditType;
+  categories_in_scope: string[];
+  window_start?: string | null;
+  window_end?: string | null;
+  status?: string | null;
+};
+
+export type ScopeCriterion = {
+  id: string;
+  requirement_key: string;
+  code: string;
+  name: string;
+  trust_services_category: string;
+  is_always_in_scope: boolean;
+};
+
+export type CriterionCoverage = {
+  requirement_id: string;
+  requirement_key: string;
+  code: string;
+  name: string;
+  trust_services_category: string;
+  in_scope: boolean;
+  control_count: number;
+};
+
+export type ControlGap = {
+  control_id: string;
+  code: string;
+  name: string;
+  reason: string;
+};
+
+export type Coverage = {
+  criteria_total: number;
+  criteria_covered: number;
+  criteria_uncovered: CriterionCoverage[];
+  controls_total: number;
+  controls_without_evidence: number;
+  /** False until the evidence module lands — do not read the count as a
+      finding while this is false. */
+  evidence_tracking_available: boolean;
+  controls_unmapped: ControlGap[];
+};

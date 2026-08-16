@@ -18,10 +18,9 @@ export type NavSection = {
 };
 
 /**
- * Primary nav — three groups, Drata-style (Overview · Compliance ·
- * Organization) plus a utility footer. Later-phase modules are listed for
- * orientation but carry an explicit "Soon" affordance — never a fake count or
- * a dead link. Kept to 8 grouped items so the rail stays scannable.
+ * Primary nav — three groups (Overview · Compliance · Risk) plus a utility
+ * footer. Later-phase modules are listed for orientation but carry an explicit
+ * "Soon" affordance — never a fake count or a dead link.
  */
 export const NAV_SECTIONS: NavSection[] = [
   {
@@ -30,6 +29,7 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { id: "get-started", label: "Get Started", icon: "check", to: "/quick-start" },
       { id: "dashboard", label: "Dashboard", icon: "grid", comingSoon: true },
+      { id: "tasks", label: "Tasks", icon: "audit", comingSoon: true },
     ],
   },
   {
@@ -37,23 +37,26 @@ export const NAV_SECTIONS: NavSection[] = [
     label: "Compliance",
     items: [
       { id: "frameworks", label: "Frameworks", icon: "shield", to: "/frameworks" },
+      { id: "scope", label: "Scope & coverage", icon: "check", to: "/scope" },
       { id: "controls", label: "Controls", icon: "controls", to: "/controls" },
       { id: "evidence", label: "Evidence", icon: "doc", comingSoon: true },
+      { id: "policies", label: "Policies & Documents", icon: "book", comingSoon: true },
     ],
   },
   {
-    id: "organization",
-    label: "Organization",
+    id: "risk",
+    label: "Risk",
     items: [
-      { id: "risk", label: "Risk", icon: "risk", comingSoon: true },
+      { id: "risks", label: "Risks", icon: "risk", comingSoon: true },
       { id: "vendors", label: "Vendors", icon: "vendor", comingSoon: true },
-      { id: "governance", label: "Governance", icon: "layers", comingSoon: true },
+      { id: "assets", label: "Assets", icon: "box", comingSoon: true },
+      { id: "vulnerabilities", label: "Vulnerabilities", icon: "bug", comingSoon: true },
     ],
   },
 ];
 
 export const FOOTER_ITEMS: NavItem[] = [
   { id: "connectors", label: "Connections", icon: "plug", to: "/connectors" },
-  { id: "audit-log", label: "Audit log", icon: "audit", to: "/audit-log" },
+  { id: "audit-log", label: "Audit Log", icon: "doc", to: "/audit-log" },
   { id: "settings", label: "Settings", icon: "gear", to: "/settings/people" },
 ];

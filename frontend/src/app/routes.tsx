@@ -19,6 +19,7 @@ import { QuickStartPage } from "@/features/compliance/components/quick-start-pag
 import { FrameworksPage } from "@/features/compliance/components/frameworks-page";
 import { FrameworkDetailPage } from "@/features/compliance/components/framework-detail-page";
 import { ControlsPage } from "@/features/compliance/components/controls-page";
+import { ScopePage } from "@/features/compliance/components/scope-page";
 import { CompanyProfilePage } from "@/features/tenancy/company-profile-page";
 import { ConnectionsPage } from "@/features/connectors/components/connections-page";
 
@@ -53,6 +54,7 @@ export function AppRoutes() {
           <Route path="frameworks" element={<FrameworksPage />} />
           <Route path="frameworks/:frameworkId" element={<FrameworkDetailPage />} />
           <Route path="controls" element={<ControlsPage />} />
+          <Route path="scope" element={<ScopePage />} />
           <Route path="connectors" element={<ConnectionsPage />} />
           {/* People and Company profile live under Settings; keep old paths working. */}
           <Route path="people" element={<Navigate to="/settings/people" replace />} />
