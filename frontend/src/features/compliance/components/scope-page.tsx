@@ -134,7 +134,7 @@ export function ScopePage() {
 
   if (frameworksQuery.isError || engagementQuery.isError) {
     return (
-      <div className="mx-auto max-w-[1200px]">
+      <div>
         <ErrorState
           title="Couldn’t load the engagement"
           description="The request failed. Retry, or contact support if it keeps happening."
@@ -148,7 +148,7 @@ export function ScopePage() {
   }
 
   return (
-    <div className="mx-auto max-w-[1200px]">
+    <div>
       <h1 className="font-display text-heading-lg text-text-primary">
         Scope &amp; coverage
       </h1>

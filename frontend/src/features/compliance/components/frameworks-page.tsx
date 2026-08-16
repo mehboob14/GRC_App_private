@@ -69,7 +69,7 @@ export function FrameworksPage() {
   });
 
   return (
-    <div className="mx-auto max-w-[1200px]">
+    <div>
       <h1 className="font-display text-heading-lg text-text-primary">
         Frameworks
       </h1>

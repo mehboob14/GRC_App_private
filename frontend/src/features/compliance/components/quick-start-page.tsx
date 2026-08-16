@@ -219,7 +219,7 @@ export function QuickStartPage() {
       title: "Enroll MFA",
       why: "Required for Admin roles, always — you'll be prompted at sign-in until it's on.",
       status: mfaEnrolled ? { kind: "done" } : { kind: "todo" },
-      cta: { label: "View policy", to: "/settings/security" },
+      cta: { label: "View policy", to: "/settings/security/mfa" },
     },
     {
       id: "invite",

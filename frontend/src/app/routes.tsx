@@ -10,6 +10,7 @@ import { VerifyEmailPage } from "@/features/iam/components/verify-email-page";
 import { ForgotPasswordPage } from "@/features/iam/components/forgot-password-page";
 import { ResetPasswordPage } from "@/features/iam/components/reset-password-page";
 import { SettingsLayout } from "@/features/iam/components/settings-layout";
+import { SettingsSection } from "@/features/iam/components/settings-section";
 import { TeamPage } from "@/features/iam/components/team-page";
 import { GroupsPage } from "@/features/iam/components/groups-page";
 import { RolesPage } from "@/features/iam/components/roles-page";
@@ -20,6 +21,7 @@ import { FrameworksPage } from "@/features/compliance/components/frameworks-page
 import { FrameworkDetailPage } from "@/features/compliance/components/framework-detail-page";
 import { ControlsPage } from "@/features/compliance/components/controls-page";
 import { ScopePage } from "@/features/compliance/components/scope-page";
+import { FrameworksLayout } from "@/features/compliance/components/frameworks-layout";
 import { CompanyProfilePage } from "@/features/tenancy/company-profile-page";
 import { ConnectionsPage } from "@/features/connectors/components/connections-page";
 
@@ -51,25 +53,72 @@ export function AppRoutes() {
         <Route element={<AppLayout />}>
           <Route index element={<Navigate to="/quick-start" replace />} />
           <Route path="quick-start" element={<QuickStartPage />} />
-          <Route path="frameworks" element={<FrameworksPage />} />
+          <Route path="frameworks" element={<FrameworksLayout />}>
+            <Route index element={<FrameworksPage />} />
+            <Route path="scope" element={<ScopePage />} />
+          </Route>
+          {/* Detail sits outside the tab strip: it is a drill-down, not a tab. */}
           <Route path="frameworks/:frameworkId" element={<FrameworkDetailPage />} />
           <Route path="controls" element={<ControlsPage />} />
-          <Route path="scope" element={<ScopePage />} />
+          <Route path="scope" element={<Navigate to="/frameworks/scope" replace />} />
           <Route path="connectors" element={<ConnectionsPage />} />
           {/* People and Company profile live under Settings; keep old paths working. */}
-          <Route path="people" element={<Navigate to="/settings/people" replace />} />
+          <Route path="people" element={<Navigate to="/settings/access/people" replace />} />
           <Route
             path="company-profile"
-            element={<Navigate to="/settings/company" replace />}
+            element={<Navigate to="/settings/organization/profile" replace />}
           />
           <Route path="settings" element={<SettingsLayout />}>
-            <Route index element={<Navigate to="people" replace />} />
-            <Route path="team" element={<Navigate to="/settings/people" replace />} />
-            <Route path="people" element={<TeamPage />} />
-            <Route path="company" element={<CompanyProfilePage />} />
-            <Route path="groups" element={<GroupsPage />} />
-            <Route path="roles" element={<RolesPage />} />
-            <Route path="security" element={<SecurityPage />} />
+            <Route index element={<Navigate to="access/people" replace />} />
+
+            {/* Access Management — People / Groups / Roles as top tabs */}
+            <Route path="access" element={<SettingsSection categoryId="access" />}>
+              <Route index element={<Navigate to="people" replace />} />
+              <Route path="people" element={<TeamPage />} />
+              <Route path="groups" element={<GroupsPage />} />
+              <Route path="roles" element={<RolesPage />} />
+            </Route>
+
+            {/* Security — MFA now; Authentication / SSO arrive later */}
+            <Route path="security" element={<SettingsSection categoryId="security" />}>
+              <Route index element={<Navigate to="mfa" replace />} />
+              <Route path="mfa" element={<SecurityPage />} />
+            </Route>
+
+            {/* Organization — Org info now; Key personnel arrives later */}
+            <Route
+              path="organization"
+              element={<SettingsSection categoryId="organization" />}
+            >
+              <Route index element={<Navigate to="profile" replace />} />
+              <Route path="profile" element={<CompanyProfilePage />} />
+            </Route>
+
+            {/* Integrations — every tab is Phase 2 */}
+            <Route
+              path="integrations"
+              element={<SettingsSection categoryId="integrations" />}
+            >
+              <Route
+                index
+                element={
+                  <ComingSoonPage
+                    title="Integrations"
+                    description="API keys, webhooks and app integrations arrive in a later phase."
+                  />
+                }
+              />
+            </Route>
+
+            {/* Back-compat: the old flat settings paths */}
+            <Route path="team" element={<Navigate to="/settings/access/people" replace />} />
+            <Route path="people" element={<Navigate to="/settings/access/people" replace />} />
+            <Route path="groups" element={<Navigate to="/settings/access/groups" replace />} />
+            <Route path="roles" element={<Navigate to="/settings/access/roles" replace />} />
+            <Route
+              path="company"
+              element={<Navigate to="/settings/organization/profile" replace />}
+            />
           </Route>
           <Route path="audit-log" element={<AuditLogPage />} />
           <Route

@@ -37,7 +37,6 @@ export const NAV_SECTIONS: NavSection[] = [
     label: "Compliance",
     items: [
       { id: "frameworks", label: "Frameworks", icon: "shield", to: "/frameworks" },
-      { id: "scope", label: "Scope & coverage", icon: "check", to: "/scope" },
       { id: "controls", label: "Controls", icon: "controls", to: "/controls" },
       { id: "evidence", label: "Evidence", icon: "doc", comingSoon: true },
       { id: "policies", label: "Policies & Documents", icon: "book", comingSoon: true },
@@ -58,5 +57,5 @@ export const NAV_SECTIONS: NavSection[] = [
 export const FOOTER_ITEMS: NavItem[] = [
   { id: "connectors", label: "Connections", icon: "plug", to: "/connectors" },
   { id: "audit-log", label: "Audit Log", icon: "doc", to: "/audit-log" },
-  { id: "settings", label: "Settings", icon: "gear", to: "/settings/people" },
+  { id: "settings", label: "Settings", icon: "gear", to: "/settings/access/people" },
 ];
