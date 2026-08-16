@@ -13,6 +13,7 @@ rather than stubbed with a zero that would read as a real measurement.
 from __future__ import annotations
 
 import uuid
+from datetime import date
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -172,3 +173,67 @@ class ControlVocabularyOut(_Response):
     control_types: list[str]
     control_sub_types: list[str]
     statuses: list[str]
+
+
+# ---------------------------------------------------------------------------
+# Engagement and coverage
+# ---------------------------------------------------------------------------
+
+
+class EngagementOut(_Response):
+    id: uuid.UUID
+    name: str
+    framework_version_id: uuid.UUID
+    audit_type: str
+    status: str
+    window_start: date | None
+    window_end: date | None
+    categories_in_scope: list[str]
+
+
+class EngagementPut(_Request):
+    name: str = Field(min_length=1, max_length=200)
+    framework_version_id: uuid.UUID
+    audit_type: str = Field(pattern="^(type_1|type_2)$")
+    categories_in_scope: list[str] = Field(default_factory=list)
+    window_start: date | None = None
+    window_end: date | None = None
+    status: str | None = Field(default=None, pattern="^(draft|active|closed)$")
+
+
+class CriterionCoverageOut(_Response):
+    requirement_id: uuid.UUID
+    requirement_key: str
+    code: str
+    name: str
+    trust_services_category: str
+    in_scope: bool
+    control_count: int
+
+
+class ControlGapOut(_Response):
+    control_id: uuid.UUID
+    code: str
+    name: str
+    reason: str
+
+
+class CoverageOut(_Response):
+    criteria_total: int
+    criteria_covered: int
+    criteria_uncovered: list[CriterionCoverageOut]
+    controls_total: int
+    controls_without_evidence: int
+    # False until the evidence module lands. The client must not read
+    # controls_without_evidence as a finding while this is false.
+    evidence_tracking_available: bool
+    controls_unmapped: list[ControlGapOut]
+
+
+class ScopeCriterionOut(_Response):
+    id: uuid.UUID
+    requirement_key: str
+    code: str
+    name: str
+    trust_services_category: str
+    is_always_in_scope: bool

@@ -31,15 +31,17 @@ Two shapes worth reading before adding to this file:
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Final
 
 from sqlalchemy import (
+    ARRAY,
     CheckConstraint,
     ForeignKey,
     Index,
     Numeric,
+    Text,
     UniqueConstraint,
     text,
 )
@@ -422,3 +424,66 @@ class ControlRequirement(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
             f"ControlRequirement(control_id={self.control_id!r}, "
             f"requirement_id={self.requirement_id!r})"
         )
+
+
+# ---------------------------------------------------------------------------
+# Engagement — the audit being prepared for, and what is in its scope
+# ---------------------------------------------------------------------------
+
+AUDIT_TYPES: Final[tuple[str, ...]] = ("type_1", "type_2")
+"""SOC 2 Type I is a point in time; Type II is a period. The distinction is not
+cosmetic: Type II is what makes ``window_start``/``window_end`` an observation
+period evidence must fall inside."""
+
+ENGAGEMENT_STATUSES: Final[tuple[str, ...]] = ("draft", "active", "closed")
+
+
+class Engagement(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
+    """The audit a tenant is preparing for, and the scope it covers.
+
+    One per tenant for now — UNIQUE (tenant_id) — because "engagement setup" is
+    a settings screen, not a history. Keeping past engagements is a later change
+    that drops this constraint; nothing else here assumes singularity.
+
+    ``categories_in_scope`` holds Trust Services Categories, not criteria. That
+    is how SOC 2 scope is actually chosen: you elect Availability or
+    Confidentiality, and the criteria follow. Security (the Common Criteria) is
+    always in scope and is carried by ``requirements.is_always_in_scope``, not
+    by this column, so a tenant cannot elect its way out of it.
+
+    A Type I engagement has a single ``as_of`` date and no window; a Type II has
+    both bounds. The CHECK below is what keeps those from disagreeing.
+    """
+
+    __tablename__ = "engagements"
+
+    name: Mapped[str]
+    framework_version_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("framework_versions.id", ondelete="RESTRICT")
+    )
+    audit_type: Mapped[str]
+    status: Mapped[str] = mapped_column(default="draft")
+    window_start: Mapped[date | None] = mapped_column(default=None)
+    window_end: Mapped[date | None] = mapped_column(default=None)
+    categories_in_scope: Mapped[list[str]] = mapped_column(
+        ARRAY(Text), server_default=text("'{}'"), default=list
+    )
+
+    __table_args__ = (
+        status_check("engagements", "audit_type", AUDIT_TYPES),
+        status_check("engagements", "status", ENGAGEMENT_STATUSES),
+        # Type II observes a period, so it needs both bounds; Type I is a point
+        # in time and needs neither. A half-specified window is a bug.
+        CheckConstraint(
+            "(audit_type = 'type_2') = (window_start IS NOT NULL AND window_end IS NOT NULL)",
+            name=conv("ck_engagements__window_matches_type"),
+        ),
+        CheckConstraint(
+            "window_end IS NULL OR window_start IS NULL OR window_end >= window_start",
+            name=conv("ck_engagements__window_ordered"),
+        ),
+        UniqueConstraint("tenant_id", name="uq_engagements__tenant"),
+    )
+
+    def __repr__(self) -> str:
+        return f"Engagement(tenant_id={self.tenant_id!r}, audit_type={self.audit_type!r})"
