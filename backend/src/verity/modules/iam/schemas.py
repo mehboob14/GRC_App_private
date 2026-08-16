@@ -292,6 +292,14 @@ class RoleCreate(_Request):
     permission_keys: list[str] = Field(default_factory=list)
 
 
+class RoleUpdate(_Request):
+    """Patch a custom role: only fields present are written. ``permission_keys``
+    when present is the full replacement set, not a delta."""
+
+    name: str | None = Field(default=None, min_length=1, max_length=200)
+    permission_keys: list[str] | None = None
+
+
 class RoleAssignmentCreate(_Request):
     assignee_type: Literal["membership", "group"]
     assignee_id: uuid.UUID

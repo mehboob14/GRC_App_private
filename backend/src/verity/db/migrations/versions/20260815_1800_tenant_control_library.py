@@ -224,8 +224,17 @@ def upgrade() -> None:
     enable_rls("control_requirements")
     grant_crud("control_requirements")
 
+    # Managing the library is a distinct grant from reading the framework
+    # catalogue: an auditor reads, a compliance manager edits. Admin picks the
+    # new key up at check time (every key, always).
+    op.execute(
+        "INSERT INTO permissions (key, module, action) "
+        "VALUES ('controls:manage', 'controls', 'manage') ON CONFLICT DO NOTHING"
+    )
+
 
 def downgrade() -> None:
+    op.execute("DELETE FROM permissions WHERE key = 'controls:manage'")
     op.drop_table("control_requirements")
     op.drop_table("controls")
 

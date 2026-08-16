@@ -8,6 +8,7 @@ filter is the first wall; the row-level security policy behind it is the second.
 from __future__ import annotations
 
 import uuid
+from collections.abc import Collection
 from datetime import datetime
 
 from sqlalchemy import select, tuple_
@@ -31,6 +32,7 @@ class AuditLogRepository:
         tenant_id: uuid.UUID | None,
         limit: int,
         before: tuple[datetime, uuid.UUID] | None = None,
+        exclude_object_types: Collection[str] | None = None,
     ) -> list[AuditLog]:
         """Newest first, keyed on ``(occurred_at, id)``.
 
@@ -38,6 +40,10 @@ class AuditLogRepository:
         or repeat what it sees (docs/conventions/api.md). The UUIDv7 ``id`` breaks
         ties between rows that share ``occurred_at`` — every row written in one
         transaction carries the same ``now()``.
+
+        ``exclude_object_types`` drops rows the *view* should not show (auth
+        telemetry, tenant-provisioning plumbing). The rows still exist — the trail
+        stays complete — the caller simply does not surface them here.
         """
         statement = (
             select(AuditLog)
@@ -45,6 +51,8 @@ class AuditLogRepository:
             .order_by(AuditLog.occurred_at.desc(), AuditLog.id.desc())
             .limit(limit)
         )
+        if exclude_object_types:
+            statement = statement.where(AuditLog.object_type.notin_(list(exclude_object_types)))
         if before is not None:
             statement = statement.where(tuple_(AuditLog.occurred_at, AuditLog.id) < before)
         result = await session.execute(statement)

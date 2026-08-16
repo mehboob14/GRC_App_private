@@ -23,6 +23,8 @@ export const PERMISSION_KEYS = [
   "audit:read",
   "security:manage",
   "tenant:manage",
+  "frameworks:read",
+  "controls:manage",
 ] as const;
 
 export type PermissionKey = (typeof PERMISSION_KEYS)[number];
@@ -382,4 +384,80 @@ export type ControlTemplateQuery = {
   search?: string;
   limit?: number;
   offset?: number;
+};
+
+// --- Tenant control library -------------------------------------------------
+
+export type ControlStatus =
+  | "not_started"
+  | "in_progress"
+  | "implemented"
+  | "not_applicable";
+
+export type Control = {
+  id: string;
+  code: string;
+  name: string;
+  description: string;
+  implementation_guidance: string | null;
+  category: string;
+  control_type: string;
+  control_sub_type: string | null;
+  status: ControlStatus;
+  origin: "template" | "custom";
+  owner_membership_id: string | null;
+  owner_name: string | null;
+  disabled_at: string | null;
+  disabled_reason: string | null;
+  template_id: string | null;
+  /** Criteria this control satisfies, e.g. ["SOC2:CC6.2"]. */
+  requirement_keys: string[];
+};
+
+export type ControlVocabulary = {
+  categories: string[];
+  control_types: string[];
+  control_sub_types: string[];
+  statuses: ControlStatus[];
+};
+
+export type ControlQuery = {
+  status?: string;
+  category?: string;
+  control_type?: string;
+  control_sub_type?: string;
+  owner_membership_id?: string;
+  include_disabled?: boolean;
+  search?: string;
+};
+
+export type ControlCreateRequest = {
+  code: string;
+  name: string;
+  description: string;
+  category: string;
+  control_type: string;
+  control_sub_type?: string | null;
+  implementation_guidance?: string | null;
+  owner_membership_id?: string | null;
+  requirement_ids?: string[];
+};
+
+export type ControlUpdateRequest = {
+  name?: string;
+  description?: string;
+  implementation_guidance?: string | null;
+  category?: string;
+  control_type?: string;
+  control_sub_type?: string | null;
+  status?: ControlStatus;
+  owner_membership_id?: string | null;
+  clear_owner?: boolean;
+  requirement_ids?: string[];
+};
+
+export type AdoptLibraryResult = {
+  created: number;
+  already_present: number;
+  mappings_created: number;
 };

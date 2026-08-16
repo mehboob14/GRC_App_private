@@ -14,9 +14,13 @@ from __future__ import annotations
 
 import uuid
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from verity.modules.tenancy.schemas import UtcDateTime
+
+
+class _Request(BaseModel):
+    model_config = ConfigDict(extra="forbid")
 
 
 class _Response(BaseModel):
@@ -79,3 +83,92 @@ class ControlTemplateDetailOut(ControlTemplateOut):
 class ControlTemplatePage(_Response):
     items: list[ControlTemplateOut]
     total: int
+
+
+# ---------------------------------------------------------------------------
+# Tenant control library
+# ---------------------------------------------------------------------------
+
+
+class ControlOut(_Response):
+    id: uuid.UUID
+    code: str
+    name: str
+    description: str
+    implementation_guidance: str | None
+    category: str
+    control_type: str
+    control_sub_type: str | None
+    status: str
+    origin: str
+    owner_membership_id: uuid.UUID | None
+    owner_name: str | None
+    disabled_at: UtcDateTime | None
+    disabled_reason: str | None
+    template_id: uuid.UUID | None
+    # The criteria this control satisfies, as stable keys (e.g. "SOC2:CC6.2").
+    requirement_keys: list[str]
+
+
+class ControlCreate(_Request):
+    code: str = Field(min_length=1, max_length=100)
+    name: str = Field(min_length=1, max_length=300)
+    description: str = Field(min_length=1, max_length=4000)
+    category: str = Field(min_length=1, max_length=100)
+    control_type: str = Field(min_length=1, max_length=50)
+    control_sub_type: str | None = Field(default=None, max_length=50)
+    implementation_guidance: str | None = Field(default=None, max_length=8000)
+    owner_membership_id: uuid.UUID | None = None
+    requirement_ids: list[uuid.UUID] = Field(default_factory=list)
+
+
+class ControlUpdate(_Request):
+    """Patch semantics: only fields present are written.
+
+    ``clear_owner`` exists because a null ``owner_membership_id`` is
+    indistinguishable from an absent one in a patch body, and un-assigning an
+    owner has to be expressible.
+    """
+
+    name: str | None = Field(default=None, min_length=1, max_length=300)
+    description: str | None = Field(default=None, min_length=1, max_length=4000)
+    implementation_guidance: str | None = Field(default=None, max_length=8000)
+    category: str | None = Field(default=None, max_length=100)
+    control_type: str | None = Field(default=None, max_length=50)
+    control_sub_type: str | None = Field(default=None, max_length=50)
+    status: str | None = Field(default=None, max_length=50)
+    owner_membership_id: uuid.UUID | None = None
+    clear_owner: bool = False
+    requirement_ids: list[uuid.UUID] | None = None
+
+
+class ControlDisable(_Request):
+    """Rule 6: a control is retired with a reason, never deleted."""
+
+    reason: str = Field(min_length=1, max_length=2000)
+
+
+class AdoptLibraryRequest(_Request):
+    """Instantiate the shipped templates into this tenant.
+
+    ``requirement_ids`` narrows adoption to the templates satisfying those
+    criteria — the scoping path. Omit it to adopt the whole library.
+    """
+
+    requirement_ids: list[uuid.UUID] | None = None
+
+
+class AdoptLibraryResponse(_Response):
+    created: int
+    already_present: int
+    mappings_created: int
+
+
+class ControlVocabularyOut(_Response):
+    """The closed vocabularies the Controls UI offers. Served rather than
+    duplicated in the frontend, so the two cannot drift out of step."""
+
+    categories: list[str]
+    control_types: list[str]
+    control_sub_types: list[str]
+    statuses: list[str]

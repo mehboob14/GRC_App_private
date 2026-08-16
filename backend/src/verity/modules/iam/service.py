@@ -1947,6 +1947,72 @@ class IamService:
             assignment_count=0,
         )
 
+    async def update_role(
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor_membership_id: uuid.UUID,
+        role_id: uuid.UUID,
+        name: str | None = None,
+        permission_keys: list[str] | None = None,
+    ) -> RoleView:
+        """Rename a custom role and/or replace its permission set. Built-in roles
+        are immutable — their keys resolve dynamically (Admin = every key). Only
+        the fields supplied are touched; the change is audited before/after."""
+        role = await self._roles.get_for_tenant(session, tenant_id, role_id)
+        if role is None:
+            raise NotFound(detail=f"role {role_id} not in tenant {tenant_id}")
+        if role.built_in:
+            raise BuiltInRoleImmutable(detail=f"role {role.name!r} is built-in")
+
+        current_keys = sorted(
+            (await self._roles.permission_keys_by_role(session, [role_id])).get(role_id, [])
+        )
+        before = AuditService.snapshot(role, fields=_ROLE_SNAPSHOT)
+        before["permission_keys"] = current_keys
+
+        if name is not None:
+            new_name = name.strip()
+            if not new_name:
+                raise InvalidInput(detail="role name must not be empty")
+            clash = await self._roles.get_by_name(session, tenant_id, new_name)
+            if clash is not None and clash.id != role_id:
+                raise NameConflict(detail=f"role {new_name!r} exists in tenant {tenant_id}")
+            role.name = new_name
+            await session.flush([role])
+
+        final_keys = current_keys
+        if permission_keys is not None:
+            requested = sorted(set(permission_keys))
+            known = await self._roles.existing_permission_keys(session, requested)
+            unknown = sorted(set(requested) - known)
+            if unknown:
+                raise InvalidInput(detail=f"unknown permission keys: {unknown}")
+            await self._roles.replace_permission_keys(session, role_id, requested)
+            final_keys = requested
+
+        after = AuditService.snapshot(role, fields=_ROLE_SNAPSHOT)
+        after["permission_keys"] = final_keys
+        await self._record(
+            session,
+            MembershipActor(actor_membership_id),
+            tenant_id,
+            "update",
+            "role",
+            role.id,
+            before,
+            after,
+        )
+        assignments = await self._roles.list_for_role(session, tenant_id, role_id)
+        return RoleView(
+            id=role.id,
+            name=role.name,
+            built_in=role.built_in,
+            permission_keys=final_keys,
+            assignment_count=len(assignments),
+        )
+
     async def delete_role(
         self,
         session: AsyncSession,

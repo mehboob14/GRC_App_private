@@ -19,6 +19,7 @@ import uuid
 from collections.abc import Iterable, Sequence
 from datetime import datetime
 
+from sqlalchemy import delete as sa_delete
 from sqlalchemy import exists, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -306,6 +307,12 @@ class RoleRepository:
         rows = [RolePermission(role_id=role_id, permission_key=key) for key in keys]
         session.add_all(rows)
         await session.flush(rows)
+
+    async def replace_permission_keys(
+        self, session: AsyncSession, role_id: uuid.UUID, keys: Iterable[str]
+    ) -> None:
+        await session.execute(sa_delete(RolePermission).where(RolePermission.role_id == role_id))
+        await self.add_permission_keys(session, role_id, keys)
 
     async def permission_keys_by_role(
         self, session: AsyncSession, role_ids: Sequence[uuid.UUID]

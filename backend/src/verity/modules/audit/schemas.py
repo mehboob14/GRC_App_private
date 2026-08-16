@@ -38,15 +38,16 @@ class AuditLogEntry(BaseModel):
 
     @model_validator(mode="after")
     def _derive_labels(self) -> AuditLogEntry:
-        """A human label for the actor (``System`` for jobs; else the humanised kind plus
-        the id's short prefix, e.g. ``Membership · 019ff785``) and for the object
-        (``Tenant membership · 019ff7a4``). Distinguishes rows without a cross-module lookup."""
-        if self.actor_type == "system":
-            self.actor_label = "System"
-        else:
-            suffix = f" · {str(self.actor_id)[:8]}" if self.actor_id is not None else ""
-            self.actor_label = f"{_humanize(self.actor_type)}{suffix}"
-        self.object_label = f"{_humanize(self.object_type)} · {str(self.object_id)[:8]}"
+        """Fallback labels only — the humanised kind (``System``, ``Membership``,
+        ``Tenant membership``), with no id noise. The router overrides these with
+        the actor's and object's real names (``resolve_labels``) whenever the
+        cross-module lookup resolves one; these stand in when it does not."""
+        if not self.actor_label:
+            self.actor_label = (
+                "System" if self.actor_type == "system" else _humanize(self.actor_type)
+            )
+        if not self.object_label:
+            self.object_label = _humanize(self.object_type)
         return self
 
     @field_serializer("occurred_at")

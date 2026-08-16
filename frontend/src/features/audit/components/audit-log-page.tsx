@@ -3,12 +3,12 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import {
   Avatar,
   Button,
-  Drawer,
-  DrawerBody,
-  DrawerContent,
-  DrawerDescription,
-  DrawerHeader,
-  DrawerTitle,
+  Checkbox,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
   EmptyState,
   ErrorState,
   FilterFacet,
@@ -59,36 +59,111 @@ const ACTOR_TYPE_OPTIONS: FilterFacetOption[] = (
   Object.keys(ACTOR_TYPE_LABEL) as AuditEvent["actor_type"][]
 ).map((value) => ({ value, label: ACTOR_TYPE_LABEL[value] }));
 
-function shortId(id: string | null | undefined): string {
-  return id ? id.slice(0, 8) : "";
-}
-
 function humanizeType(type: string): string {
   const spaced = type.replace(/_/g, " ").trim();
   if (!spaced) return "Object";
   return spaced.charAt(0).toUpperCase() + spaced.slice(1);
 }
 
-/**
- * actor_label / object_label are best-effort humanised strings and may be
- * absent or empty. Compose a stable fallback from the fields that always
- * exist so the page never renders `undefined` or blanks an avatar seed.
- */
+// The backend resolves the actor's and object's real names; these only fill in
+// a clean humanised kind (never an id) when a lookup comes back empty.
 function actorLabelOf(event: AuditEvent): string {
-  const label = event.actor_label?.trim();
-  if (label) return label;
-  if (event.actor_type === "system") return "System";
-  const base = ACTOR_TYPE_LABEL[event.actor_type];
-  const short = shortId(event.actor_id);
-  return short ? `${base} · ${short}` : base;
+  return (
+    event.actor_label?.trim() ||
+    (event.actor_type === "system"
+      ? "System"
+      : ACTOR_TYPE_LABEL[event.actor_type])
+  );
+}
+
+/** A name carried in the event's own snapshot — works even for objects since
+ *  deleted, and reflects the name as it was at the time of the event. */
+function snapshotName(event: AuditEvent): string | null {
+  const snap = event.after ?? event.before;
+  if (!snap) return null;
+  for (const key of ["name", "full_name", "title", "email"]) {
+    const value = snap[key];
+    if (typeof value === "string" && value.trim()) return value.trim();
+  }
+  return null;
 }
 
 function objectLabelOf(event: AuditEvent): string {
   const label = event.object_label?.trim();
-  if (label) return label;
-  const base = humanizeType(event.object_type);
-  const short = shortId(event.object_id);
-  return short ? `${base} · ${short}` : base;
+  const typeName = humanizeType(event.object_type);
+  // The backend resolved a real name (differs from the plain kind) → use it.
+  if (label && label !== typeName) return label;
+  // Else fall back to the name the snapshot captured, then to the kind.
+  return snapshotName(event) ?? label ?? typeName;
+}
+
+const ACTION_VERB: Record<AuditAction, string> = {
+  create: "created",
+  update: "updated",
+  transition: "moved",
+  approve: "approved",
+  delete: "removed",
+};
+
+// Snapshot bookkeeping columns that carry no meaning in a plain-English change.
+const NOISE_FIELDS = new Set([
+  "id",
+  "tenant_id",
+  "created_at",
+  "updated_at",
+  "occurred_at",
+]);
+
+function formatValue(value: unknown): string {
+  if (value === null || value === undefined || value === "") return "—";
+  if (Array.isArray(value)) return value.length ? value.join(", ") : "—";
+  if (typeof value === "object") return JSON.stringify(value);
+  return String(value);
+}
+
+type FieldChange = { field: string; from: string; to: string };
+
+/** The fields that actually differ between before/after, ignoring bookkeeping. */
+function changesOf(
+  before: Record<string, unknown> | null,
+  after: Record<string, unknown> | null,
+): FieldChange[] {
+  const keys = new Set([
+    ...(before ? Object.keys(before) : []),
+    ...(after ? Object.keys(after) : []),
+  ]);
+  const out: FieldChange[] = [];
+  for (const key of keys) {
+    if (NOISE_FIELDS.has(key)) continue;
+    const from = before?.[key];
+    const to = after?.[key];
+    if (JSON.stringify(from) !== JSON.stringify(to)) {
+      out.push({
+        field: key.replace(/_/g, " "),
+        from: formatValue(from),
+        to: formatValue(to),
+      });
+    }
+  }
+  return out;
+}
+
+/** A plain-English line, e.g. `Alex created role "Analyst"` or
+ *  `Jordan changed status of member "Sam" from invited to active`. */
+function activityOf(event: AuditEvent): string {
+  const actor = actorLabelOf(event);
+  const typeName = humanizeType(event.object_type).toLowerCase();
+  const objName = objectLabelOf(event);
+  const named = objName.toLowerCase() !== typeName;
+  const objPart = named ? `${typeName} “${objName}”` : `a ${typeName}`;
+  if (event.action === "update") {
+    const [change] = changesOf(event.before, event.after);
+    if (change) {
+      return `${actor} changed ${change.field} of ${objPart} from ${change.from} to ${change.to}`;
+    }
+    return `${actor} updated ${objPart}`;
+  }
+  return `${actor} ${ACTION_VERB[event.action]} ${objPart}`;
 }
 
 function formatWhen(iso: string) {
@@ -142,10 +217,11 @@ export function AuditLogPage() {
   const [actionFilter, setActionFilter] = useState<string[]>([]);
   const [typeFilter, setTypeFilter] = useState<string[]>([]);
   const [selected, setSelected] = useState<AuditEvent | null>(null);
+  const [includeSystem, setIncludeSystem] = useState(false);
 
   const query = useInfiniteQuery({
-    queryKey: ["audit-log", principal?.tenant_id],
-    queryFn: ({ pageParam }) => auditApi.list(pageParam),
+    queryKey: ["audit-log", principal?.tenant_id, includeSystem],
+    queryFn: ({ pageParam }) => auditApi.list(pageParam, includeSystem),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last) => last.next_cursor ?? undefined,
   });
@@ -201,18 +277,19 @@ export function AuditLogPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl">
+    <div>
       <p className="type-overline mb-2">Access &amp; Audit</p>
       <h1 className="font-display text-heading-lg text-text-primary">
         Audit log
       </h1>
       <p className="mt-1 text-body-md text-text-secondary">
-        Append-only trail for this workspace. Never updated or deleted.
+        Append-only trail of meaningful changes in this workspace — who changed
+        what, and when. Never edited or deleted.
       </p>
 
       <div className="mb-3 mt-5 flex flex-wrap items-center gap-2">
         <FilterFacet
-          label="Actor type"
+          label="User type"
           options={ACTOR_TYPE_OPTIONS}
           values={actorTypeFilter}
           onChange={setActorTypeFilter}
@@ -234,6 +311,14 @@ export function AuditLogPage() {
             Clear filters
           </Button>
         ) : null}
+        {/* Auth/provisioning telemetry is hidden by default — this reveals it. */}
+        <label className="ml-auto flex cursor-pointer items-center gap-2 text-body-sm text-text-secondary">
+          <Checkbox
+            checked={includeSystem}
+            onCheckedChange={(value) => setIncludeSystem(value === true)}
+          />
+          Show system events
+        </label>
       </div>
 
       {query.isLoading ? (
@@ -274,9 +359,10 @@ export function AuditLogPage() {
           <Table density="compact">
             <THead>
               <TR>
-                <TH>Actor</TH>
+                <TH>User</TH>
                 <TH>Action</TH>
                 <TH>Object</TH>
+                <TH>Activity</TH>
                 <TH className="text-right">When</TH>
                 <TH>
                   <span className="sr-only">Details</span>
@@ -287,7 +373,13 @@ export function AuditLogPage() {
               {filtered.map((event) => {
                 const actor = actorLabelOf(event);
                 const object = objectLabelOf(event);
+                // Only a real name is worth showing next to the type chip —
+                // "credentials · Credentials" is just the kind said twice.
+                const objectHasName =
+                  object.toLowerCase() !==
+                  humanizeType(event.object_type).toLowerCase();
                 const action = ACTION_META[event.action];
+                const activity = activityOf(event);
                 return (
                   <TR
                     key={event.id}
@@ -312,9 +404,19 @@ export function AuditLogPage() {
                     <TD>
                       <span className="flex items-center gap-2">
                         <ObjectTypeChip type={event.object_type} />
-                        <span className="truncate text-body-md text-text-primary">
-                          {object}
-                        </span>
+                        {objectHasName ? (
+                          <span className="truncate text-body-md text-text-primary">
+                            {object}
+                          </span>
+                        ) : null}
+                      </span>
+                    </TD>
+                    <TD>
+                      <span
+                        className="block max-w-[24rem] truncate text-body-sm text-text-secondary"
+                        title={activity}
+                      >
+                        {activity}
                       </span>
                     </TD>
                     <TD className="tabular whitespace-nowrap text-right text-body-sm text-text-subtle">
@@ -356,29 +458,69 @@ export function AuditLogPage() {
         </>
       )}
 
-      {/* Row detail is a peek → drawer per the overlay decision matrix (§7.1). */}
-      <Drawer
+      {/* Row detail — a centered, responsive modal. */}
+      <Dialog
         open={selected !== null}
         onOpenChange={(open) => {
           if (!open) setSelected(null);
         }}
       >
-        <DrawerContent size="md">
+        <DialogContent className="max-h-[85vh] w-full max-w-2xl overflow-y-auto">
           {selected ? (
             <>
-              <DrawerHeader>
-                <DrawerTitle className="flex items-center gap-2">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
                   <span>{ACTION_META[selected.action].label}</span>
                   <ObjectTypeChip type={selected.object_type} />
-                </DrawerTitle>
-                <DrawerDescription>
+                </DialogTitle>
+                <DialogDescription>
                   {objectLabelOf(selected)} · by {actorLabelOf(selected)} ·{" "}
                   <span className="tabular">
                     {formatWhen(selected.occurred_at)}
                   </span>
-                </DrawerDescription>
-              </DrawerHeader>
-              <DrawerBody className="space-y-4">
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                {/* Plain-English summary of what happened. */}
+                <div className="rounded-md border border-action-accent-border bg-action-accent-tint px-3.5 py-2.5">
+                  <p className="text-body-md text-text-primary">
+                    {activityOf(selected)}
+                  </p>
+                </div>
+
+                {/* What changed, field by field (updates only). */}
+                {(() => {
+                  const changes = changesOf(selected.before, selected.after);
+                  if (changes.length === 0) return null;
+                  return (
+                    <div>
+                      <p className="type-overline mb-1.5">Changes</p>
+                      <div className="overflow-hidden rounded-md border border-border">
+                        {changes.map((change) => (
+                          <div
+                            key={change.field}
+                            className="flex items-center gap-2 border-b border-border px-3 py-2 text-body-sm last:border-0"
+                          >
+                            <span className="w-28 shrink-0 truncate font-medium capitalize text-text-secondary">
+                              {change.field}
+                            </span>
+                            <span className="min-w-0 flex-1 truncate text-text-subtle line-through">
+                              {change.from}
+                            </span>
+                            <Icon
+                              name="arrowr"
+                              className="size-3.5 shrink-0 text-text-subtle"
+                            />
+                            <span className="min-w-0 flex-1 truncate text-text-primary">
+                              {change.to}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
+
                 <SnapshotBlock
                   label="Before"
                   value={selected.before}
@@ -393,15 +535,39 @@ export function AuditLogPage() {
                   <p className="type-overline mb-1.5">Event</p>
                   <dl className="space-y-1 text-body-sm">
                     <div className="flex justify-between gap-4">
-                      <dt className="text-text-subtle">Event id</dt>
-                      <dd className="tabular truncate font-mono text-text-secondary">
-                        {selected.id}
+                      <dt className="text-text-subtle">User</dt>
+                      <dd className="truncate text-text-primary">
+                        {actorLabelOf(selected)}
                       </dd>
                     </div>
                     <div className="flex justify-between gap-4">
-                      <dt className="text-text-subtle">Actor type</dt>
+                      <dt className="text-text-subtle">User type</dt>
                       <dd className="text-text-secondary">
                         {ACTOR_TYPE_LABEL[selected.actor_type]}
+                      </dd>
+                    </div>
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-text-subtle">Object</dt>
+                      <dd className="truncate text-text-primary">
+                        {objectLabelOf(selected)}
+                      </dd>
+                    </div>
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-text-subtle">Status</dt>
+                      <dd className="text-status-success-text">
+                        Committed
+                      </dd>
+                    </div>
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-text-subtle">When</dt>
+                      <dd className="tabular text-text-secondary">
+                        {formatWhen(selected.occurred_at)}
+                      </dd>
+                    </div>
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-text-subtle">Event id</dt>
+                      <dd className="tabular truncate font-mono text-text-secondary">
+                        {selected.id}
                       </dd>
                     </div>
                     <div className="flex justify-between gap-4">
@@ -412,11 +578,11 @@ export function AuditLogPage() {
                     </div>
                   </dl>
                 </div>
-              </DrawerBody>
+              </div>
             </>
           ) : null}
-        </DrawerContent>
-      </Drawer>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

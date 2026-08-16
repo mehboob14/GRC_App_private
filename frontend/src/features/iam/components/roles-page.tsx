@@ -4,13 +4,18 @@ import {
   Badge,
   Button,
   Checkbox,
+  ConfirmDialog,
   Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
   EmptyState,
   ErrorBanner,
   ErrorState,
@@ -23,15 +28,17 @@ import {
   THead,
   TR,
   TextField,
+  useToast,
 } from "@/components/ui";
 import { iamApi } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/auth-context";
 import { useAlertFocus } from "@/features/iam/hooks/use-alert-focus";
-import type { PermissionKey } from "@/lib/api/types";
+import type { PermissionKey, Role } from "@/lib/api/types";
 
 const PERMISSIONS: { key: PermissionKey; label: string }[] = [
   { key: "tenant:read", label: "Read workspace" },
+  { key: "tenant:manage", label: "Manage company profile" },
   { key: "members:read", label: "View members" },
   { key: "members:invite", label: "Invite members" },
   { key: "members:disable", label: "Disable members" },
@@ -39,16 +46,23 @@ const PERMISSIONS: { key: PermissionKey; label: string }[] = [
   { key: "groups:manage", label: "Manage groups" },
   { key: "roles:read", label: "View roles" },
   { key: "roles:manage", label: "Manage roles" },
+  { key: "security:manage", label: "Manage security policy" },
   { key: "audit:read", label: "Read audit log" },
 ];
 
 export function RolesPage() {
   const { principal } = useAuth();
   const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const canManage = principal?.permissions.includes("roles:manage");
+
   const [open, setOpen] = useState(false);
+  // null = creating a new role; a role id = editing that role.
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [keys, setKeys] = useState<PermissionKey[]>(["tenant:read"]);
   const [error, setError] = useState<string | null>(null);
+  const [toDelete, setToDelete] = useState<Role | null>(null);
   const alertRef = useAlertFocus(error !== null);
 
   const query = useQuery({
@@ -56,18 +70,40 @@ export function RolesPage() {
     queryFn: () => iamApi.listRoles(),
   });
 
-  const createMutation = useMutation({
+  const invalidate = () =>
+    queryClient.invalidateQueries({
+      queryKey: ["roles", principal?.tenant_id],
+      exact: true,
+    });
+
+  function openCreate() {
+    setEditingId(null);
+    setName("");
+    setKeys(["tenant:read"]);
+    setError(null);
+    setOpen(true);
+  }
+
+  function openEdit(role: Role) {
+    setEditingId(role.id);
+    setName(role.name);
+    setKeys([...role.permission_keys]);
+    setError(null);
+    setOpen(true);
+  }
+
+  const saveMutation = useMutation({
     mutationFn: () =>
-      iamApi.createRole({ name: name.trim(), permission_keys: keys }),
+      editingId
+        ? iamApi.updateRole(editingId, { name: name.trim(), permission_keys: keys })
+        : iamApi.createRole({ name: name.trim(), permission_keys: keys }),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["roles", principal?.tenant_id],
-        exact: true,
-      });
+      await invalidate();
       setOpen(false);
-      setName("");
-      setKeys(["tenant:read"]);
-      setError(null);
+      toast({
+        title: editingId ? "Role updated" : "Role created",
+        tone: "success",
+      });
     },
     onError: (err: unknown) => {
       setError(
@@ -78,7 +114,24 @@ export function RolesPage() {
     },
   });
 
-  const canManage = principal?.permissions.includes("roles:manage");
+  const deleteMutation = useMutation({
+    mutationFn: (role: Role) => iamApi.deleteRole(role.id),
+    onSuccess: async (_data, role) => {
+      await invalidate();
+      setToDelete(null);
+      toast({ title: `Deleted role “${role.name}”`, tone: "neutral" });
+    },
+    onError: (err: unknown) => {
+      setToDelete(null);
+      toast({
+        title:
+          err instanceof ApiError
+            ? err.message
+            : "Couldn't delete the role — try again.",
+        tone: "danger",
+      });
+    },
+  });
 
   if (query.isLoading) {
     return <TableSkeleton rows={4} density="standard" />;
@@ -94,9 +147,7 @@ export function RolesPage() {
             : "The request failed. Retry, or contact support if it keeps happening."
         }
         referenceId={
-          query.error instanceof ApiError
-            ? query.error.correlationId
-            : undefined
+          query.error instanceof ApiError ? query.error.correlationId : undefined
         }
         onRetry={() => void query.refetch()}
       />
@@ -109,87 +160,10 @@ export function RolesPage() {
     <div>
       <div className="mb-4 flex justify-end gap-3">
         {canManage ? (
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button className="shrink-0">
-                <Icon name="plus" className="size-4" />
-                New custom role
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Create custom role</DialogTitle>
-                <DialogDescription>
-                  Built-in names (Admin, Auditor, …) stay reserved for the
-                  platform.
-                </DialogDescription>
-              </DialogHeader>
-              <form
-                className="flex flex-col gap-3"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  if (name.trim()) createMutation.mutate();
-                }}
-                noValidate
-              >
-                {error ? (
-                  <ErrorBanner ref={alertRef} title="Couldn't create the role">
-                    {error}
-                  </ErrorBanner>
-                ) : null}
-                <TextField
-                  label="Role name"
-                  placeholder="Compliance analyst"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                />
-                <fieldset>
-                  <legend className="mb-2 font-sans text-label-sm text-text-secondary">
-                    Permissions
-                  </legend>
-                  <div className="space-y-2">
-                    {PERMISSIONS.map((perm) => {
-                      const checked = keys.includes(perm.key);
-                      return (
-                        <label
-                          key={perm.key}
-                          className="flex items-center gap-2 text-body-md text-text-primary"
-                        >
-                          <Checkbox
-                            checked={checked}
-                            onCheckedChange={(value) => {
-                              setKeys((prev) =>
-                                value
-                                  ? [...prev, perm.key]
-                                  : prev.filter((k) => k !== perm.key),
-                              );
-                            }}
-                          />
-                          {perm.label}
-                        </label>
-                      );
-                    })}
-                  </div>
-                </fieldset>
-                <DialogFooter>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={() => setOpen(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    loading={createMutation.isPending}
-                    disabled={!name.trim()}
-                  >
-                    Create role
-                  </Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
+          <Button className="shrink-0" onClick={openCreate}>
+            <Icon name="plus" className="size-4" />
+            New custom role
+          </Button>
         ) : null}
       </div>
 
@@ -206,6 +180,9 @@ export function RolesPage() {
               <TH>Role</TH>
               <TH numeric>Permissions</TH>
               <TH numeric>Assignments</TH>
+              <TH>
+                <span className="sr-only">Actions</span>
+              </TH>
             </TR>
           </THead>
           <TBody>
@@ -223,11 +200,149 @@ export function RolesPage() {
                 </TD>
                 <TD numeric>{role.permission_keys.length}</TD>
                 <TD numeric>{role.assignment_count}</TD>
+                <TD className="text-right">
+                  {canManage && !role.built_in ? (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          aria-label={`Actions for ${role.name}`}
+                        >
+                          <Icon name="more" className="size-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onSelect={() =>
+                            window.setTimeout(() => openEdit(role), 0)
+                          }
+                        >
+                          Edit role
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          variant="danger"
+                          onSelect={() =>
+                            window.setTimeout(() => setToDelete(role), 0)
+                          }
+                        >
+                          Delete role
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  ) : null}
+                </TD>
               </TR>
             ))}
           </TBody>
         </Table>
       )}
+
+      {/* Create / edit share one form. */}
+      <Dialog
+        open={open}
+        onOpenChange={(next) => {
+          setOpen(next);
+          if (!next) setError(null);
+        }}
+      >
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {editingId ? "Edit role" : "Create custom role"}
+            </DialogTitle>
+            <DialogDescription>
+              {editingId
+                ? "Rename this role or change what it can do. Changes apply to everyone who holds it."
+                : "Built-in names (Admin, Auditor, …) stay reserved for the platform."}
+            </DialogDescription>
+          </DialogHeader>
+          <form
+            className="flex flex-col gap-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (name.trim()) saveMutation.mutate();
+            }}
+            noValidate
+          >
+            {error ? (
+              <ErrorBanner ref={alertRef} title="Couldn't save the role">
+                {error}
+              </ErrorBanner>
+            ) : null}
+            <TextField
+              label="Role name"
+              placeholder="Compliance analyst"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+            <fieldset>
+              <legend className="mb-2 font-sans text-label-sm text-text-secondary">
+                Permissions
+              </legend>
+              <div className="space-y-2">
+                {PERMISSIONS.map((perm) => {
+                  const checked = keys.includes(perm.key);
+                  return (
+                    <label
+                      key={perm.key}
+                      className="flex items-center gap-2 text-body-md text-text-primary"
+                    >
+                      <Checkbox
+                        checked={checked}
+                        onCheckedChange={(value) => {
+                          setKeys((prev) =>
+                            value
+                              ? [...prev, perm.key]
+                              : prev.filter((k) => k !== perm.key),
+                          );
+                        }}
+                      />
+                      {perm.label}
+                    </label>
+                  );
+                })}
+              </div>
+            </fieldset>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                loading={saveMutation.isPending}
+                disabled={!name.trim()}
+              >
+                {editingId ? "Save changes" : "Create role"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <ConfirmDialog
+        open={toDelete !== null}
+        onOpenChange={(next) => {
+          if (!next) setToDelete(null);
+        }}
+        title={`Delete role “${toDelete?.name ?? ""}”?`}
+        consequence={
+          <>
+            This removes the role and any assignments to it. Members keep their
+            other roles. This can’t be undone.
+          </>
+        }
+        confirmLabel="Delete role"
+        loading={deleteMutation.isPending}
+        onConfirm={() => {
+          if (toDelete) deleteMutation.mutate(toDelete);
+        }}
+      />
     </div>
   );
 }

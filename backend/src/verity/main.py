@@ -25,6 +25,7 @@ from verity.core.middleware import (
     SecurityHeadersMiddleware,
 )
 from verity.modules.audit.router import router as audit_router
+from verity.modules.compliance.control_router import controls_router
 from verity.modules.compliance.router import frameworks_router, templates_router
 from verity.modules.iam.router import (
     auth_router,
@@ -119,6 +120,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(audit_router, prefix=API_PREFIX)
     app.include_router(frameworks_router, prefix=API_PREFIX)
     app.include_router(templates_router, prefix=API_PREFIX)
+    app.include_router(controls_router, prefix=API_PREFIX)
     app.include_router(auth_router, prefix=API_PREFIX)
     app.include_router(members_router, prefix=API_PREFIX)
     app.include_router(groups_router, prefix=API_PREFIX)

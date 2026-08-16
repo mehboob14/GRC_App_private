@@ -63,6 +63,7 @@ from verity.modules.iam.schemas import (
     RoleAssignmentOut,
     RoleCreate,
     RoleOut,
+    RoleUpdate,
     SecuritySettingsOut,
     SecuritySettingsPatch,
     SelectWorkspaceResponse,
@@ -536,6 +537,30 @@ async def create_role(
         session,
         tenant_id=context.tenant_id,
         actor_membership_id=principal.membership_id,
+        name=body.name,
+        permission_keys=body.permission_keys,
+    )
+    return RoleOut.model_validate(role)
+
+
+@roles_router.patch(
+    "/{role_id}",
+    response_model=RoleOut,
+    summary="Rename a custom role and/or replace its permissions (built-in: 409)",
+)
+async def update_role(
+    role_id: uuid.UUID,
+    body: RoleUpdate,
+    principal: Annotated[Principal, Depends(require_roles_manage)],
+    context: Annotated[TenantContext, Depends(get_tenant_context)],
+    session: Annotated[AsyncSession, Depends(get_tenant_session)],
+) -> RoleOut:
+    assert principal.membership_id is not None  # noqa: S101
+    role = await iam_service.update_role(
+        session,
+        tenant_id=context.tenant_id,
+        actor_membership_id=principal.membership_id,
+        role_id=role_id,
         name=body.name,
         permission_keys=body.permission_keys,
     )

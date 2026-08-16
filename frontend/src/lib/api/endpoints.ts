@@ -2,10 +2,16 @@ import { apiFetch } from "@/lib/api/client";
 import type {
   AcceptInvitationRequest,
   AcceptInvitationResponse,
+  AdoptLibraryResult,
   AuditEvent,
+  Control,
+  ControlCreateRequest,
+  ControlQuery,
   ControlTemplateDetail,
   ControlTemplatePage,
   ControlTemplateQuery,
+  ControlUpdateRequest,
+  ControlVocabulary,
   CursorPage,
   Framework,
   Group,
@@ -169,9 +175,12 @@ export const tenantApi = {
 };
 
 export const auditApi = {
-  list: (cursor?: string) => {
-    const qs = cursor ? `?cursor=${encodeURIComponent(cursor)}` : "";
-    return apiFetch<CursorPage<AuditEvent>>(`/audit-log${qs}`);
+  list: (cursor?: string, includeSystem = false) => {
+    const params = new URLSearchParams();
+    if (cursor) params.set("cursor", cursor);
+    if (includeSystem) params.set("include_system", "true");
+    const qs = params.toString();
+    return apiFetch<CursorPage<AuditEvent>>(`/audit-log${qs ? `?${qs}` : ""}`);
   },
 };
 
@@ -191,4 +200,39 @@ export const complianceApi = {
   },
   getControlTemplate: (templateId: string) =>
     apiFetch<ControlTemplateDetail>(`/control-templates/${templateId}`),
+};
+
+export const controlsApi = {
+  list: (query: ControlQuery = {}) => {
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(query)) {
+      if (value !== undefined && value !== "") params.set(key, String(value));
+    }
+    const qs = params.toString();
+    return apiFetch<Control[]>(`/controls${qs ? `?${qs}` : ""}`);
+  },
+  get: (controlId: string) => apiFetch<Control>(`/controls/${controlId}`),
+  vocabulary: () => apiFetch<ControlVocabulary>("/controls/vocabulary"),
+  adopt: (requirement_ids?: string[]) =>
+    apiFetch<AdoptLibraryResult>("/controls/adopt", {
+      method: "POST",
+      body: JSON.stringify(requirement_ids ? { requirement_ids } : {}),
+    }),
+  create: (body: ControlCreateRequest) =>
+    apiFetch<Control>("/controls", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  update: (controlId: string, body: ControlUpdateRequest) =>
+    apiFetch<Control>(`/controls/${controlId}`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
+  disable: (controlId: string, reason: string) =>
+    apiFetch<Control>(`/controls/${controlId}/disable`, {
+      method: "POST",
+      body: JSON.stringify({ reason }),
+    }),
+  enable: (controlId: string) =>
+    apiFetch<Control>(`/controls/${controlId}/enable`, { method: "POST" }),
 };
