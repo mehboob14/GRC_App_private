@@ -458,3 +458,48 @@ Listed so it is visible that these are unanswered rather than forgotten:
    first dashboard reads.
 
 Everything else above is a decision I will build to unless told otherwise.
+
+---
+
+## Stage 5 decisions — evidence module (answered by the client, 2026-08-16)
+
+**D12 — File storage is local disk for development.**
+Evidence bytes land on local disk behind the `ObjectStore` protocol already in
+`core/storage.py`. That seam is why this is a configuration choice and not an
+architecture one: `S3Settings` and its `verity-evidence` bucket already exist in
+config, so moving to MinIO/S3 later is a second `ObjectStore` implementation and
+a settings change, with no call site touched.
+
+What local disk does NOT change: the sha256 content hash, MIME sniffing from
+content rather than filename, filename sanitisation, and the size cap all
+already happen on write and stay identical across backends.
+
+**D13 — Evidence type and validity period are chosen by the user, not fixed.**
+The platform ships a starting set of types with sensible default validity
+periods, and every one of them is offered — and overridable — at upload *and*
+at edit. The client's instruction was "all options should be given to the user".
+
+Shipped starting set (type → default validity):
+- Screenshot → 90 days
+- Configuration export → 90 days
+- Log export → 30 days
+- Policy document → 365 days
+- Signed attestation → 365 days
+- Training record → 365 days
+- Vendor report (SOC 2, pen test) → 365 days
+- Ticket / change record → 90 days
+- Meeting minutes → 365 days
+- Other → 90 days
+
+These are defaults, not a constraint: the renewal date is a real column the user
+can set directly, and the type's period only pre-fills it. A compliance product
+must not silently decide when someone's evidence expires.
+
+**D14 — Staleness is derived from the renewal date, never stored as a flag.**
+A stored `is_stale` boolean is wrong within a day of being written. Freshness is
+computed from `renewal_date` against now, so it is correct at read time without
+a job. The automatic renewal task (Stage 6) is the thing a job creates, not the
+staleness itself.
+
+**Still open:** the PDF library for the branded readiness report (Stage 8).
+Needs a dependency and an ADR; not blocking Stages 5–7.
