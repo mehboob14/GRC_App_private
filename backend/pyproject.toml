@@ -339,6 +339,21 @@ forbidden_modules = [
 name = "compliance reaches no other module's data"
 type = "forbidden"
 source_modules = ["verity.modules.compliance"]
+# compliance calls AuditService (rule 5 — every state change is audited) and
+# IamService (owner names resolve through memberships, rule 3). Those are the
+# sanctioned service interfaces; what each one does with its own repository and
+# models is its private business, not compliance reaching another module's data.
+# Every other path into another module's repository or models stays forbidden.
+ignore_imports = [
+    "verity.modules.audit.service -> verity.modules.audit.repository",
+    "verity.modules.audit.service -> verity.modules.audit.models",
+    "verity.modules.iam.service -> verity.modules.iam.repository",
+    "verity.modules.iam.service -> verity.modules.iam.models",
+    "verity.modules.iam.service -> verity.modules.audit.service",
+    "verity.modules.iam.service -> verity.modules.tenancy.service",
+    "verity.modules.tenancy.service -> verity.modules.tenancy.repository",
+    "verity.modules.tenancy.service -> verity.modules.tenancy.models",
+]
 forbidden_modules = [
     "verity.modules.ai.repository", "verity.modules.ai.models",
     "verity.modules.approvals.repository", "verity.modules.approvals.models",

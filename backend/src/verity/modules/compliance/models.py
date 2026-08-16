@@ -46,9 +46,16 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql.elements import conv
 
-from verity.db.base import Base, Timestamped, UUIDPrimaryKey, status_check
+from verity.db.base import (
+    Base,
+    TenantScoped,
+    Timestamped,
+    UUIDPrimaryKey,
+    status_check,
+    tenant_index,
+)
 
-CONTROL_TYPES: Final[tuple[str, ...]] = (
+CONTROL_CATEGORIES: Final[tuple[str, ...]] = (
     "Governance, Risk & Compliance",
     "Data Management & Privacy",
     "Identity & Access Management",
@@ -61,6 +68,18 @@ CONTROL_TYPES: Final[tuple[str, ...]] = (
     "Communications & Collaboration Security",
     "Physical & Environmental Security",
 )
+"""The library's domain taxonomy — which part of the estate a control lives in."""
+
+CONTROL_TYPES: Final[tuple[str, ...]] = ("Preventive", "Detective", "Corrective")
+"""What a control does about a risk: stop it, surface it, or restore after it.
+
+Supersedes D1, which seeded Type equal to Category while no vocabulary existed.
+Category answers *where*, Type answers *what it does*, Sub-type answers *how it
+is operated* — three columns that each carry information the other two do not."""
+
+CONTROL_SUB_TYPES: Final[tuple[str, ...]] = ("Manual", "Automated", "Hybrid")
+"""How a control is operated. Hybrid is the honest middle: a system produces the
+signal and a person acts on it, which is most of a real SOC 2 estate."""
 """The Type vocabulary (D1), derived from the 11 categories the shipped library
 already carries on all 114 rows. One list, used verbatim on ``control_templates``
 **and** on ``controls``: a template whose type a control could not legally hold is a
@@ -193,14 +212,10 @@ class FrameworkVersionRequirement(Timestamped, Base):
 class ControlTemplate(UUIDPrimaryKey, Timestamped, Base):
     """A shipped control the platform instantiates into a tenant. The compliance IP.
 
-    ``category`` is the library's own taxonomy and ``control_type`` is the client-facing
-    Type axis; D1 seeds them equal on all 114 rows and they diverge only if the client
-    supplies a different Type vocabulary, which is then an ``UPDATE`` of one column.
-
-    ``control_sub_type`` carries **no** ``CHECK``, deliberately. D1: no Sub-type
-    vocabulary exists yet, and a check against an empty vocabulary rejects every
-    non-null value — a column no custom control could ever populate. The constraint
-    arrives with the client's list.
+    Three axes that each say something the others do not: ``category`` is where in
+    the estate the control lives, ``control_type`` is what it does about a risk
+    (Preventive / Detective / Corrective), and ``control_sub_type`` is how it is
+    operated (Manual / Automated / Hybrid). All three are CHECK-constrained.
     """
 
     __tablename__ = "control_templates"
@@ -217,7 +232,9 @@ class ControlTemplate(UUIDPrimaryKey, Timestamped, Base):
     built_in: Mapped[bool] = mapped_column(server_default=text("true"), default=True)
 
     __table_args__ = (
+        status_check("control_templates", "category", CONTROL_CATEGORIES),
         status_check("control_templates", "control_type", CONTROL_TYPES),
+        status_check("control_templates", "control_sub_type", CONTROL_SUB_TYPES),
         status_check("control_templates", "importance", TEMPLATE_IMPORTANCE),
         # Not unique: two content packs may legitimately ship two templates for one
         # concept, and the shared key is what collapses them at instantiation.
@@ -276,4 +293,132 @@ class TemplateRequirementMap(UUIDPrimaryKey, Timestamped, Base):
         return (
             f"TemplateRequirementMap(template={self.template_id!r}, "
             f"requirement={self.requirement_id!r})"
+        )
+
+
+# ---------------------------------------------------------------------------
+# Tenant plane — the working control library
+# ---------------------------------------------------------------------------
+
+CONTROL_STATUSES: Final[tuple[str, ...]] = (
+    "not_started",
+    "in_progress",
+    "implemented",
+    "not_applicable",
+)
+"""Implementation state of a tenant's control. Rule 6: a control is never
+deleted — it is disabled with a reason, which is a separate flag from status so
+the state it was in when it was retired is not overwritten."""
+
+CONTROL_SOURCES: Final[tuple[str, ...]] = ("template", "custom")
+"""Where the control came from. ``template`` rows keep ``template_id`` so a
+library update can be diffed against them; ``custom`` rows are the tenant's own
+and have no upstream."""
+
+
+class Control(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
+    """One control in a tenant's working library.
+
+    Instantiated from a :class:`ControlTemplate` or authored by the tenant. The
+    template's text is **copied**, not referenced: a tenant edits its own
+    wording, and a later library update must not silently rewrite what an
+    auditor already reviewed. ``template_id`` records the ancestry so a future
+    'template changed' diff is possible.
+
+    Rule 6 — compliance objects are never hard-deleted. ``disabled_at`` +
+    ``disabled_reason`` retire a control with a recorded justification; the
+    paired CHECK keeps the two from disagreeing.
+
+    Rule 9 — ``source``/``external_id``/``synced_at`` are here from the first
+    migration so a future connector that discovers controls is a sync, not a
+    migration.
+    """
+
+    __tablename__ = "controls"
+
+    template_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("control_templates.id", ondelete="RESTRICT"), default=None
+    )
+    code: Mapped[str]
+    name: Mapped[str]
+    description: Mapped[str]
+    implementation_guidance: Mapped[str | None] = mapped_column(default=None)
+    category: Mapped[str]
+    control_type: Mapped[str]
+    control_sub_type: Mapped[str | None] = mapped_column(default=None)
+    status: Mapped[str] = mapped_column(default="not_started")
+
+    # Rule 3: an in-tenant person is a membership, never a global user id.
+    owner_membership_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("tenant_memberships.id", ondelete="SET NULL"), default=None
+    )
+
+    origin: Mapped[str] = mapped_column(default="template")
+    disabled_at: Mapped[datetime | None] = mapped_column(default=None)
+    disabled_reason: Mapped[str | None] = mapped_column(default=None)
+
+    source: Mapped[str | None] = mapped_column(default=None)
+    external_id: Mapped[str | None] = mapped_column(default=None)
+    synced_at: Mapped[datetime | None] = mapped_column(default=None)
+
+    __table_args__ = (
+        status_check("controls", "status", CONTROL_STATUSES),
+        status_check("controls", "control_type", CONTROL_TYPES),
+        status_check("controls", "control_sub_type", CONTROL_SUB_TYPES),
+        status_check("controls", "category", CONTROL_CATEGORIES),
+        status_check("controls", "origin", CONTROL_SOURCES),
+        CheckConstraint(
+            "(disabled_at IS NULL) = (disabled_reason IS NULL)",
+            name=conv("ck_controls__disabled_has_reason"),
+        ),
+        # One control per template per tenant: adopting the library twice must
+        # not double it. Custom controls have a NULL template_id, and Postgres
+        # treats NULLs as distinct, so they are unaffected.
+        UniqueConstraint("tenant_id", "template_id", name="uq_controls__tenant_template"),
+        UniqueConstraint("tenant_id", "code", name="uq_controls__tenant_code"),
+        tenant_index("controls", "status"),
+        tenant_index("controls", "category"),
+        # Rule 9's uniqueness for anything that arrives from outside.
+        Index(
+            "uq_controls__tenant_source_external",
+            "tenant_id",
+            "source",
+            "external_id",
+            unique=True,
+            postgresql_where=text("external_id IS NOT NULL"),
+        ),
+    )
+
+    def __repr__(self) -> str:
+        return f"Control(id={self.id!r}, tenant_id={self.tenant_id!r}, code={self.code!r})"
+
+
+class ControlRequirement(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
+    """Which criterion a tenant's control satisfies.
+
+    Seeded from the shipped crosswalk at instantiation, then owned by the
+    tenant: mapping a control to another criterion, or unmapping one, is a
+    tenant decision an auditor may need to see. This is the table the coverage
+    view reads — a criterion with no row here has no control.
+    """
+
+    __tablename__ = "control_requirements"
+
+    control_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("controls.id", ondelete="CASCADE"))
+    requirement_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("requirements.id", ondelete="RESTRICT")
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "tenant_id", "control_id", "requirement_id", name="uq_control_requirements"
+        ),
+        tenant_index("control_requirements", "requirement_id"),
+        tenant_index("control_requirements", "control_id"),
+    )
+
+    def __repr__(self) -> str:
+        return (
+            f"ControlRequirement(control_id={self.control_id!r}, "
+            f"requirement_id={self.requirement_id!r})"
         )

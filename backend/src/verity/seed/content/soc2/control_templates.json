@@ -3,1140 +3,1254 @@
     "canonical_key": "code-of-conduct",
     "category": "Governance, Risk & Compliance",
     "code": "code-of-conduct",
-    "control_type": "Governance, Risk & Compliance",
+    "control_type": "Preventive",
     "description": "A documented, acknowledged code of conduct sets the tone for integrity and ethical behaviour across the organization.",
     "implementation_guidance": "Publish a code of conduct covering ethics, acceptable use and confidentiality, and require every employee and contractor to sign it at hire and annually.",
     "importance": "mandatory",
-    "name": "Code of conduct and ethics policy"
+    "name": "Code of conduct and ethics policy",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "disciplinary-process",
     "category": "Governance, Risk & Compliance",
     "code": "disciplinary-process",
-    "control_type": "Governance, Risk & Compliance",
+    "control_type": "Corrective",
     "description": "Consistent consequences for policy violations hold people accountable and deter misconduct.",
     "implementation_guidance": "Define a disciplinary process in policy, apply it when violations occur, and retain sanction records.",
     "importance": "mandatory",
-    "name": "Documented disciplinary process"
+    "name": "Documented disciplinary process",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "security-org-structure",
     "category": "Governance, Risk & Compliance",
     "code": "security-org-structure",
-    "control_type": "Governance, Risk & Compliance",
+    "control_type": "Preventive",
     "description": "Clear reporting lines and authorities ensure everyone knows who owns security responsibilities.",
     "implementation_guidance": "Maintain a current org chart and role descriptions that include security duties, reviewed at least annually.",
     "importance": "mandatory",
-    "name": "Organizational structure and reporting lines"
+    "name": "Organizational structure and reporting lines",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "designate-security-officer",
     "category": "Governance, Risk & Compliance",
     "code": "designate-security-officer",
-    "control_type": "Governance, Risk & Compliance",
+    "control_type": "Preventive",
     "description": "A named owner is accountable for the security program and its outcomes.",
     "implementation_guidance": "Formally designate a CISO or security lead in policy or by board resolution, with defined authority and escalation paths.",
     "importance": "mandatory",
-    "name": "Designated security officer"
+    "name": "Designated security officer",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "board-security-oversight",
     "category": "Governance, Risk & Compliance",
     "code": "board-security-oversight",
-    "control_type": "Governance, Risk & Compliance",
+    "control_type": "Preventive",
     "description": "Independent oversight of the security program is a core governance expectation.",
     "implementation_guidance": "Put security posture, incidents and risk on the board or oversight-body agenda at least annually and document the meetings.",
     "importance": "mandatory",
-    "name": "Board / executive security oversight"
+    "name": "Board / executive security oversight",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "management-review",
     "category": "Governance, Risk & Compliance",
     "code": "management-review",
-    "control_type": "Governance, Risk & Compliance",
+    "control_type": "Detective",
     "description": "Regular leadership review ensures deficiencies are seen and acted on by the people who can resource fixes.",
     "implementation_guidance": "Hold a recurring (quarterly recommended) management review of control health, findings and remediation, with minutes.",
     "importance": "mandatory",
-    "name": "Periodic management review of security"
+    "name": "Periodic management review of security",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "define-roles-responsibilities",
     "category": "Governance, Risk & Compliance",
     "code": "define-roles-responsibilities",
-    "control_type": "Governance, Risk & Compliance",
+    "control_type": "Preventive",
     "description": "Every control needs an accountable owner or it will not be operated reliably.",
     "implementation_guidance": "Map each control to a named owner and keep the mapping current as people change roles.",
     "importance": "mandatory",
-    "name": "Assigned control ownership (RACI)"
+    "name": "Assigned control ownership (RACI)",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "system-description",
     "category": "Governance, Risk & Compliance",
     "code": "system-description",
-    "control_type": "Governance, Risk & Compliance",
+    "control_type": "Preventive",
     "description": "Objectives must be defined clearly enough that risks to them can be identified.",
     "implementation_guidance": "Document the system, the commitments made to customers, and the requirements that follow, and anchor the risk assessment to them.",
     "importance": "mandatory",
-    "name": "System description and service commitments"
+    "name": "System description and service commitments",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "risk-assessment",
     "category": "Governance, Risk & Compliance",
     "code": "risk-assessment",
-    "control_type": "Governance, Risk & Compliance",
+    "control_type": "Detective",
     "description": "A documented, recurring risk assessment is the backbone of the program.",
     "implementation_guidance": "Perform a formal risk assessment at least annually and on major change, scoring likelihood and impact against defined objectives.",
     "importance": "mandatory",
-    "name": "Annual risk assessment"
+    "name": "Annual risk assessment",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "risk-register",
     "category": "Governance, Risk & Compliance",
     "code": "risk-register",
-    "control_type": "Governance, Risk & Compliance",
+    "control_type": "Preventive",
     "description": "Risks must be tracked with owners, ratings and a treatment decision to be managed.",
     "implementation_guidance": "Maintain a register capturing inherent and residual risk, owner, and treatment (accept/mitigate/transfer/avoid), linked to controls.",
     "importance": "mandatory",
-    "name": "Risk register with treatment decisions"
+    "name": "Risk register with treatment decisions",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "risk-treatment-plan",
     "category": "Governance, Risk & Compliance",
     "code": "risk-treatment-plan",
-    "control_type": "Governance, Risk & Compliance",
+    "control_type": "Corrective",
     "description": "Selected mitigations must be planned and tracked to reduce risk to acceptable levels.",
     "implementation_guidance": "For each material risk, record the treatment actions, owner and due dates, and track them to closure.",
     "importance": "mandatory",
-    "name": "Risk treatment plan"
+    "name": "Risk treatment plan",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "fraud-risk",
     "category": "Governance, Risk & Compliance",
     "code": "fraud-risk",
-    "control_type": "Governance, Risk & Compliance",
+    "control_type": "Preventive",
     "description": "SOC 2 explicitly requires fraud, including insider misuse, to be considered.",
     "implementation_guidance": "Add a fraud/insider-threat section to the risk assessment and map it to mitigations such as least privilege and logging.",
     "importance": "mandatory",
-    "name": "Fraud and insider-threat consideration"
+    "name": "Fraud and insider-threat consideration",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "change-risk-review",
     "category": "Governance, Risk & Compliance",
     "code": "change-risk-review",
-    "control_type": "Governance, Risk & Compliance",
+    "control_type": "Preventive",
     "description": "Significant changes can introduce new risks that must be assessed out of cycle.",
     "implementation_guidance": "Define triggers (new subprocessor, major architecture change, new data type) that force a documented mini risk review.",
     "importance": "mandatory",
-    "name": "Change-triggered risk review"
+    "name": "Change-triggered risk review",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "control-risk-mapping",
     "category": "Governance, Risk & Compliance",
     "code": "control-risk-mapping",
-    "control_type": "Governance, Risk & Compliance",
+    "control_type": "Preventive",
     "description": "Controls must demonstrably mitigate identified risks, with no orphan risks.",
     "implementation_guidance": "Maintain an explicit mapping of risks to mitigating controls and flag any risk with no control or documented acceptance.",
     "importance": "mandatory",
-    "name": "Risk-to-control mapping"
+    "name": "Risk-to-control mapping",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "it-general-controls",
     "category": "Governance, Risk & Compliance",
     "code": "it-general-controls",
-    "control_type": "Governance, Risk & Compliance",
+    "control_type": "Preventive",
     "description": "Technology-general controls (access, change, operations) underpin every other control.",
     "implementation_guidance": "Ensure the full technology footprint is inventoried and covered by access, change-management and operations controls.",
     "importance": "mandatory",
-    "name": "IT general controls coverage"
+    "name": "IT general controls coverage",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "policy-suite",
     "category": "Governance, Risk & Compliance",
     "code": "policy-suite",
-    "control_type": "Governance, Risk & Compliance",
+    "control_type": "Preventive",
     "description": "Written, approved policies deploy controls consistently across the organization.",
     "implementation_guidance": "Maintain the standard policy set (InfoSec, access, change, IR, BC/DR, vendor, data, acceptable use, secure development), approved and versioned.",
     "importance": "mandatory",
-    "name": "Security policy suite"
+    "name": "Security policy suite",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "annual-policy-review",
     "category": "Governance, Risk & Compliance",
     "code": "annual-policy-review",
-    "control_type": "Governance, Risk & Compliance",
+    "control_type": "Detective",
     "description": "Stale policies are a top audit exception; policies must match practice.",
     "implementation_guidance": "Review and re-approve every policy at least annually, tracking review dates and version history.",
     "importance": "mandatory",
-    "name": "Annual policy review"
+    "name": "Annual policy review",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "continuous-monitoring",
     "category": "Governance, Risk & Compliance",
     "code": "continuous-monitoring",
-    "control_type": "Governance, Risk & Compliance",
+    "control_type": "Detective",
     "description": "Ongoing evaluation proves controls operate throughout the period, not just at a point in time.",
     "implementation_guidance": "Run automated checks continuously against connected systems and review failures with owners.",
     "importance": "mandatory",
-    "name": "Continuous control monitoring"
+    "name": "Continuous control monitoring",
+    "control_sub_type": "Automated"
   },
   {
     "canonical_key": "penetration-test",
     "category": "Governance, Risk & Compliance",
     "code": "penetration-test",
-    "control_type": "Governance, Risk & Compliance",
+    "control_type": "Detective",
     "description": "Independent testing surfaces weaknesses internal monitoring misses.",
     "implementation_guidance": "Commission an external penetration test at least annually and track findings to remediation against SLA.",
     "importance": "mandatory",
-    "name": "Annual penetration test"
+    "name": "Annual penetration test",
+    "control_sub_type": "Hybrid"
   },
   {
     "canonical_key": "internal-audit",
     "category": "Governance, Risk & Compliance",
     "code": "internal-audit",
-    "control_type": "Governance, Risk & Compliance",
+    "control_type": "Detective",
     "description": "A periodic internal review catches gaps before the external auditor does.",
     "implementation_guidance": "Perform an internal control review or readiness assessment ahead of the audit window and document the results.",
     "importance": "preferred",
-    "name": "Internal audit / readiness assessment"
+    "name": "Internal audit / readiness assessment",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "deficiency-tracking",
     "category": "Governance, Risk & Compliance",
     "code": "deficiency-tracking",
-    "control_type": "Governance, Risk & Compliance",
+    "control_type": "Corrective",
     "description": "Identified deficiencies must be routed, tracked and closed, or formally accepted.",
     "implementation_guidance": "Track every finding with an owner, severity-based SLA and closure evidence, escalating aging or critical items.",
     "importance": "mandatory",
-    "name": "Deficiency remediation tracking"
+    "name": "Deficiency remediation tracking",
+    "control_sub_type": "Hybrid"
   },
   {
     "canonical_key": "compliance-register",
     "category": "Governance, Risk & Compliance",
     "code": "compliance-register",
-    "control_type": "Governance, Risk & Compliance",
+    "control_type": "Preventive",
     "description": "Knowing your legal, regulatory and contractual commitments is a prerequisite to meeting them.",
     "implementation_guidance": "Maintain a register of applicable obligations and map them to the controls that satisfy each.",
     "importance": "preferred",
-    "name": "Compliance obligations register"
+    "name": "Compliance obligations register",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "publish-policies",
     "category": "Communications & Collaboration Security",
     "code": "publish-policies",
-    "control_type": "Communications & Collaboration Security",
+    "control_type": "Preventive",
     "description": "Staff can only follow policies they can find and have acknowledged.",
     "implementation_guidance": "Publish policies where all staff can access them and track acknowledgments at hire and on change.",
     "importance": "mandatory",
-    "name": "Internal policy portal"
+    "name": "Internal policy portal",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "incident-reporting-channel",
     "category": "Communications & Collaboration Security",
     "code": "incident-reporting-channel",
-    "control_type": "Communications & Collaboration Security",
+    "control_type": "Detective",
     "description": "People need a known, easy way to report suspected security issues.",
     "implementation_guidance": "Operate a dedicated channel (e.g. a security Slack channel or security@ alias) and communicate it to all staff.",
     "importance": "mandatory",
-    "name": "Security incident reporting channel"
+    "name": "Security incident reporting channel",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "whistleblower",
     "category": "Communications & Collaboration Security",
     "code": "whistleblower",
-    "control_type": "Communications & Collaboration Security",
+    "control_type": "Detective",
     "description": "A confidential reporting path supports the integrity and accountability criteria.",
     "implementation_guidance": "Provide an anonymous reporting mechanism and document how reports are handled.",
     "importance": "preferred",
-    "name": "Whistleblower / ethics reporting mechanism"
+    "name": "Whistleblower / ethics reporting mechanism",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "external-commitments",
     "category": "Communications & Collaboration Security",
     "code": "external-commitments",
-    "control_type": "Communications & Collaboration Security",
+    "control_type": "Preventive",
     "description": "Customers must be told your security, availability and privacy commitments.",
     "implementation_guidance": "Publish terms of service, SLA, a security/trust page and privacy policy, kept current with actual practice.",
     "importance": "mandatory",
-    "name": "External security commitments"
+    "name": "External security commitments",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "breach-notification-commitment",
     "category": "Communications & Collaboration Security",
     "code": "breach-notification-commitment",
-    "control_type": "Communications & Collaboration Security",
+    "control_type": "Preventive",
     "description": "Contractual breach-notification promises must be defined and honoured.",
     "implementation_guidance": "Document breach-notification timeframes to customers and ensure the incident process triggers them.",
     "importance": "mandatory",
-    "name": "Customer breach-notification commitment"
+    "name": "Customer breach-notification commitment",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "background-checks",
     "category": "Human Resources & Personnel Security",
     "code": "background-checks",
-    "control_type": "Human Resources & Personnel Security",
+    "control_type": "Preventive",
     "description": "Background screening reduces the risk of granting access to unsuitable individuals.",
     "implementation_guidance": "Run background checks (where legally permitted) before granting production access, and retain completion records.",
     "importance": "mandatory",
-    "name": "Pre-hire background checks"
+    "name": "Pre-hire background checks",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "security-training",
     "category": "Human Resources & Personnel Security",
     "code": "security-training",
-    "control_type": "Human Resources & Personnel Security",
+    "control_type": "Preventive",
     "description": "Trained staff are the first line of defence; training gaps are a frequent exception.",
     "implementation_guidance": "Deliver security-awareness training at onboarding and at least annually, tracking 100% completion.",
     "importance": "mandatory",
-    "name": "Security awareness training"
+    "name": "Security awareness training",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "job-descriptions",
     "category": "Human Resources & Personnel Security",
     "code": "job-descriptions",
-    "control_type": "Human Resources & Personnel Security",
+    "control_type": "Preventive",
     "description": "Competence starts with defining the qualifications and duties a role requires.",
     "implementation_guidance": "Maintain role descriptions that state required qualifications and security responsibilities.",
     "importance": "preferred",
-    "name": "Job descriptions with security responsibilities"
+    "name": "Job descriptions with security responsibilities",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "onboarding-checklist",
     "category": "Human Resources & Personnel Security",
     "code": "onboarding-checklist",
-    "control_type": "Human Resources & Personnel Security",
+    "control_type": "Preventive",
     "description": "A consistent onboarding process ensures access, training and acknowledgments happen every time.",
     "implementation_guidance": "Use a per-hire checklist covering access request/approval, policy acknowledgment and training assignment.",
     "importance": "mandatory",
-    "name": "Onboarding checklist"
+    "name": "Onboarding checklist",
+    "control_sub_type": "Hybrid"
   },
   {
     "canonical_key": "offboarding-checklist",
     "category": "Human Resources & Personnel Security",
     "code": "offboarding-checklist",
-    "control_type": "Human Resources & Personnel Security",
+    "control_type": "Preventive",
     "description": "A single ex-employee with live access is a severe finding; offboarding must be reliable and timely.",
     "implementation_guidance": "Trigger deprovisioning on termination across all systems within a defined SLA and verify it completed.",
     "importance": "mandatory",
-    "name": "Offboarding and deprovisioning"
+    "name": "Offboarding and deprovisioning",
+    "control_sub_type": "Hybrid"
   },
   {
     "canonical_key": "confidentiality-agreements",
     "category": "Human Resources & Personnel Security",
     "code": "confidentiality-agreements",
-    "control_type": "Human Resources & Personnel Security",
+    "control_type": "Preventive",
     "description": "Contractual confidentiality obligations protect customer and company information.",
     "implementation_guidance": "Require signed confidentiality and IP agreements from all employees and contractors.",
     "importance": "mandatory",
-    "name": "Confidentiality / IP agreements"
+    "name": "Confidentiality / IP agreements",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "performance-reviews",
     "category": "Human Resources & Personnel Security",
     "code": "performance-reviews",
-    "control_type": "Human Resources & Personnel Security",
+    "control_type": "Detective",
     "description": "Ongoing performance management sustains a competent workforce.",
     "implementation_guidance": "Run a documented performance-review process for staff.",
     "importance": "preferred",
-    "name": "Performance management"
+    "name": "Performance management",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "contractor-management",
     "category": "Human Resources & Personnel Security",
     "code": "contractor-management",
-    "control_type": "Human Resources & Personnel Security",
+    "control_type": "Preventive",
     "description": "Contractors carry the same access risk as employees and are a common offboarding gap.",
     "implementation_guidance": "Track contractors with end dates, apply the same onboarding/offboarding, and review their access.",
     "importance": "preferred",
-    "name": "Contractor lifecycle management"
+    "name": "Contractor lifecycle management",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "enforce-sso",
     "category": "Identity & Access Management",
     "code": "enforce-sso",
-    "control_type": "Identity & Access Management",
+    "control_type": "Preventive",
     "description": "Centralizing authentication improves control over access and makes revocation reliable.",
     "implementation_guidance": "Enable SSO across all critical systems that support it and route access through the identity provider.",
     "importance": "mandatory",
-    "name": "Enforce single sign-on"
+    "name": "Enforce single sign-on",
+    "control_sub_type": "Automated"
   },
   {
     "canonical_key": "enforce-mfa",
     "category": "Identity & Access Management",
     "code": "enforce-mfa",
-    "control_type": "Identity & Access Management",
+    "control_type": "Preventive",
     "description": "MFA is the single highest-value control against account compromise.",
     "implementation_guidance": "Require MFA for all users, and phishing-resistant MFA for administrators, with no broad exclusions.",
     "importance": "mandatory",
-    "name": "Enforce multi-factor authentication"
+    "name": "Enforce multi-factor authentication",
+    "control_sub_type": "Automated"
   },
   {
     "canonical_key": "password-policy",
     "category": "Identity & Access Management",
     "code": "password-policy",
-    "control_type": "Identity & Access Management",
+    "control_type": "Preventive",
     "description": "Strong authentication requirements reduce credential-based attacks.",
     "implementation_guidance": "Enforce a password policy (length, complexity, breach checks) in the identity provider.",
     "importance": "mandatory",
-    "name": "Password policy"
+    "name": "Password policy",
+    "control_sub_type": "Automated"
   },
   {
     "canonical_key": "password-manager",
     "category": "Identity & Access Management",
     "code": "password-manager",
-    "control_type": "Identity & Access Management",
+    "control_type": "Preventive",
     "description": "Shared and stored secrets must be encrypted and shared safely, not over chat.",
     "implementation_guidance": "Provide a company password manager and require its use for shared credentials.",
     "importance": "preferred",
-    "name": "Company password manager"
+    "name": "Company password manager",
+    "control_sub_type": "Automated"
   },
   {
     "canonical_key": "rbac-least-privilege",
     "category": "Identity & Access Management",
     "code": "rbac-least-privilege",
-    "control_type": "Identity & Access Management",
+    "control_type": "Preventive",
     "description": "Access should be granted by role and limited to what the job requires.",
     "implementation_guidance": "Define roles/groups rather than ad-hoc grants and provision access based on least privilege.",
     "importance": "mandatory",
-    "name": "Role-based access and least privilege"
+    "name": "Role-based access and least privilege",
+    "control_sub_type": "Hybrid"
   },
   {
     "canonical_key": "access-approval",
     "category": "Identity & Access Management",
     "code": "access-approval",
-    "control_type": "Identity & Access Management",
+    "control_type": "Preventive",
     "description": "Every account should have an authorization trail before credentials are issued.",
     "implementation_guidance": "Require documented approval for access requests, especially privileged access, via ticket or workflow.",
     "importance": "mandatory",
-    "name": "Access provisioning approval"
+    "name": "Access provisioning approval",
+    "control_sub_type": "Hybrid"
   },
   {
     "canonical_key": "timely-deprovisioning",
     "category": "Identity & Access Management",
     "code": "timely-deprovisioning",
-    "control_type": "Identity & Access Management",
+    "control_type": "Preventive",
     "description": "Access must be removed promptly when no longer authorized.",
     "implementation_guidance": "Remove access on role change or termination within a defined SLA and reconcile active accounts to active staff.",
     "importance": "mandatory",
-    "name": "Timely access removal"
+    "name": "Timely access removal",
+    "control_sub_type": "Hybrid"
   },
   {
     "canonical_key": "access-reviews",
     "category": "Identity & Access Management",
     "code": "access-reviews",
-    "control_type": "Identity & Access Management",
+    "control_type": "Detective",
     "description": "Recertifying access catches privilege creep and missed removals.",
     "implementation_guidance": "Run access-review campaigns (quarterly for critical systems) where owners certify each user, and verify revocations execute.",
     "importance": "mandatory",
-    "name": "Periodic user access reviews"
+    "name": "Periodic user access reviews",
+    "control_sub_type": "Hybrid"
   },
   {
     "canonical_key": "privileged-access",
     "category": "Identity & Access Management",
     "code": "privileged-access",
-    "control_type": "Identity & Access Management",
+    "control_type": "Preventive",
     "description": "Admin and root access carry the highest risk and need tighter control.",
     "implementation_guidance": "Inventory privileged accounts, require approval for admin grants, and review them at higher frequency.",
     "importance": "mandatory",
-    "name": "Privileged access management"
+    "name": "Privileged access management",
+    "control_sub_type": "Hybrid"
   },
   {
     "canonical_key": "segregation-of-duties",
     "category": "Identity & Access Management",
     "code": "segregation-of-duties",
-    "control_type": "Identity & Access Management",
+    "control_type": "Preventive",
     "description": "Separating conflicting duties reduces fraud and error risk.",
     "implementation_guidance": "Separate sensitive duties where feasible (e.g. deployer is not sole approver) or document compensating controls.",
     "importance": "preferred",
-    "name": "Segregation of duties"
+    "name": "Segregation of duties",
+    "control_sub_type": "Hybrid"
   },
   {
     "canonical_key": "service-account-inventory",
     "category": "Identity & Access Management",
     "code": "service-account-inventory",
-    "control_type": "Identity & Access Management",
+    "control_type": "Detective",
     "description": "Non-human identities are often over-privileged and unreviewed.",
     "implementation_guidance": "Inventory service accounts and API keys, scope them least-privilege, and rotate/review them.",
     "importance": "preferred",
-    "name": "Service and machine account governance"
+    "name": "Service and machine account governance",
+    "control_sub_type": "Hybrid"
   },
   {
     "canonical_key": "session-management",
     "category": "Identity & Access Management",
     "code": "session-management",
-    "control_type": "Identity & Access Management",
+    "control_type": "Preventive",
     "description": "Idle and long-lived sessions widen the window for hijacking.",
     "implementation_guidance": "Configure session timeouts and re-authentication for sensitive systems.",
     "importance": "preferred",
-    "name": "Session timeout and management"
+    "name": "Session timeout and management",
+    "control_sub_type": "Automated"
   },
   {
     "canonical_key": "encryption-at-rest",
     "category": "Infrastructure & Network Security",
     "code": "encryption-at-rest",
-    "control_type": "Infrastructure & Network Security",
+    "control_type": "Preventive",
     "description": "Encrypting stored data protects it if underlying media is exposed.",
     "implementation_guidance": "Enable encryption at rest on every data store using cloud-native KMS and verify no store is unencrypted.",
     "importance": "mandatory",
-    "name": "Encryption at rest"
+    "name": "Encryption at rest",
+    "control_sub_type": "Automated"
   },
   {
     "canonical_key": "encryption-in-transit",
     "category": "Infrastructure & Network Security",
     "code": "encryption-in-transit",
-    "control_type": "Infrastructure & Network Security",
+    "control_type": "Preventive",
     "description": "Data in motion must be protected from interception.",
     "implementation_guidance": "Enforce TLS 1.2+ on all external endpoints, HTTPS-only (HSTS), and deny non-TLS access to storage.",
     "importance": "mandatory",
-    "name": "Encryption in transit (TLS)"
+    "name": "Encryption in transit (TLS)",
+    "control_sub_type": "Automated"
   },
   {
     "canonical_key": "key-management",
     "category": "Infrastructure & Network Security",
     "code": "key-management",
-    "control_type": "Infrastructure & Network Security",
+    "control_type": "Preventive",
     "description": "Keys must be protected and rotated for encryption to be meaningful.",
     "implementation_guidance": "Manage keys in a KMS with access controls and rotation, separate from the data they protect.",
     "importance": "mandatory",
-    "name": "Encryption key management"
+    "name": "Encryption key management",
+    "control_sub_type": "Hybrid"
   },
   {
     "canonical_key": "secrets-management",
     "category": "Infrastructure & Network Security",
     "code": "secrets-management",
-    "control_type": "Infrastructure & Network Security",
+    "control_type": "Preventive",
     "description": "Secrets in code are a leading breach cause.",
     "implementation_guidance": "Store secrets in a vault or secrets manager, never in source, and rotate on exposure.",
     "importance": "mandatory",
-    "name": "Secrets management"
+    "name": "Secrets management",
+    "control_sub_type": "Automated"
   },
   {
     "canonical_key": "network-segmentation",
     "category": "Infrastructure & Network Security",
     "code": "network-segmentation",
-    "control_type": "Infrastructure & Network Security",
+    "control_type": "Preventive",
     "description": "Segmentation limits blast radius and keeps data stores off the public network.",
     "implementation_guidance": "Place databases in private subnets, default-deny security groups, and separate trust zones.",
     "importance": "mandatory",
-    "name": "Network segmentation"
+    "name": "Network segmentation",
+    "control_sub_type": "Automated"
   },
   {
     "canonical_key": "firewall-default-deny",
     "category": "Infrastructure & Network Security",
     "code": "firewall-default-deny",
-    "control_type": "Infrastructure & Network Security",
+    "control_type": "Preventive",
     "description": "Only explicitly required inbound traffic should be allowed.",
     "implementation_guidance": "Configure firewalls/security groups to deny by default and review for 0.0.0.0/0 on sensitive ports.",
     "importance": "mandatory",
-    "name": "Default-deny firewall rules"
+    "name": "Default-deny firewall rules",
+    "control_sub_type": "Automated"
   },
   {
     "canonical_key": "no-public-admin-ports",
     "category": "Infrastructure & Network Security",
     "code": "no-public-admin-ports",
-    "control_type": "Infrastructure & Network Security",
+    "control_type": "Preventive",
     "description": "Internet-exposed SSH/RDP is a common, high-severity finding.",
     "implementation_guidance": "Block SSH/RDP from the internet and require access via VPN, zero-trust or a bastion/SSM.",
     "importance": "mandatory",
-    "name": "No management ports exposed to the internet"
+    "name": "No management ports exposed to the internet",
+    "control_sub_type": "Automated"
   },
   {
     "canonical_key": "waf-ddos",
     "category": "Infrastructure & Network Security",
     "code": "waf-ddos",
-    "control_type": "Infrastructure & Network Security",
+    "control_type": "Preventive",
     "description": "Public endpoints need protection against web attacks and volumetric floods.",
     "implementation_guidance": "Front public services with a WAF and DDoS protection (e.g. Cloudflare, AWS WAF/Shield).",
     "importance": "preferred",
-    "name": "WAF and DDoS protection"
+    "name": "WAF and DDoS protection",
+    "control_sub_type": "Automated"
   },
   {
     "canonical_key": "zero-trust-access",
     "category": "Infrastructure & Network Security",
     "code": "zero-trust-access",
-    "control_type": "Infrastructure & Network Security",
+    "control_type": "Preventive",
     "description": "Internal admin access should not rely on network location alone.",
     "implementation_guidance": "Require a VPN or zero-trust mesh with MFA for administrative access to infrastructure.",
     "importance": "preferred",
-    "name": "VPN / zero-trust remote access"
+    "name": "VPN / zero-trust remote access",
+    "control_sub_type": "Automated"
   },
   {
     "canonical_key": "infra-malware-detection",
     "category": "Infrastructure & Network Security",
     "code": "infra-malware-detection",
-    "control_type": "Infrastructure & Network Security",
+    "control_type": "Detective",
     "description": "Cloud workloads need detection for malicious activity and misconfiguration.",
     "implementation_guidance": "Enable a threat-detection service (e.g. GuardDuty) and route findings to the on-call process.",
     "importance": "mandatory",
-    "name": "Infrastructure threat detection"
+    "name": "Infrastructure threat detection",
+    "control_sub_type": "Automated"
   },
   {
     "canonical_key": "hardening-baselines",
     "category": "Infrastructure & Network Security",
     "code": "hardening-baselines",
-    "control_type": "Infrastructure & Network Security",
+    "control_type": "Preventive",
     "description": "Systems configured to a hardened baseline resist common attacks.",
     "implementation_guidance": "Apply CIS or equivalent hardening baselines to infrastructure and check for drift on a schedule.",
     "importance": "preferred",
-    "name": "Hardening baselines (CIS)"
+    "name": "Hardening baselines (CIS)",
+    "control_sub_type": "Automated"
   },
   {
     "canonical_key": "endpoint-encryption",
     "category": "Endpoint Security",
     "code": "endpoint-encryption",
-    "control_type": "Endpoint Security",
+    "control_type": "Preventive",
     "description": "Encrypted laptops make loss or disposal safe.",
     "implementation_guidance": "Enforce full-disk encryption on all endpoints and report compliance from MDM.",
     "importance": "mandatory",
-    "name": "Endpoint full-disk encryption"
+    "name": "Endpoint full-disk encryption",
+    "control_sub_type": "Automated"
   },
   {
     "canonical_key": "endpoint-edr",
     "category": "Endpoint Security",
     "code": "endpoint-edr",
-    "control_type": "Endpoint Security",
+    "control_type": "Preventive",
     "description": "Endpoints are a primary malware entry point.",
     "implementation_guidance": "Deploy EDR/anti-malware on all endpoints with enforced auto-update and monitor agent health.",
     "importance": "mandatory",
-    "name": "Endpoint EDR / anti-malware"
+    "name": "Endpoint EDR / anti-malware",
+    "control_sub_type": "Automated"
   },
   {
     "canonical_key": "mdm-enrollment",
     "category": "Endpoint Security",
     "code": "mdm-enrollment",
-    "control_type": "Endpoint Security",
+    "control_type": "Preventive",
     "description": "Managed devices can enforce encryption, patching and wipe.",
     "implementation_guidance": "Enroll all endpoints in MDM and reconcile enrolled devices against the employee roster.",
     "importance": "mandatory",
-    "name": "Device management (MDM) enrollment"
+    "name": "Device management (MDM) enrollment",
+    "control_sub_type": "Automated"
   },
   {
     "canonical_key": "patch-management",
     "category": "Endpoint Security",
     "code": "patch-management",
-    "control_type": "Endpoint Security",
+    "control_type": "Corrective",
     "description": "Unpatched systems are exploited faster than they are noticed.",
     "implementation_guidance": "Define OS and software patch SLAs and enforce timely updates via MDM/automation.",
     "importance": "mandatory",
-    "name": "Patch management"
+    "name": "Patch management",
+    "control_sub_type": "Hybrid"
   },
   {
     "canonical_key": "remote-wipe",
     "category": "Endpoint Security",
     "code": "remote-wipe",
-    "control_type": "Endpoint Security",
+    "control_type": "Corrective",
     "description": "Devices leaving the company must not carry recoverable data.",
     "implementation_guidance": "Issue and confirm a remote wipe for departing employees and lost devices, retaining the confirmation.",
     "importance": "mandatory",
-    "name": "Remote wipe on offboarding / loss"
+    "name": "Remote wipe on offboarding / loss",
+    "control_sub_type": "Hybrid"
   },
   {
     "canonical_key": "screen-lock",
     "category": "Endpoint Security",
     "code": "screen-lock",
-    "control_type": "Endpoint Security",
+    "control_type": "Preventive",
     "description": "Unattended, unlocked devices expose data and sessions.",
     "implementation_guidance": "Enforce automatic screen lock with a short idle timeout via MDM.",
     "importance": "preferred",
-    "name": "Screen lock policy"
+    "name": "Screen lock policy",
+    "control_sub_type": "Automated"
   },
   {
     "canonical_key": "data-classification",
     "category": "Data Management & Privacy",
     "code": "data-classification",
-    "control_type": "Data Management & Privacy",
+    "control_type": "Preventive",
     "description": "You cannot protect confidential data consistently until it is identified and classified.",
     "implementation_guidance": "Adopt a classification scheme (public/internal/confidential/restricted) with handling rules per level.",
     "importance": "mandatory",
-    "name": "Data classification policy"
+    "name": "Data classification policy",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "data-inventory",
     "category": "Data Management & Privacy",
     "code": "data-inventory",
-    "control_type": "Data Management & Privacy",
+    "control_type": "Detective",
     "description": "Knowing where confidential and personal data lives is prerequisite to protecting it.",
     "implementation_guidance": "Maintain a data map of stores and vendors holding confidential/personal data and the protections applied.",
     "importance": "mandatory",
-    "name": "Data inventory and data map"
+    "name": "Data inventory and data map",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "data-retention",
     "category": "Data Management & Privacy",
     "code": "data-retention",
-    "control_type": "Data Management & Privacy",
+    "control_type": "Preventive",
     "description": "Data should not be kept longer than needed for its purpose.",
     "implementation_guidance": "Define retention periods per data type and enforce them technically (lifecycle rules, TTL jobs).",
     "importance": "mandatory",
-    "name": "Data retention schedule"
+    "name": "Data retention schedule",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "secure-disposal",
     "category": "Data Management & Privacy",
     "code": "secure-disposal",
-    "control_type": "Data Management & Privacy",
+    "control_type": "Preventive",
     "description": "Data must be irrecoverable once its retention ends or on a valid erasure request.",
     "implementation_guidance": "Delete data across primary stores, indexes, caches, analytics and vendors, and age it out of backups.",
     "importance": "mandatory",
-    "name": "Secure data disposal"
+    "name": "Secure data disposal",
+    "control_sub_type": "Hybrid"
   },
   {
     "canonical_key": "no-prod-in-lower-envs",
     "category": "Data Management & Privacy",
     "code": "no-prod-in-lower-envs",
-    "control_type": "Data Management & Privacy",
+    "control_type": "Preventive",
     "description": "Copying production data into dev/staging is a frequent confidentiality exception.",
     "implementation_guidance": "Populate lower environments with masked or synthetic data and verify prod data does not leak.",
     "importance": "preferred",
-    "name": "No production data in lower environments"
+    "name": "No production data in lower environments",
+    "control_sub_type": "Hybrid"
   },
   {
     "canonical_key": "privacy-notice",
     "category": "Data Management & Privacy",
     "code": "privacy-notice",
-    "control_type": "Data Management & Privacy",
+    "control_type": "Preventive",
     "description": "Data subjects must be told what personal information is collected and why.",
     "implementation_guidance": "Publish and version a privacy notice covering collection, use, sharing, retention and rights, kept truthful to actual flows.",
     "importance": "mandatory",
-    "name": "Privacy notice"
+    "name": "Privacy notice",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "consent-management",
     "category": "Data Management & Privacy",
     "code": "consent-management",
-    "control_type": "Data Management & Privacy",
+    "control_type": "Preventive",
     "description": "Where consent is required it must be captured, recorded and revocable, including explicit consent for sensitive data.",
     "implementation_guidance": "Capture granular consent where required, store consent records, and honour opt-outs downstream.",
     "importance": "mandatory",
-    "name": "Consent and choice management"
+    "name": "Consent and choice management",
+    "control_sub_type": "Hybrid"
   },
   {
     "canonical_key": "data-minimization",
     "category": "Data Management & Privacy",
     "code": "data-minimization",
-    "control_type": "Data Management & Privacy",
+    "control_type": "Preventive",
     "description": "Collecting only what is needed reduces privacy risk and exposure.",
     "implementation_guidance": "Map collection points to stated purposes, avoid unneeded fields, and keep PI out of logs and error trackers.",
     "importance": "mandatory",
-    "name": "Data minimization"
+    "name": "Data minimization",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "limit-pi-use",
     "category": "Data Management & Privacy",
     "code": "limit-pi-use",
-    "control_type": "Data Management & Privacy",
+    "control_type": "Preventive",
     "description": "Personal data must only be used for the purposes disclosed.",
     "implementation_guidance": "Restrict PI access to purpose-based roles, govern secondary uses, and document the AI/training stance.",
     "importance": "mandatory",
-    "name": "Limit personal-information use to purpose"
+    "name": "Limit personal-information use to purpose",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "dsar-process",
     "category": "Data Management & Privacy",
     "code": "dsar-process",
-    "control_type": "Data Management & Privacy",
+    "control_type": "Preventive",
     "description": "Subjects have a right to access their data and an accounting of disclosures.",
     "implementation_guidance": "Operate a DSAR process with identity verification, cross-system compilation and an SLA, logging every request.",
     "importance": "mandatory",
-    "name": "Data-subject access request process"
+    "name": "Data-subject access request process",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "data-correction",
     "category": "Data Management & Privacy",
     "code": "data-correction",
-    "control_type": "Data Management & Privacy",
+    "control_type": "Corrective",
     "description": "Subjects can require inaccurate data to be corrected and propagated.",
     "implementation_guidance": "Provide a correction path, propagate changes to processors, and reconcile PI across systems for quality.",
     "importance": "mandatory",
-    "name": "Personal-information correction"
+    "name": "Personal-information correction",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "disclosure-controls",
     "category": "Data Management & Privacy",
     "code": "disclosure-controls",
-    "control_type": "Data Management & Privacy",
+    "control_type": "Preventive",
     "description": "Personal data may only be disclosed as disclosed and consented, with a record kept.",
     "implementation_guidance": "Gate third-party data flows through the vendor process and maintain a disclosure register.",
     "importance": "mandatory",
-    "name": "Authorized-disclosure governance"
+    "name": "Authorized-disclosure governance",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "breach-record",
     "category": "Data Management & Privacy",
     "code": "breach-record",
-    "control_type": "Data Management & Privacy",
+    "control_type": "Detective",
     "description": "Detected breaches and near-misses must be recorded with PI impact.",
     "implementation_guidance": "Record privacy incidents in the incident register with data affected, subject count and root cause.",
     "importance": "mandatory",
-    "name": "Unauthorized-disclosure recordkeeping"
+    "name": "Unauthorized-disclosure recordkeeping",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "dpa-with-vendors",
     "category": "Data Management & Privacy",
     "code": "dpa-with-vendors",
-    "control_type": "Data Management & Privacy",
+    "control_type": "Preventive",
     "description": "Your privacy commitments must flow down to processors of personal data.",
     "implementation_guidance": "Execute DPAs with every PI-touching vendor and track DPA coverage as a completeness metric.",
     "importance": "mandatory",
-    "name": "Data processing agreements with vendors"
+    "name": "Data processing agreements with vendors",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "vendor-breach-terms",
     "category": "Data Management & Privacy",
     "code": "vendor-breach-terms",
-    "control_type": "Data Management & Privacy",
+    "control_type": "Preventive",
     "description": "Vendors must commit to notifying you of incidents so you can meet your obligations.",
     "implementation_guidance": "Ensure DPAs contain breach-notification clauses with timeframes and record them per vendor.",
     "importance": "mandatory",
-    "name": "Vendor breach-notification terms"
+    "name": "Vendor breach-notification terms",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "breach-notification-process",
     "category": "Data Management & Privacy",
     "code": "breach-notification-process",
-    "control_type": "Data Management & Privacy",
+    "control_type": "Corrective",
     "description": "Regulators and affected parties must be notified as law and contract require.",
     "implementation_guidance": "Build notification criteria, jurisdiction matrices and templates into the incident-response plan.",
     "importance": "mandatory",
-    "name": "Breach notification process"
+    "name": "Breach notification process",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "privacy-complaints",
     "category": "Data Management & Privacy",
     "code": "privacy-complaints",
-    "control_type": "Data Management & Privacy",
+    "control_type": "Corrective",
     "description": "A tracked process for privacy inquiries and complaints is a Privacy-category requirement.",
     "implementation_guidance": "Publish a privacy contact, route it into a tracked queue with SLAs, and review privacy compliance periodically.",
     "importance": "mandatory",
-    "name": "Privacy inquiry and complaint handling"
+    "name": "Privacy inquiry and complaint handling",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "peer-code-review",
     "category": "Secure Development & Code Management",
     "code": "peer-code-review",
-    "control_type": "Secure Development & Code Management",
+    "control_type": "Preventive",
     "description": "Reviewed changes prevent unauthorized or defective code reaching production.",
     "implementation_guidance": "Enforce branch protection: PR required, at least one approval, no self-merge, passing status checks.",
     "importance": "mandatory",
-    "name": "Peer code review (branch protection)"
+    "name": "Peer code review (branch protection)",
+    "control_sub_type": "Hybrid"
   },
   {
     "canonical_key": "ci-testing",
     "category": "Secure Development & Code Management",
     "code": "ci-testing",
-    "control_type": "Secure Development & Code Management",
+    "control_type": "Detective",
     "description": "Automated tests gate defects and validate processing logic before release.",
     "implementation_guidance": "Run automated tests as merge gates and require them to pass before deploy.",
     "importance": "mandatory",
-    "name": "Automated testing in CI"
+    "name": "Automated testing in CI",
+    "control_sub_type": "Automated"
   },
   {
     "canonical_key": "separate-environments",
     "category": "Secure Development & Code Management",
     "code": "separate-environments",
-    "control_type": "Secure Development & Code Management",
+    "control_type": "Preventive",
     "description": "Environment separation prevents untested change and data mixing.",
     "implementation_guidance": "Maintain distinct dev, staging and production environments with controlled promotion.",
     "importance": "mandatory",
-    "name": "Separate dev/staging/production"
+    "name": "Separate dev/staging/production",
+    "control_sub_type": "Automated"
   },
   {
     "canonical_key": "change-approval",
     "category": "Secure Development & Code Management",
     "code": "change-approval",
-    "control_type": "Secure Development & Code Management",
+    "control_type": "Preventive",
     "description": "Changes must be authorized, tested and approved before implementation.",
     "implementation_guidance": "Require documented authorization and approval for production changes, including database and config changes.",
     "importance": "mandatory",
-    "name": "Change authorization and approval"
+    "name": "Change authorization and approval",
+    "control_sub_type": "Hybrid"
   },
   {
     "canonical_key": "emergency-change",
     "category": "Secure Development & Code Management",
     "code": "emergency-change",
-    "control_type": "Secure Development & Code Management",
+    "control_type": "Corrective",
     "description": "Hotfixes still need control, applied retroactively where necessary.",
     "implementation_guidance": "Define an emergency-change path that requires retroactive review and approval.",
     "importance": "preferred",
-    "name": "Emergency change procedure"
+    "name": "Emergency change procedure",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "sdlc-policy",
     "category": "Secure Development & Code Management",
     "code": "sdlc-policy",
-    "control_type": "Secure Development & Code Management",
+    "control_type": "Preventive",
     "description": "A documented SDLC sets expectations for how software is built and changed.",
     "implementation_guidance": "Maintain a secure development policy covering review, testing, environments and deployment.",
     "importance": "mandatory",
-    "name": "Secure SDLC policy"
+    "name": "Secure SDLC policy",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "dependency-scanning",
     "category": "Secure Development & Code Management",
     "code": "dependency-scanning",
-    "control_type": "Secure Development & Code Management",
+    "control_type": "Detective",
     "description": "Vulnerable dependencies are a primary supply-chain risk.",
     "implementation_guidance": "Enable dependency and container image scanning on all repos and triage alerts to SLA.",
     "importance": "mandatory",
-    "name": "Dependency and image scanning"
+    "name": "Dependency and image scanning",
+    "control_sub_type": "Automated"
   },
   {
     "canonical_key": "secret-scanning",
     "category": "Secure Development & Code Management",
     "code": "secret-scanning",
-    "control_type": "Secure Development & Code Management",
+    "control_type": "Detective",
     "description": "Committed secrets are routinely harvested by attackers.",
     "implementation_guidance": "Enable secret scanning and pre-commit hooks, and rotate any exposed secret immediately.",
     "importance": "mandatory",
-    "name": "Secret scanning"
+    "name": "Secret scanning",
+    "control_sub_type": "Automated"
   },
   {
     "canonical_key": "input-validation",
     "category": "Secure Development & Code Management",
     "code": "input-validation",
-    "control_type": "Secure Development & Code Management",
+    "control_type": "Preventive",
     "description": "Bad input must be caught at the door to keep processing complete and accurate.",
     "implementation_guidance": "Validate inputs at ingestion (schema, type, range, duplicates) and route rejects to a monitored queue.",
     "importance": "mandatory",
-    "name": "Input validation controls"
+    "name": "Input validation controls",
+    "control_sub_type": "Automated"
   },
   {
     "canonical_key": "processing-specs",
     "category": "Secure Development & Code Management",
     "code": "processing-specs",
-    "control_type": "Secure Development & Code Management",
+    "control_type": "Preventive",
     "description": "Correct processing can only be tested against a defined specification.",
     "implementation_guidance": "Document data definitions, calculation logic and processing SLAs, versioned with the system.",
     "importance": "mandatory",
-    "name": "Processing specifications"
+    "name": "Processing specifications",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "processing-reconciliation",
     "category": "Secure Development & Code Management",
     "code": "processing-reconciliation",
-    "control_type": "Secure Development & Code Management",
+    "control_type": "Detective",
     "description": "Reconciling outputs to inputs proves processing completeness and accuracy.",
     "implementation_guidance": "Monitor job execution and reconcile record counts/totals, alerting and investigating breaks.",
     "importance": "preferred",
-    "name": "Processing reconciliation and monitoring"
+    "name": "Processing reconciliation and monitoring",
+    "control_sub_type": "Automated"
   },
   {
     "canonical_key": "pipeline-storage-integrity",
     "category": "Secure Development & Code Management",
     "code": "pipeline-storage-integrity",
-    "control_type": "Secure Development & Code Management",
+    "control_type": "Preventive",
     "description": "In-process data must be stored durably and completely.",
     "implementation_guidance": "Use durable, versioned storage for pipeline stages with integrity checks and retention aligned to spec.",
     "importance": "preferred",
-    "name": "Pipeline storage integrity"
+    "name": "Pipeline storage integrity",
+    "control_sub_type": "Automated"
   },
   {
     "canonical_key": "centralized-logging",
     "category": "Logging, Monitoring & Incident Management",
     "code": "centralized-logging",
-    "control_type": "Logging, Monitoring & Incident Management",
+    "control_type": "Detective",
     "description": "Reliable logs are the raw material for detection and investigation.",
     "implementation_guidance": "Centralize security-relevant logs (audit, auth, application) with retention of at least one year.",
     "importance": "mandatory",
-    "name": "Centralized logging and retention"
+    "name": "Centralized logging and retention",
+    "control_sub_type": "Automated"
   },
   {
     "canonical_key": "asset-inventory",
     "category": "Logging, Monitoring & Incident Management",
     "code": "asset-inventory",
-    "control_type": "Logging, Monitoring & Incident Management",
+    "control_type": "Detective",
     "description": "You cannot secure or monitor what you have not inventoried.",
     "implementation_guidance": "Maintain a current inventory of systems and assets, ideally collected automatically from cloud APIs.",
     "importance": "mandatory",
-    "name": "Asset and system inventory"
+    "name": "Asset and system inventory",
+    "control_sub_type": "Automated"
   },
   {
     "canonical_key": "security-alerting",
     "category": "Logging, Monitoring & Incident Management",
     "code": "security-alerting",
-    "control_type": "Logging, Monitoring & Incident Management",
+    "control_type": "Detective",
     "description": "Detection is only useful if anomalies raise alerts someone sees.",
     "implementation_guidance": "Alert on security-relevant signals (root use, IAM changes, threat findings) and route to a monitored channel.",
     "importance": "mandatory",
-    "name": "Security anomaly alerting"
+    "name": "Security anomaly alerting",
+    "control_sub_type": "Automated"
   },
   {
     "canonical_key": "on-call",
     "category": "Logging, Monitoring & Incident Management",
     "code": "on-call",
-    "control_type": "Logging, Monitoring & Incident Management",
+    "control_type": "Corrective",
     "description": "Alerts need a responder at all hours.",
     "implementation_guidance": "Operate an on-call rotation that receives and acknowledges security and availability alerts.",
     "importance": "mandatory",
-    "name": "On-call rotation"
+    "name": "On-call rotation",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "vulnerability-management",
     "category": "Logging, Monitoring & Incident Management",
     "code": "vulnerability-management",
-    "control_type": "Logging, Monitoring & Incident Management",
+    "control_type": "Detective",
     "description": "New vulnerabilities must be found and remediated on a defined cadence.",
     "implementation_guidance": "Scan infrastructure and dependencies regularly and remediate by severity-based SLA, tracking to closure.",
     "importance": "mandatory",
-    "name": "Vulnerability management program"
+    "name": "Vulnerability management program",
+    "control_sub_type": "Hybrid"
   },
   {
     "canonical_key": "config-drift-detection",
     "category": "Logging, Monitoring & Incident Management",
     "code": "config-drift-detection",
-    "control_type": "Logging, Monitoring & Incident Management",
+    "control_type": "Detective",
     "description": "Config changes can silently introduce vulnerabilities.",
     "implementation_guidance": "Continuously monitor cloud configuration for drift from a secure baseline and alert on regressions.",
     "importance": "mandatory",
-    "name": "Configuration-change detection"
+    "name": "Configuration-change detection",
+    "control_sub_type": "Automated"
   },
   {
     "canonical_key": "event-triage",
     "category": "Logging, Monitoring & Incident Management",
     "code": "event-triage",
-    "control_type": "Logging, Monitoring & Incident Management",
+    "control_type": "Detective",
     "description": "Events must be evaluated to decide whether they are incidents.",
     "implementation_guidance": "Define severity classification and keep a triage record for security events, including benign ones.",
     "importance": "mandatory",
-    "name": "Security event evaluation"
+    "name": "Security event evaluation",
+    "control_sub_type": "Hybrid"
   },
   {
     "canonical_key": "incident-response-plan",
     "category": "Logging, Monitoring & Incident Management",
     "code": "incident-response-plan",
-    "control_type": "Logging, Monitoring & Incident Management",
+    "control_type": "Corrective",
     "description": "A defined program contains and remediates incidents predictably.",
     "implementation_guidance": "Maintain an IR plan with roles, severities, containment/eradication/recovery and communication steps.",
     "importance": "mandatory",
-    "name": "Incident response plan"
+    "name": "Incident response plan",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "incident-postmortems",
     "category": "Logging, Monitoring & Incident Management",
     "code": "incident-postmortems",
-    "control_type": "Logging, Monitoring & Incident Management",
+    "control_type": "Corrective",
     "description": "Lessons must translate into changes so incidents do not recur.",
     "implementation_guidance": "Run postmortems for incidents and track corrective action items to closure.",
     "importance": "mandatory",
-    "name": "Incident postmortems with actions"
+    "name": "Incident postmortems with actions",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "tabletop-exercise",
     "category": "Logging, Monitoring & Incident Management",
     "code": "tabletop-exercise",
-    "control_type": "Logging, Monitoring & Incident Management",
+    "control_type": "Detective",
     "description": "In a no-incident year, a tabletop is the operating evidence the program works.",
     "implementation_guidance": "Run at least an annual tabletop exercise with participants and captured findings.",
     "importance": "preferred",
-    "name": "Incident tabletop exercise"
+    "name": "Incident tabletop exercise",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "incident-recovery",
     "category": "Logging, Monitoring & Incident Management",
     "code": "incident-recovery",
-    "control_type": "Logging, Monitoring & Incident Management",
+    "control_type": "Corrective",
     "description": "Recovery from incidents must be defined and executed, not improvised.",
     "implementation_guidance": "Include restore/rebuild/credential-rotation procedures in the IR plan and document recovery in incidents.",
     "importance": "mandatory",
-    "name": "Incident recovery procedures"
+    "name": "Incident recovery procedures",
+    "control_sub_type": "Hybrid"
   },
   {
     "canonical_key": "bcdr-plan",
     "category": "Business Continuity & Third-Party Management",
     "code": "bcdr-plan",
-    "control_type": "Business Continuity & Third-Party Management",
+    "control_type": "Corrective",
     "description": "Disruptions must be planned for with defined recovery objectives.",
     "implementation_guidance": "Maintain a BC/DR plan with RTO/RPO targets, key dependencies and workarounds, reviewed annually.",
     "importance": "mandatory",
-    "name": "Business continuity / disaster recovery plan"
+    "name": "Business continuity / disaster recovery plan",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "capacity-monitoring",
     "category": "Business Continuity & Third-Party Management",
     "code": "capacity-monitoring",
-    "control_type": "Business Continuity & Third-Party Management",
+    "control_type": "Detective",
     "description": "Availability commitments require capacity to be monitored ahead of demand.",
     "implementation_guidance": "Monitor utilization with thresholds below failure points and use autoscaling where possible.",
     "importance": "mandatory",
-    "name": "Capacity management"
+    "name": "Capacity management",
+    "control_sub_type": "Automated"
   },
   {
     "canonical_key": "automated-backups",
     "category": "Business Continuity & Third-Party Management",
     "code": "automated-backups",
-    "control_type": "Business Continuity & Third-Party Management",
+    "control_type": "Corrective",
     "description": "Recoverable backups are the foundation of availability and resilience.",
     "implementation_guidance": "Enable automated encrypted backups on every data store with retention aligned to RPO and alert on failures.",
     "importance": "mandatory",
-    "name": "Automated, monitored backups"
+    "name": "Automated, monitored backups",
+    "control_sub_type": "Automated"
   },
   {
     "canonical_key": "backup-restore-test",
     "category": "Business Continuity & Third-Party Management",
     "code": "backup-restore-test",
-    "control_type": "Business Continuity & Third-Party Management",
+    "control_type": "Detective",
     "description": "A backup that has never been restored is only a hypothesis.",
     "implementation_guidance": "Test recovery at least annually by restoring a backup and validating data against RTO/RPO.",
     "importance": "mandatory",
-    "name": "Backup restore testing"
+    "name": "Backup restore testing",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "vendor-inventory",
     "category": "Business Continuity & Third-Party Management",
     "code": "vendor-inventory",
-    "control_type": "Business Continuity & Third-Party Management",
+    "control_type": "Preventive",
     "description": "You must know who your vendors are and what data they touch.",
     "implementation_guidance": "Maintain a vendor register with owner, criticality and data-access classification, kept complete.",
     "importance": "mandatory",
-    "name": "Vendor inventory"
+    "name": "Vendor inventory",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "vendor-security-review",
     "category": "Business Continuity & Third-Party Management",
     "code": "vendor-security-review",
-    "control_type": "Business Continuity & Third-Party Management",
+    "control_type": "Preventive",
     "description": "Vendor risk must be assessed on onboarding and periodically.",
     "implementation_guidance": "Review vendor security (SOC 2 report, questionnaire) scaled to risk and re-review critical vendors annually.",
     "importance": "mandatory",
-    "name": "Vendor security due diligence"
+    "name": "Vendor security due diligence",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "shadow-it-detection",
     "category": "Business Continuity & Third-Party Management",
     "code": "shadow-it-detection",
-    "control_type": "Business Continuity & Third-Party Management",
+    "control_type": "Detective",
     "description": "New SaaS adopted informally creates unmanaged vendor and data risk.",
     "implementation_guidance": "Detect new SSO apps and OAuth grants and feed them into the vendor onboarding workflow.",
     "importance": "preferred",
-    "name": "Shadow-IT detection"
+    "name": "Shadow-IT detection",
+    "control_sub_type": "Automated"
   },
   {
     "canonical_key": "subprocessor-list",
     "category": "Business Continuity & Third-Party Management",
     "code": "subprocessor-list",
-    "control_type": "Business Continuity & Third-Party Management",
+    "control_type": "Preventive",
     "description": "Subprocessors receiving customer/personal data must be tracked and (often) published.",
     "implementation_guidance": "Maintain a subprocessor list and reconcile it against vendors actually receiving data.",
     "importance": "preferred",
-    "name": "Subprocessor management"
+    "name": "Subprocessor management",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "cloud-physical-inherited",
     "category": "Physical & Environmental Security",
     "code": "cloud-physical-inherited",
-    "control_type": "Physical & Environmental Security",
+    "control_type": "Detective",
     "description": "Cloud data-center physical security is inherited and must be reviewed, not assumed.",
     "implementation_guidance": "Obtain and review the cloud provider's SOC 2 report annually and disclose the carve-out in the system description.",
     "importance": "mandatory",
-    "name": "Cloud physical security (subservice review)"
+    "name": "Cloud physical security (subservice review)",
+    "control_sub_type": "Manual"
   },
   {
     "canonical_key": "office-physical-access",
     "category": "Physical & Environmental Security",
     "code": "office-physical-access",
-    "control_type": "Physical & Environmental Security",
+    "control_type": "Preventive",
     "description": "In-scope offices and server areas need access restriction.",
     "implementation_guidance": "Where offices are in scope, use badge access, visitor logs and revoke badges on offboarding.",
     "importance": "preferred",
-    "name": "Office physical access controls"
+    "name": "Office physical access controls",
+    "control_sub_type": "Hybrid"
   }
 ]
