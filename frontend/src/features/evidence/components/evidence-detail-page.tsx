@@ -4,6 +4,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Badge,
   Button,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   EmptyState,
   ErrorState,
   Icon,
@@ -266,49 +272,32 @@ export function EvidenceDetailPage() {
 
       <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_20rem]">
         <div className="min-w-0 space-y-4">
+          {/* A compact card — the artefact itself opens in a dialog, so the
+              record stays readable and the file is only fetched on request. */}
           <section className="rounded-lg border border-border bg-surface-primary p-5">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <h2 className="font-display text-title-md text-text-primary">
-                Preview
-              </h2>
-              {previewing ? (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setPreviewing(false)}
-                >
-                  Hide preview
-                </Button>
-              ) : null}
-            </div>
-
-            {previewing ? (
-              <div className="mt-3">
-                <EvidenceViewer item={item} />
-              </div>
-            ) : (
-              // Opening the viewer fetches the whole file, so it is asked for
-              // rather than assumed — a reader scanning the record should not
-              // pull a 20 MB artefact down to read its dates.
-              <div className="mt-3 flex flex-col items-center gap-3 rounded-md border border-dashed border-border bg-surface-sunken px-4 py-8 text-center">
-                <span className="flex size-10 items-center justify-center rounded-md bg-surface-hover text-text-subtle">
-                  <Icon
-                    name={item.kind === "file" ? "doc" : "globe"}
-                    className="size-5"
-                    aria-hidden
-                  />
-                </span>
-                <p className="text-body-sm text-text-secondary">
-                  {item.kind === "file"
-                    ? `${item.filename ?? "This file"} · ${formatBytes(item.size_bytes)}`
-                    : "This evidence is a link to another system."}
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-surface-sunken text-text-subtle">
+                <Icon
+                  name={item.kind === "file" ? "doc" : "globe"}
+                  className="size-5"
+                  aria-hidden
+                />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-body-md font-semibold text-text-primary">
+                  {item.kind === "file" ? (item.filename ?? item.title) : "External link"}
                 </p>
-                <Button onClick={() => setPreviewing(true)}>
-                  <Icon name="doc" className="size-4" />
-                  View evidence
-                </Button>
+                <p className="truncate text-caption text-text-subtle">
+                  {item.kind === "file"
+                    ? `${item.content_type ?? "file"} · ${formatBytes(item.size_bytes)}`
+                    : item.link_url}
+                </p>
               </div>
-            )}
+              <Button className="shrink-0" onClick={() => setPreviewing(true)}>
+                <Icon name="doc" className="size-4" />
+                View evidence
+              </Button>
+            </div>
           </section>
 
           <LinkageSection
@@ -374,6 +363,42 @@ export function EvidenceDetailPage() {
           ) : null}
         </aside>
       </div>
+
+      {/* Wide by design: a document needs room, and Radix gives Esc, focus
+          trapping and focus restore for free. Unmounting on close revokes the
+          viewer's blob URL, so nothing is held after the dialog goes away. */}
+      <Dialog open={previewing} onOpenChange={setPreviewing}>
+        <DialogContent className="w-[min(96vw,72rem)] max-w-none">
+          <DialogHeader>
+            <DialogTitle className="truncate">{item.title}</DialogTitle>
+            <DialogDescription className="truncate">
+              {item.kind === "file"
+                ? `${item.filename ?? ""} · ${item.content_type ?? ""} · ${formatBytes(item.size_bytes)}`
+                : item.link_url}
+            </DialogDescription>
+          </DialogHeader>
+
+          <EvidenceViewer item={item} />
+
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setPreviewing(false)}>
+              Close
+            </Button>
+            {item.kind === "file" ? (
+              <Button
+                onClick={() =>
+                  void downloadEvidence(item).catch(() =>
+                    toast({ title: "Couldn't download the file.", tone: "danger" }),
+                  )
+                }
+              >
+                <Icon name="doc" className="size-4" />
+                Download
+              </Button>
+            ) : null}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <LinkControlsDialog
         open={linking}
