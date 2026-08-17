@@ -45,8 +45,9 @@ export function SuggestedMappingsTeaser() {
             Suggested control mappings
           </h2>
           <p className="mt-1 text-body-sm text-text-secondary">
-            One control, mapped across every framework you carry — suggested
-            automatically, reviewed by a person before anything is linked.
+            Controls this evidence may also satisfy, across every framework you
+            carry. Review each row, then link the ones that fit — suggested
+            automatically, never linked without a person saying so.
           </p>
         </div>
         <Badge variant="role">Coming soon</Badge>

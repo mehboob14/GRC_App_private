@@ -183,7 +183,9 @@
     --color-status-progress-base: 56 182 240;
     --color-status-progress-text: 56 182 240; /* 6.4:1 on progress-bg */
     --color-status-progress-bg: 18 42 61;
-    --color-status-pending-text: 138 154 214; /* 5.8:1 on pending-bg */
+    /* Follows the violet base, the same way progress follows action-accent —
+       the old #8A9AD6 was the indigo this family moved away from. */
+    --color-status-pending-text: 167 139 250; /* #A78BFA, 6.1:1 on pending-bg */
     --color-status-neutral-text: 133 147 168; /* 4.7:1 on neutral-bg */
     /* Severity fills keep their light values: solid chips with white text
        read identically on both themes. */

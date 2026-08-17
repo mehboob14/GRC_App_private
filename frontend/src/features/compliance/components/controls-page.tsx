@@ -21,6 +21,7 @@ import {
   ErrorState,
   FilterFacet,
   Icon,
+  Pagination,
   SearchInput,
   Select,
   SelectContent,
@@ -108,6 +109,9 @@ function ComingSoonField({ label }: { label: string }) {
 function TypeChip({ label }: { label: string }) {
   return <Badge variant="neutral">{label}</Badge>;
 }
+
+const DEFAULT_PAGE_SIZE = 20;
+const PAGE_SIZES = [10, 20, 50, 100];
 
 function ControlDetailDialog({
   control,
@@ -504,6 +508,9 @@ export function ControlsPage() {
   const [editing, setEditing] = useState<Control | null>(null);
   /** Row selection for bulk actions — distinct from `selected`, the open row. */
   const [checkedIds, setCheckedIds] = useState<string[]>([]);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [customSize, setCustomSize] = useState(false);
 
   const navigate = useNavigate();
 
@@ -636,7 +643,20 @@ export function ControlsPage() {
     () => controls.filter((control) => checkedIds.includes(control.id)),
     [controls, checkedIds],
   );
-  const checkedVisibleCount = visible.filter((control) =>
+
+  // --- Paging ---------------------------------------------------------------
+  const pageCount = Math.max(1, Math.ceil(visible.length / pageSize));
+  // Clamp rather than reset: narrowing a filter while on page 9 should land on
+  // the last page that still exists, not silently show an empty table.
+  const currentPage = Math.min(page, pageCount);
+  const pageStart = (currentPage - 1) * pageSize;
+  const paged = useMemo(
+    () => visible.slice(pageStart, pageStart + pageSize),
+    [visible, pageStart, pageSize],
+  );
+
+  // Select-all applies to the rows actually on screen, which is this page.
+  const checkedVisibleCount = paged.filter((control) =>
     checkedIds.includes(control.id),
   ).length;
   /** Always the freshest copy, so an edit made in the dialog shows there too. */
@@ -644,7 +664,7 @@ export function ControlsPage() {
     () => controls.find((control) => control.id === selectedId) ?? null,
     [controls, selectedId],
   );
-  const allChecked = visible.length > 0 && checkedVisibleCount === visible.length;
+  const allChecked = paged.length > 0 && checkedVisibleCount === paged.length;
 
   /** Owner facet options, built from who actually owns something. */
   const ownerOptions = useMemo(() => {
@@ -855,9 +875,16 @@ export function ControlsPage() {
                       allChecked ? true : checkedVisibleCount > 0 ? "indeterminate" : false
                     }
                     onCheckedChange={(next) =>
-                      setCheckedIds(next ? visible.map((control) => control.id) : [])
+                      setCheckedIds((previous) => {
+                        const onPage = paged.map((control) => control.id);
+                        // Adds/removes this page only, leaving a selection made
+                        // on another page intact.
+                        return next
+                          ? [...new Set([...previous, ...onPage])]
+                          : previous.filter((id) => !onPage.includes(id));
+                      })
                     }
-                    aria-label="Select all controls"
+                    aria-label="Select all controls on this page"
                   />
                 </TH>
               ) : null}
@@ -868,11 +895,11 @@ export function ControlsPage() {
               <TH>Owner</TH>
               <TH numeric>Evidence</TH>
               <TH>Status</TH>
-              <TH className="w-10" />
+              <TH className="w-20 text-right">Actions</TH>
             </TR>
           </THead>
           <TBody>
-            {visible.map((control) => {
+            {paged.map((control) => {
               const tsc = tscFor(control);
               const frameworks = frameworksFor(control);
               const evidenceCount = evidenceCounts.get(control.id) ?? 0;
@@ -994,10 +1021,17 @@ export function ControlsPage() {
                       label={displayStatus(control).label}
                     />
                   </TD>
-                  <TD onClick={(event) => event.stopPropagation()}>
+                  <TD
+                    className="text-right"
+                    onClick={(event) => event.stopPropagation()}
+                  >
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon-sm" aria-label="Control actions">
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          aria-label={`Actions for ${control.code}`}
+                        >
                           <Icon name="more" className="size-4" />
                         </Button>
                       </DropdownMenuTrigger>
@@ -1041,6 +1075,66 @@ export function ControlsPage() {
           </TBody>
         </Table>
       )}
+
+      {/* Paging. Sits below the table and states the exact window, so "20 of
+          117" is never left to inference. Hidden while there is nothing to
+          page through. */}
+      {visible.length > 0 ? (
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <span className="text-body-sm text-text-subtle">Rows per page</span>
+            <Select
+              value={PAGE_SIZES.includes(pageSize) ? String(pageSize) : "custom"}
+              onValueChange={(value) => {
+                setCustomSize(value === "custom");
+                if (value !== "custom") setPageSize(Number(value));
+                setPage(1);
+              }}
+            >
+              <SelectTrigger aria-label="Rows per page" className="h-8 w-[96px]" />
+              <SelectContent>
+                {PAGE_SIZES.map((size) => (
+                  <SelectItem key={size} value={String(size)}>
+                    {size}
+                  </SelectItem>
+                ))}
+                <SelectItem value="custom">Custom…</SelectItem>
+              </SelectContent>
+            </Select>
+            {customSize || !PAGE_SIZES.includes(pageSize) ? (
+              <input
+                type="number"
+                min={1}
+                max={500}
+                defaultValue={pageSize}
+                aria-label="Custom rows per page"
+                // Committed on blur/Enter, not per keystroke — re-slicing the
+                // table on every digit makes "1" render one row mid-typing.
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") event.currentTarget.blur();
+                }}
+                onBlur={(event) => {
+                  const next = Math.min(500, Math.max(1, Number(event.target.value) || DEFAULT_PAGE_SIZE));
+                  event.target.value = String(next);
+                  setPageSize(next);
+                  setPage(1);
+                }}
+                className="h-8 w-20 rounded-sm border border-border bg-surface-primary px-2 text-body-sm text-text-primary outline-none focus:border-action-accent focus:shadow-input-focus"
+              />
+            ) : null}
+            <span className="tabular text-body-sm text-text-subtle">
+              {pageStart + 1}–{Math.min(pageStart + pageSize, visible.length)} of{" "}
+              {visible.length}
+            </span>
+          </div>
+
+          <Pagination
+            page={currentPage}
+            pageCount={pageCount}
+            onPageChange={setPage}
+          />
+        </div>
+      ) : null}
 
       {canManage ? (
         <ControlsBulkBar

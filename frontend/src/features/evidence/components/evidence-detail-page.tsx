@@ -19,6 +19,7 @@ import { getAccessToken } from "@/lib/auth/session";
 import type { Evidence, EvidenceFreshness } from "@/lib/api/types";
 import { LinkControlsDialog } from "./link-controls-dialog";
 import { EvidenceViewer } from "./evidence-viewer";
+import { SuggestedMappingsTeaser } from "@/features/compliance/components/suggested-mappings-teaser";
 
 const FRESHNESS: Record<
   EvidenceFreshness,
@@ -153,6 +154,7 @@ export function EvidenceDetailPage() {
   const { toast } = useToast();
   const canManage = Boolean(principal?.permissions.includes("evidence:manage"));
   const [linking, setLinking] = useState(false);
+  const [previewing, setPreviewing] = useState(false);
 
   const itemQuery = useQuery({
     queryKey: ["evidence", evidenceId],
@@ -265,10 +267,48 @@ export function EvidenceDetailPage() {
       <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_20rem]">
         <div className="min-w-0 space-y-4">
           <section className="rounded-lg border border-border bg-surface-primary p-5">
-            <h2 className="mb-3 font-display text-title-md text-text-primary">
-              Preview
-            </h2>
-            <EvidenceViewer item={item} />
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="font-display text-title-md text-text-primary">
+                Preview
+              </h2>
+              {previewing ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setPreviewing(false)}
+                >
+                  Hide preview
+                </Button>
+              ) : null}
+            </div>
+
+            {previewing ? (
+              <div className="mt-3">
+                <EvidenceViewer item={item} />
+              </div>
+            ) : (
+              // Opening the viewer fetches the whole file, so it is asked for
+              // rather than assumed — a reader scanning the record should not
+              // pull a 20 MB artefact down to read its dates.
+              <div className="mt-3 flex flex-col items-center gap-3 rounded-md border border-dashed border-border bg-surface-sunken px-4 py-8 text-center">
+                <span className="flex size-10 items-center justify-center rounded-md bg-surface-hover text-text-subtle">
+                  <Icon
+                    name={item.kind === "file" ? "doc" : "globe"}
+                    className="size-5"
+                    aria-hidden
+                  />
+                </span>
+                <p className="text-body-sm text-text-secondary">
+                  {item.kind === "file"
+                    ? `${item.filename ?? "This file"} · ${formatBytes(item.size_bytes)}`
+                    : "This evidence is a link to another system."}
+                </p>
+                <Button onClick={() => setPreviewing(true)}>
+                  <Icon name="doc" className="size-4" />
+                  View evidence
+                </Button>
+              </div>
+            )}
           </section>
 
           <LinkageSection
@@ -276,6 +316,10 @@ export function EvidenceDetailPage() {
             canManage={canManage}
             onLink={() => setLinking(true)}
           />
+
+          {/* Below the real linkage, so what this item actually supports is
+              read first and the preview reads as an addition. */}
+          <SuggestedMappingsTeaser />
         </div>
 
         <aside className="space-y-4">
