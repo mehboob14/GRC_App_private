@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
+import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
 
 type BulkActionBarProps = {
   /** Exact selection count — bulk destructives must name it (§7.2). */
@@ -12,7 +14,14 @@ type BulkActionBarProps = {
   className?: string;
 };
 
-/** DS §7.2 — floating inverse bar above the table, z bulk-bar, shadow-3. */
+/**
+ * Floating bar over the table while rows are selected.
+ *
+ * Surface, not inverse: an inverse slab was the only dark element in the
+ * product and read as a foreign overlay. It is now the same elevated surface
+ * as a dialog or popover — `surface-primary` on a hairline border with
+ * shadow-3 — so a selection reads as part of the page it belongs to.
+ */
 export function BulkActionBar({
   count,
   noun,
@@ -27,23 +36,28 @@ export function BulkActionBar({
       role="toolbar"
       aria-label={`Bulk actions for ${count} selected ${noun}`}
       className={cn(
-        "fixed bottom-6 left-1/2 z-bulk-bar flex -translate-x-1/2 items-center gap-3",
-        "animate-toast-in rounded-md bg-surface-inverse px-4 py-2.5 shadow-3",
+        "fixed bottom-6 left-1/2 z-bulk-bar -translate-x-1/2",
+        "flex max-w-[calc(100vw-2rem)] flex-wrap items-center gap-1.5",
+        "animate-toast-in rounded-lg border border-border bg-surface-primary px-2.5 py-2 shadow-3",
         className,
       )}
     >
-      <span className="text-label-md font-bold tabular text-text-inverse">
-        {count} {noun} selected
+      <span className="inline-flex shrink-0 items-center gap-2 rounded-md bg-action-accent-tint px-2.5 py-1">
+        <Icon name="check" className="size-3.5 text-action-accent" strokeWidth={3} />
+        <span className="tabular text-label-sm font-bold text-action-accent">
+          {count} {noun} selected
+        </span>
       </span>
-      <span className="h-4 w-px bg-white/20" aria-hidden />
+
+      <span className="mx-0.5 h-5 w-px shrink-0 bg-border" aria-hidden />
+
       {children}
-      <button
-        type="button"
-        onClick={onClear}
-        className="rounded-xs px-1.5 py-0.5 text-label-sm text-text-inverse/70 hover:bg-white/10 hover:text-text-inverse"
-      >
-        Clear selection
-      </button>
+
+      <span className="mx-0.5 h-5 w-px shrink-0 bg-border" aria-hidden />
+
+      <Button variant="ghost" size="sm" onClick={onClear} className="shrink-0">
+        Clear
+      </Button>
     </div>
   );
 }

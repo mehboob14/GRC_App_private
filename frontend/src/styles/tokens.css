@@ -67,9 +67,13 @@
     --color-status-progress-base: 2 132 199; /* #0284C7 */
     --color-status-progress-text: 3 105 161; /* #0369A1 */
     --color-status-progress-bg: 234 244 251; /* #EAF4FB */
-    --color-status-pending-base: 91 114 179; /* #5B72B3 */
-    --color-status-pending-text: 74 90 160; /* #4A5AA0 */
-    --color-status-pending-bg: 238 241 250; /* #EEF1FA */
+    /* Violet, not indigo. `pending` sits directly beside `progress` in every
+       status column ("Not started" above "In progress"), and the old #5B72B3
+       was a blue one shade off #0284C7 — the two families read as the same
+       colour at a glance, which is the one thing a status colour must prevent. */
+    --color-status-pending-base: 124 92 214; /* #7C5CD6 */
+    --color-status-pending-text: 105 71 199; /* #6947C7 */
+    --color-status-pending-bg: 243 239 252; /* #F3EFFC */
     --color-status-neutral-base: 100 116 139; /* #64748B */
     --color-status-neutral-text: 86 96 114; /* #566072 */
     --color-status-neutral-bg: 240 242 245; /* #F0F2F5 */
@@ -147,8 +151,9 @@
     --color-status-danger-bg: 48 22 32; /* #301620 */
     --color-status-warning-base: 233 162 59; /* #E9A23B */
     --color-status-warning-bg: 46 35 15; /* #2E230F */
-    --color-status-pending-base: 138 154 214; /* #8A9AD6 */
-    --color-status-pending-bg: 26 34 56; /* #1A2238 */
+    /* Dark twin of the violet above — same reason, same separation. */
+    --color-status-pending-base: 167 139 250; /* #A78BFA */
+    --color-status-pending-bg: 40 30 62; /* #281E3E */
     --color-status-neutral-base: 133 147 168; /* #8593A8 */
     --color-status-neutral-bg: 31 40 57; /* #1F2839 */
 

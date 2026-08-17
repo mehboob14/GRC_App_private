@@ -12,13 +12,13 @@ import {
   Tooltip,
   useToast,
 } from "@/components/ui";
-import { cn } from "@/lib/cn";
 import { controlsApi, evidenceApi } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/auth-context";
 import { getAccessToken } from "@/lib/auth/session";
 import type { Evidence, EvidenceFreshness } from "@/lib/api/types";
 import { LinkControlsDialog } from "./link-controls-dialog";
+import { EvidenceViewer } from "./evidence-viewer";
 
 const FRESHNESS: Record<
   EvidenceFreshness,
@@ -62,104 +62,6 @@ async function downloadEvidence(item: Evidence): Promise<void> {
   anchor.click();
   anchor.remove();
   URL.revokeObjectURL(url);
-}
-
-/**
- * Where this item came from and what it now supports, as a path. An auditor's
- * first question about a piece of evidence is "where did this come from?", and
- * the answer is a chain, not a field.
- *
- * Every step is derived from the record — nothing is asserted that the data
- * does not show. The collection step reads "Uploaded" or "Collected
- * automatically" from `source`, which only a connector sets (rule 9).
- */
-function ProvenanceBar({ item }: { item: Evidence }) {
-  const collectedAutomatically = Boolean(item.source);
-  const steps = [
-    {
-      icon: collectedAutomatically ? "plug" : "doc",
-      label: collectedAutomatically ? "Collected automatically" : "Uploaded",
-      detail: collectedAutomatically
-        ? item.source
-        : (item.source_label ?? (item.kind === "link" ? "Linked from a system" : "By hand")),
-      done: true,
-    },
-    {
-      icon: "check",
-      label: "Recorded",
-      detail:
-        item.kind === "file"
-          ? `Hashed · ${formatBytes(item.size_bytes)}`
-          : "Link recorded",
-      done: true,
-    },
-    {
-      icon: "shield",
-      label: "Linked to controls",
-      detail:
-        item.control_codes.length > 0
-          ? `${item.control_codes.length} control${item.control_codes.length === 1 ? "" : "s"}`
-          : "Not linked yet",
-      done: item.control_codes.length > 0,
-    },
-    {
-      icon: "audit",
-      label: "Renewal",
-      detail:
-        item.renewal_date === null
-          ? "No expiry"
-          : `${FRESHNESS[item.freshness].label} · ${formatDate(item.renewal_date)}`,
-      done: item.freshness === "current" || item.freshness === "no_expiry",
-    },
-  ] as const;
-
-  return (
-    <ol className="flex flex-wrap items-stretch gap-2">
-      {steps.map((step, index) => (
-        <li key={step.label} className="flex min-w-0 flex-1 items-center gap-2">
-          <div
-            className={cn(
-              "flex min-w-0 flex-1 items-center gap-2.5 rounded-md border px-3 py-2.5",
-              step.done
-                ? "border-border bg-surface-primary"
-                : "border-dashed border-border bg-surface-sunken",
-            )}
-          >
-            <span
-              className={cn(
-                "flex size-7 shrink-0 items-center justify-center rounded-md",
-                step.done
-                  ? "bg-action-accent-tint text-action-accent"
-                  : "bg-surface-hover text-text-faint",
-              )}
-            >
-              <Icon name={step.icon} className="size-3.5" aria-hidden />
-            </span>
-            <span className="min-w-0">
-              <span
-                className={cn(
-                  "block truncate text-label-sm",
-                  step.done ? "text-text-primary" : "text-text-subtle",
-                )}
-              >
-                {step.label}
-              </span>
-              <span className="block truncate text-caption text-text-subtle">
-                {step.detail}
-              </span>
-            </span>
-          </div>
-          {index < steps.length - 1 ? (
-            <Icon
-              name="arrowr"
-              className="hidden size-4 shrink-0 text-text-faint sm:block"
-              aria-hidden
-            />
-          ) : null}
-        </li>
-      ))}
-    </ol>
-  );
 }
 
 /** Linkage to the other objects evidence can support. Controls work today; the
@@ -360,13 +262,15 @@ export function EvidenceDetailPage() {
         </div>
       </div>
 
-      <section className="mt-5">
-        <h2 className="type-overline mb-2">Provenance</h2>
-        <ProvenanceBar item={item} />
-      </section>
-
       <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_20rem]">
-        <div className="min-w-0">
+        <div className="min-w-0 space-y-4">
+          <section className="rounded-lg border border-border bg-surface-primary p-5">
+            <h2 className="mb-3 font-display text-title-md text-text-primary">
+              Preview
+            </h2>
+            <EvidenceViewer item={item} />
+          </section>
+
           <LinkageSection
             item={item}
             canManage={canManage}
@@ -403,7 +307,7 @@ export function EvidenceDetailPage() {
           {item.kind === "file" ? (
             <section className="rounded-lg border border-border bg-surface-primary p-5">
               <h2 className="mb-3 font-display text-title-md text-text-primary">
-                Integrity
+                File
               </h2>
               <dl className="space-y-2 text-body-sm">
                 <div>
@@ -416,16 +320,11 @@ export function EvidenceDetailPage() {
                     {item.content_type} · {formatBytes(item.size_bytes)}
                   </dd>
                 </div>
-                <div>
-                  <dt className="text-text-subtle">SHA-256</dt>
-                  <dd className="break-all font-mono text-caption text-text-secondary">
-                    {item.sha256}
-                  </dd>
-                </div>
               </dl>
-              <p className="mt-3 border-t border-border pt-3 text-caption text-text-subtle">
-                Computed when the file was stored. Re-hash a download and compare
-                to prove it has not changed since.
+              <p className="mt-3 flex items-start gap-2 border-t border-border pt-3 text-caption text-text-subtle">
+                <Icon name="check" className="mt-0.5 size-3.5 shrink-0 text-status-success-text" />
+                Integrity hash recorded at upload, so a later copy can be proven
+                identical to this one.
               </p>
             </section>
           ) : null}

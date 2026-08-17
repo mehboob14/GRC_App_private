@@ -29,7 +29,8 @@ const STATUS_OPTIONS: { value: ControlStatus; label: string }[] = [
   { value: "not_applicable", label: "Not applicable" },
 ];
 
-/** Dark-bar button — the bar is inverse, so the DS light variants do not fit. */
+/** A bar action. Ghost on the bar's own surface, so it reads as one control
+ *  strip rather than a row of competing buttons. */
 function BarButton({
   icon,
   label,
@@ -50,16 +51,18 @@ function BarButton({
       disabled={disabled}
       title={title}
       className={cn(
-        "inline-flex h-8 items-center gap-1.5 rounded-sm px-2.5 font-sans text-label-sm transition-colors duration-80",
+        "inline-flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-sm px-2.5 font-sans text-label-sm font-semibold",
+        "transition-colors duration-80 ease-state",
+        "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-accent",
         disabled
-          ? "cursor-not-allowed text-text-inverse/35"
-          : "text-text-inverse hover:bg-white/10",
+          ? "cursor-not-allowed text-text-faint"
+          : "text-text-secondary hover:bg-surface-hover hover:text-text-primary",
       )}
     >
       <Icon name={icon} className="size-3.5" />
       {label}
       {disabled ? (
-        <span className="rounded-2xs bg-white/10 px-1 text-[10px] font-bold uppercase">
+        <span className="rounded-2xs bg-surface-sunken px-1 text-[10px] font-bold uppercase tracking-wide text-text-faint">
           Soon
         </span>
       ) : null}

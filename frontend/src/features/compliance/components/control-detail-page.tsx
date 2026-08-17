@@ -26,6 +26,7 @@ import {
   AttachEvidenceDialog,
   EditControlDialog,
 } from "@/features/compliance/components/control-detail-dialogs";
+import { SuggestedMappingsTeaser } from "@/features/compliance/components/suggested-mappings-teaser";
 // The evidence library owns the add-evidence form. Reused here rather than
 // re-implemented, so the fields cannot drift between the two entry points.
 import { AddEvidenceDialog } from "@/features/evidence/components/evidence-page";
@@ -649,6 +650,7 @@ export function ControlDetailPage() {
           ) : null}
 
           {tab === "requirements" ? (
+            <>
             <Panel
               title={`${framework?.name ?? "Framework"} requirements`}
               action={
@@ -693,6 +695,10 @@ export function ControlDetailPage() {
                 </ul>
               )}
             </Panel>
+              <div className="mt-4">
+                <SuggestedMappingsTeaser />
+              </div>
+            </>
           ) : null}
         </div>
 
