@@ -503,3 +503,50 @@ staleness itself.
 
 **Still open:** the PDF library for the branded readiness report (Stage 8).
 Needs a dependency and an ADR; not blocking Stages 5–7.
+
+---
+
+## Settings decisions — roles and groups (answered by the client, 2026-08-17)
+
+**D15 — Built-in roles are editable, with one structural guard.**
+Admin, Auditor, Employee, Compliance Manager and Control Owner become fully
+editable: rename, change description, change permission set, and delete. This
+replaces `BuiltInRoleImmutable`, which refused all four.
+
+The single thing the platform will NOT allow is a workspace with no way back
+in. A write is refused if it would leave the tenant without **at least one role
+holding `roles:manage` that has at least one active member**. That covers every
+route to the same failure:
+- stripping `roles:manage` from the last role that has it
+- deleting that role
+- (later) unassigning its last active member
+
+The refusal is a typed 409 naming the reason, not a generic error, because the
+user needs to know *which* invariant they hit and that the rest of the edit was
+fine.
+
+Why a guard at all, when the client asked for full editability: without it a
+tenant can permanently lock itself out of its own workspace, and there is no
+in-app recovery — no one left can grant the permission back. It becomes a
+database intervention. Every comparable product (AWS IAM, Okta, GitHub) refuses
+the same write for the same reason. The guard is one invariant, not a general
+"built-ins are special" rule: a tenant that keeps a second admin-capable role
+can delete the shipped Admin role entirely.
+
+Admin's permission set still resolves dynamically (every key at check time)
+until a tenant edits it; once edited, the stored set wins. That is what makes
+"edit Admin" mean anything.
+
+**D16 — Roles and groups both carry a description.**
+A free-text description alongside the name on both. RBAC configuration is read
+by people deciding who should hold what, and a name alone ("Control Owner")
+does not say what the role is *for*.
+
+**D17 — Assignment is managed from the role and from the group.**
+- A role gets an "Assign to" picker: choose several members at once.
+- A group gets member add/remove in the same place.
+Both already have a per-member path (People → Change role / Add to group); this
+is the same fact approached from the other side, which is how an administrator
+setting up a workspace actually works — role first, then who is in it.
+
+Groups also gain full CRUD (rename, edit description, delete) to match roles.
