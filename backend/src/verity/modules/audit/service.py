@@ -208,7 +208,7 @@ class AuditService:
         )
         await self._repository.add(session, entry)
 
-    async def list_page(
+    async def list_page(  # noqa: PLR0913 — one keyword per documented filter
         self,
         session: AsyncSession,
         *,
@@ -216,6 +216,8 @@ class AuditService:
         limit: int,
         cursor: str | None = None,
         include_system: bool = False,
+        object_type: str | None = None,
+        object_id: uuid.UUID | None = None,
     ) -> tuple[list[AuditLog], str | None]:
         """One page, newest first, with the cursor for the next page or ``None``.
 
@@ -231,6 +233,8 @@ class AuditService:
             session,
             tenant_id=tenant_id,
             limit=limit + 1,
+            object_type=object_type,
+            object_id=object_id,
             before=before,
             exclude_object_types=None if include_system else _SYSTEM_OBJECT_TYPES,
         )

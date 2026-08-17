@@ -219,17 +219,27 @@ async def _load_version_membership(
 async def _load_templates(
     session: AsyncSession, docs: Sequence[dict[str, Any]], result: LoadResult
 ) -> tuple[dict[str, ControlTemplate], dict[str, ControlTemplate]]:
-    """Upsert control templates keyed on code.
+    """Upsert control templates keyed on ``canonical_key``.
 
-    Returns ``(current, stale)``. Stale templates are handed back rather than
+    Keyed on canonical_key, not code: the code is a label the pack may restyle
+    (the 2026-08 re-code to category codes did exactly that), while
+    canonical_key is the identity the pack was authored against. Keying on code
+    would read a re-coded template as "new one, old one dropped" and try to
+    delete a row that adopted tenant controls still reference.
+
+    Returns ``(current, stale)`` — keyed by the pack's *code* for the crosswalk,
+    which names templates by code. Stale templates are handed back rather than
     deleted here: the crosswalk rows pointing at them must go first, or the
     ``RESTRICT`` foreign key refuses the delete.
     """
-    existing = {row.code: row for row in (await session.execute(select(ControlTemplate))).scalars()}
+    existing = {
+        row.canonical_key: row
+        for row in (await session.execute(select(ControlTemplate))).scalars()
+    }
     by_code: dict[str, ControlTemplate] = {}
     for doc in docs:
         values = {
-            "canonical_key": doc["canonical_key"],
+            "code": doc["code"],
             "name": doc["name"],
             "category": doc["category"],
             "control_type": doc["control_type"],
@@ -239,9 +249,9 @@ async def _load_templates(
             "implementation_guidance": doc.get("implementation_guidance"),
             "built_in": True,
         }
-        row = existing.pop(doc["code"], None)
+        row = existing.pop(doc["canonical_key"], None)
         if row is None:
-            row = ControlTemplate(id=uuid7(), code=doc["code"], **values)
+            row = ControlTemplate(id=uuid7(), canonical_key=doc["canonical_key"], **values)
             session.add(row)
             await session.flush([row])
             result.table("control_templates").inserted += 1

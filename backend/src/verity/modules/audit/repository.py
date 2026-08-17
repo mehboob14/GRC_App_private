@@ -25,7 +25,7 @@ class AuditLogRepository:
         session.add(entry)
         await session.flush([entry])
 
-    async def list_page(
+    async def list_page(  # noqa: PLR0913 — one keyword per documented filter
         self,
         session: AsyncSession,
         *,
@@ -33,6 +33,8 @@ class AuditLogRepository:
         limit: int,
         before: tuple[datetime, uuid.UUID] | None = None,
         exclude_object_types: Collection[str] | None = None,
+        object_type: str | None = None,
+        object_id: uuid.UUID | None = None,
     ) -> list[AuditLog]:
         """Newest first, keyed on ``(occurred_at, id)``.
 
@@ -53,6 +55,12 @@ class AuditLogRepository:
         )
         if exclude_object_types:
             statement = statement.where(AuditLog.object_type.notin_(list(exclude_object_types)))
+        # Scoping to one object is what makes a per-record History tab possible
+        # without the client pulling the whole trail and filtering client-side.
+        if object_type is not None:
+            statement = statement.where(AuditLog.object_type == object_type)
+        if object_id is not None:
+            statement = statement.where(AuditLog.object_id == object_id)
         if before is not None:
             statement = statement.where(tuple_(AuditLog.occurred_at, AuditLog.id) < before)
         result = await session.execute(statement)

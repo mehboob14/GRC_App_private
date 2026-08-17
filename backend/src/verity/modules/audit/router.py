@@ -8,6 +8,7 @@ change, so this route writes no audit row.
 
 from __future__ import annotations
 
+import uuid
 from typing import Annotated, Final
 
 from fastapi import APIRouter, Depends, Query
@@ -34,12 +35,14 @@ implements ``require`` itself; nothing here changes when it does."""
     summary="The calling tenant's audit trail, newest first",
     dependencies=[Depends(require_audit_read)],
 )
-async def list_audit_log(
+async def list_audit_log(  # noqa: PLR0913, PLR0917 — one per query parameter
     context: Annotated[TenantContext, Depends(get_tenant_context)],
     session: Annotated[AsyncSession, Depends(get_tenant_session)],
     limit: Annotated[int, Query(ge=1, le=MAX_PAGE_SIZE)] = DEFAULT_PAGE_SIZE,
     cursor: Annotated[str | None, Query()] = None,
     include_system: Annotated[bool, Query()] = False,
+    object_type: Annotated[str | None, Query()] = None,
+    object_id: Annotated[uuid.UUID | None, Query()] = None,
 ) -> AuditLogPage:
     entries, next_cursor = await audit_service.list_page(
         session,
@@ -47,6 +50,8 @@ async def list_audit_log(
         limit=limit,
         cursor=cursor,
         include_system=include_system,
+        object_type=object_type,
+        object_id=object_id,
     )
     labels = await audit_service.resolve_labels(session, entries)
     items: list[AuditLogEntry] = []

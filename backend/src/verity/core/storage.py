@@ -63,9 +63,15 @@ _SIGNATURES: Final[tuple[tuple[bytes, str], ...]] = (
 _OOXML_MARKERS: Final[tuple[tuple[bytes, str], ...]] = (
     (b"word/", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
     (b"xl/", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
+    (b"ppt/", "application/vnd.openxmlformats-officedocument.presentationml.presentation"),
 )
+# WebP is a RIFF container — "RIFF", a 4-byte size, then "WEBP". The form tag sits at
+# offset 8, past where a prefix match reaches, so it is sniffed separately below rather
+# than added to _SIGNATURES. A static raster like PNG/JPEG: no script surface.
+WEBP_CONTENT_TYPE: Final = "image/webp"
 ALLOWED_CONTENT_TYPES: Final[frozenset[str]] = frozenset(
-    [value for _, value in (*_SIGNATURES, *_OOXML_MARKERS)] + ["text/plain", "application/json"]
+    [value for _, value in (*_SIGNATURES, *_OOXML_MARKERS)]
+    + ["text/plain", "application/json", WEBP_CONTENT_TYPE]
 )
 
 
@@ -146,6 +152,8 @@ def sniff_content_type(head: bytes) -> str:
     for signature, content_type in _SIGNATURES:
         if head.startswith(signature):
             return content_type
+    if head[:4] == b"RIFF" and head[8:12] == b"WEBP":
+        return WEBP_CONTENT_TYPE
     if head.startswith(b"PK\x03\x04"):
         # ponytail: OOXML is a zip, and the entry naming it lives past the head. Local
         # file headers store names uncompressed, so Word and Excel output carry "word/"

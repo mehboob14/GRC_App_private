@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Badge,
   Button,
@@ -10,11 +10,21 @@ import {
   Skeleton,
   StatusPill,
   Tooltip,
+  useToast,
 } from "@/components/ui";
 import { cn } from "@/lib/cn";
-import { complianceApi, controlsApi, evidenceApi } from "@/lib/api/endpoints";
+import {
+  auditApi,
+  complianceApi,
+  controlsApi,
+  evidenceApi,
+} from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/auth-context";
+import {
+  AttachEvidenceDialog,
+  EditControlDialog,
+} from "@/features/compliance/components/control-detail-dialogs";
 import type { Control, Evidence, EvidenceFreshness } from "@/lib/api/types";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -130,13 +140,71 @@ function Guidance({ text }: { text: string }) {
   );
 }
 
-type TabId = "overview" | "evidence" | "criteria";
+const FIELD_LABEL: Record<string, string> = {
+  name: "Name",
+  description: "Statement",
+  implementation_guidance: "Guidance",
+  category: "Category",
+  control_type: "Type",
+  control_sub_type: "Sub-type",
+  status: "Status",
+  owner_membership_id: "Owner",
+  disabled_at: "Disabled",
+  disabled_reason: "Reason",
+};
+
+/** The fields that actually moved between two audit snapshots. A raw JSON dump
+ *  is technically the truth and practically unreadable, so this names the field
+ *  and shows old → new. */
+function ChangeSummary({
+  before,
+  after,
+}: {
+  before: Record<string, unknown> | null;
+  after: Record<string, unknown> | null;
+}) {
+  const changes = useMemo(() => {
+    if (!after) return [];
+    const keys = new Set([...Object.keys(before ?? {}), ...Object.keys(after)]);
+    return [...keys]
+      .filter((key) => key !== "id" && FIELD_LABEL[key])
+      .map((key) => ({ key, from: before?.[key], to: after[key] }))
+      .filter((change) => JSON.stringify(change.from) !== JSON.stringify(change.to));
+  }, [before, after]);
+
+  if (changes.length === 0) return null;
+
+  const render = (value: unknown) =>
+    value === null || value === undefined || value === ""
+      ? "—"
+      : String(value).replace(/_/g, " ").slice(0, 60);
+
+  return (
+    <ul className="mt-1.5 space-y-1">
+      {changes.map((change) => (
+        <li key={change.key} className="text-body-sm text-text-secondary">
+          <span className="text-text-subtle">{FIELD_LABEL[change.key]}:</span>{" "}
+          <span className="line-through decoration-text-faint">{render(change.from)}</span>
+          <Icon name="arrowr" className="mx-1 inline size-3 text-text-faint" aria-hidden />
+          <span className="font-semibold text-text-primary">{render(change.to)}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+type TabId = "overview" | "evidence" | "tests" | "requirements" | "history";
 
 export function ControlDetailPage() {
   const { controlId = "" } = useParams();
   const { principal } = useAuth();
   const canManage = Boolean(principal?.permissions.includes("controls:manage"));
+  const canReadAudit = Boolean(principal?.permissions.includes("audit:read"));
   const [tab, setTab] = useState<TabId>("overview");
+  const [editing, setEditing] = useState(false);
+  const [linking, setLinking] = useState(false);
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const controlQuery = useQuery({
     queryKey: ["control", controlId],
@@ -155,6 +223,13 @@ export function ControlDetailPage() {
   const allControlsQuery = useQuery({
     queryKey: ["controls"],
     queryFn: () => controlsApi.list(),
+  });
+  // The audit trail, scoped to this control. Immutable by construction — the
+  // table is append-only, so this is the record, not a reconstruction.
+  const historyQuery = useQuery({
+    queryKey: ["audit", "control", controlId],
+    queryFn: () => auditApi.list(undefined, false, { type: "control", id: controlId }),
+    enabled: controlId.length > 0 && canReadAudit,
   });
 
   const control = controlQuery.data;
@@ -196,6 +271,7 @@ export function ControlDetailPage() {
       .slice(0, 12);
   }, [control, allControlsQuery.data]);
 
+  const history = useMemo(() => historyQuery.data?.items ?? [], [historyQuery.data]);
   const staleCount = evidence.filter((item) => item.freshness === "stale").length;
 
   if (controlQuery.isError) {
@@ -231,7 +307,9 @@ export function ControlDetailPage() {
   const tabs: { id: TabId; label: string; count?: number }[] = [
     { id: "overview", label: "Overview" },
     { id: "evidence", label: "Evidence", count: evidence.length },
-    { id: "criteria", label: "Criteria", count: criteria.length },
+    { id: "tests", label: "Tests" },
+    { id: "requirements", label: "Requirements", count: criteria.length },
+    { id: "history", label: "History", count: history.length },
   ];
 
   return (
@@ -281,14 +359,12 @@ export function ControlDetailPage() {
         </div>
 
         <div className="flex shrink-0 items-center gap-2">
-          {/* Editing lives on the library's drawer today; this points at it
-              rather than shipping a second, diverging editor. */}
-          <Button variant="secondary" asChild>
-            <Link to="/controls">
+          {canManage ? (
+            <Button variant="secondary" onClick={() => setEditing(true)}>
               <Icon name="gear" className="size-4" />
-              {canManage ? "Edit in library" : "Back to library"}
-            </Link>
-          </Button>
+              Edit
+            </Button>
+          ) : null}
           {/* Honest later-phase affordance (DS): keyboard-reachable, explicitly
               not enabled, and the tooltip says when it arrives. */}
           <Tooltip content="Automated testing arrives with connectors in Phase 2">
@@ -382,12 +458,16 @@ export function ControlDetailPage() {
             <Panel
               title={tab === "overview" ? "Linked evidence" : "Evidence"}
               action={
-                <Link
-                  to="/evidence"
-                  className="text-body-sm font-semibold text-text-link"
-                >
-                  Evidence library →
-                </Link>
+                canManage ? (
+                  <Button size="sm" variant="secondary" onClick={() => setLinking(true)}>
+                    <Icon name="plus" className="size-4" />
+                    Add evidence
+                  </Button>
+                ) : (
+                  <Link to="/evidence" className="text-body-sm font-semibold text-text-link">
+                    Evidence library →
+                  </Link>
+                )
               }
             >
               {evidenceQuery.isLoading ? (
@@ -441,8 +521,67 @@ export function ControlDetailPage() {
             </Panel>
           ) : null}
 
-          {tab === "criteria" ? (
-            <Panel title="Criteria this control satisfies">
+          {tab === "tests" ? (
+            <Panel title="Automated tests">
+              <EmptyState
+                icon="activity"
+                title="No automated tests yet"
+                description="Continuous tests run against connected systems and arrive with connectors in Phase 2. Until one is live, this control is evidenced manually."
+              />
+            </Panel>
+          ) : null}
+
+          {tab === "history" ? (
+            <Panel title="History">
+              {!canReadAudit ? (
+                <EmptyState
+                  icon="audit"
+                  title="You cannot view the audit trail"
+                  description="Viewing history needs the audit:read permission. An Admin can grant it."
+                />
+              ) : historyQuery.isLoading ? (
+                <Skeleton className="h-32 w-full rounded-md" />
+              ) : history.length === 0 ? (
+                <EmptyState
+                  icon="audit"
+                  title="No changes recorded yet"
+                  description="Every edit to this control is written to the audit trail as it happens."
+                />
+              ) : (
+                <ol className="relative space-y-4 border-l border-border pl-5">
+                  {history.map((entry) => (
+                    <li key={entry.id} className="relative">
+                      <span className="absolute -left-[1.6rem] top-1.5 size-2 rounded-full bg-action-accent" />
+                      <div className="flex flex-wrap items-baseline gap-x-2">
+                        <span className="text-body-md font-semibold text-text-primary">
+                          {entry.actor_label || "System"}
+                        </span>
+                        <span className="text-body-sm text-text-secondary">
+                          {entry.action === "create" ? "created this control" : "updated this control"}
+                        </span>
+                        <span className="ml-auto tabular text-caption text-text-subtle">
+                          {new Date(entry.occurred_at).toLocaleString()}
+                        </span>
+                      </div>
+                      {/* What actually changed — the before/after snapshot the
+                          audit row carries, reduced to the fields that moved. */}
+                      <ChangeSummary before={entry.before} after={entry.after} />
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </Panel>
+          ) : null}
+
+          {tab === "requirements" ? (
+            <Panel
+              title={`${framework?.name ?? "Framework"} requirements`}
+              action={
+                <span className="text-caption text-text-subtle">
+                  The criterion text this control is written against
+                </span>
+              }
+            >
               {criteria.length === 0 ? (
                 <EmptyState
                   icon="shield"
@@ -452,16 +591,28 @@ export function ControlDetailPage() {
               ) : (
                 <ul className="divide-y divide-border">
                   {criteria.map((requirement) => (
-                    <li key={requirement.id} className="flex gap-3 py-3 first:pt-0 last:pb-0">
-                      <CodeChip code={requirement.code} className="mt-0.5 shrink-0" />
-                      <span className="min-w-0">
-                        <span className="block text-body-md text-text-primary">
-                          {requirement.name}
-                        </span>
-                        <span className="mt-0.5 block text-caption text-text-subtle">
+                    <li key={requirement.id} className="py-4 first:pt-0 last:pb-0">
+                      <div className="mb-1.5 flex flex-wrap items-center gap-2">
+                        <CodeChip code={requirement.code} />
+                        <Badge variant="neutral">
                           {requirement.trust_services_category}
-                        </span>
-                      </span>
+                        </Badge>
+                        {requirement.is_always_in_scope ? (
+                          <span className="text-caption text-text-subtle">
+                            always in scope
+                          </span>
+                        ) : null}
+                      </div>
+                      <p className="text-body-md font-semibold text-text-primary">
+                        {requirement.name}
+                      </p>
+                      {/* The framework's own words. An auditor reads this, so it
+                          is quoted verbatim rather than paraphrased. */}
+                      {requirement.description ? (
+                        <p className="mt-1 border-l-2 border-border pl-3 text-body-sm leading-relaxed text-text-secondary">
+                          {requirement.description}
+                        </p>
+                      ) : null}
                     </li>
                   ))}
                 </ul>
@@ -560,6 +711,27 @@ export function ControlDetailPage() {
           ) : null}
         </aside>
       </div>
+
+      <EditControlDialog
+        control={control}
+        open={editing}
+        onOpenChange={setEditing}
+        onSaved={async () => {
+          await queryClient.invalidateQueries({ queryKey: ["control", controlId] });
+          await queryClient.invalidateQueries({ queryKey: ["controls"] });
+          toast({ title: "Control updated", tone: "success" });
+        }}
+      />
+
+      <AttachEvidenceDialog
+        controlId={controlId}
+        open={linking}
+        onOpenChange={setLinking}
+        onDone={async () => {
+          await queryClient.invalidateQueries({ queryKey: ["evidence"] });
+          toast({ title: "Evidence attached", tone: "success" });
+        }}
+      />
     </div>
   );
 }

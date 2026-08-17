@@ -184,10 +184,20 @@ export const tenantApi = {
 };
 
 export const auditApi = {
-  list: (cursor?: string, includeSystem = false) => {
+  list: (
+    cursor?: string,
+    includeSystem = false,
+    /** Scope to one record — what a per-object History tab needs, so the
+     *  client does not pull the whole trail and filter it locally. */
+    object?: { type: string; id: string },
+  ) => {
     const params = new URLSearchParams();
     if (cursor) params.set("cursor", cursor);
     if (includeSystem) params.set("include_system", "true");
+    if (object) {
+      params.set("object_type", object.type);
+      params.set("object_id", object.id);
+    }
     const qs = params.toString();
     return apiFetch<CursorPage<AuditEvent>>(`/audit-log${qs ? `?${qs}` : ""}`);
   },

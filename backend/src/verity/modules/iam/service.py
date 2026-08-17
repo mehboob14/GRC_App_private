@@ -227,6 +227,27 @@ def tenant_display_name(legal_name: str, trading_name: str | None) -> str:
     return trading_name or legal_name
 
 
+async def _adopt_control_library(
+    session: AsyncSession, *, tenant_id: uuid.UUID, actor: Actor
+) -> None:
+    """Adopt the full SOC 2 control library into a new tenant.
+
+    Every tenant starts with all 114 controls instantiated, so there is
+    something to scope, own and evidence from day one. Idempotent on
+    ``(tenant_id, template_id)``, so an idempotent signup replay or a second
+    provisioning pass adds nothing.
+
+    Lazy import: compliance's control service already calls back into iam
+    (owner names, rule 3), so binding this edge at call time keeps both off the
+    module-load import cycle.
+    """
+    from verity.modules.compliance.control_service import (  # noqa: PLC0415
+        control_service,
+    )
+
+    await control_service.instantiate_library(session, tenant_id=tenant_id, actor=actor)
+
+
 # ---------------------------------------------------------------------------
 # Outcome types — domain shapes the router maps onto the response contract
 # ---------------------------------------------------------------------------
@@ -633,6 +654,9 @@ class IamAuthService:
                 # Decision 10: a self-signup tenant reaches `active` inside the
                 # signup transaction — the gates above are now satisfied.
                 await tenancy_service.run_provisioning(session, tenant_id=tenant.id, actor=actor)
+                # Every tenant starts with the full SOC 2 control library adopted,
+                # so all 114 controls exist to scope, own and evidence from day one.
+                await _adopt_control_library(session, tenant_id=tenant.id, actor=actor)
                 verify = (user.id, email_n)
                 outcome = EmailVerificationRequired(email=email_n)
 
@@ -1947,7 +1971,7 @@ class IamService:
             assignment_count=0,
         )
 
-    async def update_role(
+    async def update_role(  # noqa: PLR0913 — the editable fields, all keyword-only
         self,
         session: AsyncSession,
         *,
@@ -2219,6 +2243,9 @@ class IamService:
         await tenancy_service.run_provisioning(
             session, tenant_id=tenant.id, actor_admin_id=actor_admin_id
         )
+        # Same full-library adoption as signup, so a provider-created tenant is
+        # equally complete from the start. Idempotent.
+        await _adopt_control_library(session, tenant_id=tenant.id, actor=actor)
 
         issued = issue_token(subject=membership.id, plane="tenant", typ="invite")
         accept_url = (
