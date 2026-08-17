@@ -17,12 +17,15 @@ import { RolesPage } from "@/features/iam/components/roles-page";
 import { SecurityPage } from "@/features/iam/components/security-page";
 import { AuditLogPage } from "@/features/audit/components/audit-log-page";
 import { QuickStartPage } from "@/features/compliance/components/quick-start-page";
+import { DashboardPage } from "@/features/dashboard/dashboard-page";
 import { FrameworksPage } from "@/features/compliance/components/frameworks-page";
 import { FrameworkDetailPage } from "@/features/compliance/components/framework-detail-page";
 import { ControlsPage } from "@/features/compliance/components/controls-page";
+import { EvidencePage } from "@/features/evidence/components/evidence-page";
 import { ScopePage } from "@/features/compliance/components/scope-page";
 import { FrameworksLayout } from "@/features/compliance/components/frameworks-layout";
 import { CompanyProfilePage } from "@/features/tenancy/company-profile-page";
+import { ConnectionsLayout } from "@/features/connectors/components/connections-layout";
 import { ConnectionsPage } from "@/features/connectors/components/connections-page";
 
 export function AppRoutes() {
@@ -53,6 +56,7 @@ export function AppRoutes() {
         <Route element={<AppLayout />}>
           <Route index element={<Navigate to="/quick-start" replace />} />
           <Route path="quick-start" element={<QuickStartPage />} />
+          <Route path="dashboard" element={<DashboardPage />} />
           <Route path="frameworks" element={<FrameworksLayout />}>
             <Route index element={<FrameworksPage />} />
             <Route path="scope" element={<ScopePage />} />
@@ -60,8 +64,11 @@ export function AppRoutes() {
           {/* Detail sits outside the tab strip: it is a drill-down, not a tab. */}
           <Route path="frameworks/:frameworkId" element={<FrameworkDetailPage />} />
           <Route path="controls" element={<ControlsPage />} />
+          <Route path="evidence" element={<EvidencePage />} />
           <Route path="scope" element={<Navigate to="/frameworks/scope" replace />} />
-          <Route path="connectors" element={<ConnectionsPage />} />
+          <Route path="connectors" element={<ConnectionsLayout />}>
+            <Route index element={<ConnectionsPage />} />
+          </Route>
           {/* People and Company profile live under Settings; keep old paths working. */}
           <Route path="people" element={<Navigate to="/settings/access/people" replace />} />
           <Route

@@ -12,12 +12,12 @@ import {
   DrawerTitle,
   EmptyState,
   FilterFacet,
-  Icon,
   SearchInput,
   StatusPill,
   statusFamilyFor,
   Tooltip,
 } from "@/components/ui";
+import { cn } from "@/lib/cn";
 import { ConnectorLogo } from "@/features/connectors/connector-logo";
 import {
   CONNECTOR_CATEGORIES,
@@ -34,10 +34,10 @@ const CATEGORY_OPTIONS = CONNECTOR_CATEGORIES.map((category) => ({
 const NOT_CONNECTED = "Not connected";
 const notConnectedFamily = statusFamilyFor(NOT_CONNECTED) ?? "unknown";
 
-/**
- * Categories are a taxonomy, not a status — neutral chips (DS §1). Rendered as
- * a span so the same component is valid inside the card's <button>.
- */
+type Tab = "active" | "available";
+const TABS: Tab[] = ["active", "available"];
+
+/** Categories are a taxonomy, not a status — neutral chips (DS §1). */
 function CategoryChips({
   categories,
   className = "",
@@ -56,7 +56,8 @@ function CategoryChips({
   );
 }
 
-function ConnectorCard({
+/** Available card — brand, name, categories, one action. Nothing else. */
+function AvailableCard({
   connector,
   onOpen,
 }: {
@@ -64,53 +65,31 @@ function ConnectorCard({
   onOpen: () => void;
 }) {
   return (
-    // asChild → a real <button>: Enter/Space, focus ring and tab order come
-    // from the platform. Hover is a colour change at 80ms (§7.6); no shadow,
-    // because the card is not floating (§4.4).
-    <Card
-      asChild
-      className="transition-colors duration-80 ease-state hover:border-action-accent-border hover:bg-surface-hover"
-    >
-      <button
-        type="button"
+    <Card className="flex flex-col p-4">
+      <div className="flex items-center gap-2.5">
+        <ConnectorLogo size={28} />
+        <span className="truncate text-body-md font-semibold text-text-primary">
+          {connector.name}
+        </span>
+      </div>
+      <div className="mt-3">
+        <p className="type-overline mb-1.5">Categories</p>
+        <CategoryChips categories={connector.categories} />
+      </div>
+      <Button
+        variant="secondary"
+        size="sm"
+        className="mt-4 w-full"
         onClick={onOpen}
-        className="flex size-full flex-col p-4 text-left"
       >
-        {/* DS §6.4 "Source / vendor": 22×22 brand tile + name. The name takes
-            text-primary weight here because on a card it is the primary value,
-            not a secondary vendor column (§2.3, §3.4). */}
-        <span className="flex w-full items-center gap-2">
-          <ConnectorLogo size={22} />
-          <span className="truncate text-body-md font-semibold text-text-primary">
-            {connector.name}
-          </span>
-          <Icon
-            name="chevr"
-            className="ml-auto size-4 text-text-faint"
-            aria-hidden
-          />
-        </span>
-
-        <CategoryChips categories={connector.categories} className="mb-3 mt-2.5" />
-
-        <span className="mt-auto flex w-full items-center gap-2 border-t border-border pt-3">
-          <StatusPill
-            kind="inline"
-            status={notConnectedFamily}
-            label={NOT_CONNECTED}
-          />
-          <Badge variant="role" className="ml-auto">
-            Phase 2
-          </Badge>
-        </span>
-      </button>
+        View and connect
+      </Button>
     </Card>
   );
 }
 
-/** Connections — the catalogue of integrations Verity will sync from. Phase 1
- *  lists them as honest placeholders; no connector is live yet. */
 export function ConnectionsPage() {
+  const [tab, setTab] = useState<Tab>("available");
   const [search, setSearch] = useState("");
   const [categories, setCategories] = useState<string[]>([]);
   const [selected, setSelected] = useState<Connector | null>(null);
@@ -137,76 +116,98 @@ export function ConnectionsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[1200px]">
+    <div>
       <h1 className="font-display text-heading-lg text-text-primary">
-        Connections
+        All Connections
       </h1>
-      <p className="mt-2 max-w-2xl text-body-lg text-text-secondary">
-        The <span className="tabular">{CONNECTORS.length}</span> integrations
-        Verity will collect evidence from. Connecting them arrives in Phase 2 —
-        nothing is syncing yet.
-      </p>
 
-      {/* Toolbar stays mounted above every state, so a filtered-empty result
-          can still be undone from where it was made (§7.5). */}
-      <div
-        role="search"
-        aria-label="Filter connectors"
-        className="mb-4 mt-5 flex flex-wrap items-center gap-2"
+      <nav
+        className="mb-6 mt-4 flex gap-1 border-b border-border"
+        aria-label="Connections sections"
       >
-        <SearchInput
-          value={search}
-          onChange={setSearch}
-          placeholder="Search connectors…"
-          aria-label="Search connectors by name"
-          className="w-full sm:w-64"
-        />
-        <FilterFacet
-          label="Category"
-          options={CATEGORY_OPTIONS}
-          values={categories}
-          onChange={setCategories}
-        />
-        {hasFilters ? (
-          <Button variant="ghost" size="sm" onClick={clearFilters}>
-            Clear filters
-          </Button>
-        ) : null}
-        <p
-          aria-live="polite"
-          className="ml-auto text-caption text-text-subtle"
-        >
-          Showing <span className="tabular">{visible.length}</span> of{" "}
-          <span className="tabular">{CONNECTORS.length}</span> connectors
-        </p>
-      </div>
+        {TABS.map((t) => (
+          <button
+            key={t}
+            type="button"
+            onClick={() => setTab(t)}
+            aria-current={tab === t ? "page" : undefined}
+            className={cn(
+              "relative -mb-px px-3 py-2.5 text-label-md capitalize transition-colors duration-150 ease-state",
+              tab === t
+                ? "text-action-accent"
+                : "text-text-secondary hover:text-text-primary",
+            )}
+          >
+            {t}
+            {tab === t ? (
+              <span className="absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-action-accent" />
+            ) : null}
+          </button>
+        ))}
+      </nav>
 
-      {/* The catalogue is a static constant — it never loads, never fails and
-          is never empty, so those three states are deliberately absent. */}
-      {visible.length === 0 ? (
+      {tab === "active" ? (
         <EmptyState
-          variant="no-match"
-          title="No connectors match your filters"
-          description={`Try removing ${activeFilterNames
-            .map((name) => `'${name}'`)
-            .join(" or ")}.`}
-          onClearFilters={clearFilters}
+          icon="plug"
+          title="No active connections yet"
+          description="Connect a provider from Available to start collecting evidence. Connecting arrives in Phase 2."
         />
       ) : (
-        <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {visible.map((connector) => (
-            <li key={connector.id}>
-              <ConnectorCard
-                connector={connector}
-                onOpen={() => setSelected(connector)}
-              />
-            </li>
-          ))}
-        </ul>
+        <>
+          <div
+            role="search"
+            aria-label="Filter connectors"
+            className="mb-4 flex flex-wrap items-center gap-2"
+          >
+            <SearchInput
+              value={search}
+              onChange={setSearch}
+              placeholder="Search connectors…"
+              aria-label="Search connectors by name"
+              className="w-full sm:w-64"
+            />
+            <FilterFacet
+              label="Category"
+              options={CATEGORY_OPTIONS}
+              values={categories}
+              onChange={setCategories}
+            />
+            {hasFilters ? (
+              <Button variant="ghost" size="sm" onClick={clearFilters}>
+                Clear filters
+              </Button>
+            ) : null}
+            <p aria-live="polite" className="ml-auto text-caption text-text-subtle">
+              Showing <span className="tabular">{visible.length}</span> of{" "}
+              <span className="tabular">{CONNECTORS.length}</span> connectors
+            </p>
+          </div>
+
+          {visible.length === 0 ? (
+            <EmptyState
+              variant="no-match"
+              title="No connectors match your filters"
+              description={`Try removing ${activeFilterNames
+                .map((name) => `'${name}'`)
+                .join(" or ")}.`}
+              onClearFilters={clearFilters}
+            />
+          ) : (
+            <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {visible.map((connector) => (
+                <li key={connector.id}>
+                  <AvailableCard
+                    connector={connector}
+                    onOpen={() => setSelected(connector)}
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
       )}
 
-      {/* Peek → drawer (§7.1): read what a connector will do without leaving
-          the catalogue. Radix traps focus, restores it and closes on Esc. */}
+      {/* Peek → drawer: read what a connector will do without leaving the page. */}
       <Drawer
         open={selected !== null}
         onOpenChange={(open) => {
@@ -236,9 +237,8 @@ export function ConnectionsPage() {
                 <div>
                   <p className="type-overline mb-1.5">What this will sync</p>
                   <p className="mb-2 text-body-sm text-text-subtle">
-                    Once connector sync ships in Phase 2, Verity will collect
-                    the following as control evidence. Nothing is collected
-                    today.
+                    Once connector sync ships in Phase 2, Verity will collect the
+                    following as control evidence. Nothing is collected today.
                   </p>
                   <ul className="list-disc space-y-1.5 pl-5 text-body-md text-text-secondary marker:text-text-faint">
                     {selected.syncs.map((item) => (
@@ -249,10 +249,7 @@ export function ConnectionsPage() {
 
                 <div>
                   <p className="type-overline mb-1.5">Status</p>
-                  <StatusPill
-                    status={notConnectedFamily}
-                    label={NOT_CONNECTED}
-                  />
+                  <StatusPill status={notConnectedFamily} label={NOT_CONNECTED} />
                 </div>
               </DrawerBody>
 
@@ -261,9 +258,6 @@ export function ConnectionsPage() {
                   Connecting arrives in Phase 2.
                 </p>
                 <Tooltip content="Connecting arrives in Phase 2, with the connector sync backend. There is nothing to authorise yet.">
-                  {/* Disabled buttons take no pointer or focus events, so the
-                      tooltip hangs off a focusable wrapper — the reason stays
-                      reachable by keyboard (§5.2). */}
                   <span tabIndex={0} className="rounded-sm">
                     <Button disabled>Connect {selected.name}</Button>
                   </span>

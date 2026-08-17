@@ -25,6 +25,8 @@ export const PERMISSION_KEYS = [
   "tenant:manage",
   "frameworks:read",
   "controls:manage",
+  "evidence:read",
+  "evidence:manage",
 ] as const;
 
 export type PermissionKey = (typeof PERMISSION_KEYS)[number];
@@ -523,4 +525,72 @@ export type Coverage = {
       finding while this is false. */
   evidence_tracking_available: boolean;
   controls_unmapped: ControlGap[];
+};
+
+// --- Evidence library --------------------------------------------------------
+
+export type EvidenceFreshness = "current" | "aging" | "stale" | "no_expiry";
+export type EvidenceKind = "file" | "link";
+
+export type Evidence = {
+  id: string;
+  title: string;
+  description: string | null;
+  evidence_type: string;
+  kind: EvidenceKind;
+  source_label: string | null;
+  owner_membership_id: string | null;
+  owner_name: string | null;
+  collected_at: string;
+  renewal_date: string | null;
+  /** Derived server-side from renewal_date; never stored. */
+  freshness: EvidenceFreshness;
+  filename: string | null;
+  content_type: string | null;
+  size_bytes: number | null;
+  sha256: string | null;
+  link_url: string | null;
+  control_ids: string[];
+  control_codes: string[];
+};
+
+export type EvidenceType = {
+  value: string;
+  label: string;
+  default_validity_days: number;
+};
+
+export type EvidenceVocabulary = {
+  types: EvidenceType[];
+  freshness_states: EvidenceFreshness[];
+};
+
+export type EvidenceQuery = {
+  evidence_type?: string;
+  control_id?: string;
+  freshness?: string;
+};
+
+export type EvidenceLinkCreate = {
+  title: string;
+  link_url: string;
+  evidence_type: string;
+  collected_at: string;
+  description?: string | null;
+  source_label?: string | null;
+  owner_membership_id?: string | null;
+  renewal_date?: string | null;
+  control_ids?: string[];
+};
+
+export type EvidenceUpdate = {
+  title?: string;
+  description?: string | null;
+  evidence_type?: string;
+  source_label?: string | null;
+  owner_membership_id?: string | null;
+  clear_owner?: boolean;
+  collected_at?: string;
+  renewal_date?: string | null;
+  control_ids?: string[];
 };

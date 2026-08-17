@@ -239,7 +239,7 @@ export function Topbar() {
           <DropdownMenuLabel>
             {principal?.user.full_name ?? "Account"}
           </DropdownMenuLabel>
-          <DropdownMenuItem onSelect={() => navigate("/settings/security")}>
+          <DropdownMenuItem onSelect={() => navigate("/settings/security/mfa")}>
             Security
           </DropdownMenuItem>
           <DropdownMenuSeparator />

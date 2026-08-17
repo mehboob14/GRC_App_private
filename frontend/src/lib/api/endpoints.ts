@@ -16,6 +16,11 @@ import type {
   CursorPage,
   Engagement,
   EngagementPut,
+  Evidence,
+  EvidenceLinkCreate,
+  EvidenceQuery,
+  EvidenceUpdate,
+  EvidenceVocabulary,
   Framework,
   Group,
   InviteMemberRequest,
@@ -250,4 +255,32 @@ export const engagementApi = {
     }),
   scope: () => apiFetch<ScopeCriterion[]>("/engagement/scope"),
   coverage: () => apiFetch<Coverage>("/engagement/coverage"),
+};
+
+export const evidenceApi = {
+  list: (query: EvidenceQuery = {}) => {
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(query)) {
+      if (value !== undefined && value !== "") params.set(key, String(value));
+    }
+    const qs = params.toString();
+    return apiFetch<Evidence[]>(`/evidence${qs ? `?${qs}` : ""}`);
+  },
+  get: (id: string) => apiFetch<Evidence>(`/evidence/${id}`),
+  vocabulary: () => apiFetch<EvidenceVocabulary>("/evidence/vocabulary"),
+  addLink: (body: EvidenceLinkCreate) =>
+    apiFetch<Evidence>("/evidence/link", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  /** Multipart: the body is FormData, so no JSON Content-Type is set — the
+   *  browser must supply its own boundary. */
+  uploadFile: (form: FormData) =>
+    apiFetch<Evidence>("/evidence/file", { method: "POST", body: form }),
+  update: (id: string, body: EvidenceUpdate) =>
+    apiFetch<Evidence>(`/evidence/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
+  downloadUrl: (id: string) => `/api/v1/evidence/${id}/download`,
 };

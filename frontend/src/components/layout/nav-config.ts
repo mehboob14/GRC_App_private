@@ -28,7 +28,7 @@ export const NAV_SECTIONS: NavSection[] = [
     label: "Overview",
     items: [
       { id: "get-started", label: "Get Started", icon: "check", to: "/quick-start" },
-      { id: "dashboard", label: "Dashboard", icon: "grid", comingSoon: true },
+      { id: "dashboard", label: "Dashboard", icon: "grid", to: "/dashboard" },
       { id: "tasks", label: "Tasks", icon: "audit", comingSoon: true },
     ],
   },
@@ -38,7 +38,7 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { id: "frameworks", label: "Frameworks", icon: "shield", to: "/frameworks" },
       { id: "controls", label: "Controls", icon: "controls", to: "/controls" },
-      { id: "evidence", label: "Evidence", icon: "doc", comingSoon: true },
+      { id: "evidence", label: "Evidence", icon: "doc", to: "/evidence" },
       { id: "policies", label: "Policies & Documents", icon: "book", comingSoon: true },
     ],
   },

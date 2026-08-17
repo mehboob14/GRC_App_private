@@ -13,9 +13,9 @@ export function SettingsLayout() {
   return (
     <div className="flex gap-8">
       <aside className="w-56 shrink-0" aria-label="Settings sections">
-        <h1 className="mb-5 px-2.5 font-display text-heading-md text-text-primary">
+        <p className="mb-5 px-2.5 font-display text-heading-md text-text-primary">
           Settings
-        </h1>
+        </p>
         <div className="flex flex-col gap-0.5">
           {SETTINGS_CATEGORIES.map((category) => (
             <NavLink

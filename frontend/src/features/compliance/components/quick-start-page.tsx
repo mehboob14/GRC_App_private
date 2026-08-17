@@ -233,7 +233,7 @@ export function QuickStartPage() {
       title: "Organise access",
       why: "Groups and custom roles keep permissions reviewable when the team grows.",
       status: accessStatus,
-      cta: { label: "Create a group", to: "/settings/groups" },
+      cta: { label: "Create a group", to: "/settings/access/groups" },
     },
     {
       id: "audit",
@@ -291,7 +291,7 @@ export function QuickStartPage() {
       </div>
 
       <Link
-        to="/settings/company"
+        to="/settings/organization/profile"
         className="mt-6 flex items-center gap-3 rounded-lg border border-border bg-surface-primary px-4 py-3.5 transition-colors hover:border-action-accent hover:bg-action-accent-tint/40"
       >
         <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-action-accent-tint text-action-accent">
