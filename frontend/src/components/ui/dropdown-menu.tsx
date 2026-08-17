@@ -16,7 +16,8 @@ export function DropdownMenuContent({
       <DropdownMenuPrimitive.Content
         sideOffset={sideOffset}
         className={cn(
-          "z-dropdown min-w-[220px] overflow-hidden rounded-md border border-border bg-surface-primary p-1 shadow-2",
+          // Above modal/drawer so a menu opened from within one floats over it.
+          "z-[1360] min-w-[220px] overflow-hidden rounded-md border border-border bg-surface-primary p-1 shadow-2",
           className,
         )}
         {...props}

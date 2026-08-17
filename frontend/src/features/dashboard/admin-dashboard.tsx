@@ -1,6 +1,12 @@
 import { useState } from "react";
-import { Badge, Button, Card, Icon, StatusPill, statusFamilyFor } from "@/components/ui";
+import { Button, Card, Icon, StatusPill, statusFamilyFor } from "@/components/ui";
 import { cn } from "@/lib/cn";
+import { Donut } from "./donut";
+
+const ring = (pct: number, color: string) => [
+  { value: pct, color },
+  { value: 100 - pct, color: "transparent" },
+];
 
 // Admin posture dashboard — framework rings + TSC coverage from the Executive
 // Briefing, and the Bento posture tiles (minus "Controls by SOC 2 family" and
@@ -12,72 +18,8 @@ const TOKEN = {
   amber: "rgb(var(--color-status-warning-base))",
   red: "rgb(var(--color-status-danger-base))",
   blue: "rgb(var(--color-action-accent))",
-  track: "rgb(var(--color-surface-sunken))",
   neutral: "rgb(var(--color-status-neutral-base))",
 };
-
-// ── Donut ────────────────────────────────────────────────────────────────
-function Donut({
-  size = 128,
-  stroke = 14,
-  segments,
-  children,
-}: {
-  size?: number;
-  stroke?: number;
-  segments: { value: number; color: string }[];
-  children?: React.ReactNode;
-}) {
-  const radius = (size - stroke) / 2;
-  const circ = 2 * Math.PI * radius;
-  const total = segments.reduce((s, seg) => s + seg.value, 0) || 1;
-  const filled = segments.filter((s) => s.color !== "transparent");
-  let acc = 0;
-  return (
-    <div className="relative shrink-0" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="-rotate-90" aria-hidden>
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke={TOKEN.track}
-          strokeWidth={stroke}
-        />
-        {segments.map((seg, i) => {
-          const len = (seg.value / total) * circ;
-          const node =
-            seg.color === "transparent" ? null : (
-              <circle
-                key={i}
-                cx={size / 2}
-                cy={size / 2}
-                r={radius}
-                fill="none"
-                stroke={seg.color}
-                strokeWidth={stroke}
-                strokeDasharray={`${len} ${circ - len}`}
-                strokeDashoffset={-acc}
-                strokeLinecap={filled.length === 1 ? "round" : "butt"}
-              />
-            );
-          acc += len;
-          return node;
-        })}
-      </svg>
-      {children ? (
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-center leading-none">
-          {children}
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-const ring = (pct: number, color: string) => [
-  { value: pct, color },
-  { value: 100 - pct, color: "transparent" },
-];
 
 // ── Data ─────────────────────────────────────────────────────────────────
 const FRAMEWORKS = [
@@ -263,20 +205,30 @@ export function AdminDashboard() {
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {/* SOC readiness hero — spans 2 */}
-        <Card className="p-5 sm:col-span-2">
+        {/* SOC readiness hero — spans 2, blue wash */}
+        <Card
+          className="p-5 sm:col-span-2"
+          style={{
+            background:
+              "linear-gradient(135deg, rgb(var(--color-action-accent) / 0.14), rgb(var(--color-action-accent) / 0.04))",
+            borderColor: "rgb(var(--color-action-accent) / 0.18)",
+          }}
+        >
           <div className="flex items-center justify-between">
-            <p className="type-overline text-text-subtle">SOC 2 Type II readiness</p>
-            <Badge variant="count">+4%</Badge>
+            <p className="text-overline font-bold uppercase text-action-accent">SOC 2 Type II readiness</p>
+            <span className="inline-flex items-center gap-0.5 rounded-full bg-surface-primary px-2.5 py-1 text-caption font-bold text-status-success-text shadow-sm">
+              <Icon name="arrowup" className="size-3.5" />
+              +4%
+            </span>
           </div>
           <div className="mt-3 flex items-center gap-6">
             <Donut size={132} stroke={14} segments={ring(91, TOKEN.blue)}>
               <span className="font-display text-numeral-lg tabular text-text-primary">91%</span>
-              <span className="mt-1 text-caption text-text-subtle">124 / 136</span>
+              <span className="mt-1 text-caption text-action-accent">124 / 136 controls</span>
             </Donut>
             <div className="min-w-0 flex-1">
               <p className="font-display text-title-md text-text-primary">Audit-ready</p>
-              <p className="mt-1 text-body-sm text-text-subtle">
+              <p className="mt-1 text-body-sm text-text-secondary">
                 On track for the Sep 15 window. 2 critical exceptions in remediation.
               </p>
               <div className="mt-3 flex gap-6">
@@ -286,16 +238,24 @@ export function AdminDashboard() {
               </div>
             </div>
           </div>
-          <div className="mt-4 grid grid-cols-4 gap-2 border-t border-border pt-4">
-            {[
-              ["Controls", "124"],
-              ["Evidence", "842"],
-              ["Risks", "12"],
-              ["Vulns", "64"],
-            ].map(([label, value]) => (
-              <div key={label} className="rounded-md border border-border px-3 py-2">
-                <p className="font-display text-numeral-md tabular text-text-primary">{value}</p>
-                <p className="text-caption text-text-subtle">{label}</p>
+          <div className="mt-4 grid grid-cols-4 gap-2 border-t border-action-accent/15 pt-4">
+            {(
+              [
+                ["Controls", "124", "shield", "text-action-accent"],
+                ["Evidence", "842", "doc", "text-action-accent"],
+                ["Risks", "12", "risk", "text-status-warning-text"],
+                ["Vulns", "64", "sun", "text-status-danger-text"],
+              ] as const
+            ).map(([label, value, icon, tone]) => (
+              <div
+                key={label}
+                className="rounded-lg border border-border bg-surface-primary px-3 py-2.5"
+              >
+                <p className="flex items-center gap-1.5 text-caption text-text-secondary">
+                  <Icon name={icon} className={cn("size-4", tone)} />
+                  {label}
+                </p>
+                <p className="mt-1 font-display text-numeral-md tabular text-text-primary">{value}</p>
               </div>
             ))}
           </div>
@@ -303,7 +263,10 @@ export function AdminDashboard() {
 
         {/* Vulnerabilities — multi-segment donut */}
         <Card className="p-5">
-          <p className="type-overline mb-3 text-text-subtle">Vulnerabilities</p>
+          <div className="mb-3 flex items-center justify-between">
+            <h3 className="text-title-sm font-semibold text-text-primary">Vulnerabilities</h3>
+            <Icon name="bug" className="size-4 text-status-danger-text" />
+          </div>
           <div className="flex items-center gap-4">
             <Donut size={88} stroke={12} segments={VULN_SEGMENTS}>
               <span className="font-display text-numeral-md tabular text-text-primary">64</span>
@@ -325,7 +288,10 @@ export function AdminDashboard() {
 
         {/* Evidence — green donut */}
         <Card className="p-5">
-          <p className="type-overline mb-3 text-text-subtle">Evidence</p>
+          <div className="mb-3 flex items-center justify-between">
+            <h3 className="text-title-sm font-semibold text-text-primary">Evidence</h3>
+            <Icon name="doc" className="size-4 text-text-secondary" />
+          </div>
           <div className="flex items-center gap-4">
             <Donut size={88} stroke={12} segments={ring(78, TOKEN.green)}>
               <span className="font-display text-numeral-md tabular text-text-primary">78%</span>
@@ -341,7 +307,10 @@ export function AdminDashboard() {
 
         {/* Risk register — heatmap */}
         <Card className="p-5">
-          <p className="type-overline mb-3 text-text-subtle">Risk register</p>
+          <h3 className="mb-3 flex items-center gap-2 text-title-sm font-semibold text-text-primary">
+            <Icon name="risk" className="size-4 text-text-secondary" />
+            Risk register
+          </h3>
           <div className="flex items-center gap-4">
             <div className="grid grid-cols-5 gap-1">
               {HEAT.map((rowArr, r) =>
@@ -373,7 +342,10 @@ export function AdminDashboard() {
 
         {/* Assets — coloured category bars */}
         <Card className="p-5">
-          <p className="type-overline text-text-subtle">Assets</p>
+          <h3 className="mb-1 flex items-center gap-2 text-title-sm font-semibold text-text-primary">
+            <Icon name="box" className="size-4 text-text-secondary" />
+            Assets
+          </h3>
           <p className="mt-1 font-display text-numeral-lg tabular text-text-primary">1,284</p>
           <p className="text-body-sm text-text-subtle">auto-discovered</p>
           <div className="mt-3 space-y-2">
@@ -394,7 +366,7 @@ export function AdminDashboard() {
         {/* Top risks — spans 2 */}
         <Card className="p-5 sm:col-span-2">
           <div className="mb-3 flex items-center justify-between">
-            <p className="type-overline text-text-subtle">Top risks</p>
+            <h3 className="text-title-sm font-semibold text-text-primary">Top risks</h3>
             <Button variant="link" size="sm">
               All
               <Icon name="arrowr" className="size-4" />
@@ -417,8 +389,11 @@ export function AdminDashboard() {
 
         {/* Policies */}
         <Card className="p-5">
-          <div className="flex items-baseline justify-between">
-            <p className="type-overline text-text-subtle">Policies</p>
+          <div className="flex items-center justify-between">
+            <h3 className="flex items-center gap-2 text-title-sm font-semibold text-text-primary">
+              <Icon name="book" className="size-4 text-text-secondary" />
+              Policies
+            </h3>
             <span className="font-display text-numeral-md tabular text-text-primary">11/12</span>
           </div>
           <p className="text-body-sm text-text-subtle">current · 1 renewal overdue</p>

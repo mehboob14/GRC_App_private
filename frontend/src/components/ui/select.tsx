@@ -41,7 +41,9 @@ export function SelectContent({
         position="popper"
         sideOffset={4}
         className={cn(
-          "z-dropdown min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-md border border-border bg-surface-primary p-1 shadow-2",
+          // z above modal/drawer (1300/1200): a select opened inside a dialog
+          // must float over it, not behind. Below toast/tooltip (1400/1500).
+          "z-[1360] min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-md border border-border bg-surface-primary p-1 shadow-2",
           className,
         )}
         {...props}

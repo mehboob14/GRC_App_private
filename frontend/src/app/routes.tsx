@@ -21,6 +21,7 @@ import { DashboardPage } from "@/features/dashboard/dashboard-page";
 import { FrameworksPage } from "@/features/compliance/components/frameworks-page";
 import { FrameworkDetailPage } from "@/features/compliance/components/framework-detail-page";
 import { ControlsPage } from "@/features/compliance/components/controls-page";
+import { ControlDetailPage } from "@/features/compliance/components/control-detail-page";
 import { EvidencePage } from "@/features/evidence/components/evidence-page";
 import { ScopePage } from "@/features/compliance/components/scope-page";
 import { FrameworksLayout } from "@/features/compliance/components/frameworks-layout";
@@ -64,6 +65,7 @@ export function AppRoutes() {
           {/* Detail sits outside the tab strip: it is a drill-down, not a tab. */}
           <Route path="frameworks/:frameworkId" element={<FrameworkDetailPage />} />
           <Route path="controls" element={<ControlsPage />} />
+          <Route path="controls/:controlId" element={<ControlDetailPage />} />
           <Route path="evidence" element={<EvidencePage />} />
           <Route path="scope" element={<Navigate to="/frameworks/scope" replace />} />
           <Route path="connectors" element={<ConnectionsLayout />}>

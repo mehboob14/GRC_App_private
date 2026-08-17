@@ -60,7 +60,7 @@ export function FilterFacet({
         <DropdownMenuPrimitive.Content
           sideOffset={6}
           align="start"
-          className="z-dropdown min-w-[180px] overflow-hidden rounded-md border border-border bg-surface-primary p-1 shadow-2"
+          className="z-[1360] min-w-[180px] overflow-hidden rounded-md border border-border bg-surface-primary p-1 shadow-2"
         >
           {options.map((option) => (
             <DropdownMenuPrimitive.CheckboxItem

@@ -1,11 +1,10 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ChangeEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Badge,
   Button,
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -20,8 +19,6 @@ import {
   ErrorState,
   FilterFacet,
   Icon,
-  RadioGroup,
-  RadioGroupItem,
   SearchInput,
   Select,
   SelectContent,
@@ -39,11 +36,13 @@ import {
   TR,
   useToast,
 } from "@/components/ui";
-import { controlsApi, evidenceApi } from "@/lib/api/endpoints";
+import { complianceApi, controlsApi, evidenceApi, iamApi } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/client";
+import { cn } from "@/lib/cn";
 import { useAuth } from "@/lib/auth/auth-context";
 import { getAccessToken } from "@/lib/auth/session";
-import type { Evidence, EvidenceFreshness } from "@/lib/api/types";
+import type { Control, Evidence, EvidenceFreshness } from "@/lib/api/types";
+import { ControlPicker, type ControlGroup } from "./control-picker";
 
 /** DS §6.1 — freshness maps to a status family once, here, so every surface
  *  renders the same word the same way. */
@@ -103,6 +102,36 @@ async function downloadEvidence(item: Evidence): Promise<void> {
   URL.revokeObjectURL(url);
 }
 
+// Validity presets → a renewal date computed off the collection date. "Type
+// default" stays null so the server fills in the type's own period (D13).
+const VALIDITY_OPTIONS = [
+  { value: "default", label: "Type default" },
+  { value: "30", label: "1 month" },
+  { value: "90", label: "Quarterly · 3 months" },
+  { value: "180", label: "6 months" },
+  { value: "365", label: "1 year" },
+  { value: "custom", label: "Custom date…" },
+];
+
+// UTC throughout: a YYYY-MM-DD is a civil date, so parsing it as local midnight
+// then serialising via toISOString() (UTC) would shift the result back a day on
+// any positive-offset timezone. Parse and add in UTC so the date is exact.
+function addDays(iso: string, days: number): string {
+  const date = new Date(`${iso}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+// Picker hint only — the store's magic-byte allow-list is the real gate, so this
+// stays in step with what the server will actually keep.
+const FILE_ACCEPT =
+  ".pdf,.png,.jpg,.jpeg,.gif,.webp,.docx,.xlsx,.pptx,.txt,.csv,.log,.md,.json";
+
+// Immediate feedback for the obvious-dangerous cases; the server allow-list
+// refuses everything off-list regardless, this just fails faster and clearer.
+const DANGEROUS_EXT =
+  /\.(exe|msi|bat|cmd|com|scr|pif|cpl|dll|sys|drv|vbs|vbe|jse?|mjs|wsf|wsh|ps1|psm1|sh|bash|zsh|jar|apk|app|dmg|pkg|deb|rpm|bin|hta|reg|gadget|lnk)$/i;
+
 function AddEvidenceDialog({
   open,
   onOpenChange,
@@ -112,44 +141,140 @@ function AddEvidenceDialog({
 }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { principal } = useAuth();
+  const selfId = principal?.membership_id ?? "";
+
   const [kind, setKind] = useState<"file" | "link">("file");
   const [title, setTitle] = useState("");
   const [evidenceType, setEvidenceType] = useState("screenshot");
+  const [ownerId, setOwnerId] = useState(selfId);
   const [collectedAt, setCollectedAt] = useState(today());
-  const [renewalDate, setRenewalDate] = useState("");
+  const [validity, setValidity] = useState("default");
+  const [customRenewal, setCustomRenewal] = useState("");
   const [sourceLabel, setSourceLabel] = useState("");
   const [description, setDescription] = useState("");
   const [linkUrl, setLinkUrl] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
+  const [frameworkId, setFrameworkId] = useState("");
   const [controlIds, setControlIds] = useState<string[]>([]);
+
+  const canReadMembers = Boolean(principal?.permissions.includes("members:read"));
 
   const vocabularyQuery = useQuery({
     queryKey: ["evidence-vocabulary"],
     queryFn: () => evidenceApi.vocabulary(),
   });
+  const membersQuery = useQuery({
+    queryKey: ["members"],
+    queryFn: () => iamApi.listMembers(),
+    enabled: open && canReadMembers,
+  });
+  const frameworksQuery = useQuery({
+    queryKey: ["frameworks"],
+    queryFn: () => complianceApi.listFrameworks(),
+    enabled: open,
+  });
   const controlsQuery = useQuery({
     queryKey: ["controls"],
     queryFn: () => controlsApi.list(),
+    enabled: open,
   });
 
   const types = vocabularyQuery.data?.types ?? [];
-  const selectedType = types.find((type) => type.value === evidenceType);
+
+  // No members:read → the owner picker still works, offering just the signed-in
+  // user rather than 403-ing on a list they cannot see.
+  const members = canReadMembers
+    ? (membersQuery.data ?? [])
+    : principal
+      ? [{ membership_id: selfId, full_name: principal.user.full_name }]
+      : [];
+
+  const frameworks = frameworksQuery.data ?? [];
+  const activeFrameworkId =
+    frameworkId ||
+    frameworks.find((framework) => framework.code.toUpperCase().startsWith("SOC"))?.id ||
+    frameworks[0]?.id ||
+    "";
+  const frameworkCode =
+    frameworks.find((framework) => framework.id === activeFrameworkId)?.code ?? "SOC2";
+
+  const requirementsQuery = useQuery({
+    queryKey: ["requirements", activeFrameworkId],
+    queryFn: () => complianceApi.listRequirements(activeFrameworkId),
+    enabled: open && Boolean(activeFrameworkId),
+  });
+
+  // Criteria-wise hierarchy: controls grouped by the criterion they satisfy
+  // (requirement_keys look like "SOC2:CC6.2"), each group labelled with the
+  // criterion name. A control mapped to two criteria shows under both — that is
+  // its coverage, not a duplicate.
+  const groups = useMemo<ControlGroup[]>(() => {
+    const controls = controlsQuery.data ?? [];
+    const nameFor = new Map(
+      (requirementsQuery.data ?? []).map((req) => [req.code, `${req.code} · ${req.name}`]),
+    );
+    const byCriterion = new Map<string, Control[]>();
+    for (const control of controls) {
+      const criteria = control.requirement_keys
+        .filter((key) => key.startsWith(`${frameworkCode}:`))
+        .map((key) => key.slice(frameworkCode.length + 1));
+      for (const criterion of criteria.length ? criteria : ["Unmapped"]) {
+        const bucket = byCriterion.get(criterion) ?? [];
+        bucket.push(control);
+        byCriterion.set(criterion, bucket);
+      }
+    }
+    return [...byCriterion.entries()]
+      .sort((a, b) => a[0].localeCompare(b[0], undefined, { numeric: true }))
+      .map(([criterion, cs]) => ({
+        criterion,
+        label: nameFor.get(criterion) ?? criterion,
+        controls: cs,
+      }));
+  }, [controlsQuery.data, requirementsQuery.data, frameworkCode]);
+
+  function pickFile(event: ChangeEvent<HTMLInputElement>) {
+    const picked = event.target.files?.[0] ?? null;
+    if (picked && DANGEROUS_EXT.test(picked.name)) {
+      setFile(null);
+      setFileError(
+        "That file type can’t be uploaded as evidence — executables and scripts are blocked.",
+      );
+      event.target.value = "";
+      return;
+    }
+    setFileError(null);
+    setFile(picked);
+  }
+
+  function renewalDate(): string | null {
+    if (validity === "default") return null;
+    if (validity === "custom") return customRenewal || null;
+    return addDays(collectedAt, Number(validity));
+  }
 
   function reset() {
     setKind("file");
     setTitle("");
     setEvidenceType("screenshot");
+    setOwnerId(selfId);
     setCollectedAt(today());
-    setRenewalDate("");
+    setValidity("default");
+    setCustomRenewal("");
     setSourceLabel("");
     setDescription("");
     setLinkUrl("");
     setFile(null);
+    setFileError(null);
+    setFrameworkId("");
     setControlIds([]);
   }
 
   const saveMutation = useMutation({
     mutationFn: async () => {
+      const renewal = renewalDate();
       if (kind === "link") {
         return evidenceApi.addLink({
           title,
@@ -158,8 +283,8 @@ function AddEvidenceDialog({
           collected_at: collectedAt,
           description: description || null,
           source_label: sourceLabel || null,
-          // Blank means "use the type's default" — the server fills it in.
-          renewal_date: renewalDate || null,
+          owner_membership_id: ownerId || null,
+          renewal_date: renewal,
           control_ids: controlIds,
         });
       }
@@ -170,7 +295,8 @@ function AddEvidenceDialog({
       form.append("collected_at", collectedAt);
       if (description) form.append("description", description);
       if (sourceLabel) form.append("source_label", sourceLabel);
-      if (renewalDate) form.append("renewal_date", renewalDate);
+      if (ownerId) form.append("owner_membership_id", ownerId);
+      if (renewal) form.append("renewal_date", renewal);
       for (const id of controlIds) form.append("control_ids", id);
       return evidenceApi.uploadFile(form);
     },
@@ -190,6 +316,8 @@ function AddEvidenceDialog({
 
   const canSubmit =
     title.trim() !== "" &&
+    ownerId !== "" &&
+    !fileError &&
     (kind === "link" ? linkUrl.trim() !== "" : file !== null);
 
   return (
@@ -200,134 +328,184 @@ function AddEvidenceDialog({
         onOpenChange(next);
       }}
     >
-      <DialogContent className="max-h-[90vh] overflow-y-auto">
+      <DialogContent size="lg" className="max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>Add evidence</DialogTitle>
-          <DialogDescription>
-            Upload a file or image, or record a link. One item can satisfy more
-            than one control.
-          </DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-col gap-3">
-          <fieldset>
-            <legend className="mb-1.5 font-sans text-label-sm text-text-secondary">
-              Evidence is
-            </legend>
-            <RadioGroup
-              value={kind}
-              onValueChange={(value) => setKind(value as "file" | "link")}
-            >
-              <RadioGroupItem
-                value="file"
-                label="A file or image"
-                description="Stored by Verity and hashed on upload, so its integrity is checkable later."
-              />
-              <RadioGroupItem
-                value="link"
-                label="A link"
-                description="Points at a system Verity does not hold, so there is nothing to hash."
-              />
-            </RadioGroup>
-          </fieldset>
-
-          {kind === "file" ? (
-            <div>
-              <label
-                htmlFor="evidence-file"
-                className="mb-1.5 block font-sans text-label-sm text-text-secondary"
+        <div className="flex flex-col gap-4">
+          <div className="inline-flex w-fit rounded-md border border-border p-0.5">
+            {(["file", "link"] as const).map((option) => (
+              <button
+                key={option}
+                type="button"
+                onClick={() => setKind(option)}
+                className={cn(
+                  "rounded-sm px-5 py-1 text-label-sm capitalize transition-colors duration-80 ease-state",
+                  kind === option
+                    ? "bg-action-accent-tint text-action-accent"
+                    : "text-text-secondary hover:text-text-primary",
+                )}
               >
-                File
-              </label>
-              <input
-                id="evidence-file"
-                type="file"
-                onChange={(event) => setFile(event.target.files?.[0] ?? null)}
-                className="block w-full rounded-md border border-border bg-surface-primary px-3 py-2 text-body-sm text-text-secondary file:mr-3 file:rounded-sm file:border-0 file:bg-surface-sunken file:px-3 file:py-1.5 file:text-label-sm file:text-text-primary"
+                {option}
+              </button>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+            {kind === "file" ? (
+              <div className="col-span-2">
+                <label
+                  htmlFor="evidence-file"
+                  className="mb-1.5 block font-sans text-label-sm text-text-secondary"
+                >
+                  File
+                </label>
+                <input
+                  id="evidence-file"
+                  type="file"
+                  accept={FILE_ACCEPT}
+                  onChange={pickFile}
+                  className="block w-full rounded-sm border border-border bg-surface-primary py-2 pr-3 text-body-sm text-text-secondary file:mr-3 file:h-9 file:border-0 file:border-r file:border-border file:bg-surface-sunken file:px-3 file:text-label-sm file:text-text-primary"
+                />
+                {fileError ? (
+                  <p className="mt-1.5 text-caption text-status-danger-text">{fileError}</p>
+                ) : null}
+              </div>
+            ) : (
+              <div className="col-span-2">
+                <TextField
+                  label="Link URL"
+                  value={linkUrl}
+                  onChange={(event) => setLinkUrl(event.target.value)}
+                  placeholder="https://…"
+                />
+              </div>
+            )}
+
+            <div className="col-span-2">
+              <TextField
+                label="Title"
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
+                placeholder="Q1 access review export"
               />
             </div>
-          ) : (
+
+            <div className="col-span-2">
+              <TextField
+                label="Description"
+                optional
+                value={description}
+                onChange={(event) => setDescription(event.target.value)}
+              />
+            </div>
+
+            <SelectField label="Evidence type">
+              <Select value={evidenceType} onValueChange={setEvidenceType}>
+                <SelectTrigger aria-label="Evidence type" />
+                <SelectContent>
+                  {types.map((type) => (
+                    <SelectItem key={type.value} value={type.value}>
+                      {type.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </SelectField>
+
+            <SelectField label="Owner">
+              <Select value={ownerId} onValueChange={setOwnerId}>
+                <SelectTrigger aria-label="Owner" />
+                <SelectContent>
+                  {members.map((member) => (
+                    <SelectItem key={member.membership_id} value={member.membership_id}>
+                      {member.full_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </SelectField>
+
             <TextField
-              label="Link URL"
-              value={linkUrl}
-              onChange={(event) => setLinkUrl(event.target.value)}
-              placeholder="https://…"
-            />
-          )}
-
-          <TextField
-            label="Title"
-            value={title}
-            onChange={(event) => setTitle(event.target.value)}
-            placeholder="Q1 access review export"
-          />
-
-          <SelectField label="Evidence type">
-            <Select value={evidenceType} onValueChange={setEvidenceType}>
-              <SelectTrigger aria-label="Evidence type" />
-              <SelectContent>
-                {types.map((type) => (
-                  <SelectItem key={type.value} value={type.value}>
-                    {type.label} · {type.default_validity_days}d
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </SelectField>
-
-          <div className="grid grid-cols-2 gap-3">
-            <TextField
-              label="Collected on"
+              label="Collection date"
               type="date"
               value={collectedAt}
               onChange={(event) => setCollectedAt(event.target.value)}
             />
+            <SelectField label="Validity period">
+              <Select value={validity} onValueChange={setValidity}>
+                <SelectTrigger aria-label="Validity period" />
+                <SelectContent>
+                  {VALIDITY_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </SelectField>
+
+            {validity === "custom" ? (
+              <div className="col-span-2">
+                <TextField
+                  label="Valid until"
+                  type="date"
+                  value={customRenewal}
+                  onChange={(event) => setCustomRenewal(event.target.value)}
+                />
+              </div>
+            ) : null}
+
             <TextField
-              label="Renewal date"
-              type="date"
+              label="Source system"
               optional
-              value={renewalDate}
-              onChange={(event) => setRenewalDate(event.target.value)}
+              value={sourceLabel}
+              onChange={(event) => setSourceLabel(event.target.value)}
+              placeholder="Okta admin console"
             />
+
+            <div>
+              <span className="mb-1.5 block font-sans text-label-sm text-text-secondary">
+                Linked assets
+                <span className="ml-1 font-normal text-text-faint">(optional)</span>
+              </span>
+              <div className="flex h-9 items-center justify-between rounded-sm border border-border bg-surface-sunken px-3 text-body-md text-text-faint">
+                Coming soon
+                <Icon name="chev" className="size-4" />
+              </div>
+            </div>
+
+            <div className="col-span-2">
+              <div className="mb-1.5 flex items-center justify-between gap-3">
+                <span className="font-sans text-label-sm text-text-secondary">Controls</span>
+                <div className="w-44">
+                  <Select
+                    value={activeFrameworkId}
+                    onValueChange={(value) => {
+                      setFrameworkId(value);
+                      setControlIds([]);
+                    }}
+                  >
+                    <SelectTrigger aria-label="Framework" className="h-8" />
+                    <SelectContent>
+                      {frameworks.map((framework) => (
+                        <SelectItem key={framework.id} value={framework.id}>
+                          {framework.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <ControlPicker
+                groups={groups}
+                value={controlIds}
+                onChange={setControlIds}
+                loading={controlsQuery.isLoading}
+              />
+            </div>
           </div>
-          {/* The type only suggests a period; a date typed above always wins. */}
-          {!renewalDate && selectedType ? (
-            <p className="-mt-1 text-caption text-text-subtle">
-              Left blank, this becomes {selectedType.default_validity_days} days
-              after collection — the default for {selectedType.label}. Set a date
-              to override it.
-            </p>
-          ) : null}
-
-          <TextField
-            label="Source"
-            optional
-            value={sourceLabel}
-            onChange={(event) => setSourceLabel(event.target.value)}
-            placeholder="Okta admin console"
-          />
-          <TextField
-            label="Description"
-            optional
-            value={description}
-            onChange={(event) => setDescription(event.target.value)}
-          />
-
-          <SelectField label="Attach to a control" optional>
-            <Select
-              value={controlIds[0] ?? ""}
-              onValueChange={(value) => setControlIds(value ? [value] : [])}
-            >
-              <SelectTrigger aria-label="Control" />
-              <SelectContent>
-                {(controlsQuery.data ?? []).map((control) => (
-                  <SelectItem key={control.id} value={control.id}>
-                    {control.code} — {control.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </SelectField>
         </div>
 
         <DialogFooter>

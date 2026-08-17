@@ -1,18 +1,26 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  Avatar,
   Badge,
   Button,
-  Drawer,
-  DrawerBody,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
+  Checkbox,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
   EmptyState,
   ErrorState,
   FilterFacet,
+  Icon,
   SearchInput,
   Select,
   SelectContent,
@@ -31,10 +39,20 @@ import {
   useToast,
 } from "@/components/ui";
 import { cn } from "@/lib/cn";
-import { controlsApi } from "@/lib/api/endpoints";
+import { complianceApi, controlsApi, evidenceApi } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/auth-context";
 import type { Control, ControlStatus } from "@/lib/api/types";
+import { OwnerSelect } from "@/features/iam/components/owner-select";
+import { ControlFormDialog } from "./control-form-dialog";
+import { ControlsBulkBar } from "./controls-bulk-bar";
+import { FrameworkChip, TrustServiceChip } from "./trust-services";
+import {
+  TRUST_SERVICES,
+  frameworksFor,
+  trustServicesFor,
+  type TrustService,
+} from "@/features/compliance/trust-services";
 
 /** DS §6.1 — a control's implementation state, mapped once so every screen
  *  renders the same word the same way. */
@@ -55,24 +73,74 @@ const STATUS_FAMILY: Record<
   not_applicable: "neutral",
 };
 
+type StatusFamily = "success" | "progress" | "pending" | "neutral" | "danger";
+
+/** A disabled control reads as "Disabled" everywhere, over its old status —
+ *  it is retired, not deleted, so it stays visible but inactive. */
+function displayStatus(control: Control): { label: string; family: StatusFamily } {
+  if (control.disabled_at) return { label: "Disabled", family: "neutral" };
+  return { label: STATUS_LABEL[control.status], family: STATUS_FAMILY[control.status] };
+}
+
+/** Where a control came from: authored internally, or the SOC 2 library. */
+function SourceBadge({ origin }: { origin: Control["origin"] }) {
+  return origin === "custom" ? (
+    <Badge variant="role">Internal</Badge>
+  ) : (
+    <Badge variant="neutral">SOC 2</Badge>
+  );
+}
+
+/** A disabled-looking field for a capability that is not built yet. */
+function ComingSoonField({ label }: { label: string }) {
+  return (
+    <div>
+      <p className="type-overline mb-1.5">{label}</p>
+      <div className="flex h-9 items-center justify-between rounded-sm border border-border bg-surface-sunken px-3 text-body-md text-text-faint">
+        Coming soon
+        <Icon name="chev" className="size-4" />
+      </div>
+    </div>
+  );
+}
+
 /** Type is a taxonomy, not a status — neutral chips (DS §1, F12). */
 function TypeChip({ label }: { label: string }) {
   return <Badge variant="neutral">{label}</Badge>;
 }
 
-function ControlDrawer({
+function ControlDetailDialog({
   control,
   onClose,
+  onEdit,
   canManage,
+  autoConfirm = false,
 }: {
   control: Control | null;
   onClose: () => void;
+  onEdit: (control: Control) => void;
   canManage: boolean;
+  autoConfirm?: boolean;
 }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [reason, setReason] = useState("");
   const [confirming, setConfirming] = useState(false);
+
+  // Open straight into the disable-confirm step when the kebab "Disable" asked.
+  // Keyed on the id, not the object: a refetch hands back a new Control every
+  // time, and depending on it would reset the reason mid-typing.
+  const controlId = control?.id ?? null;
+  useEffect(() => {
+    setConfirming(controlId !== null && autoConfirm);
+    setReason("");
+  }, [controlId, autoConfirm]);
+
+  const evidenceQuery = useQuery({
+    queryKey: ["evidence", "control", control?.id],
+    queryFn: () => evidenceApi.list({ control_id: control!.id }),
+    enabled: control !== null,
+  });
 
   const invalidate = () =>
     queryClient.invalidateQueries({ queryKey: ["controls"] });
@@ -115,10 +183,38 @@ function ControlDrawer({
       await invalidate();
       toast({ title: "Control re-enabled", tone: "success" });
     },
+    onError: (error: unknown) =>
+      toast({
+        title:
+          error instanceof ApiError ? error.message : "Couldn't re-enable the control.",
+        tone: "danger",
+      }),
+  });
+
+  // `clear_owner` wins over `owner_membership_id` server-side, so unassigning
+  // must send the flag alone and assigning must not send the flag at all.
+  const ownerMutation = useMutation({
+    mutationFn: (membershipId: string | null) =>
+      controlsApi.update(
+        control!.id,
+        membershipId === null
+          ? { clear_owner: true }
+          : { owner_membership_id: membershipId },
+      ),
+    onSuccess: async () => {
+      await invalidate();
+      toast({ title: "Owner updated", tone: "success" });
+    },
+    onError: (error: unknown) =>
+      toast({
+        title:
+          error instanceof ApiError ? error.message : "Couldn't set the owner.",
+        tone: "danger",
+      }),
   });
 
   return (
-    <Drawer
+    <Dialog
       open={control !== null}
       onOpenChange={(open) => {
         if (!open) {
@@ -128,20 +224,29 @@ function ControlDrawer({
         }
       }}
     >
-      <DrawerContent size="lg">
+      <DialogContent size="lg" className="max-h-[90vh]">
         {control ? (
           <>
-            <DrawerHeader>
-              <DrawerTitle className="flex flex-wrap items-center gap-2">
-                <span className="rounded-xs bg-action-accent-tint px-1.5 py-0.5 font-display text-caption font-bold text-text-link">
+            <DialogHeader>
+              <DialogTitle className="flex flex-wrap items-baseline gap-2 pr-6">
+                <span className="font-mono text-body-sm font-normal text-text-subtle">
                   {control.code}
                 </span>
                 {control.name}
-              </DrawerTitle>
-              <DrawerDescription>{control.description}</DrawerDescription>
-            </DrawerHeader>
+              </DialogTitle>
+              <DialogDescription>{control.description}</DialogDescription>
+            </DialogHeader>
 
-            <DrawerBody className="space-y-5">
+            <div className="mt-4 space-y-5">
+              <div className="flex flex-wrap items-center gap-2">
+                <SourceBadge origin={control.origin} />
+                <StatusPill
+                  kind="inline"
+                  status={displayStatus(control).family}
+                  label={displayStatus(control).label}
+                />
+              </div>
+
               {control.disabled_at ? (
                 <div className="rounded-md border border-status-neutral-border bg-status-neutral-bg px-3.5 py-3">
                   <p className="text-label-md text-status-neutral-text">
@@ -152,29 +257,65 @@ function ControlDrawer({
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="type-overline mb-1.5">Type</p>
-                  <TypeChip label={control.control_type} />
-                </div>
-                <div>
-                  <p className="type-overline mb-1.5">Sub-type</p>
-                  {control.control_sub_type ? (
-                    <TypeChip label={control.control_sub_type} />
+                  <p className="type-overline mb-1.5">Trust Services</p>
+                  {trustServicesFor(control).length ? (
+                    <div className="flex flex-wrap gap-1">
+                      {trustServicesFor(control).map((tsc) => (
+                        <TrustServiceChip key={tsc} tsc={tsc} />
+                      ))}
+                    </div>
                   ) : (
                     <span className="text-body-sm text-text-subtle">—</span>
                   )}
                 </div>
+                <div>
+                  <p className="type-overline mb-1.5">Frameworks</p>
+                  {frameworksFor(control).length ? (
+                    <div className="flex flex-wrap gap-1">
+                      {frameworksFor(control).map((framework) => (
+                        <FrameworkChip key={framework} label={framework} />
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="text-body-sm text-text-subtle">—</span>
+                  )}
+                </div>
+                {control.origin === "custom" ? (
+                  <div>
+                    <p className="type-overline mb-1.5">Type</p>
+                    <TypeChip label={control.control_type} />
+                  </div>
+                ) : null}
                 <div>
                   <p className="type-overline mb-1.5">Category</p>
                   <p className="text-body-sm text-text-secondary">
                     {control.category}
                   </p>
                 </div>
-                <div>
-                  <p className="type-overline mb-1.5">Owner</p>
-                  <p className="text-body-sm text-text-secondary">
-                    {control.owner_name ?? "Unassigned"}
+              </div>
+
+              {/* Owner is assignable in place — a control without a named owner
+                  is the single most common audit finding. */}
+              <div>
+                <p className="type-overline mb-1.5">Owner</p>
+                {canManage && !control.disabled_at ? (
+                  <OwnerSelect
+                    value={control.owner_membership_id}
+                    onChange={(membershipId) => ownerMutation.mutate(membershipId)}
+                    disabled={ownerMutation.isPending}
+                  />
+                ) : (
+                  <p className="flex items-center gap-2 text-body-sm text-text-secondary">
+                    {control.owner_name ? (
+                      <>
+                        <Avatar name={control.owner_name} size="sm" />
+                        {control.owner_name}
+                      </>
+                    ) : (
+                      "Unassigned"
+                    )}
                   </p>
-                </div>
+                )}
               </div>
 
               <div>
@@ -206,6 +347,37 @@ function ControlDrawer({
                   </p>
                 </div>
               ) : null}
+
+              <div>
+                <p className="type-overline mb-1.5">Linked evidence</p>
+                {evidenceQuery.data && evidenceQuery.data.length > 0 ? (
+                  <ul className="space-y-1.5">
+                    {evidenceQuery.data.map((item) => (
+                      <li key={item.id} className="flex items-center gap-2 text-body-sm">
+                        <Icon
+                          name={item.kind === "file" ? "doc" : "globe"}
+                          className="size-4 shrink-0 text-text-subtle"
+                        />
+                        <span className="min-w-0 flex-1 truncate text-text-secondary">
+                          {item.title}
+                        </span>
+                        <Badge variant="neutral">
+                          {item.evidence_type.replace(/_/g, " ")}
+                        </Badge>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-body-sm text-status-warning-text">
+                    No evidence linked yet
+                  </p>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <ComingSoonField label="Link to asset" />
+                <ComingSoonField label="Link to risk" />
+              </div>
 
               {canManage && !control.disabled_at ? (
                 <div>
@@ -245,57 +417,70 @@ function ControlDrawer({
                   />
                 </div>
               ) : null}
-            </DrawerBody>
+            </div>
 
-            {canManage ? (
-              <DrawerFooter>
-                {control.disabled_at ? (
+            <DialogFooter>
+              {canManage && confirming ? (
+                <>
                   <Button
                     variant="secondary"
-                    loading={enableMutation.isPending}
-                    onClick={() => enableMutation.mutate()}
+                    onClick={() => {
+                      setConfirming(false);
+                      setReason("");
+                    }}
                   >
-                    Re-enable control
+                    Cancel
                   </Button>
-                ) : confirming ? (
-                  <>
-                    <Button
-                      variant="secondary"
-                      onClick={() => {
-                        setConfirming(false);
-                        setReason("");
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      disabled={!reason.trim()}
-                      loading={disableMutation.isPending}
-                      onClick={() => disableMutation.mutate()}
-                    >
-                      Disable control
-                    </Button>
-                  </>
-                ) : (
                   <Button
-                    variant="destructive-2"
-                    onClick={() => setConfirming(true)}
+                    variant="destructive"
+                    disabled={!reason.trim()}
+                    loading={disableMutation.isPending}
+                    onClick={() => disableMutation.mutate()}
                   >
                     Disable control
                   </Button>
-                )}
-              </DrawerFooter>
-            ) : null}
+                </>
+              ) : (
+                <>
+                  <Button variant="secondary" onClick={onClose}>
+                    Close
+                  </Button>
+                  {canManage ? (
+                    <>
+                      <Button variant="secondary" onClick={() => onEdit(control)}>
+                        Edit
+                      </Button>
+                      {control.disabled_at ? (
+                        <Button
+                          variant="secondary"
+                          loading={enableMutation.isPending}
+                          onClick={() => enableMutation.mutate()}
+                        >
+                          Re-enable control
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="destructive-2"
+                          onClick={() => setConfirming(true)}
+                        >
+                          Disable control
+                        </Button>
+                      )}
+                    </>
+                  ) : null}
+                </>
+              )}
+            </DialogFooter>
           </>
         ) : null}
-      </DrawerContent>
-    </Drawer>
+      </DialogContent>
+    </Dialog>
   );
 }
 
 /** Controls — the tenant's working library, instantiated from the shipped
- *  templates. Type, Sub-type, owner, status and mapped criteria per row. */
+ *  templates. Code, description, Trust Services, mapped criteria, owner and
+ *  status per row; Type shows on internal controls only, Sub-type is hidden. */
 export function ControlsPage() {
   const { principal } = useAuth();
   const queryClient = useQueryClient();
@@ -304,18 +489,91 @@ export function ControlsPage() {
 
   const [search, setSearch] = useState("");
   const [types, setTypes] = useState<string[]>([]);
-  const [subTypes, setSubTypes] = useState<string[]>([]);
+  const [trustServices, setTrustServices] = useState<string[]>([]);
   const [statuses, setStatuses] = useState<string[]>([]);
-  const [selected, setSelected] = useState<Control | null>(null);
+  const [owners, setOwners] = useState<string[]>([]);
+  /** The open row, held by id — a snapshot would go stale the moment an edit
+   *  inside the dialog refetched the list, leaving the dialog showing the old
+   *  owner while the table behind it showed the new one. */
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [confirmDisable, setConfirmDisable] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [editing, setEditing] = useState<Control | null>(null);
+  /** Row selection for bulk actions — distinct from `selected`, the open row. */
+  const [checkedIds, setCheckedIds] = useState<string[]>([]);
 
+  const navigate = useNavigate();
+
+  function view(control: Control) {
+    navigate(`/controls/${control.id}`);
+  }
+
+  // Disabled controls stay in the library (retired, not deleted), so this view
+  // asks for them; the evidence picker's ["controls"] query keeps its own
+  // active-only list. Both are refreshed by a prefix invalidate of ["controls"].
   const controlsQuery = useQuery({
-    queryKey: ["controls"],
-    queryFn: () => controlsApi.list(),
+    queryKey: ["controls", "all"],
+    queryFn: () => controlsApi.list({ include_disabled: true }),
   });
   const vocabularyQuery = useQuery({
     queryKey: ["control-vocabulary"],
     queryFn: () => controlsApi.vocabulary(),
   });
+  // One list call, counted client-side. The evidence service loads every
+  // mapping row on any read, so `?control_id=` per row would be N full scans
+  // to learn what a single request already carries.
+  const evidenceQuery = useQuery({
+    queryKey: ["evidence"],
+    queryFn: () => evidenceApi.list(),
+  });
+  // The criterion → Trust Services Category mapping, straight from the shipped
+  // requirements rather than inferred from the code's prefix.
+  const frameworksQuery = useQuery({
+    queryKey: ["frameworks"],
+    queryFn: () => complianceApi.listFrameworks(),
+  });
+  const soc2Id = frameworksQuery.data?.find((f) =>
+    f.code.toUpperCase().startsWith("SOC"),
+  )?.id;
+  const requirementsQuery = useQuery({
+    queryKey: ["requirements", soc2Id],
+    queryFn: () => complianceApi.listRequirements(soc2Id!),
+    enabled: Boolean(soc2Id),
+  });
+
+  const evidenceCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const item of evidenceQuery.data ?? []) {
+      for (const controlId of item.control_ids) {
+        counts.set(controlId, (counts.get(controlId) ?? 0) + 1);
+      }
+    }
+    return counts;
+  }, [evidenceQuery.data]);
+
+  /** requirement_key → Trust Services Category, authoritative from the server. */
+  const tscByKey = useMemo(() => {
+    const map = new Map<string, TrustService>();
+    for (const requirement of requirementsQuery.data ?? []) {
+      map.set(requirement.requirement_key, requirement.trust_services_category as TrustService);
+    }
+    return map;
+  }, [requirementsQuery.data]);
+
+  const tscFor = useMemo(
+    () => (control: Control) => {
+      if (tscByKey.size === 0) return trustServicesFor(control);
+      const found = new Set<TrustService>();
+      for (const key of control.requirement_keys) {
+        const tsc = tscByKey.get(key);
+        if (tsc) found.add(tsc);
+      }
+      // A key with no server row (a framework not loaded here) still resolves
+      // through the prefix rule rather than silently vanishing from the column.
+      return found.size ? TRUST_SERVICES.filter((t) => found.has(t)) : trustServicesFor(control);
+    },
+    [tscByKey],
+  );
 
   const adoptMutation = useMutation({
     mutationFn: () => controlsApi.adopt(),
@@ -342,22 +600,83 @@ export function ControlsPage() {
     return controls.filter(
       (control) =>
         (types.length === 0 || types.includes(control.control_type)) &&
-        (subTypes.length === 0 ||
-          (control.control_sub_type !== null &&
-            subTypes.includes(control.control_sub_type))) &&
-        (statuses.length === 0 || statuses.includes(control.status)) &&
+        (trustServices.length === 0 ||
+          tscFor(control).some((tsc) => trustServices.includes(tsc))) &&
+        (owners.length === 0 ||
+          owners.includes(control.owner_membership_id ?? "unassigned")) &&
+        (statuses.length === 0 ||
+          statuses.includes(control.disabled_at ? "disabled" : control.status)) &&
         (query === "" ||
           control.name.toLowerCase().includes(query) ||
           control.code.toLowerCase().includes(query) ||
+          (control.owner_name ?? "").toLowerCase().includes(query) ||
           control.requirement_keys.some((key) =>
             key.toLowerCase().includes(query),
           )),
     );
-  }, [controls, search, types, subTypes, statuses]);
+  }, [controls, search, types, trustServices, owners, statuses, tscFor]);
+
+  // Selection follows what is on screen: a filter change must never leave the
+  // bulk bar counting rows the user can no longer see.
+  const visibleIds = useMemo(() => new Set(visible.map((c) => c.id)), [visible]);
+  useEffect(() => {
+    setCheckedIds((previous) => {
+      const pruned = previous.filter((id) => visibleIds.has(id));
+      return pruned.length === previous.length ? previous : pruned;
+    });
+  }, [visibleIds]);
+
+  const checkedControls = useMemo(
+    () => visible.filter((control) => checkedIds.includes(control.id)),
+    [visible, checkedIds],
+  );
+  /** Always the freshest copy, so an edit made in the dialog shows there too. */
+  const selectedControl = useMemo(
+    () => controls.find((control) => control.id === selectedId) ?? null,
+    [controls, selectedId],
+  );
+  const allChecked = visible.length > 0 && checkedIds.length === visible.length;
+
+  /** Owner facet options, built from who actually owns something. */
+  const ownerOptions = useMemo(() => {
+    const byId = new Map<string, string>();
+    let unassigned = false;
+    for (const control of controls) {
+      if (control.owner_membership_id && control.owner_name) {
+        byId.set(control.owner_membership_id, control.owner_name);
+      } else {
+        unassigned = true;
+      }
+    }
+    const options = [...byId.entries()]
+      .map(([value, label]) => ({ value, label }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+    return unassigned ? [...options, { value: "unassigned", label: "Unassigned" }] : options;
+  }, [controls]);
+
+  const ownerLabel = (value: string) =>
+    ownerOptions.find((option) => option.value === value)?.label ?? value;
+
+  // Header summary — real counts only, so the line stays true as data changes.
+  const frameworkSummary = useMemo(() => {
+    const all = new Set<string>();
+    for (const control of controls) for (const f of frameworksFor(control)) all.add(f);
+    const list = [...all].sort();
+    if (list.length === 0) return "no framework yet";
+    if (list.length === 1) return list[0];
+    return `${list.slice(0, -1).join(", ")} and ${list[list.length - 1]}`;
+  }, [controls]);
+  const unowned = controls.filter(
+    (control) => !control.owner_membership_id && !control.disabled_at,
+  ).length;
+  const noEvidence = controls.filter(
+    (control) => !control.disabled_at && (evidenceCounts.get(control.id) ?? 0) === 0,
+  ).length;
 
   const activeFilters = [
     ...types.map((t) => `Type: ${t}`),
-    ...subTypes.map((s) => `Sub-type: ${s}`),
+    ...trustServices.map((t) => `Trust Services: ${t}`),
+    ...owners.map((o) => `Owner: ${ownerLabel(o)}`),
     ...statuses.map((s) => `Status: ${STATUS_LABEL[s as ControlStatus] ?? s}`),
     ...(search.trim() ? [`Search: ${search.trim()}`] : []),
   ];
@@ -365,7 +684,8 @@ export function ControlsPage() {
   function clearFilters() {
     setSearch("");
     setTypes([]);
-    setSubTypes([]);
+    setTrustServices([]);
+    setOwners([]);
     setStatuses([]);
   }
 
@@ -392,12 +712,38 @@ export function ControlsPage() {
 
   return (
     <div className="mx-auto max-w-[1200px]">
-      <h1 className="font-display text-heading-lg text-text-primary">Controls</h1>
-      <p className="mt-2 max-w-2xl text-body-lg text-text-secondary">
-        Your working control library, instantiated from the shipped SOC 2
-        templates. Each control shows what it does, how it is operated, and the
-        criteria it satisfies.
-      </p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="type-overline text-text-subtle">Compliance</p>
+          <h1 className="mt-1 font-display text-heading-lg text-text-primary">Controls</h1>
+          <p className="mt-1.5 text-body-lg text-text-secondary">
+            <span className="tabular">{controls.length}</span> controls across{" "}
+            {frameworkSummary}
+            {unowned > 0 ? (
+              <>
+                {" · "}
+                <span className="font-semibold text-status-warning-text">
+                  {unowned} unassigned
+                </span>
+              </>
+            ) : null}
+            {noEvidence > 0 ? (
+              <>
+                {" · "}
+                <span className="font-semibold text-text-primary">
+                  {noEvidence} without evidence
+                </span>
+              </>
+            ) : null}
+          </p>
+        </div>
+        {canManage ? (
+          <Button className="shrink-0" onClick={() => setCreating(true)}>
+            <Icon name="plus" className="size-4" />
+            New control
+          </Button>
+        ) : null}
+      </div>
 
       <div
         role="search"
@@ -414,6 +760,12 @@ export function ControlsPage() {
         {vocabulary ? (
           <>
             <FilterFacet
+              label="Trust Services"
+              options={TRUST_SERVICES.map((v) => ({ value: v, label: v }))}
+              values={trustServices}
+              onChange={setTrustServices}
+            />
+            <FilterFacet
               label="Type"
               options={vocabulary.control_types.map((v) => ({
                 value: v,
@@ -423,20 +775,20 @@ export function ControlsPage() {
               onChange={setTypes}
             />
             <FilterFacet
-              label="Sub-type"
-              options={vocabulary.control_sub_types.map((v) => ({
-                value: v,
-                label: v,
-              }))}
-              values={subTypes}
-              onChange={setSubTypes}
+              label="Owner"
+              options={ownerOptions}
+              values={owners}
+              onChange={setOwners}
             />
             <FilterFacet
               label="Status"
-              options={vocabulary.statuses.map((v) => ({
-                value: v,
-                label: STATUS_LABEL[v],
-              }))}
+              options={[
+                ...vocabulary.statuses.map((v) => ({
+                  value: v,
+                  label: STATUS_LABEL[v],
+                })),
+                { value: "disabled", label: "Disabled" },
+              ]}
               values={statuses}
               onChange={setStatuses}
             />
@@ -485,95 +837,219 @@ export function ControlsPage() {
         <Table density="comfortable">
           <THead>
             <TR>
+              {/* Selection exists to drive bulk actions — without the
+                  permission to act there is nothing to select for. */}
+              {canManage ? (
+                <TH className="w-10">
+                  <Checkbox
+                    checked={
+                      allChecked ? true : checkedIds.length > 0 ? "indeterminate" : false
+                    }
+                    onCheckedChange={(next) =>
+                      setCheckedIds(next ? visible.map((control) => control.id) : [])
+                    }
+                    aria-label={allChecked ? "Clear selection" : "Select all controls"}
+                  />
+                </TH>
+              ) : null}
               <TH>Control</TH>
-              <TH>Type</TH>
-              <TH>Sub-type</TH>
-              <TH>Owner</TH>
-              <TH>Status</TH>
+              <TH>Trust Services</TH>
               <TH>Criteria</TH>
+              <TH>Frameworks</TH>
+              <TH>Owner</TH>
+              <TH numeric>Evidence</TH>
+              <TH>Status</TH>
+              <TH className="w-10" />
             </TR>
           </THead>
           <TBody>
-            {visible.map((control) => (
-              <TR
-                key={control.id}
-                onClick={() => setSelected(control)}
-                className="cursor-pointer"
-              >
-                <TD>
-                  <div className="flex items-start gap-2.5">
-                    <span className="shrink-0 rounded-xs bg-action-accent-tint px-1.5 py-0.5 font-display text-caption font-bold text-text-link">
-                      {control.code}
-                    </span>
-                    <span className="min-w-0">
-                      <span className="block text-body-md text-text-primary">
+            {visible.map((control) => {
+              const tsc = tscFor(control);
+              const frameworks = frameworksFor(control);
+              const evidenceCount = evidenceCounts.get(control.id) ?? 0;
+              const isChecked = checkedIds.includes(control.id);
+              return (
+                <TR
+                  key={control.id}
+                  onClick={() => navigate(`/controls/${control.id}`)}
+                  selected={isChecked}
+                  className="cursor-pointer"
+                >
+                  {/* The checkbox is inside the row's click target, so its cell
+                      stops propagation — selecting must not also open the row. */}
+                  {canManage ? (
+                    <TD onClick={(event) => event.stopPropagation()}>
+                      <Checkbox
+                        checked={isChecked}
+                        onCheckedChange={(next) =>
+                          setCheckedIds((previous) =>
+                            next
+                              ? [...previous, control.id]
+                              : previous.filter((id) => id !== control.id),
+                          )
+                        }
+                        aria-label={`Select ${control.code}`}
+                      />
+                    </TD>
+                  ) : null}
+                  <TD>
+                    <div className="max-w-[320px]">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-caption text-text-subtle">
+                          {control.code}
+                        </span>
+                        {/* Type is authored on internal controls only. */}
+                        {control.origin === "custom" ? (
+                          <>
+                            <Badge variant="role">Internal</Badge>
+                            <TypeChip label={control.control_type} />
+                          </>
+                        ) : null}
+                      </div>
+                      <span className="mt-0.5 block truncate text-body-md font-medium text-text-primary">
                         {control.name}
                       </span>
-                      {control.origin === "custom" ? (
-                        <Badge variant="role" className="mt-1">
-                          Custom
-                        </Badge>
-                      ) : null}
-                    </span>
-                  </div>
-                </TD>
-                <TD>
-                  <TypeChip label={control.control_type} />
-                </TD>
-                <TD>
-                  {control.control_sub_type ? (
-                    <TypeChip label={control.control_sub_type} />
-                  ) : (
-                    <span className="text-text-subtle">—</span>
-                  )}
-                </TD>
-                <TD>
-                  <span
-                    className={cn(
-                      "text-body-sm",
-                      control.owner_name
-                        ? "text-text-secondary"
-                        : "text-text-subtle",
-                    )}
-                  >
-                    {control.owner_name ?? "Unassigned"}
-                  </span>
-                </TD>
-                <TD>
-                  <StatusPill
-                    kind="inline"
-                    status={STATUS_FAMILY[control.status]}
-                    label={STATUS_LABEL[control.status]}
-                  />
-                </TD>
-                <TD>
-                  <div className="flex flex-wrap gap-1">
-                    {control.requirement_keys.length ? (
-                      control.requirement_keys.map((key) => (
-                        <span
-                          key={key}
-                          className="rounded-xs bg-surface-sunken px-1.5 py-0.5 text-caption font-medium text-text-secondary"
-                        >
-                          {key.replace("SOC2:", "")}
-                        </span>
-                      ))
+                    </div>
+                  </TD>
+                  <TD>
+                    {tsc.length ? (
+                      <div className="flex flex-wrap gap-1">
+                        {tsc.map((t) => (
+                          <TrustServiceChip key={t} tsc={t} />
+                        ))}
+                      </div>
                     ) : (
-                      <span className="text-caption text-status-warning-text">
-                        None
-                      </span>
+                      <span className="text-text-subtle">—</span>
                     )}
-                  </div>
-                </TD>
-              </TR>
-            ))}
+                  </TD>
+                  <TD>
+                    <div className="flex max-w-[140px] flex-wrap gap-1">
+                      {control.requirement_keys.length ? (
+                        control.requirement_keys.map((key) => (
+                          <span
+                            key={key}
+                            className="rounded-xs bg-surface-sunken px-1.5 py-0.5 text-caption font-medium text-text-secondary"
+                          >
+                            {key.replace(/^[A-Z0-9]+:/, "")}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-caption text-status-warning-text">
+                          None
+                        </span>
+                      )}
+                    </div>
+                  </TD>
+                  <TD>
+                    {frameworks.length ? (
+                      <div className="flex flex-wrap gap-1">
+                        {frameworks.map((framework) => (
+                          <FrameworkChip key={framework} label={framework} />
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-text-subtle">—</span>
+                    )}
+                  </TD>
+                  <TD>
+                    {control.owner_name ? (
+                      <span className="flex items-center gap-2">
+                        <Avatar name={control.owner_name} size="sm" />
+                        <span className="truncate text-body-sm text-text-secondary">
+                          {control.owner_name}
+                        </span>
+                      </span>
+                    ) : (
+                      <span className="text-body-sm text-text-subtle">Unassigned</span>
+                    )}
+                  </TD>
+                  <TD numeric>
+                    <span
+                      className={cn(
+                        "inline-flex items-center gap-1.5",
+                        evidenceCount === 0 ? "text-text-subtle" : "text-text-secondary",
+                      )}
+                    >
+                      <Icon name="doc" className="size-3.5" />
+                      {evidenceCount}
+                    </span>
+                  </TD>
+                  <TD>
+                    <StatusPill
+                      kind="inline"
+                      status={displayStatus(control).family}
+                      label={displayStatus(control).label}
+                    />
+                  </TD>
+                  <TD onClick={(event) => event.stopPropagation()}>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon-sm" aria-label="Control actions">
+                          <Icon name="more" className="size-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onSelect={() => view(control)}>
+                          View
+                        </DropdownMenuItem>
+                        {canManage ? (
+                          <>
+                            <DropdownMenuItem onSelect={() => setEditing(control)}>
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            {control.disabled_at ? (
+                              <DropdownMenuItem onSelect={() => view(control)}>
+                                Re-enable
+                              </DropdownMenuItem>
+                            ) : (
+                              <DropdownMenuItem
+                                variant="danger"
+                                onSelect={() => {
+                                  setConfirmDisable(true);
+                                  setSelectedId(control.id);
+                                }}
+                              >
+                                Disable
+                              </DropdownMenuItem>
+                            )}
+                          </>
+                        ) : null}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TD>
+                </TR>
+              );
+            })}
           </TBody>
         </Table>
       )}
 
-      <ControlDrawer
-        control={selected}
+      {canManage ? (
+        <ControlsBulkBar
+          selected={checkedControls}
+          onClear={() => setCheckedIds([])}
+        />
+      ) : null}
+
+      <ControlDetailDialog
+        control={selectedControl}
         canManage={canManage}
-        onClose={() => setSelected(null)}
+        autoConfirm={confirmDisable}
+        onEdit={(control) => {
+          setSelectedId(null);
+          setEditing(control);
+        }}
+        onClose={() => setSelectedId(null)}
+      />
+      <ControlFormDialog mode="create" open={creating} onOpenChange={setCreating} />
+      <ControlFormDialog
+        mode="edit"
+        control={editing}
+        open={editing !== null}
+        onOpenChange={(open) => {
+          if (!open) setEditing(null);
+        }}
       />
     </div>
   );

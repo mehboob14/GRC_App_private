@@ -43,6 +43,7 @@ export { Pagination } from "./pagination";
 export { PasswordField } from "./password-field";
 export { RadioGroup, RadioGroupItem } from "./radio-group";
 export { SearchInput } from "./search-input";
+export { SearchableSelect, type SearchableOption } from "./searchable-select";
 export {
   Select,
   SelectContent,
