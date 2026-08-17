@@ -1,4 +1,5 @@
 import { cn } from "@/lib/cn";
+import { FrameworkLogo } from "@/features/iam/components/framework-logo";
 import type { TrustService } from "@/features/compliance/trust-services";
 
 /**
@@ -58,11 +59,26 @@ export function TrustServiceChip({
   );
 }
 
-/** Neutral outline chip — a framework is a label, never a state. */
-export function FrameworkChip({ label }: { label: string }) {
+/**
+ * The framework's own mark, in the same contained treatment as the sign-up
+ * marquee: a light disc with a hairline ring, so a logo of any colour stays
+ * legible on a hovered or selected row.
+ *
+ * The logo is the whole cell content, so the name has to reach the reader some
+ * other way — `FrameworkLogo` sets `alt`/`title`, and the visually-hidden span
+ * keeps the column meaningful when the image is the only thing rendered.
+ */
+export function FrameworkChip({ label, size = 28 }: { label: string; size?: number }) {
   return (
-    <span className="inline-flex items-center whitespace-nowrap rounded-xs border border-border bg-surface-sunken px-1.5 py-0.5 font-sans text-caption font-medium text-text-secondary">
-      {label}
+    <span
+      title={label}
+      className="inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface-primary ring-1 ring-border"
+      style={{ width: size, height: size }}
+    >
+      {/* Eager: the whole table shares a handful of distinct logos, so this is
+          one cached request, and lazy-loading would pop icons in mid-scroll. */}
+      <FrameworkLogo name={label} size={Math.round(size * 0.68)} eager />
+      <span className="sr-only">{label}</span>
     </span>
   );
 }

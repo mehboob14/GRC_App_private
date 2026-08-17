@@ -90,6 +90,7 @@ class EvidenceView:
     content_type: str | None
     size_bytes: int | None
     sha256: str | None
+    source: str | None
     link_url: str | None
     control_ids: list[uuid.UUID] = field(default_factory=list)
     control_codes: list[str] = field(default_factory=list)
@@ -227,6 +228,7 @@ class EvidenceService:
             size_bytes=row.size_bytes,
             sha256=row.sha256,
             link_url=row.link_url,
+            source=row.source,
             control_ids=[item[0] for item in mapped],
             control_codes=[item[1] for item in mapped],
         )

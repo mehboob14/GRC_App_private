@@ -550,6 +550,9 @@ export type Evidence = {
   size_bytes: number | null;
   sha256: string | null;
   link_url: string | null;
+  /** Connector that produced this item (rule 9). Null for hand-uploaded
+   *  evidence, which is everything until connectors land in Phase 2. */
+  source: string | null;
   control_ids: string[];
   control_codes: string[];
 };

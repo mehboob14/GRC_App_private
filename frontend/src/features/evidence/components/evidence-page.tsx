@@ -1,4 +1,5 @@
 import { useMemo, useState, type ChangeEvent } from "react";
+import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Badge,
@@ -8,6 +9,10 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   Drawer,
   DrawerBody,
   DrawerContent,
@@ -307,6 +312,10 @@ export function AddEvidenceDialog({
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["evidence"] });
+      // Attaching evidence writes audit rows against each control it links to,
+      // so any open control History must refetch. Prefix-invalidated because
+      // this dialog does not know which control the user came from.
+      await queryClient.invalidateQueries({ queryKey: ["audit"] });
       toast({ title: "Evidence added", tone: "success" });
       reset();
       onOpenChange(false);
@@ -687,6 +696,8 @@ function EvidenceDrawer({
 /** Evidence library — every artefact, what it proves, and whether it is still
  *  good. Freshness comes from the server, derived from the renewal date. */
 export function EvidencePage() {
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const { principal } = useAuth();
   const canManage = Boolean(principal?.permissions.includes("evidence:manage"));
 
@@ -872,13 +883,16 @@ export function EvidencePage() {
               <TH>Owner</TH>
               <TH>Renewal</TH>
               <TH>Freshness</TH>
+              <TH>
+                <span className="sr-only">Actions</span>
+              </TH>
             </TR>
           </THead>
           <TBody>
             {visible.map((item) => (
               <TR
                 key={item.id}
-                onClick={() => setSelected(item)}
+                onClick={() => navigate(`/evidence/${item.id}`)}
                 className="cursor-pointer"
               >
                 <TD>
@@ -939,6 +953,71 @@ export function EvidencePage() {
                     status={FRESHNESS[item.freshness].family}
                     label={FRESHNESS[item.freshness].label}
                   />
+                </TD>
+                {/* Row actions. The cell stops propagation so opening the menu
+                    does not also navigate to the detail page. */}
+                <TD
+                  className="text-right"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        aria-label={`Actions for ${item.title}`}
+                      >
+                        <Icon name="more" className="size-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onSelect={() =>
+                          window.setTimeout(() => navigate(`/evidence/${item.id}`), 0)
+                        }
+                      >
+                        View details
+                      </DropdownMenuItem>
+                      {item.kind === "file" ? (
+                        <DropdownMenuItem
+                          onSelect={() =>
+                            window.setTimeout(
+                              () =>
+                                void downloadEvidence(item).catch(() =>
+                                  toast({
+                                    title: "Couldn't download the file.",
+                                    tone: "danger",
+                                  }),
+                                ),
+                              0,
+                            )
+                          }
+                        >
+                          Download
+                        </DropdownMenuItem>
+                      ) : item.link_url ? (
+                        <DropdownMenuItem
+                          onSelect={() =>
+                            window.setTimeout(
+                              () => window.open(item.link_url!, "_blank", "noopener"),
+                              0,
+                            )
+                          }
+                        >
+                          Open link
+                        </DropdownMenuItem>
+                      ) : null}
+                      {canManage ? (
+                        <DropdownMenuItem
+                          onSelect={() =>
+                            window.setTimeout(() => navigate(`/evidence/${item.id}`), 0)
+                          }
+                        >
+                          Edit details
+                        </DropdownMenuItem>
+                      ) : null}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </TD>
               </TR>
             ))}

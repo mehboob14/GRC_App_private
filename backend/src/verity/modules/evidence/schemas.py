@@ -34,6 +34,9 @@ class EvidenceOut(_Response):
     size_bytes: int | None
     sha256: str | None
     link_url: str | None
+    # Rule 9: the connector that produced this item. Null for hand-uploaded
+    # evidence, which is all of it until connectors land.
+    source: str | None
     control_ids: list[uuid.UUID]
     control_codes: list[str]
 

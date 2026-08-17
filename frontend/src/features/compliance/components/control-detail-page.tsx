@@ -810,6 +810,7 @@ export function ControlDetailPage() {
         onSaved={async () => {
           await queryClient.invalidateQueries({ queryKey: ["control", controlId] });
           await queryClient.invalidateQueries({ queryKey: ["controls"] });
+          await queryClient.invalidateQueries({ queryKey: ["audit", "control", controlId] });
           toast({ title: "Control updated", tone: "success" });
         }}
       />
@@ -827,6 +828,7 @@ export function ControlDetailPage() {
         onOpenChange={setLinking}
         onDone={async () => {
           await queryClient.invalidateQueries({ queryKey: ["evidence"] });
+          await queryClient.invalidateQueries({ queryKey: ["audit", "control", controlId] });
           toast({ title: "Evidence attached", tone: "success" });
         }}
       />

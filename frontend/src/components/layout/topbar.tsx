@@ -99,24 +99,26 @@ export function Topbar() {
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            className="flex items-center gap-2.5 rounded-md border border-border py-1 pl-1.5 pr-2.5 transition-colors duration-80 ease-state hover:bg-surface-hover"
+            className="flex shrink-0 items-center gap-2.5 rounded-md border border-border py-1 pl-1.5 pr-2.5 transition-colors duration-80 ease-state hover:bg-surface-hover"
             aria-label="Switch workspace"
             disabled={switching}
           >
             <WorkspaceMark
               tenantId={principal?.tenant_id ?? activeName}
               name={activeName}
-              className="size-7 text-body-sm"
+              className="size-7 shrink-0 text-body-sm"
             />
-            <span className="flex flex-col items-start">
-              <span className="text-label-md font-bold text-text-primary">
+            {/* Truncates instead of forcing the bar wider — a long workspace
+                name is the usual cause of a topbar that overflows. */}
+            <span className="flex min-w-0 flex-col items-start">
+              <span className="max-w-[140px] truncate text-label-md font-bold text-text-primary">
                 {activeName}
               </span>
-              <span className="text-caption text-text-subtle">
+              <span className="max-w-[140px] truncate text-caption text-text-subtle">
                 {principal?.role_names[0] ?? "Member"}
               </span>
             </span>
-            <Icon name="chev" className="size-4 text-text-subtle" />
+            <Icon name="chev" className="size-4 shrink-0 text-text-subtle" />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-[280px]">
@@ -168,7 +170,10 @@ export function Topbar() {
 
       <SearchInput
         ref={searchRef}
-        className="max-w-[460px] flex-1"
+        // Hidden until there is room for it: with a 240px sidebar the bar runs
+        // out of space around lg, and a 37px search field is worse than none.
+        // min-w-0 lets it absorb the remaining squeeze instead of overflowing.
+        className="hidden min-w-0 max-w-[460px] flex-1 lg:flex"
         placeholder="Search controls, evidence, risks, vendors…"
         shortcut="⌘K"
         readOnly
@@ -184,7 +189,7 @@ export function Topbar() {
           type="button"
           aria-label="Help — arrives in a later phase"
           aria-disabled
-          className="flex size-9 cursor-not-allowed items-center justify-center rounded-sm border border-border bg-surface-primary"
+          className="flex size-9 shrink-0 cursor-not-allowed items-center justify-center rounded-sm border border-border bg-surface-primary"
         >
           <Icon name="help" className="size-4 text-text-subtle" />
         </button>
@@ -195,7 +200,12 @@ export function Topbar() {
       <DropdownMenu>
         <Tooltip content="Notifications">
           <DropdownMenuTrigger asChild>
-            <Button variant="secondary" size="icon" aria-label="Notifications">
+            <Button
+              variant="secondary"
+              size="icon"
+              className="shrink-0"
+              aria-label="Notifications"
+            >
               <Icon name="bell" className="size-4 text-text-secondary" />
             </Button>
           </DropdownMenuTrigger>
@@ -217,21 +227,21 @@ export function Topbar() {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <div className="mx-1 h-6 w-px bg-border" />
+      <div className="mx-1 h-6 w-px shrink-0 bg-border" />
 
       <DropdownMenu>
         <Tooltip content="Account">
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="flex items-center gap-2 rounded-md p-0.5 transition-colors duration-80 ease-state hover:bg-surface-hover"
+              className="flex shrink-0 items-center gap-2 rounded-md p-0.5 transition-colors duration-80 ease-state hover:bg-surface-hover"
               aria-label="User menu"
             >
               <Avatar
                 name={principal?.user.full_name ?? "User"}
                 seed={principal?.user.email}
               />
-              <Icon name="chev" className="size-4 text-text-subtle" />
+              <Icon name="chev" className="size-4 shrink-0 text-text-subtle" />
             </button>
           </DropdownMenuTrigger>
         </Tooltip>

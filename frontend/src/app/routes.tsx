@@ -23,6 +23,7 @@ import { FrameworkDetailPage } from "@/features/compliance/components/framework-
 import { ControlsPage } from "@/features/compliance/components/controls-page";
 import { ControlDetailPage } from "@/features/compliance/components/control-detail-page";
 import { EvidencePage } from "@/features/evidence/components/evidence-page";
+import { EvidenceDetailPage } from "@/features/evidence/components/evidence-detail-page";
 import { ScopePage } from "@/features/compliance/components/scope-page";
 import { FrameworksLayout } from "@/features/compliance/components/frameworks-layout";
 import { CompanyProfilePage } from "@/features/tenancy/company-profile-page";
@@ -67,6 +68,7 @@ export function AppRoutes() {
           <Route path="controls" element={<ControlsPage />} />
           <Route path="controls/:controlId" element={<ControlDetailPage />} />
           <Route path="evidence" element={<EvidencePage />} />
+          <Route path="evidence/:evidenceId" element={<EvidenceDetailPage />} />
           <Route path="scope" element={<Navigate to="/frameworks/scope" replace />} />
           <Route path="connectors" element={<ConnectionsLayout />}>
             <Route index element={<ConnectionsPage />} />
