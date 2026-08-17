@@ -30,6 +30,9 @@ dependencies = [
     "langchain-openai==1.4.3",
     "langsmith==0.10.17",
     "aiosmtplib>=3.0",
+    # Multipart form parsing — evidence file upload is the only route that
+    # needs it; FastAPI refuses to start a Form() route without it.
+    "python-multipart>=0.0.9",
 ]
 
 [project.optional-dependencies]

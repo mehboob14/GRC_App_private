@@ -424,16 +424,23 @@ class EvidenceService:
             for control_id, row in rows.items():
                 if control_id not in control_ids:
                     await session.delete(row)
-        for control_id in control_ids:
-            if control_id not in rows:
-                session.add(
-                    EvidenceControl(
-                        id=uuid7(),
-                        tenant_id=tenant_id,
-                        evidence_id=evidence_id,
-                        control_id=control_id,
-                    )
-                )
+        added = [
+            EvidenceControl(
+                id=uuid7(),
+                tenant_id=tenant_id,
+                evidence_id=evidence_id,
+                control_id=control_id,
+            )
+            for control_id in control_ids
+            if control_id not in rows
+        ]
+        for row in added:
+            session.add(row)
+        # Flush before returning: the caller builds its response by re-reading
+        # the mappings, and an unflushed row would make the response disagree
+        # with what was actually persisted.
+        if added or replace:
+            await session.flush()
 
 
 evidence_service = EvidenceService()
