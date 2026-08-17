@@ -333,7 +333,12 @@ class EvidenceService:
         session.add(row)
         await session.flush([row])
         await self.map_controls(
-            session, tenant_id=tenant_id, evidence_id=row.id, control_ids=control_ids
+            session,
+            tenant_id=tenant_id,
+            evidence_id=row.id,
+            control_ids=control_ids,
+            actor=actor,
+            title=row.title,
         )
         await self._audit.record(
             session,
@@ -388,6 +393,8 @@ class EvidenceService:
                 evidence_id=evidence_id,
                 control_ids=control_ids,
                 replace=True,
+                actor=actor,
+                title=row.title,
             )
 
         await self._audit.record(
@@ -402,7 +409,7 @@ class EvidenceService:
         )
         return await self.get(session, tenant_id=tenant_id, evidence_id=evidence_id)
 
-    async def map_controls(
+    async def map_controls(  # noqa: PLR0913 — actor is required to audit the link
         self,
         session: AsyncSession,
         *,
@@ -410,6 +417,8 @@ class EvidenceService:
         evidence_id: uuid.UUID,
         control_ids: list[uuid.UUID],
         replace: bool = False,
+        actor: Actor | None = None,
+        title: str | None = None,
     ) -> None:
         """Attach an item to controls. One item satisfying many is the point of
         the join table, not an accident of it."""
@@ -420,10 +429,12 @@ class EvidenceService:
             )
         )
         rows = {row.control_id: row for row in current.scalars()}
+        detached: list[uuid.UUID] = []
         if replace:
             for control_id, row in rows.items():
                 if control_id not in control_ids:
                     await session.delete(row)
+                    detached.append(control_id)
         added = [
             EvidenceControl(
                 id=uuid7(),
@@ -441,6 +452,33 @@ class EvidenceService:
         # with what was actually persisted.
         if added or replace:
             await session.flush()
+
+        # One audit row per control touched, written against the CONTROL so it
+        # surfaces in that control's history. The evidence item has its own row
+        # already; this is the other side of the same fact.
+        if actor is not None:
+            for row in added:
+                await self._audit.record(
+                    session,
+                    action="update",
+                    object_type="control",
+                    object_id=row.control_id,
+                    actor=actor,
+                    tenant_id=tenant_id,
+                    before=None,
+                    after={"evidence_linked": title or str(evidence_id)},
+                )
+            for control_id in detached:
+                await self._audit.record(
+                    session,
+                    action="update",
+                    object_type="control",
+                    object_id=control_id,
+                    actor=actor,
+                    tenant_id=tenant_id,
+                    before={"evidence_linked": title or str(evidence_id)},
+                    after=None,
+                )
 
 
 evidence_service = EvidenceService()

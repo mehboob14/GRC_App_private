@@ -80,8 +80,14 @@ function toCsv(controls: Control[]): string {
   ];
   // Quote every field and double any embedded quote — a control description
   // routinely contains commas, and an export that corrupts on them is worse
-  // than no export.
-  const escape = (value: string) => `"${(value ?? "").replace(/"/g, '""')}"`;
+  // than no export. A leading =, +, - or @ is also prefixed with an apostrophe:
+  // Excel would otherwise evaluate the cell as a formula, and control text is
+  // user-supplied, so an export is an injection path into whoever opens it.
+  const escape = (value: string) => {
+    const text = String(value ?? "");
+    const safe = /^[=+\-@\t\r]/.test(text) ? `'${text}` : text;
+    return `"${safe.replace(/"/g, '""')}"`;
+  };
   const rows = controls.map((control) =>
     [
       control.code,
@@ -180,7 +186,18 @@ export function ControlsBulkBar({
   return (
     <>
       <BulkActionBar count={selected.length} noun="controls" onClear={onClear}>
-        <BarButton icon="users" label="Assign owner" onClick={() => setOwnerOpen(true)} />
+        {/* Reset on open, not on close: closing via a state setter (after a
+            successful apply) never fires onOpenChange, so the previous person
+            would still be armed the next time the dialog is opened. */}
+        <BarButton
+          icon="users"
+          label="Assign owner"
+          onClick={() => {
+            setOwnerId(null);
+            setOwnerTouched(false);
+            setOwnerOpen(true);
+          }}
+        />
         <BarButton icon="gauge" label="Set status" onClick={() => setStatusOpen(true)} />
         <BarButton
           icon="shield"

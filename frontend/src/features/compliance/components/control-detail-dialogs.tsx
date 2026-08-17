@@ -7,7 +7,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  Icon,
   Select,
   SelectContent,
   SelectField,
@@ -16,7 +15,6 @@ import {
   TextField,
   useToast,
 } from "@/components/ui";
-import { cn } from "@/lib/cn";
 import { controlsApi, evidenceApi, iamApi } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/client";
 import type { Control, ControlStatus } from "@/lib/api/types";
@@ -185,8 +183,8 @@ export function EditControlDialog({
   );
 }
 
-/** Attach evidence to a control: pick existing items out of the library, or
- *  upload a new one that is linked here and lands in the library at once. */
+/** Link EXISTING evidence to this control. Uploading a new item is the
+ *  evidence library's own dialog, reused as-is — this one only picks. */
 export function AttachEvidenceDialog({
   controlId,
   open,
@@ -199,20 +197,13 @@ export function AttachEvidenceDialog({
   onDone: () => Promise<void>;
 }) {
   const { toast } = useToast();
-  const [mode, setMode] = useState<"existing" | "upload">("existing");
   const [picked, setPicked] = useState<string[]>([]);
   const [search, setSearch] = useState("");
-  const [title, setTitle] = useState("");
-  const [evidenceType, setEvidenceType] = useState("screenshot");
-  const [file, setFile] = useState<File | null>(null);
 
   useEffect(() => {
     if (!open) return;
-    setMode("existing");
     setPicked([]);
     setSearch("");
-    setTitle("");
-    setFile(null);
   }, [open]);
 
   const libraryQuery = useQuery({
@@ -220,13 +211,8 @@ export function AttachEvidenceDialog({
     queryFn: () => evidenceApi.list(),
     enabled: open,
   });
-  const vocabularyQuery = useQuery({
-    queryKey: ["evidence-vocabulary"],
-    queryFn: () => evidenceApi.vocabulary(),
-    enabled: open,
-  });
 
-  // Items not already attached. Offering one that is already linked would be a
+  // Items not already attached. Offering an already-linked one would be a
   // no-op the user could not tell apart from a failure.
   const candidates = (libraryQuery.data ?? []).filter(
     (item) =>
@@ -237,16 +223,6 @@ export function AttachEvidenceDialog({
 
   const attachMutation = useMutation({
     mutationFn: async () => {
-      if (mode === "upload") {
-        const form = new FormData();
-        form.append("file", file as File);
-        form.append("title", title);
-        form.append("evidence_type", evidenceType);
-        form.append("collected_at", new Date().toISOString().slice(0, 10));
-        form.append("control_ids", controlId);
-        await evidenceApi.uploadFile(form);
-        return;
-      }
       // control_ids REPLACES the set, so each item's existing links are carried
       // through — sending only this control would silently detach the others.
       const library = libraryQuery.data ?? [];
@@ -273,131 +249,69 @@ export function AttachEvidenceDialog({
       }),
   });
 
-  const canSubmit =
-    mode === "existing" ? picked.length > 0 : title.trim() !== "" && file !== null;
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add evidence to this control</DialogTitle>
+          <DialogTitle>Link existing evidence</DialogTitle>
         </DialogHeader>
 
-        <div className="mb-3 flex gap-1 border-b border-border">
-          {(["existing", "upload"] as const).map((value) => (
-            <button
-              key={value}
-              type="button"
-              onClick={() => setMode(value)}
-              className={cn(
-                "relative -mb-px px-3 py-2 text-label-md transition-colors duration-150 ease-state",
-                mode === value
-                  ? "text-action-accent"
-                  : "text-text-secondary hover:text-text-primary",
-              )}
-            >
-              {value === "existing" ? "From library" : "Upload new"}
-              {mode === value ? (
-                <span className="absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-action-accent" />
-              ) : null}
-            </button>
-          ))}
-        </div>
-
-        {mode === "existing" ? (
-          <div className="flex flex-col gap-2">
-            <TextField
-              label="Search the library"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Filter by title…"
-            />
-            <div className="max-h-72 overflow-y-auto rounded-md border border-border">
-              {candidates.length === 0 ? (
-                <p className="p-4 text-body-sm text-text-subtle">
-                  {(libraryQuery.data ?? []).length === 0
-                    ? "The library is empty — upload something instead."
-                    : "Every matching item is already attached to this control."}
-                </p>
-              ) : (
-                <ul className="divide-y divide-border">
-                  {candidates.map((item) => {
-                    const checked = picked.includes(item.id);
-                    return (
-                      <li key={item.id}>
-                        <label className="flex cursor-pointer items-center gap-3 px-3 py-2.5">
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={(event) =>
-                              setPicked((previous) =>
-                                event.target.checked
-                                  ? [...previous, item.id]
-                                  : previous.filter((id) => id !== item.id),
-                              )
-                            }
-                            className="size-4 rounded-xs border-border"
-                          />
-                          <span className="min-w-0 flex-1">
-                            <span className="block truncate text-body-md text-text-primary">
-                              {item.title}
-                            </span>
-                            <span className="block truncate text-caption text-text-subtle">
-                              {item.evidence_type.replace(/_/g, " ")}
-                              {item.control_codes.length
-                                ? ` · already on ${item.control_codes.length} control(s)`
-                                : ""}
-                            </span>
+        <div className="flex flex-col gap-2">
+          <TextField
+            label="Search the library"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Filter by title…"
+          />
+          <div className="max-h-80 overflow-y-auto rounded-md border border-border">
+            {candidates.length === 0 ? (
+              <p className="p-4 text-body-sm text-text-subtle">
+                {(libraryQuery.data ?? []).length === 0
+                  ? "The library is empty — use Add evidence to upload one."
+                  : "Every matching item is already attached to this control."}
+              </p>
+            ) : (
+              <ul className="divide-y divide-border">
+                {candidates.map((item) => {
+                  const checked = picked.includes(item.id);
+                  return (
+                    <li key={item.id}>
+                      <label className="flex cursor-pointer items-center gap-3 px-3 py-2.5">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={(event) =>
+                            setPicked((previous) =>
+                              event.target.checked
+                                ? [...previous, item.id]
+                                : previous.filter((id) => id !== item.id),
+                            )
+                          }
+                          className="size-4 rounded-xs border-border"
+                        />
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-body-md text-text-primary">
+                            {item.title}
                           </span>
-                        </label>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </div>
+                          <span className="block truncate text-caption text-text-subtle">
+                            {item.evidence_type.replace(/_/g, " ")}
+                            {item.control_codes.length
+                              ? ` · already on ${item.control_codes.length} control(s)`
+                              : ""}
+                          </span>
+                        </span>
+                      </label>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </div>
-        ) : (
-          <div className="flex flex-col gap-3">
-            <div>
-              <label
-                htmlFor="attach-file"
-                className="mb-1.5 block font-sans text-label-sm text-text-secondary"
-              >
-                File
-              </label>
-              <input
-                id="attach-file"
-                type="file"
-                onChange={(event) => setFile(event.target.files?.[0] ?? null)}
-                className="block w-full rounded-md border border-border bg-surface-primary px-3 py-2 text-body-sm text-text-secondary file:mr-3 file:rounded-sm file:border-0 file:bg-surface-sunken file:px-3 file:py-1.5 file:text-label-sm file:text-text-primary"
-              />
-            </div>
-            <TextField
-              label="Title"
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              placeholder="Q1 access review export"
-            />
-            <SelectField label="Evidence type">
-              <Select value={evidenceType} onValueChange={setEvidenceType}>
-                <SelectTrigger aria-label="Evidence type" />
-                <SelectContent>
-                  {(vocabularyQuery.data?.types ?? []).map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.label} · {type.default_validity_days}d
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </SelectField>
-            <p className="flex items-start gap-2 text-caption text-text-subtle">
-              <Icon name="doc" className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-              Uploading attaches the item here and adds it to the evidence
-              library at the same time — one record, not a copy.
-            </p>
-          </div>
-        )}
+          <p className="text-caption text-text-subtle">
+            One item can support several controls — linking here does not remove
+            it from any control it already supports.
+          </p>
+        </div>
 
         <DialogFooter>
           <Button variant="secondary" onClick={() => onOpenChange(false)}>
@@ -405,12 +319,10 @@ export function AttachEvidenceDialog({
           </Button>
           <Button
             loading={attachMutation.isPending}
-            disabled={!canSubmit}
+            disabled={picked.length === 0}
             onClick={() => attachMutation.mutate()}
           >
-            {mode === "existing"
-              ? `Attach${picked.length ? ` ${picked.length}` : ""}`
-              : "Upload and attach"}
+            Link{picked.length ? ` ${picked.length}` : ""}
           </Button>
         </DialogFooter>
       </DialogContent>

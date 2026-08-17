@@ -301,6 +301,7 @@ function ControlDetailDialog({
                 {canManage && !control.disabled_at ? (
                   <OwnerSelect
                     value={control.owner_membership_id}
+                    valueLabel={control.owner_name}
                     onChange={(membershipId) => ownerMutation.mutate(membershipId)}
                     disabled={ownerMutation.isPending}
                   />
@@ -447,9 +448,11 @@ function ControlDetailDialog({
                   </Button>
                   {canManage ? (
                     <>
-                      <Button variant="secondary" onClick={() => onEdit(control)}>
-                        Edit
-                      </Button>
+                      {control.disabled_at ? null : (
+                        <Button variant="secondary" onClick={() => onEdit(control)}>
+                          Edit
+                        </Button>
+                      )}
                       {control.disabled_at ? (
                         <Button
                           variant="secondary"
@@ -522,10 +525,18 @@ export function ControlsPage() {
   // One list call, counted client-side. The evidence service loads every
   // mapping row on any read, so `?control_id=` per row would be N full scans
   // to learn what a single request already carries.
+  //
+  // Reading evidence is a separate permission from reading controls, so this is
+  // gated: without it the column reports "—" rather than a confident 0, which
+  // would otherwise read as "this control has no evidence" — a fabricated
+  // compliance finding.
+  const canReadEvidence = Boolean(principal?.permissions.includes("evidence:read"));
   const evidenceQuery = useQuery({
     queryKey: ["evidence"],
     queryFn: () => evidenceApi.list(),
+    enabled: canReadEvidence,
   });
+  const evidenceKnown = evidenceQuery.isSuccess;
   // The criterion → Trust Services Category mapping, straight from the shipped
   // requirements rather than inferred from the code's prefix.
   const frameworksQuery = useQuery({
@@ -616,26 +627,24 @@ export function ControlsPage() {
     );
   }, [controls, search, types, trustServices, owners, statuses, tscFor]);
 
-  // Selection follows what is on screen: a filter change must never leave the
-  // bulk bar counting rows the user can no longer see.
-  const visibleIds = useMemo(() => new Set(visible.map((c) => c.id)), [visible]);
-  useEffect(() => {
-    setCheckedIds((previous) => {
-      const pruned = previous.filter((id) => visibleIds.has(id));
-      return pruned.length === previous.length ? previous : pruned;
-    });
-  }, [visibleIds]);
-
+  // Selection survives filtering. Pruning to the visible rows would wipe a
+  // selection on every search keystroke — you pick five controls, type to find
+  // a sixth, and the first five are gone. The count stays honest instead by
+  // resolving against the whole library, so the bar never names a row that no
+  // longer exists.
   const checkedControls = useMemo(
-    () => visible.filter((control) => checkedIds.includes(control.id)),
-    [visible, checkedIds],
+    () => controls.filter((control) => checkedIds.includes(control.id)),
+    [controls, checkedIds],
   );
+  const checkedVisibleCount = visible.filter((control) =>
+    checkedIds.includes(control.id),
+  ).length;
   /** Always the freshest copy, so an edit made in the dialog shows there too. */
   const selectedControl = useMemo(
     () => controls.find((control) => control.id === selectedId) ?? null,
     [controls, selectedId],
   );
-  const allChecked = visible.length > 0 && checkedIds.length === visible.length;
+  const allChecked = visible.length > 0 && checkedVisibleCount === visible.length;
 
   /** Owner facet options, built from who actually owns something. */
   const ownerOptions = useMemo(() => {
@@ -727,7 +736,7 @@ export function ControlsPage() {
                 </span>
               </>
             ) : null}
-            {noEvidence > 0 ? (
+            {evidenceKnown && noEvidence > 0 ? (
               <>
                 {" · "}
                 <span className="font-semibold text-text-primary">
@@ -843,12 +852,12 @@ export function ControlsPage() {
                 <TH className="w-10">
                   <Checkbox
                     checked={
-                      allChecked ? true : checkedIds.length > 0 ? "indeterminate" : false
+                      allChecked ? true : checkedVisibleCount > 0 ? "indeterminate" : false
                     }
                     onCheckedChange={(next) =>
                       setCheckedIds(next ? visible.map((control) => control.id) : [])
                     }
-                    aria-label={allChecked ? "Clear selection" : "Select all controls"}
+                    aria-label="Select all controls"
                   />
                 </TH>
               ) : null}
@@ -964,15 +973,19 @@ export function ControlsPage() {
                     )}
                   </TD>
                   <TD numeric>
-                    <span
-                      className={cn(
-                        "inline-flex items-center gap-1.5",
-                        evidenceCount === 0 ? "text-text-subtle" : "text-text-secondary",
-                      )}
-                    >
-                      <Icon name="doc" className="size-3.5" />
-                      {evidenceCount}
-                    </span>
+                    {evidenceKnown ? (
+                      <span
+                        className={cn(
+                          "inline-flex items-center gap-1.5",
+                          evidenceCount === 0 ? "text-text-subtle" : "text-text-secondary",
+                        )}
+                      >
+                        <Icon name="doc" className="size-3.5" />
+                        {evidenceCount}
+                      </span>
+                    ) : (
+                      <span className="text-text-subtle">—</span>
+                    )}
                   </TD>
                   <TD>
                     <StatusPill
@@ -994,9 +1007,13 @@ export function ControlsPage() {
                         </DropdownMenuItem>
                         {canManage ? (
                           <>
-                            <DropdownMenuItem onSelect={() => setEditing(control)}>
-                              Edit
-                            </DropdownMenuItem>
+                            {/* The API refuses to patch a disabled control, so
+                                the form is not offered for one. */}
+                            {control.disabled_at ? null : (
+                              <DropdownMenuItem onSelect={() => setEditing(control)}>
+                                Edit
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuSeparator />
                             {control.disabled_at ? (
                               <DropdownMenuItem onSelect={() => view(control)}>

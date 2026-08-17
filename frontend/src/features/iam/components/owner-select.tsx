@@ -51,12 +51,15 @@ function useAssignableMembers() {
 
 export function OwnerSelect({
   value,
+  valueLabel,
   onChange,
   disabled,
   className,
   placeholder = "Unassigned",
 }: {
   value: string | null;
+  /** The owner's name as the server reports it — see the fallback below. */
+  valueLabel?: string | null;
   onChange: (membershipId: string | null) => void;
   disabled?: boolean;
   className?: string;
@@ -69,6 +72,19 @@ export function OwnerSelect({
     label: member.full_name,
     sublabel: member.email,
   }));
+
+  // A picker that cannot represent its own current value would render a real
+  // owner as "Unassigned" — which happens when that person's membership was
+  // later disabled, or when the viewer cannot read the member list at all. The
+  // control still has an owner and the server still names them, so carry the
+  // value as its own option rather than silently reporting the opposite.
+  if (value && !options.some((option) => option.value === value)) {
+    options.unshift({
+      value,
+      label: valueLabel ?? "Current owner",
+      sublabel: "no longer an active member",
+    });
+  }
 
   return (
     <SearchableSelect

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Badge,
   Button,
@@ -18,6 +18,7 @@ import {
   complianceApi,
   controlsApi,
   evidenceApi,
+  iamApi,
 } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/auth-context";
@@ -25,6 +26,10 @@ import {
   AttachEvidenceDialog,
   EditControlDialog,
 } from "@/features/compliance/components/control-detail-dialogs";
+// The evidence library owns the add-evidence form. Reused here rather than
+// re-implemented, so the fields cannot drift between the two entry points.
+import { AddEvidenceDialog } from "@/features/evidence/components/evidence-page";
+import { OwnerSelect } from "@/features/iam/components/owner-select";
 import type { Control, Evidence, EvidenceFreshness } from "@/lib/api/types";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -159,25 +164,43 @@ const FIELD_LABEL: Record<string, string> = {
 function ChangeSummary({
   before,
   after,
+  names,
 }: {
   before: Record<string, unknown> | null;
   after: Record<string, unknown> | null;
+  /** membership id → person. An owner change must read as a name; a raw UUID
+   *  tells a reader nothing about who now owns the control. */
+  names: Map<string, string>;
 }) {
   const changes = useMemo(() => {
     if (!after) return [];
     const keys = new Set([...Object.keys(before ?? {}), ...Object.keys(after)]);
     return [...keys]
-      .filter((key) => key !== "id" && FIELD_LABEL[key])
+      .filter((key) => key !== "id" && key !== "evidence_linked" && FIELD_LABEL[key])
       .map((key) => ({ key, from: before?.[key], to: after[key] }))
       .filter((change) => JSON.stringify(change.from) !== JSON.stringify(change.to));
   }, [before, after]);
 
+  const linkedNow = after?.evidence_linked;
+  const linkedBefore = before?.evidence_linked;
+  if (linkedNow || linkedBefore) {
+    return (
+      <p className="mt-1.5 text-body-sm text-text-secondary">
+        {linkedNow ? "Linked evidence" : "Unlinked evidence"}{" "}
+        <span className="font-semibold text-text-primary">
+          {String(linkedNow ?? linkedBefore)}
+        </span>
+      </p>
+    );
+  }
+
   if (changes.length === 0) return null;
 
-  const render = (value: unknown) =>
-    value === null || value === undefined || value === ""
-      ? "—"
-      : String(value).replace(/_/g, " ").slice(0, 60);
+  const render = (value: unknown) => {
+    if (value === null || value === undefined || value === "") return "Unassigned";
+    const text = String(value);
+    return (names.get(text) ?? text).replace(/_/g, " ").slice(0, 60);
+  };
 
   return (
     <ul className="mt-1.5 space-y-1">
@@ -203,6 +226,7 @@ export function ControlDetailPage() {
   const [tab, setTab] = useState<TabId>("overview");
   const [editing, setEditing] = useState(false);
   const [linking, setLinking] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -215,6 +239,27 @@ export function ControlDetailPage() {
     queryKey: ["evidence", "control", controlId],
     queryFn: () => evidenceApi.list({ control_id: controlId }),
     enabled: controlId.length > 0,
+  });
+
+  // Assigning an owner is the most common edit on this screen, so it happens in
+  // place rather than through the edit dialog. `clear_owner` wins over
+  // `owner_membership_id` server-side, so unassigning sends the flag alone.
+  const ownerMutation = useMutation({
+    mutationFn: (membershipId: string | null) =>
+      controlsApi.update(
+        controlId,
+        membershipId === null
+          ? { clear_owner: true }
+          : { owner_membership_id: membershipId },
+      ),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["control", controlId] }),
+        queryClient.invalidateQueries({ queryKey: ["controls"] }),
+      ]);
+      toast({ title: "Owner updated", tone: "success" });
+    },
+    onError: () => toast({ title: "Couldn't set the owner.", tone: "danger" }),
   });
   const frameworksQuery = useQuery({
     queryKey: ["frameworks"],
@@ -272,6 +317,21 @@ export function ControlDetailPage() {
   }, [control, allControlsQuery.data]);
 
   const history = useMemo(() => historyQuery.data?.items ?? [], [historyQuery.data]);
+  const membersQuery = useQuery({
+    queryKey: ["members"],
+    queryFn: () => iamApi.listMembers(),
+    enabled: tab === "history",
+  });
+  const memberNames = useMemo(
+    () =>
+      new Map(
+        (membersQuery.data ?? []).map((member) => [
+          member.membership_id,
+          member.full_name,
+        ]),
+      ),
+    [membersQuery.data],
+  );
   const staleCount = evidence.filter((item) => item.freshness === "stale").length;
 
   if (controlQuery.isError) {
@@ -459,10 +519,15 @@ export function ControlDetailPage() {
               title={tab === "overview" ? "Linked evidence" : "Evidence"}
               action={
                 canManage ? (
-                  <Button size="sm" variant="secondary" onClick={() => setLinking(true)}>
-                    <Icon name="plus" className="size-4" />
-                    Add evidence
-                  </Button>
+                  <span className="flex gap-2">
+                    <Button size="sm" variant="secondary" onClick={() => setLinking(true)}>
+                      Link existing
+                    </Button>
+                    <Button size="sm" onClick={() => setUploading(true)}>
+                      <Icon name="plus" className="size-4" />
+                      Add evidence
+                    </Button>
+                  </span>
                 ) : (
                   <Link to="/evidence" className="text-body-sm font-semibold text-text-link">
                     Evidence library →
@@ -557,7 +622,13 @@ export function ControlDetailPage() {
                           {entry.actor_label || "System"}
                         </span>
                         <span className="text-body-sm text-text-secondary">
-                          {entry.action === "create" ? "created this control" : "updated this control"}
+                          {entry.action === "create"
+                            ? "created this control"
+                            : entry.after?.evidence_linked
+                              ? "attached evidence"
+                              : entry.before?.evidence_linked
+                                ? "removed evidence"
+                                : "updated this control"}
                         </span>
                         <span className="ml-auto tabular text-caption text-text-subtle">
                           {new Date(entry.occurred_at).toLocaleString()}
@@ -565,7 +636,11 @@ export function ControlDetailPage() {
                       </div>
                       {/* What actually changed — the before/after snapshot the
                           audit row carries, reduced to the fields that moved. */}
-                      <ChangeSummary before={entry.before} after={entry.after} />
+                      <ChangeSummary
+                        before={entry.before}
+                        after={entry.after}
+                        names={memberNames}
+                      />
                     </li>
                   ))}
                 </ol>
@@ -635,7 +710,23 @@ export function ControlDetailPage() {
                 />
               }
             />
-            <Fact label="Owner" value={control.owner_name ?? "Unassigned"} />
+            <Fact
+              label="Owner"
+              value={
+                canManage && !control.disabled_at ? (
+                  <div className="w-48">
+                    <OwnerSelect
+                      value={control.owner_membership_id}
+                      valueLabel={control.owner_name}
+                      onChange={(membershipId) => ownerMutation.mutate(membershipId)}
+                      disabled={ownerMutation.isPending}
+                    />
+                  </div>
+                ) : (
+                  (control.owner_name ?? "Unassigned")
+                )
+              }
+            />
             <Fact label="Type" value={control.control_type} />
             <Fact label="Sub-type" value={control.control_sub_type ?? "—"} />
             <Fact label="Source" value={control.origin === "custom" ? "Custom" : "Template"} />
@@ -721,6 +812,13 @@ export function ControlDetailPage() {
           await queryClient.invalidateQueries({ queryKey: ["controls"] });
           toast({ title: "Control updated", tone: "success" });
         }}
+      />
+
+      {/* The library's own dialog, with this control pre-attached. */}
+      <AddEvidenceDialog
+        open={uploading}
+        onOpenChange={setUploading}
+        presetControlIds={[controlId]}
       />
 
       <AttachEvidenceDialog

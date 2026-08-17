@@ -132,12 +132,17 @@ const FILE_ACCEPT =
 const DANGEROUS_EXT =
   /\.(exe|msi|bat|cmd|com|scr|pif|cpl|dll|sys|drv|vbs|vbe|jse?|mjs|wsf|wsh|ps1|psm1|sh|bash|zsh|jar|apk|app|dmg|pkg|deb|rpm|bin|hta|reg|gadget|lnk)$/i;
 
-function AddEvidenceDialog({
+export function AddEvidenceDialog({
   open,
   onOpenChange,
+  /** Controls to pre-attach. The control detail page passes its own id so the
+   *  item is linked where the user started, while still offering the full
+   *  picker — this is the same dialog, not a copy of it. */
+  presetControlIds,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  presetControlIds?: string[];
 }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -157,7 +162,7 @@ function AddEvidenceDialog({
   const [file, setFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
   const [frameworkId, setFrameworkId] = useState("");
-  const [controlIds, setControlIds] = useState<string[]>([]);
+  const [controlIds, setControlIds] = useState<string[]>(presetControlIds ?? []);
 
   const canReadMembers = Boolean(principal?.permissions.includes("members:read"));
 
@@ -269,7 +274,7 @@ function AddEvidenceDialog({
     setFile(null);
     setFileError(null);
     setFrameworkId("");
-    setControlIds([]);
+    setControlIds(presetControlIds ?? []);
   }
 
   const saveMutation = useMutation({
