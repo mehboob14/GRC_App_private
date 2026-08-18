@@ -8,7 +8,14 @@
 # format, not the editing environment.
 
 # ---- builder ---------------------------------------------------------------
-FROM ghcr.io/astral-sh/uv:0.12.3-python3.12-bookworm-slim AS builder
+# Same base as the runtime stage, with the uv binary copied in. Astral does not
+# publish a combined uv+python tag for every release (0.12.3-python3.12-bookworm-slim
+# does not exist), and this way the wheels are compiled against exactly the
+# interpreter that will run them — asyncpg, cryptography and argon2-cffi are all
+# native builds, so a mismatched base is a runtime import error, not a build error.
+FROM python:3.12-slim-bookworm AS builder
+
+COPY --from=ghcr.io/astral-sh/uv:0.12.3 /uv /uvx /bin/
 
 ENV UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy \

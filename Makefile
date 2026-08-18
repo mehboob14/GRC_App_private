@@ -93,9 +93,20 @@ build: ## Build the production images (does not run them)
 	docker build -t verity-web:latest frontend
 
 .PHONY: build-check
-build-check: build ## Build, then prove the API image boots and answers /healthz
-	@docker run --rm --entrypoint python verity-api:latest \
+build-check: build ## Build, then prove the images are actually usable
+	# A throwaway DSN, never connected to: modules/evidence/service.py builds its
+	# object store at import time, so `import verity.main` constructs Settings and
+	# fails without one. ENV stays `local` here, so the production validators that
+	# reject dev secrets do not fire — this is a smoke test of the image, not of a
+	# deployment's configuration.
+	@docker run --rm \
+		-e DATABASE_URL=postgresql+asyncpg://smoke:smoke@127.0.0.1:5432/smoke \
+		--entrypoint python verity-api:latest \
 		-c "import verity.main; print('api image imports ok')"
+	# `-u` goes after the image, or docker run claims it as its own --user flag.
+	@test "$$(docker run --rm --entrypoint id verity-api:latest -u)" = "1001" \
+		&& echo "api image runs as non-root ok" \
+		|| { echo "FAIL: api image is not running as uid 1001"; exit 1; }
 	@docker run --rm --entrypoint sh verity-web:latest \
 		-c "test -f /usr/share/nginx/html/index.html && ! test -f /usr/share/nginx/html/mockServiceWorker.js && echo 'web image built ok, mocks stripped'"
 
