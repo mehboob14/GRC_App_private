@@ -32,7 +32,7 @@ type Task = {
 const TASKS: Task[] = [
   { title: "Remediate CVE-2026-1284 on prod-api-gateway", module: "Vuln", detail: "CVSS 9.8 · CISA KEV · openssl 3.0.11", due: "Overdue 2d", overdue: true, action: "Fix" },
   { title: "Restore SIEM log forwarding for CC7.2", module: "Control", detail: "3 of 15 hosts not reporting", due: "Overdue 3d", overdue: true, action: "Open" },
-  { title: "Certify Q3 access review — Engineering", module: "Access", detail: "24 accounts · Okta", due: "Due today", today: true, action: "Review" },
+  { title: "Certify Q3 access review · Engineering", module: "Access", detail: "24 accounts · Okta", due: "Due today", today: true, action: "Review" },
   { title: "Enforce TLS 1.2+ on 2 public endpoints (CC6.6)", module: "Control", detail: "api-gateway, cdn-edge", due: "Due today", today: true, action: "Fix" },
   { title: "Re-upload AWS Config export for CC6.1", module: "Evidence", detail: "Auto-collection expiring", due: "in 2d", action: "Upload" },
   { title: "Reassess Tier-1 vendor: Datadog", module: "Vendor", detail: "Annual review overdue 189d", due: "in 4d", action: "Start" },
@@ -68,7 +68,7 @@ function slaRow(left: number) {
 const DEADLINES = [
   { d: "23", m: "JUL", title: "Q3 access review closes", detail: "Engineering · 24 to certify", dot: "bg-status-danger-base" },
   { d: "25", m: "JUL", title: "AWS Config evidence expires", detail: "CC6.1", dot: "bg-status-warning-base" },
-  { d: "29", m: "JUL", title: "Vendor reassessment — Datadog", detail: "TPRM Tier 1", dot: "bg-status-warning-base" },
+  { d: "29", m: "JUL", title: "Vendor reassessment · Datadog", detail: "TPRM Tier 1", dot: "bg-status-warning-base" },
   { d: "01", m: "AUG", title: "Monthly control test cycle", detail: "218 automated checks", dot: "bg-action-accent" },
   { d: "15", m: "SEP", title: "SOC 2 observation window closes", detail: "Audit · Brenner & Associates", dot: "bg-action-accent" },
 ];

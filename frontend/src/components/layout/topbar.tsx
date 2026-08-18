@@ -162,8 +162,8 @@ export function Topbar() {
           {workspaces.length > 1 ? (
             <p className="px-2.5 pb-1 pt-1.5 text-caption text-text-subtle">
               Signed in across{" "}
-              <span className="tabular">{workspaces.length}</span> workspaces —
-              switching is audited
+              <span className="tabular">{workspaces.length}</span> workspaces.
+              Switching is audited
             </p>
           ) : null}
         </DropdownMenuContent>
@@ -179,7 +179,7 @@ export function Topbar() {
         shortcut="⌘K"
         readOnly
         aria-label="Global search"
-        title="Search arrives with the compliance modules — ⌘K already focuses it"
+        title="Search arrives with the compliance modules. ⌘K already focuses it"
       />
 
       <div className="flex-1" />
@@ -188,7 +188,7 @@ export function Topbar() {
       <Tooltip content="Help & docs arrive in a later phase">
         <button
           type="button"
-          aria-label="Help — arrives in a later phase"
+          aria-label="Help, arrives in a later phase"
           aria-disabled
           className="flex size-9 shrink-0 cursor-not-allowed items-center justify-center rounded-sm border border-border bg-surface-primary"
         >

@@ -46,7 +46,7 @@ export function SuggestedMappingsTeaser() {
           </h2>
           <p className="mt-1 text-body-sm text-text-secondary">
             Controls this evidence may also satisfy, across every framework you
-            carry. Review each row, then link the ones that fit — suggested
+            carry. Review each row, then link the ones that fit. Suggested
             automatically, never linked without a person saying so.
           </p>
         </div>
@@ -104,7 +104,7 @@ export function SuggestedMappingsTeaser() {
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-surface-primary via-surface-primary/85 to-transparent" />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center pb-4">
         <span className="rounded-full border border-border bg-surface-primary px-3 py-1.5 text-caption font-semibold text-text-secondary shadow-1">
-          Example only — cross-framework suggestions arrive with the AI mapping
+          Example only. Cross-framework suggestions arrive with the AI mapping
           engine
         </span>
       </div>

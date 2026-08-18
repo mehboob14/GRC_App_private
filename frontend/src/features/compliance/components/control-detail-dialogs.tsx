@@ -267,7 +267,7 @@ export function AttachEvidenceDialog({
             {candidates.length === 0 ? (
               <p className="p-4 text-body-sm text-text-subtle">
                 {(libraryQuery.data ?? []).length === 0
-                  ? "The library is empty — use Add evidence to upload one."
+                  ? "The library is empty. Use Add evidence to upload one."
                   : "Every matching item is already attached to this control."}
               </p>
             ) : (
@@ -308,7 +308,7 @@ export function AttachEvidenceDialog({
             )}
           </div>
           <p className="text-caption text-text-subtle">
-            One item can support several controls — linking here does not remove
+            One item can support several controls. Linking here does not remove
             it from any control it already supports.
           </p>
         </div>

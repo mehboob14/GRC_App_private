@@ -100,7 +100,7 @@ export function SignUpPage() {
           <ErrorBanner ref={alertRef} title="Couldn't create the workspace">
             {signupMutation.error instanceof ApiError
               ? signupMutation.error.message
-              : "The request didn't reach the server — check your connection and try again."}
+              : "The request didn't reach the server. Check your connection and try again."}
           </ErrorBanner>
         ) : null}
         <TextField

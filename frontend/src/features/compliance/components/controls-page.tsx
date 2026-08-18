@@ -266,7 +266,7 @@ function ControlDetailDialog({
               {control.disabled_at ? (
                 <div className="rounded-md border border-status-neutral-border bg-status-neutral-bg px-3.5 py-3">
                   <p className="text-label-md text-status-neutral-text">
-                    Disabled — {control.disabled_reason}
+                    Disabled · {control.disabled_reason}
                   </p>
                 </div>
               ) : null}
@@ -920,7 +920,7 @@ export function ControlsPage() {
         <EmptyState
           icon="controls"
           title="Your control library is empty"
-          description="Build it from the shipped SOC 2 template library — 114 controls, already mapped to the criteria they satisfy."
+          description="Build it from the shipped SOC 2 template library, 114 controls already mapped to the criteria they satisfy."
           action={
             canManage ? (
               <Button

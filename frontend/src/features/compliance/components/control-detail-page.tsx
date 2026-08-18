@@ -549,7 +549,7 @@ export function ControlDetailPage() {
                     {control.disabled_reason}
                   </p>
                   <p className="mt-2 text-caption text-text-subtle">
-                    Retired, not deleted — the justification is on the audit
+                    Retired, not deleted. The justification is on the audit
                     trail.
                   </p>
                 </Panel>
@@ -567,7 +567,7 @@ export function ControlDetailPage() {
                   <p className="text-body-sm text-text-secondary">
                     Continuous tests run against connected systems and arrive
                     with connectors in Phase 2. Until a connector is live, this
-                    control is evidenced manually — see Evidence.
+                    control is evidenced manually. See Evidence.
                   </p>
                 </div>
               </Panel>
@@ -848,7 +848,7 @@ export function ControlDetailPage() {
                         {framework?.name ?? "SOC 2"}
                       </span>
                       <span className="block truncate text-caption text-text-subtle">
-                        {requirement.code} — {requirement.name}
+                        {requirement.code} · {requirement.name}
                       </span>
                     </span>
                   </li>

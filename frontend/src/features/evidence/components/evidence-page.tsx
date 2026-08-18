@@ -250,7 +250,7 @@ export function AddEvidenceDialog({
     if (picked && DANGEROUS_EXT.test(picked.name)) {
       setFile(null);
       setFileError(
-        "That file type can’t be uploaded as evidence — executables and scripts are blocked.",
+        "That file type can’t be uploaded as evidence. Executables and scripts are blocked.",
       );
       event.target.value = "";
       return;

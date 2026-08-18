@@ -95,7 +95,7 @@ export function ResetPasswordPage() {
           <ErrorBanner ref={alertRef} title="Couldn’t reset your password">
             {mutation.error instanceof ApiError
               ? mutation.error.message
-              : "The request didn’t reach the server — check your connection and try again."}{" "}
+              : "The request didn’t reach the server. Check your connection and try again."}{" "}
             <Link className="font-semibold underline" to="/forgot-password">
               Request a new link
             </Link>

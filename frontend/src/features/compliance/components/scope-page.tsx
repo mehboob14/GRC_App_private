@@ -319,7 +319,7 @@ export function ScopePage() {
               <p className="text-body-sm text-text-secondary">
                 Evidence tracking arrives with the evidence module. Until then
                 “controls with no evidence” cannot be measured, so it is not
-                shown as a result — all{" "}
+                shown as a result. All{" "}
                 <span className="tabular">{coverage.controls_total}</span>{" "}
                 controls are awaiting it.
               </p>

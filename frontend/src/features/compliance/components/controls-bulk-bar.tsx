@@ -70,7 +70,7 @@ function BarButton({
             className="size-1.5 shrink-0 rounded-full bg-status-pending-base"
           />
           {/* The dot is visual shorthand; the reason still has to be readable. */}
-          <span className="sr-only"> — coming soon</span>
+          <span className="sr-only">, coming soon</span>
         </>
       ) : null}
     </button>

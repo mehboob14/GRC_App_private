@@ -47,7 +47,7 @@ export function RecoveryCodesPanel({ codes, onContinue }: Props) {
       </Button>
 
       <Button size="lg" className="w-full" onClick={onContinue}>
-        I've saved them — continue
+        I've saved them, continue
         <Icon name="arrowr" className="size-4" />
       </Button>
     </div>

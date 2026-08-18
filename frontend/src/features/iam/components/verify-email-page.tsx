@@ -85,8 +85,8 @@ export function VerifyEmailPage() {
             </p>
           </div>
           <p className="text-body-md text-text-secondary">
-            You can close this tab and return to the window where you signed up —
-            it continues automatically. Or{" "}
+            You can close this tab and return to the window where you signed up.
+            It continues automatically. Or{" "}
             <Link className="font-semibold text-text-link" to="/sign-in">
               sign in here
             </Link>
@@ -133,7 +133,7 @@ export function VerifyEmailPage() {
             <ErrorBanner ref={resendAlertRef} title="Couldn't send the email">
               {messageFrom(
                 resendMutation.error,
-                "The request didn't reach the server — check your connection and try again.",
+                "The request didn't reach the server. Check your connection and try again.",
               )}
             </ErrorBanner>
           ) : null}

@@ -30,7 +30,7 @@ export function CheckEmailPanel({
 
   const resendMutation = useMutation({
     mutationFn: () => authApi.resendVerification(email),
-    onSuccess: () => toast({ title: "Sent — check your inbox", tone: "success" }),
+    onSuccess: () => toast({ title: "Sent. Check your inbox", tone: "success" }),
   });
 
   const continueMutation = useMutation({
@@ -90,7 +90,7 @@ export function CheckEmailPanel({
 
       {notYet ? (
         <p className="text-body-sm text-status-warning-text">
-          Not verified yet — open the link in your email, then try again.
+          Not verified yet. Open the link in your email, then try again.
         </p>
       ) : null}
 
@@ -98,7 +98,7 @@ export function CheckEmailPanel({
         <ErrorBanner ref={alertRef} title="Couldn't resend the email">
           {resendMutation.error instanceof ApiError
             ? resendMutation.error.message
-            : "The request didn't reach the server — check your connection and try again."}
+            : "The request didn't reach the server. Check your connection and try again."}
         </ErrorBanner>
       ) : null}
 
@@ -110,7 +110,7 @@ export function CheckEmailPanel({
             loading={continueMutation.isPending}
             onClick={() => continueLogin()}
           >
-            I've verified — continue
+            I've verified, continue
             <Icon name="arrowr" className="size-4" />
           </Button>
         ) : null}

@@ -5,12 +5,19 @@ import {
   useEffect,
   useMemo,
   useState,
-  useSyncExternalStore,
   type ReactNode,
 } from "react";
 import { hexToRgbChannels, mixHexChannels } from "@/lib/color";
 
-export type ThemeMode = "light" | "dark" | "system";
+/**
+ * Light is the product default, and the operating system is never consulted.
+ *
+ * There was a third mode, `system`, which followed `prefers-color-scheme` and
+ * was what an unset preference fell back to. That meant anyone whose laptop was
+ * in dark mode saw a dark app on first visit, having never asked for one. The
+ * mode is now a deliberate choice between two, and absence of a choice is light.
+ */
+export type ThemeMode = "light" | "dark";
 
 const STORAGE_KEY = "verity.theme";
 const ACCENT_STYLE_ID = "verity-tenant-accent";
@@ -29,23 +36,13 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 function readStoredMode(): ThemeMode {
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    return raw === "light" || raw === "dark" || raw === "system"
-      ? raw
-      : "system";
+    // Only an explicit "dark" turns the lights off. An unset key, a stale
+    // "system" value from before this changed, or unreadable storage all mean
+    // light. Matches the pre-paint script in index.html.
+    return window.localStorage.getItem(STORAGE_KEY) === "dark" ? "dark" : "light";
   } catch {
-    return "system";
+    return "light";
   }
-}
-
-function subscribeToSystemTheme(onChange: () => void): () => void {
-  const query = window.matchMedia("(prefers-color-scheme: dark)");
-  query.addEventListener("change", onChange);
-  return () => query.removeEventListener("change", onChange);
-}
-
-function systemPrefersDark(): boolean {
-  return window.matchMedia("(prefers-color-scheme: dark)").matches;
 }
 
 /**
@@ -64,13 +61,11 @@ function systemPrefersDark(): boolean {
  */
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [mode, setModeState] = useState<ThemeMode>(readStoredMode);
-  const prefersDark = useSyncExternalStore(
-    subscribeToSystemTheme,
-    systemPrefersDark,
-  );
 
-  const resolvedTheme: "light" | "dark" =
-    mode === "system" ? (prefersDark ? "dark" : "light") : mode;
+  // The stored mode is now the applied mode: there is nothing left to resolve
+  // against, since the OS is not consulted. Kept as a distinct name because it
+  // is part of the context contract that consumers already read.
+  const resolvedTheme: "light" | "dark" = mode;
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", resolvedTheme === "dark");

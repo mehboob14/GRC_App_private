@@ -118,7 +118,7 @@ export function SmtpSettings({ canManage }: { canManage: boolean }) {
             Outbound email (SMTP)
           </h2>
           <p className="mt-1 text-body-md text-text-secondary">
-            Send Verity emails — invites, verification — from your own mail
+            Send Verity emails (invites, verification) from your own mail
             server.
           </p>
           <p className="mt-2.5 text-body-sm text-text-subtle">{summary}</p>
@@ -285,7 +285,7 @@ export function SmtpSettings({ canManage }: { canManage: boolean }) {
               </>
             ) : (
               <p className="mt-4 text-body-sm text-text-subtle">
-                View-only — ask an Admin to change SMTP settings.
+                View-only. Ask an Admin to change SMTP settings.
               </p>
             )}
           </DialogBody>

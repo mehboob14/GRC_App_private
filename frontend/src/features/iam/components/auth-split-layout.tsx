@@ -145,9 +145,9 @@ export function AuthSplitLayout({
               style={{ animationDelay: "0.12s" }}
             >
               <p className="text-body-lg font-medium text-text-secondary">
-                Governance, risk &amp; compliance —{" "}
+                Governance, risk &amp; compliance.{" "}
                 <span className="font-semibold text-action-accent">
-                  one continuous loop.
+                  One continuous loop.
                 </span>
               </p>
               <LifecycleFlow />

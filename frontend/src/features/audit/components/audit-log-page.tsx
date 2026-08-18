@@ -283,7 +283,7 @@ export function AuditLogPage() {
         Audit log
       </h1>
       <p className="mt-1 text-body-md text-text-secondary">
-        Append-only trail of meaningful changes in this workspace — who changed
+        Append-only trail of meaningful changes in this workspace: who changed
         what, and when. Never edited or deleted.
       </p>
 
@@ -524,12 +524,12 @@ export function AuditLogPage() {
                 <SnapshotBlock
                   label="Before"
                   value={selected.before}
-                  emptyNote="No prior state — the object was created by this event."
+                  emptyNote="No prior state. The object was created by this event."
                 />
                 <SnapshotBlock
                   label="After"
                   value={selected.after}
-                  emptyNote="No resulting state — the object was removed by this event."
+                  emptyNote="No resulting state. The object was removed by this event."
                 />
                 <div>
                   <p className="type-overline mb-1.5">Event</p>

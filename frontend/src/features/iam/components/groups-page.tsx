@@ -109,7 +109,7 @@ export function GroupsPage() {
       setError(
         err instanceof ApiError
           ? err.message
-          : "The group didn't reach the server — check your connection and try again.",
+          : "The group didn't reach the server. Check your connection and try again.",
       );
     },
   });
@@ -127,7 +127,7 @@ export function GroupsPage() {
         title:
           err instanceof ApiError
             ? err.message
-            : "Couldn't delete the group — try again.",
+            : "Couldn't delete the group. Try again.",
         tone: "danger",
       });
     },
@@ -168,7 +168,7 @@ export function GroupsPage() {
       setMemberError(
         err instanceof ApiError
           ? err.message
-          : "The change didn't reach the server — try again.",
+          : "The change didn't reach the server. Try again.",
       );
     },
   });
@@ -218,7 +218,7 @@ export function GroupsPage() {
         <EmptyState
           icon="users"
           title="No groups yet"
-          description="Create a group to assign people together — reviews and role changes then move group-by-group."
+          description="Create a group to assign people together. Reviews and role changes then move group-by-group."
         />
       ) : (
         <Table density="standard">
@@ -372,7 +372,7 @@ export function GroupsPage() {
           }
         }}
         title={`Members of “${managing?.name ?? ""}”`}
-        description="Tick everyone who belongs to this group. Unticking removes them from the group only — their roles are untouched."
+        description="Tick everyone who belongs to this group. Unticking removes them from the group only. Their roles are untouched."
         confirmLabel="Save members"
         initialSelected={managing?.member_ids ?? []}
         saving={membersMutation.isPending}

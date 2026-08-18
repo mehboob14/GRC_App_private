@@ -1169,7 +1169,7 @@ class TenancyService:
                     smtp.password_encrypted, aad=f"tenant_smtp:{tenant_id}"
                 )
             except CryptoError:
-                return False, "Stored password could not be decrypted — re-enter it."
+                return False, "Stored password could not be decrypted. Re-enter it."
         creds = SmtpCredentials(
             host=smtp.host,
             port=smtp.port,
@@ -1182,8 +1182,8 @@ class TenancyService:
         message = OutboundEmail(
             to=to_email,
             subject="Verity SMTP test",
-            text="This is a test message from Verity — your SMTP settings work.",
-            html="<p>This is a test message from Verity — your SMTP settings work.</p>",
+            text="This is a test message from Verity. Your SMTP settings work.",
+            html="<p>This is a test message from Verity. Your SMTP settings work.</p>",
         )
         return await send_with(creds, message)
 

@@ -60,7 +60,7 @@ export function AcceptInvitePage() {
       navigate("/sign-in", {
         replace: true,
         state: {
-          notice: `Invitation accepted — sign in to ${result.tenant_name} with your email${
+          notice: `Invitation accepted. Sign in to ${result.tenant_name} with your email${
             existingAccount ? "" : " and new password"
           }.`,
         },
@@ -75,7 +75,7 @@ export function AcceptInvitePage() {
     return (
       <AuthSplitLayout
         title="You're in"
-        subtitle={`You've joined ${joined}. It's now in your workspace switcher — top left — so you can jump between organisations.`}
+        subtitle={`You've joined ${joined}. It's now in your workspace switcher, top left, so you can jump between organisations.`}
       >
         <Button
           className="w-full"
@@ -127,7 +127,7 @@ export function AcceptInvitePage() {
           <ErrorBanner ref={alertRef} title="Couldn't accept the invitation">
             {messageFrom(
               acceptMutation.error,
-              "The invite may be expired or already used — ask a workspace admin to send a new one.",
+              "The invite may be expired or already used. Ask a workspace admin to send a new one.",
             )}
           </ErrorBanner>
         ) : null}
@@ -144,7 +144,7 @@ export function AcceptInvitePage() {
         {asExistingUser ? (
           <p className="text-body-sm text-text-secondary">
             {isAuthenticated
-              ? "You're signed in — accepting attaches this workspace to your account."
+              ? "You're signed in. Accepting attaches this workspace to your account."
               : "We'll attach this workspace to your existing account. Sign in with your usual email and password afterwards."}
           </p>
         ) : (

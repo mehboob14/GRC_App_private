@@ -26,7 +26,7 @@ import type { LoginResponse, WorkspaceSummary } from "@/lib/api/types";
 const schema = z.object({
   email: z
     .string()
-    .email("Enter a work email — personal domains aren't allowed."),
+    .email("Enter a work email. Personal domains aren't allowed."),
   password: z.string().min(1, "Enter your password."),
 });
 
@@ -199,7 +199,7 @@ export function SignInPage() {
           >
             {messageFrom(
               selectMutation.error,
-              "The selection didn't reach the server — check your connection and try again.",
+              "The selection didn't reach the server. Check your connection and try again.",
             )}
           </ErrorBanner>
         ) : null}
@@ -237,8 +237,8 @@ export function SignInPage() {
             {messageFrom(
               verifyMutation.error,
               recoveryMode
-                ? "That recovery code didn't match, or it's already been used — try another."
-                : "That code didn't match — check your authenticator app and try again.",
+                ? "That recovery code didn't match, or it's already been used. Try another."
+                : "That code didn't match. Check your authenticator app and try again.",
             )}
           </ErrorBanner>
         ) : null}
@@ -382,7 +382,7 @@ export function SignInPage() {
           <ErrorBanner ref={loginAlertRef} title="Sign-in failed">
             {messageFrom(
               loginMutation.error,
-              "The request didn't reach the server — check your connection and try again.",
+              "The request didn't reach the server. Check your connection and try again.",
             )}
           </ErrorBanner>
         ) : null}

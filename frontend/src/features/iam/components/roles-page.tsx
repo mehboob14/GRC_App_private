@@ -117,7 +117,7 @@ export function RolesPage() {
       setError(
         err instanceof ApiError
           ? err.message
-          : "The role didn't reach the server — check your connection and try again.",
+          : "The role didn't reach the server. Check your connection and try again.",
       );
     },
   });
@@ -149,7 +149,7 @@ export function RolesPage() {
       setAssignError(
         err instanceof ApiError
           ? err.message
-          : "The assignment didn't reach the server — try again.",
+          : "The assignment didn't reach the server. Try again.",
       );
     },
   });
@@ -167,7 +167,7 @@ export function RolesPage() {
         title:
           err instanceof ApiError
             ? err.message
-            : "Couldn't delete the role — try again.",
+            : "Couldn't delete the role. Try again.",
         tone: "danger",
       });
     },
@@ -218,7 +218,7 @@ export function RolesPage() {
         <EmptyState
           icon="shield"
           title="No roles to show"
-          description="Built-in roles should always exist — retry, or contact support if this persists."
+          description="Built-in roles should always exist. Retry, or contact support if this persists."
         />
       ) : (
         <Table density="standard">

@@ -229,7 +229,7 @@ export function TeamPage() {
       setInviteError(
         error instanceof ApiError
           ? error.message
-          : "The invite didn't reach the server — check your connection and try again.",
+          : "The invite didn't reach the server. Check your connection and try again.",
       );
     },
   });
@@ -294,7 +294,7 @@ export function TeamPage() {
         title:
           error instanceof ApiError
             ? error.message
-            : "Couldn't disable the membership — try again.",
+            : "Couldn't disable the membership. Try again.",
         tone: "danger",
       });
     },
@@ -348,7 +348,7 @@ export function TeamPage() {
         title:
           error instanceof ApiError
             ? error.message
-            : "Couldn't update the role — try again.",
+            : "Couldn't update the role. Try again.",
         tone: "danger",
       });
     },
@@ -376,7 +376,7 @@ export function TeamPage() {
         title:
           error instanceof ApiError
             ? error.message
-            : "Couldn't add to the group — try again.",
+            : "Couldn't add to the group. Try again.",
         tone: "danger",
       });
     },
@@ -492,7 +492,7 @@ export function TeamPage() {
                           className="mt-2 text-body-sm text-status-danger-text"
                           role="alert"
                         >
-                          Copy failed — select the link text and copy it
+                          Copy failed. Select the link text and copy it
                           manually.
                         </p>
                       ) : null}
@@ -963,7 +963,7 @@ export function TeamPage() {
           {availableGroups.length === 0 ? (
             <p className="text-body-sm text-text-subtle">
               {groups.length === 0
-                ? "No groups yet — create one in Settings → Groups first."
+                ? "No groups yet. Create one in Settings → Groups first."
                 : `${groupAdd?.full_name ?? "This member"} is already in every group.`}
             </p>
           ) : (

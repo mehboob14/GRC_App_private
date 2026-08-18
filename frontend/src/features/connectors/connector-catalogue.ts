@@ -118,7 +118,7 @@ export const CONNECTORS: Connector[] = [
       "RBAC roles, cluster roles and bindings",
       "Namespace and pod security standards",
       "Audit policy configuration",
-      "Secret inventory — names only, never values",
+      "Secret inventory · names only, never values",
     ],
   },
   {
@@ -243,7 +243,7 @@ export const CONNECTORS: Connector[] = [
       "Workspace members and repository permissions",
       "Branch restrictions and merge checks",
       "Pull request approval history",
-      "Repository access keys — names only",
+      "Repository access keys · names only",
     ],
   },
   {
@@ -254,7 +254,7 @@ export const CONNECTORS: Connector[] = [
       "Project and context access",
       "Pipeline and workflow run history",
       "Manual approval job records",
-      "Environment variable inventory — names only",
+      "Environment variable inventory · names only",
     ],
   },
   {
@@ -265,7 +265,7 @@ export const CONNECTORS: Connector[] = [
       "User accounts and matrix permissions",
       "Job configuration and build history",
       "Installed plugin inventory and versions",
-      "Credential store inventory — names only",
+      "Credential store inventory · names only",
     ],
   },
 

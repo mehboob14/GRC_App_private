@@ -499,7 +499,7 @@ export const handlers = [
       return err(
         422,
         "invalid_access_window",
-        "Access must end after it starts — check the window dates.",
+        "Access must end after it starts. Check the window dates.",
       );
     }
 

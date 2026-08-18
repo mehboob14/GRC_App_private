@@ -1,19 +1,22 @@
 import { Icon, Tooltip, type IconName } from "@/components/ui";
 import { useTheme, type ThemeMode } from "@/lib/theme";
 
-const CYCLE: readonly ThemeMode[] = ["light", "system", "dark"];
-
 const MODE_META: Record<ThemeMode, { icon: IconName; label: string }> = {
   light: { icon: "sun", label: "Light" },
-  system: { icon: "monitor", label: "System" },
   dark: { icon: "moon", label: "Dark" },
 };
 
-/** Sidebar-footer control cycling light → system → dark (DS icon-only 28). */
+/**
+ * Sidebar-footer control toggling light and dark (DS icon-only 28).
+ *
+ * "System" used to sit between the two, and an unset preference resolved to it,
+ * so anyone whose laptop was in dark mode got a dark app without asking for one.
+ * Light is the product default now and this is a straight two-way switch.
+ */
 export function ThemeToggle() {
   const { mode, setMode } = useTheme();
-  const next = CYCLE[(CYCLE.indexOf(mode) + 1) % CYCLE.length] ?? "system";
-  const label = `Theme: ${MODE_META[mode].label.toLowerCase()} — switch to ${MODE_META[next].label.toLowerCase()}`;
+  const next: ThemeMode = mode === "dark" ? "light" : "dark";
+  const label = `Switch to ${MODE_META[next].label.toLowerCase()} mode`;
 
   return (
     <Tooltip content={label} side="top">

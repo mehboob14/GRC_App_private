@@ -59,7 +59,7 @@ export function MfaEnrollPage() {
     return (
       <AuthSplitLayout
         title="Save your recovery codes"
-        subtitle="Each code works once, if you lose your authenticator. This is the only time they're shown — store them somewhere safe."
+        subtitle="Each code works once, if you lose your authenticator. This is the only time they're shown. Store them somewhere safe."
       >
         <RecoveryCodesPanel
           codes={saved.recovery_codes}
@@ -98,7 +98,7 @@ export function MfaEnrollPage() {
         >
           {messageFrom(
             enrollQuery.error,
-            "The challenge may have expired — sign in again to get a fresh one.",
+            "The challenge may have expired. Sign in again to get a fresh one.",
           )}{" "}
           <Link className="font-semibold text-text-link" to="/sign-in">
             Back to sign in
@@ -152,7 +152,7 @@ export function MfaEnrollPage() {
         >
           {messageFrom(
             confirmMutation.error,
-            "That code didn't match — check your authenticator app and try again.",
+            "That code didn't match. Check your authenticator app and try again.",
           )}
         </ErrorBanner>
       ) : null}

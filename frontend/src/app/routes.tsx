@@ -184,7 +184,7 @@ export function AppRoutes() {
               <ComingSoonPage
                 notFound
                 title="Page not found"
-                description="That route is not part of the current shell — check the address, or head back to the dashboard."
+                description="That route is not part of the current shell. Check the address, or head back to the dashboard."
               />
             }
           />

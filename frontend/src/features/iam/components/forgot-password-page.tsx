@@ -85,7 +85,7 @@ export function ForgotPasswordPage() {
           <ErrorBanner ref={alertRef} title="Couldn’t send the reset link">
             {mutation.error instanceof ApiError
               ? mutation.error.message
-              : "The request didn’t reach the server — check your connection and try again."}
+              : "The request didn’t reach the server. Check your connection and try again."}
           </ErrorBanner>
         ) : null}
         <TextField

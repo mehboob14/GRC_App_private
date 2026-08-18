@@ -152,7 +152,7 @@ export function CompanyProfilePage() {
         {!canManage ? (
           <div className="mb-5 flex items-center gap-2 rounded-md border border-border bg-surface-sunken px-3.5 py-2.5 text-body-sm text-text-secondary">
             <Icon name="shield" className="size-4 shrink-0 text-text-subtle" />
-            You have view-only access — ask an Admin to edit the company profile.
+            You have view-only access. Ask an Admin to edit the company profile.
           </div>
         ) : null}
 
@@ -160,7 +160,7 @@ export function CompanyProfilePage() {
           <ErrorBanner ref={alertRef} className="mb-5" title="Couldn’t save">
             {mutation.error instanceof ApiError
               ? mutation.error.message
-              : "The request didn’t reach the server — check your connection and try again."}
+              : "The request didn’t reach the server. Check your connection and try again."}
           </ErrorBanner>
         ) : null}
 

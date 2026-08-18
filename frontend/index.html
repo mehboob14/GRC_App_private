@@ -6,18 +6,19 @@
     <link rel="icon" type="image/png" href="/brand/app-mark.png" />
     <title>Verity</title>
     <script>
-      // Apply the stored theme before first paint so dark mode never
-      // flashes light. Must match lib/theme.tsx (key: verity.theme).
+      // Apply the stored theme before first paint, so someone who chose dark
+      // does not get a flash of light. Must match lib/theme.tsx (key:
+      // verity.theme).
+      //
+      // Light is the product default and the operating system is deliberately
+      // not consulted. Dark applies only when a person has explicitly asked
+      // for it; anything else, including no stored value at all, is light.
       (function () {
         try {
-          var mode = window.localStorage.getItem("verity.theme");
-          var dark =
-            mode === "dark" ||
-            (mode !== "light" &&
-              window.matchMedia("(prefers-color-scheme: dark)").matches);
+          var dark = window.localStorage.getItem("verity.theme") === "dark";
           document.documentElement.classList.toggle("dark", dark);
         } catch (e) {
-          /* default to light */
+          /* storage unavailable: light, same as every other fallback */
         }
       })();
     </script>

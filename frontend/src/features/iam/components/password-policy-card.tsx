@@ -63,7 +63,7 @@ function draftOf(settings: SecuritySettings): Draft {
 /** Marks a field the platform stores but does not yet apply. */
 function NotEnforced() {
   return (
-    <Tooltip content="Saved, but not applied yet — this control arrives in a later phase">
+    <Tooltip content="Saved, but not applied yet. This control arrives in a later phase">
       <span tabIndex={0} className="rounded-2xs">
         <Badge variant="neutral">Not enforced yet</Badge>
       </span>
@@ -219,7 +219,7 @@ export function PasswordPolicyCard() {
       <Section
         icon="shield"
         title="Password complexity"
-        description="Applies to every account created in this workspace — members, invited guests and auditors."
+        description="Applies to every account created in this workspace, including members, invited guests and auditors."
         action={
           dirty ? (
             <div className="flex shrink-0 items-center gap-2">
