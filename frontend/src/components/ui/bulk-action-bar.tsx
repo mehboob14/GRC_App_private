@@ -36,17 +36,22 @@ export function BulkActionBar({
       role="toolbar"
       aria-label={`Bulk actions for ${count} selected ${noun}`}
       className={cn(
+        // One row, always. Wrapping turned the bar into a two-line block that
+        // read as a broken panel; if the actions genuinely outgrow the viewport
+        // the strip scrolls sideways instead of stacking.
         "fixed bottom-6 left-1/2 z-bulk-bar -translate-x-1/2",
-        "flex max-w-[calc(100vw-2rem)] flex-wrap items-center gap-1.5",
-        "animate-toast-in rounded-lg border border-border bg-surface-primary px-2.5 py-2 shadow-3",
+        "flex max-w-[calc(100vw-2rem)] flex-nowrap items-center gap-1 overflow-x-auto",
+        "animate-toast-in rounded-lg border border-border bg-surface-primary p-1.5 shadow-3",
+        "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
         className,
       )}
     >
-      <span className="inline-flex shrink-0 items-center gap-2 rounded-md bg-action-accent-tint px-2.5 py-1">
+      <span className="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-action-accent-tint px-2.5 py-1.5">
         <Icon name="check" className="size-3.5 text-action-accent" strokeWidth={3} />
-        <span className="tabular text-label-sm font-bold text-action-accent">
-          {count} {noun} selected
+        <span className="tabular whitespace-nowrap text-label-sm font-bold text-action-accent">
+          {count} selected
         </span>
+        <span className="sr-only">{noun}</span>
       </span>
 
       <span className="mx-0.5 h-5 w-px shrink-0 bg-border" aria-hidden />

@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import type { ReactNode } from "react";
-import { Icon } from "@/components/ui";
+import { BrandMark, Icon } from "@/components/ui";
 import { FrameworkLogo } from "@/features/iam/components/framework-logo";
 
 // The continuous GRC loop, shown as a flow (security-first framing): assess
@@ -10,18 +10,14 @@ const LIFECYCLE = ["Assess", "Remediate", "Monitor", "Attest"];
 // Full framework catalogue for the bottom marquee. Text chips (no third-party
 // brand marks) — a shield glyph stands in for each logo.
 const FRAMEWORKS: { label: string; blurb: string }[] = [
-  { label: "SOC 2", blurb: "Trust services" },
   { label: "ISO 27001", blurb: "Information security" },
+  { label: "SOC 2", blurb: "Trust services" },
   { label: "GDPR", blurb: "Data protection" },
-  { label: "NIST CSF", blurb: "Cyber framework" },
-  { label: "PCI-DSS", blurb: "Payment security" },
   { label: "HIPAA", blurb: "Health data" },
-  { label: "ISO 22301", blurb: "Business continuity" },
-  { label: "ISO 27701", blurb: "Privacy management" },
-  { label: "DORA", blurb: "Operational resilience" },
   { label: "NIS2", blurb: "EU cyber directive" },
   { label: "CIS Controls", blurb: "Security baselines" },
-  { label: "SOX", blurb: "Financial reporting" },
+  { label: "PCI DSS", blurb: "Payment security" },
+  { label: "NIST CSF", blurb: "Cyber framework" },
 ];
 
 const MARQUEE_MASK =
@@ -30,9 +26,7 @@ const MARQUEE_MASK =
 function Wordmark() {
   return (
     <Link to="/sign-in" className="inline-flex items-center gap-2.5">
-      <span className="flex size-9 items-center justify-center rounded-md bg-action-primary text-action-primary-fg">
-        <Icon name="check" className="size-5" />
-      </span>
+      <BrandMark size={36} />
       <span className="font-display text-heading-sm text-text-primary">
         Verity
       </span>

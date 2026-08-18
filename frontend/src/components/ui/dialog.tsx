@@ -22,12 +22,20 @@ type DialogContentProps = ComponentPropsWithoutRef<
   typeof DialogPrimitive.Content
 > & {
   size?: keyof typeof widths;
+  /**
+   * Scroll a `<DialogBody>` instead of the whole dialog, which keeps the header
+   * and footer in place — the Drawer arrangement. Opt-in: without it the dialog
+   * scrolls as one block, which is right for short content and is what every
+   * dialog written before this did.
+   */
+  scrollBody?: boolean;
 };
 
 export function DialogContent({
   className,
   children,
   size = "sm",
+  scrollBody = false,
   ...props
 }: DialogContentProps) {
   return (
@@ -41,7 +49,8 @@ export function DialogContent({
       <DialogPrimitive.Content
         className={cn(
           "fixed left-1/2 top-1/2 z-modal -translate-x-1/2 -translate-y-1/2",
-          "max-h-[70vh] overflow-y-auto rounded-xl border border-border bg-surface-primary p-6 shadow-4",
+          "max-h-[70vh] rounded-xl border border-border bg-surface-primary p-6 shadow-4",
+          scrollBody ? "flex flex-col overflow-hidden" : "overflow-y-auto",
           "focus:outline-none",
           "data-[state=open]:animate-modal-in data-[state=closed]:animate-modal-out",
           widths[size],
@@ -70,7 +79,10 @@ export function DialogHeader({
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={cn("mb-4 flex flex-col gap-1 pr-8", className)} {...props} />
+    <div
+      className={cn("mb-4 flex flex-col gap-1 pr-8", className)}
+      {...props}
+    />
   );
 }
 
@@ -80,7 +92,10 @@ export function DialogTitle({
 }: ComponentPropsWithoutRef<typeof DialogPrimitive.Title>) {
   return (
     <DialogPrimitive.Title
-      className={cn("font-display text-heading-md text-text-primary", className)}
+      className={cn(
+        "font-display text-heading-md text-text-primary",
+        className,
+      )}
       {...props}
     />
   );
@@ -106,7 +121,29 @@ export function DialogFooter({
   children: ReactNode;
 }) {
   return (
-    <div className={cn("mt-6 flex justify-end gap-2", className)}>
+    <div className={cn("mt-6 flex shrink-0 justify-end gap-2", className)}>
+      {children}
+    </div>
+  );
+}
+
+/**
+ * The scrolling middle of a `scrollBody` dialog. Put the fields in here and the
+ * confirm button stays reachable however tall the form gets.
+ *
+ * The negative margins bleed the scroll area through the content's `p-6` so the
+ * scrollbar rides the dialog edge rather than floating inside the padding, and
+ * the padding is re-applied inside.
+ */
+export function DialogBody({
+  className,
+  children,
+}: {
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className={cn("-mx-6 min-h-0 flex-1 overflow-y-auto px-6", className)}>
       {children}
     </div>
   );

@@ -35,8 +35,21 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
     to: "/settings/security/mfa",
     tabs: [
       { label: "MFA", to: "/settings/security/mfa" },
+      { label: "Password policy", to: "/settings/security/password" },
       { label: "Authentication", to: "/settings/security/authentication", soon: true },
       { label: "SSO", to: "/settings/security/sso", soon: true },
+      // Remediation SLAs are meaningless until there are findings to age —
+      // they land with the vulnerability module.
+      {
+        label: "Remediation SLAs",
+        to: "/settings/security/remediation-slas",
+        soon: true,
+      },
+      {
+        label: "CIS benchmark hardening",
+        to: "/settings/security/cis-benchmarks",
+        soon: true,
+      },
     ],
   },
   {
@@ -47,6 +60,15 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
     tabs: [
       { label: "Org info", to: "/settings/organization/profile" },
       { label: "Key personnel", to: "/settings/organization/key-personnel", soon: true },
+    ],
+  },
+  {
+    id: "workflow",
+    label: "Workflow",
+    icon: "activity",
+    to: "/settings/workflow",
+    tabs: [
+      { label: "Workflow configurer", to: "/settings/workflow/configurer", soon: true },
     ],
   },
   {

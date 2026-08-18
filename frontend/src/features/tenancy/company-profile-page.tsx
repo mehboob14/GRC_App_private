@@ -71,7 +71,7 @@ function toForm(profile: CompanyProfile): FormValues {
 }
 
 export function CompanyProfilePage() {
-  const { principal } = useAuth();
+  const { principal, refreshPrincipal } = useAuth();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const canManage = principal?.permissions.includes("tenant:manage");
@@ -94,6 +94,10 @@ export function CompanyProfilePage() {
         updated,
       );
       form.reset(toForm(updated));
+      // The topbar reads the workspace name off the cached principal, which the
+      // session token does not carry — without this it keeps the old name until
+      // the next sign-in.
+      void refreshPrincipal();
       toast({ title: "Company profile saved", tone: "success" });
     },
   });

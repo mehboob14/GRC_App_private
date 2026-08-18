@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Button, Card, Icon, StatusPill, statusFamilyFor } from "@/components/ui";
 import { cn } from "@/lib/cn";
+import { FrameworkLogo } from "@/features/iam/components/framework-logo";
 import { Donut } from "./donut";
 
 const ring = (pct: number, color: string) => [
@@ -23,9 +24,9 @@ const TOKEN = {
 
 // ── Data ─────────────────────────────────────────────────────────────────
 const FRAMEWORKS = [
-  { abbr: "SOC", name: "SOC 2 Type II", phase: "Type II window", status: "On track", pct: 91, pass: 124, fail: 3, review: 4, color: TOKEN.green },
-  { abbr: "ISO", name: "ISO 27001", phase: "Stage 2 · Nov", status: "At risk", pct: 78, pass: 74, fail: 6, review: 7, color: TOKEN.amber },
-  { abbr: "HIP", name: "HIPAA Security", phase: "Readiness Q1", status: "Behind", pct: 64, pass: 59, fail: 9, review: 11, color: TOKEN.red },
+  { name: "SOC 2 Type II", phase: "Type II window", status: "On track", pct: 91, pass: 124, fail: 3, review: 4, color: TOKEN.green },
+  { name: "ISO 27001", phase: "Stage 2 · Nov", status: "At risk", pct: 78, pass: 74, fail: 6, review: 7, color: TOKEN.amber },
+  { name: "HIPAA Security", phase: "Readiness Q1", status: "Behind", pct: 64, pass: 59, fail: 9, review: 11, color: TOKEN.red },
 ];
 
 // have = passing; the remainder splits into needs-review then failing.
@@ -89,14 +90,28 @@ export function AdminDashboard() {
 
   return (
     <div className="mx-auto max-w-[1200px]">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="font-display text-heading-lg text-text-primary">Compliance posture</h1>
-          <p className="mt-2 text-body-lg text-text-secondary">
-            Northwind Cloud · reporting period Q3 2026 · prepared for the board &amp; leadership
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="font-display text-heading-lg text-text-primary">Compliance posture</h1>
+        <div className="flex flex-wrap items-center gap-3">
+          {/* The range switch governs the whole page, so it sits with the page
+              title rather than over one section of it. */}
+          <div className="flex shrink-0 rounded-md border border-border p-0.5">
+            {(["Live", "Weekly"] as const).map((r) => (
+              <button
+                key={r}
+                type="button"
+                onClick={() => setRange(r)}
+                className={cn(
+                  "rounded-sm px-3 py-1 text-label-sm transition-colors duration-80 ease-state",
+                  range === r
+                    ? "bg-action-accent-tint text-action-accent"
+                    : "text-text-secondary hover:text-text-primary",
+                )}
+              >
+                {r}
+              </button>
+            ))}
+          </div>
           <div className="flex items-center gap-2 rounded-md border border-status-success-border bg-status-success-bg px-3 py-1.5">
             <span className="text-body-sm text-text-subtle">Overall trust score</span>
             <span className="font-display text-title-sm font-bold text-status-success-text">A · Strong</span>
@@ -108,13 +123,76 @@ export function AdminDashboard() {
         </div>
       </div>
 
+      {/* SOC 2 readiness — the headline number, so it leads the page. Full
+          width: it is the only tile with a hero donut and a stat strip, and
+          boxing it into two of three columns left it visually unbalanced. */}
+      <Card
+        className="mt-5 p-5"
+        style={{
+          background:
+            "linear-gradient(135deg, rgb(var(--color-action-accent) / 0.14), rgb(var(--color-action-accent) / 0.04))",
+          borderColor: "rgb(var(--color-action-accent) / 0.18)",
+        }}
+      >
+        <div className="flex items-center justify-between">
+          <p className="text-overline font-bold uppercase text-action-accent">
+            SOC 2 Type II readiness
+          </p>
+          <span className="inline-flex items-center gap-0.5 rounded-full bg-surface-primary px-2.5 py-1 text-caption font-bold text-status-success-text shadow-sm">
+            <Icon name="arrowup" className="size-3.5" />
+            +4%
+          </span>
+        </div>
+        <div className="mt-3 flex flex-wrap items-center gap-6">
+          <Donut size={132} stroke={14} segments={ring(91, TOKEN.blue)}>
+            <span className="font-display text-numeral-lg tabular text-text-primary">91%</span>
+            <span className="mt-1 text-caption text-action-accent">124 / 136 controls</span>
+          </Donut>
+          <div className="min-w-[240px] flex-1">
+            <p className="font-display text-title-md text-text-primary">Audit-ready</p>
+            <p className="mt-1 text-body-sm text-text-secondary">
+              On track for the Sep 15 window. 2 critical exceptions in remediation.
+            </p>
+            <div className="mt-3 flex flex-wrap gap-6">
+              <MiniStat value="3" label="Failing" tone="text-status-danger-text" />
+              <MiniStat value="6" label="Review" tone="text-status-warning-text" />
+              <MiniStat value="55d" label="To audit" />
+            </div>
+          </div>
+        </div>
+        <div className="mt-4 grid grid-cols-2 gap-2 border-t border-action-accent/15 pt-4 sm:grid-cols-4">
+          {(
+            [
+              ["Controls", "124", "shield", "text-action-accent"],
+              ["Evidence", "842", "doc", "text-action-accent"],
+              ["Risks", "12", "risk", "text-status-warning-text"],
+              ["Vulns", "64", "sun", "text-status-danger-text"],
+            ] as const
+          ).map(([label, value, icon, tone]) => (
+            <div
+              key={label}
+              className="rounded-lg border border-border bg-surface-primary px-3 py-2.5"
+            >
+              <p className="flex items-center gap-1.5 text-caption text-text-secondary">
+                <Icon name={icon} className={cn("size-4", tone)} />
+                {label}
+              </p>
+              <p className="mt-1 font-display text-numeral-md tabular text-text-primary">{value}</p>
+            </div>
+          ))}
+        </div>
+      </Card>
+
       {/* Framework compliance cards — donut rings */}
       <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-3">
         {FRAMEWORKS.map((fw) => (
-          <Card key={fw.abbr} className="p-4">
+          <Card key={fw.name} className="p-4">
             <div className="flex items-center gap-2.5">
-              <span className="flex size-9 items-center justify-center rounded-md bg-action-accent-tint font-display text-caption font-bold text-action-accent">
-                {fw.abbr}
+              {/* The framework's own mark, in the same contained treatment as
+                  the sign-in marquee and the controls table — one presentation
+                  of a framework across the product. */}
+              <span className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface-primary ring-1 ring-border">
+                <FrameworkLogo name={fw.name} size={24} eager />
               </span>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-body-md font-semibold text-text-primary">{fw.name}</p>
@@ -181,90 +259,13 @@ export function AdminDashboard() {
         </div>
       </Card>
 
-      {/* Bento posture grid */}
-      <div className="mb-4 mt-8 flex items-center justify-between">
-        <div>
-          <p className="type-overline text-action-accent">Posture at a glance</p>
-          <h2 className="font-display text-heading-sm text-text-primary">Everything, one screen</h2>
-        </div>
-        <div className="flex rounded-md border border-border p-0.5">
-          {(["Live", "Weekly"] as const).map((r) => (
-            <button
-              key={r}
-              type="button"
-              onClick={() => setRange(r)}
-              className={cn(
-                "rounded-sm px-3 py-1 text-label-sm transition-colors duration-80 ease-state",
-                range === r ? "bg-action-accent-tint text-action-accent" : "text-text-secondary hover:text-text-primary",
-              )}
-            >
-              {r}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {/* SOC readiness hero — spans 2, blue wash */}
-        <Card
-          className="p-5 sm:col-span-2"
-          style={{
-            background:
-              "linear-gradient(135deg, rgb(var(--color-action-accent) / 0.14), rgb(var(--color-action-accent) / 0.04))",
-            borderColor: "rgb(var(--color-action-accent) / 0.18)",
-          }}
-        >
-          <div className="flex items-center justify-between">
-            <p className="text-overline font-bold uppercase text-action-accent">SOC 2 Type II readiness</p>
-            <span className="inline-flex items-center gap-0.5 rounded-full bg-surface-primary px-2.5 py-1 text-caption font-bold text-status-success-text shadow-sm">
-              <Icon name="arrowup" className="size-3.5" />
-              +4%
-            </span>
-          </div>
-          <div className="mt-3 flex items-center gap-6">
-            <Donut size={132} stroke={14} segments={ring(91, TOKEN.blue)}>
-              <span className="font-display text-numeral-lg tabular text-text-primary">91%</span>
-              <span className="mt-1 text-caption text-action-accent">124 / 136 controls</span>
-            </Donut>
-            <div className="min-w-0 flex-1">
-              <p className="font-display text-title-md text-text-primary">Audit-ready</p>
-              <p className="mt-1 text-body-sm text-text-secondary">
-                On track for the Sep 15 window. 2 critical exceptions in remediation.
-              </p>
-              <div className="mt-3 flex gap-6">
-                <MiniStat value="3" label="Failing" tone="text-status-danger-text" />
-                <MiniStat value="6" label="Review" tone="text-status-warning-text" />
-                <MiniStat value="55d" label="To audit" />
-              </div>
-            </div>
-          </div>
-          <div className="mt-4 grid grid-cols-4 gap-2 border-t border-action-accent/15 pt-4">
-            {(
-              [
-                ["Controls", "124", "shield", "text-action-accent"],
-                ["Evidence", "842", "doc", "text-action-accent"],
-                ["Risks", "12", "risk", "text-status-warning-text"],
-                ["Vulns", "64", "sun", "text-status-danger-text"],
-              ] as const
-            ).map(([label, value, icon, tone]) => (
-              <div
-                key={label}
-                className="rounded-lg border border-border bg-surface-primary px-3 py-2.5"
-              >
-                <p className="flex items-center gap-1.5 text-caption text-text-secondary">
-                  <Icon name={icon} className={cn("size-4", tone)} />
-                  {label}
-                </p>
-                <p className="mt-1 font-display text-numeral-md tabular text-text-primary">{value}</p>
-              </div>
-            ))}
-          </div>
-        </Card>
-
+      {/* Supporting tiles. Every card spans one column so the grid closes into
+          even rows — the old layout left a hole beside the last tile. */}
+      <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {/* Vulnerabilities — multi-segment donut */}
         <Card className="p-5">
           <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-title-sm font-semibold text-text-primary">Vulnerabilities</h3>
+            <h3 className="font-display text-title-sm text-text-primary">Vulnerabilities</h3>
             <Icon name="bug" className="size-4 text-status-danger-text" />
           </div>
           <div className="flex items-center gap-4">
@@ -289,7 +290,7 @@ export function AdminDashboard() {
         {/* Evidence — green donut */}
         <Card className="p-5">
           <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-title-sm font-semibold text-text-primary">Evidence</h3>
+            <h3 className="font-display text-title-sm text-text-primary">Evidence</h3>
             <Icon name="doc" className="size-4 text-text-secondary" />
           </div>
           <div className="flex items-center gap-4">
@@ -307,7 +308,7 @@ export function AdminDashboard() {
 
         {/* Risk register — heatmap */}
         <Card className="p-5">
-          <h3 className="mb-3 flex items-center gap-2 text-title-sm font-semibold text-text-primary">
+          <h3 className="mb-3 flex items-center gap-2 font-display text-title-sm text-text-primary">
             <Icon name="risk" className="size-4 text-text-secondary" />
             Risk register
           </h3>
@@ -342,7 +343,7 @@ export function AdminDashboard() {
 
         {/* Assets — coloured category bars */}
         <Card className="p-5">
-          <h3 className="mb-1 flex items-center gap-2 text-title-sm font-semibold text-text-primary">
+          <h3 className="mb-1 flex items-center gap-2 font-display text-title-sm text-text-primary">
             <Icon name="box" className="size-4 text-text-secondary" />
             Assets
           </h3>
@@ -363,10 +364,10 @@ export function AdminDashboard() {
           </div>
         </Card>
 
-        {/* Top risks — spans 2 */}
-        <Card className="p-5 sm:col-span-2">
+        {/* Top risks — one column like the rest, so the row closes evenly. */}
+        <Card className="p-5">
           <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-title-sm font-semibold text-text-primary">Top risks</h3>
+            <h3 className="font-display text-title-sm text-text-primary">Top risks</h3>
             <Button variant="link" size="sm">
               All
               <Icon name="arrowr" className="size-4" />
@@ -374,12 +375,19 @@ export function AdminDashboard() {
           </div>
           <ul className="divide-y divide-border">
             {TOP_RISKS.map((risk) => (
-              <li key={risk.title} className="flex items-center gap-3 py-2.5">
-                <span className={cn("flex size-9 shrink-0 items-center justify-center rounded-md font-display text-title-sm font-bold", riskScoreTone(risk.score))}>
+              <li key={risk.title} className="flex items-center gap-2.5 py-2">
+                <span
+                  className={cn(
+                    "flex size-8 shrink-0 items-center justify-center rounded-md font-display text-body-md font-bold",
+                    riskScoreTone(risk.score),
+                  )}
+                >
                   {risk.score}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-body-md font-medium text-text-primary">{risk.title}</p>
+                  <p className="truncate text-body-sm font-medium text-text-primary">
+                    {risk.title}
+                  </p>
                   <p className="text-caption text-text-subtle">{risk.ref}</p>
                 </div>
               </li>
@@ -390,7 +398,7 @@ export function AdminDashboard() {
         {/* Policies */}
         <Card className="p-5">
           <div className="flex items-center justify-between">
-            <h3 className="flex items-center gap-2 text-title-sm font-semibold text-text-primary">
+            <h3 className="flex items-center gap-2 font-display text-title-sm text-text-primary">
               <Icon name="book" className="size-4 text-text-secondary" />
               Policies
             </h3>

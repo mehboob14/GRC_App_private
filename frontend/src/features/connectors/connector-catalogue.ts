@@ -24,6 +24,17 @@ export const CONNECTOR_CATEGORIES = [
 ] as const;
 
 export type ConnectorCategory = (typeof CONNECTOR_CATEGORIES)[number];
+
+/**
+ * Deep link to the catalogue pre-filtered to identity providers. It lives here
+ * so the category literal is never retyped at a call site: the page matches the
+ * label exactly, and a near-miss (the control library's own "Identity & Access
+ * Management") would silently match nothing.
+ */
+export const IDENTITY_CONNECTORS_PATH = `/connectors?category=${encodeURIComponent(
+  "Identity" satisfies ConnectorCategory,
+)}`;
+
 export type Connector = {
   id: string;
   name: string;

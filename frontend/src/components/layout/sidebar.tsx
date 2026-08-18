@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { Avatar, Badge, Icon, Tooltip } from "@/components/ui";
+import { Avatar, Badge, BrandMark, Icon, Tooltip } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { useAuth } from "@/lib/auth/auth-context";
 import {
@@ -23,14 +23,11 @@ function NavRow({ item, active }: { item: NavItem; active?: boolean }) {
           aria-disabled
           className={cn(NAV_ROW, "cursor-not-allowed")}
         >
-          <Icon
-            name={item.icon}
-            className="size-4 text-text-secondary opacity-60"
-          />
-          <span className="min-w-0 flex-1 truncate text-label-sm text-text-secondary opacity-70">
+          <Icon name={item.icon} className="size-4 text-text-subtle" />
+          <span className="min-w-0 flex-1 truncate text-label-sm text-text-subtle">
             {item.label}
           </span>
-          <span className="font-sans text-overline uppercase text-text-subtle">
+          <span className="shrink-0 rounded-full border border-border px-1.5 py-px font-sans text-overline uppercase text-text-subtle">
             Soon
           </span>
         </button>
@@ -42,16 +39,22 @@ function NavRow({ item, active }: { item: NavItem; active?: boolean }) {
     <NavLink
       to={item.to}
       aria-current={active ? "page" : undefined}
-      className={cn(NAV_ROW, active ? "bg-action-accent-tint" : "hover:bg-surface-hover")}
+      className={cn(
+        NAV_ROW,
+        active ? "bg-action-accent-tint" : "hover:bg-surface-hover",
+      )}
     >
       <Icon
         name={item.icon}
-        className={cn("size-4", active ? "text-action-accent" : "text-text-secondary")}
+        className={cn(
+          "size-4",
+          active ? "text-action-primary" : "text-text-secondary",
+        )}
       />
       <span
         className={cn(
           "min-w-0 flex-1 truncate text-label-sm",
-          active ? "text-action-accent" : "text-text-secondary",
+          active ? "font-semibold text-action-primary" : "text-text-primary",
         )}
       >
         {item.label}
@@ -76,14 +79,9 @@ export function Sidebar() {
       aria-label="Primary"
     >
       <div className="mb-4 flex items-center gap-2.5 px-2 pt-1">
-        <div className="flex size-8 items-center justify-center rounded-md bg-action-primary text-action-primary-fg">
-          <Icon name="check" className="size-[18px]" aria-hidden />
-        </div>
+        <BrandMark size={32} />
         <span className="font-display text-heading-sm text-text-primary">
           Verity
-        </span>
-        <span className="ml-auto rounded-xs border border-border px-1.5 py-0.5 font-sans text-overline uppercase text-text-subtle">
-          GRC
         </span>
       </div>
 
@@ -91,7 +89,14 @@ export function Sidebar() {
         {NAV_SECTIONS.map((section) => (
           <div key={section.id} className="mb-1">
             <div className="px-2.5 pb-1.5 pt-3">
-              <p className="type-overline">{section.label}</p>
+              {/* Spelled out rather than `type-overline`: that helper lives in
+                  the same @layer utilities and is emitted after Tailwind's
+                  generated classes, so `text-text-subtle` alongside it loses on
+                  source order and the heading stays text-faint — 2.58:1 at
+                  10px, well under AA. */}
+              <p className="font-sans text-overline uppercase text-text-subtle">
+                {section.label}
+              </p>
             </div>
             <div className="flex flex-col gap-0.5">
               {section.items.map((item) => (

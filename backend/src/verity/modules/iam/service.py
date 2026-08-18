@@ -49,7 +49,13 @@ from verity.core.deps import (
     resolve_effective_permissions,
 )
 from verity.core.email import Mailer, OutboundEmail, get_mailer
-from verity.core.errors import AuthenticationRequired, InvalidInput, InvalidToken, NotFound
+from verity.core.errors import (
+    AuthenticationRequired,
+    Conflict,
+    InvalidInput,
+    InvalidToken,
+    NotFound,
+)
 from verity.core.rls import bind_tenant_context
 from verity.core.security import (
     IssuedToken,
@@ -67,7 +73,6 @@ from verity.modules.audit.service import Membership as MembershipActor
 from verity.modules.audit.service import PlatformAdmin as PlatformAdminActor
 from verity.modules.iam.exceptions import (
     AlreadyMember,
-    BuiltInRoleImmutable,
     DuplicateAssignment,
     EmailTaken,
     InvalidInvite,
@@ -90,6 +95,7 @@ from verity.modules.iam.models import (
     Role,
     RoleAssignment,
     TenantMembership,
+    TenantSettings,
     User,
 )
 from verity.modules.iam.repository import (
@@ -141,20 +147,47 @@ through its service interface only, never its models (import-linter enforces).""
 
 BUILT_IN_ROLE_KEYS: Final[dict[str, tuple[str, ...] | None]] = {
     ADMIN_ROLE_NAME: None,  # every key that exists, resolved at check time (decision 13)
-    "Compliance Manager": (
-        "members:read",
-        "groups:read",
-        "roles:read",
-        "tenant:read",
-        "audit:read",
-    ),
-    "Control Owner": ("tenant:read",),
-    "Employee": ("tenant:read",),
-    "Auditor": ("tenant:read", "audit:read"),
+    "Chief Executive Officer": ("tenant:read",),
+    "Security Officer": ("tenant:read", "audit:read", "frameworks:read", "evidence:read"),
+    "Privacy Officer": ("tenant:read", "audit:read", "frameworks:read"),
+    "Engineering Lead": ("tenant:read", "frameworks:read", "evidence:read"),
+    "Business Operations/Finance Lead": ("tenant:read", "frameworks:read"),
 }
-"""The five built-in roles and their Week 1 keys (design.md). Keys for modules
-that do not exist yet are simply absent from ``permissions`` and are attached by
-the module change that introduces them."""
+"""The built-in roles seeded into every tenant, and the keys they start with.
+
+Read-only by design: these name who is *accountable* for an area, and the
+starting grants let each holder see their area without being able to change it.
+They are ordinary editable roles (D15) — an admin widens them in the Roles
+screen rather than waiting on a release.
+
+Admin is not one of these and cannot be retired: ``core.deps`` resolves it to
+every permission that exists, signup assigns it to the first member, and the
+D15 guard refuses any write that would leave a workspace unable to manage roles.
+
+Keys for modules that do not exist yet are simply absent from ``permissions``
+and are attached by the module change that introduces them."""
+
+BUILT_IN_ROLE_DESCRIPTIONS: Final[dict[str, str]] = {
+    ADMIN_ROLE_NAME: "Full access to every part of the workspace.",
+    "Chief Executive Officer": ("This person may also be appointed to other roles."),
+    "Security Officer": (
+        "Who at the company is ultimately responsible for the security of "
+        "assets (this may be the same person as other roles)."
+    ),
+    "Privacy Officer": (
+        "Who at the company is ultimately responsible for the privacy program "
+        "of the company (this may be the same person as other roles)."
+    ),
+    "Engineering Lead": (
+        "Who at the company leads all of engineering (this may be the same person as other roles)."
+    ),
+    "Business Operations/Finance Lead": (
+        "Who at the company leads all of operations and/or finance (this may "
+        "be the same person as other roles)."
+    ),
+}
+"""Wording taken from the client's appointment screen. Seeded as the starting
+description; an admin may rewrite it, and a re-seed never overwrites an edit."""
 
 _USER_SNAPSHOT: Final = ("id", "email", "full_name", "status", "mfa_enabled")
 _CREDENTIALS_SNAPSHOT: Final = (
@@ -191,11 +224,109 @@ def normalize_email(email: str) -> str:
     return email.strip().lower()
 
 
-def validate_password(password: str) -> None:
-    """The platform password policy. Raised as ``weak_password`` so the client
-    gets the stable code it switches on rather than a generic 422."""
-    if len(password) < MIN_PASSWORD_LENGTH:
-        raise WeakPassword(detail=f"password shorter than {MIN_PASSWORD_LENGTH} characters")
+_SYMBOLS: Final = set("!@#$%^&*()-_=+[]{};:'\",.<>/?\\|`~ ")
+
+
+@dataclass(frozen=True, slots=True)
+class PasswordPolicy:
+    """A tenant's password rules, as the checker needs them.
+
+    The floor is the platform's own ``MIN_PASSWORD_LENGTH``: a workspace may
+    make its policy stricter than the platform's, never weaker.
+    """
+
+    min_length: int = 12
+    require_upper: bool = True
+    require_lower: bool = True
+    require_digit: bool = True
+    require_symbol: bool = True
+    history_depth: int = 5
+
+    @property
+    def effective_min_length(self) -> int:
+        return max(self.min_length, MIN_PASSWORD_LENGTH)
+
+
+DEFAULT_PASSWORD_POLICY: Final = PasswordPolicy()
+"""What applies before a workspace exists (signup) or has never saved a policy."""
+
+
+def password_policy_from(row: TenantSettings | None) -> PasswordPolicy:
+    """Settings row → policy. A pure function so both service classes read the
+    policy the same way; an absent row means the defaults."""
+    if row is None:
+        return DEFAULT_PASSWORD_POLICY
+    return PasswordPolicy(
+        min_length=row.password_min_length,
+        require_upper=row.password_require_upper,
+        require_lower=row.password_require_lower,
+        require_digit=row.password_require_digit,
+        require_symbol=row.password_require_symbol,
+        history_depth=row.password_history_depth,
+    )
+
+
+def validate_password(password: str, policy: PasswordPolicy | None = None) -> None:
+    """Check a password against the tenant's policy.
+
+    Raised as ``weak_password`` so the client gets the stable code it switches
+    on rather than a generic 422. Every unmet rule is named at once — telling
+    someone their password is too short, then that it also needs a digit, is
+    two round trips to say one thing.
+    """
+    rules = policy or DEFAULT_PASSWORD_POLICY
+    minimum = rules.effective_min_length
+    unmet: list[str] = []
+
+    if len(password) < minimum:
+        unmet.append(f"at least {minimum} characters")
+    if rules.require_upper and not any(character.isupper() for character in password):
+        unmet.append("an uppercase letter")
+    if rules.require_lower and not any(character.islower() for character in password):
+        unmet.append("a lowercase letter")
+    if rules.require_digit and not any(character.isdigit() for character in password):
+        unmet.append("a digit")
+    if rules.require_symbol and not any(character in _SYMBOLS for character in password):
+        unmet.append("a special character")
+
+    if not unmet:
+        return
+    requirement = unmet[0] if len(unmet) == 1 else f"{', '.join(unmet[:-1])} and {unmet[-1]}"
+    raise WeakPassword(
+        f"Your password needs {requirement}.",
+        detail=f"password failed {len(unmet)} policy rule(s)",
+    )
+
+
+def assert_not_reused(credentials: Credentials, password: str, depth: int) -> None:
+    """Refuse a password the user has recently used.
+
+    Checks the current hash as well as the stored history: "do not reuse the
+    last 5" has to include the one in force, which is not in the history list
+    until it is replaced.
+    """
+    if depth <= 0:
+        return
+    candidates = [credentials.password_hash, *(credentials.previous_password_hashes or [])]
+    for stored in candidates[:depth]:
+        if stored and verify_password(stored, password).ok:
+            raise WeakPassword(
+                f"That is one of your last {depth} passwords. Choose a new one.",
+                detail="password matched an entry in the reuse history",
+            )
+
+
+def rotate_password_history(credentials: Credentials, depth: int) -> None:
+    """Push the outgoing hash onto the history, newest first, trimmed to depth.
+
+    Call *before* assigning the new hash — the value on the row at this moment
+    is the one being retired.
+    """
+    if depth <= 0:
+        credentials.previous_password_hashes = None
+        return
+    history = [credentials.password_hash, *(credentials.previous_password_hashes or [])]
+    credentials.previous_password_hashes = history[:depth]
 
 
 def _credentials_aad(user_id: uuid.UUID) -> str:
@@ -352,6 +483,11 @@ class InviteResult:
     member: MemberView
     invite_token: str
     accept_url: str
+    email_sent: bool
+    """Whether the accept link actually left the building. False when SMTP is
+    unconfigured or the send failed — the mailer never raises, so without this
+    the caller cannot tell a delivered invite from a silent no-op, and the UI
+    ends up claiming a delivery that did not happen."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -359,6 +495,7 @@ class GroupView:
     id: uuid.UUID
     name: str
     member_count: int
+    description: str | None = None
     member_ids: list[uuid.UUID] = field(default_factory=list)
 
 
@@ -366,6 +503,7 @@ class GroupView:
 class RoleView:
     id: uuid.UUID
     name: str
+    description: str | None
     built_in: bool
     permission_keys: list[str]
     assignment_count: int
@@ -764,7 +902,6 @@ class IamAuthService:
             claims = decode_token(token, expected_typ="password_reset", expected_plane="tenant")
         except InvalidToken as exc:
             raise InvalidInput(detail="password-reset token failed validation") from exc
-        validate_password(new_password)
 
         notify: str | None = None
         async with provider_session_scope() as session:
@@ -779,6 +916,17 @@ class IamAuthService:
                 and claims.issued_at < credentials.credentials_changed_at
             ):
                 raise InvalidInput(detail="this reset link has already been used")
+
+            # The policy of the workspace this person belongs to. Checked here,
+            # inside the transaction, rather than before it: the tenant is only
+            # known once the token has resolved to a user and a membership.
+            memberships = await self._active_memberships(session, user)
+            policy = password_policy_from(
+                await self._settings.get(session, memberships[0].tenant_id) if memberships else None
+            )
+            validate_password(new_password, policy)
+            assert_not_reused(credentials, new_password, policy.history_depth)
+            rotate_password_history(credentials, policy.history_depth)
 
             credentials.password_hash = hash_password(new_password)
             credentials.credentials_changed_at = datetime.now(UTC)
@@ -1160,7 +1308,13 @@ class IamAuthService:
             if credentials is None:
                 if password is None:
                     raise InvalidInput(detail="a new user must set a password on accept")
-                validate_password(password)
+                # The inviting workspace's policy — this is the path a guest or
+                # auditor takes to their first password, so it is the one that
+                # has to hold.
+                validate_password(
+                    password,
+                    password_policy_from(await self._settings.get(session, membership.tenant_id)),
+                )
                 # Accepting an invitation proves control of the address it was
                 # issued for, so a new invited user is email-verified by that act —
                 # no separate verification step, unlike self-service signup.
@@ -1329,6 +1483,26 @@ class IamAuthService:
             workspaces=workspaces,
         )
 
+    async def current_principal(
+        self, *, user_id: uuid.UUID, membership_id: uuid.UUID
+    ) -> PrincipalSnapshot:
+        """The caller's principal, rebuilt from the database rather than from
+        whatever the client cached at sign-in.
+
+        The session token carries identity, not display data: renaming the
+        workspace or correcting a person's name changes rows the token knows
+        nothing about, so a client that keeps showing the old values is reading
+        a stale copy, not a stale session. This is what it re-reads.
+        """
+        async with provider_session_scope() as session:
+            membership = await self._memberships.get(session, membership_id)
+            if membership is None or membership.user_id != user_id:
+                raise NotFound(detail=f"membership {membership_id} is not this user's")
+            user = await self._users.get(session, membership.user_id)
+            if user is None:
+                raise NotFound(detail=f"user behind membership {membership_id} is gone")
+            return await self._principal_snapshot(session, membership, user)
+
     async def _principal_snapshot(
         self, session: AsyncSession, membership: TenantMembership, user: User
     ) -> PrincipalSnapshot:
@@ -1336,6 +1510,13 @@ class IamAuthService:
             session, tenant_id=membership.tenant_id, membership_id=membership.id
         )
         tenant = await tenancy_service.get_tenant(session, membership.tenant_id)
+        # What the workspace calls itself wins over the provider's registration
+        # record. `tenants` is the provider plane's row — the tenant plane never
+        # writes it — so an admin who sets a display name on the company profile
+        # would otherwise keep seeing the name their account was registered
+        # under, with nothing on screen explaining why the edit did nothing.
+        profile = await tenancy_service.get_own_company_profile(session, membership.tenant_id)
+        chosen = (profile.display_name or profile.legal_name or "").strip()
         return PrincipalSnapshot(
             user_id=user.id,
             email=user.email,
@@ -1344,7 +1525,7 @@ class IamAuthService:
             mfa_enabled=user.mfa_enabled,
             membership_id=membership.id,
             tenant_id=membership.tenant_id,
-            tenant_name=tenant_display_name(tenant.legal_name, tenant.trading_name),
+            tenant_name=chosen or tenant_display_name(tenant.legal_name, tenant.trading_name),
             permissions=sorted(permissions),
             role_names=await self._direct_role_names(session, membership),
         )
@@ -1559,6 +1740,76 @@ class IamService:
 
     # -- security settings ------------------------------------------------------
 
+    async def get_password_policy(
+        self, session: AsyncSession, tenant_id: uuid.UUID
+    ) -> PasswordPolicy:
+        """The tenant's password rules. An absent row means the defaults."""
+        return password_policy_from(await self._settings.get(session, tenant_id))
+
+    async def get_security_settings(
+        self, session: AsyncSession, tenant_id: uuid.UUID
+    ) -> TenantSettings:
+        """The whole settings row for the settings screen, defaults included.
+
+        A tenant that has never saved a policy has no row, and a *transient* ORM
+        object is not a substitute: column defaults are applied on flush, so
+        every attribute would still read ``None`` and the response would fail
+        validation. The declared defaults are copied onto the stand-in instead,
+        read off the columns themselves so the two cannot drift.
+        """
+        row = await self._settings.get(session, tenant_id)
+        if row is not None:
+            return row
+
+        stand_in = TenantSettings(tenant_id=tenant_id)
+        for column in TenantSettings.__table__.columns:
+            default = column.default
+            if default is None or getattr(stand_in, column.name, None) is not None:
+                continue
+            if not default.is_callable and not default.is_clause_element:
+                setattr(stand_in, column.name, default.arg)
+        return stand_in
+
+    async def update_security_settings(
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor_membership_id: uuid.UUID,
+        changes: dict[str, object],
+    ) -> TenantSettings:
+        """Patch the tenant's auth policy. Audited; a no-op change writes nothing.
+
+        Only the fields present in ``changes`` are written, and only fields that
+        exist on the row — the router validates the values, this refuses to
+        invent columns.
+        """
+        row = await self._settings.upsert(session, tenant_id)
+        before = {name: getattr(row, name) for name in changes if hasattr(row, name)}
+        applied = {
+            name: value
+            for name, value in changes.items()
+            if hasattr(row, name) and getattr(row, name) != value
+        }
+        if not applied:
+            return row
+
+        for name, value in applied.items():
+            setattr(row, name, value)
+        await session.flush([row])
+
+        await self._audit.record(
+            session,
+            action="update",
+            object_type="tenant_settings",
+            object_id=tenant_id,
+            actor=MembershipActor(actor_membership_id),
+            tenant_id=tenant_id,
+            before={name: before[name] for name in applied},
+            after={name: getattr(row, name) for name in applied},
+        )
+        return row
+
     async def get_require_admin_mfa(self, session: AsyncSession, tenant_id: uuid.UUID) -> bool:
         return await self._settings.require_admin_mfa(session, tenant_id)
 
@@ -1603,7 +1854,13 @@ class IamService:
         for name, keys in BUILT_IN_ROLE_KEYS.items():
             if name in existing:
                 continue
-            role = Role(id=uuid7(), tenant_id=tenant_id, name=name, built_in=True)
+            role = Role(
+                id=uuid7(),
+                tenant_id=tenant_id,
+                name=name,
+                built_in=True,
+                description=BUILT_IN_ROLE_DESCRIPTIONS.get(name),
+            )
             await self._roles.add(session, role)
             attach = [] if keys is None else sorted(k for k in keys if k in shipped_keys)
             if attach:
@@ -1660,6 +1917,7 @@ class IamService:
         email: str,
         full_name: str,
         role_id: uuid.UUID,
+        group_id: uuid.UUID | None = None,
         valid_from: date | None = None,
         valid_until: date | None = None,
     ) -> InviteResult:
@@ -1667,11 +1925,23 @@ class IamService:
         with a fresh token, a disabled membership is reactivated (audited as an
         update), and an active membership is a 409 — the frontend's
         ``already_member``. The optional window lands on the role assignment:
-        the guest-auditor path."""
+        the guest-auditor path.
+
+        ``group_id`` puts the invitee in a group as part of the same
+        transaction. Doing it here rather than as a follow-up call is the point:
+        a second request can fail on its own and leave a member who was supposed
+        to be in a group sitting outside it."""
         _validate_window(valid_from, valid_until)
         role = await self._roles.get_for_tenant(session, tenant_id, role_id)
         if role is None:
             raise NotFound(detail=f"role {role_id} not in tenant {tenant_id}")
+        # Resolved before anything is written, so a bad group id is a clean 404
+        # rather than a rollback of a half-built invite.
+        group = None
+        if group_id is not None:
+            group = await self._groups.get_for_tenant(session, tenant_id, group_id)
+            if group is None:
+                raise NotFound(detail=f"group {group_id} not in tenant {tenant_id}")
         actor = MembershipActor(actor_membership_id)
         email_n = normalize_email(email)
 
@@ -1759,6 +2029,28 @@ class IamService:
         # A membership still in 'invited' needs no row change: re-issuing the
         # token below is the whole re-invite.
 
+        if group is not None:
+            # Idempotent, because a re-invite runs this path a second time.
+            already = await self._groups.get_member(session, tenant_id, group.id, membership.id)
+            if already is None:
+                group_member = GroupMember(
+                    id=uuid7(),
+                    tenant_id=tenant_id,
+                    group_id=group.id,
+                    tenant_membership_id=membership.id,
+                )
+                await self._groups.add_member(session, group_member)
+                await self._record(
+                    session,
+                    actor,
+                    tenant_id,
+                    "create",
+                    "group_member",
+                    group_member.id,
+                    None,
+                    AuditService.snapshot(group_member, fields=_GROUP_MEMBER_SNAPSHOT),
+                )
+
         issued = issue_token(subject=membership.id, plane="tenant", typ="invite")
         accept_url = (
             f"{get_settings().frontend_base_url.rstrip('/')}/accept-invite?token={issued.token}"
@@ -1768,8 +2060,58 @@ class IamService:
         # Best-effort: the mailer never raises and no-ops without SMTP; the link
         # is still returned as a fallback and for the "copy link" affordance.
         # ponytail: in-transaction send; move to the notifications outbox later.
-        await self._mailer.send(_invite_message(email_n, full_name, accept_url))
-        return InviteResult(member=member, invite_token=issued.token, accept_url=accept_url)
+        sent = await self._mailer.send(_invite_message(email_n, full_name, accept_url))
+        return InviteResult(
+            member=member,
+            invite_token=issued.token,
+            accept_url=accept_url,
+            email_sent=sent,
+        )
+
+    async def rename_member(
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor_membership_id: uuid.UUID,
+        membership_id: uuid.UUID,
+        full_name: str,
+    ) -> MemberView:
+        """Correct a member's display name.
+
+        The name lives on the global ``users`` row, so this changes it in every
+        workspace that person belongs to — a person has one name (ADR-0011).
+        The membership is resolved through the tenant first, so an admin can
+        only rename someone who is actually a member of their workspace, and the
+        change is audited in that tenant's stream — the same shape
+        ``accept_invitation`` uses when it writes a name.
+        """
+        membership = await self._memberships.get_for_tenant(session, tenant_id, membership_id)
+        if membership is None:
+            raise NotFound(detail=f"membership {membership_id} not in tenant {tenant_id}")
+        user = await self._users.get(session, membership.user_id)
+        if user is None:
+            raise NotFound(detail=f"user behind membership {membership_id} is gone")
+
+        cleaned = full_name.strip()
+        if not cleaned:
+            raise InvalidInput(detail="a member's name cannot be blank")
+
+        if cleaned != user.full_name:
+            before = AuditService.snapshot(user, fields=_USER_SNAPSHOT)
+            user.full_name = cleaned
+            await session.flush([user])
+            await self._record(
+                session,
+                MembershipActor(actor_membership_id),
+                tenant_id,
+                "update",
+                "user",
+                user.id,
+                before,
+                AuditService.snapshot(user, fields=_USER_SNAPSHOT),
+            )
+        return await self._member_view_for(session, tenant_id, membership, user)
 
     async def disable_member(
         self,
@@ -1844,11 +2186,17 @@ class IamService:
         tenant_id: uuid.UUID,
         actor_membership_id: uuid.UUID,
         name: str,
+        description: str | None = None,
     ) -> GroupView:
         name = name.strip()
         if await self._groups.get_by_name(session, tenant_id, name) is not None:
             raise NameConflict(detail=f"group {name!r} exists in tenant {tenant_id}")
-        group = Group(id=uuid7(), tenant_id=tenant_id, name=name)
+        group = Group(
+            id=uuid7(),
+            tenant_id=tenant_id,
+            name=name,
+            description=(description or "").strip() or None,
+        )
         await self._groups.add(session, group)
         await self._record(
             session,
@@ -1904,6 +2252,101 @@ class IamService:
         ids = [row.tenant_membership_id for row in members if row.group_id == group_id]
         return self._group_view(group, ids)
 
+    async def update_group(  # noqa: PLR0913 — the editable fields, all keyword-only
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor_membership_id: uuid.UUID,
+        group_id: uuid.UUID,
+        name: str | None = None,
+        description: str | None = None,
+    ) -> GroupView:
+        """Rename or re-describe a group (D17). Absent fields are left alone."""
+        group = await self._groups.get_for_tenant(session, tenant_id, group_id)
+        if group is None:
+            raise NotFound(detail=f"group {group_id} not in tenant {tenant_id}")
+        before = AuditService.snapshot(group, fields=_GROUP_SNAPSHOT)
+        if name is not None:
+            name = name.strip()
+            clash = await self._groups.get_by_name(session, tenant_id, name)
+            if clash is not None and clash.id != group_id:
+                raise NameConflict(detail=f"group {name!r} exists in tenant {tenant_id}")
+            group.name = name
+        if description is not None:
+            group.description = description.strip() or None
+        await session.flush([group])
+        await self._record(
+            session,
+            MembershipActor(actor_membership_id),
+            tenant_id,
+            "update",
+            "group",
+            group.id,
+            before,
+            AuditService.snapshot(group, fields=_GROUP_SNAPSHOT),
+        )
+        members = await self._groups.list_members(session, tenant_id)
+        ids = [row.tenant_membership_id for row in members if row.group_id == group_id]
+        return self._group_view(group, ids)
+
+    async def delete_group(
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor_membership_id: uuid.UUID,
+        group_id: uuid.UUID,
+    ) -> None:
+        """Delete a group and, with it, every role assignment made **to the
+        group** — members keep whatever they hold directly. The audit row is
+        written before the delete so the snapshot is of a row that still exists."""
+        group = await self._groups.get_for_tenant(session, tenant_id, group_id)
+        if group is None:
+            raise NotFound(detail=f"group {group_id} not in tenant {tenant_id}")
+        await self._record(
+            session,
+            MembershipActor(actor_membership_id),
+            tenant_id,
+            "delete",
+            "group",
+            group.id,
+            AuditService.snapshot(group, fields=_GROUP_SNAPSHOT),
+            None,
+        )
+        await self._groups.delete(session, group)
+
+    async def remove_group_member(
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor_membership_id: uuid.UUID,
+        group_id: uuid.UUID,
+        membership_id: uuid.UUID,
+    ) -> GroupView:
+        """Remove one membership from a group. A membership that is not in the
+        group is a no-op, not a 404 — a retried removal should succeed."""
+        group = await self._groups.get_for_tenant(session, tenant_id, group_id)
+        if group is None:
+            raise NotFound(detail=f"group {group_id} not in tenant {tenant_id}")
+        member = await self._groups.get_member(session, tenant_id, group_id, membership_id)
+        if member is not None:
+            await self._record(
+                session,
+                MembershipActor(actor_membership_id),
+                tenant_id,
+                "delete",
+                "group_member",
+                member.id,
+                AuditService.snapshot(member, fields=_GROUP_MEMBER_SNAPSHOT),
+                None,
+            )
+            await self._groups.delete_member(session, member)
+        members = await self._groups.list_members(session, tenant_id)
+        ids = [row.tenant_membership_id for row in members if row.group_id == group_id]
+        return self._group_view(group, ids)
+
     # -- roles ----------------------------------------------------------------------
 
     async def list_roles(self, session: AsyncSession, *, tenant_id: uuid.UUID) -> list[RoleView]:
@@ -1923,6 +2366,7 @@ class IamService:
                 RoleView(
                     id=role.id,
                     name=role.name,
+                    description=role.description,
                     built_in=role.built_in,
                     permission_keys=keys,
                     assignment_count=counts.get(role.id, 0),
@@ -1930,13 +2374,14 @@ class IamService:
             )
         return views
 
-    async def create_role(
+    async def create_role(  # noqa: PLR0913 — the role's own fields
         self,
         session: AsyncSession,
         *,
         tenant_id: uuid.UUID,
         actor_membership_id: uuid.UUID,
         name: str,
+        description: str | None = None,
         permission_keys: list[str],
     ) -> RoleView:
         name = name.strip()
@@ -1947,7 +2392,13 @@ class IamService:
         unknown = sorted(set(requested) - known)
         if unknown:
             raise InvalidInput(detail=f"unknown permission keys: {unknown}")
-        role = Role(id=uuid7(), tenant_id=tenant_id, name=name, built_in=False)
+        role = Role(
+            id=uuid7(),
+            tenant_id=tenant_id,
+            name=name,
+            description=(description or "").strip() or None,
+            built_in=False,
+        )
         await self._roles.add(session, role)
         if requested:
             await self._roles.add_permission_keys(session, role.id, requested)
@@ -1966,9 +2417,62 @@ class IamService:
         return RoleView(
             id=role.id,
             name=role.name,
+            description=role.description,
             built_in=role.built_in,
             permission_keys=requested,
             assignment_count=0,
+        )
+
+    ROLE_MANAGE_KEY: Final = "roles:manage"
+
+    async def _assert_admin_capability_survives(
+        self,
+        session: AsyncSession,
+        tenant_id: uuid.UUID,
+        *,
+        role_id: uuid.UUID,
+        future_keys: list[str] | None,
+    ) -> None:
+        """Refuse a write that would leave the tenant unable to manage roles.
+
+        D15. Built-in roles are otherwise fully editable — this is the single
+        structural guard, not a "built-ins are special" rule: a tenant that
+        keeps a second admin-capable role may delete the shipped Admin role
+        outright.
+
+        ``future_keys`` is the permission set the role WILL have (None = the
+        role is going away). The check asks whether any *other* role would
+        still hold roles:manage with at least one active member, and if not,
+        whether this role still would.
+        """
+        roles = await self._roles.list_for_tenant(session, tenant_id)
+        keys_by_role = await self._roles.permission_keys_by_role(
+            session, [role.id for role in roles]
+        )
+        counts = await self._roles.assignment_counts(session, tenant_id)
+
+        def can_manage(rid: uuid.UUID, keys: list[str]) -> bool:
+            return self.ROLE_MANAGE_KEY in keys and counts.get(rid, 0) > 0
+
+        for role in roles:
+            if role.id == role_id:
+                continue
+            # A built-in Admin that has never been edited resolves to every key.
+            keys = keys_by_role.get(role.id, [])
+            if role.built_in and role.name == ADMIN_ROLE_NAME and not keys:
+                keys = [self.ROLE_MANAGE_KEY]
+            if can_manage(role.id, keys):
+                return
+
+        if future_keys is not None and can_manage(role_id, future_keys):
+            return
+
+        raise Conflict(
+            detail=(
+                "this would leave the workspace with no role that can manage "
+                "roles and has an active member — grant roles:manage to another "
+                "role with members first"
+            )
         )
 
     async def update_role(  # noqa: PLR0913 — the editable fields, all keyword-only
@@ -1979,16 +2483,20 @@ class IamService:
         actor_membership_id: uuid.UUID,
         role_id: uuid.UUID,
         name: str | None = None,
+        description: str | None = None,
         permission_keys: list[str] | None = None,
     ) -> RoleView:
-        """Rename a custom role and/or replace its permission set. Built-in roles
-        are immutable — their keys resolve dynamically (Admin = every key). Only
-        the fields supplied are touched; the change is audited before/after."""
+        """Rename a role, change its description, and/or replace its permission
+        set. Built-in roles are editable too (D15) — the only refusal is a write
+        that would leave the workspace unable to manage roles. Only the fields
+        supplied are touched; the change is audited before/after."""
         role = await self._roles.get_for_tenant(session, tenant_id, role_id)
         if role is None:
             raise NotFound(detail=f"role {role_id} not in tenant {tenant_id}")
-        if role.built_in:
-            raise BuiltInRoleImmutable(detail=f"role {role.name!r} is built-in")
+        if permission_keys is not None:
+            await self._assert_admin_capability_survives(
+                session, tenant_id, role_id=role_id, future_keys=permission_keys
+            )
 
         current_keys = sorted(
             (await self._roles.permission_keys_by_role(session, [role_id])).get(role_id, [])
@@ -1996,6 +2504,8 @@ class IamService:
         before = AuditService.snapshot(role, fields=_ROLE_SNAPSHOT)
         before["permission_keys"] = current_keys
 
+        if description is not None:
+            role.description = description.strip() or None
         if name is not None:
             new_name = name.strip()
             if not new_name:
@@ -2032,6 +2542,7 @@ class IamService:
         return RoleView(
             id=role.id,
             name=role.name,
+            description=role.description,
             built_in=role.built_in,
             permission_keys=final_keys,
             assignment_count=len(assignments),
@@ -2045,13 +2556,16 @@ class IamService:
         actor_membership_id: uuid.UUID,
         role_id: uuid.UUID,
     ) -> None:
-        """Custom roles only — RBAC configuration, not a compliance object, so a
-        hard delete is permitted; every removed assignment is audited first."""
+        """RBAC configuration, not a compliance object, so a hard delete is
+        permitted; every removed assignment is audited first. Built-in roles may
+        be deleted too (D15), unless doing so would leave the workspace unable
+        to manage roles."""
         role = await self._roles.get_for_tenant(session, tenant_id, role_id)
         if role is None:
             raise NotFound(detail=f"role {role_id} not in tenant {tenant_id}")
-        if role.built_in:
-            raise BuiltInRoleImmutable(detail=f"role {role.name!r} is built-in")
+        await self._assert_admin_capability_survives(
+            session, tenant_id, role_id=role_id, future_keys=None
+        )
         actor = MembershipActor(actor_membership_id)
         for assignment in await self._roles.list_for_role(session, tenant_id, role_id):
             await self._record(
@@ -2253,8 +2767,13 @@ class IamService:
         )
         member = await self._member_view_for(session, tenant.id, membership, user)
         # Same best-effort accept-link email as invite_member (see there).
-        await self._mailer.send(_invite_message(email_n, full_name, accept_url))
-        return InviteResult(member=member, invite_token=issued.token, accept_url=accept_url)
+        sent = await self._mailer.send(_invite_message(email_n, full_name, accept_url))
+        return InviteResult(
+            member=member,
+            invite_token=issued.token,
+            accept_url=accept_url,
+            email_sent=sent,
+        )
 
     # -- internals ------------------------------------------------------------------------
 
@@ -2372,7 +2891,11 @@ class IamService:
     @staticmethod
     def _group_view(group: Group, member_ids: list[uuid.UUID]) -> GroupView:
         return GroupView(
-            id=group.id, name=group.name, member_count=len(member_ids), member_ids=member_ids
+            id=group.id,
+            name=group.name,
+            description=group.description,
+            member_count=len(member_ids),
+            member_ids=member_ids,
         )
 
     async def _record(  # noqa: PLR0913, PLR0917 — one audit row's facts

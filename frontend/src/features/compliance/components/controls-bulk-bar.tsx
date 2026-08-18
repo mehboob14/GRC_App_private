@@ -59,12 +59,19 @@ function BarButton({
           : "text-text-secondary hover:bg-surface-hover hover:text-text-primary",
       )}
     >
-      <Icon name={icon} className="size-3.5" />
+      <Icon name={icon} className="size-3.5 shrink-0" />
       {label}
+      {/* A dot, not a "SOON" chip: the chip cost ~50px per button and pushed
+          the strip onto a second line. The title says when it arrives. */}
       {disabled ? (
-        <span className="rounded-2xs bg-surface-sunken px-1 text-[10px] font-bold uppercase tracking-wide text-text-faint">
-          Soon
-        </span>
+        <>
+          <span
+            aria-hidden
+            className="size-1.5 shrink-0 rounded-full bg-status-pending-base"
+          />
+          {/* The dot is visual shorthand; the reason still has to be readable. */}
+          <span className="sr-only"> — coming soon</span>
+        </>
       ) : null}
     </button>
   );
@@ -97,7 +104,7 @@ function toCsv(controls: Control[]): string {
       control.name,
       control.description,
       control.category,
-      control.control_type,
+      control.control_type ?? "",
       control.disabled_at ? "Disabled" : control.status,
       control.owner_name ?? "",
       control.requirement_keys.join(" "),

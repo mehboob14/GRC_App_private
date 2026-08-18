@@ -242,7 +242,9 @@ async def _load_templates(
             "code": doc["code"],
             "name": doc["name"],
             "category": doc["category"],
-            "control_type": doc["control_type"],
+            # Optional by design: shipped framework content asserts no
+            # Preventive/Detective/Corrective classification.
+            "control_type": doc.get("control_type"),
             "control_sub_type": doc.get("control_sub_type"),
             "importance": doc["importance"],
             "description": doc["description"],

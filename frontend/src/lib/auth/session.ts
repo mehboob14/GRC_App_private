@@ -45,6 +45,18 @@ export function setSession(
   sessionStorage.setItem(PRINCIPAL_KEY, JSON.stringify(principal));
 }
 
+/**
+ * Replace the cached principal, keeping the current token.
+ *
+ * The token carries identity, not display data: renaming the workspace or
+ * correcting a person's name changes rows the token knows nothing about, so
+ * the cached copy goes stale while the session stays perfectly valid.
+ */
+export function setPrincipalCache(principal: SessionPrincipal): void {
+  memoryPrincipal = principal;
+  sessionStorage.setItem(PRINCIPAL_KEY, JSON.stringify(principal));
+}
+
 export function clearSession(): void {
   memoryToken = null;
   memoryPrincipal = null;

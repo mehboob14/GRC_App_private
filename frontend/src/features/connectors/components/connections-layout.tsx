@@ -6,7 +6,7 @@ import type { IconName } from "@/components/ui/icon";
 const ROW =
   "flex h-8 w-full items-center gap-2.5 rounded-sm px-2.5 text-left text-label-sm transition-colors duration-80 ease-state";
 
-// Manage-accounts surfaces land with the connector sync backend (Phase 2);
+// Manage-accounts surfaces land with the connector sync backend;
 // listed for orientation, disabled until then.
 const MANAGE: { label: string; icon: IconName }[] = [
   { label: "Access Reviews", icon: "audit" },

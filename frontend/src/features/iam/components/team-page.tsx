@@ -43,6 +43,7 @@ import {
   TR,
   useToast,
 } from "@/components/ui";
+import { SettingsPageHeader } from "@/features/iam/components/settings-page-header";
 import { iamApi } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/auth-context";
@@ -78,10 +79,15 @@ function timeAgo(iso: string | null): string {
     ["minute", 60_000],
   ];
   for (const [unit, ms] of units) {
-    if (Math.abs(diffMs) >= ms) return rtf.format(Math.round(diffMs / ms), unit);
+    if (Math.abs(diffMs) >= ms)
+      return rtf.format(Math.round(diffMs / ms), unit);
   }
   return "just now";
 }
+
+/** Radix Select forbids an empty string as an item value, so "no group" needs
+ *  a sentinel that is mapped back to "" before it reaches the request. */
+const NO_GROUP = "__none__";
 
 const inviteSchema = z
   .object({
@@ -89,6 +95,7 @@ const inviteSchema = z
     email: z.string().email("Enter a work email."),
     invite_as: z.enum(["member", "guest"]),
     role_id: z.string(),
+    group_id: z.string(),
     valid_from: z.string(),
     valid_until: z.string(),
   })
@@ -117,6 +124,8 @@ const INVITE_DEFAULTS: InviteValues = {
   // from the roles query once it loads (see TeamPage). A literal like
   // "role-employee" is not a valid UUID and matches no option → 422.
   role_id: "",
+  // "" means no group — the Select renders it as the "No group" option.
+  group_id: "",
   valid_from: "",
   valid_until: "",
 };
@@ -139,7 +148,7 @@ function MemberStatusPill({ status }: { status: Member["status"] }) {
 }
 
 export function TeamPage() {
-  const { principal } = useAuth();
+  const { principal, refreshPrincipal } = useAuth();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
@@ -150,6 +159,8 @@ export function TeamPage() {
   const [copyFailed, setCopyFailed] = useState(false);
   const [toDisable, setToDisable] = useState<Member | null>(null);
   const [roleEdit, setRoleEdit] = useState<Member | null>(null);
+  const [renaming, setRenaming] = useState<Member | null>(null);
+  const [nameDraft, setNameDraft] = useState("");
   const [roleChoice, setRoleChoice] = useState("");
   const [groupAdd, setGroupAdd] = useState<Member | null>(null);
   const [groupChoice, setGroupChoice] = useState("");
@@ -174,8 +185,11 @@ export function TeamPage() {
 
   const roles = rolesQuery.data ?? [];
   const groups = groupsQuery.data ?? [];
-  const auditorRole = roles.find((role) => role.name === "Auditor");
-  const employeeRole = roles.find((role) => role.name === "Employee");
+  // The built-in set is the client's own list of appointments now, so there is
+  // no "Employee" default and no dedicated "Auditor" to pin guests to. Fall
+  // back to the least-privileged option available rather than a magic name:
+  // any name we hard-coded here would break the next time the set changes.
+  const defaultRole = roles.find((role) => role.name !== "Admin") ?? roles[0];
 
   const form = useForm<InviteValues>({
     resolver: zodResolver(inviteSchema),
@@ -185,18 +199,17 @@ export function TeamPage() {
   const inviteAs = form.watch("invite_as");
   const memberRoleId = form.watch("role_id");
 
-  // Preselect the tenant's built-in "Employee" role once roles load, resolved
-  // by name rather than a hard-coded id. If it can't be resolved the field
+  // Preselect a sensible default once roles load. If none resolves the field
   // stays unset and the submit is disabled until a role is chosen.
   useEffect(() => {
-    if (open && inviteAs === "member" && !memberRoleId && employeeRole) {
-      form.setValue("role_id", employeeRole.id);
+    if (open && !memberRoleId && defaultRole) {
+      form.setValue("role_id", defaultRole.id);
     }
-  }, [open, inviteAs, memberRoleId, employeeRole, form]);
+  }, [open, memberRoleId, defaultRole, form]);
 
   // The role actually submitted: guests always get Auditor, members the picked
   // role. Always a real role UUID from the roles query — never a literal.
-  const submitRoleId = inviteAs === "guest" ? auditorRole?.id : memberRoleId;
+  const submitRoleId = memberRoleId;
   const canSubmitInvite = Boolean(submitRoleId);
 
   const inviteMutation = useMutation({
@@ -223,12 +236,10 @@ export function TeamPage() {
 
   function submitInvite(values: InviteValues) {
     const guest = values.invite_as === "guest";
-    const roleId = guest ? auditorRole?.id : values.role_id;
+    const roleId = values.role_id;
     if (!roleId) {
       setInviteError(
-        guest
-          ? "The Auditor role isn't available in this workspace yet — ask an admin to add it, then try again."
-          : "Choose a role for this member before sending the invite.",
+        "Choose a role for this member before sending the invite.",
       );
       return;
     }
@@ -237,6 +248,7 @@ export function TeamPage() {
       email: values.email,
       role_id: roleId,
     };
+    if (values.group_id) body.group_id = values.group_id;
     if (guest && values.valid_from) body.valid_from = values.valid_from;
     if (guest && values.valid_until) body.valid_until = values.valid_until;
     inviteMutation.mutate(body);
@@ -291,8 +303,34 @@ export function TeamPage() {
   const members = useMemo(() => membersQuery.data ?? [], [membersQuery.data]);
   const canInvite = principal?.permissions.includes("members:invite");
   const canDisable = principal?.permissions.includes("members:disable");
+  const canEditMember = principal?.permissions.includes("members:manage");
   const canManageRoles = principal?.permissions.includes("roles:manage");
   const canManageGroups = principal?.permissions.includes("groups:manage");
+
+  const renameMutation = useMutation({
+    mutationFn: (vars: { membershipId: string; fullName: string }) =>
+      iamApi.renameMember(vars.membershipId, vars.fullName),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["members", principal?.tenant_id],
+        exact: true,
+      });
+      setRenaming(null);
+      // Renaming yourself changes the name in your own topbar; the principal
+      // cache holds the copy that is displayed.
+      void refreshPrincipal();
+      toast({ title: "Name updated", tone: "success" });
+    },
+    onError: (error: unknown) => {
+      toast({
+        title:
+          error instanceof ApiError
+            ? error.message
+            : "Couldn't update the name.",
+        tone: "danger",
+      });
+    },
+  });
 
   const roleMutation = useMutation({
     mutationFn: (vars: { membershipId: string; roleId: string }) =>
@@ -350,6 +388,11 @@ export function TeamPage() {
     ? groups.filter((group) => !groupAdd.group_names.includes(group.name))
     : [];
 
+  function openRename(member: Member) {
+    setNameDraft(member.full_name);
+    setRenaming(member);
+  }
+
   function openRoleEdit(member: Member) {
     const current = roles.find((role) => member.role_names.includes(role.name));
     setRoleChoice(current?.id ?? "");
@@ -386,18 +429,12 @@ export function TeamPage() {
 
   return (
     <div>
-      <div className="rounded-lg border border-border bg-surface-primary px-5 py-4">
-        <div className="mb-4 flex items-start justify-between gap-3">
-          <div>
-            <h2 className="font-display text-title-md text-text-primary">
-              Team &amp; roles
-            </h2>
-            <p className="mt-1 text-body-sm text-text-subtle">
-              <span className="tabular">{members.length}</span> members ·
-              manage access to the Verity workspace
-            </p>
-          </div>
-          {canInvite ? (
+      <SettingsPageHeader
+        title="People"
+        count={{ value: members.length, noun: "members" }}
+        description="Everyone with access to this workspace, and what they can do."
+        action={
+          canInvite ? (
             <Dialog open={open} onOpenChange={handleDialogChange}>
               <DialogTrigger asChild>
                 <Button className="shrink-0">
@@ -405,24 +442,35 @@ export function TeamPage() {
                   Invite member
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent size="md">
                 {inviteResult ? (
                   <>
                     <DialogHeader>
                       <DialogTitle>Invite created</DialogTitle>
+                      {/* Only claim delivery the server actually reports. */}
                       <DialogDescription>
-                        We emailed an invite to{" "}
-                        <span className="font-semibold text-text-primary">
-                          {inviteResult.member.email}
-                        </span>
-                        . The one-time link is below as a backup.
+                        {inviteResult.email_sent ? (
+                          <>
+                            Sent to{" "}
+                            <span className="font-semibold text-text-primary">
+                              {inviteResult.member.email}
+                            </span>
+                            .
+                          </>
+                        ) : (
+                          <>
+                            Email is not configured, so nothing was sent. Share
+                            this link with{" "}
+                            <span className="font-semibold text-text-primary">
+                              {inviteResult.member.email}
+                            </span>
+                            .
+                          </>
+                        )}
                       </DialogDescription>
                     </DialogHeader>
                     <div className="rounded-md border border-border bg-surface-sunken px-3 py-3">
-                      <p className="type-overline text-text-subtle">
-                        One-time accept link
-                      </p>
-                      <div className="mt-1.5 flex items-center gap-2">
+                      <div className="flex items-center gap-2">
                         <input
                           readOnly
                           aria-label="Invite accept link"
@@ -449,10 +497,8 @@ export function TeamPage() {
                         </p>
                       ) : null}
                     </div>
-                    <p className="mt-3 text-body-sm text-text-subtle">
-                      The invite was emailed automatically. Share this link
-                      directly if it doesn&apos;t arrive — it works once and
-                      expires in 7 days.
+                    <p className="mt-2.5 text-caption text-text-subtle">
+                      Works once · expires in 7 days
                     </p>
                     <DialogFooter>
                       <Button
@@ -469,8 +515,7 @@ export function TeamPage() {
                     <DialogHeader>
                       <DialogTitle>Invite member</DialogTitle>
                       <DialogDescription>
-                        Creates an invited membership and emails them a one-time
-                        accept link.
+                        They get a one-time accept link by email.
                       </DialogDescription>
                     </DialogHeader>
                     <form
@@ -510,32 +555,12 @@ export function TeamPage() {
                             )
                           }
                         >
-                          <RadioGroupItem
-                            value="member"
-                            label="Member"
-                            description="A teammate in your organisation, with a role you pick."
-                          />
-                          <RadioGroupItem
-                            value="guest"
-                            label="Guest auditor"
-                            description="An external auditor or consultant — read-only Auditor role, optionally time-boxed."
-                          />
+                          <RadioGroupItem value="member" label="Member" />
+                          <RadioGroupItem value="guest" label="Guest auditor" />
                         </RadioGroup>
                       </fieldset>
                       {inviteAs === "guest" ? (
                         <>
-                          <SelectField label="Role">
-                            <Select value={auditorRole?.id ?? ""} disabled>
-                              <SelectTrigger aria-label="Role (fixed to Auditor for guests)" />
-                              <SelectContent>
-                                {auditorRole ? (
-                                  <SelectItem value={auditorRole.id}>
-                                    {auditorRole.name}
-                                  </SelectItem>
-                                ) : null}
-                              </SelectContent>
-                            </Select>
-                          </SelectField>
                           <div className="grid grid-cols-2 gap-3">
                             <TextField
                               label="Access starts"
@@ -552,11 +577,6 @@ export function TeamPage() {
                               {...form.register("valid_until")}
                             />
                           </div>
-                          <p className="text-body-sm text-text-subtle">
-                            Time-boxes access for external auditors and
-                            consultants — for example an engagement window.
-                            Leave empty for open-ended access.
-                          </p>
                         </>
                       ) : (
                         <SelectField label="Role">
@@ -570,17 +590,38 @@ export function TeamPage() {
                           >
                             <SelectTrigger aria-label="Role" />
                             <SelectContent>
-                              {roles
-                                .filter((role) => role.name !== "Auditor")
-                                .map((role) => (
-                                  <SelectItem key={role.id} value={role.id}>
-                                    {role.name}
-                                  </SelectItem>
-                                ))}
+                              {roles.map((role) => (
+                                <SelectItem key={role.id} value={role.id}>
+                                  {role.name}
+                                </SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
                         </SelectField>
                       )}
+                      {groups.length > 0 ? (
+                        <SelectField label="Group" optional>
+                          <Select
+                            value={form.watch("group_id")}
+                            onValueChange={(value) =>
+                              form.setValue(
+                                "group_id",
+                                value === NO_GROUP ? "" : value,
+                              )
+                            }
+                          >
+                            <SelectTrigger aria-label="Group" />
+                            <SelectContent>
+                              <SelectItem value={NO_GROUP}>No group</SelectItem>
+                              {groups.map((group) => (
+                                <SelectItem key={group.id} value={group.id}>
+                                  {group.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </SelectField>
+                      ) : null}
                       <DialogFooter>
                         <Button
                           type="button"
@@ -602,157 +643,233 @@ export function TeamPage() {
                 )}
               </DialogContent>
             </Dialog>
-          ) : null}
-        </div>
+          ) : null
+        }
+      />
 
-        {members.length === 0 ? (
-          <EmptyState
-            icon="users"
-            title="No members yet"
-            description="Invite someone to this workspace."
-          />
-        ) : (
-          <Table className="rounded-none border-0 bg-transparent">
-            <THead>
-              <TR>
-                <TH>Member</TH>
-                <TH>Role</TH>
-                <TH>Groups</TH>
-                <TH>MFA</TH>
-                <TH>Background</TH>
-                <TH>Documents</TH>
-                <TH>Last active</TH>
-                <TH>
-                  <span className="sr-only">Actions</span>
-                </TH>
-              </TR>
-            </THead>
-            <TBody>
-              {members.map((member: Member) => {
-                const isSelf =
-                  member.membership_id === principal?.membership_id;
-                const active = member.status !== "disabled";
-                const canChangeRole = canManageRoles && active && !isSelf;
-                const canAddToGroup = canManageGroups && active;
-                const canDisableMember = canDisable && active && !isSelf;
-                const hasActions =
-                  canChangeRole || canAddToGroup || canDisableMember;
-                return (
-                  <TR key={member.membership_id}>
-                    <TD>
-                      <div className="flex items-center gap-3">
-                        <Avatar name={member.full_name} seed={member.email} />
-                        <div className="min-w-0">
-                          <p className="flex items-center gap-2 text-body-md font-semibold text-text-primary">
-                            {member.full_name}
-                            <MemberStatusPill status={member.status} />
-                          </p>
-                          <p className="truncate text-body-sm text-text-subtle">
-                            {member.email}
-                          </p>
-                        </div>
+      {members.length === 0 ? (
+        <EmptyState
+          icon="users"
+          title="No members yet"
+          description="Invite someone to this workspace."
+        />
+      ) : (
+        <Table>
+          <THead>
+            <TR>
+              <TH>Member</TH>
+              <TH>Role</TH>
+              <TH>Groups</TH>
+              <TH>MFA</TH>
+              <TH>Background</TH>
+              <TH>Documents</TH>
+              <TH>Last active</TH>
+              <TH>
+                <span className="sr-only">Actions</span>
+              </TH>
+            </TR>
+          </THead>
+          <TBody>
+            {members.map((member: Member) => {
+              const isSelf = member.membership_id === principal?.membership_id;
+              const active = member.status !== "disabled";
+              const canChangeRole = canManageRoles && active && !isSelf;
+              const canAddToGroup = canManageGroups && active;
+              const canDisableMember = canDisable && active && !isSelf;
+              const canRename = Boolean(canEditMember) && active;
+              const hasActions =
+                canRename || canChangeRole || canAddToGroup || canDisableMember;
+              return (
+                <TR key={member.membership_id}>
+                  <TD>
+                    <div className="flex items-center gap-3">
+                      <Avatar name={member.full_name} seed={member.email} />
+                      <div className="min-w-0">
+                        <p className="flex items-center gap-2 text-body-md font-semibold text-text-primary">
+                          {member.full_name}
+                          <MemberStatusPill status={member.status} />
+                        </p>
+                        <p className="truncate text-body-sm text-text-subtle">
+                          {member.email}
+                        </p>
                       </div>
-                    </TD>
-                    <TD>
-                      <div className="flex flex-wrap gap-1">
-                        {member.role_names.map((role) => (
-                          <Badge key={role} variant={roleBadgeVariant(role)}>
-                            {role}
-                          </Badge>
-                        ))}
-                      </div>
-                    </TD>
-                    <TD>
-                      <span className="text-body-md text-text-secondary">
-                        {member.group_names.length
-                          ? member.group_names.join(" · ")
-                          : "—"}
-                      </span>
-                    </TD>
-                    <TD>
-                      <StatusPill
-                        kind="inline"
-                        status={member.mfa_enabled ? "success" : "warning"}
-                        label={member.mfa_enabled ? "Enabled" : "No MFA"}
-                      />
-                    </TD>
-                    {/* Background checks & document acknowledgement aren't tracked
+                    </div>
+                  </TD>
+                  <TD>
+                    <div className="flex flex-wrap gap-1">
+                      {member.role_names.map((role) => (
+                        <Badge key={role} variant={roleBadgeVariant(role)}>
+                          {role}
+                        </Badge>
+                      ))}
+                    </div>
+                  </TD>
+                  <TD>
+                    <span className="text-body-md text-text-secondary">
+                      {member.group_names.length
+                        ? member.group_names.join(" · ")
+                        : "—"}
+                    </span>
+                  </TD>
+                  <TD>
+                    <StatusPill
+                      kind="inline"
+                      status={member.mfa_enabled ? "success" : "warning"}
+                      label={member.mfa_enabled ? "Enabled" : "No MFA"}
+                    />
+                  </TD>
+                  {/* Background checks & document acknowledgement aren't tracked
                         yet (no module) — honest "Unknown", never a fabricated pass. */}
-                    <TD>
-                      <StatusPill kind="inline" status="unknown" label="Unknown" />
-                    </TD>
-                    <TD>
-                      <StatusPill kind="inline" status="unknown" label="Unknown" />
-                    </TD>
-                    <TD>
-                      <span className="text-body-md text-text-secondary">
-                        {timeAgo(member.last_login_at)}
-                      </span>
-                    </TD>
-                    <TD className="text-right">
-                      {hasActions ? (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon-sm"
-                              aria-label={`Actions for ${member.full_name}`}
+                  <TD>
+                    <StatusPill
+                      kind="inline"
+                      status="unknown"
+                      label="Unknown"
+                    />
+                  </TD>
+                  <TD>
+                    <StatusPill
+                      kind="inline"
+                      status="unknown"
+                      label="Unknown"
+                    />
+                  </TD>
+                  <TD>
+                    <span className="text-body-md text-text-secondary">
+                      {timeAgo(member.last_login_at)}
+                    </span>
+                  </TD>
+                  <TD className="text-right">
+                    {hasActions ? (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            aria-label={`Actions for ${member.full_name}`}
+                          >
+                            <Icon name="more" className="size-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          {canRename ? (
+                            <DropdownMenuItem
+                              onSelect={() =>
+                                window.setTimeout(() => openRename(member), 0)
+                              }
                             >
-                              <Icon name="more" className="size-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            {canChangeRole ? (
+                              Edit name
+                            </DropdownMenuItem>
+                          ) : null}
+                          {canChangeRole ? (
+                            <DropdownMenuItem
+                              onSelect={() =>
+                                window.setTimeout(() => openRoleEdit(member), 0)
+                              }
+                            >
+                              Change role
+                            </DropdownMenuItem>
+                          ) : null}
+                          {canAddToGroup ? (
+                            <DropdownMenuItem
+                              onSelect={() =>
+                                window.setTimeout(() => openGroupAdd(member), 0)
+                              }
+                            >
+                              Add to group
+                            </DropdownMenuItem>
+                          ) : null}
+                          {canDisableMember ? (
+                            <>
+                              <DropdownMenuSeparator />
                               <DropdownMenuItem
+                                variant="danger"
                                 onSelect={() =>
                                   window.setTimeout(
-                                    () => openRoleEdit(member),
+                                    () => setToDisable(member),
                                     0,
                                   )
                                 }
                               >
-                                Change role
+                                Disable member
                               </DropdownMenuItem>
-                            ) : null}
-                            {canAddToGroup ? (
-                              <DropdownMenuItem
-                                onSelect={() =>
-                                  window.setTimeout(
-                                    () => openGroupAdd(member),
-                                    0,
-                                  )
-                                }
-                              >
-                                Add to group
-                              </DropdownMenuItem>
-                            ) : null}
-                            {canDisableMember ? (
-                              <>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  variant="danger"
-                                  onSelect={() =>
-                                    window.setTimeout(
-                                      () => setToDisable(member),
-                                      0,
-                                    )
-                                  }
-                                >
-                                  Disable member
-                                </DropdownMenuItem>
-                              </>
-                            ) : null}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      ) : null}
-                    </TD>
-                  </TR>
-                );
-              })}
-            </TBody>
-          </Table>
-        )}
-      </div>
+                            </>
+                          ) : null}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    ) : null}
+                  </TD>
+                </TR>
+              );
+            })}
+          </TBody>
+        </Table>
+      )}
+
+      {/* Rename. The name is the person's, not the membership's, so the copy
+          says plainly that it changes everywhere they work. */}
+      <Dialog
+        open={renaming !== null}
+        onOpenChange={(next) => {
+          if (!next) setRenaming(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit name</DialogTitle>
+            <DialogDescription>
+              {renaming?.email} · this is the person&rsquo;s name across every
+              workspace they belong to.
+            </DialogDescription>
+          </DialogHeader>
+          <TextField
+            label="Full name"
+            value={nameDraft}
+            onChange={(event) => setNameDraft(event.target.value)}
+            onKeyDown={(event) => {
+              if (
+                event.key === "Enter" &&
+                nameDraft.trim() &&
+                renaming &&
+                !renameMutation.isPending
+              ) {
+                renameMutation.mutate({
+                  membershipId: renaming.membership_id,
+                  fullName: nameDraft.trim(),
+                });
+              }
+            }}
+            placeholder="Riya Mehta"
+            autoFocus
+          />
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setRenaming(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              loading={renameMutation.isPending}
+              disabled={
+                !nameDraft.trim() || nameDraft.trim() === renaming?.full_name
+              }
+              onClick={() => {
+                if (renaming && nameDraft.trim()) {
+                  renameMutation.mutate({
+                    membershipId: renaming.membership_id,
+                    fullName: nameDraft.trim(),
+                  });
+                }
+              }}
+            >
+              Save name
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* DS §7.3 destructive confirm — names the member and the consequence. */}
       <ConfirmDialog
@@ -763,10 +880,9 @@ export function TeamPage() {
         title={`Disable ${toDisable?.full_name ?? "this member"}'s membership?`}
         consequence={
           <>
-            {toDisable?.full_name} ({toDisable?.email}) immediately loses
-            access to {principal?.tenant_name ?? "this workspace"}. Their
-            history stays in the audit trail, and you can invite them again
-            later.
+            {toDisable?.full_name} ({toDisable?.email}) immediately loses access
+            to {principal?.tenant_name ?? "this workspace"}. Their history stays
+            in the audit trail, and you can invite them again later.
           </>
         }
         confirmLabel="Disable membership"

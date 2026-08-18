@@ -14,7 +14,10 @@ import { SettingsSection } from "@/features/iam/components/settings-section";
 import { TeamPage } from "@/features/iam/components/team-page";
 import { GroupsPage } from "@/features/iam/components/groups-page";
 import { RolesPage } from "@/features/iam/components/roles-page";
-import { SecurityPage } from "@/features/iam/components/security-page";
+import {
+  PasswordPolicyPage,
+  SecurityPage,
+} from "@/features/iam/components/security-page";
 import { AuditLogPage } from "@/features/audit/components/audit-log-page";
 import { QuickStartPage } from "@/features/compliance/components/quick-start-page";
 import { DashboardPage } from "@/features/dashboard/dashboard-page";
@@ -64,17 +67,26 @@ export function AppRoutes() {
             <Route path="scope" element={<ScopePage />} />
           </Route>
           {/* Detail sits outside the tab strip: it is a drill-down, not a tab. */}
-          <Route path="frameworks/:frameworkId" element={<FrameworkDetailPage />} />
+          <Route
+            path="frameworks/:frameworkId"
+            element={<FrameworkDetailPage />}
+          />
           <Route path="controls" element={<ControlsPage />} />
           <Route path="controls/:controlId" element={<ControlDetailPage />} />
           <Route path="evidence" element={<EvidencePage />} />
           <Route path="evidence/:evidenceId" element={<EvidenceDetailPage />} />
-          <Route path="scope" element={<Navigate to="/frameworks/scope" replace />} />
+          <Route
+            path="scope"
+            element={<Navigate to="/frameworks/scope" replace />}
+          />
           <Route path="connectors" element={<ConnectionsLayout />}>
             <Route index element={<ConnectionsPage />} />
           </Route>
           {/* People and Company profile live under Settings; keep old paths working. */}
-          <Route path="people" element={<Navigate to="/settings/access/people" replace />} />
+          <Route
+            path="people"
+            element={<Navigate to="/settings/access/people" replace />}
+          />
           <Route
             path="company-profile"
             element={<Navigate to="/settings/organization/profile" replace />}
@@ -83,17 +95,24 @@ export function AppRoutes() {
             <Route index element={<Navigate to="access/people" replace />} />
 
             {/* Access Management — People / Groups / Roles as top tabs */}
-            <Route path="access" element={<SettingsSection categoryId="access" />}>
+            <Route
+              path="access"
+              element={<SettingsSection categoryId="access" />}
+            >
               <Route index element={<Navigate to="people" replace />} />
               <Route path="people" element={<TeamPage />} />
               <Route path="groups" element={<GroupsPage />} />
               <Route path="roles" element={<RolesPage />} />
             </Route>
 
-            {/* Security — MFA now; Authentication / SSO arrive later */}
-            <Route path="security" element={<SettingsSection categoryId="security" />}>
+            {/* Security — MFA and password policy now; Authentication / SSO later */}
+            <Route
+              path="security"
+              element={<SettingsSection categoryId="security" />}
+            >
               <Route index element={<Navigate to="mfa" replace />} />
               <Route path="mfa" element={<SecurityPage />} />
+              <Route path="password" element={<PasswordPolicyPage />} />
             </Route>
 
             {/* Organization — Org info now; Key personnel arrives later */}
@@ -103,6 +122,17 @@ export function AppRoutes() {
             >
               <Route index element={<Navigate to="profile" replace />} />
               <Route path="profile" element={<CompanyProfilePage />} />
+            </Route>
+
+            {/* Workflow — the configurer arrives with the task engine */}
+            <Route
+              path="workflow"
+              element={<SettingsSection categoryId="workflow" />}
+            >
+              <Route
+                index
+                element={<ComingSoonPage title="Workflow configurer" />}
+              />
             </Route>
 
             {/* Integrations — every tab is Phase 2 */}
@@ -122,10 +152,22 @@ export function AppRoutes() {
             </Route>
 
             {/* Back-compat: the old flat settings paths */}
-            <Route path="team" element={<Navigate to="/settings/access/people" replace />} />
-            <Route path="people" element={<Navigate to="/settings/access/people" replace />} />
-            <Route path="groups" element={<Navigate to="/settings/access/groups" replace />} />
-            <Route path="roles" element={<Navigate to="/settings/access/roles" replace />} />
+            <Route
+              path="team"
+              element={<Navigate to="/settings/access/people" replace />}
+            />
+            <Route
+              path="people"
+              element={<Navigate to="/settings/access/people" replace />}
+            />
+            <Route
+              path="groups"
+              element={<Navigate to="/settings/access/groups" replace />}
+            />
+            <Route
+              path="roles"
+              element={<Navigate to="/settings/access/roles" replace />}
+            />
             <Route
               path="company"
               element={<Navigate to="/settings/organization/profile" replace />}

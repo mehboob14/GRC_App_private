@@ -2,6 +2,13 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Button,
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   ErrorBanner,
   Icon,
   Skeleton,
@@ -61,6 +68,7 @@ export function SmtpSettings({ canManage }: { canManage: boolean }) {
   const [form, setForm] = useState<Form | null>(null);
   const [password, setPassword] = useState("");
   const [testTo, setTestTo] = useState(principal?.user.email ?? "");
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     if (query.data) setForm(toForm(query.data));
@@ -95,171 +103,214 @@ export function SmtpSettings({ canManage }: { canManage: boolean }) {
   const hasPassword = query.data?.has_password ?? false;
   const busy = saveMutation.isPending || testMutation.isPending;
 
+  const summary =
+    form.enabled && form.host.trim()
+      ? `Sending through ${form.host.trim()}`
+      : "Using the platform default mail server";
+
   return (
-    <div>
-      <h2 className="font-display text-heading-sm text-text-primary">
-        Outbound email (SMTP)
-      </h2>
-      <p className="mb-5 mt-1 text-body-md text-text-secondary">
-        Send Verity emails — invites, verification — from your own mail server.
-        Leave off to use the platform default.
-      </p>
-
-      <div className="rounded-lg border border-border bg-surface-primary p-5 sm:p-6">
-        {saveMutation.isError ? (
-          <ErrorBanner className="mb-4" title="Couldn’t save">
-            {saveMutation.error instanceof ApiError
-              ? saveMutation.error.message
-              : "The request didn’t reach the server."}
-          </ErrorBanner>
-        ) : null}
-
-        <div className="mb-4 flex items-center justify-between rounded-md border border-border bg-surface-sunken px-3.5 py-3">
-          <div>
-            <p className="text-body-md font-semibold text-text-primary">
-              Use my own SMTP
-            </p>
-            <p className="text-body-sm text-text-subtle">
-              When on, Verity sends this workspace’s email through the server
-              below.
-            </p>
-          </div>
-          <Switch
-            checked={form.enabled}
-            onCheckedChange={(v) => set("enabled", v)}
-            disabled={!canManage}
-          />
+    // A summary row, not the whole form: SMTP is set once and rarely revisited,
+    // so it earns a line on the page and a dialog for the eight fields behind it.
+    <div className="rounded-lg border border-border bg-surface-primary p-5 sm:p-6">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h2 className="font-display text-heading-sm text-text-primary">
+            Outbound email (SMTP)
+          </h2>
+          <p className="mt-1 text-body-md text-text-secondary">
+            Send Verity emails — invites, verification — from your own mail
+            server.
+          </p>
+          <p className="mt-2.5 text-body-sm text-text-subtle">{summary}</p>
         </div>
+        <Button
+          variant="secondary"
+          className="shrink-0"
+          onClick={() => setOpen(true)}
+        >
+          {canManage ? "Configure" : "View settings"}
+        </Button>
+      </div>
 
-        <fieldset disabled={!canManage} className="grid gap-4 sm:grid-cols-2">
-          <TextField
-            label="SMTP host"
-            placeholder="smtp.yourcompany.com"
-            value={form.host}
-            onChange={(e) => set("host", e.target.value)}
-          />
-          <TextField
-            label="Port"
-            inputMode="numeric"
-            placeholder="587"
-            value={form.port}
-            onChange={(e) =>
-              set("port", e.target.value.replace(/\D/g, "").slice(0, 5))
-            }
-          />
-          <TextField
-            label="Username"
-            optional
-            autoComplete="off"
-            placeholder="mailer@yourcompany.com"
-            value={form.username}
-            onChange={(e) => set("username", e.target.value)}
-          />
-          <TextField
-            label="Password"
-            type="password"
-            optional
-            autoComplete="new-password"
-            placeholder={
-              hasPassword ? "•••••••• (leave blank to keep)" : "SMTP password"
-            }
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          <TextField
-            label="From name"
-            optional
-            placeholder="Acme Security"
-            value={form.from_name}
-            onChange={(e) => set("from_name", e.target.value)}
-          />
-          <TextField
-            label="From address"
-            type="email"
-            placeholder="no-reply@yourcompany.com"
-            value={form.from_address}
-            onChange={(e) => set("from_address", e.target.value)}
-          />
-          <label className="flex items-center gap-2.5 text-body-md text-text-primary sm:col-span-2">
-            <Switch
-              checked={form.use_tls}
-              onCheckedChange={(v) => set("use_tls", v)}
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent size="md" scrollBody>
+          <DialogHeader>
+            <DialogTitle>Outbound email (SMTP)</DialogTitle>
+            <DialogDescription>
+              Verity sends invites and verification links through this server.
+              Leave it off to use the platform default.
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogBody className="space-y-4 pb-1">
+            {saveMutation.isError ? (
+              <ErrorBanner className="mb-4" title="Couldn’t save">
+                {saveMutation.error instanceof ApiError
+                  ? saveMutation.error.message
+                  : "The request didn’t reach the server."}
+              </ErrorBanner>
+            ) : null}
+
+            <div className="mb-4 flex items-center justify-between rounded-md border border-border bg-surface-sunken px-3.5 py-3">
+              <div>
+                <p className="text-body-md font-semibold text-text-primary">
+                  Use my own SMTP
+                </p>
+                <p className="text-body-sm text-text-subtle">
+                  When on, Verity sends this workspace’s email through the
+                  server below.
+                </p>
+              </div>
+              <Switch
+                checked={form.enabled}
+                onCheckedChange={(v) => set("enabled", v)}
+                disabled={!canManage}
+              />
+            </div>
+
+            <fieldset
               disabled={!canManage}
-            />
-            Use STARTTLS (recommended for port 587)
-          </label>
-        </fieldset>
+              className="grid gap-4 sm:grid-cols-2"
+            >
+              <TextField
+                label="SMTP host"
+                placeholder="smtp.yourcompany.com"
+                value={form.host}
+                onChange={(e) => set("host", e.target.value)}
+              />
+              <TextField
+                label="Port"
+                inputMode="numeric"
+                placeholder="587"
+                value={form.port}
+                onChange={(e) =>
+                  set("port", e.target.value.replace(/\D/g, "").slice(0, 5))
+                }
+              />
+              <TextField
+                label="Username"
+                optional
+                autoComplete="off"
+                placeholder="mailer@yourcompany.com"
+                value={form.username}
+                onChange={(e) => set("username", e.target.value)}
+              />
+              <TextField
+                label="Password"
+                type="password"
+                optional
+                autoComplete="new-password"
+                placeholder={
+                  hasPassword
+                    ? "•••••••• (leave blank to keep)"
+                    : "SMTP password"
+                }
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              <TextField
+                label="From name"
+                optional
+                placeholder="Acme Security"
+                value={form.from_name}
+                onChange={(e) => set("from_name", e.target.value)}
+              />
+              <TextField
+                label="From address"
+                type="email"
+                placeholder="no-reply@yourcompany.com"
+                value={form.from_address}
+                onChange={(e) => set("from_address", e.target.value)}
+              />
+              <label className="flex items-center gap-2.5 text-body-md text-text-primary sm:col-span-2">
+                <Switch
+                  checked={form.use_tls}
+                  onCheckedChange={(v) => set("use_tls", v)}
+                  disabled={!canManage}
+                />
+                Use STARTTLS (recommended for port 587)
+              </label>
+            </fieldset>
 
-        {canManage ? (
-          <>
-            <div className="mt-6 flex justify-end">
+            {canManage ? (
+              <>
+                <div className="mt-6 border-t border-border pt-5">
+                  <p className="mb-2 font-sans text-label-sm text-text-secondary">
+                    Send a test email
+                  </p>
+                  {testMutation.data ? (
+                    testMutation.data.ok ? (
+                      <div
+                        className="mb-3 flex items-center gap-2 rounded-md border border-status-success-border bg-status-success-bg px-3.5 py-2.5"
+                        role="status"
+                      >
+                        <Icon
+                          name="check"
+                          className="size-4 text-status-success-text"
+                        />
+                        <p className="text-body-sm font-semibold text-status-success-text">
+                          Test email sent to {testTo}.
+                        </p>
+                      </div>
+                    ) : (
+                      <ErrorBanner className="mb-3" title="Test failed">
+                        {testMutation.data.detail}
+                      </ErrorBanner>
+                    )
+                  ) : null}
+                  <div className="flex flex-wrap items-end gap-2">
+                    <div className="min-w-0 flex-1">
+                      <TextField
+                        label="Send to"
+                        type="email"
+                        value={testTo}
+                        onChange={(e) => setTestTo(e.target.value)}
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="lg"
+                      loading={testMutation.isPending}
+                      disabled={busy || !testTo}
+                      onClick={() => testMutation.mutate()}
+                    >
+                      Save &amp; send test
+                    </Button>
+                  </div>
+                  <p className="mt-1.5 text-caption text-text-subtle">
+                    Saves the settings above, then sends through your server.
+                  </p>
+                </div>
+              </>
+            ) : (
+              <p className="mt-4 text-body-sm text-text-subtle">
+                View-only — ask an Admin to change SMTP settings.
+              </p>
+            )}
+          </DialogBody>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setOpen(false)}
+            >
+              Close
+            </Button>
+            {canManage ? (
               <Button
                 type="button"
-                size="lg"
                 loading={saveMutation.isPending}
                 disabled={busy}
                 onClick={() => saveMutation.mutate()}
               >
-                Save SMTP settings
-                <Icon name="check" className="size-4" />
+                Save settings
               </Button>
-            </div>
-
-            <div className="mt-6 border-t border-border pt-5">
-              <p className="mb-2 font-sans text-label-sm text-text-secondary">
-                Send a test email
-              </p>
-              {testMutation.data ? (
-                testMutation.data.ok ? (
-                  <div
-                    className="mb-3 flex items-center gap-2 rounded-md border border-status-success-border bg-status-success-bg px-3.5 py-2.5"
-                    role="status"
-                  >
-                    <Icon
-                      name="check"
-                      className="size-4 text-status-success-text"
-                    />
-                    <p className="text-body-sm font-semibold text-status-success-text">
-                      Test email sent to {testTo}.
-                    </p>
-                  </div>
-                ) : (
-                  <ErrorBanner className="mb-3" title="Test failed">
-                    {testMutation.data.detail}
-                  </ErrorBanner>
-                )
-              ) : null}
-              <div className="flex flex-wrap items-end gap-2">
-                <div className="min-w-0 flex-1">
-                  <TextField
-                    label="Send to"
-                    type="email"
-                    value={testTo}
-                    onChange={(e) => setTestTo(e.target.value)}
-                  />
-                </div>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="lg"
-                  loading={testMutation.isPending}
-                  disabled={busy || !testTo}
-                  onClick={() => testMutation.mutate()}
-                >
-                  Save &amp; send test
-                </Button>
-              </div>
-              <p className="mt-1.5 text-caption text-text-subtle">
-                Saves the settings above, then sends through your server.
-              </p>
-            </div>
-          </>
-        ) : (
-          <p className="mt-4 text-body-sm text-text-subtle">
-            View-only — ask an Admin to change SMTP settings.
-          </p>
-        )}
-      </div>
+            ) : null}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

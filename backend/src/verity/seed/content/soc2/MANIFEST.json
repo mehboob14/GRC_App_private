@@ -5,6 +5,11 @@
     "requirements": 61,
     "template_requirements": 150
   },
+  "criterion_text_source": {
+    "criteria": 61,
+    "replaced_on": "2026-08-18",
+    "verbatim": true
+  },
   "generated": [
     {
       "path": "framework.json",
@@ -12,7 +17,7 @@
     },
     {
       "path": "requirements.json",
-      "sha256": "cc755c09023ca4176a3a4226a5f1badf821c0e9cb610bc3850314927214cb853"
+      "sha256": "48f80daccf9ebd86b1ad2a666297cd0db6743c3c83c6a73932e347b86828630d"
     },
     {
       "path": "control_templates.json",
@@ -23,7 +28,7 @@
       "sha256": "ac0f3c53439d5248a465ab99b2a0d8d49f917b513ccc0b28127d4e6d7231678c"
     }
   ],
-  "note": "Vendored from the grc-s prototype on 2026-08-15 by backend/scripts/vendor_soc2_content.py; re-run it to regenerate.",
+  "note": "Control templates and mappings vendored from the grc-s prototype on 2026-08-15 by backend/scripts/vendor_soc2_content.py. Criterion TEXT was replaced on 2026-08-18 with the verbatim wording from the AICPA Trust Services Criteria PDF — re-running the vendor script would overwrite it with the prototype's paraphrases, so re-apply the exact text afterwards.",
   "sources": [
     {
       "path": "C:\\Users\\HP\\OneDrive\\Desktop\\Platform\\grc-s\\backend\\app\\control_library.json",
@@ -32,6 +37,11 @@
     {
       "path": "C:\\Users\\HP\\OneDrive\\Desktop\\Platform\\grc-s\\backend\\data\\soc2_controls.json",
       "sha256": "82b1653ccf418e0acd40dc271ac56e4228e5321081e211b378f60d2d5c2be984"
+    },
+    {
+      "note": "AICPA Trust Services Criteria — authoritative source for requirements.json 'name' (the criterion text, verbatim) and 'description' (the COSO principle attribution). Codes, categories, trust_services_category and is_always_in_scope still come from the prototype vendoring.",
+      "path": "C:\\Users\\HP\\Downloads\\Trust-services-criteria.pdf",
+      "sha256": "23a099dd1dc273b7a45fda2351f376344c33fcb2911d586036c0e0d631b8ad69"
     }
   ],
   "vendored_on": "2026-08-15"

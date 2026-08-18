@@ -19,6 +19,12 @@ const variants = {
     "border border-border bg-surface-primary font-semibold text-text-primary hover:bg-surface-hover",
   ghost:
     "bg-transparent font-semibold text-text-secondary hover:bg-surface-hover hover:text-text-primary",
+  // Tinted call-to-action for repeated cards: reads as the action without 40
+  // filled primaries shouting at once, and fills in on hover. Label is
+  // action-primary rather than action-accent — accent on the tint is 3.7:1,
+  // which misses AA for a 14px label; action-primary is 5.3:1 light / 6.4:1 dark.
+  accent:
+    "border border-action-accent-border bg-action-accent-tint font-semibold text-action-primary hover:border-action-primary hover:bg-action-primary hover:text-action-primary-fg",
   destructive:
     "bg-action-danger font-bold text-action-danger-fg hover:bg-action-danger-hover",
   "destructive-2":

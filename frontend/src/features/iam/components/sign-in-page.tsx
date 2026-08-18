@@ -421,13 +421,6 @@ export function SignInPage() {
         </Button>
       </form>
 
-      <div className="mt-5 flex items-center gap-2 rounded-md border border-status-success-border bg-status-success-bg px-3.5 py-3">
-        <Icon name="shield" className="size-4 text-status-success-text" />
-        <p className="text-body-sm font-semibold text-status-success-text">
-          Protected by enterprise SSO · SOC 2 Type II
-        </p>
-      </div>
-
       <p className="mt-6 text-body-md text-text-secondary">
         New here?{" "}
         <Link className="font-semibold text-text-link" to="/sign-up">

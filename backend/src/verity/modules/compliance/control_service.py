@@ -59,7 +59,7 @@ class ControlView:
     description: str
     implementation_guidance: str | None
     category: str
-    control_type: str
+    control_type: str | None
     control_sub_type: str | None
     status: str
     origin: str
@@ -320,7 +320,7 @@ class ControlService:
         name: str,
         description: str,
         category: str,
-        control_type: str,
+        control_type: str | None = None,
         control_sub_type: str | None = None,
         implementation_guidance: str | None = None,
         owner_membership_id: uuid.UUID | None = None,

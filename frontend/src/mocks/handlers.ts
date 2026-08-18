@@ -577,7 +577,9 @@ export const handlers = [
       {
         member: newMember,
         invite_token: inviteToken,
-        accept_url: `${window.location.origin}/accept-invite?token=${inviteToken}`,
+        // The mock has no mail server either — say so rather than imply delivery.
+      email_sent: false,
+      accept_url: `${window.location.origin}/accept-invite?token=${inviteToken}`,
       } satisfies InviteMemberResponse,
       { status: 201 },
     );
@@ -739,13 +741,17 @@ export const handlers = [
     if (!principal.permissions.includes("groups:manage")) {
       return err(403, "permission_denied", "Missing permission: groups:manage");
     }
-    const body = (await request.json()) as { name?: string };
+    const body = (await request.json()) as {
+      name?: string;
+      description?: string | null;
+    };
     if (!body.name?.trim()) {
       return err(422, "validation_error", "Group name is required.");
     }
     const group = {
       id: `group-${crypto.randomUUID().slice(0, 6)}`,
       name: body.name.trim(),
+      description: body.description?.trim() || null,
       member_count: 0,
       member_ids: [] as string[],
     };
@@ -819,6 +825,7 @@ export const handlers = [
     }
     const body = (await request.json()) as {
       name?: string;
+      description?: string | null;
       permission_keys?: string[];
     };
     if (!body.name?.trim()) {
@@ -827,6 +834,7 @@ export const handlers = [
     const role = {
       id: `role-${crypto.randomUUID().slice(0, 6)}`,
       name: body.name.trim(),
+      description: body.description?.trim() || null,
       built_in: false,
       permission_keys: (body.permission_keys ?? []).filter(isPermissionKey),
       assignment_count: 0,

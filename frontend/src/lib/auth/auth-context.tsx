@@ -9,6 +9,7 @@ import {
 import type { LoginResponse, SessionPrincipal, WorkspaceSummary } from "@/lib/api/types";
 import {
   clearSession,
+  setPrincipalCache,
   getAccessToken,
   getPrincipal,
   setSession,
@@ -28,7 +29,7 @@ type AuthContextValue = {
    */
   switchWorkspace: (membershipId: string) => Promise<LoginResponse>;
   signOut: () => void;
-  refreshPrincipal: () => void;
+  refreshPrincipal: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -44,9 +45,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
   const [token, setToken] = useState<string | null>(() => getAccessToken());
 
-  const refreshPrincipal = useCallback(() => {
-    setPrincipal(getPrincipal());
+  /**
+   * Re-read the principal from the server and update the cache.
+   *
+   * Reading sessionStorage alone would just return the stale copy again — the
+   * workspace name and the person's own name live in rows the token does not
+   * carry, so a round trip is the only way to notice they changed. Failure is
+   * deliberately silent: the cached values stay on screen rather than the
+   * chrome emptying out because one background refresh did not land.
+   */
+  const refreshPrincipal = useCallback(async () => {
     setToken(getAccessToken());
+    if (!getAccessToken()) {
+      setPrincipal(getPrincipal());
+      return;
+    }
+    try {
+      const fresh = await authApi.me();
+      setPrincipalCache(fresh);
+      setPrincipal(fresh);
+    } catch {
+      setPrincipal(getPrincipal());
+    }
   }, []);
 
   const applyLogin = useCallback((response: LoginResponse) => {

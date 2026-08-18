@@ -11,6 +11,7 @@ import pytest
 
 from verity.modules.iam.exceptions import WeakPassword
 from verity.modules.iam.service import (
+    BUILT_IN_ROLE_DESCRIPTIONS,
     BUILT_IN_ROLE_KEYS,
     MIN_PASSWORD_LENGTH,
     derive_slug_candidates,
@@ -56,17 +57,30 @@ def test_the_federation_seam_is_imported_by_nothing(filename: str) -> None:
     assert "user_identities" not in code, f"{filename} references the seam's table"
 
 
-def test_the_five_built_in_roles_are_exactly_the_designed_set() -> None:
+def test_the_built_in_roles_are_exactly_the_designed_set() -> None:
     assert list(BUILT_IN_ROLE_KEYS) == [
         "Admin",
-        "Compliance Manager",
-        "Control Owner",
-        "Employee",
-        "Auditor",
+        "Chief Executive Officer",
+        "Security Officer",
+        "Privacy Officer",
+        "Engineering Lead",
+        "Business Operations/Finance Lead",
     ]
     # Admin is "every key that exists", resolved at check time — no static list.
     assert BUILT_IN_ROLE_KEYS["Admin"] is None
-    assert BUILT_IN_ROLE_KEYS["Auditor"] == ("tenant:read", "audit:read")
+    # The appointments start read-only; an admin widens them in the UI.
+    for name, keys in BUILT_IN_ROLE_KEYS.items():
+        if name == "Admin":
+            continue
+        assert keys is not None
+        assert all(key.endswith(":read") for key in keys), name
+
+
+def test_every_built_in_role_ships_a_description() -> None:
+    """A role list where half the rows explain themselves and half do not is
+    worse than one that never promised. The two tables move together."""
+    assert set(BUILT_IN_ROLE_DESCRIPTIONS) == set(BUILT_IN_ROLE_KEYS)
+    assert all(text.strip() for text in BUILT_IN_ROLE_DESCRIPTIONS.values())
 
 
 def test_password_policy_is_ten_characters() -> None:

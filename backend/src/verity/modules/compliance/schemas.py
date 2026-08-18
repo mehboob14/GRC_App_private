@@ -68,7 +68,7 @@ class ControlTemplateOut(_Response):
     description: str
     implementation_guidance: str | None
     category: str
-    control_type: str
+    control_type: str | None
     control_sub_type: str | None
     importance: str
     built_in: bool
@@ -98,7 +98,7 @@ class ControlOut(_Response):
     description: str
     implementation_guidance: str | None
     category: str
-    control_type: str
+    control_type: str | None
     control_sub_type: str | None
     status: str
     origin: str
@@ -116,7 +116,11 @@ class ControlCreate(_Request):
     name: str = Field(min_length=1, max_length=300)
     description: str = Field(min_length=1, max_length=4000)
     category: str = Field(min_length=1, max_length=100)
-    control_type: str = Field(min_length=1, max_length=50)
+    control_type: str | None = Field(default=None, max_length=50)
+    """Preventive / Detective / Corrective, for a tenant's own internal or custom
+    control. Omitted for anything that mirrors framework content — the platform
+    does not assert a design classification the framework never made."""
+
     control_sub_type: str | None = Field(default=None, max_length=50)
     implementation_guidance: str | None = Field(default=None, max_length=8000)
     owner_membership_id: uuid.UUID | None = None

@@ -106,6 +106,11 @@ class Credentials(Timestamped, Base):
     # whose token was issued before this instant is rejected — the one primitive
     # that revokes stateless JWT sessions and makes a reset link single-use.
     credentials_changed_at: Mapped[datetime | None] = mapped_column(default=None)
+    # Argon2 digests of superseded passwords, newest first, trimmed to the
+    # tenant's history depth. Enforces "do not reuse the last N". The column
+    # name carries "hash", which is what places it inside the audit-snapshot
+    # and logging deny-lists in `core.logging` — no second registration needed.
+    previous_password_hashes: Mapped[list[str] | None] = mapped_column(JSONB(), default=None)
 
     def __repr__(self) -> str:
         # Deliberately no credential columns.
@@ -127,6 +132,25 @@ class TenantSettings(Timestamped, Base):
         ForeignKey("tenants.id", ondelete="CASCADE"), primary_key=True
     )
     require_admin_mfa: Mapped[bool] = mapped_column(server_default=text("false"), default=False)
+
+    # Password policy. Defaults are the recommended posture, not the loosest —
+    # a workspace that never opens this screen still gets 12 characters, all
+    # four character classes, and no reuse of the last 5.
+    password_min_length: Mapped[int] = mapped_column(server_default=text("12"), default=12)
+    password_require_upper: Mapped[bool] = mapped_column(server_default=text("true"), default=True)
+    password_require_lower: Mapped[bool] = mapped_column(server_default=text("true"), default=True)
+    password_require_digit: Mapped[bool] = mapped_column(server_default=text("true"), default=True)
+    password_require_symbol: Mapped[bool] = mapped_column(server_default=text("true"), default=True)
+    password_history_depth: Mapped[int] = mapped_column(server_default=text("5"), default=5)
+
+    # Stored and surfaced, deliberately not enforced yet: each needs machinery
+    # this phase does not ship (expiry needs a forced-change flow, lockout a
+    # state machine, idle timeout a client timer). All default to off, so the
+    # settings screen never states a control the platform does not apply.
+    password_max_age_days: Mapped[int] = mapped_column(server_default=text("0"), default=0)
+    lockout_threshold: Mapped[int] = mapped_column(server_default=text("0"), default=0)
+    lockout_duration_minutes: Mapped[int] = mapped_column(server_default=text("30"), default=30)
+    idle_timeout_minutes: Mapped[int] = mapped_column(server_default=text("0"), default=0)
 
 
 class UserIdentity(UUIDPrimaryKey, Timestamped, Base):
@@ -189,6 +213,7 @@ class Group(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
     __tablename__ = "groups"
 
     name: Mapped[str]
+    description: Mapped[str | None] = mapped_column(default=None)
 
     __table_args__ = (UniqueConstraint("tenant_id", "name"),)
 
@@ -249,6 +274,7 @@ class Role(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
     __tablename__ = "roles"
 
     name: Mapped[str]
+    description: Mapped[str | None] = mapped_column(default=None)
     built_in: Mapped[bool] = mapped_column(server_default=text("false"), default=False)
 
     __table_args__ = (UniqueConstraint("tenant_id", "name"),)

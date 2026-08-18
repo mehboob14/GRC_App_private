@@ -10,6 +10,7 @@ SHELL := /bin/bash
 .DEFAULT_GOAL := help
 
 COMPOSE := docker compose --env-file .env -f infra/docker/docker-compose.yml
+PROD_COMPOSE := docker compose -f infra/docker/docker-compose.prod.yml
 UV := uv --directory backend
 BACKEND := $(UV) run
 
@@ -76,6 +77,27 @@ worker: ## Run a Celery worker
 .PHONY: beat
 beat: ## Run the Celery scheduler
 	$(BACKEND) celery -A verity.workers.celery_app:celery_app beat --loglevel=info
+
+# --- images --------------------------------------------------------------------------
+#
+# The production images. Local development does not use them — `make run` is still
+# native uvicorn against `make up`. These exist so a broken Dockerfile is caught here,
+# in seconds, instead of on the server halfway through a deploy.
+
+# Plain `docker build`, not `compose build`: compose interpolates the whole file
+# before doing anything, so the `:?` required-variable guards in the prod stack would
+# fail here — and demanding production secrets to typecheck a Dockerfile is silly.
+.PHONY: build
+build: ## Build the production images (does not run them)
+	docker build -t verity-api:latest backend
+	docker build -t verity-web:latest frontend
+
+.PHONY: build-check
+build-check: build ## Build, then prove the API image boots and answers /healthz
+	@docker run --rm --entrypoint python verity-api:latest \
+		-c "import verity.main; print('api image imports ok')"
+	@docker run --rm --entrypoint sh verity-web:latest \
+		-c "test -f /usr/share/nginx/html/index.html && ! test -f /usr/share/nginx/html/mockServiceWorker.js && echo 'web image built ok, mocks stripped'"
 
 # --- checks --------------------------------------------------------------------------
 

@@ -5,8 +5,10 @@ export { Button, type ButtonSize, type ButtonVariant } from "./button";
 export { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./card";
 export { Checkbox } from "./checkbox";
 export { ConfirmDialog } from "./confirm-dialog";
+export { BrandMark } from "./brand-mark";
 export {
   Dialog,
+  DialogBody,
   DialogClose,
   DialogContent,
   DialogDescription,

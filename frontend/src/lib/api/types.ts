@@ -6,16 +6,18 @@
 
 export type BuiltInRoleName =
   | "Admin"
-  | "Compliance Manager"
-  | "Control Owner"
-  | "Employee"
-  | "Auditor";
+  | "Chief Executive Officer"
+  | "Security Officer"
+  | "Privacy Officer"
+  | "Engineering Lead"
+  | "Business Operations/Finance Lead";
 
 export const PERMISSION_KEYS = [
   "tenant:read",
   "members:read",
   "members:invite",
   "members:disable",
+  "members:manage",
   "groups:read",
   "groups:manage",
   "roles:read",
@@ -165,6 +167,11 @@ export type InviteMemberRequest = {
   full_name: string;
   role_id: string;
   /**
+   * Optional group. The backend adds the membership to it in the same
+   * transaction as the invite, so the person is in the group on arrival.
+   */
+  group_id?: string;
+  /**
    * Optional access window for guest auditors/consultants (ISO dates,
    * YYYY-MM-DD). The backend models the window on the role assignment;
    * an omitted bound means open-ended on that side.
@@ -184,6 +191,9 @@ export type InviteMemberResponse = {
   invite_token: string;
   /** Absolute URL to /accept-invite?token=… for the invitee. */
   accept_url: string;
+  /** False when SMTP is unconfigured or the send failed. Never claim an invite
+   *  was emailed unless this is true. */
+  email_sent: boolean;
 };
 
 /**
@@ -206,6 +216,7 @@ export type AcceptInvitationResponse = {
 export type Group = {
   id: string;
   name: string;
+  description: string | null;
   member_count: number;
   member_ids: string[];
 };
@@ -213,6 +224,7 @@ export type Group = {
 export type Role = {
   id: string;
   name: string;
+  description: string | null;
   built_in: boolean;
   permission_keys: PermissionKey[];
   assignment_count: number;
@@ -262,7 +274,22 @@ export type TenantSummary = {
 
 export type SecuritySettings = {
   require_admin_mfa: boolean;
+  /** Enforced on every path that sets a password. */
+  password_min_length: number;
+  password_require_upper: boolean;
+  password_require_lower: boolean;
+  password_require_digit: boolean;
+  password_require_symbol: boolean;
+  password_history_depth: number;
+  /** Stored and shown, not enforced yet — the UI badges these as such. */
+  password_max_age_days: number;
+  lockout_threshold: number;
+  lockout_duration_minutes: number;
+  idle_timeout_minutes: number;
 };
+
+/** Patch only what changed; the server accepts any subset. */
+export type SecuritySettingsPatch = Partial<SecuritySettings>;
 
 export type CompanyProfile = {
   tenant_id: string;
@@ -363,7 +390,9 @@ export type ControlTemplate = {
   description: string;
   implementation_guidance: string | null;
   category: string;
-  control_type: string;
+  /** Preventive / Detective / Corrective. NULL on framework content — the
+   *  classification is authored on a tenant's own internal/custom controls. */
+  control_type: string | null;
   control_sub_type: string | null;
   importance: string;
   built_in: boolean;
@@ -403,7 +432,9 @@ export type Control = {
   description: string;
   implementation_guidance: string | null;
   category: string;
-  control_type: string;
+  /** Preventive / Detective / Corrective. NULL on framework content — the
+   *  classification is authored on a tenant's own internal/custom controls. */
+  control_type: string | null;
   control_sub_type: string | null;
   status: ControlStatus;
   origin: "template" | "custom";
@@ -438,7 +469,9 @@ export type ControlCreateRequest = {
   name: string;
   description: string;
   category: string;
-  control_type: string;
+  /** Preventive / Detective / Corrective. NULL on framework content — the
+   *  classification is authored on a tenant's own internal/custom controls. */
+  control_type: string | null;
   control_sub_type?: string | null;
   implementation_guidance?: string | null;
   owner_membership_id?: string | null;

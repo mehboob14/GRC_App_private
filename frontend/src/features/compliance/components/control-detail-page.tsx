@@ -39,7 +39,10 @@ const STATUS_LABEL: Record<string, string> = {
   not_applicable: "Not applicable",
 };
 
-const STATUS_FAMILY: Record<string, "success" | "progress" | "pending" | "neutral"> = {
+const STATUS_FAMILY: Record<
+  string,
+  "success" | "progress" | "pending" | "neutral"
+> = {
   not_started: "pending",
   in_progress: "progress",
   implemented: "success",
@@ -83,7 +86,9 @@ function Panel({
   return (
     <section className="rounded-lg border border-border bg-surface-primary p-5">
       <div className="mb-3 flex items-center justify-between gap-3">
-        <h2 className="font-display text-title-md text-text-primary">{title}</h2>
+        <h2 className="font-display text-title-md text-text-primary">
+          {title}
+        </h2>
         {action}
       </div>
       {children}
@@ -136,7 +141,10 @@ function Guidance({ text }: { text: string }) {
   return (
     <ul className="space-y-1.5">
       {lines.map((line) => (
-        <li key={line} className="flex gap-2.5 text-body-md leading-relaxed text-text-secondary">
+        <li
+          key={line}
+          className="flex gap-2.5 text-body-md leading-relaxed text-text-secondary"
+        >
           <span className="mt-2 size-1.5 shrink-0 rounded-full bg-text-faint" />
           <span className="min-w-0">{line}</span>
         </li>
@@ -176,9 +184,13 @@ function ChangeSummary({
     if (!after) return [];
     const keys = new Set([...Object.keys(before ?? {}), ...Object.keys(after)]);
     return [...keys]
-      .filter((key) => key !== "id" && key !== "evidence_linked" && FIELD_LABEL[key])
+      .filter(
+        (key) => key !== "id" && key !== "evidence_linked" && FIELD_LABEL[key],
+      )
       .map((key) => ({ key, from: before?.[key], to: after[key] }))
-      .filter((change) => JSON.stringify(change.from) !== JSON.stringify(change.to));
+      .filter(
+        (change) => JSON.stringify(change.from) !== JSON.stringify(change.to),
+      );
   }, [before, after]);
 
   const linkedNow = after?.evidence_linked;
@@ -197,7 +209,8 @@ function ChangeSummary({
   if (changes.length === 0) return null;
 
   const render = (value: unknown) => {
-    if (value === null || value === undefined || value === "") return "Unassigned";
+    if (value === null || value === undefined || value === "")
+      return "Unassigned";
     const text = String(value);
     return (names.get(text) ?? text).replace(/_/g, " ").slice(0, 60);
   };
@@ -207,9 +220,17 @@ function ChangeSummary({
       {changes.map((change) => (
         <li key={change.key} className="text-body-sm text-text-secondary">
           <span className="text-text-subtle">{FIELD_LABEL[change.key]}:</span>{" "}
-          <span className="line-through decoration-text-faint">{render(change.from)}</span>
-          <Icon name="arrowr" className="mx-1 inline size-3 text-text-faint" aria-hidden />
-          <span className="font-semibold text-text-primary">{render(change.to)}</span>
+          <span className="line-through decoration-text-faint">
+            {render(change.from)}
+          </span>
+          <Icon
+            name="arrowr"
+            className="mx-1 inline size-3 text-text-faint"
+            aria-hidden
+          />
+          <span className="font-semibold text-text-primary">
+            {render(change.to)}
+          </span>
         </li>
       ))}
     </ul>
@@ -273,19 +294,24 @@ export function ControlDetailPage() {
   // table is append-only, so this is the record, not a reconstruction.
   const historyQuery = useQuery({
     queryKey: ["audit", "control", controlId],
-    queryFn: () => auditApi.list(undefined, false, { type: "control", id: controlId }),
+    queryFn: () =>
+      auditApi.list(undefined, false, { type: "control", id: controlId }),
     enabled: controlId.length > 0 && canReadAudit,
   });
 
   const control = controlQuery.data;
-  const evidence = useMemo(() => evidenceQuery.data ?? [], [evidenceQuery.data]);
+  const evidence = useMemo(
+    () => evidenceQuery.data ?? [],
+    [evidenceQuery.data],
+  );
 
   const framework = frameworksQuery.data?.[0];
   const frameworkVersionId = framework?.versions.find((v) => v.is_current)?.id;
 
   const requirementsQuery = useQuery({
     queryKey: ["requirements", framework?.id],
-    queryFn: () => complianceApi.listRequirements(framework!.id, frameworkVersionId),
+    queryFn: () =>
+      complianceApi.listRequirements(framework!.id, frameworkVersionId),
     enabled: Boolean(framework?.id),
   });
 
@@ -293,7 +319,10 @@ export function ControlDetailPage() {
   // look like "SOC2:CC6.2", and the criterion list is keyed on the bare code.
   const criteria = useMemo(() => {
     const byCode = new Map(
-      (requirementsQuery.data ?? []).map((requirement) => [requirement.code, requirement]),
+      (requirementsQuery.data ?? []).map((requirement) => [
+        requirement.code,
+        requirement,
+      ]),
     );
     return (control?.requirement_keys ?? [])
       .map((key) => byCode.get(key.replace(/^[^:]+:/, "")))
@@ -316,7 +345,10 @@ export function ControlDetailPage() {
       .slice(0, 12);
   }, [control, allControlsQuery.data]);
 
-  const history = useMemo(() => historyQuery.data?.items ?? [], [historyQuery.data]);
+  const history = useMemo(
+    () => historyQuery.data?.items ?? [],
+    [historyQuery.data],
+  );
   const membersQuery = useQuery({
     queryKey: ["members"],
     queryFn: () => iamApi.listMembers(),
@@ -332,7 +364,9 @@ export function ControlDetailPage() {
       ),
     [membersQuery.data],
   );
-  const staleCount = evidence.filter((item) => item.freshness === "stale").length;
+  const staleCount = evidence.filter(
+    (item) => item.freshness === "stale",
+  ).length;
 
   if (controlQuery.isError) {
     return (
@@ -375,8 +409,14 @@ export function ControlDetailPage() {
   return (
     <div className="mx-auto max-w-[1200px]">
       {/* Breadcrumb — the trail an auditor follows back up. */}
-      <nav aria-label="Breadcrumb" className="mb-3 flex items-center gap-1.5 text-body-sm">
-        <Link className="text-text-subtle hover:text-text-primary" to="/controls">
+      <nav
+        aria-label="Breadcrumb"
+        className="mb-3 flex items-center gap-1.5 text-body-sm"
+      >
+        <Link
+          className="text-text-subtle hover:text-text-primary"
+          to="/controls"
+        >
           Controls
         </Link>
         <Icon name="chevr" className="size-3.5 text-text-faint" aria-hidden />
@@ -394,24 +434,38 @@ export function ControlDetailPage() {
             {control.disabled_at ? (
               <Badge variant="neutral">Disabled</Badge>
             ) : null}
-            {control.origin === "custom" ? <Badge variant="role">Custom</Badge> : null}
+            {control.origin === "custom" ? (
+              <Badge variant="role">Custom</Badge>
+            ) : null}
           </div>
           <h1 className="font-display text-heading-lg text-text-primary">
             {control.name}
           </h1>
           <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-body-sm text-text-secondary">
-            <span className="inline-flex items-center gap-1.5">
-              <span className="size-1.5 rounded-full bg-action-accent" />
-              {control.control_type}
-            </span>
+            {/* Framework controls carry no Preventive/Detective classification,
+                so the chip is absent rather than empty. */}
+            {control.control_type ? (
+              <span className="inline-flex items-center gap-1.5">
+                <span className="size-1.5 rounded-full bg-action-accent" />
+                {control.control_type}
+              </span>
+            ) : null}
             {control.control_sub_type ? (
               <span className="inline-flex items-center gap-1.5">
-                <Icon name="activity" className="size-3.5 text-text-subtle" aria-hidden />
+                <Icon
+                  name="activity"
+                  className="size-3.5 text-text-subtle"
+                  aria-hidden
+                />
                 {control.control_sub_type}
               </span>
             ) : null}
             <span className="inline-flex items-center gap-1.5">
-              <Icon name="users" className="size-3.5 text-text-subtle" aria-hidden />
+              <Icon
+                name="users"
+                className="size-3.5 text-text-subtle"
+                aria-hidden
+              />
               {control.owner_name ?? "Unassigned"}
             </span>
             <Badge variant="neutral">{control.category}</Badge>
@@ -459,7 +513,9 @@ export function ControlDetailPage() {
             >
               {item.label}
               {item.count !== undefined ? (
-                <span className="tabular text-caption text-text-subtle">{item.count}</span>
+                <span className="tabular text-caption text-text-subtle">
+                  {item.count}
+                </span>
               ) : null}
               {active ? (
                 <span className="absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-action-accent" />
@@ -493,7 +549,8 @@ export function ControlDetailPage() {
                     {control.disabled_reason}
                   </p>
                   <p className="mt-2 text-caption text-text-subtle">
-                    Retired, not deleted — the justification is on the audit trail.
+                    Retired, not deleted — the justification is on the audit
+                    trail.
                   </p>
                 </Panel>
               ) : null}
@@ -503,11 +560,14 @@ export function ControlDetailPage() {
                   invented passes. */}
               <Panel title="Automated tests">
                 <div className="flex items-start gap-2.5 rounded-md border border-border bg-surface-sunken px-3.5 py-3">
-                  <Icon name="alert" className="mt-0.5 size-4 shrink-0 text-text-subtle" />
+                  <Icon
+                    name="alert"
+                    className="mt-0.5 size-4 shrink-0 text-text-subtle"
+                  />
                   <p className="text-body-sm text-text-secondary">
-                    Continuous tests run against connected systems and arrive with
-                    connectors in Phase 2. Until a connector is live, this control
-                    is evidenced manually — see Evidence.
+                    Continuous tests run against connected systems and arrive
+                    with connectors in Phase 2. Until a connector is live, this
+                    control is evidenced manually — see Evidence.
                   </p>
                 </div>
               </Panel>
@@ -520,7 +580,11 @@ export function ControlDetailPage() {
               action={
                 canManage ? (
                   <span className="flex gap-2">
-                    <Button size="sm" variant="secondary" onClick={() => setLinking(true)}>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => setLinking(true)}
+                    >
                       Link existing
                     </Button>
                     <Button size="sm" onClick={() => setUploading(true)}>
@@ -529,7 +593,10 @@ export function ControlDetailPage() {
                     </Button>
                   </span>
                 ) : (
-                  <Link to="/evidence" className="text-body-sm font-semibold text-text-link">
+                  <Link
+                    to="/evidence"
+                    className="text-body-sm font-semibold text-text-link"
+                  >
                     Evidence library →
                   </Link>
                 )
@@ -561,7 +628,8 @@ export function ControlDetailPage() {
                             {item.title}
                           </span>
                           <span className="block truncate text-caption text-text-subtle">
-                            {item.source_label ?? item.evidence_type.replace(/_/g, " ")}
+                            {item.source_label ??
+                              item.evidence_type.replace(/_/g, " ")}
                           </span>
                         </span>
                         <StatusPill
@@ -666,7 +734,10 @@ export function ControlDetailPage() {
               ) : (
                 <ul className="divide-y divide-border">
                   {criteria.map((requirement) => (
-                    <li key={requirement.id} className="py-4 first:pt-0 last:pb-0">
+                    <li
+                      key={requirement.id}
+                      className="py-4 first:pt-0 last:pb-0"
+                    >
                       <div className="mb-1.5 flex flex-wrap items-center gap-2">
                         <CodeChip code={requirement.code} />
                         <Badge variant="neutral">
@@ -699,7 +770,9 @@ export function ControlDetailPage() {
         {/* ── Right rail ─────────────────────────────────────────────────── */}
         <aside className="space-y-4">
           <section className="rounded-lg border border-border bg-surface-primary p-5">
-            <h2 className="mb-1 font-display text-title-md text-text-primary">Status</h2>
+            <h2 className="mb-1 font-display text-title-md text-text-primary">
+              Status
+            </h2>
             <Fact
               label="Implementation"
               value={
@@ -718,7 +791,9 @@ export function ControlDetailPage() {
                     <OwnerSelect
                       value={control.owner_membership_id}
                       valueLabel={control.owner_name}
-                      onChange={(membershipId) => ownerMutation.mutate(membershipId)}
+                      onChange={(membershipId) =>
+                        ownerMutation.mutate(membershipId)
+                      }
                       disabled={ownerMutation.isPending}
                     />
                   </div>
@@ -727,9 +802,14 @@ export function ControlDetailPage() {
                 )
               }
             />
-            <Fact label="Type" value={control.control_type} />
+            {control.control_type ? (
+              <Fact label="Type" value={control.control_type} />
+            ) : null}
             <Fact label="Sub-type" value={control.control_sub_type ?? "—"} />
-            <Fact label="Source" value={control.origin === "custom" ? "Custom" : "Template"} />
+            <Fact
+              label="Source"
+              value={control.origin === "custom" ? "Custom" : "Template"}
+            />
             <Fact
               label="Evidence"
               value={
@@ -790,7 +870,11 @@ export function ControlDetailPage() {
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {related.map((item) => (
-                  <Link key={item.id} to={`/controls/${item.id}`} title={item.name}>
+                  <Link
+                    key={item.id}
+                    to={`/controls/${item.id}`}
+                    title={item.name}
+                  >
                     <CodeChip
                       code={item.code}
                       className="transition-colors duration-80 ease-state hover:bg-action-accent hover:text-text-inverse"
@@ -808,9 +892,13 @@ export function ControlDetailPage() {
         open={editing}
         onOpenChange={setEditing}
         onSaved={async () => {
-          await queryClient.invalidateQueries({ queryKey: ["control", controlId] });
+          await queryClient.invalidateQueries({
+            queryKey: ["control", controlId],
+          });
           await queryClient.invalidateQueries({ queryKey: ["controls"] });
-          await queryClient.invalidateQueries({ queryKey: ["audit", "control", controlId] });
+          await queryClient.invalidateQueries({
+            queryKey: ["audit", "control", controlId],
+          });
           toast({ title: "Control updated", tone: "success" });
         }}
       />
@@ -828,7 +916,9 @@ export function ControlDetailPage() {
         onOpenChange={setLinking}
         onDone={async () => {
           await queryClient.invalidateQueries({ queryKey: ["evidence"] });
-          await queryClient.invalidateQueries({ queryKey: ["audit", "control", controlId] });
+          await queryClient.invalidateQueries({
+            queryKey: ["audit", "control", controlId],
+          });
           toast({ title: "Evidence attached", tone: "success" });
         }}
       />

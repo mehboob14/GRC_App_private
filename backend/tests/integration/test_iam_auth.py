@@ -82,6 +82,7 @@ ALL_WEEK1_KEYS = {
     "members:read",
     "members:invite",
     "members:disable",
+    "members:manage",
     "groups:read",
     "groups:manage",
     "roles:read",

@@ -27,7 +27,7 @@ export const NAV_SECTIONS: NavSection[] = [
     id: "overview",
     label: "Overview",
     items: [
-      { id: "get-started", label: "Get Started", icon: "check", to: "/quick-start" },
+      { id: "get-started", label: "Get Started", icon: "gauge", to: "/quick-start" },
       { id: "dashboard", label: "Dashboard", icon: "grid", to: "/dashboard" },
       { id: "tasks", label: "Tasks", icon: "audit", comingSoon: true },
     ],
@@ -56,6 +56,5 @@ export const NAV_SECTIONS: NavSection[] = [
 
 export const FOOTER_ITEMS: NavItem[] = [
   { id: "connectors", label: "Connections", icon: "plug", to: "/connectors" },
-  { id: "audit-log", label: "Audit Log", icon: "doc", to: "/audit-log" },
   { id: "settings", label: "Settings", icon: "gear", to: "/settings/access/people" },
 ];

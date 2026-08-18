@@ -2,6 +2,7 @@
   {
     "category": "Control Environment",
     "code": "CC1.1",
+    "description": "COSO Principle 1",
     "is_always_in_scope": true,
     "name": "The entity demonstrates a commitment to integrity and ethical values.",
     "requirement_key": "SOC2:CC1.1",
@@ -10,254 +11,286 @@
   {
     "category": "Control Environment",
     "code": "CC1.2",
+    "description": "COSO Principle 2",
     "is_always_in_scope": true,
-    "name": "The board of directors demonstrates independence from management and exercises oversight of internal control.",
+    "name": "The board of directors demonstrates independence from management and exercises oversight of the development and performance of internal control.",
     "requirement_key": "SOC2:CC1.2",
     "trust_services_category": "Security"
   },
   {
     "category": "Control Environment",
     "code": "CC1.3",
+    "description": "COSO Principle 3",
     "is_always_in_scope": true,
-    "name": "Management establishes structures, reporting lines, and appropriate authorities and responsibilities.",
+    "name": "Management establishes, with board oversight, structures, reporting lines, and appropriate authorities and responsibilities in the pursuit of objectives.",
     "requirement_key": "SOC2:CC1.3",
     "trust_services_category": "Security"
   },
   {
     "category": "Control Environment",
     "code": "CC1.4",
+    "description": "COSO Principle 4",
     "is_always_in_scope": true,
-    "name": "The entity demonstrates a commitment to attract, develop, and retain competent individuals.",
+    "name": "The entity demonstrates a commitment to attract, develop, and retain competent individuals in alignment with objectives.",
     "requirement_key": "SOC2:CC1.4",
     "trust_services_category": "Security"
   },
   {
     "category": "Control Environment",
     "code": "CC1.5",
+    "description": "COSO Principle 5",
     "is_always_in_scope": true,
-    "name": "The entity holds individuals accountable for their internal control responsibilities.",
+    "name": "The entity holds individuals accountable for their internal control responsibilities in the pursuit of objectives.",
     "requirement_key": "SOC2:CC1.5",
     "trust_services_category": "Security"
   },
   {
     "category": "Communication & Information",
     "code": "CC2.1",
+    "description": "COSO Principle 13",
     "is_always_in_scope": true,
-    "name": "The entity obtains or generates relevant, quality information to support internal control.",
+    "name": "The entity obtains or generates and uses relevant, quality information to support the functioning of internal control.",
     "requirement_key": "SOC2:CC2.1",
     "trust_services_category": "Security"
   },
   {
     "category": "Communication & Information",
     "code": "CC2.2",
+    "description": "COSO Principle 14",
     "is_always_in_scope": true,
-    "name": "The entity internally communicates information necessary to support the functioning of internal control.",
+    "name": "The entity internally communicates information, including objectives and responsibilities for internal control, necessary to support the functioning of internal control.",
     "requirement_key": "SOC2:CC2.2",
     "trust_services_category": "Security"
   },
   {
     "category": "Communication & Information",
     "code": "CC2.3",
+    "description": "COSO Principle 15",
     "is_always_in_scope": true,
-    "name": "The entity communicates with external parties regarding matters affecting internal control.",
+    "name": "The entity communicates with external parties regarding matters affecting the functioning of internal control.",
     "requirement_key": "SOC2:CC2.3",
     "trust_services_category": "Security"
   },
   {
     "category": "Risk Assessment",
     "code": "CC3.1",
+    "description": "COSO Principle 6",
     "is_always_in_scope": true,
-    "name": "The entity specifies objectives with sufficient clarity to enable identification of risks.",
+    "name": "The entity specifies objectives with sufficient clarity to enable the identification and assessment of risks relating to objectives.",
     "requirement_key": "SOC2:CC3.1",
     "trust_services_category": "Security"
   },
   {
     "category": "Risk Assessment",
     "code": "CC3.2",
+    "description": "COSO Principle 7",
     "is_always_in_scope": true,
-    "name": "The entity identifies and analyzes risks to the achievement of its objectives.",
+    "name": "The entity identifies risks to the achievement of its objectives across the entity and analyzes risks as a basis for determining how the risks should be managed.",
     "requirement_key": "SOC2:CC3.2",
     "trust_services_category": "Security"
   },
   {
     "category": "Risk Assessment",
     "code": "CC3.3",
+    "description": "COSO Principle 8",
     "is_always_in_scope": true,
-    "name": "The entity considers the potential for fraud in assessing risks.",
+    "name": "The entity considers the potential for fraud in assessing risks to the achievement of objectives.",
     "requirement_key": "SOC2:CC3.3",
     "trust_services_category": "Security"
   },
   {
     "category": "Risk Assessment",
     "code": "CC3.4",
+    "description": "COSO Principle 9",
     "is_always_in_scope": true,
-    "name": "The entity identifies and assesses changes that could significantly impact internal control.",
+    "name": "The entity identifies and assesses changes that could significantly impact the system of internal control.",
     "requirement_key": "SOC2:CC3.4",
     "trust_services_category": "Security"
   },
   {
     "category": "Monitoring Activities",
     "code": "CC4.1",
+    "description": "COSO Principle 16",
     "is_always_in_scope": true,
-    "name": "The entity selects, develops, and performs evaluations to ascertain whether controls are functioning.",
+    "name": "The entity selects, develops, and performs ongoing and/or separate evaluations to ascertain whether the components of internal control are present and functioning.",
     "requirement_key": "SOC2:CC4.1",
     "trust_services_category": "Security"
   },
   {
     "category": "Monitoring Activities",
     "code": "CC4.2",
+    "description": "COSO Principle 17",
     "is_always_in_scope": true,
-    "name": "The entity evaluates and communicates internal control deficiencies in a timely manner.",
+    "name": "The entity evaluates and communicates internal control deficiencies in a timely manner to those parties responsible for taking corrective action, including senior management and the board of directors, as appropriate.",
     "requirement_key": "SOC2:CC4.2",
     "trust_services_category": "Security"
   },
   {
     "category": "Control Activities",
     "code": "CC5.1",
+    "description": "COSO Principle 10",
     "is_always_in_scope": true,
-    "name": "The entity selects and develops control activities that mitigate risks to acceptable levels.",
+    "name": "The entity selects and develops control activities that contribute to the mitigation of risks to the achievement of objectives to acceptable levels.",
     "requirement_key": "SOC2:CC5.1",
     "trust_services_category": "Security"
   },
   {
     "category": "Control Activities",
     "code": "CC5.2",
+    "description": "COSO Principle 11",
     "is_always_in_scope": true,
-    "name": "The entity selects and develops general control activities over technology.",
+    "name": "The entity also selects and develops general control activities over technology to support the achievement of objectives.",
     "requirement_key": "SOC2:CC5.2",
     "trust_services_category": "Security"
   },
   {
     "category": "Control Activities",
     "code": "CC5.3",
+    "description": "COSO Principle 12",
     "is_always_in_scope": true,
-    "name": "The entity deploys control activities through policies and procedures.",
+    "name": "The entity deploys control activities through policies that establish what is expected and in procedures that put policies into action.",
     "requirement_key": "SOC2:CC5.3",
     "trust_services_category": "Security"
   },
   {
     "category": "Logical & Physical Access",
     "code": "CC6.1",
+    "description": null,
     "is_always_in_scope": true,
-    "name": "The entity implements logical access security software and architectures over protected information assets.",
+    "name": "The entity implements logical access security software, infrastructure, and architectures over protected information assets to protect them from security events to meet the entity's objectives.",
     "requirement_key": "SOC2:CC6.1",
     "trust_services_category": "Security"
   },
   {
     "category": "Logical & Physical Access",
     "code": "CC6.2",
+    "description": null,
     "is_always_in_scope": true,
-    "name": "The entity registers and authorizes new users and removes credentials when access is no longer authorized.",
+    "name": "Prior to issuing system credentials and granting system access, the entity registers and authorizes new internal and external users whose access is administered by the entity. For those users whose access is administered by the entity, user system credentials are removed when user access is no longer authorized.",
     "requirement_key": "SOC2:CC6.2",
     "trust_services_category": "Security"
   },
   {
     "category": "Logical & Physical Access",
     "code": "CC6.3",
+    "description": null,
     "is_always_in_scope": true,
-    "name": "The entity authorizes, modifies, or removes access based on roles, least privilege, and segregation of duties.",
+    "name": "The entity authorizes, modifies, or removes access to data, software, functions, and other protected information assets based on roles, responsibilities, or the system design and changes, giving consideration to the concepts of least privilege and segregation of duties, to meet the entity’s objectives.",
     "requirement_key": "SOC2:CC6.3",
     "trust_services_category": "Security"
   },
   {
     "category": "Logical & Physical Access",
     "code": "CC6.4",
+    "description": null,
     "is_always_in_scope": true,
-    "name": "The entity restricts physical access to facilities and protected information assets.",
+    "name": "The entity restricts physical access to facilities and protected information assets (for example, data center facilities, backup media storage, and other sensitive locations) to authorized personnel to meet the entity’s objectives.",
     "requirement_key": "SOC2:CC6.4",
     "trust_services_category": "Security"
   },
   {
     "category": "Logical & Physical Access",
     "code": "CC6.5",
+    "description": null,
     "is_always_in_scope": true,
-    "name": "The entity discontinues logical and physical protections over assets only after the ability to read data is removed.",
+    "name": "The entity discontinues logical and physical protections over physical assets only after the ability to read or recover data and software from those assets has been diminished and is no longer required to meet the entity’s objectives.",
     "requirement_key": "SOC2:CC6.5",
     "trust_services_category": "Security"
   },
   {
     "category": "Logical & Physical Access",
     "code": "CC6.6",
+    "description": null,
     "is_always_in_scope": true,
-    "name": "The entity implements security measures to protect against threats from sources outside its system boundaries.",
+    "name": "The entity implements logical access security measures to protect against threats from sources outside its system boundaries.",
     "requirement_key": "SOC2:CC6.6",
     "trust_services_category": "Security"
   },
   {
     "category": "Logical & Physical Access",
     "code": "CC6.7",
+    "description": null,
     "is_always_in_scope": true,
-    "name": "The entity restricts the transmission, movement, and removal of information to authorized users and protects it during transit and on endpoints.",
+    "name": "The entity restricts the transmission, movement, and removal of information to authorized internal and external users and processes, and protects it during transmission, movement, or removal to meet the entity’s objectives.",
     "requirement_key": "SOC2:CC6.7",
     "trust_services_category": "Security"
   },
   {
     "category": "Logical & Physical Access",
     "code": "CC6.8",
+    "description": null,
     "is_always_in_scope": true,
-    "name": "The entity implements controls to prevent or detect and act upon the introduction of unauthorized or malicious software.",
+    "name": "The entity implements controls to prevent or detect and act upon the introduction of unauthorized or malicious software to meet the entity’s objectives.",
     "requirement_key": "SOC2:CC6.8",
     "trust_services_category": "Security"
   },
   {
     "category": "System Operations",
     "code": "CC7.1",
+    "description": null,
     "is_always_in_scope": true,
-    "name": "The entity uses detection and monitoring procedures to identify configuration changes and vulnerabilities.",
+    "name": "To meet its objectives, the entity uses detection and monitoring procedures to identify (1) changes to configurations that result in the introduction of new vulnerabilities, and (2) susceptibilities to newly discovered vulnerabilities.",
     "requirement_key": "SOC2:CC7.1",
     "trust_services_category": "Security"
   },
   {
     "category": "System Operations",
     "code": "CC7.2",
+    "description": null,
     "is_always_in_scope": true,
-    "name": "The entity monitors system components for anomalies indicative of malicious acts or security events.",
+    "name": "The entity monitors system components and the operation of those components for anomalies that are indicative of malicious acts, natural disasters, and errors affecting the entity's ability to meet its objectives; anomalies are analyzed to determine whether they represent security events.",
     "requirement_key": "SOC2:CC7.2",
     "trust_services_category": "Security"
   },
   {
     "category": "System Operations",
     "code": "CC7.3",
+    "description": null,
     "is_always_in_scope": true,
-    "name": "The entity evaluates security events to determine whether they could result in a failure to meet objectives.",
+    "name": "The entity evaluates security events to determine whether they could or have resulted in a failure of the entity to meet its objectives (security incidents) and, if so, takes actions to prevent or address such failures.",
     "requirement_key": "SOC2:CC7.3",
     "trust_services_category": "Security"
   },
   {
     "category": "System Operations",
     "code": "CC7.4",
+    "description": null,
     "is_always_in_scope": true,
-    "name": "The entity responds to identified security incidents through a defined incident-response program.",
+    "name": "The entity responds to identified security incidents by executing a defined incident-response program to understand, contain, remediate, and communicate security incidents, as appropriate.",
     "requirement_key": "SOC2:CC7.4",
     "trust_services_category": "Security"
   },
   {
     "category": "System Operations",
     "code": "CC7.5",
+    "description": null,
     "is_always_in_scope": true,
-    "name": "The entity identifies, develops, and implements activities to recover from security incidents.",
+    "name": "The entity identifies, develops, and implements activities to recover from identified security incidents.",
     "requirement_key": "SOC2:CC7.5",
     "trust_services_category": "Security"
   },
   {
     "category": "Change Management",
     "code": "CC8.1",
+    "description": null,
     "is_always_in_scope": true,
-    "name": "The entity authorizes, designs, develops, tests, approves, and implements changes to infrastructure, data, and software.",
+    "name": "The entity authorizes, designs, develops or acquires, configures, documents, tests, approves, and implements changes to infrastructure, data, software, and procedures to meet its objectives.",
     "requirement_key": "SOC2:CC8.1",
     "trust_services_category": "Security"
   },
   {
     "category": "Risk Mitigation",
     "code": "CC9.1",
+    "description": null,
     "is_always_in_scope": true,
-    "name": "The entity identifies, selects, and develops risk-mitigation activities for business disruptions.",
+    "name": "The entity identifies, selects, and develops risk mitigation activities for risks arising from potential business disruptions.",
     "requirement_key": "SOC2:CC9.1",
     "trust_services_category": "Security"
   },
   {
     "category": "Risk Mitigation",
     "code": "CC9.2",
+    "description": null,
     "is_always_in_scope": true,
     "name": "The entity assesses and manages risks associated with vendors and business partners.",
     "requirement_key": "SOC2:CC9.2",
@@ -266,224 +299,252 @@
   {
     "category": "Availability",
     "code": "A1.1",
+    "description": null,
     "is_always_in_scope": false,
-    "name": "The entity maintains, monitors, and evaluates current processing capacity and use of system components.",
+    "name": "The entity maintains, monitors, and evaluates current processing capacity and use of system components (infrastructure, data, and software) to manage capacity demand and to enable the implementation of additional capacity to help meet its objectives.",
     "requirement_key": "SOC2:A1.1",
     "trust_services_category": "Availability"
   },
   {
     "category": "Availability",
     "code": "A1.2",
+    "description": null,
     "is_always_in_scope": false,
-    "name": "The entity authorizes, designs, and maintains environmental protections, backup, and recovery infrastructure.",
+    "name": "The entity authorizes, designs, develops or acquires, implements, operates, approves, maintains, and monitors environmental protections, software, data backup processes, and recovery infrastructure to meet its objectives.",
     "requirement_key": "SOC2:A1.2",
     "trust_services_category": "Availability"
   },
   {
     "category": "Availability",
     "code": "A1.3",
+    "description": null,
     "is_always_in_scope": false,
-    "name": "The entity tests recovery plan procedures supporting system recovery.",
+    "name": "The entity tests recovery plan procedures supporting system recovery to meet its objectives.",
     "requirement_key": "SOC2:A1.3",
     "trust_services_category": "Availability"
   },
   {
     "category": "Confidentiality",
     "code": "C1.1",
+    "description": null,
     "is_always_in_scope": false,
-    "name": "The entity identifies and maintains confidential information to meet its confidentiality objectives.",
+    "name": "The entity identifies and maintains confidential information to meet the entity’s objectives related to confidentiality.",
     "requirement_key": "SOC2:C1.1",
     "trust_services_category": "Confidentiality"
   },
   {
     "category": "Confidentiality",
     "code": "C1.2",
+    "description": null,
     "is_always_in_scope": false,
-    "name": "The entity disposes of confidential information to meet its confidentiality objectives.",
+    "name": "The entity disposes of confidential information to meet the entity’s objectives related to confidentiality.",
     "requirement_key": "SOC2:C1.2",
     "trust_services_category": "Confidentiality"
   },
   {
     "category": "Processing Integrity",
     "code": "PI1.1",
+    "description": null,
     "is_always_in_scope": false,
-    "name": "The entity obtains or generates information about processing objectives and uses it over system inputs and outputs.",
+    "name": "The entity obtains or generates, uses, and communicates relevant, quality information regarding the objectives related to processing, including definitions of data processed and product and service specifications, to support the use of products and services.",
     "requirement_key": "SOC2:PI1.1",
     "trust_services_category": "Processing Integrity"
   },
   {
     "category": "Processing Integrity",
     "code": "PI1.2",
+    "description": null,
     "is_always_in_scope": false,
-    "name": "The entity implements controls over inputs to result in products and services that meet specifications.",
+    "name": "The entity implements policies and procedures over system inputs, including controls over completeness and accuracy, to result in products, services, and reporting to meet the entity’s objectives.",
     "requirement_key": "SOC2:PI1.2",
     "trust_services_category": "Processing Integrity"
   },
   {
     "category": "Processing Integrity",
     "code": "PI1.3",
+    "description": null,
     "is_always_in_scope": false,
-    "name": "The entity implements controls over processing to result in products and services that meet specifications.",
+    "name": "The entity implements policies and procedures over system processing to result in products, services, and reporting to meet the entity’s objectives.",
     "requirement_key": "SOC2:PI1.3",
     "trust_services_category": "Processing Integrity"
   },
   {
     "category": "Processing Integrity",
     "code": "PI1.4",
+    "description": null,
     "is_always_in_scope": false,
-    "name": "The entity implements controls to make outputs complete, accurate, and delivered to meet specifications.",
+    "name": "The entity implements policies and procedures to make available or deliver output completely, accurately, and timely in accordance with specifications to meet the entity’s objectives.",
     "requirement_key": "SOC2:PI1.4",
     "trust_services_category": "Processing Integrity"
   },
   {
     "category": "Processing Integrity",
     "code": "PI1.5",
+    "description": null,
     "is_always_in_scope": false,
-    "name": "The entity stores inputs and outputs completely, accurately, and in a timely manner.",
+    "name": "The entity implements policies and procedures to store inputs, items in processing, and outputs completely, accurately, and timely in accordance with system specifications to meet the entity’s objectives.",
     "requirement_key": "SOC2:PI1.5",
     "trust_services_category": "Processing Integrity"
   },
   {
     "category": "Privacy",
     "code": "P1.1",
+    "description": null,
     "is_always_in_scope": false,
-    "name": "The entity provides notice to data subjects about its privacy practices.",
+    "name": "The entity provides notice to data subjects about its privacy practices to meet the entity’s objectives related to privacy. The notice is updated and communicated to data subjects in a timely manner for changes to the entity’s privacy practices, including changes in the use of personal information, to meet the entity’s objectives related to privacy.",
     "requirement_key": "SOC2:P1.1",
     "trust_services_category": "Privacy"
   },
   {
     "category": "Privacy",
     "code": "P2.1",
+    "description": null,
     "is_always_in_scope": false,
-    "name": "The entity communicates choices available regarding the collection, use, and disclosure of personal information and obtains consent.",
+    "name": "The entity communicates choices available regarding the collection, use, retention, disclosure, and disposal of personal information to the data subjects and the consequences, if any, of each choice. Explicit consent for the collection, use, retention, disclosure, and disposal of personal information is obtained from data subjects or other authorized persons, if required. Such consent is obtained only for the intended purpose of the information to meet the entity’s objectives related to privacy. The entity’s basis for determining implicit consent for the collection, use, retention, disclosure, and disposal of personal information is documented.",
     "requirement_key": "SOC2:P2.1",
     "trust_services_category": "Privacy"
   },
   {
     "category": "Privacy",
     "code": "P3.1",
+    "description": null,
     "is_always_in_scope": false,
-    "name": "Personal information is collected consistent with the entity's objectives.",
+    "name": "Personal information is collected consistent with the entity’s objectives related to privacy.",
     "requirement_key": "SOC2:P3.1",
     "trust_services_category": "Privacy"
   },
   {
     "category": "Privacy",
     "code": "P3.2",
+    "description": null,
     "is_always_in_scope": false,
-    "name": "The entity obtains explicit consent for sensitive personal information.",
+    "name": "For information requiring explicit consent, the entity communicates the need for such consent as well as the consequences of a failure to provide consent for the request for personal information and obtains the consent prior to the collection of the information to meet the entity’s objectives related to privacy.",
     "requirement_key": "SOC2:P3.2",
     "trust_services_category": "Privacy"
   },
   {
     "category": "Privacy",
     "code": "P4.1",
+    "description": null,
     "is_always_in_scope": false,
-    "name": "The entity limits the use of personal information to the purposes identified in its notice.",
+    "name": "The entity limits the use of personal information to the purposes identified in the entity’s objectives related to privacy.",
     "requirement_key": "SOC2:P4.1",
     "trust_services_category": "Privacy"
   },
   {
     "category": "Privacy",
     "code": "P4.2",
+    "description": null,
     "is_always_in_scope": false,
-    "name": "The entity retains personal information consistent with its objectives.",
+    "name": "The entity retains personal information consistent with the entity’s objectives related to privacy.",
     "requirement_key": "SOC2:P4.2",
     "trust_services_category": "Privacy"
   },
   {
     "category": "Privacy",
     "code": "P4.3",
+    "description": null,
     "is_always_in_scope": false,
-    "name": "The entity securely disposes of personal information.",
+    "name": "The entity securely disposes of personal information to meet the entity’s objectives related to privacy.",
     "requirement_key": "SOC2:P4.3",
     "trust_services_category": "Privacy"
   },
   {
     "category": "Privacy",
     "code": "P5.1",
+    "description": null,
     "is_always_in_scope": false,
-    "name": "The entity grants data subjects access to their personal information for review.",
+    "name": "The entity grants identified and authenticated data subjects the ability to access their stored personal information for review and, upon request, provides physical or electronic copies of that information to data subjects to meet the entity’s objectives related to privacy. If access is denied, data subjects are informed of the denial and reason for such denial, as required, to meet the entity’s objectives related to privacy.",
     "requirement_key": "SOC2:P5.1",
     "trust_services_category": "Privacy"
   },
   {
     "category": "Privacy",
     "code": "P5.2",
+    "description": null,
     "is_always_in_scope": false,
-    "name": "The entity corrects, amends, or appends personal information based on data-subject requests.",
+    "name": "The entity corrects, amends, or appends personal information based on information provided by data subjects and communicates such information to third parties, as committed or required, to meet the entity’s objectives related to privacy. If a request for correction is denied, data subjects are informed of the denial and reason for such denial to meet the entity’s objectives related to privacy.",
     "requirement_key": "SOC2:P5.2",
     "trust_services_category": "Privacy"
   },
   {
     "category": "Privacy",
     "code": "P6.1",
+    "description": null,
     "is_always_in_scope": false,
-    "name": "The entity discloses personal information only with consent of the data subject.",
+    "name": "The entity discloses personal information to third parties with the explicit consent of data subjects and such consent is obtained prior to disclosure to meet the entity’s objectives related to privacy.",
     "requirement_key": "SOC2:P6.1",
     "trust_services_category": "Privacy"
   },
   {
     "category": "Privacy",
     "code": "P6.2",
+    "description": null,
     "is_always_in_scope": false,
-    "name": "The entity creates and retains a record of authorized disclosures of personal information.",
+    "name": "The entity creates and retains a complete, accurate, and timely record of authorized disclosures of personal information to meet the entity’s objectives related to privacy.",
     "requirement_key": "SOC2:P6.2",
     "trust_services_category": "Privacy"
   },
   {
     "category": "Privacy",
     "code": "P6.3",
+    "description": null,
     "is_always_in_scope": false,
-    "name": "The entity creates and retains a record of unauthorized disclosures of personal information.",
+    "name": "The entity creates and retains a complete, accurate, and timely record of detected or reported unauthorized disclosures (including breaches) of personal information to meet the entity’s objectives related to privacy.",
     "requirement_key": "SOC2:P6.3",
     "trust_services_category": "Privacy"
   },
   {
     "category": "Privacy",
     "code": "P6.4",
+    "description": null,
     "is_always_in_scope": false,
-    "name": "The entity obtains commitments from third parties to protect personal information consistent with its objectives.",
+    "name": "The entity obtains privacy commitments from vendors and other third parties who have access to personal information to meet the entity’s objectives related to privacy. The entity assesses those parties’ compliance on a periodic and as-needed basis and takes corrective action, if necessary.",
     "requirement_key": "SOC2:P6.4",
     "trust_services_category": "Privacy"
   },
   {
     "category": "Privacy",
     "code": "P6.5",
+    "description": null,
     "is_always_in_scope": false,
-    "name": "The entity obtains notification of unauthorized disclosures of personal information by third parties.",
+    "name": "The entity obtains commitments from vendors and other third parties with access to personal information to notify the entity in the event of actual or suspected unauthorized disclosures of personal information. Such notifications are reported to appropriate personnel and acted on in accordance with established incident-response procedures to meet the entity’s objectives related to privacy.",
     "requirement_key": "SOC2:P6.5",
     "trust_services_category": "Privacy"
   },
   {
     "category": "Privacy",
     "code": "P6.6",
+    "description": null,
     "is_always_in_scope": false,
-    "name": "The entity provides notification of breaches and incidents to affected parties.",
+    "name": "The entity provides notification of breaches and incidents to affected data subjects, regulators, and others to meet the entity’s objectives related to privacy.",
     "requirement_key": "SOC2:P6.6",
     "trust_services_category": "Privacy"
   },
   {
     "category": "Privacy",
     "code": "P6.7",
+    "description": null,
     "is_always_in_scope": false,
-    "name": "The entity provides an accounting of personal information held and disclosures made to data subjects.",
+    "name": "The entity provides data subjects with an accounting of the personal information held and disclosure of the data subjects’ personal information, upon the data subjects’ request, to meet the entity’s objectives related to privacy.",
     "requirement_key": "SOC2:P6.7",
     "trust_services_category": "Privacy"
   },
   {
     "category": "Privacy",
     "code": "P7.1",
+    "description": null,
     "is_always_in_scope": false,
-    "name": "The entity collects and maintains accurate, complete, and relevant personal information.",
+    "name": "The entity collects and maintains accurate, up-to-date, complete, and relevant personal information to meet the entity’s objectives related to privacy.",
     "requirement_key": "SOC2:P7.1",
     "trust_services_category": "Privacy"
   },
   {
     "category": "Privacy",
     "code": "P8.1",
+    "description": null,
     "is_always_in_scope": false,
-    "name": "The entity implements a process for receiving, addressing, and resolving privacy complaints and disputes.",
+    "name": "The entity implements a process for receiving, addressing, resolving, and communicating the resolution of inquiries, complaints, and disputes from data subjects and others and periodically monitors compliance to meet the entity’s objectives related to privacy. Corrections and other necessary actions related to identified deficiencies are made or taken in a timely manner.",
     "requirement_key": "SOC2:P8.1",
     "trust_services_category": "Privacy"
   }

@@ -43,12 +43,14 @@ from verity.modules.iam.schemas import (
     GroupCreate,
     GroupMemberAdd,
     GroupOut,
+    GroupUpdate,
     InviteMemberRequest,
     InviteMemberResponse,
     LoginRequest,
     LoginResponse,
     MemberOut,
     MemberRolesPut,
+    MemberUpdate,
     MfaConfirmRequest,
     MfaEnrollmentRequiredResponse,
     MfaEnrollRequest,
@@ -96,6 +98,7 @@ provider_router = APIRouter(prefix="/provider/tenants", tags=["provider tenants"
 require_members_read = require("members:read")
 require_members_invite = require("members:invite")
 require_members_disable = require("members:disable")
+require_members_manage = require("members:manage")
 require_groups_read = require("groups:read")
 require_groups_manage = require("groups:manage")
 require_roles_read = require("roles:read")
@@ -171,6 +174,7 @@ def _invite_response(result: InviteResult) -> InviteMemberResponse:
         member=MemberOut.model_validate(result.member),
         invite_token=result.invite_token,
         accept_url=result.accept_url,
+        email_sent=result.email_sent,
     )
 
 
@@ -290,6 +294,37 @@ async def confirm_mfa_enrollment(body: MfaConfirmRequest) -> AuthenticatedRespon
 
 
 @auth_router.get(
+    "/me",
+    response_model=PrincipalOut,
+    summary="The caller's principal, read fresh from the database",
+)
+async def read_me(
+    principal: Annotated[Principal, Depends(get_current_principal)],
+) -> PrincipalOut:
+    """Lets a client re-read display data the session token does not carry —
+    the workspace name and the person's own name both live in rows that can
+    change while a session is open."""
+    assert principal.membership_id is not None  # noqa: S101 — tenant route
+    snapshot = await iam_auth_service.current_principal(
+        user_id=principal.user_id, membership_id=principal.membership_id
+    )
+    return PrincipalOut(
+        user=UserOut(
+            id=snapshot.user_id,
+            email=snapshot.email,
+            full_name=snapshot.full_name,
+            status=snapshot.user_status,
+            mfa_enabled=snapshot.mfa_enabled,
+        ),
+        membership_id=snapshot.membership_id,
+        tenant_id=snapshot.tenant_id,
+        tenant_name=snapshot.tenant_name,
+        permissions=snapshot.permissions,
+        role_names=snapshot.role_names,
+    )
+
+
+@auth_router.get(
     "/workspaces",
     response_model=list[WorkspaceOut],
     summary="The caller's memberships across tenants (authenticated; no key)",
@@ -395,10 +430,34 @@ async def invite_member(
         email=body.email,
         full_name=body.full_name,
         role_id=body.role_id,
+        group_id=body.group_id,
         valid_from=body.valid_from,
         valid_until=body.valid_until,
     )
     return _invite_response(result)
+
+
+@members_router.patch(
+    "/{membership_id}",
+    response_model=MemberOut,
+    summary="Edit a member's details (currently the display name)",
+)
+async def patch_member(
+    membership_id: uuid.UUID,
+    body: MemberUpdate,
+    principal: Annotated[Principal, Depends(require_members_manage)],
+    context: Annotated[TenantContext, Depends(get_tenant_context)],
+    session: Annotated[AsyncSession, Depends(get_tenant_session)],
+) -> MemberOut:
+    assert principal.membership_id is not None  # noqa: S101
+    member = await iam_service.rename_member(
+        session,
+        tenant_id=context.tenant_id,
+        actor_membership_id=principal.membership_id,
+        membership_id=membership_id,
+        full_name=body.full_name,
+    )
+    return MemberOut.model_validate(member)
 
 
 @members_router.post(
@@ -478,6 +537,7 @@ async def create_group(
         tenant_id=context.tenant_id,
         actor_membership_id=principal.membership_id,
         name=body.name,
+        description=body.description,
     )
     return GroupOut.model_validate(group)
 
@@ -501,6 +561,73 @@ async def add_group_member(
         actor_membership_id=principal.membership_id,
         group_id=group_id,
         membership_id=body.membership_id,
+    )
+    return GroupOut.model_validate(group)
+
+
+@groups_router.patch(
+    "/{group_id}",
+    response_model=GroupOut,
+    summary="Rename or re-describe a group",
+)
+async def update_group(
+    group_id: uuid.UUID,
+    body: GroupUpdate,
+    principal: Annotated[Principal, Depends(require_groups_manage)],
+    context: Annotated[TenantContext, Depends(get_tenant_context)],
+    session: Annotated[AsyncSession, Depends(get_tenant_session)],
+) -> GroupOut:
+    assert principal.membership_id is not None  # noqa: S101
+    group = await iam_service.update_group(
+        session,
+        tenant_id=context.tenant_id,
+        actor_membership_id=principal.membership_id,
+        group_id=group_id,
+        name=body.name,
+        description=body.description,
+    )
+    return GroupOut.model_validate(group)
+
+
+@groups_router.delete(
+    "/{group_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete a group and every role assignment made to it",
+)
+async def delete_group(
+    group_id: uuid.UUID,
+    principal: Annotated[Principal, Depends(require_groups_manage)],
+    context: Annotated[TenantContext, Depends(get_tenant_context)],
+    session: Annotated[AsyncSession, Depends(get_tenant_session)],
+) -> None:
+    assert principal.membership_id is not None  # noqa: S101
+    await iam_service.delete_group(
+        session,
+        tenant_id=context.tenant_id,
+        actor_membership_id=principal.membership_id,
+        group_id=group_id,
+    )
+
+
+@groups_router.delete(
+    "/{group_id}/members/{membership_id}",
+    response_model=GroupOut,
+    summary="Remove a membership from a group",
+)
+async def remove_group_member(
+    group_id: uuid.UUID,
+    membership_id: uuid.UUID,
+    principal: Annotated[Principal, Depends(require_groups_manage)],
+    context: Annotated[TenantContext, Depends(get_tenant_context)],
+    session: Annotated[AsyncSession, Depends(get_tenant_session)],
+) -> GroupOut:
+    assert principal.membership_id is not None  # noqa: S101
+    group = await iam_service.remove_group_member(
+        session,
+        tenant_id=context.tenant_id,
+        actor_membership_id=principal.membership_id,
+        group_id=group_id,
+        membership_id=membership_id,
     )
     return GroupOut.model_validate(group)
 
@@ -538,6 +665,7 @@ async def create_role(
         tenant_id=context.tenant_id,
         actor_membership_id=principal.membership_id,
         name=body.name,
+        description=body.description,
         permission_keys=body.permission_keys,
     )
     return RoleOut.model_validate(role)
@@ -546,7 +674,7 @@ async def create_role(
 @roles_router.patch(
     "/{role_id}",
     response_model=RoleOut,
-    summary="Rename a custom role and/or replace its permissions (built-in: 409)",
+    summary="Rename a role, edit its description and/or replace its permissions",
 )
 async def update_role(
     role_id: uuid.UUID,
@@ -562,6 +690,7 @@ async def update_role(
         actor_membership_id=principal.membership_id,
         role_id=role_id,
         name=body.name,
+        description=body.description,
         permission_keys=body.permission_keys,
     )
     return RoleOut.model_validate(role)
@@ -648,8 +777,8 @@ async def get_security(
     context: Annotated[TenantContext, Depends(get_tenant_context)],
     session: Annotated[AsyncSession, Depends(get_tenant_session)],
 ) -> SecuritySettingsOut:
-    value = await iam_service.get_require_admin_mfa(session, context.tenant_id)
-    return SecuritySettingsOut(require_admin_mfa=value)
+    row = await iam_service.get_security_settings(session, context.tenant_id)
+    return SecuritySettingsOut.model_validate(row)
 
 
 @security_router.patch(
@@ -662,13 +791,16 @@ async def patch_security(
     session: Annotated[AsyncSession, Depends(get_tenant_session)],
 ) -> SecuritySettingsOut:
     assert principal.membership_id is not None  # noqa: S101 — guaranteed by the dependency
-    value = await iam_service.set_require_admin_mfa(
+    # exclude_unset, not exclude_none: the screen sends only what it changed,
+    # and every field here has a meaningful non-null value.
+    changes = body.model_dump(exclude_unset=True)
+    row = await iam_service.update_security_settings(
         session,
         tenant_id=context.tenant_id,
         actor_membership_id=principal.membership_id,
-        value=body.require_admin_mfa,
+        changes=changes,
     )
-    return SecuritySettingsOut(require_admin_mfa=value)
+    return SecuritySettingsOut.model_validate(row)
 
 
 # ---------------------------------------------------------------------------

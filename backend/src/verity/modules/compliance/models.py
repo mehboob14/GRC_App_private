@@ -215,9 +215,9 @@ class ControlTemplate(UUIDPrimaryKey, Timestamped, Base):
     """A shipped control the platform instantiates into a tenant. The compliance IP.
 
     Three axes that each say something the others do not: ``category`` is where in
-    the estate the control lives, ``control_type`` is what it does about a risk
-    (Preventive / Detective / Corrective), and ``control_sub_type`` is how it is
-    operated (Manual / Automated / Hybrid). All three are CHECK-constrained.
+    the estate the control lives, and ``control_sub_type`` is how it is operated
+    (Manual / Automated / Hybrid). ``control_type`` (Preventive / Detective /
+    Corrective) is available but NULL on shipped content — see the column.
     """
 
     __tablename__ = "control_templates"
@@ -226,7 +226,12 @@ class ControlTemplate(UUIDPrimaryKey, Timestamped, Base):
     canonical_key: Mapped[str]
     name: Mapped[str]
     category: Mapped[str]
-    control_type: Mapped[str]
+    # Optional, and NULL on everything shipped: Preventive/Detective/Corrective
+    # is how an organisation describes its own control design. It is not a SOC 2
+    # concept and the AICPA does not classify the criteria that way, so the
+    # platform must not assert it on framework content. Tenants set it on their
+    # own internal or custom controls.
+    control_type: Mapped[str | None] = mapped_column(default=None)
     control_sub_type: Mapped[str | None] = mapped_column(default=None)
     importance: Mapped[str]
     description: Mapped[str]
@@ -346,7 +351,8 @@ class Control(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
     description: Mapped[str]
     implementation_guidance: Mapped[str | None] = mapped_column(default=None)
     category: Mapped[str]
-    control_type: Mapped[str]
+    # NULL for anything instantiated from a template — see ControlTemplate.
+    control_type: Mapped[str | None] = mapped_column(default=None)
     control_sub_type: Mapped[str | None] = mapped_column(default=None)
     status: Mapped[str] = mapped_column(default="not_started")
 

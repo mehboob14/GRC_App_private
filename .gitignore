@@ -1,7 +1,15 @@
-# Secrets. .env.example is the committed template; .env never is.
+# Secrets. The *.example templates are committed; the filled-in files never are.
+# `.env.*` catches .env.production and .env.local; the negations put the templates
+# back, including infra/docker/.env.production.example — without the second one,
+# `.env.*` swallows it and the server deploy ships with no documented config surface.
 .env
 .env.*
 !.env.example
+!.env.*.example
+
+# Runtime data written by STORAGE_DRIVER=local — uploaded evidence files. Real
+# customer documents in a compliance product; never in version control.
+.data/
 
 # Python
 __pycache__/

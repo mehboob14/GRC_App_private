@@ -27,6 +27,7 @@ import type {
   InviteMemberResponse,
   LoginPasswordRequest,
   LoginResponse,
+  SessionPrincipal,
   Member,
   MfaEnrollStartResponse,
   MfaVerifyRequest,
@@ -38,6 +39,7 @@ import type {
   CompanyProfile,
   CompanyProfilePatch,
   SecuritySettings,
+  SecuritySettingsPatch,
   SmtpConfig,
   SmtpConfigUpdate,
   SmtpTestResult,
@@ -91,6 +93,8 @@ export const authApi = {
       method: "POST",
       body: JSON.stringify(body),
     }),
+  /** The caller's principal, read fresh from the server (not the cached copy). */
+  me: () => apiFetch<SessionPrincipal>("/auth/me"),
   logout: () => apiFetch<void>("/auth/logout", { method: "POST" }),
   listWorkspaces: () => apiFetch<WorkspaceSummary[]>("/auth/workspaces"),
   switchWorkspace: (membershipId: string) =>
@@ -120,6 +124,12 @@ export const iamApi = {
       method: "POST",
       body: JSON.stringify(body),
     }),
+  /** Correct a member's display name (global to the person, ADR-0011). */
+  renameMember: (membershipId: string, full_name: string) =>
+    apiFetch<Member>(`/members/${membershipId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ full_name }),
+    }),
   disableMember: (membershipId: string) =>
     apiFetch<Member>(`/members/${membershipId}/disable`, { method: "POST" }),
   assignRole: (membershipId: string, roleId: string) =>
@@ -128,25 +138,47 @@ export const iamApi = {
       body: JSON.stringify({ role_id: roleId }),
     }),
   listGroups: () => apiFetch<Group[]>("/groups"),
-  createGroup: (name: string) =>
+  createGroup: (body: { name: string; description?: string | null }) =>
     apiFetch<Group>("/groups", {
       method: "POST",
-      body: JSON.stringify({ name }),
+      body: JSON.stringify(body),
     }),
+  updateGroup: (
+    groupId: string,
+    body: { name?: string; description?: string | null },
+  ) =>
+    apiFetch<Group>(`/groups/${groupId}`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
+  deleteGroup: (groupId: string) =>
+    apiFetch<void>(`/groups/${groupId}`, { method: "DELETE" }),
   addGroupMember: (groupId: string, membershipId: string) =>
     apiFetch<Group>(`/groups/${groupId}/members`, {
       method: "POST",
       body: JSON.stringify({ membership_id: membershipId }),
     }),
+  removeGroupMember: (groupId: string, membershipId: string) =>
+    apiFetch<Group>(`/groups/${groupId}/members/${membershipId}`, {
+      method: "DELETE",
+    }),
   listRoles: () => apiFetch<Role[]>("/roles"),
-  createRole: (body: { name: string; permission_keys: string[] }) =>
+  createRole: (body: {
+    name: string;
+    description?: string | null;
+    permission_keys: string[];
+  }) =>
     apiFetch<Role>("/roles", {
       method: "POST",
       body: JSON.stringify(body),
     }),
   updateRole: (
     roleId: string,
-    body: { name?: string; permission_keys?: string[] },
+    body: {
+      name?: string;
+      description?: string | null;
+      permission_keys?: string[];
+    },
   ) =>
     apiFetch<Role>(`/roles/${roleId}`, {
       method: "PATCH",
@@ -154,6 +186,19 @@ export const iamApi = {
     }),
   deleteRole: (roleId: string) =>
     apiFetch<void>(`/roles/${roleId}`, { method: "DELETE" }),
+  /**
+   * Assign one role to a membership. The backend is idempotent per assignee, so
+   * the multi-select picker just calls this once per person rather than needing
+   * a bulk endpoint.
+   */
+  assignRoleTo: (roleId: string, membershipId: string) =>
+    apiFetch<unknown>(`/roles/${roleId}/assignments`, {
+      method: "POST",
+      body: JSON.stringify({
+        assignee_type: "membership",
+        assignee_id: membershipId,
+      }),
+    }),
 };
 
 export const tenantApi = {
@@ -163,6 +208,12 @@ export const tenantApi = {
     apiFetch<SecuritySettings>("/tenant/security", {
       method: "PATCH",
       body: JSON.stringify({ require_admin_mfa }),
+    }),
+  /** Patch any subset of the security policy — the screen sends what changed. */
+  updateSecurity: (patch: SecuritySettingsPatch) =>
+    apiFetch<SecuritySettings>("/tenant/security", {
+      method: "PATCH",
+      body: JSON.stringify(patch),
     }),
   getCompanyProfile: () => apiFetch<CompanyProfile>("/tenant/profile"),
   updateCompanyProfile: (patch: CompanyProfilePatch) =>

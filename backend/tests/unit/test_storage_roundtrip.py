@@ -216,6 +216,12 @@ def test_a_disallowed_type_is_refused_however_it_is_named(
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             id="xlsx",
         ),
+        pytest.param(
+            zipped("ppt/presentation.xml"),
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            id="pptx",
+        ),
+        pytest.param(b"RIFF\x2c\x00\x00\x00WEBP" + b"\x00" * 16, "image/webp", id="webp"),
         pytest.param(b"control,owner\nCC6.1,alice\n", "text/plain", id="csv"),
         pytest.param(b'{"finding": "closed"}', "application/json", id="json"),
         pytest.param(b'{"note": "<b>see attached</b>"}', "application/json", id="json with markup"),

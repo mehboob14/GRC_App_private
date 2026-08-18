@@ -78,9 +78,15 @@ type StatusFamily = "success" | "progress" | "pending" | "neutral" | "danger";
 
 /** A disabled control reads as "Disabled" everywhere, over its old status —
  *  it is retired, not deleted, so it stays visible but inactive. */
-function displayStatus(control: Control): { label: string; family: StatusFamily } {
+function displayStatus(control: Control): {
+  label: string;
+  family: StatusFamily;
+} {
   if (control.disabled_at) return { label: "Disabled", family: "neutral" };
-  return { label: STATUS_LABEL[control.status], family: STATUS_FAMILY[control.status] };
+  return {
+    label: STATUS_LABEL[control.status],
+    family: STATUS_FAMILY[control.status],
+  };
 }
 
 /** Where a control came from: authored internally, or the SOC 2 library. */
@@ -159,7 +165,9 @@ function ControlDetailDialog({
     onError: (error: unknown) =>
       toast({
         title:
-          error instanceof ApiError ? error.message : "Couldn't update the status.",
+          error instanceof ApiError
+            ? error.message
+            : "Couldn't update the status.",
         tone: "danger",
       }),
   });
@@ -176,7 +184,9 @@ function ControlDetailDialog({
     onError: (error: unknown) =>
       toast({
         title:
-          error instanceof ApiError ? error.message : "Couldn't disable the control.",
+          error instanceof ApiError
+            ? error.message
+            : "Couldn't disable the control.",
         tone: "danger",
       }),
   });
@@ -190,7 +200,9 @@ function ControlDetailDialog({
     onError: (error: unknown) =>
       toast({
         title:
-          error instanceof ApiError ? error.message : "Couldn't re-enable the control.",
+          error instanceof ApiError
+            ? error.message
+            : "Couldn't re-enable the control.",
         tone: "danger",
       }),
   });
@@ -284,7 +296,7 @@ function ControlDetailDialog({
                     <span className="text-body-sm text-text-subtle">—</span>
                   )}
                 </div>
-                {control.origin === "custom" ? (
+                {control.origin === "custom" && control.control_type ? (
                   <div>
                     <p className="type-overline mb-1.5">Type</p>
                     <TypeChip label={control.control_type} />
@@ -306,7 +318,9 @@ function ControlDetailDialog({
                   <OwnerSelect
                     value={control.owner_membership_id}
                     valueLabel={control.owner_name}
-                    onChange={(membershipId) => ownerMutation.mutate(membershipId)}
+                    onChange={(membershipId) =>
+                      ownerMutation.mutate(membershipId)
+                    }
                     disabled={ownerMutation.isPending}
                   />
                 ) : (
@@ -346,7 +360,9 @@ function ControlDetailDialog({
 
               {control.implementation_guidance ? (
                 <div>
-                  <p className="type-overline mb-1.5">Implementation guidance</p>
+                  <p className="type-overline mb-1.5">
+                    Implementation guidance
+                  </p>
                   <p className="whitespace-pre-line text-body-sm leading-relaxed text-text-secondary">
                     {control.implementation_guidance}
                   </p>
@@ -358,7 +374,10 @@ function ControlDetailDialog({
                 {evidenceQuery.data && evidenceQuery.data.length > 0 ? (
                   <ul className="space-y-1.5">
                     {evidenceQuery.data.map((item) => (
-                      <li key={item.id} className="flex items-center gap-2 text-body-sm">
+                      <li
+                        key={item.id}
+                        className="flex items-center gap-2 text-body-sm"
+                      >
                         <Icon
                           name={item.kind === "file" ? "doc" : "globe"}
                           className="size-4 shrink-0 text-text-subtle"
@@ -453,7 +472,10 @@ function ControlDetailDialog({
                   {canManage ? (
                     <>
                       {control.disabled_at ? null : (
-                        <Button variant="secondary" onClick={() => onEdit(control)}>
+                        <Button
+                          variant="secondary"
+                          onClick={() => onEdit(control)}
+                        >
                           Edit
                         </Button>
                       )}
@@ -499,6 +521,7 @@ export function ControlsPage() {
   const [trustServices, setTrustServices] = useState<string[]>([]);
   const [statuses, setStatuses] = useState<string[]>([]);
   const [owners, setOwners] = useState<string[]>([]);
+  const [frameworkFilter, setFrameworkFilter] = useState<string[]>([]);
   /** The open row, held by id — a snapshot would go stale the moment an edit
    *  inside the dialog refetched the list, leaving the dialog showing the old
    *  owner while the table behind it showed the new one. */
@@ -537,7 +560,9 @@ export function ControlsPage() {
   // gated: without it the column reports "—" rather than a confident 0, which
   // would otherwise read as "this control has no evidence" — a fabricated
   // compliance finding.
-  const canReadEvidence = Boolean(principal?.permissions.includes("evidence:read"));
+  const canReadEvidence = Boolean(
+    principal?.permissions.includes("evidence:read"),
+  );
   const evidenceQuery = useQuery({
     queryKey: ["evidence"],
     queryFn: () => evidenceApi.list(),
@@ -573,7 +598,10 @@ export function ControlsPage() {
   const tscByKey = useMemo(() => {
     const map = new Map<string, TrustService>();
     for (const requirement of requirementsQuery.data ?? []) {
-      map.set(requirement.requirement_key, requirement.trust_services_category as TrustService);
+      map.set(
+        requirement.requirement_key,
+        requirement.trust_services_category as TrustService,
+      );
     }
     return map;
   }, [requirementsQuery.data]);
@@ -588,7 +616,9 @@ export function ControlsPage() {
       }
       // A key with no server row (a framework not loaded here) still resolves
       // through the prefix rule rather than silently vanishing from the column.
-      return found.size ? TRUST_SERVICES.filter((t) => found.has(t)) : trustServicesFor(control);
+      return found.size
+        ? TRUST_SERVICES.filter((t) => found.has(t))
+        : trustServicesFor(control);
     },
     [tscByKey],
   );
@@ -605,25 +635,36 @@ export function ControlsPage() {
     onError: (error: unknown) =>
       toast({
         title:
-          error instanceof ApiError ? error.message : "Couldn't build the library.",
+          error instanceof ApiError
+            ? error.message
+            : "Couldn't build the library.",
         tone: "danger",
       }),
   });
 
-  const controls = useMemo(() => controlsQuery.data ?? [], [controlsQuery.data]);
+  const controls = useMemo(
+    () => controlsQuery.data ?? [],
+    [controlsQuery.data],
+  );
   const vocabulary = vocabularyQuery.data;
 
   const visible = useMemo(() => {
     const query = search.trim().toLowerCase();
     return controls.filter(
       (control) =>
-        (types.length === 0 || types.includes(control.control_type)) &&
+        (types.length === 0 ||
+          (control.control_type !== null &&
+            types.includes(control.control_type))) &&
         (trustServices.length === 0 ||
           tscFor(control).some((tsc) => trustServices.includes(tsc))) &&
+        (frameworkFilter.length === 0 ||
+          frameworksFor(control).some((f) => frameworkFilter.includes(f))) &&
         (owners.length === 0 ||
           owners.includes(control.owner_membership_id ?? "unassigned")) &&
         (statuses.length === 0 ||
-          statuses.includes(control.disabled_at ? "disabled" : control.status)) &&
+          statuses.includes(
+            control.disabled_at ? "disabled" : control.status,
+          )) &&
         (query === "" ||
           control.name.toLowerCase().includes(query) ||
           control.code.toLowerCase().includes(query) ||
@@ -632,7 +673,16 @@ export function ControlsPage() {
             key.toLowerCase().includes(query),
           )),
     );
-  }, [controls, search, types, trustServices, owners, statuses, tscFor]);
+  }, [
+    controls,
+    search,
+    types,
+    trustServices,
+    frameworkFilter,
+    owners,
+    statuses,
+    tscFor,
+  ]);
 
   // Selection survives filtering. Pruning to the visible rows would wipe a
   // selection on every search keystroke — you pick five controls, type to find
@@ -680,31 +730,42 @@ export function ControlsPage() {
     const options = [...byId.entries()]
       .map(([value, label]) => ({ value, label }))
       .sort((a, b) => a.label.localeCompare(b.label));
-    return unassigned ? [...options, { value: "unassigned", label: "Unassigned" }] : options;
+    return unassigned
+      ? [...options, { value: "unassigned", label: "Unassigned" }]
+      : options;
   }, [controls]);
 
   const ownerLabel = (value: string) =>
     ownerOptions.find((option) => option.value === value)?.label ?? value;
 
+  /** Every framework the library actually maps to — the facet never offers one
+   *  that would return nothing. */
+  const frameworkOptions = useMemo(() => {
+    const all = new Set<string>();
+    for (const control of controls)
+      for (const f of frameworksFor(control)) all.add(f);
+    return [...all].sort().map((f) => ({ value: f, label: f }));
+  }, [controls]);
+
   // Header summary — real counts only, so the line stays true as data changes.
   const frameworkSummary = useMemo(() => {
-    const all = new Set<string>();
-    for (const control of controls) for (const f of frameworksFor(control)) all.add(f);
-    const list = [...all].sort();
+    const list = frameworkOptions.map((option) => option.label);
     if (list.length === 0) return "no framework yet";
     if (list.length === 1) return list[0];
     return `${list.slice(0, -1).join(", ")} and ${list[list.length - 1]}`;
-  }, [controls]);
+  }, [frameworkOptions]);
   const unowned = controls.filter(
     (control) => !control.owner_membership_id && !control.disabled_at,
   ).length;
   const noEvidence = controls.filter(
-    (control) => !control.disabled_at && (evidenceCounts.get(control.id) ?? 0) === 0,
+    (control) =>
+      !control.disabled_at && (evidenceCounts.get(control.id) ?? 0) === 0,
   ).length;
 
   const activeFilters = [
     ...types.map((t) => `Type: ${t}`),
     ...trustServices.map((t) => `Trust Services: ${t}`),
+    ...frameworkFilter.map((f) => `Framework: ${f}`),
     ...owners.map((o) => `Owner: ${ownerLabel(o)}`),
     ...statuses.map((s) => `Status: ${STATUS_LABEL[s as ControlStatus] ?? s}`),
     ...(search.trim() ? [`Search: ${search.trim()}`] : []),
@@ -714,6 +775,7 @@ export function ControlsPage() {
     setSearch("");
     setTypes([]);
     setTrustServices([]);
+    setFrameworkFilter([]);
     setOwners([]);
     setStatuses([]);
   }
@@ -744,7 +806,9 @@ export function ControlsPage() {
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="type-overline text-text-subtle">Compliance</p>
-          <h1 className="mt-1 font-display text-heading-lg text-text-primary">Controls</h1>
+          <h1 className="mt-1 font-display text-heading-lg text-text-primary">
+            Controls library
+          </h1>
           <p className="mt-1.5 text-body-lg text-text-secondary">
             <span className="tabular">{controls.length}</span> controls across{" "}
             {frameworkSummary}
@@ -766,28 +830,32 @@ export function ControlsPage() {
             ) : null}
           </p>
         </div>
-        {canManage ? (
-          <Button className="shrink-0" onClick={() => setCreating(true)}>
-            <Icon name="plus" className="size-4" />
-            New control
-          </Button>
-        ) : null}
       </div>
 
+      {/* Search · filters · primary action share one band. It wraps as a whole
+          rather than reflowing column by column: the search takes the full row
+          on a phone, the facets flow beneath it, and the action stays pinned to
+          the end of the band at every width. */}
       <div
         role="search"
         aria-label="Filter controls"
-        className="mb-4 mt-5 flex flex-wrap items-center gap-2"
+        className="mb-3 mt-5 flex flex-wrap items-center gap-2"
       >
         <SearchInput
           value={search}
           onChange={setSearch}
           placeholder="Search by name, code or criterion…"
           aria-label="Search controls"
-          className="w-full sm:w-72"
+          className="w-full min-w-0 sm:w-64 lg:w-72"
         />
         {vocabulary ? (
           <>
+            <FilterFacet
+              label="Framework"
+              options={frameworkOptions}
+              values={frameworkFilter}
+              onChange={setFrameworkFilter}
+            />
             <FilterFacet
               label="Trust Services"
               options={TRUST_SERVICES.map((v) => ({ value: v, label: v }))}
@@ -825,14 +893,25 @@ export function ControlsPage() {
         ) : null}
         {activeFilters.length > 0 ? (
           <Button variant="ghost" size="sm" onClick={clearFilters}>
-            Clear filters
+            Clear
           </Button>
         ) : null}
-        <p aria-live="polite" className="ml-auto text-caption text-text-subtle">
-          Showing <span className="tabular">{visible.length}</span> of{" "}
-          <span className="tabular">{controls.length}</span> controls
-        </p>
+
+        {canManage ? (
+          <Button
+            className="ml-auto shrink-0"
+            onClick={() => setCreating(true)}
+          >
+            <Icon name="plus" className="size-4" />
+            New control
+          </Button>
+        ) : null}
       </div>
+
+      <p aria-live="polite" className="mb-4 text-caption text-text-subtle">
+        Showing <span className="tabular">{visible.length}</span> of{" "}
+        <span className="tabular">{controls.length}</span> controls
+      </p>
 
       {controlsQuery.isLoading ? (
         <TableSkeleton rows={10} density="comfortable" />
@@ -872,7 +951,11 @@ export function ControlsPage() {
                 <TH className="w-10">
                   <Checkbox
                     checked={
-                      allChecked ? true : checkedVisibleCount > 0 ? "indeterminate" : false
+                      allChecked
+                        ? true
+                        : checkedVisibleCount > 0
+                          ? "indeterminate"
+                          : false
                     }
                     onCheckedChange={(next) =>
                       setCheckedIds((previous) => {
@@ -938,7 +1021,9 @@ export function ControlsPage() {
                         {control.origin === "custom" ? (
                           <>
                             <Badge variant="role">Internal</Badge>
-                            <TypeChip label={control.control_type} />
+                            {control.control_type ? (
+                              <TypeChip label={control.control_type} />
+                            ) : null}
                           </>
                         ) : null}
                       </div>
@@ -996,7 +1081,9 @@ export function ControlsPage() {
                         </span>
                       </span>
                     ) : (
-                      <span className="text-body-sm text-text-subtle">Unassigned</span>
+                      <span className="text-body-sm text-text-subtle">
+                        Unassigned
+                      </span>
                     )}
                   </TD>
                   <TD numeric>
@@ -1004,7 +1091,9 @@ export function ControlsPage() {
                       <span
                         className={cn(
                           "inline-flex items-center gap-1.5",
-                          evidenceCount === 0 ? "text-text-subtle" : "text-text-secondary",
+                          evidenceCount === 0
+                            ? "text-text-subtle"
+                            : "text-text-secondary",
                         )}
                       >
                         <Icon name="doc" className="size-3.5" />
@@ -1044,7 +1133,9 @@ export function ControlsPage() {
                             {/* The API refuses to patch a disabled control, so
                                 the form is not offered for one. */}
                             {control.disabled_at ? null : (
-                              <DropdownMenuItem onSelect={() => setEditing(control)}>
+                              <DropdownMenuItem
+                                onSelect={() => setEditing(control)}
+                              >
                                 Edit
                               </DropdownMenuItem>
                             )}
@@ -1084,14 +1175,19 @@ export function ControlsPage() {
           <div className="flex items-center gap-2">
             <span className="text-body-sm text-text-subtle">Rows per page</span>
             <Select
-              value={PAGE_SIZES.includes(pageSize) ? String(pageSize) : "custom"}
+              value={
+                PAGE_SIZES.includes(pageSize) ? String(pageSize) : "custom"
+              }
               onValueChange={(value) => {
                 setCustomSize(value === "custom");
                 if (value !== "custom") setPageSize(Number(value));
                 setPage(1);
               }}
             >
-              <SelectTrigger aria-label="Rows per page" className="h-8 w-[96px]" />
+              <SelectTrigger
+                aria-label="Rows per page"
+                className="h-8 w-[96px]"
+              />
               <SelectContent>
                 {PAGE_SIZES.map((size) => (
                   <SelectItem key={size} value={String(size)}>
@@ -1114,7 +1210,13 @@ export function ControlsPage() {
                   if (event.key === "Enter") event.currentTarget.blur();
                 }}
                 onBlur={(event) => {
-                  const next = Math.min(500, Math.max(1, Number(event.target.value) || DEFAULT_PAGE_SIZE));
+                  const next = Math.min(
+                    500,
+                    Math.max(
+                      1,
+                      Number(event.target.value) || DEFAULT_PAGE_SIZE,
+                    ),
+                  );
                   event.target.value = String(next);
                   setPageSize(next);
                   setPage(1);
@@ -1123,8 +1225,8 @@ export function ControlsPage() {
               />
             ) : null}
             <span className="tabular text-body-sm text-text-subtle">
-              {pageStart + 1}–{Math.min(pageStart + pageSize, visible.length)} of{" "}
-              {visible.length}
+              {pageStart + 1}–{Math.min(pageStart + pageSize, visible.length)}{" "}
+              of {visible.length}
             </span>
           </div>
 
@@ -1153,7 +1255,11 @@ export function ControlsPage() {
         }}
         onClose={() => setSelectedId(null)}
       />
-      <ControlFormDialog mode="create" open={creating} onOpenChange={setCreating} />
+      <ControlFormDialog
+        mode="create"
+        open={creating}
+        onOpenChange={setCreating}
+      />
       <ControlFormDialog
         mode="edit"
         control={editing}

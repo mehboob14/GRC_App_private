@@ -112,7 +112,7 @@ export function ControlFormDialog({
       setCode(control.code);
       setDescription(control.description);
       setCategory(control.category);
-      setControlType(control.control_type);
+      setControlType(control.control_type ?? "");
       setSubType(control.control_sub_type ?? "");
       setOwnerId(control.owner_membership_id ?? "");
       setGuidance(control.implementation_guidance ?? "");

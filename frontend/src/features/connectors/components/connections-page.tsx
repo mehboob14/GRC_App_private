@@ -1,15 +1,16 @@
 import { useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   Badge,
   Button,
   Card,
-  Drawer,
-  DrawerBody,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   EmptyState,
   FilterFacet,
   SearchInput,
@@ -23,6 +24,7 @@ import {
   CONNECTOR_CATEGORIES,
   CONNECTORS,
   type Connector,
+  type ConnectorCategory,
 } from "@/features/connectors/connector-catalogue";
 
 const CATEGORY_OPTIONS = CONNECTOR_CATEGORIES.map((category) => ({
@@ -30,7 +32,7 @@ const CATEGORY_OPTIONS = CONNECTOR_CATEGORIES.map((category) => ({
   label: category,
 }));
 
-/** Every provider reads the same: nothing is connected until Phase 2. */
+/** Every provider reads the same: nothing is connected until connectors go live. */
 const NOT_CONNECTED = "Not connected";
 const notConnectedFamily = statusFamilyFor(NOT_CONNECTED) ?? "unknown";
 
@@ -65,33 +67,62 @@ function AvailableCard({
   onOpen: () => void;
 }) {
   return (
-    <Card className="flex flex-col p-4">
-      <div className="flex items-center gap-2.5">
-        <ConnectorLogo size={28} />
-        <span className="truncate text-body-md font-semibold text-text-primary">
-          {connector.name}
-        </span>
+    // h-full so a row of cards shares one height however many category chips
+    // each carries; the button then lines up across the row.
+    <Card
+      className={cn(
+        "group flex h-full flex-col p-5",
+        "transition-[border-color,box-shadow] duration-150 ease-state",
+        "hover:border-border-strong hover:shadow-2",
+      )}
+    >
+      <div className="flex items-start gap-3.5">
+        <ConnectorLogo id={connector.id} name={connector.name} size={48} />
+        <div className="min-w-0 flex-1 pt-0.5">
+          <p className="truncate text-body-lg font-semibold text-text-primary">
+            {connector.name}
+          </p>
+          {/* Two different kinds of fact, so two different shapes: status is a
+              dot + word (a live state), categories are chips (a taxonomy).
+              Reading them as one row of look-alike pills is the thing to
+              avoid — and the inline kind keeps 40 identical statuses quiet. */}
+          <StatusPill
+            className="mt-1"
+            kind="inline"
+            status={notConnectedFamily}
+            label={NOT_CONNECTED}
+          />
+        </div>
       </div>
-      <div className="mt-3">
-        <p className="type-overline mb-1.5">Categories</p>
-        <CategoryChips categories={connector.categories} />
+      {/* The chips are self-evidently categories — an overline above them
+          would be a label for a label. */}
+      <CategoryChips categories={connector.categories} className="mt-3.5" />
+      {/* mt-auto pins the action to the bottom edge whatever the chips do,
+          so buttons line up across a row of uneven cards. */}
+      <div className="mt-auto pt-5">
+        <Button variant="accent" className="w-full" onClick={onOpen}>
+          View and connect
+        </Button>
       </div>
-      <Button
-        variant="secondary"
-        size="sm"
-        className="mt-4 w-full"
-        onClick={onOpen}
-      >
-        View and connect
-      </Button>
     </Card>
   );
 }
 
 export function ConnectionsPage() {
+  const [params] = useSearchParams();
   const [tab, setTab] = useState<Tab>("available");
   const [search, setSearch] = useState("");
-  const [categories, setCategories] = useState<string[]>([]);
+  // `?category=Identity` deep-links a pre-filtered catalogue (quick start sends
+  // you here for your IdP). Read once as the initial value, so the facet stays
+  // the owner of the filter afterwards and Clear filters still clears it.
+  // Repeatable, and unknown values are dropped rather than filtering to nothing.
+  const [categories, setCategories] = useState<string[]>(() =>
+    params
+      .getAll("category")
+      .filter((value): value is ConnectorCategory =>
+        (CONNECTOR_CATEGORIES as readonly string[]).includes(value),
+      ),
+  );
   const [selected, setSelected] = useState<Connector | null>(null);
 
   const visible = useMemo(() => {
@@ -150,7 +181,7 @@ export function ConnectionsPage() {
         <EmptyState
           icon="plug"
           title="No active connections yet"
-          description="Connect a provider from Available to start collecting evidence. Connecting arrives in Phase 2."
+          description="Connect a provider from Available to start collecting evidence. Connecting arrives soon."
         />
       ) : (
         <>
@@ -177,7 +208,10 @@ export function ConnectionsPage() {
                 Clear filters
               </Button>
             ) : null}
-            <p aria-live="polite" className="ml-auto text-caption text-text-subtle">
+            <p
+              aria-live="polite"
+              className="ml-auto text-caption text-text-subtle"
+            >
               Showing <span className="tabular">{visible.length}</span> of{" "}
               <span className="tabular">{CONNECTORS.length}</span> connectors
             </p>
@@ -193,7 +227,7 @@ export function ConnectionsPage() {
               onClearFilters={clearFilters}
             />
           ) : (
-            <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {visible.map((connector) => (
                 <li key={connector.id}>
                   <AvailableCard
@@ -207,66 +241,90 @@ export function ConnectionsPage() {
         </>
       )}
 
-      {/* Peek → drawer: read what a connector will do without leaving the page. */}
-      <Drawer
+      {/* Centred modal, not a side drawer: this is a short, self-contained
+          read — name, status, scope — with one action at the end. DS §7.1
+          reserves the drawer for content you work alongside the list. */}
+      <Dialog
         open={selected !== null}
         onOpenChange={(open) => {
           if (!open) setSelected(null);
         }}
       >
-        <DrawerContent size="md">
+        <DialogContent size="md" scrollBody>
           {selected ? (
             <>
-              <DrawerHeader>
-                <DrawerTitle className="flex items-center gap-2.5">
-                  <ConnectorLogo size={28} />
-                  {selected.name}
-                </DrawerTitle>
-                <DrawerDescription>
-                  Not connected. Verity holds no credential for {selected.name}{" "}
-                  and has collected nothing from it.
-                </DrawerDescription>
-              </DrawerHeader>
-
-              <DrawerBody className="space-y-5">
-                <div>
-                  <p className="type-overline mb-1.5">Categories</p>
-                  <CategoryChips categories={selected.categories} />
+              <DialogHeader>
+                <div className="flex items-start gap-3.5">
+                  <ConnectorLogo
+                    id={selected.id}
+                    name={selected.name}
+                    size={48}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <DialogTitle className="truncate">
+                      {selected.name}
+                    </DialogTitle>
+                  </div>
                 </div>
+                <DialogDescription className="mt-4">
+                  Verity holds no credential for {selected.name} and has
+                  collected nothing from it.
+                </DialogDescription>
+              </DialogHeader>
 
-                <div>
-                  <p className="type-overline mb-1.5">What this will sync</p>
-                  <p className="mb-2 text-body-sm text-text-subtle">
-                    Once connector sync ships in Phase 2, Verity will collect the
-                    following as control evidence. Nothing is collected today.
+              <DialogBody className="space-y-5 pb-1">
+                {/* Status and categories are different kinds of fact, so they
+                    get different shapes as well as labels: a dot + word for the
+                    live state, filled chips for the taxonomy. Rendered as two
+                    grey pills they read as one row of the same thing. */}
+                <section className="grid grid-cols-1 divide-y divide-border rounded-lg border border-border sm:grid-cols-2 sm:divide-x sm:divide-y-0">
+                  <div className="px-4 py-3">
+                    <h3 className="type-overline mb-1.5">Status</h3>
+                    <StatusPill
+                      kind="inline"
+                      status={notConnectedFamily}
+                      label={NOT_CONNECTED}
+                    />
+                  </div>
+                  <div className="px-4 py-3">
+                    <h3 className="type-overline mb-1.5">Categories</h3>
+                    <CategoryChips categories={selected.categories} />
+                  </div>
+                </section>
+
+                <section>
+                  <h3 className="type-overline mb-2">What this will sync</h3>
+                  <p className="mb-2.5 text-body-sm text-text-subtle">
+                    Once connectors go live, Verity will collect the following
+                    as control evidence. Nothing is collected today.
                   </p>
-                  <ul className="list-disc space-y-1.5 pl-5 text-body-md text-text-secondary marker:text-text-faint">
+                  <ul className="divide-y divide-border rounded-lg border border-border">
                     {selected.syncs.map((item) => (
-                      <li key={item}>{item}</li>
+                      <li
+                        key={item}
+                        className="px-3.5 py-2.5 text-body-md text-text-secondary"
+                      >
+                        {item}
+                      </li>
                     ))}
                   </ul>
-                </div>
+                </section>
+              </DialogBody>
 
-                <div>
-                  <p className="type-overline mb-1.5">Status</p>
-                  <StatusPill status={notConnectedFamily} label={NOT_CONNECTED} />
-                </div>
-              </DrawerBody>
-
-              <DrawerFooter className="items-center justify-between gap-3">
+              <DialogFooter className="items-center justify-between">
                 <p className="text-body-sm text-text-subtle">
-                  Connecting arrives in Phase 2.
+                  Connecting arrives soon.
                 </p>
-                <Tooltip content="Connecting arrives in Phase 2, with the connector sync backend. There is nothing to authorise yet.">
+                <Tooltip content="Connecting arrives soon, with the connector sync backend. There is nothing to authorise yet.">
                   <span tabIndex={0} className="rounded-sm">
                     <Button disabled>Connect {selected.name}</Button>
                   </span>
                 </Tooltip>
-              </DrawerFooter>
+              </DialogFooter>
             </>
           ) : null}
-        </DrawerContent>
-      </Drawer>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

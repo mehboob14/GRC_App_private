@@ -225,6 +225,10 @@ class InviteMemberRequest(_Request):
     email: str = Field(min_length=3, max_length=320)
     full_name: str = Field(min_length=1, max_length=200)
     role_id: uuid.UUID
+    group_id: uuid.UUID | None = None
+    """Optional: puts the invitee in this group in the same transaction as the
+    membership, so they are in it the moment they accept."""
+
     valid_from: date | None = None
     valid_until: date | None = None
     """The optional time-box lands on the created role assignment — the
@@ -239,10 +243,25 @@ class InviteMemberResponse(_Response):
     member: MemberOut
     invite_token: str
     accept_url: str
+    email_sent: bool
+    """False when SMTP is unconfigured or the send failed. The screen must not
+    say an invite was emailed unless this is true."""
 
 
 class MemberRolesPut(_Request):
     role_id: uuid.UUID
+
+
+class MemberUpdate(_Request):
+    """Editable member details.
+
+    ``full_name`` lives on the global ``users`` row (ADR-0011), so correcting it
+    here corrects it in every workspace that person belongs to. That is the
+    intended behaviour — a person has one name — and the change is audited in
+    the tenant whose admin made it.
+    """
+
+    full_name: str = Field(min_length=1, max_length=200)
 
 
 class AdminInviteRequest(_Request):
@@ -260,12 +279,21 @@ class AdminInviteRequest(_Request):
 class GroupOut(_Response):
     id: uuid.UUID
     name: str
+    description: str | None = None
     member_count: int
     member_ids: list[uuid.UUID]
 
 
 class GroupCreate(_Request):
+    description: str | None = Field(default=None, max_length=500)
     name: str = Field(min_length=1, max_length=200)
+
+
+class GroupUpdate(_Request):
+    """Patch a group (D17): only the fields present are written."""
+
+    name: str | None = Field(default=None, min_length=1, max_length=200)
+    description: str | None = Field(default=None, max_length=500)
 
 
 class GroupMemberAdd(_Request):
@@ -282,21 +310,25 @@ class GroupMemberAdd(_Request):
 class RoleOut(_Response):
     id: uuid.UUID
     name: str
+    description: str | None = None
     built_in: bool
     permission_keys: list[str]
     assignment_count: int
 
 
 class RoleCreate(_Request):
+    description: str | None = Field(default=None, max_length=500)
     name: str = Field(min_length=1, max_length=200)
     permission_keys: list[str] = Field(default_factory=list)
 
 
 class RoleUpdate(_Request):
-    """Patch a custom role: only fields present are written. ``permission_keys``
-    when present is the full replacement set, not a delta."""
+    """Patch any role, built-in included (D15): only fields present are written.
+    ``permission_keys`` when present is the full replacement set, not a delta.
+    A write that would leave the workspace unable to manage roles is a 409."""
 
     name: str | None = Field(default=None, min_length=1, max_length=200)
+    description: str | None = Field(default=None, max_length=500)
     permission_keys: list[str] | None = None
 
 
@@ -326,7 +358,36 @@ class RoleAssignmentOut(_Response):
 
 class SecuritySettingsOut(_Response):
     require_admin_mfa: bool
+    # Password policy — enforced on every path that sets a password.
+    password_min_length: int
+    password_require_upper: bool
+    password_require_lower: bool
+    password_require_digit: bool
+    password_require_symbol: bool
+    password_history_depth: int
+    # Stored and returned, not yet enforced. The client badges these, so the
+    # screen never states a control the platform does not apply.
+    password_max_age_days: int
+    lockout_threshold: int
+    lockout_duration_minutes: int
+    idle_timeout_minutes: int
 
 
 class SecuritySettingsPatch(_Request):
-    require_admin_mfa: bool
+    """Every field optional: the screen patches what changed, not the world.
+
+    Bounds mirror the table's CHECK constraints, so an out-of-range value is a
+    clean 422 here rather than an integrity error surfacing from the database.
+    """
+
+    require_admin_mfa: bool | None = None
+    password_min_length: int | None = Field(default=None, ge=8, le=128)
+    password_require_upper: bool | None = None
+    password_require_lower: bool | None = None
+    password_require_digit: bool | None = None
+    password_require_symbol: bool | None = None
+    password_history_depth: int | None = Field(default=None, ge=0, le=24)
+    password_max_age_days: int | None = Field(default=None, ge=0, le=3650)
+    lockout_threshold: int | None = Field(default=None, ge=0, le=100)
+    lockout_duration_minutes: int | None = Field(default=None, ge=0, le=10080)
+    idle_timeout_minutes: int | None = Field(default=None, ge=0, le=10080)

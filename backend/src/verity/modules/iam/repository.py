@@ -53,13 +53,22 @@ class TenantSettingsRepository:
     async def set_require_admin_mfa(
         self, session: AsyncSession, tenant_id: uuid.UUID, value: bool
     ) -> TenantSettings:
+        row = await self.upsert(session, tenant_id)
+        row.require_admin_mfa = value
+        await session.flush([row])
+        return row
+
+    async def upsert(self, session: AsyncSession, tenant_id: uuid.UUID) -> TenantSettings:
+        """The tenant's settings row, created with column defaults if absent.
+
+        An absent row means "the defaults", so materialising it changes nothing
+        the reader could observe — it just gives a writer something to set.
+        """
         row = await session.get(TenantSettings, tenant_id)
         if row is None:
-            row = TenantSettings(tenant_id=tenant_id, require_admin_mfa=value)
+            row = TenantSettings(tenant_id=tenant_id)
             session.add(row)
-        else:
-            row.require_admin_mfa = value
-        await session.flush([row])
+            await session.flush([row])
         return row
 
 
@@ -204,9 +213,20 @@ class GroupRepository:
         )
         return list(result.scalars())
 
+    async def delete(self, session: AsyncSession, group: Group) -> None:
+        """Groups are an access-control convenience, not a compliance object, so
+        rule 6 does not apply: deleting one drops its memberships and any role
+        assignment made to it (both cascade), which is the point."""
+        await session.delete(group)
+        await session.flush()
+
     async def add_member(self, session: AsyncSession, member: GroupMember) -> None:
         session.add(member)
         await session.flush([member])
+
+    async def delete_member(self, session: AsyncSession, member: GroupMember) -> None:
+        await session.delete(member)
+        await session.flush()
 
     async def get_member(
         self,
