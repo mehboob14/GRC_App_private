@@ -103,6 +103,12 @@ services:
     container_name: verity-api
     env_file:
       - .env.production
+    volumes:
+      # Evidence files. STORAGE_DRIVER=local writes to the container filesystem,
+      # which a rebuild would discard — this volume is what makes that durable.
+      # Not needed once the s3 driver exists (core/storage.py:S3ObjectStore is
+      # currently a stub that raises on every call).
+      - evidence-data:/app/.data
     depends_on:
       postgres:
         condition: service_healthy
@@ -149,3 +155,4 @@ volumes:
   postgres-data:
   redis-data:
   minio-data:
+  evidence-data:

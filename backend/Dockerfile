@@ -51,6 +51,13 @@ RUN groupadd --system --gid 1001 verity \
 WORKDIR /app
 COPY --from=builder --chown=verity:verity /app /app
 
+# Evidence files land under .data/objects (storage.local_root, relative to this
+# WORKDIR). The directory must exist in the image and be owned by the runtime
+# user: Docker seeds a fresh named volume from the image path it is mounted over,
+# so if this is absent the volume is created root-owned and uid 1001 cannot write
+# to it — the upload then fails at runtime, not at build time.
+RUN mkdir -p /app/.data/objects && chown -R verity:verity /app/.data
+
 USER verity
 EXPOSE 8000
 
