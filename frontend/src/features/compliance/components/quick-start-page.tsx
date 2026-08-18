@@ -1,222 +1,403 @@
+import { useMemo, useState } from "react";
+import { useQueries } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { Button, Icon, StatusPill } from "@/components/ui";
-import { IDENTITY_CONNECTORS_PATH } from "@/features/connectors/connector-catalogue";
+import { Button, Icon, Skeleton } from "@/components/ui";
+import {
+  controlsApi,
+  engagementApi,
+  iamApi,
+  tenantApi,
+} from "@/lib/api/endpoints";
 import { useAuth } from "@/lib/auth/auth-context";
 import { cn } from "@/lib/cn";
 
-/** `soon` is a step the platform does not ship yet: shown, never counted. */
-type StepStatus = "done" | "todo" | "soon";
+/**
+ * Get Started — grouped setup checklist.
+ *
+ * Every task here is decided by a real API response, and that constraint is the
+ * design. A checklist is a claim about the workspace; in a compliance product a
+ * claim that cannot be traced to data is worse than no claim. So:
+ *
+ *   * a task exists only if some endpoint can answer "is this done?" today;
+ *   * work the platform does not ship yet (integrations, policies) is not a row
+ *     with a permanent 0 — it sits below the checklist, uncounted;
+ *   * a field the server pre-fills cannot prove a user did anything. The
+ *     company-profile check reads website/headquarters/company_size, never
+ *     legal_name: signup seeds legal_name from the company name, so it is
+ *     non-null for a tenant that has never opened the form.
+ */
 
-type Step = {
+type Task = {
   id: string;
   title: string;
-  why: string;
-  status: StepStatus;
-  cta?: { label: string; to: string };
+  detail: string;
+  done: boolean;
+  to: string;
+  cta: string;
 };
 
-/** 22px circle: solid success check when done, numbered outline otherwise. */
-function StepMark({
-  status,
-  index,
-  isNext,
-}: {
-  status: StepStatus;
-  index: number;
-  isNext: boolean;
-}) {
-  if (status === "done") {
-    return (
-      <span className="flex size-[22px] shrink-0 items-center justify-center rounded-full bg-status-success-base text-text-inverse">
-        <Icon name="check" className="size-[13px]" strokeWidth={2.5} />
-      </span>
-    );
-  }
-  return (
-    <span
-      className={cn(
-        "flex size-[22px] shrink-0 items-center justify-center rounded-full border-1.5 font-sans text-caption font-bold tabular",
-        status === "soon"
-          ? "border-border text-text-faint"
-          : isNext
-            ? "border-action-accent text-action-accent"
-            : "border-border-strong text-text-subtle",
-      )}
-    >
-      {index}
-    </span>
-  );
-}
+type Section = {
+  id: string;
+  title: string;
+  purpose: string;
+  tasks: Task[];
+};
 
-function StepRow({
-  step,
-  index,
-  isNext,
-}: {
-  step: Step;
-  index: number;
-  isNext: boolean;
-}) {
-  const soon = step.status === "soon";
+function TaskRow({ task }: { task: Task }) {
   return (
-    <div
-      className={cn(
-        "flex items-center gap-3 rounded-lg border border-border px-4 py-3",
-        // Dashed on sunken is how this app already draws a not-yet-built row
-        // (evidence detail's Risks/Assets/Policies placeholders).
-        soon ? "border-dashed bg-surface-sunken" : "bg-surface-primary",
+    <div className="flex items-start gap-3 border-t border-border px-5 py-3.5 first:border-t-0">
+      {task.done ? (
+        <span className="mt-0.5 flex size-[18px] shrink-0 items-center justify-center rounded-full bg-status-success-base text-text-inverse">
+          <Icon name="check" className="size-[11px]" strokeWidth={3} />
+        </span>
+      ) : (
+        <span className="mt-0.5 size-[18px] shrink-0 rounded-full border-1.5 border-border-strong" />
       )}
-    >
-      <StepMark status={step.status} index={index} isNext={isNext} />
-      <div className="min-w-0 flex-1">
-        <p
+      <span className="min-w-0 flex-1">
+        <span
           className={cn(
-            "text-body-lg font-semibold",
-            soon ? "text-text-secondary" : "text-text-primary",
+            "block text-body-md font-semibold",
+            task.done ? "text-text-subtle" : "text-text-primary",
           )}
         >
-          {step.title}
-        </p>
-        <p className="mt-0.5 text-body-sm text-text-subtle">{step.why}</p>
-      </div>
-      {step.status === "done" ? (
-        <StatusPill status="success" label="Complete" className="shrink-0" />
-      ) : soon ? (
-        // The app's existing quiet "Soon" tag (sidebar, settings tabs, evidence
-        // detail). Longhand, not `.type-overline`: that utility resolves to
-        // text-faint, which is decorative-only and too low-contrast for a label
-        // that carries meaning.
-        <span className="shrink-0 font-sans text-overline uppercase text-text-subtle">
-          Soon
+          {task.title}
         </span>
-      ) : step.cta ? (
-        // One primary on the page: the next incomplete step's CTA. Later steps
-        // stay reachable as secondary actions.
-        <Button
-          asChild
-          variant={isNext ? "primary" : "secondary"}
-          size="sm"
-          className="ml-2 shrink-0"
-        >
-          <Link to={step.cta.to}>{step.cta.label}</Link>
+        <span className="mt-0.5 block text-body-sm text-text-secondary">
+          {task.detail}
+        </span>
+      </span>
+      {!task.done ? (
+        <Button asChild variant="secondary" size="sm" className="shrink-0">
+          <Link to={task.to}>{task.cta}</Link>
         </Button>
       ) : null}
     </div>
   );
 }
 
-/**
- * First-run checklist. Every live step reads real session state; steps the
- * platform does not ship yet are marked `soon` and stay out of the count, so
- * the progress figure never claims work the product cannot do.
- */
-export function QuickStartPage() {
-  const { principal } = useAuth();
-  // Enrollment happens at sign-in (`/mfa/enroll`), never mid-session, so the
-  // session principal is authoritative here and no members fetch is needed.
-  const mfaEnrolled = principal?.user.mfa_enabled ?? false;
+function ProgressTrack({ done, total }: { done: number; total: number }) {
+  const pct = total === 0 ? 0 : Math.round((done / total) * 100);
+  return (
+    <span
+      role="progressbar"
+      aria-valuemin={0}
+      aria-valuemax={total}
+      aria-valuenow={done}
+      aria-label={`${done} of ${total} complete`}
+      className="block h-[6px] w-full overflow-hidden rounded-full bg-surface-sunken"
+    >
+      <span
+        className={cn(
+          "block h-full rounded-full transition-[width] duration-300 ease-state",
+          done === total ? "bg-status-success-base" : "bg-action-accent",
+        )}
+        style={{ width: `${pct}%` }}
+      />
+    </span>
+  );
+}
 
-  const steps: Step[] = [
-    {
-      id: "workspace",
-      title: "Workspace created",
-      why: "Your isolated workspace is live.",
-      status: "done",
-    },
-    {
-      id: "mfa",
-      title: "Enroll MFA",
-      why: "Required for every Admin role.",
-      status: mfaEnrolled ? "done" : "todo",
-      cta: { label: "View policy", to: "/settings/security/mfa" },
-    },
-    {
-      id: "identity",
-      title: "Connect your identity provider",
-      why: "Sync people and access from Okta, Entra ID or Google Workspace.",
-      status: "todo",
-      cta: { label: "Connect", to: IDENTITY_CONNECTORS_PATH },
-    },
-    {
-      id: "frameworks",
-      title: "Review frameworks and controls",
-      why: "Check the SOC 2 control set against how you operate.",
-      status: "soon",
-    },
-    {
-      id: "policies",
-      title: "Review policies",
-      why: "Publish the policies your auditor asks for.",
-      status: "soon",
-    },
-  ];
-
-  const actionable = steps.filter((step) => step.status !== "soon");
-  const doneCount = actionable.filter((step) => step.status === "done").length;
-  const nextStepId = steps.find((step) => step.status === "todo")?.id;
+function SectionCard({
+  section,
+  open,
+  onToggle,
+}: {
+  section: Section;
+  open: boolean;
+  onToggle: () => void;
+}) {
+  const done = section.tasks.filter((task) => task.done).length;
+  const total = section.tasks.length;
+  const panelId = `quickstart-${section.id}`;
 
   return (
-    <div className="mx-auto max-w-[840px]">
-      <p className="type-overline mb-2">Overview</p>
+    <div className="overflow-hidden rounded-lg border border-border bg-surface-primary">
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={panelId}
+        onClick={onToggle}
+        className="flex w-full items-start gap-4 px-5 py-4 text-left hover:bg-surface-hover"
+      >
+        <span className="min-w-0 flex-1">
+          <span className="block font-display text-title-md text-text-primary">
+            {section.title}
+          </span>
+          <span className="mt-0.5 block text-body-sm text-text-secondary">
+            {section.purpose}
+          </span>
+          <span className="mt-3 flex items-center gap-3">
+            <ProgressTrack done={done} total={total} />
+            <span className="shrink-0 text-caption tabular text-text-subtle">
+              {done} of {total} completed
+            </span>
+          </span>
+        </span>
+        <Icon
+          name="chevr"
+          aria-hidden
+          className={cn(
+            "mt-1 size-4 shrink-0 text-text-subtle transition-transform duration-150",
+            open && "rotate-90",
+          )}
+        />
+      </button>
+      {open ? (
+        <div id={panelId} className="border-t border-border">
+          {section.tasks.map((task) => (
+            <TaskRow key={task.id} task={task} />
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+export function QuickStartPage() {
+  const { principal } = useAuth();
+  const tenantId = principal?.tenant_id;
+
+  const [profileQ, securityQ, membersQ, engagementQ, controlsQ] = useQueries({
+    queries: [
+      {
+        queryKey: ["company-profile", tenantId],
+        queryFn: tenantApi.getCompanyProfile,
+      },
+      {
+        queryKey: ["tenant-security", tenantId],
+        queryFn: tenantApi.getSecurity,
+      },
+      { queryKey: ["members", tenantId], queryFn: () => iamApi.listMembers() },
+      {
+        queryKey: ["engagement", tenantId],
+        queryFn: () => engagementApi.get(),
+      },
+      { queryKey: ["controls", tenantId], queryFn: () => controlsApi.list({}) },
+    ],
+  });
+
+  const loading = [profileQ, securityQ, membersQ, engagementQ, controlsQ].some(
+    (query) => query.isLoading,
+  );
+
+  const profile = profileQ.data;
+  const security = securityQ.data;
+  const members = membersQ.data;
+  const engagement = engagementQ.data;
+  const controls = controlsQ.data;
+  const mfaEnabled = principal?.user.mfa_enabled ?? false;
+
+  const sections = useMemo<Section[]>(() => {
+    const controlList = controls ?? [];
+    const memberList = members ?? [];
+
+    const scopeTasks: Task[] = [
+      {
+        id: "engagement",
+        title: "Set up your audit engagement",
+        detail:
+          "Choose the framework and whether you are pursuing Type I or Type II.",
+        done: Boolean(engagement),
+        to: "/frameworks/scope",
+        cta: "Set up",
+      },
+      {
+        id: "categories",
+        title: "Choose your Trust Services Criteria",
+        detail:
+          "Security is always in scope. Add Availability, Confidentiality, Processing Integrity or Privacy if you are claiming them.",
+        done: (engagement?.categories_in_scope.length ?? 0) > 0,
+        to: "/frameworks/scope",
+        cta: "Choose",
+      },
+    ];
+    // The observation window is a Type II concept. Showing it against a Type I
+    // engagement would be a row that can never legitimately complete.
+    if (engagement?.audit_type === "type_2") {
+      scopeTasks.push({
+        id: "window",
+        title: "Set your observation window",
+        detail: "The period your auditor tests evidence across.",
+        done: Boolean(engagement.window_start && engagement.window_end),
+        to: "/frameworks/scope",
+        cta: "Set dates",
+      });
+    }
+
+    return [
+      {
+        id: "workspace",
+        title: "Set up your workspace",
+        purpose: "The company details later steps depend on.",
+        tasks: [
+          {
+            id: "profile",
+            title: "Complete your company profile",
+            detail: "Website, headquarters and company size.",
+            done: Boolean(
+              profile?.website &&
+              profile?.headquarters &&
+              profile?.company_size,
+            ),
+            to: "/settings/organization/profile",
+            cta: "Complete",
+          },
+        ],
+      },
+      {
+        id: "access",
+        title: "Secure access to your workspace",
+        purpose: "Who can get in, and what they have to prove to do it.",
+        tasks: [
+          {
+            id: "own-mfa",
+            title: "Turn on two-factor for your account",
+            detail: "An authenticator app on your own sign-in.",
+            done: mfaEnabled,
+            to: "/settings/security/mfa",
+            cta: "Turn on",
+          },
+          {
+            id: "admin-mfa",
+            title: "Require two-factor for admins",
+            detail:
+              "Every Admin-role member must enrol before they can sign in.",
+            done: security?.require_admin_mfa ?? false,
+            to: "/settings/security/mfa",
+            cta: "Require",
+          },
+          {
+            id: "invite",
+            title: "Invite your team",
+            detail:
+              "Add the people who will own controls and collect evidence.",
+            // Signup creates exactly one membership, so more than one proves an
+            // invite was actually issued.
+            done:
+              memberList.filter((member) => member.status !== "disabled")
+                .length > 1,
+            to: "/settings/access/people",
+            cta: "Invite",
+          },
+        ],
+      },
+      {
+        id: "scope",
+        title: "Scope your audit",
+        purpose: "What you are audited against, and over what period.",
+        tasks: scopeTasks,
+      },
+      {
+        id: "controls",
+        title: "Work your controls",
+        purpose: "Your SOC 2 control library, owned and moving.",
+        tasks: [
+          {
+            id: "owners",
+            title: "Assign control owners",
+            detail:
+              "Adopted controls start unassigned. Give each one a person.",
+            done: controlList.some(
+              (control) => control.owner_membership_id !== null,
+            ),
+            to: "/controls",
+            cta: "Assign",
+          },
+          {
+            id: "progress",
+            title: "Start working your controls",
+            detail:
+              "Move a control off Not started once you are implementing it.",
+            done: controlList.some(
+              (control) => control.status !== "not_started",
+            ),
+            to: "/controls",
+            cta: "Open controls",
+          },
+        ],
+      },
+    ];
+  }, [profile, security, members, engagement, controls, mfaEnabled]);
+
+  const allTasks = sections.flatMap((section) => section.tasks);
+  const doneCount = allTasks.filter((task) => task.done).length;
+  const remaining = allTasks.length - doneCount;
+
+  // Open the first section with work left: opening everything is a wall,
+  // opening nothing hides the next action. `""` means the user closed it.
+  const firstIncomplete = sections.find((section) =>
+    section.tasks.some((task) => !task.done),
+  );
+  const [openId, setOpenId] = useState<string | null>(null);
+  const effectiveOpen = openId ?? firstIncomplete?.id ?? null;
+
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-[860px] space-y-3">
+        <Skeleton className="h-9 w-56" />
+        <Skeleton className="h-28 w-full rounded-lg" />
+        <Skeleton className="h-28 w-full rounded-lg" />
+        <Skeleton className="h-28 w-full rounded-lg" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="mx-auto max-w-[860px]">
       <h1 className="font-display text-heading-lg text-text-primary">
-        Quick start
+        Get started
       </h1>
       <p className="mt-2 text-body-lg text-text-secondary">
-        First-run checklist for your workspace.
+        {remaining === 0
+          ? "Setup complete."
+          : `${remaining} of ${allTasks.length} steps remaining.`}
       </p>
 
-      {/* DS §6.4 progress pattern: 150×7 track + tabular value */}
       <div className="mt-5 flex items-center gap-3">
-        <span className="font-display text-numeral-sm tabular text-text-primary">
-          {doneCount}
-          <span className="text-text-subtle">/{actionable.length}</span>
-        </span>
-        <span
-          role="progressbar"
-          aria-valuemin={0}
-          aria-valuemax={actionable.length}
-          aria-valuenow={doneCount}
-          aria-label="Setup steps complete"
-          className="h-[7px] w-[150px] overflow-hidden rounded-full border border-border bg-surface-sunken"
-        >
-          <span
-            className="block h-full rounded-full bg-status-success-base"
-            style={{ width: `${(doneCount / actionable.length) * 100}%` }}
-          />
-        </span>
-        <span className="text-label-sm text-text-secondary">
-          setup steps complete
+        <ProgressTrack done={doneCount} total={allTasks.length} />
+        <span className="shrink-0 text-label-sm tabular text-text-secondary">
+          {doneCount}/{allTasks.length}
         </span>
       </div>
 
-      <Link
-        to="/settings/organization/profile"
-        className="mt-6 flex items-center gap-3 rounded-lg border border-border bg-surface-primary px-4 py-3.5 transition-colors hover:border-action-accent hover:bg-action-accent-tint/40"
-      >
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-action-accent-tint text-action-accent">
-          <Icon name="box" className="size-4" />
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block text-body-md font-semibold text-text-primary">
-            Complete your company profile
-          </span>
-          <span className="block text-body-sm text-text-subtle">
-            Name, industry, website and policy URLs.
-          </span>
-        </span>
-        <Icon name="arrowr" className="size-4 shrink-0 text-text-subtle" />
-      </Link>
-
-      <div className="mt-6 space-y-2">
-        {steps.map((step, index) => (
-          <StepRow
-            key={step.id}
-            step={step}
-            index={index + 1}
-            isNext={step.id === nextStepId}
+      <div className="mt-6 space-y-3">
+        {sections.map((section) => (
+          <SectionCard
+            key={section.id}
+            section={section}
+            open={effectiveOpen === section.id}
+            onToggle={() =>
+              setOpenId(effectiveOpen === section.id ? "" : section.id)
+            }
           />
         ))}
       </div>
+
+      {/* Deliberately outside the checklist and without a counter. There is no
+          connectors API — `modules/connectors/` is an empty package and every
+          provider renders "Not connected" from a static catalogue — so nothing
+          here can report done. A counted row would sit at 0 forever and read as
+          the workspace failing a step it cannot take. */}
+      <div className="mt-3 rounded-lg border border-border bg-surface-primary px-5 py-4">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
+            <p className="font-display text-title-md text-text-primary">
+              Establish continuous compliance for your frameworks
+            </p>
+            <p className="mt-0.5 text-body-sm text-text-secondary">
+              Connect the systems your controls run on.
+            </p>
+          </div>
+          <Button asChild variant="secondary" className="shrink-0">
+            <Link to="/connectors">View connections</Link>
+          </Button>
+        </div>
+      </div>
+
+      <p className="mt-4 text-body-sm text-text-subtle">
+        Connecting systems and policy management arrive in a later phase, so
+        neither is counted above.
+      </p>
     </div>
   );
 }

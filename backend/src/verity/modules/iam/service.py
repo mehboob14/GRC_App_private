@@ -48,7 +48,7 @@ from verity.core.deps import (
     fetch_grants_for_membership,
     resolve_effective_permissions,
 )
-from verity.core.email import Mailer, OutboundEmail, get_mailer
+from verity.core.email import Mailer, OutboundEmail, get_mailer, render_email
 from verity.core.errors import (
     AuthenticationRequired,
     Conflict,
@@ -543,42 +543,66 @@ class IamMembershipGates:
 
 
 def _verification_message(email: str, link: str) -> OutboundEmail:
-    """The signup email-verification message. Plain and unbranded for Week 1 —
-    real templates and per-tenant from-addresses land with the notifications
-    module. The link carries a single-purpose ``email_verify`` token."""
-    subject = "Confirm your email for Verity"
+    """The signup email-verification message. The link carries a single-purpose
+    ``email_verify`` token.
+
+    The copy states the action, the expiry, and what happens if it was not you.
+    Nothing else earns a place: "trial" is a marketing token to a spam filter and
+    was factually wrong for anyone arriving by invitation, and a security email
+    that reads like an advert is one a careful recipient is right to distrust.
+    """
+    subject = "Confirm your email address"
     text = (
-        "Welcome to Verity.\n\n"
-        "Confirm this email address to finish setting up your workspace:\n"
+        "Confirm your email address\n\n"
+        "Verify this address to finish setting up your Verity workspace.\n\n"
         f"{link}\n\n"
-        "The link expires in 24 hours. If you did not start a Verity trial, "
-        "you can ignore this message."
+        "This link expires in 24 hours and can be used once.\n\n"
+        "If you did not create a Verity account, no action is needed and no "
+        "account will be activated."
     )
-    html = (
-        "<p>Welcome to Verity.</p>"
-        "<p>Confirm this email address to finish setting up your workspace:</p>"
-        f'<p><a href="{link}">Confirm my email</a></p>'
-        "<p>The link expires in 24 hours. If you did not start a Verity trial, "
-        "you can ignore this message.</p>"
+    html = render_email(
+        heading="Confirm your email address",
+        paragraphs=("Verify this address to finish setting up your Verity workspace.",),
+        action=("Confirm email address", link),
+        footnote=(
+            "This link expires in 24 hours and can be used once. "
+            "If you did not create a Verity account, no action is needed."
+        ),
     )
     return OutboundEmail(to=email, subject=subject, text=text, html=html)
 
 
 def _password_reset_message(email: str, link: str) -> OutboundEmail:
-    """The reset-link email. Plain and unbranded for Week 1, like verification."""
+    """The reset-link email.
+
+    The expiry is stated as a number rather than "soon". The exact value is
+    configured (``auth.password_reset_ttl_minutes``), so vagueness bought nothing
+    — and vague-where-it-could-be-specific is precisely how phishing copy reads.
+    """
+    minutes = get_settings().auth.password_reset_ttl_minutes
     subject = "Reset your Verity password"
     text = (
-        "We received a request to reset your Verity password.\n\n"
-        "Set a new password here:\n"
+        "Reset your password\n\n"
+        "Someone asked to reset the Verity password for this address. Use the "
+        "link below to choose a new one.\n\n"
         f"{link}\n\n"
-        "The link expires soon and works once. If you did not request this, you "
-        "can ignore this message — your password stays unchanged."
+        f"This link expires in {minutes} minutes and can be used once.\n\n"
+        "If you did not request this, no action is needed. Your password has "
+        "not changed and the link above can still only be used by whoever "
+        "receives this message."
     )
-    html = (
-        "<p>We received a request to reset your Verity password.</p>"
-        f'<p><a href="{link}">Set a new password</a></p>'
-        "<p>The link expires soon and works once. If you did not request this, "
-        "you can ignore this message — your password stays unchanged.</p>"
+    html = render_email(
+        heading="Reset your password",
+        paragraphs=(
+            "Someone asked to reset the Verity password for this address. "
+            "Use the button below to choose a new one.",
+        ),
+        action=("Choose a new password", link),
+        footnote=(
+            f"This link expires in {minutes} minutes and can be used once. "
+            "If you did not request this, no action is needed and your password "
+            "has not changed."
+        ),
     )
     return OutboundEmail(to=email, subject=subject, text=text, html=html)
 
@@ -588,40 +612,70 @@ def _password_changed_message(email: str) -> OutboundEmail:
     notices a change they did not make."""
     subject = "Your Verity password was changed"
     text = (
-        "Your Verity password was just changed, and any signed-in sessions were "
-        "logged out.\n\nIf this was you, nothing more is needed. If it wasn't, "
-        "contact your administrator immediately."
+        "Your password was changed\n\n"
+        "The Verity password for this address was just changed, and every "
+        "signed-in session was logged out.\n\n"
+        "If this was you, there is nothing more to do.\n\n"
+        "If it was not you, someone else may have access to this mailbox. "
+        "Reset your password immediately and tell your workspace administrator:\n"
+        f"{get_settings().frontend_base_url.rstrip('/')}/forgot-password"
     )
-    html = (
-        "<p>Your Verity password was just changed, and any signed-in sessions "
-        "were logged out.</p><p>If this was you, nothing more is needed. If it "
-        "wasn't, contact your administrator immediately.</p>"
+    html = render_email(
+        heading="Your password was changed",
+        paragraphs=(
+            "The Verity password for this address was just changed, and every "
+            "signed-in session was logged out.",
+            "If this was you, there is nothing more to do.",
+        ),
+        # An urgent notice with no way to act on it is not a notice. The previous
+        # copy said "contact your administrator immediately" and gave no address,
+        # link, or next step.
+        action=(
+            "Secure my account",
+            f"{get_settings().frontend_base_url.rstrip('/')}/forgot-password",
+        ),
+        footnote=(
+            "If this was not you, someone else may have access to this mailbox. "
+            "Reset your password now and tell your workspace administrator."
+        ),
     )
     return OutboundEmail(to=email, subject=subject, text=text, html=html)
 
 
 def _invite_message(to_email: str, invitee_name: str, accept_url: str) -> OutboundEmail:
     """The membership-invitation email, so an admin never has to hand the accept
-    link over by hand. Plain and unbranded for Week 1 — real templates and
-    per-tenant from-addresses arrive with the notifications module. The link
-    carries a single-use ``invite`` token (7-day expiry)."""
-    name = invitee_name.strip() or "there"
-    subject = "You've been invited to Verity"
+    link over by hand. The link carries a single-use ``invite`` token.
+
+    Known gap: this names neither the workspace nor the person who sent the
+    invitation, because only ``tenant_id`` is in scope at both call sites and the
+    name needs a lookup. An invitation from an unfamiliar sender that cannot say
+    who invited you or to what is hard to tell from a phishing attempt, so it is
+    worth closing — it just needs the tenant read threaded through first.
+    """
+    days = get_settings().auth.invite_ttl_days
+    name = invitee_name.strip()
+    greeting = f"Hi {name}," if name else "Hi,"
+    subject = "You have been invited to a Verity workspace"
     text = (
-        f"Hi {name},\n\n"
-        "You've been invited to a workspace on Verity. Accept your invitation "
-        "to get started:\n"
+        f"{greeting}\n\n"
+        "You have been invited to join a workspace on Verity, a SOC 2 "
+        "compliance platform. Accept the invitation to set up your account.\n\n"
         f"{accept_url}\n\n"
-        "The link expires in 7 days. If you weren't expecting this, you can "
-        "ignore this message."
+        f"This link expires in {days} days and can be used once.\n\n"
+        "If you were not expecting this invitation, no action is needed."
     )
-    html = (
-        f"<p>Hi {_html_escape(name)},</p>"
-        "<p>You've been invited to a workspace on Verity. "
-        "Accept your invitation to get started:</p>"
-        f'<p><a href="{accept_url}">Accept invitation</a></p>'
-        "<p>The link expires in 7 days. If you weren't expecting this, you can "
-        "ignore this message.</p>"
+    html = render_email(
+        heading="You have been invited to Verity",
+        paragraphs=(
+            _html_escape(greeting),
+            "You have been invited to join a workspace on Verity, a SOC 2 "
+            "compliance platform. Accept the invitation to set up your account.",
+        ),
+        action=("Accept invitation", accept_url),
+        footnote=(
+            f"This link expires in {days} days and can be used once. "
+            "If you were not expecting this invitation, no action is needed."
+        ),
     )
     return OutboundEmail(to=to_email, subject=subject, text=text, html=html)
 

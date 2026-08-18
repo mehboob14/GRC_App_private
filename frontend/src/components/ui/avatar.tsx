@@ -2,13 +2,18 @@ import * as AvatarPrimitive from "@radix-ui/react-avatar";
 import { cn } from "@/lib/cn";
 import { identityTone, initials, type IdentityTone } from "@/lib/color";
 
+/**
+ * Pale fill, same-hue initials. A solid dark disc with white text is heavy at
+ * 24px and makes two different people read as the same mark; the tint keeps the
+ * hue legible while letting the name stay the loudest thing in the row.
+ */
 const toneClass: Record<IdentityTone, string> = {
-  1: "bg-identity-1",
-  2: "bg-identity-2",
-  3: "bg-identity-3",
-  4: "bg-identity-4",
-  5: "bg-identity-5",
-  6: "bg-identity-6",
+  1: "bg-identity-tint-1 text-identity-1",
+  2: "bg-identity-tint-2 text-identity-2",
+  3: "bg-identity-tint-3 text-identity-3",
+  4: "bg-identity-tint-4 text-identity-4",
+  5: "bg-identity-tint-5 text-identity-5",
+  6: "bg-identity-tint-6 text-identity-6",
 };
 
 /**
@@ -46,7 +51,7 @@ export function Avatar({
   return (
     <AvatarPrimitive.Root
       className={cn(
-        "inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full font-sans font-bold text-text-inverse",
+        "inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full font-sans font-bold",
         toneClass[tone],
         sizeClass[size],
         className,

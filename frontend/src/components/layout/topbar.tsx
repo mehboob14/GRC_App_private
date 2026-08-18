@@ -33,7 +33,8 @@ function WorkspaceMark({
   return (
     <span
       className={cn(
-        "flex items-center justify-center rounded-sm font-display font-extrabold text-text-inverse",
+        // identityBgClass supplies both the tint and its matching text colour.
+        "flex items-center justify-center rounded-sm font-display font-extrabold",
         identityBgClass(tenantId),
         className,
       )}

@@ -61,12 +61,15 @@
     --color-status-danger-bg: 253 238 241; /* #FDEEF1 */
     --color-status-danger-border: 246 207 216; /* rose-200 #F6CFD8 */
     --color-status-warning-base: 217 119 6; /* #D97706 */
-    --color-status-warning-text: 178 94 9; /* #B25E09 */
+    --color-status-warning-text: 154 80 7; /* #9A5007 — 5.3:1 on warning-bg.
+       Was #B25E09 at 4.18:1, which missed AA for the bold caption a status
+       pill uses; the other five families were already above 4.5. */
     --color-status-warning-bg: 251 241 228; /* #FBF1E4 */
     --color-status-warning-border: 240 217 180; /* amber-200 #F0D9B4 */
     --color-status-progress-base: 2 132 199; /* #0284C7 */
     --color-status-progress-text: 3 105 161; /* #0369A1 */
     --color-status-progress-bg: 234 244 251; /* #EAF4FB */
+    --color-status-progress-border: 190 219 240; /* #BEDBF0 */
     /* Violet, not indigo. `pending` sits directly beside `progress` in every
        status column ("Not started" above "In progress"), and the old #5B72B3
        was a blue one shade off #0284C7 — the two families read as the same
@@ -74,9 +77,11 @@
     --color-status-pending-base: 124 92 214; /* #7C5CD6 */
     --color-status-pending-text: 105 71 199; /* #6947C7 */
     --color-status-pending-bg: 243 239 252; /* #F3EFFC */
+    --color-status-pending-border: 219 208 246; /* #DBD0F6 */
     --color-status-neutral-base: 100 116 139; /* #64748B */
     --color-status-neutral-text: 86 96 114; /* #566072 */
     --color-status-neutral-bg: 240 242 245; /* #F0F2F5 */
+    --color-status-neutral-border: 214 219 227; /* #D6DBE3 */
 
     /* Severity — a separate axis from status (F12) */
     --color-severity-critical: 180 35 24; /* #B42318 */
@@ -86,12 +91,22 @@
 
     /* Identity ramp — per-person hashes for avatars, not semantic status.
        Not enumerated on the v1.0 board; carried from the shipped set. */
-    --color-identity-1: 91 100 114;
-    --color-identity-2: 110 106 120;
-    --color-identity-3: 79 96 104;
-    --color-identity-4: 107 97 84;
-    --color-identity-5: 99 89 107;
-    --color-identity-6: 99 89 107;
+    /* Identity ramp — a per-entity hash, never semantic. Each tone is a pair:
+       `-tint` fills the avatar, the base colour draws the initials on it. The
+       old ramp was six near-identical slates filled solid with white text,
+       which read as heavy and made two different people look alike. */
+    --color-identity-1: 13 110 130; /* teal   */
+    --color-identity-2: 29 78 216; /* blue   */
+    --color-identity-3: 67 56 202; /* indigo */
+    --color-identity-4: 109 40 217; /* violet */
+    --color-identity-5: 146 64 14; /* amber  */
+    --color-identity-6: 159 18 57; /* rose   */
+    --color-identity-1-tint: 214 240 245;
+    --color-identity-2-tint: 219 234 254;
+    --color-identity-3-tint: 224 231 255;
+    --color-identity-4-tint: 237 233 254;
+    --color-identity-5-tint: 254 243 199;
+    --color-identity-6-tint: 255 228 230;
 
     /* Auth marketing panel — deliberate one-off dark surface, identical in
        both themes and never tenant-themed. Re-expressed with the DS
@@ -154,8 +169,10 @@
     /* Dark twin of the violet above — same reason, same separation. */
     --color-status-pending-base: 167 139 250; /* #A78BFA */
     --color-status-pending-bg: 40 30 62; /* #281E3E */
+    --color-status-pending-border: 62 48 92;
     --color-status-neutral-base: 133 147 168; /* #8593A8 */
     --color-status-neutral-bg: 31 40 57; /* #1F2839 */
+    --color-status-neutral-border: 50 63 85;
 
     /* Derived dark values — no stated value on the board.
        Hover direction inverts (lightens); text on tints = dark -base. */
@@ -179,10 +196,24 @@
     --color-status-danger-border: 76 34 48; /* #4C2230 */
     --color-status-warning-text: 233 162 59; /* 7.1:1 on warning-bg */
     --color-status-warning-border: 74 58 28; /* #4A3A1C */
+    /* Identity ramp, inverted: light hue on a deep tint of the same colour. */
+    --color-identity-1: 103 213 232;
+    --color-identity-2: 147 178 255;
+    --color-identity-3: 175 168 255;
+    --color-identity-4: 196 168 255;
+    --color-identity-5: 250 204 21;
+    --color-identity-6: 253 164 175;
+    --color-identity-1-tint: 17 51 60;
+    --color-identity-2-tint: 25 36 66;
+    --color-identity-3-tint: 32 32 66;
+    --color-identity-4-tint: 42 31 62;
+    --color-identity-5-tint: 58 44 12;
+    --color-identity-6-tint: 61 24 34;
     /* Progress triad follows action-accent in dark (flagged derivation) */
     --color-status-progress-base: 56 182 240;
     --color-status-progress-text: 56 182 240; /* 6.4:1 on progress-bg */
     --color-status-progress-bg: 18 42 61;
+    --color-status-progress-border: 30 68 96;
     /* Follows the violet base, the same way progress follows action-accent —
        the old #8A9AD6 was the indigo this family moved away from. */
     --color-status-pending-text: 167 139 250; /* #A78BFA, 6.1:1 on pending-bg */

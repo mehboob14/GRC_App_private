@@ -3,12 +3,7 @@ import { Icon } from "@/components/ui/icon";
 
 /** DS §6.1 — the six status families. Severity is a separate axis (F12). */
 export type StatusFamily =
-  | "success"
-  | "danger"
-  | "warning"
-  | "progress"
-  | "pending"
-  | "neutral";
+  "success" | "danger" | "warning" | "progress" | "pending" | "neutral";
 
 /**
  * Canonical lifecycle → family map (DS §6.1). The same word must render the
@@ -77,13 +72,24 @@ export function statusFamilyFor(word: string): StatusFamily | undefined {
   return STATUS_WORD_FAMILY[word.trim().toLowerCase()];
 }
 
+/**
+ * Tint fill, same-family border, same-family text. The border is what makes a
+ * column of these readable at a glance: on tint alone the pale families blur
+ * into the row background and a reader has to look twice to tell them apart.
+ */
 const pillClass: Record<StatusFamily, string> = {
-  success: "bg-status-success-bg text-status-success-text",
-  danger: "bg-status-danger-bg text-status-danger-text",
-  warning: "bg-status-warning-bg text-status-warning-text",
-  progress: "bg-status-progress-bg text-status-progress-text",
-  pending: "bg-status-pending-bg text-status-pending-text",
-  neutral: "bg-status-neutral-bg text-status-neutral-text",
+  success:
+    "bg-status-success-bg text-status-success-text border-status-success-border",
+  danger:
+    "bg-status-danger-bg text-status-danger-text border-status-danger-border",
+  warning:
+    "bg-status-warning-bg text-status-warning-text border-status-warning-border",
+  progress:
+    "bg-status-progress-bg text-status-progress-text border-status-progress-border",
+  pending:
+    "bg-status-pending-bg text-status-pending-text border-status-pending-border",
+  neutral:
+    "bg-status-neutral-bg text-status-neutral-text border-status-neutral-border",
 };
 
 const textClass: Record<StatusFamily, string> = {
@@ -179,7 +185,7 @@ export function StatusPill({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full px-[9px] py-[3px] text-caption font-bold",
+        "inline-flex items-center gap-1.5 rounded-full border px-[9px] py-[3px] text-caption font-bold",
         pillClass[status],
         className,
       )}

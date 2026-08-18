@@ -66,16 +66,19 @@ export default {
             base: "rgb(var(--color-status-progress-base) / <alpha-value>)",
             text: "rgb(var(--color-status-progress-text) / <alpha-value>)",
             bg: "rgb(var(--color-status-progress-bg) / <alpha-value>)",
+            border: "rgb(var(--color-status-progress-border) / <alpha-value>)",
           },
           pending: {
             base: "rgb(var(--color-status-pending-base) / <alpha-value>)",
             text: "rgb(var(--color-status-pending-text) / <alpha-value>)",
             bg: "rgb(var(--color-status-pending-bg) / <alpha-value>)",
+            border: "rgb(var(--color-status-pending-border) / <alpha-value>)",
           },
           neutral: {
             base: "rgb(var(--color-status-neutral-base) / <alpha-value>)",
             text: "rgb(var(--color-status-neutral-text) / <alpha-value>)",
             bg: "rgb(var(--color-status-neutral-bg) / <alpha-value>)",
+            border: "rgb(var(--color-status-neutral-border) / <alpha-value>)",
           },
         },
         severity: {
@@ -91,6 +94,15 @@ export default {
           4: "rgb(var(--color-identity-4) / <alpha-value>)",
           5: "rgb(var(--color-identity-5) / <alpha-value>)",
           6: "rgb(var(--color-identity-6) / <alpha-value>)",
+        },
+        // Avatar fill; pairs with the matching `identity` colour for the text.
+        "identity-tint": {
+          1: "rgb(var(--color-identity-1-tint) / <alpha-value>)",
+          2: "rgb(var(--color-identity-2-tint) / <alpha-value>)",
+          3: "rgb(var(--color-identity-3-tint) / <alpha-value>)",
+          4: "rgb(var(--color-identity-4-tint) / <alpha-value>)",
+          5: "rgb(var(--color-identity-5-tint) / <alpha-value>)",
+          6: "rgb(var(--color-identity-6-tint) / <alpha-value>)",
         },
         // Auth marketing panel one-offs — see tokens.css for why these exist.
         panel: {

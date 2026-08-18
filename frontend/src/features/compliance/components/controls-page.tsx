@@ -1105,7 +1105,6 @@ export function ControlsPage() {
                   </TD>
                   <TD>
                     <StatusPill
-                      kind="inline"
                       status={displayStatus(control).family}
                       label={displayStatus(control).label}
                     />
