@@ -51,6 +51,7 @@ MEMBER_FIELDS = {
 }
 ALL_WEEK1_KEYS = {
     "tenant:read",
+    "tenant:manage",
     "members:read",
     "members:invite",
     "members:disable",
@@ -60,6 +61,12 @@ ALL_WEEK1_KEYS = {
     "roles:read",
     "roles:manage",
     "audit:read",
+    "security:manage",
+    "frameworks:read",
+    "controls:manage",
+    "evidence:read",
+    "evidence:manage",
+    "evidence:review",
 }
 
 

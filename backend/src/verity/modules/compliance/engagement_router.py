@@ -1,10 +1,11 @@
-"""HTTP for engagement setup, scope, and the coverage view."""
+"""HTTP for engagement setup, scope, the coverage view, and the dashboard."""
 
 from __future__ import annotations
 
+from datetime import date
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from verity.core.deps import (
@@ -18,6 +19,7 @@ from verity.modules.audit.service import Membership
 from verity.modules.compliance.engagement_service import engagement_service
 from verity.modules.compliance.schemas import (
     CoverageOut,
+    DashboardOut,
     EngagementOut,
     EngagementPut,
     ScopeCriterionOut,
@@ -92,3 +94,24 @@ async def get_coverage(
 ) -> CoverageOut:
     report = await engagement_service.coverage(session, tenant_id=context.tenant_id)
     return CoverageOut.model_validate(report)
+
+
+@engagement_router.get(
+    "/dashboard",
+    response_model=DashboardOut,
+    summary="Compliance dashboard: coverage, control health, timeline, activity",
+)
+async def get_dashboard(
+    _principal: Annotated[Principal, Depends(require_engagement_read)],
+    context: Annotated[TenantContext, Depends(get_tenant_context)],
+    session: Annotated[AsyncSession, Depends(get_tenant_session)],
+    window_from: Annotated[date | None, Query(alias="from")] = None,
+    window_to: Annotated[date | None, Query(alias="to")] = None,
+) -> DashboardOut:
+    report = await engagement_service.dashboard(
+        session,
+        tenant_id=context.tenant_id,
+        window_from=window_from,
+        window_to=window_to,
+    )
+    return DashboardOut.model_validate(report)

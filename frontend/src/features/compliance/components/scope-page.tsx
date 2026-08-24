@@ -1,24 +1,16 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Badge,
   Button,
   Checkbox,
-  EmptyState,
   ErrorState,
   Icon,
   RadioGroup,
   RadioGroupItem,
   Skeleton,
-  StatusPill,
-  Table,
-  TBody,
-  TD,
   TextField,
-  TH,
-  THead,
-  TR,
   useToast,
 } from "@/components/ui";
 import { complianceApi, engagementApi } from "@/lib/api/endpoints";
@@ -35,28 +27,6 @@ const ELECTIVE_CATEGORIES = [
   "Privacy",
 ];
 
-function Stat({
-  value,
-  label,
-  tone = "neutral",
-}: {
-  value: number | string;
-  label: string;
-  tone?: "neutral" | "success" | "warning";
-}) {
-  const valueClass = {
-    neutral: "text-text-primary",
-    success: "text-status-success-text",
-    warning: "text-status-warning-text",
-  }[tone];
-  return (
-    <div className="rounded-lg border border-border bg-surface-primary px-4 py-3">
-      <p className={`tabular font-display text-numeral-md ${valueClass}`}>{value}</p>
-      <p className="mt-0.5 text-body-sm text-text-subtle">{label}</p>
-    </div>
-  );
-}
-
 /** Scope & coverage — elect what the audit covers, then see what is missing. */
 export function ScopePage() {
   const { principal } = useAuth();
@@ -71,10 +41,6 @@ export function ScopePage() {
   const engagementQuery = useQuery({
     queryKey: ["engagement"],
     queryFn: () => engagementApi.get(),
-  });
-  const coverageQuery = useQuery({
-    queryKey: ["coverage"],
-    queryFn: () => engagementApi.coverage(),
   });
 
   const engagement = engagementQuery.data ?? null;
@@ -123,11 +89,6 @@ export function ScopePage() {
       }),
   });
 
-  const coverage = coverageQuery.data;
-  const readiness = useMemo(() => {
-    if (!coverage || coverage.criteria_total === 0) return null;
-    return Math.round((coverage.criteria_covered / coverage.criteria_total) * 100);
-  }, [coverage]);
 
   const windowIncomplete =
     auditType === "type_2" && (!windowStart || !windowEnd);
@@ -282,136 +243,17 @@ export function ScopePage() {
         </div>
       )}
 
-      <h2 className="mb-3 mt-8 font-display text-heading-sm text-text-primary">
-        Coverage
-      </h2>
 
-      {coverageQuery.isLoading ? (
-        <Skeleton className="h-24 w-full rounded-lg" />
-      ) : !engagement ? (
-        <EmptyState
-          icon="shield"
-          title="No scope set yet"
-          description="Choose an audit type and the categories it covers, and coverage is measured against exactly those criteria."
-        />
-      ) : coverage ? (
-        <>
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <Stat value={coverage.criteria_total} label="criteria in scope" />
-            <Stat
-              value={coverage.criteria_covered}
-              label="with a control"
-              tone="success"
-            />
-            <Stat
-              value={coverage.criteria_uncovered.length}
-              label="with no control"
-              tone={coverage.criteria_uncovered.length ? "warning" : "neutral"}
-            />
-            <Stat value={readiness === null ? "—" : `${readiness}%`} label="criteria covered" />
-          </div>
-
-          {/* Honest about what is not yet measurable, rather than showing a
-              zero that would read as a finding. */}
-          {!coverage.evidence_tracking_available ? (
-            <div className="mt-3 flex items-start gap-2.5 rounded-md border border-border bg-surface-sunken px-3.5 py-3">
-              <Icon name="alert" className="mt-0.5 size-4 shrink-0 text-text-subtle" />
-              <p className="text-body-sm text-text-secondary">
-                Evidence tracking arrives with the evidence module. Until then
-                “controls with no evidence” cannot be measured, so it is not
-                shown as a result. All{" "}
-                <span className="tabular">{coverage.controls_total}</span>{" "}
-                controls are awaiting it.
-              </p>
-            </div>
-          ) : null}
-
-          <h3 className="mb-2 mt-6 font-display text-title-sm text-text-primary">
-            Criteria with no control
-          </h3>
-          {coverage.criteria_uncovered.length === 0 ? (
-            <div className="flex items-center gap-2 rounded-md border border-status-success-border bg-status-success-bg px-3.5 py-3">
-              <Icon name="check" className="size-4 text-status-success-text" />
-              <p className="text-body-md font-semibold text-status-success-text">
-                Every criterion in scope has at least one control.
-              </p>
-            </div>
-          ) : (
-            <Table density="standard">
-              <THead>
-                <TR>
-                  <TH>Criterion</TH>
-                  <TH>Category</TH>
-                  <TH>Status</TH>
-                </TR>
-              </THead>
-              <TBody>
-                {coverage.criteria_uncovered.map((gap) => (
-                  <TR key={gap.requirement_id}>
-                    <TD>
-                      <span className="mr-2 rounded-xs bg-action-accent-tint px-1.5 py-0.5 font-display text-caption font-bold text-text-link">
-                        {gap.code}
-                      </span>
-                      <span className="text-body-md text-text-primary">
-                        {gap.name}
-                      </span>
-                    </TD>
-                    <TD>
-                      <Badge variant="neutral">
-                        {gap.trust_services_category}
-                      </Badge>
-                    </TD>
-                    <TD>
-                      <StatusPill kind="inline" status="warning" label="No control" />
-                    </TD>
-                  </TR>
-                ))}
-              </TBody>
-            </Table>
-          )}
-
-          {coverage.controls_unmapped.length > 0 ? (
-            <>
-              <h3 className="mb-2 mt-6 font-display text-title-sm text-text-primary">
-                Controls mapped to no criterion
-              </h3>
-              <Table density="standard">
-                <THead>
-                  <TR>
-                    <TH>Control</TH>
-                    <TH>Issue</TH>
-                  </TR>
-                </THead>
-                <TBody>
-                  {coverage.controls_unmapped.map((gap) => (
-                    <TR key={gap.control_id}>
-                      <TD>
-                        <span className="mr-2 rounded-xs bg-action-accent-tint px-1.5 py-0.5 font-display text-caption font-bold text-text-link">
-                          {gap.code}
-                        </span>
-                        <span className="text-body-md text-text-primary">
-                          {gap.name}
-                        </span>
-                      </TD>
-                      <TD>
-                        <StatusPill kind="inline" status="warning" label={gap.reason} />
-                      </TD>
-                    </TR>
-                  ))}
-                </TBody>
-              </Table>
-            </>
-          ) : null}
-
-          <p className="mt-5 text-body-sm text-text-subtle">
-            Controls are managed in{" "}
-            <Link className="font-semibold text-text-link" to="/controls">
-              Controls
-            </Link>
-            .
-          </p>
-        </>
-      ) : null}
+      {/* Coverage moved to its own tab. Scope is a form you complete once;
+          coverage is a report you return to, and pairing them meant the
+          gap lists were buried under a settings form. */}
+      <p className="mt-8 text-body-sm text-text-subtle">
+        Gaps against this scope are listed in{" "}
+        <Link className="font-semibold text-text-link" to="/frameworks/coverage">
+          Coverage
+        </Link>
+        .
+      </p>
     </div>
   );
 }

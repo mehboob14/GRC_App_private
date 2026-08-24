@@ -12,6 +12,8 @@ import type {
   ControlTemplateQuery,
   ControlUpdateRequest,
   ControlVocabulary,
+  ComplianceDashboard,
+  ControlReport,
   Coverage,
   CursorPage,
   Engagement,
@@ -305,6 +307,9 @@ export const controlsApi = {
     }),
   enable: (controlId: string) =>
     apiFetch<Control>(`/controls/${controlId}/enable`, { method: "POST" }),
+  report: () => apiFetch<ControlReport>("/controls/report"),
+  reportExportUrl: (format: "csv" | "xlsx") =>
+    `/api/v1/controls/report/export?format=${format}`,
 };
 
 export const engagementApi = {
@@ -316,6 +321,15 @@ export const engagementApi = {
     }),
   scope: () => apiFetch<ScopeCriterion[]>("/engagement/scope"),
   coverage: () => apiFetch<Coverage>("/engagement/coverage"),
+  dashboard: (range?: { from?: string; to?: string }) => {
+    const params = new URLSearchParams();
+    if (range?.from) params.set("from", range.from);
+    if (range?.to) params.set("to", range.to);
+    const qs = params.toString();
+    return apiFetch<ComplianceDashboard>(
+      `/engagement/dashboard${qs ? `?${qs}` : ""}`,
+    );
+  },
 };
 
 export const evidenceApi = {
@@ -341,6 +355,11 @@ export const evidenceApi = {
   update: (id: string, body: EvidenceUpdate) =>
     apiFetch<Evidence>(`/evidence/${id}`, {
       method: "PATCH",
+      body: JSON.stringify(body),
+    }),
+  review: (id: string, body: { decision: "approved" | "rejected"; note?: string }) =>
+    apiFetch<Evidence>(`/evidence/${id}/review`, {
+      method: "POST",
       body: JSON.stringify(body),
     }),
   downloadUrl: (id: string) => `/api/v1/evidence/${id}/download`,

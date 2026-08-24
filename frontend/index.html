@@ -13,9 +13,16 @@
       // Light is the product default and the operating system is deliberately
       // not consulted. Dark applies only when a person has explicitly asked
       // for it; anything else, including no stored value at all, is light.
+      //
+      // DARK_MODE_ENABLED is false for now, so the app is pinned to light and a
+      // previously stored "dark" is ignored rather than flashing before React
+      // corrects it. Keep this in step with DARK_MODE_ENABLED in lib/theme.tsx.
       (function () {
+        var DARK_MODE_ENABLED = false;
         try {
-          var dark = window.localStorage.getItem("verity.theme") === "dark";
+          var dark =
+            DARK_MODE_ENABLED &&
+            window.localStorage.getItem("verity.theme") === "dark";
           document.documentElement.classList.toggle("dark", dark);
         } catch (e) {
           /* storage unavailable: light, same as every other fallback */

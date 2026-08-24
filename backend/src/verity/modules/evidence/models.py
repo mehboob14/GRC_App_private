@@ -46,7 +46,6 @@ EVIDENCE_TYPES: Final[tuple[str, ...]] = (
     "configuration_export",
     "log_export",
     "policy_document",
-    "signed_attestation",
     "training_record",
     "vendor_report",
     "ticket_record",
@@ -54,12 +53,17 @@ EVIDENCE_TYPES: Final[tuple[str, ...]] = (
     "other",
 )
 
+REVIEW_STATUSES: Final[tuple[str, ...]] = ("pending", "approved", "rejected")
+"""A reviewer's verdict on an item. New evidence starts ``pending``; a reviewer
+with ``evidence:review`` approves it or rejects it with a reason. Kept distinct
+from freshness (which is about age) — an item can be current but unreviewed, or
+approved but going stale."""
+
 DEFAULT_VALIDITY_DAYS: Final[dict[str, int]] = {
     "screenshot": 90,
     "configuration_export": 90,
     "log_export": 30,
     "policy_document": 365,
-    "signed_attestation": 365,
     "training_record": 365,
     "vendor_report": 365,
     "ticket_record": 90,
@@ -100,6 +104,17 @@ class Evidence(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
     # -- link payload (kind='link') -----------------------------------------
     link_url: Mapped[str | None] = mapped_column(default=None)
 
+    # -- review / approval --------------------------------------------------
+    # A four-eyes step: evidence is a claim until a reviewer signs off on it.
+    # ``reviewed_by`` is a membership (rule 3), SET NULL so a departed reviewer
+    # does not erase the fact that a review happened.
+    review_status: Mapped[str] = mapped_column(server_default=text("'pending'"), default="pending")
+    reviewed_by_membership_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("tenant_memberships.id", ondelete="SET NULL"), default=None
+    )
+    reviewed_at: Mapped[datetime | None] = mapped_column(default=None)
+    review_note: Mapped[str | None] = mapped_column(default=None)
+
     # Rule 9: anything that could arrive from a connector carries these from
     # the first migration, so a future sync is a sync and not a migration.
     source: Mapped[str | None] = mapped_column(default=None)
@@ -109,6 +124,7 @@ class Evidence(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
     __table_args__ = (
         status_check("evidence", "kind", EVIDENCE_KINDS),
         status_check("evidence", "evidence_type", EVIDENCE_TYPES),
+        status_check("evidence", "review_status", REVIEW_STATUSES),
         # A file must have its bytes and their hash; a link must have its URL.
         # Without this an item could claim to be a file and hold nothing.
         CheckConstraint(

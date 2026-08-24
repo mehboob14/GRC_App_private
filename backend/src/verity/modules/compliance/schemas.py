@@ -98,6 +98,7 @@ class ControlOut(_Response):
     description: str
     implementation_guidance: str | None
     category: str
+    sub_category: str | None
     control_type: str | None
     control_sub_type: str | None
     status: str
@@ -112,10 +113,13 @@ class ControlOut(_Response):
 
 
 class ControlCreate(_Request):
-    code: str = Field(min_length=1, max_length=100)
+    # Optional: omit it and the platform assigns a GRC-NN code. A value is still
+    # accepted (e.g. an imported control that carries its own).
+    code: str | None = Field(default=None, max_length=100)
     name: str = Field(min_length=1, max_length=300)
     description: str = Field(min_length=1, max_length=4000)
     category: str = Field(min_length=1, max_length=100)
+    sub_category: str | None = Field(default=None, max_length=100)
     control_type: str | None = Field(default=None, max_length=50)
     """Preventive / Detective / Corrective, for a tenant's own internal or custom
     control. Omitted for anything that mirrors framework content — the platform
@@ -125,6 +129,8 @@ class ControlCreate(_Request):
     implementation_guidance: str | None = Field(default=None, max_length=8000)
     owner_membership_id: uuid.UUID | None = None
     requirement_ids: list[uuid.UUID] = Field(default_factory=list)
+    # Evidence to attach to the new control. None leaves it unlinked.
+    evidence_ids: list[uuid.UUID] | None = None
 
 
 class ControlUpdate(_Request):
@@ -139,12 +145,15 @@ class ControlUpdate(_Request):
     description: str | None = Field(default=None, min_length=1, max_length=4000)
     implementation_guidance: str | None = Field(default=None, max_length=8000)
     category: str | None = Field(default=None, max_length=100)
+    sub_category: str | None = Field(default=None, max_length=100)
     control_type: str | None = Field(default=None, max_length=50)
     control_sub_type: str | None = Field(default=None, max_length=50)
     status: str | None = Field(default=None, max_length=50)
     owner_membership_id: uuid.UUID | None = None
     clear_owner: bool = False
     requirement_ids: list[uuid.UUID] | None = None
+    # None leaves evidence links untouched; a list replaces them wholesale.
+    evidence_ids: list[uuid.UUID] | None = None
 
 
 class ControlDisable(_Request):
@@ -228,10 +237,128 @@ class CoverageOut(_Response):
     criteria_uncovered: list[CriterionCoverageOut]
     controls_total: int
     controls_without_evidence: int
-    # False until the evidence module lands. The client must not read
-    # controls_without_evidence as a finding while this is false.
+    controls_no_evidence: list[ControlGapOut]
+    # Always true since the evidence module shipped (2026-08-17). Kept so the
+    # existing client contract does not break; new clients should ignore it.
     evidence_tracking_available: bool
     controls_unmapped: list[ControlGapOut]
+
+
+class StatusCountOut(_Response):
+    status: str
+    count: int
+
+
+class CategoryCoverageOut(_Response):
+    category: str
+    in_scope: int
+    covered: int
+    ready: int
+
+
+class TimelinePointOut(_Response):
+    on: date
+    controls: int
+    evidence: int
+
+
+class ActivityItemOut(_Response):
+    occurred_at: UtcDateTime
+    action: str
+    actor_name: str | None
+    control_code: str | None
+    control_name: str | None
+
+
+class OwnerCountOut(_Response):
+    membership_id: uuid.UUID | None
+    name: str
+    role: str | None
+    count: int
+
+
+class DisabledControlOut(_Response):
+    control_id: uuid.UUID
+    code: str
+    name: str
+    reason: str | None
+
+
+class RecentEvidenceOut(_Response):
+    title: str
+    control_code: str | None
+    collected_on: date
+    freshness: str
+
+
+class DashboardOut(_Response):
+    """The compliance dashboard payload. Point-in-time figures plus one timeline
+    and a recent-activity feed. ``checks_available`` is false until a connector
+    can run automated checks — the client greys that panel rather than showing a
+    zero that reads as a finding."""
+
+    has_engagement: bool
+    framework_name: str | None
+    audit_type: str | None
+    categories_in_scope: list[str]
+    criteria_total: int
+    criteria_covered: int
+    criteria_uncovered: int
+    controls_total: int
+    controls_evidenced: int
+    controls_no_evidence: int
+    controls_owned: int
+    controls_disabled: int
+    controls_internal: int
+    controls_unmapped: int
+    controls_ready: int
+    controls_in_progress: int
+    by_status: list[StatusCountOut]
+    by_category: list[CategoryCoverageOut]
+    by_owner: list[OwnerCountOut]
+    disabled: list[DisabledControlOut]
+    evidence_total: int
+    evidence_fresh: int
+    evidence_aging: int
+    evidence_stale: int
+    evidence_recent: list[RecentEvidenceOut]
+    tenant_created_on: date
+    timeline_from: date
+    timeline_to: date
+    timeline: list[TimelinePointOut]
+    checks_available: bool
+    recent_activity: list[ActivityItemOut]
+
+
+class ReportKpisOut(_Response):
+    controls_total: int
+    controls_disabled: int
+    controls_evidenced: int
+    controls_owned: int
+    controls_ready: int
+    criteria_mapped: int
+    by_status: dict[str, int]
+
+
+class ReportRowOut(_Response):
+    code: str
+    name: str
+    category: str
+    control_type: str | None
+    status: str
+    status_label: str
+    owner_name: str | None
+    frameworks: list[str]
+    criteria: list[str]
+    evidence_count: int
+    disabled_reason: str | None
+
+
+class ControlReportOut(_Response):
+    generated_at: UtcDateTime
+    framework_label: str
+    kpis: ReportKpisOut
+    rows: list[ReportRowOut]
 
 
 class ScopeCriterionOut(_Response):

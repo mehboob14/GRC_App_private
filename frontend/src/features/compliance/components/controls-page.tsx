@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Avatar,
@@ -13,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
@@ -54,6 +55,10 @@ import {
   trustServicesFor,
   type TrustService,
 } from "@/features/compliance/trust-services";
+import {
+  downloadControlReport,
+  printControlReport,
+} from "@/features/compliance/control-report-export";
 
 /** DS §6.1 — a control's implementation state, mapped once so every screen
  *  renders the same word the same way. */
@@ -507,6 +512,39 @@ function ControlDetailDialog({
   );
 }
 
+/** Columns the reader can hide. "Control" (identity) and the action/selection
+ *  columns are structural and always shown. Choice persists per browser. */
+const TOGGLEABLE_COLUMNS = [
+  { key: "description", label: "Description" },
+  { key: "trust", label: "Trust Services" },
+  { key: "criteria", label: "Criteria" },
+  { key: "frameworks", label: "Frameworks" },
+  { key: "owner", label: "Owner" },
+  { key: "evidence", label: "Evidence" },
+  { key: "status", label: "Status" },
+] as const;
+
+type ColKey = (typeof TOGGLEABLE_COLUMNS)[number]["key"];
+
+const COLUMN_PREFS_KEY = "verity.controls.columns";
+
+function loadColumnPrefs(): Record<ColKey, boolean> {
+  const all = Object.fromEntries(
+    TOGGLEABLE_COLUMNS.map((c) => [c.key, true]),
+  ) as Record<ColKey, boolean>;
+  try {
+    const raw = localStorage.getItem(COLUMN_PREFS_KEY);
+    if (!raw) return all;
+    const saved = JSON.parse(raw) as Partial<Record<ColKey, boolean>>;
+    for (const { key } of TOGGLEABLE_COLUMNS) {
+      if (typeof saved[key] === "boolean") all[key] = saved[key] as boolean;
+    }
+  } catch {
+    // Corrupt/absent pref is not worth failing the page over — show everything.
+  }
+  return all;
+}
+
 /** Controls — the tenant's working library, instantiated from the shipped
  *  templates. Code, description, Trust Services, mapped criteria, owner and
  *  status per row; Type shows on internal controls only, Sub-type is hidden. */
@@ -515,13 +553,61 @@ export function ControlsPage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const canManage = Boolean(principal?.permissions.includes("controls:manage"));
+  const canExport = Boolean(principal?.permissions.includes("frameworks:read"));
+  const [exporting, setExporting] = useState<null | "csv" | "xlsx" | "pdf">(null);
 
+  const [visibleCols, setVisibleCols] = useState<Record<ColKey, boolean>>(
+    loadColumnPrefs,
+  );
+  useEffect(() => {
+    localStorage.setItem(COLUMN_PREFS_KEY, JSON.stringify(visibleCols));
+  }, [visibleCols]);
+  const hiddenColCount = TOGGLEABLE_COLUMNS.filter(
+    (c) => !visibleCols[c.key],
+  ).length;
+
+
+  async function handleExport(format: "csv" | "xlsx" | "pdf") {
+    if (exporting) return;
+    setExporting(format);
+    try {
+      if (format === "pdf") {
+        const report = await controlsApi.report();
+        printControlReport(report, principal?.tenant_name ?? "Workspace");
+      } else {
+        await downloadControlReport(format);
+      }
+    } catch {
+      toast({
+        title: "Export failed. Please try again.",
+        tone: "danger",
+      });
+    } finally {
+      setExporting(null);
+    }
+  }
+
+
+  // The dashboard deep-links here with filters pre-applied (e.g.
+  // ?status=not_started, ?owner=unassigned, ?evidence=none). Read once as the
+  // initial value so a click on a chart lands on exactly that slice; the facets
+  // stay the owner of the filter afterwards, and Clear still clears it.
+  const [params] = useSearchParams();
   const [search, setSearch] = useState("");
-  const [types, setTypes] = useState<string[]>([]);
-  const [trustServices, setTrustServices] = useState<string[]>([]);
-  const [statuses, setStatuses] = useState<string[]>([]);
-  const [owners, setOwners] = useState<string[]>([]);
-  const [frameworkFilter, setFrameworkFilter] = useState<string[]>([]);
+  const [types, setTypes] = useState<string[]>(() => params.getAll("type"));
+  const [trustServices, setTrustServices] = useState<string[]>(() =>
+    params.getAll("trust"),
+  );
+  const [statuses, setStatuses] = useState<string[]>(() =>
+    params.getAll("status"),
+  );
+  const [owners, setOwners] = useState<string[]>(() => params.getAll("owner"));
+  const [evidence, setEvidence] = useState<string[]>(() =>
+    params.getAll("evidence"),
+  );
+  const [frameworkFilter, setFrameworkFilter] = useState<string[]>(() =>
+    params.getAll("framework"),
+  );
   /** The open row, held by id — a snapshot would go stale the moment an edit
    *  inside the dialog refetched the list, leaving the dialog showing the old
    *  owner while the table behind it showed the new one. */
@@ -660,11 +746,28 @@ export function ControlsPage() {
         (frameworkFilter.length === 0 ||
           frameworksFor(control).some((f) => frameworkFilter.includes(f))) &&
         (owners.length === 0 ||
-          owners.includes(control.owner_membership_id ?? "unassigned")) &&
+          owners.some((o) =>
+            // "assigned"/"unassigned" describe the live library — the dashboard
+            // counts it that way, and a click there must land on the same set.
+            // A real owner id still matches regardless of disabled state.
+            o === "assigned"
+              ? control.owner_membership_id != null && !control.disabled_at
+              : o === "unassigned"
+                ? control.owner_membership_id == null && !control.disabled_at
+                : o === control.owner_membership_id,
+          )) &&
         (statuses.length === 0 ||
           statuses.includes(
             control.disabled_at ? "disabled" : control.status,
           )) &&
+        // A retired control's evidence state is not a live gap, so an evidence
+        // filter never matches a disabled control — this keeps the count behind
+        // "112 with no evidence" identical whether read on the dashboard or here.
+        (evidence.length === 0 ||
+          (!control.disabled_at &&
+            evidence.includes(
+              (evidenceCounts.get(control.id) ?? 0) > 0 ? "with" : "none",
+            ))) &&
         (query === "" ||
           control.name.toLowerCase().includes(query) ||
           control.code.toLowerCase().includes(query) ||
@@ -681,6 +784,8 @@ export function ControlsPage() {
     frameworkFilter,
     owners,
     statuses,
+    evidence,
+    evidenceCounts,
     tscFor,
   ]);
 
@@ -736,7 +841,9 @@ export function ControlsPage() {
   }, [controls]);
 
   const ownerLabel = (value: string) =>
-    ownerOptions.find((option) => option.value === value)?.label ?? value;
+    value === "assigned"
+      ? "Assigned"
+      : (ownerOptions.find((option) => option.value === value)?.label ?? value);
 
   /** Every framework the library actually maps to — the facet never offers one
    *  that would return nothing. */
@@ -768,6 +875,7 @@ export function ControlsPage() {
     ...frameworkFilter.map((f) => `Framework: ${f}`),
     ...owners.map((o) => `Owner: ${ownerLabel(o)}`),
     ...statuses.map((s) => `Status: ${STATUS_LABEL[s as ControlStatus] ?? s}`),
+    ...evidence.map((e) => `Evidence: ${e === "with" ? "Has evidence" : "None"}`),
     ...(search.trim() ? [`Search: ${search.trim()}`] : []),
   ];
 
@@ -778,6 +886,7 @@ export function ControlsPage() {
     setFrameworkFilter([]);
     setOwners([]);
     setStatuses([]);
+    setEvidence([]);
   }
 
   if (controlsQuery.isError) {
@@ -829,6 +938,64 @@ export function ControlsPage() {
               </>
             ) : null}
           </p>
+        </div>
+        <div className="ml-auto flex shrink-0 items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="secondary">
+                <Icon name="layers" className="size-4" />
+                Columns
+                {hiddenColCount > 0 ? (
+                  <span className="tabular text-caption text-text-subtle">
+                    {TOGGLEABLE_COLUMNS.length - hiddenColCount}/
+                    {TOGGLEABLE_COLUMNS.length}
+                  </span>
+                ) : null}
+                <Icon name="chev" className="size-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {TOGGLEABLE_COLUMNS.map((col) => (
+                <DropdownMenuCheckboxItem
+                  key={col.key}
+                  checked={visibleCols[col.key]}
+                  onCheckedChange={(next) =>
+                    setVisibleCols((prev) => ({ ...prev, [col.key]: next }))
+                  }
+                >
+                  {col.label}
+                </DropdownMenuCheckboxItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          {canExport ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="secondary" loading={exporting !== null}>
+                  <Icon name="download" className="size-4" />
+                  Export
+                  <Icon name="chev" className="size-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onSelect={() => void handleExport("pdf")}>
+                  PDF report
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => void handleExport("xlsx")}>
+                  Excel workbook
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => void handleExport("csv")}>
+                  CSV
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : null}
+          {canManage ? (
+            <Button onClick={() => setCreating(true)}>
+              <Icon name="plus" className="size-4" />
+              New control
+            </Button>
+          ) : null}
         </div>
       </div>
 
@@ -889,21 +1056,20 @@ export function ControlsPage() {
               values={statuses}
               onChange={setStatuses}
             />
+            <FilterFacet
+              label="Evidence"
+              options={[
+                { value: "with", label: "Has evidence" },
+                { value: "none", label: "No evidence" },
+              ]}
+              values={evidence}
+              onChange={setEvidence}
+            />
           </>
         ) : null}
         {activeFilters.length > 0 ? (
           <Button variant="ghost" size="sm" onClick={clearFilters}>
             Clear
-          </Button>
-        ) : null}
-
-        {canManage ? (
-          <Button
-            className="ml-auto shrink-0"
-            onClick={() => setCreating(true)}
-          >
-            <Icon name="plus" className="size-4" />
-            New control
           </Button>
         ) : null}
       </div>
@@ -972,12 +1138,13 @@ export function ControlsPage() {
                 </TH>
               ) : null}
               <TH>Control</TH>
-              <TH>Trust Services</TH>
-              <TH>Criteria</TH>
-              <TH>Frameworks</TH>
-              <TH>Owner</TH>
-              <TH numeric>Evidence</TH>
-              <TH>Status</TH>
+              {visibleCols.description ? <TH>Description</TH> : null}
+              {visibleCols.trust ? <TH>Trust Services</TH> : null}
+              {visibleCols.criteria ? <TH>Criteria</TH> : null}
+              {visibleCols.frameworks ? <TH>Frameworks</TH> : null}
+              {visibleCols.owner ? <TH>Owner</TH> : null}
+              {visibleCols.evidence ? <TH numeric>Evidence</TH> : null}
+              {visibleCols.status ? <TH>Status</TH> : null}
               <TH className="w-20 text-right">Actions</TH>
             </TR>
           </THead>
@@ -1032,83 +1199,107 @@ export function ControlsPage() {
                       </span>
                     </div>
                   </TD>
-                  <TD>
-                    {tsc.length ? (
-                      <div className="flex flex-wrap gap-1">
-                        {tsc.map((t) => (
-                          <TrustServiceChip key={t} tsc={t} />
-                        ))}
-                      </div>
-                    ) : (
-                      <span className="text-text-subtle">—</span>
-                    )}
-                  </TD>
-                  <TD>
-                    <div className="flex max-w-[140px] flex-wrap gap-1">
-                      {control.requirement_keys.length ? (
-                        control.requirement_keys.map((key) => (
-                          <span
-                            key={key}
-                            className="rounded-xs bg-surface-sunken px-1.5 py-0.5 text-caption font-medium text-text-secondary"
-                          >
-                            {key.replace(/^[A-Z0-9]+:/, "")}
-                          </span>
-                        ))
+                  {visibleCols.description ? (
+                    <TD>
+                      <p
+                        className="line-clamp-2 max-w-[360px] text-body-sm text-text-secondary"
+                        title={control.description}
+                      >
+                        {control.description || (
+                          <span className="text-text-subtle">No description</span>
+                        )}
+                      </p>
+                    </TD>
+                  ) : null}
+                  {visibleCols.trust ? (
+                    <TD>
+                      {tsc.length ? (
+                        <div className="flex flex-wrap gap-1">
+                          {tsc.map((t) => (
+                            <TrustServiceChip key={t} tsc={t} />
+                          ))}
+                        </div>
                       ) : (
-                        <span className="text-caption text-status-warning-text">
-                          None
+                        <span className="text-text-subtle">—</span>
+                      )}
+                    </TD>
+                  ) : null}
+                  {visibleCols.criteria ? (
+                    <TD>
+                      <div className="flex max-w-[140px] flex-wrap gap-1">
+                        {control.requirement_keys.length ? (
+                          control.requirement_keys.map((key) => (
+                            <span
+                              key={key}
+                              className="rounded-xs bg-surface-sunken px-1.5 py-0.5 text-caption font-medium text-text-secondary"
+                            >
+                              {key.replace(/^[A-Z0-9]+:/, "")}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-caption text-status-warning-text">
+                            None
+                          </span>
+                        )}
+                      </div>
+                    </TD>
+                  ) : null}
+                  {visibleCols.frameworks ? (
+                    <TD>
+                      {frameworks.length ? (
+                        <div className="flex flex-wrap gap-1">
+                          {frameworks.map((framework) => (
+                            <FrameworkChip key={framework} label={framework} />
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-text-subtle">—</span>
+                      )}
+                    </TD>
+                  ) : null}
+                  {visibleCols.owner ? (
+                    <TD>
+                      {control.owner_name ? (
+                        <span className="flex items-center gap-2">
+                          <Avatar name={control.owner_name} size="sm" />
+                          <span className="truncate text-body-sm text-text-secondary">
+                            {control.owner_name}
+                          </span>
+                        </span>
+                      ) : (
+                        <span className="text-body-sm text-text-subtle">
+                          Unassigned
                         </span>
                       )}
-                    </div>
-                  </TD>
-                  <TD>
-                    {frameworks.length ? (
-                      <div className="flex flex-wrap gap-1">
-                        {frameworks.map((framework) => (
-                          <FrameworkChip key={framework} label={framework} />
-                        ))}
-                      </div>
-                    ) : (
-                      <span className="text-text-subtle">—</span>
-                    )}
-                  </TD>
-                  <TD>
-                    {control.owner_name ? (
-                      <span className="flex items-center gap-2">
-                        <Avatar name={control.owner_name} size="sm" />
-                        <span className="truncate text-body-sm text-text-secondary">
-                          {control.owner_name}
+                    </TD>
+                  ) : null}
+                  {visibleCols.evidence ? (
+                    <TD numeric>
+                      {evidenceKnown ? (
+                        <span
+                          className={cn(
+                            "inline-flex items-center gap-1.5",
+                            evidenceCount === 0
+                              ? "text-text-subtle"
+                              : "text-text-secondary",
+                          )}
+                        >
+                          <Icon name="doc" className="size-3.5" />
+                          {evidenceCount}
                         </span>
-                      </span>
-                    ) : (
-                      <span className="text-body-sm text-text-subtle">
-                        Unassigned
-                      </span>
-                    )}
-                  </TD>
-                  <TD numeric>
-                    {evidenceKnown ? (
-                      <span
-                        className={cn(
-                          "inline-flex items-center gap-1.5",
-                          evidenceCount === 0
-                            ? "text-text-subtle"
-                            : "text-text-secondary",
-                        )}
-                      >
-                        <Icon name="doc" className="size-3.5" />
-                        {evidenceCount}
-                      </span>
-                    ) : (
-                      <span className="text-text-subtle">—</span>
-                    )}
-                  </TD>
-                  <TD>
-                    <StatusPill
-                      status={displayStatus(control).family}
-                      label={displayStatus(control).label}
-                    />
-                  </TD>
+                      ) : (
+                        <span className="text-text-subtle">—</span>
+                      )}
+                    </TD>
+                  ) : null}
+                  {visibleCols.status ? (
+                    <TD>
+                      <StatusPill
+                        status={displayStatus(control).family}
+                        label={displayStatus(control).label}
+                      />
+                    </TD>
+                  ) : null}
                   <TD
                     className="text-right"
                     onClick={(event) => event.stopPropagation()}

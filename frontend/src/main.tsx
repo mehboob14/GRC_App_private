@@ -4,8 +4,8 @@ import { BrowserRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AppRoutes } from "@/app/routes";
 import { ToastProvider, TooltipProvider } from "@/components/ui";
-import { ThemeProvider } from "@/lib/theme";
-import { AuthProvider } from "@/lib/auth/auth-context";
+import { ThemeProvider } from "@/lib/theme-provider";
+import { AuthProvider } from "@/lib/auth/auth-provider";
 import { mocksEnabled } from "@/lib/api/client";
 
 import "@fontsource/inter/400.css";

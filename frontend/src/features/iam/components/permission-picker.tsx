@@ -55,6 +55,17 @@ const PERMISSION_GROUPS = [
       { key: "controls:manage", label: "Manage controls" },
       { key: "evidence:read", label: "View evidence" },
       { key: "evidence:manage", label: "Manage evidence" },
+      { key: "evidence:review", label: "Review & approve evidence" },
+    ],
+  },
+  {
+    group: "Documents & Policies",
+    summary: "Author, approve and publish policy documents.",
+    items: [
+      { key: "documents:read", label: "View documents" },
+      { key: "documents:manage", label: "Author & edit documents" },
+      { key: "documents:approve", label: "Approve documents" },
+      { key: "documents:publish", label: "Publish documents" },
     ],
   },
 ] as const satisfies readonly {

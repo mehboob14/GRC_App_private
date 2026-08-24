@@ -29,6 +29,7 @@ numeric check. The three columns that are stored but not yet enforced
 from __future__ import annotations
 
 from collections.abc import Sequence
+from typing import Any
 
 import sqlalchemy as sa
 from alembic import op
@@ -40,7 +41,9 @@ branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
 # Each entry is the column name, its type, and its server-side default.
-_POLICY_COLUMNS: tuple[tuple[str, sa.types.TypeEngine[object], str], ...] = (
+# `TypeEngine` is invariant in its Python type, so the parameter has to be `Any`
+# for a tuple that mixes Integer (int) and Boolean (bool) entries.
+_POLICY_COLUMNS: tuple[tuple[str, sa.types.TypeEngine[Any], str], ...] = (
     ("password_min_length", sa.Integer(), "12"),
     ("password_require_upper", sa.Boolean(), "true"),
     ("password_require_lower", sa.Boolean(), "true"),

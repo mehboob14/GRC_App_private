@@ -1,4 +1,5 @@
 import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
+import { Check } from "lucide-react";
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
@@ -51,6 +52,38 @@ export function DropdownMenuItem({
     />
   );
 }
+
+export function DropdownMenuCheckboxItem({
+  className,
+  children,
+  checked,
+  onCheckedChange,
+  ...props
+}: ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.CheckboxItem>) {
+  return (
+    <DropdownMenuPrimitive.CheckboxItem
+      checked={checked}
+      onCheckedChange={onCheckedChange}
+      // Keep the menu open while toggling several columns in a row.
+      onSelect={(event) => event.preventDefault()}
+      className={cn(
+        "relative flex h-8 cursor-pointer select-none items-center gap-2 rounded-xs py-1 pl-8 pr-2.5 text-body-md text-text-primary outline-none",
+        "data-[highlighted]:bg-surface-hover",
+        "data-[disabled]:pointer-events-none data-[disabled]:text-text-faint",
+        className,
+      )}
+      {...props}
+    >
+      <span className="absolute left-2 flex size-4 items-center justify-center">
+        <DropdownMenuPrimitive.ItemIndicator>
+          <Check className="size-3.5" strokeWidth={2.5} />
+        </DropdownMenuPrimitive.ItemIndicator>
+      </span>
+      {children}
+    </DropdownMenuPrimitive.CheckboxItem>
+  );
+}
+
 
 export function DropdownMenuLabel({
   className,

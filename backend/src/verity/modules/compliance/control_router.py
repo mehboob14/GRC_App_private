@@ -13,6 +13,7 @@ import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, status
+from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from verity.core.deps import (
@@ -30,12 +31,14 @@ from verity.modules.compliance.models import (
     CONTROL_SUB_TYPES,
     CONTROL_TYPES,
 )
+from verity.modules.compliance.report_service import report_service
 from verity.modules.compliance.schemas import (
     AdoptLibraryRequest,
     AdoptLibraryResponse,
     ControlCreate,
     ControlDisable,
     ControlOut,
+    ControlReportOut,
     ControlUpdate,
     ControlVocabularyOut,
 )
@@ -100,6 +103,52 @@ async def list_controls(  # noqa: PLR0913, PLR0917 — one parameter per filter
     return [ControlOut.model_validate(view) for view in views]
 
 
+# Report routes are declared before /{control_id} so the static "report" segment
+# is matched here rather than parsed as a control id.
+@controls_router.get(
+    "/report",
+    response_model=ControlReportOut,
+    summary="Gap-assessment report: KPIs and every control's status",
+)
+async def get_control_report(
+    _principal: Annotated[Principal, Depends(require_controls_read)],
+    context: Annotated[TenantContext, Depends(get_tenant_context)],
+    session: Annotated[AsyncSession, Depends(get_tenant_session)],
+) -> ControlReportOut:
+    report = await report_service.control_gap_report(session, tenant_id=context.tenant_id)
+    return ControlReportOut.model_validate(report)
+
+
+_EXPORT_MEDIA = {
+    "csv": "text/csv",
+    "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+}
+
+
+@controls_router.get(
+    "/report/export",
+    summary="The gap-assessment report as a CSV or XLSX download",
+)
+async def export_control_report(
+    _principal: Annotated[Principal, Depends(require_controls_read)],
+    context: Annotated[TenantContext, Depends(get_tenant_context)],
+    session: Annotated[AsyncSession, Depends(get_tenant_session)],
+    export_format: Annotated[str, Query(alias="format", pattern="^(csv|xlsx)$")] = "csv",
+) -> Response:
+    report = await report_service.control_gap_report(session, tenant_id=context.tenant_id)
+    stamp = report.generated_at.strftime("%Y%m%d")
+    filename = f"control-gap-assessment-{stamp}.{export_format}"
+    if export_format == "csv":
+        body: bytes = report_service.render_csv(report).encode("utf-8-sig")
+    else:
+        body = report_service.render_xlsx(report)
+    return Response(
+        content=body,
+        media_type=_EXPORT_MEDIA[export_format],
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
 @controls_router.get("/{control_id}", response_model=ControlOut, summary="One control")
 async def get_control(
     control_id: uuid.UUID,
@@ -153,11 +202,13 @@ async def create_control(
         name=body.name,
         description=body.description,
         category=body.category,
+        sub_category=body.sub_category,
         control_type=body.control_type,
         control_sub_type=body.control_sub_type,
         implementation_guidance=body.implementation_guidance,
         owner_membership_id=body.owner_membership_id,
         requirement_ids=body.requirement_ids,
+        evidence_ids=body.evidence_ids,
     )
     return ControlOut.model_validate(view)
 
@@ -179,12 +230,14 @@ async def update_control(
         description=body.description,
         implementation_guidance=body.implementation_guidance,
         category=body.category,
+        sub_category=body.sub_category,
         control_type=body.control_type,
         control_sub_type=body.control_sub_type,
         status=body.status,
         owner_membership_id=body.owner_membership_id,
         clear_owner=body.clear_owner,
         requirement_ids=body.requirement_ids,
+        evidence_ids=body.evidence_ids,
     )
     return ControlOut.model_validate(view)
 

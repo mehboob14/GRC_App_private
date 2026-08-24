@@ -233,8 +233,7 @@ async def _load_templates(
     ``RESTRICT`` foreign key refuses the delete.
     """
     existing = {
-        row.canonical_key: row
-        for row in (await session.execute(select(ControlTemplate))).scalars()
+        row.canonical_key: row for row in (await session.execute(select(ControlTemplate))).scalars()
     }
     by_code: dict[str, ControlTemplate] = {}
     for doc in docs:

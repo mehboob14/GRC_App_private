@@ -29,6 +29,11 @@ export const PERMISSION_KEYS = [
   "controls:manage",
   "evidence:read",
   "evidence:manage",
+  "evidence:review",
+  "documents:read",
+  "documents:manage",
+  "documents:approve",
+  "documents:publish",
 ] as const;
 
 export type PermissionKey = (typeof PERMISSION_KEYS)[number];
@@ -432,8 +437,9 @@ export type Control = {
   description: string;
   implementation_guidance: string | null;
   category: string;
-  /** Preventive / Detective / Corrective. NULL on framework content — the
-   *  classification is authored on a tenant's own internal/custom controls. */
+  sub_category: string | null;
+  /** Preventive / Detective / Corrective / Deterrent / Compensating / Directive.
+   *  NULL on framework content — authored on a tenant's own controls. */
   control_type: string | null;
   control_sub_type: string | null;
   status: ControlStatus;
@@ -465,17 +471,20 @@ export type ControlQuery = {
 };
 
 export type ControlCreateRequest = {
-  code: string;
+  /** Optional: omit and the platform assigns a GRC-NN code. */
+  code?: string;
   name: string;
   description: string;
   category: string;
   /** Preventive / Detective / Corrective. NULL on framework content — the
    *  classification is authored on a tenant's own internal/custom controls. */
   control_type: string | null;
+  sub_category?: string | null;
   control_sub_type?: string | null;
   implementation_guidance?: string | null;
   owner_membership_id?: string | null;
   requirement_ids?: string[];
+  evidence_ids?: string[] | null;
 };
 
 export type ControlUpdateRequest = {
@@ -483,12 +492,14 @@ export type ControlUpdateRequest = {
   description?: string;
   implementation_guidance?: string | null;
   category?: string;
+  sub_category?: string | null;
   control_type?: string;
   control_sub_type?: string | null;
   status?: ControlStatus;
   owner_membership_id?: string | null;
   clear_owner?: boolean;
   requirement_ids?: string[];
+  evidence_ids?: string[] | null;
 };
 
 export type AdoptLibraryResult = {
@@ -554,15 +565,122 @@ export type Coverage = {
   criteria_uncovered: CriterionCoverage[];
   controls_total: number;
   controls_without_evidence: number;
-  /** False until the evidence module lands — do not read the count as a
-      finding while this is false. */
+  /** The controls behind that count. Itemised so the gap is something a person
+      can open and act on, rather than a number they cannot get to. */
+  controls_no_evidence: ControlGap[];
+  /** Always true since the evidence module shipped. Kept so the older contract
+      does not break; new code should not branch on it. */
   evidence_tracking_available: boolean;
   controls_unmapped: ControlGap[];
+};
+
+export type StatusCount = { status: string; count: number };
+export type CategoryCoverage = {
+  category: string;
+  in_scope: number;
+  covered: number;
+  ready: number;
+};
+export type TimelinePoint = { on: string; controls: number; evidence: number };
+export type ActivityItem = {
+  occurred_at: string;
+  action: string;
+  actor_name: string | null;
+  control_code: string | null;
+  control_name: string | null;
+};
+
+export type OwnerCount = {
+  membership_id: string | null;
+  name: string;
+  role: string | null;
+  count: number;
+};
+export type DisabledControl = {
+  control_id: string;
+  code: string;
+  name: string;
+  reason: string | null;
+};
+export type RecentEvidence = {
+  title: string;
+  control_code: string | null;
+  collected_on: string;
+  freshness: EvidenceFreshness;
+};
+
+export type ReportKpis = {
+  controls_total: number;
+  controls_disabled: number;
+  controls_evidenced: number;
+  controls_owned: number;
+  controls_ready: number;
+  criteria_mapped: number;
+  by_status: Record<string, number>;
+};
+export type ReportRow = {
+  code: string;
+  name: string;
+  category: string;
+  control_type: string | null;
+  status: string;
+  status_label: string;
+  owner_name: string | null;
+  frameworks: string[];
+  criteria: string[];
+  evidence_count: number;
+  disabled_reason: string | null;
+};
+export type ControlReport = {
+  generated_at: string;
+  framework_label: string;
+  kpis: ReportKpis;
+  rows: ReportRow[];
+};
+
+export type ComplianceDashboard = {
+  has_engagement: boolean;
+  framework_name: string | null;
+  audit_type: string | null;
+  categories_in_scope: string[];
+  criteria_total: number;
+  criteria_covered: number;
+  criteria_uncovered: number;
+  controls_total: number;
+  controls_evidenced: number;
+  controls_no_evidence: number;
+  controls_owned: number;
+  controls_disabled: number;
+  controls_internal: number;
+  controls_unmapped: number;
+  /** Implemented and currently evidenced — the point-in-time readiness count.
+      Readiness over time needs a snapshot table, which is a later phase. */
+  controls_ready: number;
+  controls_in_progress: number;
+  by_status: StatusCount[];
+  by_category: CategoryCoverage[];
+  by_owner: OwnerCount[];
+  disabled: DisabledControl[];
+  evidence_total: number;
+  evidence_fresh: number;
+  evidence_aging: number;
+  evidence_stale: number;
+  evidence_recent: RecentEvidence[];
+  /** The date range picker's floor: the tenant cannot see before this. */
+  tenant_created_on: string;
+  timeline_from: string;
+  timeline_to: string;
+  timeline: TimelinePoint[];
+  /** False until a connector can run automated checks. The UI greys that panel
+      rather than showing a zero that would read as "everything failing". */
+  checks_available: boolean;
+  recent_activity: ActivityItem[];
 };
 
 // --- Evidence library --------------------------------------------------------
 
 export type EvidenceFreshness = "current" | "aging" | "stale" | "no_expiry";
+export type ReviewStatus = "pending" | "approved" | "rejected";
 export type EvidenceKind = "file" | "link";
 
 export type Evidence = {
@@ -586,8 +704,15 @@ export type Evidence = {
   /** Connector that produced this item (rule 9). Null for hand-uploaded
    *  evidence, which is everything until connectors land in Phase 2. */
   source: string | null;
+  /** Review / approval — pending until someone with evidence:review signs off. */
+  review_status: ReviewStatus;
+  reviewed_by_membership_id: string | null;
+  reviewed_by_name: string | null;
+  reviewed_at: string | null;
+  review_note: string | null;
   control_ids: string[];
   control_codes: string[];
+  control_links: { code: string; criteria: string[] }[];
 };
 
 export type EvidenceType = {

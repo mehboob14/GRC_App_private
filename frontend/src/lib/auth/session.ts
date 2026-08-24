@@ -13,6 +13,30 @@ const PRINCIPAL_KEY = "verity.session.principal";
 let memoryToken: string | null = null;
 let memoryPrincipal: SessionPrincipal | null = null;
 
+/**
+ * A tab opened with window.open (the policy editor) starts with empty
+ * sessionStorage — it is per-tab. Copy the session from the opener, which is
+ * same-origin, so the new tab is authenticated without a second sign-in.
+ * sessionStorage only; still never localStorage (ADR-0006).
+ */
+function bootstrapFromOpener(): void {
+  try {
+    if (sessionStorage.getItem(TOKEN_KEY)) return;
+    const opener = window.opener as Window | null;
+    if (!opener) return;
+    const token = opener.sessionStorage.getItem(TOKEN_KEY);
+    const principal = opener.sessionStorage.getItem(PRINCIPAL_KEY);
+    if (token && principal) {
+      sessionStorage.setItem(TOKEN_KEY, token);
+      sessionStorage.setItem(PRINCIPAL_KEY, principal);
+    }
+  } catch {
+    // Cross-origin opener or blocked storage — fall through to normal auth.
+  }
+}
+
+bootstrapFromOpener();
+
 function readJson<T>(key: string): T | null {
   try {
     const raw = sessionStorage.getItem(key);

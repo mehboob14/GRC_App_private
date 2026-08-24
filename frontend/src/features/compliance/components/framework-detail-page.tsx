@@ -109,7 +109,7 @@ export function FrameworkDetailPage() {
   return (
     <div className="mx-auto max-w-[1200px]">
       <Link
-        to="/frameworks"
+        to="/frameworks/list"
         className="mb-3 inline-flex items-center gap-1.5 text-body-sm font-semibold text-text-link"
       >
         <Icon name="chevr" className="size-3.5 rotate-180" aria-hidden />

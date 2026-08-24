@@ -31,6 +31,7 @@ from verity.modules.evidence.models import DEFAULT_VALIDITY_DAYS, EVIDENCE_TYPES
 from verity.modules.evidence.schemas import (
     EvidenceLinkCreate,
     EvidenceOut,
+    EvidenceReviewRequest,
     EvidenceTypeOut,
     EvidenceUpdate,
     EvidenceVocabularyOut,
@@ -41,6 +42,7 @@ evidence_router = APIRouter(prefix="/evidence", tags=["evidence"])
 
 require_evidence_read = require("evidence:read")
 require_evidence_manage = require("evidence:manage")
+require_evidence_review = require("evidence:review")
 
 FRESHNESS_STATES = ("current", "aging", "stale", "no_expiry")
 
@@ -226,5 +228,30 @@ async def update_evidence(
         collected_at=body.collected_at,
         renewal_date=body.renewal_date,
         control_ids=body.control_ids,
+    )
+    return EvidenceOut.model_validate(view)
+
+
+@evidence_router.post(
+    "/{evidence_id}/review",
+    response_model=EvidenceOut,
+    summary="Approve or reject an item — the four-eyes review step",
+)
+async def review_evidence(
+    evidence_id: uuid.UUID,
+    body: EvidenceReviewRequest,
+    principal: Annotated[Principal, Depends(require_evidence_review)],
+    context: Annotated[TenantContext, Depends(get_tenant_context)],
+    session: Annotated[AsyncSession, Depends(get_tenant_session)],
+) -> EvidenceOut:
+    assert principal.membership_id is not None  # noqa: S101 — tenant plane always has one
+    view = await evidence_service.review(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(principal),
+        evidence_id=evidence_id,
+        reviewer_membership_id=principal.membership_id,
+        decision=body.decision,
+        note=body.note,
     )
     return EvidenceOut.model_validate(view)

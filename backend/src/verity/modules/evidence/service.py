@@ -14,11 +14,12 @@ asked, without a job having run.
 from __future__ import annotations
 
 import uuid
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime, timedelta
 from typing import Final
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from verity.core.errors import InvalidInput, NotFound
@@ -46,6 +47,9 @@ _SNAPSHOT: Final = (
     "collected_at",
     "renewal_date",
     "sha256",
+    "review_status",
+    "reviewed_by_membership_id",
+    "review_note",
 )
 
 
@@ -74,6 +78,16 @@ def default_renewal_date(evidence_type: str, collected_at: date) -> date | None:
 
 
 @dataclass(frozen=True, slots=True)
+class ControlLink:
+    """A linked control as the evidence library shows it: the platform control
+    code plus the criteria that control satisfies (framework prefix stripped)."""
+
+    id: uuid.UUID
+    code: str
+    criteria: list[str] = field(default_factory=list)
+
+
+@dataclass(frozen=True, slots=True)
 class EvidenceView:
     id: uuid.UUID
     title: str
@@ -92,8 +106,14 @@ class EvidenceView:
     sha256: str | None
     source: str | None
     link_url: str | None
+    review_status: str
+    reviewed_by_membership_id: uuid.UUID | None
+    reviewed_by_name: str | None
+    reviewed_at: datetime | None
+    review_note: str | None
     control_ids: list[uuid.UUID] = field(default_factory=list)
     control_codes: list[str] = field(default_factory=list)
+    control_links: list[ControlLink] = field(default_factory=list)
 
 
 class EvidenceService:
@@ -160,9 +180,107 @@ class EvidenceService:
             row.content_type or "application/octet-stream",
         )
 
+    async def collected_dates(self, session: AsyncSession, tenant_id: uuid.UUID) -> list[date]:
+        """Every evidence item's collection date, oldest first.
+
+        Exists so the compliance dashboard can draw "evidence collected over
+        time" without reading this module's tables. Dates only — the caller
+        buckets them into a cumulative line and needs nothing else.
+        """
+        rows = await session.execute(
+            select(Evidence.collected_at)
+            .where(Evidence.tenant_id == tenant_id)
+            .order_by(Evidence.collected_at.asc())
+        )
+        return list(rows.scalars())
+
+    async def evidence_ids_for_control(
+        self, session: AsyncSession, tenant_id: uuid.UUID, control_id: uuid.UUID
+    ) -> list[uuid.UUID]:
+        """The evidence linked to one control. For the control editor's prefill
+        and its before/after audit snapshot; compliance asks through here, never
+        the table (rule 4)."""
+        rows = await session.execute(
+            select(EvidenceControl.evidence_id).where(
+                EvidenceControl.tenant_id == tenant_id,
+                EvidenceControl.control_id == control_id,
+            )
+        )
+        return list(rows.scalars())
+
+    async def set_control_evidence(
+        self,
+        session: AsyncSession,
+        tenant_id: uuid.UUID,
+        control_id: uuid.UUID,
+        evidence_ids: Sequence[uuid.UUID],
+    ) -> None:
+        """Replace the evidence links for one control with ``evidence_ids``.
+
+        The reverse of attaching controls to an evidence item — used by the
+        control editor. Rows this module owns; compliance drives it through this
+        service (rule 4). The parent control's audit records the before/after
+        id sets, so this method does not write its own trail.
+        """
+        target = set(evidence_ids)
+        existing = set(await self.evidence_ids_for_control(session, tenant_id, control_id))
+        for evidence_id in existing - target:
+            await session.execute(
+                delete(EvidenceControl).where(
+                    EvidenceControl.tenant_id == tenant_id,
+                    EvidenceControl.control_id == control_id,
+                    EvidenceControl.evidence_id == evidence_id,
+                )
+            )
+        for evidence_id in target - existing:
+            session.add(
+                EvidenceControl(
+                    id=uuid7(),
+                    tenant_id=tenant_id,
+                    evidence_id=evidence_id,
+                    control_id=control_id,
+                )
+            )
+        await session.flush()
+
+    async def evidence_counts_by_control(
+        self, session: AsyncSession, tenant_id: uuid.UUID
+    ) -> dict[uuid.UUID, int]:
+        """How many evidence items each control carries, in one query.
+
+        For the gap-assessment report, which shows a count per control. Reads
+        this module's own join table; the compliance report asks through the
+        service, never the table (rule 4).
+        """
+        rows = await session.execute(
+            select(EvidenceControl.control_id).where(EvidenceControl.tenant_id == tenant_id)
+        )
+        counts: dict[uuid.UUID, int] = {}
+        for (control_id,) in rows:
+            counts[control_id] = counts.get(control_id, 0) + 1
+        return counts
+
+    async def control_ids_with_evidence(
+        self, session: AsyncSession, tenant_id: uuid.UUID
+    ) -> set[uuid.UUID]:
+        """Which controls have at least one evidence item linked to them.
+
+        Exists so compliance's coverage report can answer "controls with no
+        evidence" without reading this module's tables, which rule 4 forbids.
+        Ids only: the caller already holds the controls and needs nothing else
+        from evidence, so this stays a set membership test rather than a join
+        that would drag evidence rows across the module boundary.
+        """
+        rows = await session.execute(
+            select(EvidenceControl.control_id)
+            .where(EvidenceControl.tenant_id == tenant_id)
+            .distinct()
+        )
+        return set(rows.scalars())
+
     async def _mappings(
         self, session: AsyncSession, tenant_id: uuid.UUID
-    ) -> dict[uuid.UUID, list[tuple[uuid.UUID, str]]]:
+    ) -> dict[uuid.UUID, list[ControlLink]]:
         """Every item's controls in one pass — the library shows them per row,
         and a per-row fetch would be an N+1 across the whole library.
 
@@ -186,13 +304,20 @@ class EvidenceService:
         controls = await control_service.list_controls(
             session, tenant_id=tenant_id, include_disabled=True
         )
-        codes = {control.id: control.code for control in controls}
-
-        out: dict[uuid.UUID, list[tuple[uuid.UUID, str]]] = {}
+        link_by_id = {
+            control.id: ControlLink(
+                id=control.id,
+                code=control.code,
+                criteria=sorted({key.split(":", 1)[-1] for key in control.requirement_keys}),
+            )
+            for control in controls
+        }
+        out: dict[uuid.UUID, list[ControlLink]] = {}
         for evidence_id, control_id in pairs:
-            out.setdefault(evidence_id, []).append((control_id, codes.get(control_id, "?")))
+            link = link_by_id.get(control_id) or ControlLink(id=control_id, code="?")
+            out.setdefault(evidence_id, []).append(link)
         for mapped in out.values():
-            mapped.sort(key=lambda item: item[1])
+            mapped.sort(key=lambda link: link.code)
         return out
 
     async def _owner_names(
@@ -207,7 +332,7 @@ class EvidenceService:
     @staticmethod
     def _view(
         row: Evidence,
-        mappings: dict[uuid.UUID, list[tuple[uuid.UUID, str]]],
+        mappings: dict[uuid.UUID, list[ControlLink]],
         owners: dict[uuid.UUID, str],
     ) -> EvidenceView:
         mapped = mappings.get(row.id, [])
@@ -229,8 +354,16 @@ class EvidenceService:
             sha256=row.sha256,
             link_url=row.link_url,
             source=row.source,
-            control_ids=[item[0] for item in mapped],
-            control_codes=[item[1] for item in mapped],
+            review_status=row.review_status,
+            reviewed_by_membership_id=row.reviewed_by_membership_id,
+            reviewed_by_name=(
+                owners.get(row.reviewed_by_membership_id) if row.reviewed_by_membership_id else None
+            ),
+            reviewed_at=row.reviewed_at,
+            review_note=row.review_note,
+            control_ids=[link.id for link in mapped],
+            control_codes=[link.code for link in mapped],
+            control_links=list(mapped),
         )
 
     async def _load(
@@ -398,6 +531,50 @@ class EvidenceService:
                 actor=actor,
                 title=row.title,
             )
+
+        await self._audit.record(
+            session,
+            action="update",
+            object_type="evidence",
+            object_id=row.id,
+            actor=actor,
+            tenant_id=tenant_id,
+            before=before,
+            after=AuditService.snapshot(row, fields=_SNAPSHOT),
+        )
+        return await self.get(session, tenant_id=tenant_id, evidence_id=evidence_id)
+
+    async def review(  # noqa: PLR0913 — reviewer + decision + note + audit actor
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        evidence_id: uuid.UUID,
+        reviewer_membership_id: uuid.UUID,
+        decision: str,
+        note: str | None = None,
+    ) -> EvidenceView:
+        """Record a reviewer's verdict on one item.
+
+        ``decision`` is ``approved`` or ``rejected`` — ``pending`` is a starting
+        state, not something a person chooses. A rejection must say why, so the
+        owner knows what to fix; the note is optional on an approval. The verdict
+        is audited with before/after, so who signed off (or refused) and when is
+        part of the tenant's record.
+        """
+        if decision not in ("approved", "rejected"):
+            raise InvalidInput(detail="a review decision is 'approved' or 'rejected'")
+        cleaned = (note or "").strip()
+        if decision == "rejected" and not cleaned:
+            raise InvalidInput(detail="a rejection must include a reason")
+
+        row = await self._load(session, tenant_id, evidence_id)
+        before = AuditService.snapshot(row, fields=_SNAPSHOT)
+        row.review_status = decision
+        row.reviewed_by_membership_id = reviewer_membership_id
+        row.reviewed_at = datetime.now(UTC)
+        row.review_note = cleaned or None
 
         await self._audit.record(
             session,

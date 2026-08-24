@@ -14,14 +14,6 @@ const fillClass: Record<Severity, string> = {
   low: "bg-severity-low",
 };
 
-/** Label colour for text placed beside the chip (DS §2.6). */
-export const severityTextClass: Record<Severity, string> = {
-  critical: "text-severity-critical",
-  high: "text-severity-high",
-  medium: "text-severity-medium",
-  low: "text-status-neutral-text",
-};
-
 type SeverityChipProps = {
   severity: Severity;
   /** The score or word inside the chip — a bare coloured chip is banned. */

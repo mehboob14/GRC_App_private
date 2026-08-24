@@ -21,11 +21,11 @@
     },
     {
       "path": "control_templates.json",
-      "sha256": "df40385b37d2780cfdca27704411f6e0db952e221cf67fc51b1937d5ef417361"
+      "sha256": "2931fcc51c9de8a53b6c1e9e422a04dcd3983269eddcc08d2fda0bb4ee601bb0"
     },
     {
       "path": "template_requirements.json",
-      "sha256": "ac0f3c53439d5248a465ab99b2a0d8d49f917b513ccc0b28127d4e6d7231678c"
+      "sha256": "7e25175de24b2444a684bc8dfdadbfe9b73f7d92d2f241402e21ccb37dfcb99f"
     }
   ],
   "note": "Control templates and mappings vendored from the grc-s prototype on 2026-08-15 by backend/scripts/vendor_soc2_content.py. Criterion TEXT was replaced on 2026-08-18 with the verbatim wording from the AICPA Trust Services Criteria PDF — re-running the vendor script would overwrite it with the prototype's paraphrases, so re-apply the exact text afterwards.",

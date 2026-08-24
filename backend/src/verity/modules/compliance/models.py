@@ -72,7 +72,14 @@ CONTROL_CATEGORIES: Final[tuple[str, ...]] = (
 )
 """The library's domain taxonomy — which part of the estate a control lives in."""
 
-CONTROL_TYPES: Final[tuple[str, ...]] = ("Preventive", "Detective", "Corrective")
+CONTROL_TYPES: Final[tuple[str, ...]] = (
+    "Preventive",
+    "Detective",
+    "Corrective",
+    "Deterrent",
+    "Compensating",
+    "Directive",
+)
 """What a control does about a risk: stop it, surface it, or restore after it.
 
 Supersedes D1, which seeded Type equal to Category while no vocabulary existed.
@@ -351,6 +358,9 @@ class Control(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
     description: Mapped[str]
     implementation_guidance: Mapped[str | None] = mapped_column(default=None)
     category: Mapped[str]
+    # Optional finer grouping under ``category``; taxonomy is app-defined and may
+    # vary per register type, so it is deliberately not CHECK-constrained.
+    sub_category: Mapped[str | None] = mapped_column(default=None)
     # NULL for anything instantiated from a template — see ControlTemplate.
     control_type: Mapped[str | None] = mapped_column(default=None)
     control_sub_type: Mapped[str | None] = mapped_column(default=None)

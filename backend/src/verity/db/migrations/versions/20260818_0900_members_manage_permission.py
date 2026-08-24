@@ -38,9 +38,5 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     # role_permissions rows referencing it go first, or the FK refuses the delete.
-    op.execute(
-        sa.text(
-            "DELETE FROM role_permissions WHERE permission_key = 'members:manage'"
-        )
-    )
+    op.execute(sa.text("DELETE FROM role_permissions WHERE permission_key = 'members:manage'"))
     op.execute(sa.text("DELETE FROM permissions WHERE key = 'members:manage'"))

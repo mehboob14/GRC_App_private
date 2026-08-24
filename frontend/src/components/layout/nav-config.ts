@@ -39,7 +39,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { id: "frameworks", label: "Frameworks", icon: "shield", to: "/frameworks" },
       { id: "controls", label: "Controls", icon: "controls", to: "/controls" },
       { id: "evidence", label: "Evidence", icon: "doc", to: "/evidence" },
-      { id: "policies", label: "Policies & Documents", icon: "book", comingSoon: true },
+      { id: "policies", label: "Policies & Documents", icon: "book", to: "/documents" },
     ],
   },
   {

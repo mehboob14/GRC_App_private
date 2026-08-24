@@ -1,123 +1,123 @@
 [
   {
     "requirement_key": "SOC2:CC1.1",
-    "template_code": "GRC-04"
+    "template_code": "GOV-04"
   },
   {
     "requirement_key": "SOC2:CC1.1",
-    "template_code": "GRC-11"
+    "template_code": "GOV-11"
   },
   {
     "requirement_key": "SOC2:CC1.5",
-    "template_code": "GRC-11"
+    "template_code": "GOV-11"
   },
   {
     "requirement_key": "SOC2:CC1.3",
-    "template_code": "GRC-21"
+    "template_code": "GOV-21"
   },
   {
     "requirement_key": "SOC2:CC1.3",
-    "template_code": "GRC-10"
+    "template_code": "GOV-10"
   },
   {
     "requirement_key": "SOC2:CC1.5",
-    "template_code": "GRC-10"
+    "template_code": "GOV-10"
   },
   {
     "requirement_key": "SOC2:CC1.2",
-    "template_code": "GRC-02"
+    "template_code": "GOV-02"
   },
   {
     "requirement_key": "SOC2:CC1.2",
-    "template_code": "GRC-15"
+    "template_code": "GOV-15"
   },
   {
     "requirement_key": "SOC2:CC4.2",
-    "template_code": "GRC-15"
+    "template_code": "GOV-15"
   },
   {
     "requirement_key": "SOC2:CC1.5",
-    "template_code": "GRC-09"
+    "template_code": "GOV-09"
   },
   {
     "requirement_key": "SOC2:CC1.3",
-    "template_code": "GRC-09"
+    "template_code": "GOV-09"
   },
   {
     "requirement_key": "SOC2:CC3.1",
-    "template_code": "GRC-22"
+    "template_code": "GOV-22"
   },
   {
     "requirement_key": "SOC2:CC3.1",
-    "template_code": "GRC-18"
+    "template_code": "GOV-18"
   },
   {
     "requirement_key": "SOC2:CC3.2",
-    "template_code": "GRC-18"
+    "template_code": "GOV-18"
   },
   {
     "requirement_key": "SOC2:CC3.2",
-    "template_code": "GRC-19"
+    "template_code": "GOV-19"
   },
   {
     "requirement_key": "SOC2:CC5.1",
-    "template_code": "GRC-19"
+    "template_code": "GOV-19"
   },
   {
     "requirement_key": "SOC2:CC3.2",
-    "template_code": "GRC-20"
+    "template_code": "GOV-20"
   },
   {
     "requirement_key": "SOC2:CC9.1",
-    "template_code": "GRC-20"
+    "template_code": "GOV-20"
   },
   {
     "requirement_key": "SOC2:CC3.3",
-    "template_code": "GRC-12"
+    "template_code": "GOV-12"
   },
   {
     "requirement_key": "SOC2:CC3.4",
-    "template_code": "GRC-03"
+    "template_code": "GOV-03"
   },
   {
     "requirement_key": "SOC2:CC5.1",
-    "template_code": "GRC-07"
+    "template_code": "GOV-07"
   },
   {
     "requirement_key": "SOC2:CC5.2",
-    "template_code": "GRC-14"
+    "template_code": "GOV-14"
   },
   {
     "requirement_key": "SOC2:CC5.3",
-    "template_code": "GRC-17"
+    "template_code": "GOV-17"
   },
   {
     "requirement_key": "SOC2:CC5.3",
-    "template_code": "GRC-01"
+    "template_code": "GOV-01"
   },
   {
     "requirement_key": "SOC2:CC4.1",
-    "template_code": "GRC-06"
+    "template_code": "GOV-06"
   },
   {
     "requirement_key": "SOC2:CC4.1",
-    "template_code": "GRC-16"
+    "template_code": "GOV-16"
   },
   {
     "requirement_key": "SOC2:CC7.1",
-    "template_code": "GRC-16"
+    "template_code": "GOV-16"
   },
   {
     "requirement_key": "SOC2:CC4.1",
-    "template_code": "GRC-13"
+    "template_code": "GOV-13"
   },
   {
     "requirement_key": "SOC2:CC4.2",
-    "template_code": "GRC-08"
+    "template_code": "GOV-08"
   },
   {
     "requirement_key": "SOC2:CC2.3",
-    "template_code": "GRC-05"
+    "template_code": "GOV-05"
   },
   {
     "requirement_key": "SOC2:CC2.2",

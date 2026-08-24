@@ -27,7 +27,12 @@ import { ControlsPage } from "@/features/compliance/components/controls-page";
 import { ControlDetailPage } from "@/features/compliance/components/control-detail-page";
 import { EvidencePage } from "@/features/evidence/components/evidence-page";
 import { EvidenceDetailPage } from "@/features/evidence/components/evidence-detail-page";
+import { DocumentsRegisterPage } from "@/features/documents/components/documents-register-page";
+import { DocumentDetailPage } from "@/features/documents/components/document-detail-page";
+import { DocumentEditorPage } from "@/features/documents/components/document-editor-page";
 import { ScopePage } from "@/features/compliance/components/scope-page";
+import { CoveragePage } from "@/features/compliance/components/coverage-page";
+import { ComplianceDashboardPage } from "@/features/compliance/components/compliance-dashboard-page";
 import { FrameworksLayout } from "@/features/compliance/components/frameworks-layout";
 import { CompanyProfilePage } from "@/features/tenancy/company-profile-page";
 import { ConnectionsLayout } from "@/features/connectors/components/connections-layout";
@@ -58,13 +63,26 @@ export function AppRoutes() {
       <Route path="/reset-password" element={<ResetPasswordPage />} />
 
       <Route element={<RequireAuth />}>
+        {/* Full-screen policy editor — its own tab, no app shell (ADR-0012). */}
+        <Route
+          path="documents/:documentId/edit"
+          element={<DocumentEditorPage />}
+        />
         <Route element={<AppLayout />}>
           <Route index element={<Navigate to="/quick-start" replace />} />
           <Route path="quick-start" element={<QuickStartPage />} />
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="frameworks" element={<FrameworksLayout />}>
-            <Route index element={<FrameworksPage />} />
+            {/* Frameworks opens on the compliance dashboard: the posture read is
+                what people come here for; the framework list is a tab. */}
+            <Route
+              index
+              element={<Navigate to="/frameworks/dashboard" replace />}
+            />
+            <Route path="dashboard" element={<ComplianceDashboardPage />} />
+            <Route path="list" element={<FrameworksPage />} />
             <Route path="scope" element={<ScopePage />} />
+            <Route path="coverage" element={<CoveragePage />} />
           </Route>
           {/* Detail sits outside the tab strip: it is a drill-down, not a tab. */}
           <Route
@@ -75,6 +93,8 @@ export function AppRoutes() {
           <Route path="controls/:controlId" element={<ControlDetailPage />} />
           <Route path="evidence" element={<EvidencePage />} />
           <Route path="evidence/:evidenceId" element={<EvidenceDetailPage />} />
+          <Route path="documents" element={<DocumentsRegisterPage />} />
+          <Route path="documents/:documentId" element={<DocumentDetailPage />} />
           <Route
             path="scope"
             element={<Navigate to="/frameworks/scope" replace />}

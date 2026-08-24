@@ -2,6 +2,7 @@ import { useMemo, useState, type ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  Avatar,
   Badge,
   Button,
   Dialog,
@@ -41,12 +42,18 @@ import {
   TR,
   useToast,
 } from "@/components/ui";
+import { Donut } from "@/features/dashboard/donut";
 import { complianceApi, controlsApi, evidenceApi, iamApi } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/client";
 import { cn } from "@/lib/cn";
 import { useAuth } from "@/lib/auth/auth-context";
 import { getAccessToken } from "@/lib/auth/session";
-import type { Control, Evidence, EvidenceFreshness } from "@/lib/api/types";
+import type {
+  Control,
+  Evidence,
+  EvidenceFreshness,
+  ReviewStatus,
+} from "@/lib/api/types";
 import { ControlPicker, type ControlGroup } from "./control-picker";
 
 /** DS §6.1 — freshness maps to a status family once, here, so every surface
@@ -67,6 +74,277 @@ const FRESHNESS_ORDER: EvidenceFreshness[] = [
   "stale",
   "no_expiry",
 ];
+
+/** Review status → a status family + word, mapped once so every surface agrees.
+ *  Pending gets its own family (an action item), approved reads as good, and a
+ *  rejection reads as a problem to fix. */
+const REVIEW_META: Record<
+  ReviewStatus,
+  { label: string; family: "success" | "danger" | "pending" }
+> = {
+  pending: { label: "Pending review", family: "pending" },
+  approved: { label: "Approved", family: "success" },
+  rejected: { label: "Rejected", family: "danger" },
+};
+
+const REVIEW_ORDER: ReviewStatus[] = ["pending", "approved", "rejected"];
+
+/** The freshness families as solid fills, for the overview bar and dots.
+ *  Colour here is status (fresh / expiring / expired), which the DS allows. */
+const FRESHNESS_FILL: Record<EvidenceFreshness, string> = {
+  current: "rgb(var(--color-status-success-base))",
+  aging: "rgb(var(--color-status-warning-base))",
+  stale: "rgb(var(--color-status-danger-base))",
+  no_expiry: "rgb(var(--color-status-neutral-base))",
+};
+
+/** Whole days from today to a yyyy-mm-dd date; negative means overdue. Parsed
+ *  from the parts so a timezone never shifts the day across a boundary. */
+function daysSince(iso: string): number {
+  const [y, m, d] = iso.split("-").map(Number);
+  const then = Date.UTC(y, m - 1, d);
+  const now = new Date();
+  const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  return Math.max(0, Math.round((today - then) / 86_400_000));
+}
+
+
+/** A compact ring for the coverage snapshot. */
+function MiniRing({
+  value,
+  total,
+  color,
+  label,
+}: {
+  value: number;
+  total: number;
+  color: string;
+  label: string;
+}) {
+  const percent = total === 0 ? 0 : Math.round((value / total) * 100);
+  return (
+    <div className="flex flex-col items-center gap-1.5 text-center">
+      <Donut
+        size={72}
+        stroke={9}
+        segments={[
+          { value, color },
+          { value: Math.max(total - value, 0), color: "transparent" },
+        ]}
+      >
+        <span className="font-display text-body-lg tabular font-bold text-text-primary">
+          {percent}%
+        </span>
+      </Donut>
+      <span className="text-caption text-text-subtle">{label}</span>
+    </div>
+  );
+}
+
+/**
+ * The evidence dashboard: one compact row — how fresh the library is, what kinds
+ * of artefact it holds, and how much of the control set it covers. All computed
+ * from the already-loaded list, so there is no second request. The freshness
+ * legend and the type bars filter the table below.
+ */
+function EvidenceOverview({
+  items,
+  controlsTotal,
+  onPickFreshness,
+}: {
+  items: Evidence[];
+  controlsTotal: number;
+  onPickFreshness: (state: EvidenceFreshness) => void;
+}) {
+  const total = items.length;
+  const counts = FRESHNESS_ORDER.reduce<Record<string, number>>((acc, state) => {
+    acc[state] = items.filter((i) => i.freshness === state).length;
+    return acc;
+  }, {});
+  const percentOf = (n: number) =>
+    total === 0 ? 0 : Math.round((n / total) * 100);
+
+  // Group by owner; the unassigned bucket sorts last, since it is context, not
+  // a person. Membership id is the key so two people who share a name stay apart.
+  const ownerMap = new Map<
+    string,
+    { key: string; name: string; count: number; unassigned: boolean }
+  >();
+  for (const item of items) {
+    const key = item.owner_membership_id ?? "__unassigned__";
+    const existing = ownerMap.get(key);
+    if (existing) {
+      existing.count += 1;
+    } else {
+      ownerMap.set(key, {
+        key,
+        name: item.owner_name ?? "Unassigned",
+        count: 1,
+        unassigned: !item.owner_membership_id,
+      });
+    }
+  }
+  const owners = [...ownerMap.values()].sort((a, b) =>
+    a.unassigned === b.unassigned ? b.count - a.count : a.unassigned ? 1 : -1,
+  );
+  const ownerMax = Math.max(1, ...owners.map((o) => o.count));
+
+  const controlsWithEvidence = new Set(
+    items.flatMap((i) => i.control_ids),
+  ).size;
+  const owned = items.filter((i) => i.owner_membership_id).length;
+  const fresh = counts.current ?? 0;
+  const avgAge =
+    total === 0
+      ? 0
+      : Math.round(items.reduce((s, i) => s + daysSince(i.collected_at), 0) / total);
+
+  return (
+    <div className="mt-5 grid gap-3 lg:grid-cols-3">
+      {/* Evidence freshness */}
+      <div className="rounded-lg border border-border bg-surface-primary p-4">
+        <div className="mb-3 flex items-baseline justify-between">
+          <p className="type-overline">Evidence freshness</p>
+          <p className="text-body-sm tabular text-text-subtle">{total} total</p>
+        </div>
+        <div className="flex items-center gap-4">
+          <Donut
+            size={104}
+            stroke={13}
+            segments={FRESHNESS_ORDER.map((state) => ({
+              value: counts[state],
+              color: FRESHNESS_FILL[state],
+            }))}
+          >
+            <span className="font-display text-numeral-sm tabular text-text-primary">
+              {total}
+            </span>
+            <span className="type-overline">Artifacts</span>
+          </Donut>
+          <ul className="min-w-0 flex-1 space-y-1">
+            {FRESHNESS_ORDER.map((state) => (
+              <li key={state}>
+                <button
+                  type="button"
+                  onClick={() => onPickFreshness(state)}
+                  className="flex w-full items-center gap-2 rounded-sm px-1 py-0.5 text-left hover:bg-surface-hover"
+                >
+                  <span
+                    className="size-2.5 shrink-0 rounded-[3px]"
+                    style={{ backgroundColor: FRESHNESS_FILL[state] }}
+                  />
+                  <span className="min-w-0 flex-1 truncate text-body-sm text-text-secondary">
+                    {FRESHNESS[state].label}
+                  </span>
+                  <span className="w-6 text-right font-display text-body-md tabular font-semibold text-text-primary">
+                    {counts[state]}
+                  </span>
+                  <span className="w-9 text-right text-caption tabular text-text-subtle">
+                    {percentOf(counts[state])}%
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      {/* Evidence by owner */}
+      <div className="rounded-lg border border-border bg-surface-primary p-4">
+        <div className="mb-3 flex items-baseline justify-between">
+          <p className="type-overline">Evidence by owner</p>
+          <p className="text-body-sm tabular text-text-subtle">{total} items</p>
+        </div>
+        {owners.length === 0 ? (
+          <p className="text-body-sm text-text-subtle">No evidence yet.</p>
+        ) : (
+          <ul className="space-y-1.5">
+            {owners.map((owner) => (
+              <li
+                key={owner.key}
+                className="flex items-center gap-3 px-1 py-0.5"
+              >
+                {owner.unassigned ? (
+                  <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-surface-sunken text-[10px] font-bold text-text-subtle">
+                    ?
+                  </span>
+                ) : (
+                  <Avatar name={owner.name} size="sm" />
+                )}
+                <span
+                  className={cn(
+                    "w-24 shrink-0 truncate text-body-sm",
+                    owner.unassigned
+                      ? "text-status-warning-text"
+                      : "text-text-secondary",
+                  )}
+                >
+                  {owner.name}
+                </span>
+                <span className="h-[7px] flex-1 overflow-hidden rounded-full bg-surface-sunken">
+                  <span
+                    className="block h-full rounded-full"
+                    style={{
+                      width: `${(owner.count / ownerMax) * 100}%`,
+                      backgroundColor: owner.unassigned
+                        ? "rgb(var(--color-status-neutral-base))"
+                        : "rgb(var(--color-action-accent))",
+                    }}
+                  />
+                </span>
+                <span className="w-6 shrink-0 text-right font-display text-body-md tabular font-semibold text-text-primary">
+                  {owner.count}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {/* Coverage snapshot */}
+      <div className="rounded-lg border border-border bg-surface-primary p-4">
+        <p className="type-overline mb-3">Coverage snapshot</p>
+        <div className="flex justify-around">
+          <MiniRing
+            value={controlsWithEvidence}
+            total={controlsTotal}
+            color="rgb(var(--color-action-accent))"
+            label="Controls"
+          />
+          <MiniRing
+            value={fresh}
+            total={total}
+            color="rgb(var(--color-status-success-base))"
+            label="Fresh"
+          />
+          <MiniRing
+            value={owned}
+            total={total}
+            color="rgb(var(--color-status-pending-base))"
+            label="Owned"
+          />
+        </div>
+        <ul className="mt-4 border-t border-border pt-3">
+          {[
+            ["Controls with evidence", `${controlsWithEvidence} / ${controlsTotal}`],
+            ["Evidence with an owner", `${owned} / ${total}`],
+            ["Avg. evidence age", `${avgAge} days`],
+          ].map(([label, value]) => (
+            <li
+              key={label}
+              className="flex items-center justify-between py-1 text-body-sm"
+            >
+              <span className="text-text-secondary">{label}</span>
+              <span className="tabular font-semibold text-text-primary">
+                {value}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
 
 function formatDate(iso: string | null): string {
   if (!iso) return "—";
@@ -704,6 +982,7 @@ export function EvidencePage() {
   const [search, setSearch] = useState("");
   const [freshnessFilter, setFreshnessFilter] = useState<string[]>([]);
   const [typeFilter, setTypeFilter] = useState<string[]>([]);
+  const [reviewFilter, setReviewFilter] = useState<string[]>([]);
   const [selected, setSelected] = useState<Evidence | null>(null);
   const [adding, setAdding] = useState(false);
 
@@ -715,6 +994,11 @@ export function EvidencePage() {
     queryKey: ["evidence-vocabulary"],
     queryFn: () => evidenceApi.vocabulary(),
   });
+  // Only for the coverage-snapshot denominator (controls with evidence / total).
+  const controlsQuery = useQuery({
+    queryKey: ["controls"],
+    queryFn: () => controlsApi.list(),
+  });
 
   const items = useMemo(() => evidenceQuery.data ?? [], [evidenceQuery.data]);
 
@@ -725,20 +1009,20 @@ export function EvidencePage() {
         (freshnessFilter.length === 0 ||
           freshnessFilter.includes(item.freshness)) &&
         (typeFilter.length === 0 || typeFilter.includes(item.evidence_type)) &&
+        (reviewFilter.length === 0 ||
+          reviewFilter.includes(item.review_status)) &&
         (query === "" ||
           item.title.toLowerCase().includes(query) ||
           (item.source_label ?? "").toLowerCase().includes(query) ||
           item.control_codes.some((code) => code.toLowerCase().includes(query))),
     );
-  }, [items, search, freshnessFilter, typeFilter]);
+  }, [items, search, freshnessFilter, typeFilter, reviewFilter]);
 
-  const counts = useMemo(() => {
-    const by: Record<string, number> = {};
-    for (const item of items) by[item.freshness] = (by[item.freshness] ?? 0) + 1;
-    return by;
-  }, [items]);
 
   const activeFilters = [
+    ...reviewFilter.map(
+      (state) => `Review: ${REVIEW_META[state as ReviewStatus].label}`,
+    ),
     ...freshnessFilter.map(
       (state) => `Freshness: ${FRESHNESS[state as EvidenceFreshness].label}`,
     ),
@@ -750,6 +1034,7 @@ export function EvidencePage() {
     setSearch("");
     setFreshnessFilter([]);
     setTypeFilter([]);
+    setReviewFilter([]);
   }
 
   if (evidenceQuery.isError) {
@@ -789,23 +1074,11 @@ export function EvidencePage() {
       </div>
 
       {items.length > 0 ? (
-        <div className="mt-5 flex flex-wrap gap-2">
-          {FRESHNESS_ORDER.map((state) => (
-            <div
-              key={state}
-              className="flex items-center gap-2 rounded-md border border-border bg-surface-primary px-3 py-2"
-            >
-              <StatusPill
-                kind="inline"
-                status={FRESHNESS[state].family}
-                label={FRESHNESS[state].label}
-              />
-              <span className="tabular font-display text-numeral-sm text-text-primary">
-                {counts[state] ?? 0}
-              </span>
-            </div>
-          ))}
-        </div>
+        <EvidenceOverview
+          items={items}
+          controlsTotal={controlsQuery.data?.length ?? 0}
+          onPickFreshness={(state) => setFreshnessFilter([state])}
+        />
       ) : null}
 
       <div
@@ -819,6 +1092,15 @@ export function EvidencePage() {
           placeholder="Search by title, source or control…"
           aria-label="Search evidence"
           className="w-full sm:w-72"
+        />
+        <FilterFacet
+          label="Review"
+          options={REVIEW_ORDER.map((state) => ({
+            value: state,
+            label: REVIEW_META[state].label,
+          }))}
+          values={reviewFilter}
+          onChange={setReviewFilter}
         />
         <FilterFacet
           label="Freshness"
@@ -883,6 +1165,7 @@ export function EvidencePage() {
               <TH>Owner</TH>
               <TH>Renewal</TH>
               <TH>Freshness</TH>
+              <TH>Review</TH>
               <TH>
                 <span className="sr-only">Actions</span>
               </TH>
@@ -896,23 +1179,16 @@ export function EvidencePage() {
                 className="cursor-pointer"
               >
                 <TD>
-                  <div className="flex items-start gap-2.5">
-                    <Icon
-                      name={item.kind === "file" ? "doc" : "globe"}
-                      className="mt-0.5 size-4 shrink-0 text-text-subtle"
-                      aria-hidden
-                    />
-                    <span className="min-w-0">
-                      <span className="block text-body-md text-text-primary">
-                        {item.title}
-                      </span>
-                      {item.source_label ? (
-                        <span className="block truncate text-body-sm text-text-subtle">
-                          {item.source_label}
-                        </span>
-                      ) : null}
+                  <span className="block min-w-0">
+                    <span className="block text-body-md text-text-primary">
+                      {item.title}
                     </span>
-                  </div>
+                    {item.source_label ? (
+                      <span className="block truncate text-body-sm text-text-subtle">
+                        {item.source_label}
+                      </span>
+                    ) : null}
+                  </span>
                 </TD>
                 <TD>
                   <Badge variant="neutral">
@@ -921,13 +1197,20 @@ export function EvidencePage() {
                 </TD>
                 <TD>
                   <div className="flex flex-wrap gap-1">
-                    {item.control_codes.length ? (
-                      item.control_codes.map((code) => (
+                    {item.control_links.length ? (
+                      item.control_links.map((link) => (
                         <span
-                          key={code}
-                          className="rounded-xs bg-surface-sunken px-1.5 py-0.5 text-caption font-medium text-text-secondary"
+                          key={link.code}
+                          className="inline-flex flex-col rounded-xs bg-surface-sunken px-1.5 py-0.5 leading-tight"
                         >
-                          {code}
+                          <span className="text-caption font-medium text-text-secondary">
+                            {link.code}
+                          </span>
+                          {link.criteria.length ? (
+                            <span className="text-[10px] text-text-subtle">
+                              {link.criteria.join(" · ")}
+                            </span>
+                          ) : null}
                         </span>
                       ))
                     ) : (
@@ -938,9 +1221,23 @@ export function EvidencePage() {
                   </div>
                 </TD>
                 <TD>
-                  <span className="text-body-sm text-text-secondary">
-                    {item.owner_name ?? "Unassigned"}
-                  </span>
+                  {item.owner_name ? (
+                    <span className="flex items-center gap-2">
+                      <Avatar name={item.owner_name} size="sm" />
+                      <span className="truncate text-body-sm text-text-primary">
+                        {item.owner_name}
+                      </span>
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-2">
+                      <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-surface-sunken text-[10px] font-bold text-text-subtle">
+                        ?
+                      </span>
+                      <span className="text-body-sm text-text-subtle">
+                        Unassigned
+                      </span>
+                    </span>
+                  )}
                 </TD>
                 <TD>
                   <span className="tabular text-body-sm text-text-secondary">
@@ -952,6 +1249,13 @@ export function EvidencePage() {
                     kind="inline"
                     status={FRESHNESS[item.freshness].family}
                     label={FRESHNESS[item.freshness].label}
+                  />
+                </TD>
+                <TD>
+                  <StatusPill
+                    kind="inline"
+                    status={REVIEW_META[item.review_status].family}
+                    label={REVIEW_META[item.review_status].label}
                   />
                 </TD>
                 {/* Row actions. The cell stops propagation so opening the menu

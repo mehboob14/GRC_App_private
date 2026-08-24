@@ -33,6 +33,9 @@ dependencies = [
     # Multipart form parsing — evidence file upload is the only route that
     # needs it; FastAPI refuses to start a Form() route without it.
     "python-multipart>=0.0.9",
+    # Pure-Python .xlsx writer for the gap-assessment export. No native deps, so
+    # it installs the same on a laptop and in the container.
+    "openpyxl>=3.1",
 ]
 
 [project.optional-dependencies]
@@ -146,6 +149,14 @@ classmethod-decorators = ["sqlalchemy.orm.declared_attr", "declared_attr"]
 "src/verity/db/migrations/**" = [
     "INP001",  # alembic loads env.py by path, not as a package member
 ]
+"src/verity/db/migrations/versions/20260824_1000_control_guidance_rewrite.py" = [
+    # A content migration carries its content: the before/after prose for all 114
+    # controls is embedded so the migration stays a fixed snapshot rather than a
+    # read of a pack file that keeps moving. Wrapping the strings to 100 columns
+    # would only make the content harder to read in review.
+    "E501",
+    "ERA001",
+]
 
 [tool.ruff.format]
 quote-style = "double"
@@ -173,7 +184,7 @@ untyped_calls_exclude = ["redis"]
 
 [[tool.mypy.overrides]]
 # Ships no type information and has no stub package.
-module = ["pyotp.*"]
+module = ["pyotp.*", "openpyxl.*"]
 ignore_missing_imports = true
 
 # ---------------------------------------------------------------------------
@@ -356,6 +367,11 @@ ignore_imports = [
     "verity.modules.iam.service -> verity.modules.tenancy.service",
     "verity.modules.tenancy.service -> verity.modules.tenancy.repository",
     "verity.modules.tenancy.service -> verity.modules.tenancy.models",
+    # Coverage answers "controls with no evidence", which only the evidence
+    # module can know. It is asked through
+    # EvidenceService.control_ids_with_evidence, never by reading
+    # evidence_controls from here.
+    "verity.modules.evidence.service -> verity.modules.evidence.models",
 ]
 forbidden_modules = [
     "verity.modules.ai.repository", "verity.modules.ai.models",
@@ -399,6 +415,26 @@ forbidden_modules = [
 name = "documents reaches no other module's data"
 type = "forbidden"
 source_modules = ["verity.modules.documents"]
+# documents calls AuditService (rule 5), ComplianceControlService (control codes)
+# and ComplianceService (framework names) and IamService (owner names, rule 3).
+# What each does with its own repository/models is its private business.
+ignore_imports = [
+    "verity.modules.compliance.control_service -> verity.modules.compliance.models",
+    "verity.modules.compliance.control_service -> verity.modules.audit.service",
+    "verity.modules.compliance.control_service -> verity.modules.iam.service",
+    "verity.modules.compliance.control_service -> verity.modules.evidence.service",
+    "verity.modules.evidence.service -> verity.modules.evidence.models",
+    "verity.modules.compliance.service -> verity.modules.compliance.models",
+    "verity.modules.compliance.service -> verity.modules.compliance.repository",
+    "verity.modules.audit.service -> verity.modules.audit.repository",
+    "verity.modules.audit.service -> verity.modules.audit.models",
+    "verity.modules.iam.service -> verity.modules.iam.repository",
+    "verity.modules.iam.service -> verity.modules.iam.models",
+    "verity.modules.iam.service -> verity.modules.audit.service",
+    "verity.modules.iam.service -> verity.modules.tenancy.service",
+    "verity.modules.tenancy.service -> verity.modules.tenancy.repository",
+    "verity.modules.tenancy.service -> verity.modules.tenancy.models",
+]
 forbidden_modules = [
     "verity.modules.ai.repository", "verity.modules.ai.models",
     "verity.modules.approvals.repository", "verity.modules.approvals.models",
@@ -469,6 +505,14 @@ ignore_imports = [
     "verity.modules.audit.service -> verity.modules.audit.models",
     "verity.modules.tenancy.service -> verity.modules.tenancy.repository",
     "verity.modules.tenancy.service -> verity.modules.tenancy.models",
+    # A new tenant is given the control library at signup and at invite
+    # acceptance, through ControlService.instantiate_library. What the
+    # controls are remains compliance's business.
+    "verity.modules.compliance.control_service -> verity.modules.compliance.models",
+    # ControlService links a control to its evidence through EvidenceService
+    # (service -> service, rule 4). iam only ever reaches control_service; what
+    # it calls in turn is compliance's business, not iam touching evidence data.
+    "verity.modules.compliance.control_service -> verity.modules.evidence.service",
 ]
 forbidden_modules = [
     "verity.modules.ai.repository", "verity.modules.ai.models",

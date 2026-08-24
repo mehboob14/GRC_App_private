@@ -22,7 +22,7 @@ import { controlsApi, evidenceApi } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/auth-context";
 import { getAccessToken } from "@/lib/auth/session";
-import type { Evidence, EvidenceFreshness } from "@/lib/api/types";
+import type { Evidence, EvidenceFreshness, ReviewStatus } from "@/lib/api/types";
 import { LinkControlsDialog } from "./link-controls-dialog";
 import { EvidenceViewer } from "./evidence-viewer";
 import { SuggestedMappingsTeaser } from "@/features/compliance/components/suggested-mappings-teaser";
@@ -35,6 +35,15 @@ const FRESHNESS: Record<
   aging: { label: "Aging", family: "warning" },
   stale: { label: "Stale", family: "danger" },
   no_expiry: { label: "No expiry", family: "neutral" },
+};
+
+const REVIEW_META: Record<
+  ReviewStatus,
+  { label: string; family: "success" | "danger" | "pending" }
+> = {
+  pending: { label: "Pending review", family: "pending" },
+  approved: { label: "Approved", family: "success" },
+  rejected: { label: "Rejected", family: "danger" },
 };
 
 function formatDate(iso: string | null): string {
@@ -90,8 +99,9 @@ function LinkageSection({
   ] as const;
 
   return (
-    <div className="space-y-3">
-      <div className="rounded-lg border border-border bg-surface-primary p-5">
+    <div className="rounded-lg border border-border bg-surface-primary">
+      {/* Controls — the one linkage that works today */}
+      <div className="p-5">
         <div className="mb-3 flex items-center justify-between gap-3">
           <h2 className="font-display text-title-md text-text-primary">
             Controls
@@ -131,10 +141,13 @@ function LinkageSection({
         )}
       </div>
 
+      {/* The other objects evidence will support, in the same card so the shape
+          is visible — each explicit about arriving with its module rather than
+          rendering an empty list that reads as "none". */}
       {soon.map((row) => (
         <Tooltip key={row.label} content={row.note}>
-          <div className="flex items-center gap-3 rounded-lg border border-dashed border-border bg-surface-sunken px-5 py-4">
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-surface-hover text-text-faint">
+          <div className="flex items-center gap-3 border-t border-border px-5 py-3.5">
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-surface-sunken text-text-faint">
               <Icon name={row.icon} className="size-4" aria-hidden />
             </span>
             <span className="min-w-0 flex-1">
@@ -159,8 +172,11 @@ export function EvidenceDetailPage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const canManage = Boolean(principal?.permissions.includes("evidence:manage"));
+  const canReview = Boolean(principal?.permissions.includes("evidence:review"));
   const [linking, setLinking] = useState(false);
   const [previewing, setPreviewing] = useState(false);
+  const [rejecting, setRejecting] = useState(false);
+  const [rejectNote, setRejectNote] = useState("");
 
   const itemQuery = useQuery({
     queryKey: ["evidence", evidenceId],
@@ -185,6 +201,26 @@ export function EvidenceDetailPage() {
       await queryClient.invalidateQueries({ queryKey: ["audit"] });
       toast({ title: "Control unlinked", tone: "neutral" });
     },
+  });
+
+  const reviewMutation = useMutation({
+    mutationFn: (body: { decision: "approved" | "rejected"; note?: string }) =>
+      evidenceApi.review(evidenceId, body),
+    onSuccess: async (_data, body) => {
+      await queryClient.invalidateQueries({ queryKey: ["evidence"] });
+      await queryClient.invalidateQueries({ queryKey: ["audit"] });
+      setRejecting(false);
+      setRejectNote("");
+      toast({
+        title: body.decision === "approved" ? "Evidence approved" : "Evidence rejected",
+        tone: body.decision === "approved" ? "success" : "neutral",
+      });
+    },
+    onError: (error: unknown) =>
+      toast({
+        title: error instanceof ApiError ? error.message : "Couldn't record the review.",
+        tone: "danger",
+      }),
   });
 
   const meta = useMemo(
@@ -248,19 +284,25 @@ export function EvidenceDetailPage() {
 
         <div className="flex shrink-0 items-center gap-2">
           {item.kind === "file" ? (
-            <Button
-              variant="secondary"
-              onClick={() =>
-                void downloadEvidence(item).catch(() =>
-                  toast({ title: "Couldn't download the file.", tone: "danger" }),
-                )
-              }
-            >
-              <Icon name="doc" className="size-4" />
-              Download
-            </Button>
+            <>
+              <Button onClick={() => setPreviewing(true)}>
+                <Icon name="search" className="size-4" />
+                View evidence
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() =>
+                  void downloadEvidence(item).catch(() =>
+                    toast({ title: "Couldn't download the file.", tone: "danger" }),
+                  )
+                }
+              >
+                <Icon name="doc" className="size-4" />
+                Download
+              </Button>
+            </>
           ) : item.link_url ? (
-            <Button variant="secondary" asChild>
+            <Button asChild>
               <a href={item.link_url} target="_blank" rel="noopener noreferrer">
                 <Icon name="globe" className="size-4" />
                 Open link
@@ -272,46 +314,77 @@ export function EvidenceDetailPage() {
 
       <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_20rem]">
         <div className="min-w-0 space-y-4">
-          {/* A compact card — the artefact itself opens in a dialog, so the
-              record stays readable and the file is only fetched on request. */}
-          <section className="rounded-lg border border-border bg-surface-primary p-5">
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-surface-sunken text-text-subtle">
-                <Icon
-                  name={item.kind === "file" ? "doc" : "globe"}
-                  className="size-5"
-                  aria-hidden
-                />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-body-md font-semibold text-text-primary">
-                  {item.kind === "file" ? (item.filename ?? item.title) : "External link"}
-                </p>
-                <p className="truncate text-caption text-text-subtle">
-                  {item.kind === "file"
-                    ? `${item.content_type ?? "file"} · ${formatBytes(item.size_bytes)}`
-                    : item.link_url}
-                </p>
-              </div>
-              <Button className="shrink-0" onClick={() => setPreviewing(true)}>
-                <Icon name="doc" className="size-4" />
-                View evidence
-              </Button>
-            </div>
-          </section>
-
+          {/* Controls lead: what this item actually supports is the point of the
+              record. The artefact itself opens from the header, on request. */}
           <LinkageSection
             item={item}
             canManage={canManage}
             onLink={() => setLinking(true)}
           />
 
-          {/* Below the real linkage, so what this item actually supports is
-              read first and the preview reads as an addition. */}
           <SuggestedMappingsTeaser />
         </div>
 
         <aside className="space-y-4">
+          {/* Review — the four-eyes step. Evidence is a claim until someone with
+              evidence:review signs off. */}
+          <section className="rounded-lg border border-border bg-surface-primary p-5">
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <h2 className="font-display text-title-md text-text-primary">
+                Review
+              </h2>
+              <StatusPill
+                status={REVIEW_META[item.review_status].family}
+                label={REVIEW_META[item.review_status].label}
+              />
+            </div>
+            {item.reviewed_by_name ? (
+              <p className="text-body-sm text-text-secondary">
+                {item.review_status === "approved" ? "Approved" : "Rejected"} by{" "}
+                <span className="font-semibold text-text-primary">
+                  {item.reviewed_by_name}
+                </span>
+                {item.reviewed_at ? (
+                  <span className="text-text-subtle">
+                    {" "}
+                    · {formatDate(item.reviewed_at.slice(0, 10))}
+                  </span>
+                ) : null}
+              </p>
+            ) : (
+              <p className="text-body-sm text-text-subtle">
+                Not yet reviewed.
+              </p>
+            )}
+            {item.review_note ? (
+              <p className="mt-2 rounded-md border border-border bg-surface-sunken px-3 py-2 text-body-sm text-text-secondary">
+                “{item.review_note}”
+              </p>
+            ) : null}
+            {canReview ? (
+              <div className="mt-3 flex gap-2">
+                <Button
+                  size="sm"
+                  disabled={
+                    reviewMutation.isPending || item.review_status === "approved"
+                  }
+                  onClick={() => reviewMutation.mutate({ decision: "approved" })}
+                >
+                  <Icon name="check" className="size-4" />
+                  Approve
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  disabled={reviewMutation.isPending}
+                  onClick={() => setRejecting(true)}
+                >
+                  Reject
+                </Button>
+              </div>
+            ) : null}
+          </section>
+
           <section className="rounded-lg border border-border bg-surface-primary p-5">
             <h2 className="mb-1 font-display text-title-md text-text-primary">
               Details
@@ -323,44 +396,28 @@ export function EvidenceDetailPage() {
                 ["Collected", formatDate(item.collected_at)],
                 ["Renewal", formatDate(item.renewal_date)],
                 ["Type", item.evidence_type.replace(/_/g, " ")],
+                ...(item.kind === "file"
+                  ? ([
+                      ["File", item.filename ?? "—"],
+                      [
+                        "Size",
+                        `${item.content_type ?? "file"} · ${formatBytes(item.size_bytes)}`,
+                      ],
+                    ] as [string, string][])
+                  : ([["Link", item.link_url ?? "—"]] as [string, string][])),
               ].map(([label, value]) => (
                 <div
                   key={label}
                   className="flex items-baseline justify-between gap-3 border-b border-border py-2.5 last:border-0"
                 >
                   <dt className="shrink-0 text-body-sm text-text-subtle">{label}</dt>
-                  <dd className="min-w-0 text-right text-body-sm font-semibold text-text-primary">
+                  <dd className="min-w-0 break-all text-right text-body-sm font-semibold text-text-primary">
                     {value}
                   </dd>
                 </div>
               ))}
             </dl>
           </section>
-
-          {item.kind === "file" ? (
-            <section className="rounded-lg border border-border bg-surface-primary p-5">
-              <h2 className="mb-3 font-display text-title-md text-text-primary">
-                File
-              </h2>
-              <dl className="space-y-2 text-body-sm">
-                <div>
-                  <dt className="text-text-subtle">Filename</dt>
-                  <dd className="break-all text-text-primary">{item.filename}</dd>
-                </div>
-                <div>
-                  <dt className="text-text-subtle">Type · size</dt>
-                  <dd className="text-text-primary">
-                    {item.content_type} · {formatBytes(item.size_bytes)}
-                  </dd>
-                </div>
-              </dl>
-              <p className="mt-3 flex items-start gap-2 border-t border-border pt-3 text-caption text-text-subtle">
-                <Icon name="check" className="mt-0.5 size-3.5 shrink-0 text-status-success-text" />
-                Integrity hash recorded at upload, so a later copy can be proven
-                identical to this one.
-              </p>
-            </section>
-          ) : null}
         </aside>
       </div>
 
@@ -413,6 +470,45 @@ export function EvidenceDetailPage() {
         }}
         onUnlink={(id) => unlinkMutation.mutate(id)}
       />
+
+      <Dialog open={rejecting} onOpenChange={setRejecting}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reject this evidence</DialogTitle>
+            <DialogDescription>
+              Say what needs fixing. The owner sees this reason, and it is
+              recorded on the audit trail.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="px-6">
+            <textarea
+              value={rejectNote}
+              onChange={(e) => setRejectNote(e.target.value)}
+              rows={3}
+              autoFocus
+              placeholder="e.g. This screenshot is from staging — attach the production console."
+              className="w-full rounded-sm border border-border bg-surface-primary px-3 py-2 text-body-md text-text-primary placeholder:text-text-faint focus:border-action-accent focus:outline-none"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setRejecting(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={reviewMutation.isPending || rejectNote.trim() === ""}
+              onClick={() =>
+                reviewMutation.mutate({
+                  decision: "rejected",
+                  note: rejectNote.trim(),
+                })
+              }
+            >
+              Reject evidence
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

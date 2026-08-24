@@ -49,7 +49,9 @@ def downgrade() -> None:
     # NOT NULL cannot come back while rows hold NULL. 'Preventive' is the modal
     # value of the classification this migration removed — restoring it is
     # lossy by nature, which is the point: the data was not real.
-    op.execute("UPDATE control_templates SET control_type = 'Preventive' WHERE control_type IS NULL")
+    op.execute(
+        "UPDATE control_templates SET control_type = 'Preventive' WHERE control_type IS NULL"
+    )
     op.execute("ALTER TABLE controls NO FORCE ROW LEVEL SECURITY")
     op.execute("UPDATE controls SET control_type = 'Preventive' WHERE control_type IS NULL")
     op.execute("ALTER TABLE controls FORCE ROW LEVEL SECURITY")

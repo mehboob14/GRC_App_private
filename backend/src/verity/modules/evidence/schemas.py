@@ -7,6 +7,8 @@ from datetime import date
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from verity.modules.tenancy.schemas import UtcDateTime
+
 
 class _Request(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -14,6 +16,13 @@ class _Request(BaseModel):
 
 class _Response(BaseModel):
     model_config = ConfigDict(from_attributes=True)
+
+
+class EvidenceControlLinkOut(_Response):
+    """A linked control: its platform code and the criteria it satisfies."""
+
+    code: str
+    criteria: list[str]
 
 
 class EvidenceOut(_Response):
@@ -37,8 +46,20 @@ class EvidenceOut(_Response):
     # Rule 9: the connector that produced this item. Null for hand-uploaded
     # evidence, which is all of it until connectors land.
     source: str | None
+    # Review / approval — pending until a reviewer signs off.
+    review_status: str
+    reviewed_by_membership_id: uuid.UUID | None
+    reviewed_by_name: str | None
+    reviewed_at: UtcDateTime | None
+    review_note: str | None
     control_ids: list[uuid.UUID]
     control_codes: list[str]
+    control_links: list[EvidenceControlLinkOut]
+
+
+class EvidenceReviewRequest(_Request):
+    decision: str = Field(pattern="^(approved|rejected)$")
+    note: str | None = Field(default=None, max_length=2000)
 
 
 class EvidenceLinkCreate(_Request):

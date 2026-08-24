@@ -8,6 +8,7 @@ import {
   type NavItem,
 } from "@/components/layout/nav-config";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { DARK_MODE_ENABLED } from "@/lib/theme";
 
 const NAV_ROW =
   "flex h-8 w-full items-center gap-2.5 rounded-sm px-2.5 text-left transition-colors duration-80 ease-state";
@@ -145,7 +146,7 @@ export function Sidebar() {
               </span>
             </span>
           </div>
-          <ThemeToggle />
+          {DARK_MODE_ENABLED ? <ThemeToggle /> : null}
         </div>
       </div>
     </aside>

@@ -28,6 +28,7 @@ from verity.modules.audit.router import router as audit_router
 from verity.modules.compliance.control_router import controls_router
 from verity.modules.compliance.engagement_router import engagement_router
 from verity.modules.compliance.router import frameworks_router, templates_router
+from verity.modules.documents.router import documents_router
 from verity.modules.evidence.router import evidence_router
 from verity.modules.iam.router import (
     auth_router,
@@ -125,6 +126,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(controls_router, prefix=API_PREFIX)
     app.include_router(engagement_router, prefix=API_PREFIX)
     app.include_router(evidence_router, prefix=API_PREFIX)
+    app.include_router(documents_router, prefix=API_PREFIX)
     app.include_router(auth_router, prefix=API_PREFIX)
     app.include_router(members_router, prefix=API_PREFIX)
     app.include_router(groups_router, prefix=API_PREFIX)

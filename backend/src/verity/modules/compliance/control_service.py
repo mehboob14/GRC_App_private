@@ -34,15 +34,25 @@ _CONTROL_SNAPSHOT: Final = (
     "id",
     "code",
     "name",
+    "description",
     "category",
+    "sub_category",
     "control_type",
     "control_sub_type",
     "status",
     "owner_membership_id",
+    "implementation_guidance",
     "origin",
     "disabled_at",
     "disabled_reason",
 )
+"""Every field an edit can change, because the update path only writes an audit
+row when this snapshot differs before and after.
+
+``description`` and ``implementation_guidance`` were missing, so an edit that
+touched only those two wrote nothing at all — and implementation guidance is
+exactly the field an auditor asks "who changed this, and when" about (rule 5).
+"""
 
 
 @dataclass(frozen=True, slots=True)
@@ -59,6 +69,7 @@ class ControlView:
     description: str
     implementation_guidance: str | None
     category: str
+    sub_category: str | None
     control_type: str | None
     control_sub_type: str | None
     status: str
@@ -286,6 +297,7 @@ class ControlService:
             description=control.description,
             implementation_guidance=control.implementation_guidance,
             category=control.category,
+            sub_category=control.sub_category,
             control_type=control.control_type,
             control_sub_type=control.control_sub_type,
             status=control.status,
@@ -299,6 +311,51 @@ class ControlService:
             template_id=control.template_id,
             requirement_keys=keys.get(control.id, []),
         )
+
+    async def _next_custom_code(self, session: AsyncSession, tenant_id: uuid.UUID) -> str:
+        """The next platform code for a tenant-authored control: ``IC-NN``
+        (Internal Control), one past the highest existing IC-prefixed code. IC is
+        its own namespace, clear of the shipped library's category codes
+        (BC-01, GOV-01, IAM-01, …) so a future library update can never collide
+        with a tenant's custom control.
+
+        ponytail: max()+1 races two concurrent creates; the
+        uq_controls__tenant_code unique constraint is the backstop (the loser
+        gets a Conflict and retries). Add a sequence table only if that ever
+        actually bites.
+        """
+        rows = await session.execute(
+            select(Control.code).where(
+                Control.tenant_id == tenant_id,
+                Control.code.like("IC-%"),
+            )
+        )
+        highest = 0
+        for (code,) in rows:
+            suffix = code.removeprefix("IC-")
+            if suffix.isdigit():
+                highest = max(highest, int(suffix))
+        return f"IC-{highest + 1:02d}"
+
+    async def _evidence_ids(
+        self, session: AsyncSession, tenant_id: uuid.UUID, control_id: uuid.UUID
+    ) -> list[uuid.UUID]:
+        # Evidence links live in the evidence module; reach them via its service,
+        # never its table (rule 4).
+        from verity.modules.evidence.service import evidence_service  # noqa: PLC0415
+
+        return await evidence_service.evidence_ids_for_control(session, tenant_id, control_id)
+
+    async def _set_evidence(
+        self,
+        session: AsyncSession,
+        tenant_id: uuid.UUID,
+        control_id: uuid.UUID,
+        evidence_ids: list[uuid.UUID],
+    ) -> None:
+        from verity.modules.evidence.service import evidence_service  # noqa: PLC0415
+
+        await evidence_service.set_control_evidence(session, tenant_id, control_id, evidence_ids)
 
     async def _load(
         self, session: AsyncSession, tenant_id: uuid.UUID, control_id: uuid.UUID
@@ -316,31 +373,35 @@ class ControlService:
         *,
         tenant_id: uuid.UUID,
         actor: Actor,
-        code: str,
+        code: str | None = None,
         name: str,
         description: str,
         category: str,
+        sub_category: str | None = None,
         control_type: str | None = None,
         control_sub_type: str | None = None,
         implementation_guidance: str | None = None,
         owner_membership_id: uuid.UUID | None = None,
         requirement_ids: list[uuid.UUID] | None = None,
+        evidence_ids: list[uuid.UUID] | None = None,
     ) -> ControlView:
+        resolved_code = (code or "").strip() or await self._next_custom_code(session, tenant_id)
         clash = await session.execute(
-            select(Control.id).where(Control.tenant_id == tenant_id, Control.code == code.strip())
+            select(Control.id).where(Control.tenant_id == tenant_id, Control.code == resolved_code)
         )
         if clash.first() is not None:
-            raise Conflict(detail=f"a control with code {code!r} already exists")
+            raise Conflict(detail=f"a control with code {resolved_code!r} already exists")
 
         control = Control(
             id=uuid7(),
             tenant_id=tenant_id,
             template_id=None,
-            code=code.strip(),
+            code=resolved_code,
             name=name.strip(),
             description=description.strip(),
             implementation_guidance=implementation_guidance,
             category=category,
+            sub_category=sub_category,
             control_type=control_type,
             control_sub_type=control_sub_type,
             status="not_started",
@@ -351,6 +412,10 @@ class ControlService:
         await session.flush([control])
 
         await self._map_requirements(session, tenant_id, control.id, requirement_ids or [])
+        after = AuditService.snapshot(control, fields=_CONTROL_SNAPSHOT)
+        if evidence_ids is not None:
+            await self._set_evidence(session, tenant_id, control.id, evidence_ids)
+            after = {**after, "evidence_ids": [str(e) for e in evidence_ids]}
         await self._audit.record(
             session,
             action="create",
@@ -359,7 +424,7 @@ class ControlService:
             actor=actor,
             tenant_id=tenant_id,
             before=None,
-            after=AuditService.snapshot(control, fields=_CONTROL_SNAPSHOT),
+            after=after,
         )
         return await self.get_control(session, tenant_id=tenant_id, control_id=control.id)
 
@@ -374,23 +439,31 @@ class ControlService:
         description: str | None = None,
         implementation_guidance: str | None = None,
         category: str | None = None,
+        sub_category: str | None = None,
         control_type: str | None = None,
         control_sub_type: str | None = None,
         status: str | None = None,
         owner_membership_id: uuid.UUID | None = None,
         clear_owner: bool = False,
         requirement_ids: list[uuid.UUID] | None = None,
+        evidence_ids: list[uuid.UUID] | None = None,
     ) -> ControlView:
         control = await self._load(session, tenant_id, control_id)
         if control.disabled_at is not None:
             raise InvalidInput(detail="a disabled control cannot be edited; re-enable it first")
 
         before = AuditService.snapshot(control, fields=_CONTROL_SNAPSHOT)
+        evidence_before = (
+            await self._evidence_ids(session, tenant_id, control.id)
+            if evidence_ids is not None
+            else None
+        )
         for attribute, value in (
             ("name", name),
             ("description", description),
             ("implementation_guidance", implementation_guidance),
             ("category", category),
+            ("sub_category", sub_category),
             ("control_type", control_type),
             ("control_sub_type", control_sub_type),
             ("status", status),
@@ -408,7 +481,13 @@ class ControlService:
             )
 
         after = AuditService.snapshot(control, fields=_CONTROL_SNAPSHOT)
-        if before != after or requirement_ids is not None:
+        evidence_changed = False
+        if evidence_ids is not None:
+            await self._set_evidence(session, tenant_id, control.id, evidence_ids)
+            evidence_changed = set(evidence_before or []) != set(evidence_ids)
+            before = {**before, "evidence_ids": [str(e) for e in (evidence_before or [])]}
+            after = {**after, "evidence_ids": [str(e) for e in evidence_ids]}
+        if before != after or requirement_ids is not None or evidence_changed:
             await self._audit.record(
                 session,
                 action="update",

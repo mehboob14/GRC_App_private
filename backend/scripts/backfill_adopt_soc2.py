@@ -18,18 +18,18 @@ import uuid
 from sqlalchemy import select
 
 from verity.core.db import dispose_engine, provider_session_scope, session_scope
-from verity.modules.audit.service import System
-from verity.modules.compliance.control_service import control_service
-from verity.modules.tenancy.models import Tenant
 
 # Register every module's models on Base.metadata before the mapper resolves
 # cross-module FKs (controls.owner_membership_id -> tenant_memberships, etc.).
 # Same set the Alembic env imports; a plain script skips the app's router graph
 # that would otherwise pull them in.
-from verity.modules.audit import models as _audit_models  # noqa: E402, F401
-from verity.modules.compliance import models as _compliance_models  # noqa: E402, F401
-from verity.modules.iam import models as _iam_models  # noqa: E402, F401
-from verity.modules.tenancy import models as _tenancy_models  # noqa: E402, F401
+from verity.modules.audit import models as _audit_models  # noqa: F401
+from verity.modules.audit.service import System
+from verity.modules.compliance import models as _compliance_models  # noqa: F401
+from verity.modules.compliance.control_service import control_service
+from verity.modules.iam import models as _iam_models  # noqa: F401
+from verity.modules.tenancy import models as _tenancy_models  # noqa: F401
+from verity.modules.tenancy.models import Tenant
 
 
 async def _tenant_ids() -> list[uuid.UUID]:
@@ -49,10 +49,7 @@ async def main() -> None:
                 session, tenant_id=tenant_id, actor=System()
             )
         created_total += result.created
-        print(
-            f"  {tenant_id}: +{result.created} created, "
-            f"{result.already_present} already present"
-        )
+        print(f"  {tenant_id}: +{result.created} created, {result.already_present} already present")
     print(f"done — {created_total} control(s) created across {len(tenant_ids)} tenant(s)")
     await dispose_engine()
 

@@ -2,10 +2,14 @@ import { NavLink, Outlet } from "react-router-dom";
 import { cn } from "@/lib/cn";
 
 /** Scope is a property of the framework you are being audited against, so it
- *  lives inside Frameworks rather than competing with it in the sidebar. */
+ *  lives inside Frameworks rather than competing with it in the sidebar.
+ *
+ *  Scope and Coverage were one tab, which put two different jobs on one screen:
+ *  Scope is a form you fill in once, Coverage is a report you come back to. */
 const TABS = [
-  { to: "/frameworks", label: "Frameworks", end: true },
-  { to: "/frameworks/scope", label: "Scope & coverage", end: false },
+  { to: "/frameworks/dashboard", label: "Dashboard", end: false },
+  { to: "/frameworks/list", label: "Frameworks", end: false },
+  { to: "/frameworks/scope", label: "Scope", end: false },
 ] as const;
 
 export function FrameworksLayout() {
