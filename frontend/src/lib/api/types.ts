@@ -34,6 +34,10 @@ export const PERMISSION_KEYS = [
   "documents:manage",
   "documents:approve",
   "documents:publish",
+  "tasks:read",
+  "tasks:manage",
+  "tasks:assign",
+  "tasks:approve",
 ] as const;
 
 export type PermissionKey = (typeof PERMISSION_KEYS)[number];
@@ -754,4 +758,31 @@ export type EvidenceUpdate = {
   collected_at?: string;
   renewal_date?: string | null;
   control_ids?: string[];
+};
+
+/** A suggested control mapping for a piece of evidence — a draft a person approves. */
+export type MappingSuggestion = {
+  control_id: string;
+  code: string;
+  name: string;
+  criteria: string[];
+  coverage: "full" | "partial";
+  confidence: number;
+  rationale: string;
+};
+
+export type MappingSuggestions = {
+  /** "ai" when a model produced these, "heuristic" for the offline matcher. */
+  source: "ai" | "heuristic";
+  suggestions: MappingSuggestion[];
+};
+
+/** A task this evidence is linked to — the remediation or work it supports. */
+export type LinkedTask = {
+  link_id: string;
+  task_id: string;
+  code: string;
+  title: string;
+  status: string;
+  task_kind: string;
 };

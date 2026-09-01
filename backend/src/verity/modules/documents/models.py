@@ -22,6 +22,7 @@ from datetime import date, datetime
 from typing import Final
 
 from sqlalchemy import CheckConstraint, ForeignKey, Index, UniqueConstraint, text
+from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql.elements import conv
 
@@ -57,6 +58,12 @@ CONTENT_FORMATS: Final[tuple[str, ...]] = ("html", "pdf", "docx")
 CHANGE_TYPES: Final[tuple[str, ...]] = ("major", "minor", "patch")
 
 APPROVAL_STATUSES: Final[tuple[str, ...]] = ("not_started", "pending", "approved", "rejected")
+
+# Acknowledgement campaigns: a targeted read-and-sign against a document.
+CAMPAIGN_STATUSES: Final[tuple[str, ...]] = ("active", "closed")
+RECIPIENT_KINDS: Final[tuple[str, ...]] = ("reviewer", "approver")
+RECIPIENT_SOURCES: Final[tuple[str, ...]] = ("user", "role", "group")
+RECIPIENT_STATUSES: Final[tuple[str, ...]] = ("pending", "acknowledged")
 
 TYPE_PREFIX: Final[dict[str, str]] = {
     "policy": "POL",
@@ -233,3 +240,75 @@ class DocumentAcknowledgement(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
         ),
         tenant_index("document_acknowledgements", "document_id"),
     )
+
+
+class DocumentAckCampaign(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
+    """A targeted acknowledgement campaign against a document: the owner asks a
+    named set of people to read and sign, and tracks who has and who hasn't."""
+
+    __tablename__ = "document_ack_campaigns"
+
+    document_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("documents.id", ondelete="CASCADE"))
+    title: Mapped[str]
+    message: Mapped[str | None] = mapped_column(default=None)
+    created_by_membership_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("tenant_memberships.id", ondelete="SET NULL"), default=None
+    )
+    status: Mapped[str] = mapped_column(default="active", server_default=text("'active'"))
+    due_at: Mapped[datetime | None] = mapped_column(default=None)
+    closed_at: Mapped[datetime | None] = mapped_column(default=None)
+
+    __table_args__ = (
+        status_check("document_ack_campaigns", "status", CAMPAIGN_STATUSES),
+        tenant_index("document_ack_campaigns", "document_id"),
+    )
+
+
+class DocumentAckCampaignRecipient(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
+    """One person asked to acknowledge, their role, and whether they have. Deduped
+    per campaign even when added via several sources (a role and a group)."""
+
+    __tablename__ = "document_ack_campaign_recipients"
+
+    campaign_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("document_ack_campaigns.id", ondelete="CASCADE")
+    )
+    membership_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenant_memberships.id", ondelete="CASCADE")
+    )
+    kind: Mapped[str] = mapped_column(default="reviewer", server_default=text("'reviewer'"))
+    source: Mapped[str] = mapped_column(default="user", server_default=text("'user'"))
+    status: Mapped[str] = mapped_column(default="pending", server_default=text("'pending'"))
+    acknowledged_at: Mapped[datetime | None] = mapped_column(default=None)
+    ack_comment: Mapped[str | None] = mapped_column(default=None)
+
+    __table_args__ = (
+        status_check("document_ack_campaign_recipients", "kind", RECIPIENT_KINDS),
+        status_check("document_ack_campaign_recipients", "source", RECIPIENT_SOURCES),
+        status_check("document_ack_campaign_recipients", "status", RECIPIENT_STATUSES),
+        UniqueConstraint(
+            "tenant_id", "campaign_id", "membership_id",
+            name="uq_document_ack_campaign_recipients__member",
+        ),
+        tenant_index("document_ack_campaign_recipients", "membership_id"),
+    )
+
+
+class DocumentAckCampaignComment(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
+    """Discussion on a campaign. Flat, with an optional set of @-mentioned members
+    the author tagged (notified separately)."""
+
+    __tablename__ = "document_ack_campaign_comments"
+
+    campaign_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("document_ack_campaigns.id", ondelete="CASCADE")
+    )
+    author_membership_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("tenant_memberships.id", ondelete="SET NULL"), default=None
+    )
+    body: Mapped[str]
+    mentioned_ids: Mapped[list[str]] = mapped_column(
+        postgresql.JSONB, default=list, server_default=text("'[]'::jsonb")
+    )
+
+    __table_args__ = (tenant_index("document_ack_campaign_comments", "campaign_id"),)

@@ -1016,6 +1016,10 @@ class IamAuthService:
         """
         email_n = normalize_email(email)
         outcome: AuthOutcome | None = None
+        # The specific refusal reason, surfaced to the caller ONLY in a
+        # non-deployed environment. Production keeps the uniform message so login
+        # cannot be turned into an oracle for which emails exist.
+        refused: str | None = None
         async with provider_session_scope() as session:
             user = await self._users.get_by_email(session, email_n)
             credentials = (
@@ -1032,16 +1036,19 @@ class IamAuthService:
                     outcome="failed_password",
                     reason="unknown_email",
                 )
+                refused = "no account exists for that email"
             elif not verification.ok:
                 actor, stream = await self._attempt_attribution(session, user)
                 await self._record_attempt(
                     session, actor=actor, tenant_id=stream, outcome="failed_password"
                 )
+                refused = "the password is incorrect"
             elif user.status != USER_STATUS_ACTIVE:
                 actor, stream = await self._attempt_attribution(session, user)
                 await self._record_attempt(
                     session, actor=actor, tenant_id=stream, outcome="user_disabled"
                 )
+                refused = "this account is disabled"
             elif user.email_verified_at is None:
                 # No session until the work email is confirmed. The link was mailed
                 # at signup; a lost one is re-sent via the explicit resend, not here
@@ -1064,6 +1071,7 @@ class IamAuthService:
                         tenant_id=None,
                         outcome="no_active_membership",
                     )
+                    refused = "this account has no active workspace membership"
                 elif len(memberships) > 1:
                     issued = issue_token(subject=user.id, plane="tenant", typ="selection")
                     outcome = SelectionIssued(
@@ -1076,7 +1084,13 @@ class IamAuthService:
                         session, memberships[0], user, credentials
                     )
         if outcome is None:
-            raise AuthenticationRequired(detail=_UNIFORM_LOGIN_DETAIL)
+            # Uniform in production (no email enumeration); specific in dev, where a
+            # developer needs to know whether it was the email, the password, the
+            # account state, or the membership.
+            message = "Incorrect email or password."
+            if refused is not None and not get_settings().is_deployed:
+                message = f"Sign-in refused: {refused} (this detail is shown in development only)."
+            raise AuthenticationRequired(message, detail=_UNIFORM_LOGIN_DETAIL)
         return outcome
 
     # -- MFA -----------------------------------------------------------------------

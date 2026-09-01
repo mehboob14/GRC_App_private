@@ -29,7 +29,19 @@ import { EvidencePage } from "@/features/evidence/components/evidence-page";
 import { EvidenceDetailPage } from "@/features/evidence/components/evidence-detail-page";
 import { DocumentsRegisterPage } from "@/features/documents/components/documents-register-page";
 import { DocumentDetailPage } from "@/features/documents/components/document-detail-page";
+import { CampaignPage } from "@/features/documents/components/campaign-page";
 import { DocumentEditorPage } from "@/features/documents/components/document-editor-page";
+import { TasksLayout } from "@/features/tasks/components/tasks-layout";
+import { TasksRegisterPage } from "@/features/tasks/components/tasks-register-page";
+import { TasksOverviewPage } from "@/features/tasks/components/tasks-overview-page";
+import { TasksSettingsPage } from "@/features/tasks/components/tasks-settings-page";
+import { TaskDetailPage } from "@/features/tasks/components/task-detail-page";
+import { AssetsLayout } from "@/features/assets/components/assets-layout";
+import { AssetsRegisterPage } from "@/features/assets/components/assets-register-page";
+import { AssetsOverviewPage } from "@/features/assets/components/assets-overview-page";
+import { AssetDetailPage } from "@/features/assets/components/asset-detail-page";
+import { AssetFormPage } from "@/features/assets/components/asset-form-page";
+import { AssetsImportPage } from "@/features/assets/components/assets-import-page";
 import { ScopePage } from "@/features/compliance/components/scope-page";
 import { CoveragePage } from "@/features/compliance/components/coverage-page";
 import { ComplianceDashboardPage } from "@/features/compliance/components/compliance-dashboard-page";
@@ -94,7 +106,23 @@ export function AppRoutes() {
           <Route path="evidence" element={<EvidencePage />} />
           <Route path="evidence/:evidenceId" element={<EvidenceDetailPage />} />
           <Route path="documents" element={<DocumentsRegisterPage />} />
+          <Route path="documents/campaigns/:campaignId" element={<CampaignPage />} />
           <Route path="documents/:documentId" element={<DocumentDetailPage />} />
+          <Route path="tasks" element={<TasksLayout />}>
+            <Route index element={<TasksRegisterPage />} />
+            <Route path="overview" element={<TasksOverviewPage />} />
+            <Route path="automations" element={<Navigate to="/tasks/settings" replace />} />
+            <Route path="settings" element={<TasksSettingsPage />} />
+          </Route>
+          <Route path="tasks/:taskId" element={<TaskDetailPage />} />
+          <Route path="assets" element={<AssetsLayout />}>
+            <Route index element={<AssetsRegisterPage />} />
+            <Route path="overview" element={<AssetsOverviewPage />} />
+          </Route>
+          <Route path="assets/import" element={<AssetsImportPage />} />
+          <Route path="assets/new" element={<AssetFormPage />} />
+          <Route path="assets/:assetId" element={<AssetDetailPage />} />
+          <Route path="assets/:assetId/edit" element={<AssetFormPage />} />
           <Route
             path="scope"
             element={<Navigate to="/frameworks/scope" replace />}

@@ -48,6 +48,7 @@ export { PasswordField } from "./password-field";
 export { RadioGroup, RadioGroupItem } from "./radio-group";
 export { SearchInput } from "./search-input";
 export { SearchableSelect, type SearchableOption } from "./searchable-select";
+export { PersonSelect, PeopleSelect, type Person } from "./person-select";
 export {
   Select,
   SelectContent,

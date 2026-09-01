@@ -29,7 +29,7 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { id: "get-started", label: "Get Started", icon: "gauge", to: "/quick-start" },
       { id: "dashboard", label: "Dashboard", icon: "grid", to: "/dashboard" },
-      { id: "tasks", label: "Tasks", icon: "audit", comingSoon: true },
+      { id: "tasks", label: "Tasks", icon: "list", to: "/tasks" },
     ],
   },
   {
@@ -48,7 +48,7 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { id: "risks", label: "Risks", icon: "risk", comingSoon: true },
       { id: "vendors", label: "Vendors", icon: "vendor", comingSoon: true },
-      { id: "assets", label: "Assets", icon: "box", comingSoon: true },
+      { id: "assets", label: "Assets", icon: "box", to: "/assets" },
       { id: "vulnerabilities", label: "Vulnerabilities", icon: "bug", comingSoon: true },
     ],
   },

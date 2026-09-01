@@ -13,9 +13,9 @@ import uuid
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime
-from typing import Final
+from typing import TYPE_CHECKING, Any, Final
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from verity.core.errors import Conflict, InvalidInput, NotFound
@@ -25,6 +25,9 @@ from verity.modules.documents.models import (
     DOC_TYPES,
     TYPE_PREFIX,
     Document,
+    DocumentAckCampaign,
+    DocumentAckCampaignComment,
+    DocumentAckCampaignRecipient,
     DocumentAcknowledgement,
     DocumentApproval,
     DocumentControl,
@@ -32,6 +35,9 @@ from verity.modules.documents.models import (
     DocumentVersion,
 )
 from verity.shared.ids import uuid7
+
+if TYPE_CHECKING:
+    from verity.modules.notifications.service import NotificationService
 
 _DOC_SNAPSHOT: Final = (
     "id",
@@ -51,6 +57,17 @@ _DOC_SNAPSHOT: Final = (
 
 # ponytail: fixed two-tier sign-off; make configurable if a client needs it.
 _APPROVAL_TIERS: Final = 2
+
+_CAMPAIGN_SNAPSHOT: Final = ("id", "document_id", "title", "status", "due_at", "closed_at")
+_RECIPIENT_SNAPSHOT: Final = (
+    "id",
+    "campaign_id",
+    "membership_id",
+    "kind",
+    "source",
+    "status",
+    "acknowledged_at",
+)
 
 
 @dataclass(frozen=True)
@@ -110,6 +127,91 @@ class DocumentDetailView(DocumentView):
     acknowledged: int = 0
     assigned_count: int = 0
     acknowledged_by_me: bool = False
+
+
+# -- acknowledgement-campaign views -----------------------------------------
+
+
+@dataclass(frozen=True)
+class RecipientSelection:
+    """Who a campaign targets, by any mix of individuals, roles and groups.
+    Resolved to a deduped set of memberships when the campaign is created."""
+
+    user_ids: Sequence[uuid.UUID] = ()
+    role_ids: Sequence[uuid.UUID] = ()
+    group_ids: Sequence[uuid.UUID] = ()
+
+
+@dataclass(frozen=True)
+class CampaignRecipientView:
+    membership_id: uuid.UUID
+    name: str
+    email: str
+    kind: str
+    source: str
+    status: str
+    acknowledged_at: datetime | None
+    ack_comment: str | None
+
+
+@dataclass(frozen=True)
+class CampaignCommentView:
+    id: uuid.UUID
+    author_membership_id: uuid.UUID | None
+    author_name: str
+    body: str
+    mentioned_ids: list[str]
+    mentioned_names: list[str]
+    created_at: datetime
+
+
+@dataclass(frozen=True)
+class CampaignView:
+    id: uuid.UUID
+    document_id: uuid.UUID
+    document_code: str
+    document_title: str
+    title: str
+    message: str | None
+    status: str
+    created_by_membership_id: uuid.UUID | None
+    created_by_name: str
+    due_at: datetime | None
+    closed_at: datetime | None
+    created_at: datetime
+    total: int
+    acknowledged: int
+    pending: int
+    recipients: list[CampaignRecipientView] = field(default_factory=list)
+    comments: list[CampaignCommentView] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
+class CampaignSummaryView:
+    id: uuid.UUID
+    document_id: uuid.UUID
+    title: str
+    status: str
+    due_at: datetime | None
+    closed_at: datetime | None
+    created_at: datetime
+    total: int
+    acknowledged: int
+    pending: int
+
+
+@dataclass(frozen=True)
+class PendingCampaignView:
+    id: uuid.UUID
+    document_id: uuid.UUID
+    document_code: str
+    document_title: str
+    title: str
+    message: str | None
+    kind: str
+    due_at: datetime | None
+    created_at: datetime
+    created_by_name: str
 
 
 def _next_version(current: str | None, change_type: str) -> str:
@@ -929,6 +1031,481 @@ class DocumentService:
         )
         await session.flush()
 
+    # -- acknowledgement campaigns -------------------------------------------
+
+    async def _load_campaign(
+        self, session: AsyncSession, tenant_id: uuid.UUID, campaign_id: uuid.UUID
+    ) -> DocumentAckCampaign:
+        camp = await session.get(DocumentAckCampaign, campaign_id)
+        if camp is None or camp.tenant_id != tenant_id:
+            raise NotFound(detail=f"campaign {campaign_id}")
+        return camp
+
+    async def _resolve_recipients(
+        self,
+        session: AsyncSession,
+        tenant_id: uuid.UUID,
+        reviewers: RecipientSelection,
+        approvers: RecipientSelection,
+    ) -> tuple[dict[uuid.UUID, tuple[str, str]], list[Any]]:
+        """Turn the (users, roles, groups) selections for each kind into one
+        (kind, source) per membership. Approver beats reviewer; a directly named
+        user beats a role or group they also fall under. Returns the resolved
+        map plus the member list (reused for name lookups)."""
+        from verity.modules.iam.service import iam_service  # noqa: PLC0415
+
+        members = await iam_service.list_members(session, tenant_id=tenant_id)
+        roles = await iam_service.list_roles(session, tenant_id=tenant_id)
+        groups = await iam_service.list_groups(session, tenant_id=tenant_id)
+        valid = {m.membership_id for m in members}
+        role_name = {r.id: r.name for r in roles}
+        group_members = {g.id: list(g.member_ids) for g in groups}
+        members_by_role: dict[str, list[uuid.UUID]] = {}
+        for m in members:
+            for rn in m.role_names:
+                members_by_role.setdefault(rn, []).append(m.membership_id)
+
+        resolved: dict[uuid.UUID, tuple[str, str]] = {}
+
+        def add(mid: uuid.UUID, kind: str, source: str) -> None:
+            if mid not in valid:
+                return
+            current = resolved.get(mid)
+            # Approver always wins; within a kind, keep the first (most specific).
+            if current is not None and not (kind == "approver" and current[0] == "reviewer"):
+                return
+            resolved[mid] = (kind, source)
+
+        # Reviewers first, approvers second so approver overrides on overlap.
+        for kind, sel in (("reviewer", reviewers), ("approver", approvers)):
+            for uid in sel.user_ids:
+                add(uid, kind, "user")
+            for rid in sel.role_ids:
+                for mid in members_by_role.get(role_name.get(rid, ""), []):
+                    add(mid, kind, "role")
+            for gid in sel.group_ids:
+                for mid in group_members.get(gid, []):
+                    add(mid, kind, "group")
+
+        return resolved, list(members)
+
+    async def create_campaign(  # noqa: PLR0913
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        document_id: uuid.UUID,
+        title: str,
+        message: str | None,
+        reviewers: RecipientSelection,
+        approvers: RecipientSelection,
+        due_at: datetime | None = None,
+    ) -> CampaignView:
+        doc = await self._load(session, tenant_id, document_id)
+        resolved, members = await self._resolve_recipients(
+            session, tenant_id, reviewers, approvers
+        )
+        if not resolved:
+            raise InvalidInput(detail="select at least one person, role or group to acknowledge")
+
+        camp = DocumentAckCampaign(
+            id=uuid7(),
+            tenant_id=tenant_id,
+            document_id=doc.id,
+            title=title,
+            message=message,
+            created_by_membership_id=_membership(actor),
+            status="active",
+            due_at=due_at,
+        )
+        session.add(camp)
+        await session.flush()
+        for mid, (kind, source) in resolved.items():
+            session.add(
+                DocumentAckCampaignRecipient(
+                    id=uuid7(),
+                    tenant_id=tenant_id,
+                    campaign_id=camp.id,
+                    membership_id=mid,
+                    kind=kind,
+                    source=source,
+                    status="pending",
+                )
+            )
+        await session.flush()
+
+        await self._audit.record(
+            session,
+            action="create",
+            object_type="document_ack_campaign",
+            object_id=camp.id,
+            actor=actor,
+            tenant_id=tenant_id,
+            after=AuditService.snapshot(camp, fields=_CAMPAIGN_SNAPSHOT),
+        )
+        await self._notify().notify_many(
+            session,
+            tenant_id=tenant_id,
+            recipients=list(resolved),
+            kind="assigned",
+            title=f"Please acknowledge: {doc.title}",
+            body=message or f"You've been asked to read and acknowledge {doc.code}.",
+            object_type="document_ack_campaign",
+            object_id=camp.id,
+        )
+        return await self._campaign_view(session, tenant_id, camp, members=members)
+
+    async def list_document_campaigns(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, document_id: uuid.UUID
+    ) -> list[CampaignSummaryView]:
+        camps = list(
+            (
+                await session.execute(
+                    select(DocumentAckCampaign)
+                    .where(
+                        DocumentAckCampaign.tenant_id == tenant_id,
+                        DocumentAckCampaign.document_id == document_id,
+                    )
+                    .order_by(DocumentAckCampaign.created_at.desc())
+                )
+            ).scalars()
+        )
+        counts = await self._recipient_counts(session, tenant_id, [c.id for c in camps])
+        out: list[CampaignSummaryView] = []
+        for c in camps:
+            total, ack = counts.get(c.id, (0, 0))
+            out.append(
+                CampaignSummaryView(
+                    id=c.id,
+                    document_id=c.document_id,
+                    title=c.title,
+                    status=c.status,
+                    due_at=c.due_at,
+                    closed_at=c.closed_at,
+                    created_at=c.created_at,
+                    total=total,
+                    acknowledged=ack,
+                    pending=total - ack,
+                )
+            )
+        return out
+
+    async def get_campaign(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, campaign_id: uuid.UUID
+    ) -> CampaignView:
+        camp = await self._load_campaign(session, tenant_id, campaign_id)
+        return await self._campaign_view(session, tenant_id, camp)
+
+    async def my_pending_campaigns(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, membership_id: uuid.UUID
+    ) -> list[PendingCampaignView]:
+        rows = list(
+            (
+                await session.execute(
+                    select(DocumentAckCampaignRecipient, DocumentAckCampaign, Document)
+                    .join(
+                        DocumentAckCampaign,
+                        DocumentAckCampaign.id == DocumentAckCampaignRecipient.campaign_id,
+                    )
+                    .join(Document, Document.id == DocumentAckCampaign.document_id)
+                    .where(
+                        DocumentAckCampaignRecipient.tenant_id == tenant_id,
+                        DocumentAckCampaignRecipient.membership_id == membership_id,
+                        DocumentAckCampaignRecipient.status == "pending",
+                        DocumentAckCampaign.status == "active",
+                    )
+                    .order_by(DocumentAckCampaign.created_at.desc())
+                )
+            ).all()
+        )
+        names = await self._member_names(session, tenant_id)
+        return [
+            PendingCampaignView(
+                id=camp.id,
+                document_id=doc.id,
+                document_code=doc.code,
+                document_title=doc.title,
+                title=camp.title,
+                message=camp.message,
+                kind=rec.kind,
+                due_at=camp.due_at,
+                created_at=camp.created_at,
+                created_by_name=_name_of(names, camp.created_by_membership_id),
+            )
+            for rec, camp, doc in rows
+        ]
+
+    async def my_pending_count(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, membership_id: uuid.UUID
+    ) -> int:
+        return (
+            await session.execute(
+                select(func.count())
+                .select_from(DocumentAckCampaignRecipient)
+                .join(
+                    DocumentAckCampaign,
+                    DocumentAckCampaign.id == DocumentAckCampaignRecipient.campaign_id,
+                )
+                .where(
+                    DocumentAckCampaignRecipient.tenant_id == tenant_id,
+                    DocumentAckCampaignRecipient.membership_id == membership_id,
+                    DocumentAckCampaignRecipient.status == "pending",
+                    DocumentAckCampaign.status == "active",
+                )
+            )
+        ).scalar_one()
+
+    async def acknowledge_campaign(  # noqa: PLR0913
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        membership_id: uuid.UUID,
+        campaign_id: uuid.UUID,
+        comment: str | None = None,
+    ) -> CampaignView:
+        camp = await self._load_campaign(session, tenant_id, campaign_id)
+        if camp.status != "active":
+            raise InvalidInput(detail="this campaign is closed")
+        rec = (
+            await session.execute(
+                select(DocumentAckCampaignRecipient).where(
+                    DocumentAckCampaignRecipient.tenant_id == tenant_id,
+                    DocumentAckCampaignRecipient.campaign_id == campaign_id,
+                    DocumentAckCampaignRecipient.membership_id == membership_id,
+                )
+            )
+        ).scalar_one_or_none()
+        if rec is None:
+            raise NotFound(detail="you are not a recipient of this campaign")
+        if rec.status != "acknowledged":
+            before = AuditService.snapshot(rec, fields=_RECIPIENT_SNAPSHOT)
+            rec.status = "acknowledged"
+            rec.acknowledged_at = datetime.now(UTC)
+            rec.ack_comment = comment
+            await session.flush()
+            await self._audit.record(
+                session,
+                action="approve",
+                object_type="document_ack_campaign",
+                object_id=camp.id,
+                actor=actor,
+                tenant_id=tenant_id,
+                before=before,
+                after=AuditService.snapshot(rec, fields=_RECIPIENT_SNAPSHOT),
+            )
+            names = await self._member_names(session, tenant_id)
+            who = names.get(membership_id, "Someone")
+            await self._notify().notify_many(
+                session,
+                tenant_id=tenant_id,
+                recipients=[camp.created_by_membership_id],
+                kind="approval",
+                title=f"{who} acknowledged {camp.title}",
+                body=comment or "",
+                object_type="document_ack_campaign",
+                object_id=camp.id,
+            )
+        return await self._campaign_view(session, tenant_id, camp)
+
+    async def add_campaign_comment(  # noqa: PLR0913
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        campaign_id: uuid.UUID,
+        body: str,
+        mentioned_ids: Sequence[uuid.UUID] = (),
+    ) -> CampaignView:
+        camp = await self._load_campaign(session, tenant_id, campaign_id)
+        comment = DocumentAckCampaignComment(
+            id=uuid7(),
+            tenant_id=tenant_id,
+            campaign_id=camp.id,
+            author_membership_id=_membership(actor),
+            body=body,
+            mentioned_ids=[str(m) for m in mentioned_ids],
+        )
+        session.add(comment)
+        await session.flush()
+        await self._audit.record(
+            session,
+            action="create",
+            object_type="document_ack_campaign_comment",
+            object_id=comment.id,
+            actor=actor,
+            tenant_id=tenant_id,
+            after={"campaign_id": str(camp.id), "body": body},
+        )
+        # Owner and anyone tagged hear about it (the author is dropped by notify_many).
+        recipients: list[uuid.UUID | None] = [camp.created_by_membership_id, *mentioned_ids]
+        await self._notify().notify_many(
+            session,
+            tenant_id=tenant_id,
+            recipients=[r for r in recipients if r != _membership(actor)],
+            kind="comment",
+            title=f"New comment on {camp.title}",
+            body=body,
+            object_type="document_ack_campaign",
+            object_id=camp.id,
+        )
+        return await self._campaign_view(session, tenant_id, camp)
+
+    async def close_campaign(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, actor: Actor, campaign_id: uuid.UUID
+    ) -> CampaignView:
+        camp = await self._load_campaign(session, tenant_id, campaign_id)
+        if camp.status != "closed":
+            before = AuditService.snapshot(camp, fields=_CAMPAIGN_SNAPSHOT)
+            camp.status = "closed"
+            camp.closed_at = datetime.now(UTC)
+            await session.flush()
+            await self._audit.record(
+                session,
+                action="transition",
+                object_type="document_ack_campaign",
+                object_id=camp.id,
+                actor=actor,
+                tenant_id=tenant_id,
+                before=before,
+                after=AuditService.snapshot(camp, fields=_CAMPAIGN_SNAPSHOT),
+            )
+        return await self._campaign_view(session, tenant_id, camp)
+
+    # -- campaign helpers ----------------------------------------------------
+
+    def _notify(self) -> NotificationService:
+        from verity.modules.notifications.service import notification_service  # noqa: PLC0415
+
+        return notification_service
+
+    async def _member_names(
+        self, session: AsyncSession, tenant_id: uuid.UUID
+    ) -> dict[uuid.UUID, str]:
+        return await self._owner_names(session, tenant_id)
+
+    async def _recipient_counts(
+        self, session: AsyncSession, tenant_id: uuid.UUID, campaign_ids: Sequence[uuid.UUID]
+    ) -> dict[uuid.UUID, tuple[int, int]]:
+        """Per campaign, (total, acknowledged) in one grouped query."""
+        if not campaign_ids:
+            return {}
+        rows = (
+            await session.execute(
+                select(
+                    DocumentAckCampaignRecipient.campaign_id,
+                    func.count().label("total"),
+                    func.count()
+                    .filter(DocumentAckCampaignRecipient.status == "acknowledged")
+                    .label("ack"),
+                )
+                .where(
+                    DocumentAckCampaignRecipient.tenant_id == tenant_id,
+                    DocumentAckCampaignRecipient.campaign_id.in_(campaign_ids),
+                )
+                .group_by(DocumentAckCampaignRecipient.campaign_id)
+            )
+        ).all()
+        return {cid: (total, ack) for cid, total, ack in rows}
+
+    async def _campaign_view(
+        self,
+        session: AsyncSession,
+        tenant_id: uuid.UUID,
+        camp: DocumentAckCampaign,
+        *,
+        members: Sequence[Any] | None = None,
+    ) -> CampaignView:
+        doc = await session.get(Document, camp.document_id)
+        names = await self._member_names(session, tenant_id)
+        emails: dict[uuid.UUID, str] = {}
+        if members is None:
+            from verity.modules.iam.service import iam_service  # noqa: PLC0415
+
+            members = await iam_service.list_members(session, tenant_id=tenant_id)
+        for m in members:
+            emails[m.membership_id] = m.email
+
+        rec_rows = list(
+            (
+                await session.execute(
+                    select(DocumentAckCampaignRecipient)
+                    .where(
+                        DocumentAckCampaignRecipient.tenant_id == tenant_id,
+                        DocumentAckCampaignRecipient.campaign_id == camp.id,
+                    )
+                    .order_by(DocumentAckCampaignRecipient.created_at)
+                )
+            ).scalars()
+        )
+        recipients = [
+            CampaignRecipientView(
+                membership_id=r.membership_id,
+                name=names.get(r.membership_id, "Unknown"),
+                email=emails.get(r.membership_id, ""),
+                kind=r.kind,
+                source=r.source,
+                status=r.status,
+                acknowledged_at=r.acknowledged_at,
+                ack_comment=r.ack_comment,
+            )
+            for r in rec_rows
+        ]
+
+        com_rows = list(
+            (
+                await session.execute(
+                    select(DocumentAckCampaignComment)
+                    .where(
+                        DocumentAckCampaignComment.tenant_id == tenant_id,
+                        DocumentAckCampaignComment.campaign_id == camp.id,
+                    )
+                    .order_by(DocumentAckCampaignComment.created_at)
+                )
+            ).scalars()
+        )
+        comments = [
+            CampaignCommentView(
+                id=c.id,
+                author_membership_id=c.author_membership_id,
+                author_name=_name_of(names, c.author_membership_id),
+                body=c.body,
+                mentioned_ids=list(c.mentioned_ids),
+                mentioned_names=[
+                    names.get(uuid.UUID(mid), "Unknown")
+                    for mid in c.mentioned_ids
+                    if _is_uuid(mid)
+                ],
+                created_at=c.created_at,
+            )
+            for c in com_rows
+        ]
+
+        ack = sum(1 for r in rec_rows if r.status == "acknowledged")
+        total = len(rec_rows)
+        return CampaignView(
+            id=camp.id,
+            document_id=camp.document_id,
+            document_code=doc.code if doc else "",
+            document_title=doc.title if doc else "",
+            title=camp.title,
+            message=camp.message,
+            status=camp.status,
+            created_by_membership_id=camp.created_by_membership_id,
+            created_by_name=_name_of(names, camp.created_by_membership_id),
+            due_at=camp.due_at,
+            closed_at=camp.closed_at,
+            created_at=camp.created_at,
+            total=total,
+            acknowledged=ack,
+            pending=total - ack,
+            recipients=recipients,
+            comments=comments,
+        )
+
     # -- helper: one document's view (with current version_no) ---------------
 
     async def _one(
@@ -947,6 +1524,20 @@ def _with_version(view: DocumentView, version_no: str | None) -> DocumentView:
 
 def _membership(actor: Actor) -> uuid.UUID | None:
     return getattr(actor, "id", None)
+
+
+def _name_of(names: dict[uuid.UUID, str], mid: uuid.UUID | None) -> str:
+    if mid is None:
+        return "Unknown"
+    return names.get(mid, "Unknown")
+
+
+def _is_uuid(value: object) -> bool:
+    try:
+        uuid.UUID(str(value))
+    except (ValueError, AttributeError, TypeError):
+        return False
+    return True
 
 
 document_service = DocumentService()

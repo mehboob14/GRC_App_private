@@ -1,113 +1,126 @@
-import { Badge, Icon } from "@/components/ui";
+import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { Badge, Button, useToast } from "@/components/ui";
+import { ApiError } from "@/lib/api/client";
+import { evidenceApi } from "@/lib/api/endpoints";
+import type { MappingSuggestion } from "@/lib/api/types";
+
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 /**
- * A preview of cross-framework mapping suggestions, deliberately half-visible.
+ * Suggested control mappings for a piece of evidence.
  *
- * Everything below is ILLUSTRATIVE — a shape, not a result. Nothing in the
- * platform computes these today, so the panel is faded, non-interactive and
- * labelled, and the rows use frameworks Verity does not yet ship content for.
- * A reader must not be able to mistake this for a mapping their tenant has.
+ * The engine SUGGESTS; a person links. Nothing here writes a mapping — each row
+ * is a draft the reviewer approves or dismisses (rule 11). When a model key is
+ * configured the backend uses it ("AI"); otherwise a deterministic matcher stands
+ * in, and the source badge says which so a reviewer knows what produced the list.
  */
-const SAMPLE = [
-  {
-    framework: "ISO/IEC 27001:2022",
-    code: "A.5.15",
-    name: "Access control",
-    coverage: "Full",
-  },
-  {
-    framework: "SOC 2 (2017 TSC)",
-    code: "CC6.2",
-    name: "Registration and authorisation of users",
-    coverage: "Full",
-  },
-  {
-    framework: "GDPR",
-    code: "Art. 32(1)(b)",
-    name: "Confidentiality and integrity of processing",
-    coverage: "Partial",
-  },
-] as const;
+export function SuggestedMappings({
+  evidenceId,
+  onApproved,
+}: {
+  evidenceId: string;
+  /** Called after a suggestion is linked, so the parent can refresh its controls. */
+  onApproved: () => void | Promise<void>;
+}) {
+  const { toast } = useToast();
+  const [rows, setRows] = useState<MappingSuggestion[] | null>(null);
+  const [source, setSource] = useState<"ai" | "heuristic" | null>(null);
+  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
 
-export function SuggestedMappingsTeaser() {
+  const suggest = useMutation({
+    mutationFn: () => evidenceApi.suggestMappings(evidenceId),
+    onSuccess: (r) => {
+      setRows(r.suggestions);
+      setSource(r.source);
+      setDismissed(new Set());
+    },
+    onError: (error: unknown) =>
+      toast({
+        title: error instanceof ApiError ? error.message : "Couldn't get suggestions.",
+        tone: "danger",
+      }),
+  });
+
+  const approve = useMutation({
+    mutationFn: (controlId: string) => evidenceApi.approveMapping(evidenceId, controlId),
+    onSuccess: async (_data, controlId) => {
+      setDismissed((prev) => new Set(prev).add(controlId));
+      await onApproved();
+      toast({ title: "Control linked", tone: "success" });
+    },
+    onError: (error: unknown) =>
+      toast({
+        title: error instanceof ApiError ? error.message : "Couldn't link the control.",
+        tone: "danger",
+      }),
+  });
+
+  const visible = (rows ?? []).filter((r) => !dismissed.has(r.control_id));
+
   return (
-    <section
-      aria-labelledby="suggested-mappings-heading"
-      className="relative overflow-hidden rounded-lg border border-border bg-surface-primary"
-    >
-      <div className="flex flex-wrap items-start justify-between gap-3 p-5 pb-3">
+    <section className="rounded-lg border border-border bg-surface-primary p-5">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2
-            id="suggested-mappings-heading"
-            className="flex items-center gap-2 font-display text-title-md text-text-primary"
-          >
-            <Icon name="shield" className="size-4 text-action-accent" aria-hidden />
-            Suggested control mappings
-          </h2>
+          <h2 className="font-display text-title-md text-text-primary">Suggested control mappings</h2>
           <p className="mt-1 text-body-sm text-text-secondary">
-            Controls this evidence may also satisfy, across every framework you
-            carry. Review each row, then link the ones that fit. Suggested
-            automatically, never linked without a person saying so.
+            Controls this evidence may also satisfy, across every framework you carry. Review each,
+            then link the ones that fit — never linked without you saying so.
           </p>
         </div>
-        <Badge variant="role">Coming soon</Badge>
+        <div className="flex shrink-0 items-center gap-2">
+          {source ? <Badge variant="role">{source === "ai" ? "AI" : "Suggested"}</Badge> : null}
+          <Button size="sm" variant="secondary" loading={suggest.isPending} onClick={() => suggest.mutate()}>
+            {rows ? "Refresh" : "Suggest mappings"}
+          </Button>
+        </div>
       </div>
 
-      {/* aria-hidden: illustrative rows are decoration, not content a screen
-          reader should announce as this control's real mappings. */}
-      <div aria-hidden className="px-5 pb-5">
-        <table className="w-full table-fixed">
-          <thead>
-            <tr className="border-b border-border">
-              {["Framework", "Control", "Coverage", ""].map((heading) => (
-                <th key={heading} className="pb-2 text-left type-overline">
-                  {heading}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {SAMPLE.map((row) => (
-              <tr key={row.framework} className="border-b border-border last:border-0">
-                <td className="py-3 pr-3 align-top text-body-sm text-text-primary">
-                  {row.framework}
-                </td>
-                <td className="py-3 pr-3 align-top">
-                  <span className="block font-display text-caption font-bold text-text-link">
-                    {row.code}
-                  </span>
-                  <span className="block truncate text-caption text-text-subtle">
-                    {row.name}
-                  </span>
-                </td>
-                <td className="py-3 pr-3 align-top">
-                  <Badge
-                    variant={row.coverage === "Full" ? "count" : "countWarn"}
-                  >
-                    {row.coverage}
-                  </Badge>
-                </td>
-                <td className="py-3 text-right align-top">
-                  <span className="inline-flex items-center gap-1 rounded-sm bg-action-accent-tint px-2.5 py-1 text-label-sm text-action-accent opacity-60">
-                    <Icon name="plus" className="size-3.5" aria-hidden />
-                    Link
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* The fade is the honesty device: the panel is visibly a preview that
-          runs out, not a list that happens to be short. */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-surface-primary via-surface-primary/85 to-transparent" />
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center pb-4">
-        <span className="rounded-full border border-border bg-surface-primary px-3 py-1.5 text-caption font-semibold text-text-secondary shadow-1">
-          Example only. Cross-framework suggestions arrive with the AI mapping
-          engine
-        </span>
-      </div>
+      {rows === null ? (
+        <p className="mt-4 text-body-sm text-text-subtle">
+          Ask the mapping engine which of your controls this evidence supports.
+        </p>
+      ) : visible.length === 0 ? (
+        <p className="mt-4 text-body-sm text-text-subtle">
+          {rows.length === 0
+            ? "No further controls look like a match — the relevant ones may already be linked."
+            : "All suggestions handled."}
+        </p>
+      ) : (
+        <ul className="mt-4 divide-y divide-border">
+          {visible.map((r) => (
+            <li key={r.control_id} className="flex items-start gap-3 py-3">
+              <div className="min-w-0 flex-1">
+                <p className="text-body-md text-text-primary">
+                  <span className="mr-2 font-display text-caption font-bold text-text-link">{r.code}</span>
+                  {r.name}
+                </p>
+                <p className="mt-0.5 flex flex-wrap items-center gap-2 text-caption text-text-subtle">
+                  <Badge variant={r.coverage === "full" ? "count" : "countWarn"}>{cap(r.coverage)}</Badge>
+                  <span className="tabular">{Math.round(r.confidence * 100)}% match</span>
+                  <span className="min-w-0 truncate">· {r.rationale}</span>
+                </p>
+              </div>
+              <div className="flex shrink-0 items-center gap-1">
+                <Button
+                  size="sm"
+                  loading={approve.isPending && approve.variables === r.control_id}
+                  onClick={() => approve.mutate(r.control_id)}
+                >
+                  Link
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setDismissed((prev) => new Set(prev).add(r.control_id))}
+                >
+                  Dismiss
+                </Button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   );
 }

@@ -68,6 +68,16 @@ const PERMISSION_GROUPS = [
       { key: "documents:publish", label: "Publish documents" },
     ],
   },
+  {
+    group: "Tasks & Issues",
+    summary: "Track remediation work, run tasks through their workflow, sign off.",
+    items: [
+      { key: "tasks:read", label: "View tasks & issues" },
+      { key: "tasks:manage", label: "Create, edit & transition tasks" },
+      { key: "tasks:assign", label: "Assign owners & assignees" },
+      { key: "tasks:approve", label: "Approve tasks" },
+    ],
+  },
 ] as const satisfies readonly {
   group: string;
   summary: string;

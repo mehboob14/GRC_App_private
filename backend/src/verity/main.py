@@ -24,6 +24,7 @@ from verity.core.middleware import (
     CorrelationIdMiddleware,
     SecurityHeadersMiddleware,
 )
+from verity.modules.assets.router import assets_router
 from verity.modules.audit.router import router as audit_router
 from verity.modules.compliance.control_router import controls_router
 from verity.modules.compliance.engagement_router import engagement_router
@@ -38,6 +39,8 @@ from verity.modules.iam.router import (
     security_router,
 )
 from verity.modules.iam.router import provider_router as iam_provider_router
+from verity.modules.notifications.router import notifications_router
+from verity.modules.tasks.router import tasks_router
 from verity.modules.tenancy.provider_auth import router as provider_auth_router
 from verity.modules.tenancy.router import provider_tenants_router, tenant_router
 
@@ -127,6 +130,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(engagement_router, prefix=API_PREFIX)
     app.include_router(evidence_router, prefix=API_PREFIX)
     app.include_router(documents_router, prefix=API_PREFIX)
+    app.include_router(tasks_router, prefix=API_PREFIX)
+    app.include_router(notifications_router, prefix=API_PREFIX)
+    app.include_router(assets_router, prefix=API_PREFIX)
     app.include_router(auth_router, prefix=API_PREFIX)
     app.include_router(members_router, prefix=API_PREFIX)
     app.include_router(groups_router, prefix=API_PREFIX)

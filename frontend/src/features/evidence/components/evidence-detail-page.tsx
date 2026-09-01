@@ -25,7 +25,8 @@ import { getAccessToken } from "@/lib/auth/session";
 import type { Evidence, EvidenceFreshness, ReviewStatus } from "@/lib/api/types";
 import { LinkControlsDialog } from "./link-controls-dialog";
 import { EvidenceViewer } from "./evidence-viewer";
-import { SuggestedMappingsTeaser } from "@/features/compliance/components/suggested-mappings-teaser";
+import { LinkedTasksSection } from "./linked-tasks-section";
+import { SuggestedMappings } from "@/features/compliance/components/suggested-mappings-teaser";
 
 const FRESHNESS: Record<
   EvidenceFreshness,
@@ -322,7 +323,15 @@ export function EvidenceDetailPage() {
             onLink={() => setLinking(true)}
           />
 
-          <SuggestedMappingsTeaser />
+          <LinkedTasksSection evidenceId={evidenceId} canManage={canManage} />
+
+          <SuggestedMappings
+            evidenceId={evidenceId}
+            onApproved={async () => {
+              await queryClient.invalidateQueries({ queryKey: ["evidence"] });
+              await queryClient.invalidateQueries({ queryKey: ["audit"] });
+            }}
+          />
         </div>
 
         <aside className="space-y-4">

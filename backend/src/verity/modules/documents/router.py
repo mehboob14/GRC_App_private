@@ -25,8 +25,13 @@ from verity.core.deps import (
 from verity.modules.audit.service import Membership
 from verity.modules.documents.models import CLASSIFICATIONS, DOC_TYPES, LIFECYCLES
 from verity.modules.documents.schemas import (
+    AcknowledgeCampaignRequest,
     ApprovalDecision,
     ArchiveRequest,
+    CampaignCommentCreate,
+    CampaignCreate,
+    CampaignOut,
+    CampaignSummaryOut,
     DocumentContentUpdate,
     DocumentCreate,
     DocumentDetailOut,
@@ -34,9 +39,10 @@ from verity.modules.documents.schemas import (
     DocumentOut,
     DocumentUpdate,
     DocumentVocabularyOut,
+    PendingCampaignOut,
     SubmitRequest,
 )
-from verity.modules.documents.service import document_service
+from verity.modules.documents.service import RecipientSelection, document_service
 
 documents_router = APIRouter(prefix="/documents", tags=["documents"])
 
@@ -147,6 +153,172 @@ async def upload_document(  # noqa: PLR0913, PLR0917 — multipart form fields
         assigned_to=assigned_to,
     )
     return DocumentOut.model_validate(view)
+
+
+# -- acknowledgement campaigns (static paths before /{document_id}) ----------
+
+
+@documents_router.get(
+    "/campaigns/pending",
+    response_model=list[PendingCampaignOut],
+    summary="Campaigns awaiting my acknowledgement",
+)
+async def my_pending_campaigns(
+    principal: Annotated[Principal, Depends(require_read)],
+    context: Annotated[TenantContext, Depends(get_tenant_context)],
+    session: Annotated[AsyncSession, Depends(get_tenant_session)],
+) -> list[PendingCampaignOut]:
+    assert principal.membership_id is not None  # noqa: S101
+    views = await document_service.my_pending_campaigns(
+        session, tenant_id=context.tenant_id, membership_id=principal.membership_id
+    )
+    return [PendingCampaignOut.model_validate(v) for v in views]
+
+
+@documents_router.get(
+    "/campaigns/pending/count", summary="Count of campaigns awaiting my acknowledgement"
+)
+async def my_pending_campaign_count(
+    principal: Annotated[Principal, Depends(require_read)],
+    context: Annotated[TenantContext, Depends(get_tenant_context)],
+    session: Annotated[AsyncSession, Depends(get_tenant_session)],
+) -> dict[str, int]:
+    assert principal.membership_id is not None  # noqa: S101
+    count = await document_service.my_pending_count(
+        session, tenant_id=context.tenant_id, membership_id=principal.membership_id
+    )
+    return {"count": count}
+
+
+@documents_router.get(
+    "/campaigns/{campaign_id}", response_model=CampaignOut, summary="One campaign with detail"
+)
+async def get_campaign(
+    campaign_id: uuid.UUID,
+    _principal: Annotated[Principal, Depends(require_read)],
+    context: Annotated[TenantContext, Depends(get_tenant_context)],
+    session: Annotated[AsyncSession, Depends(get_tenant_session)],
+) -> CampaignOut:
+    view = await document_service.get_campaign(
+        session, tenant_id=context.tenant_id, campaign_id=campaign_id
+    )
+    return CampaignOut.model_validate(view)
+
+
+@documents_router.post(
+    "/campaigns/{campaign_id}/acknowledge",
+    response_model=CampaignOut,
+    summary="Acknowledge a campaign, optionally with a comment",
+)
+async def acknowledge_campaign(
+    campaign_id: uuid.UUID,
+    body: AcknowledgeCampaignRequest,
+    principal: Annotated[Principal, Depends(require_read)],
+    context: Annotated[TenantContext, Depends(get_tenant_context)],
+    session: Annotated[AsyncSession, Depends(get_tenant_session)],
+) -> CampaignOut:
+    assert principal.membership_id is not None  # noqa: S101
+    view = await document_service.acknowledge_campaign(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(principal),
+        membership_id=principal.membership_id,
+        campaign_id=campaign_id,
+        comment=body.comment,
+    )
+    return CampaignOut.model_validate(view)
+
+
+@documents_router.post(
+    "/campaigns/{campaign_id}/comments",
+    response_model=CampaignOut,
+    summary="Comment on a campaign, optionally tagging members",
+)
+async def comment_campaign(
+    campaign_id: uuid.UUID,
+    body: CampaignCommentCreate,
+    principal: Annotated[Principal, Depends(require_read)],
+    context: Annotated[TenantContext, Depends(get_tenant_context)],
+    session: Annotated[AsyncSession, Depends(get_tenant_session)],
+) -> CampaignOut:
+    view = await document_service.add_campaign_comment(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(principal),
+        campaign_id=campaign_id,
+        body=body.body,
+        mentioned_ids=body.mentioned_ids,
+    )
+    return CampaignOut.model_validate(view)
+
+
+@documents_router.post(
+    "/campaigns/{campaign_id}/close",
+    response_model=CampaignOut,
+    summary="Close a campaign (owner)",
+)
+async def close_campaign(
+    campaign_id: uuid.UUID,
+    principal: Annotated[Principal, Depends(require_manage)],
+    context: Annotated[TenantContext, Depends(get_tenant_context)],
+    session: Annotated[AsyncSession, Depends(get_tenant_session)],
+) -> CampaignOut:
+    view = await document_service.close_campaign(
+        session, tenant_id=context.tenant_id, actor=_actor(principal), campaign_id=campaign_id
+    )
+    return CampaignOut.model_validate(view)
+
+
+@documents_router.post(
+    "/{document_id}/campaigns",
+    status_code=status.HTTP_201_CREATED,
+    response_model=CampaignOut,
+    summary="Start an acknowledgement campaign against a document",
+)
+async def create_campaign(
+    document_id: uuid.UUID,
+    body: CampaignCreate,
+    principal: Annotated[Principal, Depends(require_manage)],
+    context: Annotated[TenantContext, Depends(get_tenant_context)],
+    session: Annotated[AsyncSession, Depends(get_tenant_session)],
+) -> CampaignOut:
+    view = await document_service.create_campaign(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(principal),
+        document_id=document_id,
+        title=body.title,
+        message=body.message,
+        reviewers=RecipientSelection(
+            user_ids=body.reviewers.user_ids,
+            role_ids=body.reviewers.role_ids,
+            group_ids=body.reviewers.group_ids,
+        ),
+        approvers=RecipientSelection(
+            user_ids=body.approvers.user_ids,
+            role_ids=body.approvers.role_ids,
+            group_ids=body.approvers.group_ids,
+        ),
+        due_at=body.due_at,
+    )
+    return CampaignOut.model_validate(view)
+
+
+@documents_router.get(
+    "/{document_id}/campaigns",
+    response_model=list[CampaignSummaryOut],
+    summary="Acknowledgement campaigns for a document",
+)
+async def list_document_campaigns(
+    document_id: uuid.UUID,
+    _principal: Annotated[Principal, Depends(require_read)],
+    context: Annotated[TenantContext, Depends(get_tenant_context)],
+    session: Annotated[AsyncSession, Depends(get_tenant_session)],
+) -> list[CampaignSummaryOut]:
+    views = await document_service.list_document_campaigns(
+        session, tenant_id=context.tenant_id, document_id=document_id
+    )
+    return [CampaignSummaryOut.model_validate(v) for v in views]
 
 
 @documents_router.get(

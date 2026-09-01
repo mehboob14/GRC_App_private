@@ -131,11 +131,11 @@ services:
         condition: service_started
     restart: unless-stopped
 
-  # Nothing in the application enqueues a task yet — the only registered task is a
-  # heartbeat that touches no database. Enable with `--profile worker` when the first
-  # real job lands, so the deploy is not carrying two idle containers until then.
+  # Runs the scheduled jobs (SLA sweep, notification-email outbox). The worker
+  # executes tasks; `beat` below is the scheduler that enqueues them. Both are on
+  # by default now that real jobs exist — before, an idle heartbeat did not earn a
+  # container, so this was gated behind `--profile worker`.
   worker:
-    profiles: ["worker"]
     build:
       context: ../../backend
       dockerfile: Dockerfile
@@ -147,6 +147,23 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # The scheduler. Exactly one beat process must run — a second would enqueue every
+  # scheduled job twice. The schedule lives in code (celery_app.beat_schedule), so
+  # the container needs no persistent volume.
+  beat:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile
+    image: verity-api:${VERITY_VERSION:-latest}
+    container_name: verity-beat
+    command: ["celery", "-A", "verity.workers.celery_app:celery_app", "beat", "--loglevel=info"]
+    env_file:
+      - .env.production
+    depends_on:
       redis:
         condition: service_healthy
     restart: unless-stopped

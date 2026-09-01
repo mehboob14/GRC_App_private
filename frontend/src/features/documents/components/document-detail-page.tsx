@@ -44,6 +44,7 @@ import type {
   Lifecycle,
 } from "@/features/documents/types";
 import { DocumentContentViewer } from "./document-content-viewer";
+import { DocumentCampaignsPanel } from "./document-campaigns-panel";
 import { DocumentFormDialog } from "./document-form-dialog";
 
 const TYPE_LABEL: Record<DocType, string> = {
@@ -389,32 +390,11 @@ export function DocumentDetailPage() {
                 ))}
               </ol>
             </Panel>
-            <Panel title="Acknowledgement campaign">
-              {doc.assigned_count > 0 ? (
-                <>
-                  <div className="flex items-baseline justify-between">
-                    <span className="text-body-md text-text-secondary">Attestation</span>
-                    <span className="font-display text-heading-md tabular text-text-primary">
-                      {doc.attestation_pct ?? 0}%
-                    </span>
-                  </div>
-                  <div className="mt-2 h-2 overflow-hidden rounded-full bg-surface-sunken">
-                    <span
-                      className="block h-full rounded-full bg-action-accent"
-                      style={{ width: `${doc.attestation_pct ?? 0}%` }}
-                    />
-                  </div>
-                  <p className="mt-2 text-caption text-text-subtle">
-                    {doc.acknowledged} of {doc.assigned_count} assigned personnel have
-                    acknowledged · assigned to {doc.assigned_to}
-                  </p>
-                </>
-              ) : (
-                <p className="text-body-sm text-text-subtle">
-                  No acknowledgement campaign. Publish and assign this document to start one.
-                </p>
-              )}
-            </Panel>
+            <DocumentCampaignsPanel
+              documentId={doc.id}
+              documentTitle={doc.title}
+              canManage={canManage}
+            />
           </div>
         ) : null}
 

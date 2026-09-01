@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import {
   Avatar,
-  Button,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -19,6 +18,8 @@ import { cn } from "@/lib/cn";
 import { authApi } from "@/lib/api/endpoints";
 import { useAuth } from "@/lib/auth/auth-context";
 import { resumePendingAuth } from "@/lib/auth/resume-auth";
+import { NotificationBell } from "@/features/notifications/components/notification-bell";
+import { AcknowledgementsBell } from "@/features/documents/components/acknowledgements-bell";
 
 /** Workspace tile — identity-ramp mark, same vocabulary as person avatars. */
 function WorkspaceMark({
@@ -196,37 +197,13 @@ export function Topbar() {
         </button>
       </Tooltip>
 
-      {/* Notifications ship in a later phase: no fake badge — an honest,
-          empty popover (§7.2 bell + popover channel). */}
-      <DropdownMenu>
-        <Tooltip content="Notifications">
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="secondary"
-              size="icon"
-              className="shrink-0"
-              aria-label="Notifications"
-            >
-              <Icon name="bell" className="size-4 text-text-secondary" />
-            </Button>
-          </DropdownMenuTrigger>
-        </Tooltip>
-        <DropdownMenuContent align="end" className="w-[320px]">
-          <DropdownMenuLabel>Notifications</DropdownMenuLabel>
-          <div className="flex flex-col items-center px-4 pb-4 pt-3 text-center">
-            <span className="flex size-10 items-center justify-center rounded-md bg-surface-hover">
-              <Icon name="bell" className="size-5 text-text-subtle" />
-            </span>
-            <p className="mt-2 font-display text-title-sm text-text-primary">
-              Nothing here yet
-            </p>
-            <p className="mt-1 text-body-sm text-text-subtle">
-              Alerts on failing checks and expiring evidence arrive with the
-              notifications module in a later phase.
-            </p>
-          </div>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      {/* Documents awaiting the signed-in member's acknowledgement — the
+          "please sign" indicator beside the inbox and profile. */}
+      <AcknowledgementsBell />
+
+      {/* §7.2 bell + popover channel — live inbox, wired to the notifications
+          module (assignments, comments, SLA alerts). */}
+      <NotificationBell />
 
       <div className="mx-1 h-6 w-px shrink-0 bg-border" />
 

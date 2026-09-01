@@ -29,12 +29,17 @@ from verity.core.deps import (
 from verity.modules.audit.service import Membership
 from verity.modules.evidence.models import DEFAULT_VALIDITY_DAYS, EVIDENCE_TYPES
 from verity.modules.evidence.schemas import (
+    ApproveMappingRequest,
     EvidenceLinkCreate,
     EvidenceOut,
     EvidenceReviewRequest,
     EvidenceTypeOut,
     EvidenceUpdate,
     EvidenceVocabularyOut,
+    LinkedTaskOut,
+    LinkTaskRequest,
+    MappingSuggestionOut,
+    MappingSuggestionsOut,
 )
 from verity.modules.evidence.service import evidence_service
 
@@ -255,3 +260,106 @@ async def review_evidence(
         note=body.note,
     )
     return EvidenceOut.model_validate(view)
+
+
+@evidence_router.post(
+    "/{evidence_id}/suggest-mappings",
+    response_model=MappingSuggestionsOut,
+    summary="Suggested control mappings for this evidence — a draft a person approves",
+)
+async def suggest_mappings(
+    evidence_id: uuid.UUID,
+    _principal: Annotated[Principal, Depends(require_evidence_manage)],
+    context: Annotated[TenantContext, Depends(get_tenant_context)],
+    session: Annotated[AsyncSession, Depends(get_tenant_session)],
+) -> MappingSuggestionsOut:
+    source, suggestions = await evidence_service.suggest_mappings(
+        session, tenant_id=context.tenant_id, evidence_id=evidence_id
+    )
+    return MappingSuggestionsOut(
+        source=source,
+        suggestions=[MappingSuggestionOut.model_validate(s) for s in suggestions],
+    )
+
+
+@evidence_router.post(
+    "/{evidence_id}/mappings/approve",
+    response_model=EvidenceOut,
+    summary="Link a suggested control mapping — the person's decision",
+)
+async def approve_mapping(
+    evidence_id: uuid.UUID,
+    body: ApproveMappingRequest,
+    principal: Annotated[Principal, Depends(require_evidence_manage)],
+    context: Annotated[TenantContext, Depends(get_tenant_context)],
+    session: Annotated[AsyncSession, Depends(get_tenant_session)],
+) -> EvidenceOut:
+    view = await evidence_service.approve_mapping(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(principal),
+        evidence_id=evidence_id,
+        control_id=body.control_id,
+    )
+    return EvidenceOut.model_validate(view)
+
+
+@evidence_router.get(
+    "/{evidence_id}/tasks",
+    response_model=list[LinkedTaskOut],
+    summary="Tasks this evidence is linked to",
+)
+async def linked_tasks(
+    evidence_id: uuid.UUID,
+    _principal: Annotated[Principal, Depends(require_evidence_read)],
+    context: Annotated[TenantContext, Depends(get_tenant_context)],
+    session: Annotated[AsyncSession, Depends(get_tenant_session)],
+) -> list[LinkedTaskOut]:
+    views = await evidence_service.linked_tasks(
+        session, tenant_id=context.tenant_id, evidence_id=evidence_id
+    )
+    return [LinkedTaskOut.model_validate(v) for v in views]
+
+
+@evidence_router.post(
+    "/{evidence_id}/tasks",
+    response_model=list[LinkedTaskOut],
+    summary="Link a task to this evidence",
+)
+async def link_task(
+    evidence_id: uuid.UUID,
+    body: LinkTaskRequest,
+    principal: Annotated[Principal, Depends(require_evidence_manage)],
+    context: Annotated[TenantContext, Depends(get_tenant_context)],
+    session: Annotated[AsyncSession, Depends(get_tenant_session)],
+) -> list[LinkedTaskOut]:
+    views = await evidence_service.link_task(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(principal),
+        evidence_id=evidence_id,
+        task_id=body.task_id,
+    )
+    return [LinkedTaskOut.model_validate(v) for v in views]
+
+
+@evidence_router.delete(
+    "/{evidence_id}/tasks/{link_id}",
+    response_model=list[LinkedTaskOut],
+    summary="Unlink a task from this evidence",
+)
+async def unlink_task(
+    evidence_id: uuid.UUID,
+    link_id: uuid.UUID,
+    principal: Annotated[Principal, Depends(require_evidence_manage)],
+    context: Annotated[TenantContext, Depends(get_tenant_context)],
+    session: Annotated[AsyncSession, Depends(get_tenant_session)],
+) -> list[LinkedTaskOut]:
+    views = await evidence_service.unlink_task(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(principal),
+        evidence_id=evidence_id,
+        link_id=link_id,
+    )
+    return [LinkedTaskOut.model_validate(v) for v in views]

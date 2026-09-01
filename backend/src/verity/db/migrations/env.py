@@ -20,9 +20,13 @@ from verity.db.base import Base
 # Every module's models must be registered on Base.metadata before autogenerate
 # compares it against the database, or autogenerate will confidently propose dropping
 # every table it cannot see. Import them here as modules land.
+from verity.modules.assets import models as _assets_models  # noqa: F401
 from verity.modules.audit import models as _audit_models  # noqa: F401
 from verity.modules.compliance import models as _compliance_models  # noqa: F401
 from verity.modules.iam import models as _iam_models  # noqa: F401
+from verity.modules.links import models as _links_models  # noqa: F401
+from verity.modules.notifications import models as _notifications_models  # noqa: F401
+from verity.modules.tasks import models as _tasks_models  # noqa: F401
 from verity.modules.tenancy import models as _tenancy_models  # noqa: F401
 
 target_metadata = Base.metadata

@@ -24,7 +24,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from verity.core.errors import InvalidInput, NotFound
 from verity.core.storage import ObjectStore, get_object_store
-from verity.modules.audit.service import Actor, AuditService, audit_service
+from verity.modules.audit.service import Actor, AuditService, Membership, audit_service
 from verity.modules.evidence.models import (
     DEFAULT_VALIDITY_DAYS,
     Evidence,
@@ -114,6 +114,31 @@ class EvidenceView:
     control_ids: list[uuid.UUID] = field(default_factory=list)
     control_codes: list[str] = field(default_factory=list)
     control_links: list[ControlLink] = field(default_factory=list)
+
+
+@dataclass(frozen=True, slots=True)
+class SuggestionView:
+    """One AI/heuristic-suggested control mapping — a draft a person approves."""
+
+    control_id: uuid.UUID
+    code: str
+    name: str
+    criteria: list[str]
+    coverage: str
+    confidence: float
+    rationale: str
+
+
+@dataclass(frozen=True, slots=True)
+class LinkedTaskView:
+    """A task this evidence is linked to — the remediation or work it supports."""
+
+    link_id: uuid.UUID
+    task_id: uuid.UUID
+    code: str
+    title: str
+    status: str
+    task_kind: str
 
 
 class EvidenceService:
@@ -658,6 +683,184 @@ class EvidenceService:
                     before={"evidence_linked": title or str(evidence_id)},
                     after=None,
                 )
+
+    async def suggest_mappings(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, evidence_id: uuid.UUID
+    ) -> tuple[str, list[SuggestionView]]:
+        """Rank the controls this evidence likely supports (draft, rule 11). Excludes
+        controls already linked. Returns ``(source, suggestions)`` where source is
+        ``"ai"`` or ``"heuristic"``."""
+        from verity.modules.ai.mapping import (  # noqa: PLC0415 — keeps the LLM path optional
+            ControlCandidate,
+            EvidenceContext,
+            suggest_mappings,
+        )
+        from verity.modules.compliance.control_service import control_service  # noqa: PLC0415
+
+        row = await self._load(session, tenant_id, evidence_id)
+        linked = set(
+            (
+                await session.execute(
+                    select(EvidenceControl.control_id).where(
+                        EvidenceControl.tenant_id == tenant_id,
+                        EvidenceControl.evidence_id == evidence_id,
+                    )
+                )
+            ).scalars()
+        )
+        controls = await control_service.list_controls(session, tenant_id=tenant_id)
+        by_id = {str(c.id): c for c in controls}
+        candidates = [
+            ControlCandidate(
+                control_id=str(c.id),
+                code=c.code,
+                name=c.name,
+                description=c.description or "",
+                criteria=[k.split(":", 1)[-1] for k in c.requirement_keys],
+            )
+            for c in controls
+            if c.id not in linked
+        ]
+        suggestions, source = await suggest_mappings(
+            EvidenceContext(
+                title=row.title,
+                description=row.description or "",
+                evidence_type=row.evidence_type,
+            ),
+            candidates,
+        )
+        views = [
+            SuggestionView(
+                control_id=uuid.UUID(s.control_id),
+                code=by_id[s.control_id].code,
+                name=by_id[s.control_id].name,
+                criteria=[k.split(":", 1)[-1] for k in by_id[s.control_id].requirement_keys],
+                coverage=s.coverage,
+                confidence=s.confidence,
+                rationale=s.rationale,
+            )
+            for s in suggestions
+            if s.control_id in by_id
+        ]
+        return source, views
+
+    async def approve_mapping(
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        evidence_id: uuid.UUID,
+        control_id: uuid.UUID,
+    ) -> EvidenceView:
+        """Link one suggested control (a person's decision, rule 11). Merges rather
+        than replaces, so approving several suggestions never drops the others, and
+        the link is audited on the control's history like any manual mapping."""
+        row = await self._load(session, tenant_id, evidence_id)
+        await self.map_controls(
+            session,
+            tenant_id=tenant_id,
+            evidence_id=evidence_id,
+            control_ids=[control_id],
+            replace=False,
+            actor=actor,
+            title=row.title,
+        )
+        return await self.get(session, tenant_id=tenant_id, evidence_id=evidence_id)
+
+    async def linked_tasks(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, evidence_id: uuid.UUID
+    ) -> list[LinkedTaskView]:
+        """The tasks this evidence is linked to, resolved through the tasks service
+        (rule 4) so titles and status stay their module's business."""
+        from verity.modules.links.service import link_service  # noqa: PLC0415
+        from verity.modules.tasks.service import task_service  # noqa: PLC0415
+
+        edges = await link_service.for_object(
+            session, tenant_id=tenant_id, obj_type="evidence", obj_id=evidence_id
+        )
+        out: list[LinkedTaskView] = []
+        for edge in edges:
+            if edge.other_type != "task":
+                continue
+            try:
+                task = await task_service.get_task(
+                    session, tenant_id=tenant_id, task_id=edge.other_id
+                )
+            except NotFound:
+                continue  # task removed or out of scope; skip the dangling edge
+            out.append(
+                LinkedTaskView(
+                    link_id=edge.link_id,
+                    task_id=task.id,
+                    code=task.code,
+                    title=task.title,
+                    status=task.status,
+                    task_kind=task.task_kind,
+                )
+            )
+        out.sort(key=lambda t: t.code)
+        return out
+
+    async def link_task(
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        evidence_id: uuid.UUID,
+        task_id: uuid.UUID,
+    ) -> list[LinkedTaskView]:
+        """Link this evidence to a task (idempotent). Audited on the evidence."""
+        from verity.modules.links.service import link_service  # noqa: PLC0415
+
+        await self._load(session, tenant_id, evidence_id)  # 404 if the evidence is gone
+        member = actor.id if isinstance(actor, Membership) else None
+        await link_service.create(
+            session,
+            tenant_id=tenant_id,
+            from_type="evidence",
+            from_id=evidence_id,
+            to_type="task",
+            to_id=task_id,
+            created_by_membership_id=member,
+        )
+        await self._audit.record(
+            session,
+            action="update",
+            object_type="evidence",
+            object_id=evidence_id,
+            actor=actor,
+            tenant_id=tenant_id,
+            before=None,
+            after={"linked_task": str(task_id)},
+        )
+        return await self.linked_tasks(session, tenant_id=tenant_id, evidence_id=evidence_id)
+
+    async def unlink_task(
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        evidence_id: uuid.UUID,
+        link_id: uuid.UUID,
+    ) -> list[LinkedTaskView]:
+        from verity.modules.links.service import link_service  # noqa: PLC0415
+
+        await self._load(session, tenant_id, evidence_id)
+        await link_service.delete(session, tenant_id=tenant_id, link_id=link_id)
+        await self._audit.record(
+            session,
+            action="update",
+            object_type="evidence",
+            object_id=evidence_id,
+            actor=actor,
+            tenant_id=tenant_id,
+            before={"unlinked_task": str(link_id)},
+            after=None,
+        )
+        return await self.linked_tasks(session, tenant_id=tenant_id, evidence_id=evidence_id)
 
 
 evidence_service = EvidenceService()

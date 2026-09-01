@@ -104,3 +104,93 @@ export type DocumentKpis = {
   ready_to_publish: number;
 };
 
+
+/**
+ * Acknowledgement campaigns: an owner asks a named set of people (individuals,
+ * roles or groups) to read a document and sign. Statuses track who has.
+ */
+export type CampaignStatus = "active" | "closed";
+export type RecipientKind = "reviewer" | "approver";
+export type RecipientStatus = "pending" | "acknowledged";
+
+export type CampaignRecipient = {
+  membership_id: string;
+  name: string;
+  email: string;
+  kind: RecipientKind;
+  source: "user" | "role" | "group";
+  status: RecipientStatus;
+  acknowledged_at: string | null;
+  ack_comment: string | null;
+};
+
+export type CampaignComment = {
+  id: string;
+  author_membership_id: string | null;
+  author_name: string;
+  body: string;
+  mentioned_ids: string[];
+  mentioned_names: string[];
+  created_at: string;
+};
+
+export type Campaign = {
+  id: string;
+  document_id: string;
+  document_code: string;
+  document_title: string;
+  title: string;
+  message: string | null;
+  status: CampaignStatus;
+  created_by_membership_id: string | null;
+  created_by_name: string;
+  due_at: string | null;
+  closed_at: string | null;
+  created_at: string;
+  total: number;
+  acknowledged: number;
+  pending: number;
+  recipients: CampaignRecipient[];
+  comments: CampaignComment[];
+};
+
+export type CampaignSummary = {
+  id: string;
+  document_id: string;
+  title: string;
+  status: CampaignStatus;
+  due_at: string | null;
+  closed_at: string | null;
+  created_at: string;
+  total: number;
+  acknowledged: number;
+  pending: number;
+};
+
+export type PendingCampaign = {
+  id: string;
+  document_id: string;
+  document_code: string;
+  document_title: string;
+  title: string;
+  message: string | null;
+  kind: RecipientKind;
+  due_at: string | null;
+  created_at: string;
+  created_by_name: string;
+};
+
+/** One kind's targeting: any mix of individuals, roles and groups. */
+export type RecipientSelectionInput = {
+  user_ids: string[];
+  role_ids: string[];
+  group_ids: string[];
+};
+
+export type CampaignCreateInput = {
+  title: string;
+  message?: string | null;
+  reviewers: RecipientSelectionInput;
+  approvers: RecipientSelectionInput;
+  due_at?: string | null;
+};

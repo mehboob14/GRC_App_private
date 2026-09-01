@@ -23,6 +23,8 @@ import type {
   EvidenceQuery,
   EvidenceUpdate,
   EvidenceVocabulary,
+  LinkedTask,
+  MappingSuggestions,
   Framework,
   Group,
   InviteMemberRequest,
@@ -362,5 +364,20 @@ export const evidenceApi = {
       method: "POST",
       body: JSON.stringify(body),
     }),
+  suggestMappings: (id: string) =>
+    apiFetch<MappingSuggestions>(`/evidence/${id}/suggest-mappings`, { method: "POST" }),
+  approveMapping: (id: string, controlId: string) =>
+    apiFetch<Evidence>(`/evidence/${id}/mappings/approve`, {
+      method: "POST",
+      body: JSON.stringify({ control_id: controlId }),
+    }),
+  linkedTasks: (id: string) => apiFetch<LinkedTask[]>(`/evidence/${id}/tasks`),
+  linkTask: (id: string, taskId: string) =>
+    apiFetch<LinkedTask[]>(`/evidence/${id}/tasks`, {
+      method: "POST",
+      body: JSON.stringify({ task_id: taskId }),
+    }),
+  unlinkTask: (id: string, linkId: string) =>
+    apiFetch<LinkedTask[]>(`/evidence/${id}/tasks/${linkId}`, { method: "DELETE" }),
   downloadUrl: (id: string) => `/api/v1/evidence/${id}/download`,
 };

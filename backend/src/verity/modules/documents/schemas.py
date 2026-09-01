@@ -131,3 +131,99 @@ class SubmitRequest(_Request):
 class ApprovalDecision(_Request):
     decision: str = Field(pattern="^(approved|rejected)$")
     note: str | None = Field(default=None, max_length=2000)
+
+
+# -- acknowledgement campaigns ----------------------------------------------
+
+
+class RecipientSelectionIn(_Request):
+    """A mix of individuals, roles and groups to target. Roles and groups are
+    expanded to their current members when the campaign is created."""
+
+    user_ids: list[uuid.UUID] = Field(default_factory=list)
+    role_ids: list[uuid.UUID] = Field(default_factory=list)
+    group_ids: list[uuid.UUID] = Field(default_factory=list)
+
+
+class CampaignCreate(_Request):
+    title: str = Field(min_length=1, max_length=300)
+    message: str | None = Field(default=None, max_length=4000)
+    reviewers: RecipientSelectionIn = Field(default_factory=RecipientSelectionIn)
+    approvers: RecipientSelectionIn = Field(default_factory=RecipientSelectionIn)
+    due_at: UtcDateTime | None = None
+
+
+class AcknowledgeCampaignRequest(_Request):
+    comment: str | None = Field(default=None, max_length=2000)
+
+
+class CampaignCommentCreate(_Request):
+    body: str = Field(min_length=1, max_length=4000)
+    mentioned_ids: list[uuid.UUID] = Field(default_factory=list)
+
+
+class CampaignRecipientOut(_Response):
+    membership_id: uuid.UUID
+    name: str
+    email: str
+    kind: str
+    source: str
+    status: str
+    acknowledged_at: UtcDateTime | None
+    ack_comment: str | None
+
+
+class CampaignCommentOut(_Response):
+    id: uuid.UUID
+    author_membership_id: uuid.UUID | None
+    author_name: str
+    body: str
+    mentioned_ids: list[str]
+    mentioned_names: list[str]
+    created_at: UtcDateTime
+
+
+class CampaignOut(_Response):
+    id: uuid.UUID
+    document_id: uuid.UUID
+    document_code: str
+    document_title: str
+    title: str
+    message: str | None
+    status: str
+    created_by_membership_id: uuid.UUID | None
+    created_by_name: str
+    due_at: UtcDateTime | None
+    closed_at: UtcDateTime | None
+    created_at: UtcDateTime
+    total: int
+    acknowledged: int
+    pending: int
+    recipients: list[CampaignRecipientOut]
+    comments: list[CampaignCommentOut]
+
+
+class CampaignSummaryOut(_Response):
+    id: uuid.UUID
+    document_id: uuid.UUID
+    title: str
+    status: str
+    due_at: UtcDateTime | None
+    closed_at: UtcDateTime | None
+    created_at: UtcDateTime
+    total: int
+    acknowledged: int
+    pending: int
+
+
+class PendingCampaignOut(_Response):
+    id: uuid.UUID
+    document_id: uuid.UUID
+    document_code: str
+    document_title: str
+    title: str
+    message: str | None
+    kind: str
+    due_at: UtcDateTime | None
+    created_at: UtcDateTime
+    created_by_name: str

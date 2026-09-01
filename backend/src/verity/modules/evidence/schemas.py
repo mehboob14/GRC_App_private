@@ -99,3 +99,40 @@ class EvidenceTypeOut(_Response):
 class EvidenceVocabularyOut(_Response):
     types: list[EvidenceTypeOut]
     freshness_states: list[str]
+
+
+class MappingSuggestionOut(_Response):
+    """A suggested control mapping — a draft a person approves (rule 11)."""
+
+    control_id: uuid.UUID
+    code: str
+    name: str
+    criteria: list[str]
+    coverage: str
+    confidence: float
+    rationale: str
+
+
+class MappingSuggestionsOut(_Response):
+    # "ai" when a model produced these, "heuristic" for the offline matcher.
+    source: str
+    suggestions: list[MappingSuggestionOut]
+
+
+class ApproveMappingRequest(_Request):
+    control_id: uuid.UUID
+
+
+class LinkedTaskOut(_Response):
+    """A task this evidence supports — the remediation or work it evidences."""
+
+    link_id: uuid.UUID
+    task_id: uuid.UUID
+    code: str
+    title: str
+    status: str
+    task_kind: str
+
+
+class LinkTaskRequest(_Request):
+    task_id: uuid.UUID

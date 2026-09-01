@@ -2,6 +2,9 @@ import { ApiError, apiFetch } from "@/lib/api/client";
 import { getAccessToken } from "@/lib/auth/session";
 import type {
   ApprovalTier,
+  Campaign,
+  CampaignCreateInput,
+  CampaignSummary,
   Classification,
   Document,
   DocumentDetail,
@@ -9,6 +12,7 @@ import type {
   DocumentVersion,
   DocType,
   Lifecycle,
+  PendingCampaign,
 } from "./types";
 
 /**
@@ -270,4 +274,63 @@ export async function downloadDocumentBlob(id: string): Promise<Blob> {
   });
   if (!response.ok) throw new Error("download failed");
   return response.blob();
+}
+
+// -- acknowledgement campaigns ----------------------------------------------
+
+export async function createCampaign(
+  documentId: string,
+  input: CampaignCreateInput,
+): Promise<Campaign> {
+  return apiFetch<Campaign>(`/documents/${documentId}/campaigns`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export async function listDocumentCampaigns(documentId: string): Promise<CampaignSummary[]> {
+  return apiFetch<CampaignSummary[]>(`/documents/${documentId}/campaigns`);
+}
+
+export async function getCampaign(campaignId: string): Promise<Campaign | null> {
+  try {
+    return await apiFetch<Campaign>(`/documents/campaigns/${campaignId}`);
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return null;
+    throw error;
+  }
+}
+
+export async function myPendingCampaigns(): Promise<PendingCampaign[]> {
+  return apiFetch<PendingCampaign[]>("/documents/campaigns/pending");
+}
+
+export async function myPendingCampaignCount(): Promise<number> {
+  const { count } = await apiFetch<{ count: number }>("/documents/campaigns/pending/count");
+  return count;
+}
+
+export async function acknowledgeCampaign(
+  campaignId: string,
+  comment?: string,
+): Promise<Campaign> {
+  return apiFetch<Campaign>(`/documents/campaigns/${campaignId}/acknowledge`, {
+    method: "POST",
+    body: JSON.stringify({ comment: comment ?? null }),
+  });
+}
+
+export async function commentOnCampaign(
+  campaignId: string,
+  body: string,
+  mentionedIds: string[] = [],
+): Promise<Campaign> {
+  return apiFetch<Campaign>(`/documents/campaigns/${campaignId}/comments`, {
+    method: "POST",
+    body: JSON.stringify({ body, mentioned_ids: mentionedIds }),
+  });
+}
+
+export async function closeCampaign(campaignId: string): Promise<Campaign> {
+  return apiFetch<Campaign>(`/documents/campaigns/${campaignId}/close`, { method: "POST" });
 }

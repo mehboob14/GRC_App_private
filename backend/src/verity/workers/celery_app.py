@@ -51,6 +51,16 @@ celery_app.conf.update(
             "task": "verity.workers.tasks.heartbeat",
             "schedule": 300.0,
         },
+        # Every 15 min: warn owners/assignees of tasks breaching or due within 2 days.
+        "scan-slas": {
+            "task": "verity.workers.tasks.scan_slas",
+            "schedule": 900.0,
+        },
+        # Every 2 min: deliver the email copy of notifications that asked for one.
+        "flush-notification-emails": {
+            "task": "verity.workers.tasks.flush_notification_emails",
+            "schedule": 120.0,
+        },
     },
 )
 
