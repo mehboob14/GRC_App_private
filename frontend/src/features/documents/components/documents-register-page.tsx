@@ -5,29 +5,37 @@ import {
   Avatar,
   Badge,
   Button,
+  ColumnPicker,
   ConfirmDialog,
   DropdownMenu,
-  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
   EmptyState,
+  ErrorState,
   FilterFacet,
   Icon,
+  PageHeader,
   Pagination,
   SearchInput,
   StatusPill,
   Table,
   TableSkeleton,
+  TabStrip,
   TBody,
   TD,
   TH,
   THead,
+  Toolbar,
   TR,
+  useColumnPrefs,
+  useTableSort,
   useToast,
+  type ColumnDef,
 } from "@/components/ui";
 import type { StatusFamily } from "@/components/ui/status-pill";
 import { cn } from "@/lib/cn";
+import { describeError, errorToast } from "@/lib/api/describe-error";
 import {
   archiveDocument,
   downloadDocumentBlob,
@@ -36,27 +44,13 @@ import {
 import {
   CLASSIFICATIONS,
   DOC_TYPES,
-  type Classification,
   type Document,
-  type DocType,
   type Lifecycle,
 } from "@/features/documents/types";
 import { DocumentFormDialog } from "./document-form-dialog";
+import { CLASS_LABEL, TYPE_LABEL } from "../labels";
 
-const TYPE_LABEL: Record<DocType, string> = {
-  policy: "Policy",
-  standard: "Standard",
-  procedure: "Procedure",
-  guideline: "Guideline",
-  charter: "Charter",
-};
 
-const CLASS_LABEL: Record<Classification, string> = {
-  public: "Public",
-  internal: "Internal",
-  confidential: "Confidential",
-  restricted: "Restricted",
-};
 
 /** Lifecycle → pill family + label. */
 const LIFECYCLE_META: Record<Lifecycle, { label: string; family: StatusFamily }> = {
@@ -86,30 +80,13 @@ const TOGGLEABLE_COLUMNS = [
   { key: "classification", label: "Classification" },
   { key: "frameworks", label: "Frameworks" },
   { key: "description", label: "Description" },
-] as const;
+] as const satisfies readonly ColumnDef<string>[];
 type ColKey = (typeof TOGGLEABLE_COLUMNS)[number]["key"];
 
 // Default columns mirror the Figma register: Version, Owner, Status, Next
 // review, Acknowledged. Type/Classification/Frameworks/Description are opt-in.
 const DEFAULT_HIDDEN: ColKey[] = ["type", "classification", "frameworks", "description"];
 const COLUMN_PREFS_KEY = "verity.documents.columns";
-
-function loadColumnPrefs(): Record<ColKey, boolean> {
-  const all = Object.fromEntries(
-    TOGGLEABLE_COLUMNS.map((c) => [c.key, !DEFAULT_HIDDEN.includes(c.key)]),
-  ) as Record<ColKey, boolean>;
-  try {
-    const raw = localStorage.getItem(COLUMN_PREFS_KEY);
-    if (!raw) return all;
-    const saved = JSON.parse(raw) as Partial<Record<ColKey, boolean>>;
-    for (const { key } of TOGGLEABLE_COLUMNS) {
-      if (typeof saved[key] === "boolean") all[key] = saved[key] as boolean;
-    }
-  } catch {
-    // Corrupt/absent pref falls back to defaults — never fail the page over it.
-  }
-  return all;
-}
 
 const PAGE_SIZE = 12;
 
@@ -138,6 +115,18 @@ function fmtDate(value: string | null): string {
   });
 }
 
+type SortKey = "title" | "version" | "owner" | "lifecycle" | "renewal" | "attestation";
+
+const SORT_ACCESSORS = {
+  title: (d: Document) => d.title,
+  version: (d: Document) => d.version,
+  owner: (d: Document) => d.owner?.name ?? null,
+  lifecycle: (d: Document) => displayStatus(d).label,
+  // ISO dates sort correctly as strings, so no Date allocation per comparison.
+  renewal: (d: Document) => d.renewal_date,
+  attestation: (d: Document) => d.attestation_pct,
+};
+
 
 export function DocumentsRegisterPage() {
   const navigate = useNavigate();
@@ -156,16 +145,13 @@ export function DocumentsRegisterPage() {
   const [editing, setEditing] = useState<Document | null>(null);
   const [archiveTarget, setArchiveTarget] = useState<Document | null>(null);
 
-  const [visibleCols, setVisibleCols] = useState<Record<ColKey, boolean>>(
-    loadColumnPrefs,
-  );
-  useEffect(() => {
-    localStorage.setItem(COLUMN_PREFS_KEY, JSON.stringify(visibleCols));
-  }, [visibleCols]);
-  const hiddenColCount = TOGGLEABLE_COLUMNS.filter((c) => !visibleCols[c.key]).length;
+  const cols = useColumnPrefs(COLUMN_PREFS_KEY, TOGGLEABLE_COLUMNS, DEFAULT_HIDDEN);
 
   const documentsQuery = useQuery({ queryKey: ["documents"], queryFn: listDocuments });
   const documents = useMemo(() => documentsQuery.data ?? [], [documentsQuery.data]);
+  const loadFailure = documentsQuery.isError
+    ? describeError(documentsQuery.error, "document register")
+    : null;
 
   const ownerOptions = useMemo(() => {
     const seen = new Map<string, string>();
@@ -200,8 +186,11 @@ export function DocumentsRegisterPage() {
     );
   }, [scoped, search, types, statuses, classes, owners]);
 
+  const { thProps, sortRows } = useTableSort<Document, SortKey>(null, SORT_ACCESSORS);
+  const sorted = useMemo(() => sortRows(visible), [sortRows, visible]);
+
   const pageCount = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
-  const paged = visible.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const paged = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   useEffect(() => {
     if (page > pageCount) setPage(1);
   }, [page, pageCount]);
@@ -231,8 +220,8 @@ export function DocumentsRegisterPage() {
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
-    } catch {
-      toast({ title: "Download failed", tone: "danger" });
+    } catch (error) {
+      toast({ title: errorToast(error, "document"), tone: "danger" });
     }
   }
 
@@ -243,11 +232,21 @@ export function DocumentsRegisterPage() {
       setArchiveTarget(null);
       void queryClient.invalidateQueries({ queryKey: ["documents"] });
     },
+    onError: (error: unknown) => toast({ title: errorToast(error, "document"), tone: "danger" }),
   });
 
 
   const overdue = documents.filter(isOverdue);
+  const archivedCount = documents.filter((d) => d.lifecycle === "archived").length;
+  const activeCount = documents.length - archivedCount;
   const inReview = documents.filter((d) => d.lifecycle === "needs_approval").length;
+  // FilterFacet has no count prop, so the one number the deleted summary line
+  // owned for this facet rides in the option label.
+  const statusOptions = LIFECYCLE_FILTERS.map((option) =>
+    option.value === "needs_approval" && inReview > 0
+      ? { ...option, label: `${option.label} (${inReview})` }
+      : option,
+  );
   const withAck = documents.filter((d) => d.attestation_pct != null);
   const orgAck =
     withAck.length > 0
@@ -257,76 +256,22 @@ export function DocumentsRegisterPage() {
       : null;
 
   return (
-    <div className="mx-auto max-w-[1200px]">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="type-overline text-text-subtle">Compliance</p>
-          <h1 className="mt-1 font-display text-heading-lg text-text-primary">
-            Policies &amp; documents
-          </h1>
-          <p className="mt-1.5 text-body-lg text-text-secondary">
-            <span className="tabular">{scoped.length}</span>{" "}
-            {scope === "archived" ? "archived " : ""}
-            {scoped.length === 1 ? "document" : "documents"}
-            {overdue.length > 0 ? (
-              <>
-                {" · "}
-                <span className="font-semibold text-status-danger-text">
-                  {overdue.length} need renewal
-                </span>
-              </>
-            ) : null}
-            {inReview > 0 ? <> · {inReview} in review</> : null}
-            {orgAck != null ? <> · org-wide acknowledgement {orgAck}%</> : null}
-          </p>
-        </div>
-        <div className="ml-auto flex shrink-0 items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="secondary">
-                <Icon name="layers" className="size-4" />
-                Columns
-                {hiddenColCount > 0 ? (
-                  <span className="tabular text-caption text-text-subtle">
-                    {TOGGLEABLE_COLUMNS.length - hiddenColCount}/
-                    {TOGGLEABLE_COLUMNS.length}
-                  </span>
-                ) : null}
-                <Icon name="chev" className="size-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {TOGGLEABLE_COLUMNS.map((col) => (
-                <DropdownMenuCheckboxItem
-                  key={col.key}
-                  checked={visibleCols[col.key]}
-                  onCheckedChange={(next) =>
-                    setVisibleCols((prev) => ({ ...prev, [col.key]: next }))
-                  }
-                >
-                  {col.label}
-                </DropdownMenuCheckboxItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <Button onClick={() => setCreating(true)}>
-            <Icon name="plus" className="size-4" />
-            New document
-          </Button>
-        </div>
-      </div>
+    <div className="w-full">
+      <PageHeader eyebrow="Compliance" title="Policies & documents" />
 
-      {/* Overdue-renewal alert (Figma): surfaces the most urgent item. */}
+      {/* Overdue-renewal alert (Figma): leads with how many, then the worst. */}
       {scope === "active" && overdue.length > 0 ? (
         <div className="mt-5 flex items-center justify-between gap-3 rounded-lg border border-status-warning-border bg-status-warning-bg px-4 py-3">
           <div className="flex items-center gap-3">
             <Icon name="clock" className="size-5 shrink-0 text-status-warning-text" />
             <div className="min-w-0">
               <p className="text-body-md font-medium text-text-primary">
-                {overdue[0].title} renewal is overdue
+                {overdue.length === 1
+                  ? "1 document needs renewal"
+                  : `${overdue.length} documents need renewal`}
               </p>
               <p className="text-caption text-text-subtle">
-                Review was due {fmtDate(overdue[0].renewal_date)}
+                {overdue[0].title}, review was due {fmtDate(overdue[0].renewal_date)}
                 {overdue[0].frameworks.length
                   ? ` · required for ${overdue[0].frameworks.join(", ")}`
                   : ""}
@@ -343,38 +288,50 @@ export function DocumentsRegisterPage() {
         </div>
       ) : null}
 
-      {/* Active / Archived tabs */}
-      <div className="mt-5 flex items-center gap-1 border-b border-border">
-        {(["active", "archived"] as const).map((s) => (
-          <button
-            key={s}
-            type="button"
-            onClick={() => {
-              setScope(s);
-              setPage(1);
-            }}
-            className={cn(
-              "relative px-3 py-2 text-label-sm capitalize",
-              scope === s ? "text-text-primary" : "text-text-subtle hover:text-text-secondary",
-            )}
-          >
-            {s}
-            {scope === s ? (
-              <span className="absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-action-accent" />
-            ) : null}
-          </button>
-        ))}
-      </div>
+      <TabStrip
+        label="Document scope"
+        value={scope}
+        onSelect={(id) => {
+          setScope(id as "active" | "archived");
+          setPage(1);
+        }}
+        items={[
+          { id: "active", label: "Active", count: activeCount },
+          { id: "archived", label: "Archived", count: archivedCount },
+        ]}
+        aside={
+          orgAck != null ? (
+            <>
+              Org-wide acknowledgement{" "}
+              <span className="tabular font-semibold text-text-secondary">{orgAck}%</span>
+            </>
+          ) : null
+        }
+      />
 
-      {/* Search · filters */}
-      <div className="mt-4 flex flex-wrap items-center gap-2">
-        <div className="min-w-[240px] flex-1">
+      <Toolbar
+        searchLabel="Filter documents"
+        search={
           <SearchInput
             value={search}
             onChange={setSearch}
             placeholder="Search by title, code, owner or control…"
+            aria-label="Search documents"
           />
-        </div>
+        }
+        actions={
+          <>
+            <p aria-live="polite" className="text-caption text-text-subtle">
+              Showing <span className="tabular">{visible.length}</span> of{" "}
+              <span className="tabular">{scoped.length}</span> documents
+            </p>
+            <Button onClick={() => setCreating(true)}>
+              <Icon name="plus" className="size-4" />
+              New document
+            </Button>
+          </>
+        }
+      >
         <FilterFacet
           label="Type"
           options={DOC_TYPES.map((t) => ({ value: t, label: TYPE_LABEL[t] }))}
@@ -383,7 +340,7 @@ export function DocumentsRegisterPage() {
         />
         <FilterFacet
           label="Status"
-          options={LIFECYCLE_FILTERS}
+          options={statusOptions}
           values={statuses}
           onChange={setStatuses}
         />
@@ -396,18 +353,20 @@ export function DocumentsRegisterPage() {
         <FilterFacet label="Owner" options={ownerOptions} values={owners} onChange={setOwners} />
         {activeFilters > 0 ? (
           <Button variant="ghost" size="sm" onClick={clearFilters}>
-            Clear
+            Clear filters
           </Button>
         ) : null}
-      </div>
-
-      <p aria-live="polite" className="mb-3 mt-3 text-caption text-text-subtle">
-        Showing <span className="tabular">{visible.length}</span> of{" "}
-        <span className="tabular">{scoped.length}</span> documents
-      </p>
+      </Toolbar>
 
       {documentsQuery.isLoading ? (
         <TableSkeleton rows={8} density="comfortable" />
+      ) : loadFailure ? (
+        <ErrorState
+          title={loadFailure.title}
+          description={loadFailure.message}
+          referenceId={loadFailure.referenceId}
+          onRetry={loadFailure.retryable ? () => void documentsQuery.refetch() : undefined}
+        />
       ) : visible.length === 0 ? (
         <EmptyState
           icon="book"
@@ -427,20 +386,22 @@ export function DocumentsRegisterPage() {
           }
         />
       ) : (
-        <Table>
+        <Table actions={<ColumnPicker {...cols} />}>
           <THead>
             <TR>
-              <TH>Policy</TH>
-              {visibleCols.version ? <TH>Version</TH> : null}
-              {visibleCols.owner ? <TH>Owner</TH> : null}
-              {visibleCols.lifecycle ? <TH>Status</TH> : null}
-              {visibleCols.renewal ? <TH>Next review</TH> : null}
-              {visibleCols.attestation ? <TH>Acknowledged</TH> : null}
-              {visibleCols.type ? <TH>Type</TH> : null}
-              {visibleCols.classification ? <TH>Classification</TH> : null}
-              {visibleCols.frameworks ? <TH>Frameworks</TH> : null}
-              {visibleCols.description ? <TH>Description</TH> : null}
-              <TH className="w-12 text-right">
+              <TH {...thProps("title")}>Policy</TH>
+              {cols.isVisible("version") ? <TH {...thProps("version")}>Version</TH> : null}
+              {cols.isVisible("owner") ? <TH {...thProps("owner")}>Owner</TH> : null}
+              {cols.isVisible("lifecycle") ? <TH {...thProps("lifecycle")}>Status</TH> : null}
+              {cols.isVisible("renewal") ? <TH {...thProps("renewal")}>Next review</TH> : null}
+              {cols.isVisible("attestation") ? (
+                <TH {...thProps("attestation")}>Acknowledged</TH>
+              ) : null}
+              {cols.isVisible("type") ? <TH>Type</TH> : null}
+              {cols.isVisible("classification") ? <TH>Classification</TH> : null}
+              {cols.isVisible("frameworks") ? <TH>Frameworks</TH> : null}
+              {cols.isVisible("description") ? <TH>Description</TH> : null}
+              <TH className="w-12">
                 <span className="sr-only">Actions</span>
               </TH>
             </TR>
@@ -477,14 +438,14 @@ export function DocumentsRegisterPage() {
                       </div>
                     </div>
                   </TD>
-                  {visibleCols.version ? (
+                  {cols.isVisible("version") ? (
                     <TD>
                       <span className="tabular text-body-sm text-text-secondary">
                         {doc.version}
                       </span>
                     </TD>
                   ) : null}
-                  {visibleCols.owner ? (
+                  {cols.isVisible("owner") ? (
                     <TD>
                       {doc.owner ? (
                         <span className="flex items-center gap-2">
@@ -498,12 +459,12 @@ export function DocumentsRegisterPage() {
                       )}
                     </TD>
                   ) : null}
-                  {visibleCols.lifecycle ? (
+                  {cols.isVisible("lifecycle") ? (
                     <TD>
                       <StatusPill status={status.family} label={status.label} />
                     </TD>
                   ) : null}
-                  {visibleCols.renewal ? (
+                  {cols.isVisible("renewal") ? (
                     <TD>
                       {overdueRow ? (
                         <span className="text-body-sm font-medium text-status-danger-text">
@@ -516,7 +477,7 @@ export function DocumentsRegisterPage() {
                       )}
                     </TD>
                   ) : null}
-                  {visibleCols.attestation ? (
+                  {cols.isVisible("attestation") ? (
                     <TD>
                       {pct == null ? (
                         <span className="text-body-sm text-text-subtle">not published</span>
@@ -533,19 +494,19 @@ export function DocumentsRegisterPage() {
                       )}
                     </TD>
                   ) : null}
-                  {visibleCols.type ? (
+                  {cols.isVisible("type") ? (
                     <TD>
                       <Badge variant="neutral">{TYPE_LABEL[doc.doc_type]}</Badge>
                     </TD>
                   ) : null}
-                  {visibleCols.classification ? (
+                  {cols.isVisible("classification") ? (
                     <TD>
                       <span className="text-body-sm text-text-secondary">
                         {CLASS_LABEL[doc.classification]}
                       </span>
                     </TD>
                   ) : null}
-                  {visibleCols.frameworks ? (
+                  {cols.isVisible("frameworks") ? (
                     <TD>
                       {doc.frameworks.length ? (
                         <div className="flex flex-wrap gap-1">
@@ -563,7 +524,7 @@ export function DocumentsRegisterPage() {
                       )}
                     </TD>
                   ) : null}
-                  {visibleCols.description ? (
+                  {cols.isVisible("description") ? (
                     <TD>
                       <p
                         className="line-clamp-2 max-w-[320px] text-body-sm text-text-secondary"

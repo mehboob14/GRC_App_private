@@ -16,6 +16,9 @@ export const DrawerClose = DialogPrimitive.Close;
 const widths = {
   md: "w-[480px]",
   lg: "w-[560px]",
+  /** A dense multi-column form (e.g. the asset editor) needs real width to
+   *  keep fields two-across without wrapping every label. */
+  xl: "w-[780px]",
 } as const;
 
 type DrawerContentProps = ComponentPropsWithoutRef<

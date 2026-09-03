@@ -15,7 +15,7 @@ import {
   TextField,
 } from "@/components/ui";
 import { authApi } from "@/lib/api/endpoints";
-import { ApiError } from "@/lib/api/client";
+import { describeAuthError } from "@/lib/api/describe-error";
 import { useAuth } from "@/lib/auth/auth-context";
 import { useAlertFocus } from "@/features/iam/hooks/use-alert-focus";
 
@@ -97,11 +97,10 @@ export function SignUpPage() {
         noValidate
       >
         {signupMutation.isError ? (
-          <ErrorBanner ref={alertRef} title="Couldn't create the workspace">
-            {signupMutation.error instanceof ApiError
-              ? signupMutation.error.message
-              : "The request didn't reach the server. Check your connection and try again."}
-          </ErrorBanner>
+          <ErrorBanner
+            ref={alertRef}
+            title={describeAuthError(signupMutation.error).message}
+          />
         ) : null}
         <TextField
           label="Company name"

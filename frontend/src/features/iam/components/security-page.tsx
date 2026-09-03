@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ReactNode } from "react";
-import { Switch } from "@/components/ui";
+import { Switch, useToast } from "@/components/ui";
+import { describeError, errorToast } from "@/lib/api/describe-error";
 import { tenantApi } from "@/lib/api/endpoints";
 import { useAuth } from "@/lib/auth/auth-context";
 import { PasswordPolicyCard } from "@/features/iam/components/password-policy-card";
@@ -31,6 +32,7 @@ function PolicyRow({ title, description, status }: PolicyRowProps) {
 export function SecurityPage() {
   const { principal } = useAuth();
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const canManage = principal?.permissions.includes("security:manage") ?? false;
 
   const tenantQuery = useQuery({
@@ -48,6 +50,9 @@ export function SecurityPage() {
         queryKey: ["security", principal?.tenant_id],
         exact: true,
       }),
+    // The switch snaps back on failure; without this it would do so silently.
+    onError: (error: unknown) =>
+      toast({ title: errorToast(error, "security setting"), tone: "danger" }),
   });
 
   const scopeLine = tenantQuery.data
@@ -88,6 +93,12 @@ export function SecurityPage() {
             }
           />
         </div>
+        {/* The row's badge only says it failed; this says why. */}
+        {securityQuery.isError ? (
+          <p className="mt-2 text-body-sm text-status-danger-text">
+            {describeError(securityQuery.error, "security setting").message}
+          </p>
+        ) : null}
         {!canManage ? (
           <p className="mt-3 text-caption text-text-subtle">
             Only workspace admins can change these settings.

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Badge, Button, useToast } from "@/components/ui";
-import { ApiError } from "@/lib/api/client";
+import { errorToast } from "@/lib/api/describe-error";
 import { evidenceApi } from "@/lib/api/endpoints";
 import type { MappingSuggestion } from "@/lib/api/types";
 
@@ -36,10 +36,7 @@ export function SuggestedMappings({
       setDismissed(new Set());
     },
     onError: (error: unknown) =>
-      toast({
-        title: error instanceof ApiError ? error.message : "Couldn't get suggestions.",
-        tone: "danger",
-      }),
+      toast({ title: errorToast(error, "suggestion list"), tone: "danger" }),
   });
 
   const approve = useMutation({
@@ -50,10 +47,7 @@ export function SuggestedMappings({
       toast({ title: "Control linked", tone: "success" });
     },
     onError: (error: unknown) =>
-      toast({
-        title: error instanceof ApiError ? error.message : "Couldn't link the control.",
-        tone: "danger",
-      }),
+      toast({ title: errorToast(error, "control"), tone: "danger" }),
   });
 
   const visible = (rows ?? []).filter((r) => !dismissed.has(r.control_id));

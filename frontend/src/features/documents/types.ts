@@ -1,3 +1,4 @@
+import type { RecipientSelection } from "@/components/ui/recipient-picker";
 /**
  * Documents & Policies — typed contracts for the UI/UX build.
  *
@@ -79,12 +80,41 @@ export type DocumentVersion = {
   status: "current" | "superseded";
 };
 
+export type ApprovalTargetType = "user" | "role" | "group";
+
+export type ApprovalTarget = {
+  target_type: ApprovalTargetType;
+  target_id: string;
+  target_name: string;
+};
+
+export type ApprovalDecisionValue = "pending" | "approved" | "rejected";
+
+export type ApprovalAssignee = {
+  membership_id: string;
+  name: string;
+  decision: ApprovalDecisionValue;
+  decided_at: string | null;
+  note: string | null;
+};
+
 export type ApprovalTier = {
   tier: number;
   name: string;
   status: "pending" | "approved" | "rejected" | "not_started";
-  approver: string | null;
   decided_on: string | null;
+  targets: ApprovalTarget[];
+  assignees: ApprovalAssignee[];
+  /** This viewer's own decision on this tier, or null if they are not on it. */
+  my_decision: ApprovalDecisionValue | null;
+};
+
+/** A tier waiting on the current viewer's own decision (for the bell). */
+export type PendingApproval = {
+  document_id: string;
+  document_code: string;
+  document_title: string;
+  tier: number;
 };
 
 /** The extra detail a single document carries beyond the register row. */
@@ -181,11 +211,7 @@ export type PendingCampaign = {
 };
 
 /** One kind's targeting: any mix of individuals, roles and groups. */
-export type RecipientSelectionInput = {
-  user_ids: string[];
-  role_ids: string[];
-  group_ids: string[];
-};
+export type RecipientSelectionInput = RecipientSelection;
 
 export type CampaignCreateInput = {
   title: string;

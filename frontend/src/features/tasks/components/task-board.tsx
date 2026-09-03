@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Avatar, ErrorState, Skeleton, StatusPill } from "@/components/ui";
 import { cn } from "@/lib/cn";
+import { describeError } from "@/lib/api/describe-error";
 import { listTasks } from "../api";
 import type { Task, TaskFilters, TaskStatus } from "../types";
 import { PRIORITY_META, SLA_META, STATUS_META } from "../tokens";
@@ -19,11 +20,13 @@ export function TaskBoard({ filters }: { filters: Partial<TaskFilters> }) {
   });
 
   if (query.isError) {
+    const e = describeError(query.error, "task board");
     return (
       <ErrorState
-        title="Couldn’t load the board"
-        description="The request failed. Retry, or contact support if it keeps happening."
-        onRetry={() => void query.refetch()}
+        title={e.title}
+        description={e.message}
+        referenceId={e.referenceId}
+        onRetry={e.retryable ? () => void query.refetch() : undefined}
       />
     );
   }

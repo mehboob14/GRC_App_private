@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import DOMPurify from "dompurify";
 import mammoth from "mammoth";
 import { Button, Icon, useToast } from "@/components/ui";
+import { describeError, errorToast } from "@/lib/api/describe-error";
 import { downloadDocumentBlob } from "@/features/documents/api";
 import type { DocumentDetail } from "@/features/documents/types";
 import "../document-prose.css";
@@ -29,6 +30,9 @@ export function DocumentContentViewer({
   const [zoom, setZoom] = useState(100);
   const [fileUrl, setFileUrl] = useState<string | null>(null);
   const [docxHtml, setDocxHtml] = useState<string | null>(null);
+  // Why the file could not be shown, so a failed fetch does not sit on
+  // "Loading file…" forever or read as an empty document.
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const isPdf = doc.content_format === "pdf";
   const isDocx = doc.content_format === "docx";
@@ -44,7 +48,9 @@ export function DocumentContentViewer({
         url = URL.createObjectURL(blob);
         setFileUrl(url);
       })
-      .catch(() => setFileUrl(null));
+      .catch((error: unknown) => {
+        if (!revoked) setLoadError(describeError(error, "document").message);
+      });
     return () => {
       revoked = true;
       if (url) URL.revokeObjectURL(url);
@@ -62,8 +68,8 @@ export function DocumentContentViewer({
         });
         if (!cancelled) setDocxHtml(DOMPurify.sanitize(value));
       })
-      .catch(() => {
-        if (!cancelled) setDocxHtml("");
+      .catch((error: unknown) => {
+        if (!cancelled) setLoadError(describeError(error, "document").message);
       });
     return () => {
       cancelled = true;
@@ -81,8 +87,8 @@ export function DocumentContentViewer({
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
-    } catch {
-      toast({ title: "Download failed", tone: "danger" });
+    } catch (error) {
+      toast({ title: errorToast(error, "document"), tone: "danger" });
     }
   }
 
@@ -97,7 +103,15 @@ export function DocumentContentViewer({
             Download
           </Button>
         </div>
-        {fileUrl ? (
+        {loadError ? (
+          <div className="px-3 py-10 text-center">
+            <p className="text-body-sm text-status-danger-text">{loadError}</p>
+            <Button className="mt-3" variant="secondary" size="sm" onClick={download}>
+              <Icon name="download" className="size-4" />
+              Download original
+            </Button>
+          </div>
+        ) : fileUrl ? (
           <iframe title={doc.title} src={fileUrl} className="h-[72vh] w-full" />
         ) : (
           <p className="px-3 py-10 text-center text-body-sm text-text-subtle">Loading file…</p>
@@ -108,8 +122,8 @@ export function DocumentContentViewer({
 
   // -- Authored HTML or converted Word: zoomable paper ---------------------
   const html = isDocx ? docxHtml : DOMPurify.sanitize(doc.content_html ?? "");
-  const converting = isDocx && docxHtml === null;
-  const failed = isDocx && docxHtml === "";
+  const converting = isDocx && docxHtml === null && loadError === null;
+  const failed = isDocx && loadError !== null;
 
   return (
     <div className="rounded-lg border border-border bg-surface-sunken">
@@ -153,9 +167,7 @@ export function DocumentContentViewer({
           <p className="py-10 text-center text-body-sm text-text-subtle">Rendering document…</p>
         ) : failed ? (
           <div className="py-10 text-center">
-            <p className="text-body-sm text-text-secondary">
-              This file couldn't be previewed here.
-            </p>
+            <p className="text-body-sm text-status-danger-text">{loadError}</p>
             <Button className="mt-3" variant="secondary" size="sm" onClick={download}>
               <Icon name="download" className="size-4" />
               Download original

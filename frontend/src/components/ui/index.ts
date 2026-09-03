@@ -5,8 +5,21 @@ export { BulkActionBar } from "./bulk-action-bar";
 export { Button, type ButtonSize, type ButtonVariant } from "./button";
 export { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./card";
 export { Checkbox } from "./checkbox";
+export { CodeChip } from "./code-chip";
+export { ColumnPicker } from "./column-picker";
+export { useColumnPrefs, type ColumnDef } from "./use-column-prefs";
 export { ConfirmDialog } from "./confirm-dialog";
 export { BrandMark } from "./brand-mark";
+export { DetailHeader } from "./detail-header";
+export {
+  BarList,
+  Donut,
+  FAMILY_CHART,
+  Gauge,
+  RankedBars,
+  type BarListItem,
+  type ChartSegment,
+} from "./donut-chart";
 export {
   Dialog,
   DialogBody,
@@ -46,6 +59,8 @@ export { Icon, type IconName } from "./icon";
 export { Pagination } from "./pagination";
 export { PasswordField } from "./password-field";
 export { RadioGroup, RadioGroupItem } from "./radio-group";
+export { RecipientPicker, type RecipientSelection } from "./recipient-picker";
+export { EMPTY_RECIPIENTS, isEmptyRecipients, useRecipientOptions } from "./use-recipient-options";
 export { SearchInput } from "./search-input";
 export { SearchableSelect, type SearchableOption } from "./searchable-select";
 export { PersonSelect, PeopleSelect, type Person } from "./person-select";
@@ -74,7 +89,11 @@ export {
   TR,
   type TableDensity,
 } from "./table";
-export { Tabs, TabsContent, TabsList, TabsTrigger } from "./tabs";
+export { PageHeader } from "./page-header";
+export { SegmentedControl, type SegmentedItem } from "./segmented-control";
+export { TabStrip, type TabStripItem } from "./tab-strip";
+export { Toolbar } from "./toolbar";
+export { useTableSort, type SortDir } from "./use-table-sort";
 export { TextField } from "./text-field";
 export { ToastProvider } from "./toast";
 export { useToast } from "./toast-context";

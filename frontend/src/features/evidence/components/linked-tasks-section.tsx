@@ -13,7 +13,7 @@ import {
   TextField,
   useToast,
 } from "@/components/ui";
-import { ApiError } from "@/lib/api/client";
+import { describeError, errorToast } from "@/lib/api/describe-error";
 import { evidenceApi } from "@/lib/api/endpoints";
 import type { LinkedTask } from "@/lib/api/types";
 import { listTasks } from "@/features/tasks/api";
@@ -33,6 +33,7 @@ export function LinkedTasksSection({
   canManage: boolean;
 }) {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const key = ["evidence-tasks", evidenceId];
   const [linking, setLinking] = useState(false);
 
@@ -40,16 +41,22 @@ export function LinkedTasksSection({
   const unlink = useMutation({
     mutationFn: (linkId: string) => evidenceApi.unlinkTask(evidenceId, linkId),
     onSuccess: (rows) => queryClient.setQueryData(key, rows),
+    onError: (error: unknown) =>
+      toast({ title: errorToast(error, "task link"), tone: "danger" }),
   });
 
   const tasks = tasksQuery.data ?? [];
+  // A panel inside a working page: one quiet line, not a full ErrorState.
+  const loadFailure = tasksQuery.isError ? describeError(tasksQuery.error, "task list") : null;
 
   return (
     <div className="rounded-lg border border-border bg-surface-primary p-5">
       <div className="mb-3 flex items-center justify-between gap-3">
         <h2 className="font-display text-title-md text-text-primary">
           Tasks
-          <span className="ml-2 tabular text-body-sm text-text-subtle">{tasks.length}</span>
+          {loadFailure ? null : (
+            <span className="ml-2 tabular text-body-sm text-text-subtle">{tasks.length}</span>
+          )}
         </h2>
         {canManage ? (
           <Button size="sm" variant="secondary" onClick={() => setLinking(true)}>
@@ -58,7 +65,10 @@ export function LinkedTasksSection({
         ) : null}
       </div>
 
-      {tasks.length === 0 ? (
+      {loadFailure ? (
+        // A failed load is not "no tasks linked": saying so would be a lie.
+        <p className="text-body-sm text-status-danger-text">{loadFailure.message}</p>
+      ) : tasks.length === 0 ? (
         <p className="text-body-sm text-text-subtle">
           No tasks linked. Link the remediation or work this evidence supports so it shows on the task too.
         </p>
@@ -123,13 +133,11 @@ function LinkTaskDialog({
       toast({ title: "Task linked", tone: "success" });
     },
     onError: (error: unknown) =>
-      toast({
-        title: error instanceof ApiError ? error.message : "Couldn't link the task.",
-        tone: "danger",
-      }),
+      toast({ title: errorToast(error, "task"), tone: "danger" }),
   });
 
   const items = (tasksQuery.data?.items ?? []).filter((t) => !linkedTaskIds.includes(t.id));
+  const searchFailure = tasksQuery.isError ? describeError(tasksQuery.error, "task list") : null;
 
   return (
     <Dialog open onOpenChange={onOpenChange}>
@@ -145,7 +153,11 @@ function LinkTaskDialog({
             placeholder="By title or code…"
           />
           <div className="max-h-80 overflow-y-auto rounded-md border border-border">
-            {items.length === 0 ? (
+            {searchFailure ? (
+              // "No tasks match" for a failed search would send the reader
+              // looking for a task that is there.
+              <p className="p-4 text-body-sm text-status-danger-text">{searchFailure.message}</p>
+            ) : items.length === 0 ? (
               <p className="p-4 text-body-sm text-text-subtle">
                 {tasksQuery.isLoading ? "Loading…" : "No tasks match — everything found may already be linked."}
               </p>

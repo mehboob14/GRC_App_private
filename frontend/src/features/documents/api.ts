@@ -1,6 +1,9 @@
 import { ApiError, apiFetch } from "@/lib/api/client";
 import { getAccessToken } from "@/lib/auth/session";
 import type {
+  ApprovalAssignee,
+  ApprovalDecisionValue,
+  ApprovalTarget,
   ApprovalTier,
   Campaign,
   CampaignCreateInput,
@@ -12,7 +15,9 @@ import type {
   DocumentVersion,
   DocType,
   Lifecycle,
+  PendingApproval,
   PendingCampaign,
+  RecipientSelectionInput,
 } from "./types";
 
 /**
@@ -55,11 +60,27 @@ type RawVersion = {
   is_current: boolean;
 };
 
+type RawApprovalTarget = {
+  target_type: ApprovalTarget["target_type"];
+  target_id: string;
+  target_name: string;
+};
+
+type RawApprovalAssignee = {
+  membership_id: string;
+  name: string;
+  decision: ApprovalDecisionValue;
+  decided_at: string | null;
+  note: string | null;
+};
+
 type RawApproval = {
   tier: number;
   status: ApprovalTier["status"];
-  approver_name: string | null;
   decided_at: string | null;
+  targets: RawApprovalTarget[];
+  assignees: RawApprovalAssignee[];
+  my_decision: ApprovalDecisionValue | null;
 };
 
 type RawDetail = RawDocument & {
@@ -116,8 +137,18 @@ function toApproval(a: RawApproval): ApprovalTier {
     tier: a.tier,
     name: `Tier ${a.tier}`,
     status: a.status,
-    approver: a.approver_name,
     decided_on: day(a.decided_at),
+    targets: a.targets,
+    assignees: a.assignees.map(
+      (asn): ApprovalAssignee => ({
+        membership_id: asn.membership_id,
+        name: asn.name,
+        decision: asn.decision,
+        decided_at: asn.decided_at,
+        note: asn.note,
+      }),
+    ),
+    my_decision: a.my_decision,
   };
 }
 
@@ -233,14 +264,15 @@ export async function saveDocumentContent(
   );
 }
 
-export async function submitDocument(
+export async function assignApprovalTier(
   id: string,
-  approverIds: string[] = [],
+  tier: number,
+  targets: RecipientSelectionInput,
 ): Promise<Document> {
   return toDocument(
-    await apiFetch<RawDocument>(`/documents/${id}/submit`, {
+    await apiFetch<RawDocument>(`/documents/${id}/approvals/${tier}/assign`, {
       method: "POST",
-      body: JSON.stringify({ approver_ids: approverIds }),
+      body: JSON.stringify({ targets }),
     }),
   );
 }
@@ -259,8 +291,19 @@ export async function decideApproval(
   );
 }
 
+/** A manual fallback: the normal flow auto-publishes when the last tier is
+ *  decided, so this should rarely be needed. */
 export async function publishDocument(id: string): Promise<Document> {
   return toDocument(await apiFetch<RawDocument>(`/documents/${id}/publish`, { method: "POST" }));
+}
+
+export async function myPendingApprovals(): Promise<PendingApproval[]> {
+  return apiFetch<PendingApproval[]>("/documents/approvals/pending");
+}
+
+export async function myPendingApprovalCount(): Promise<number> {
+  const { count } = await apiFetch<{ count: number }>("/documents/approvals/pending/count");
+  return count;
 }
 
 export async function acknowledgeDocument(id: string): Promise<void> {

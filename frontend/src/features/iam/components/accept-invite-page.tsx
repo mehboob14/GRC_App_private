@@ -14,7 +14,7 @@ import {
   TextField,
 } from "@/components/ui";
 import { authApi } from "@/lib/api/endpoints";
-import { ApiError } from "@/lib/api/client";
+import { describeAuthError } from "@/lib/api/describe-error";
 import { useAuth } from "@/lib/auth/auth-context";
 import { useAlertFocus } from "@/features/iam/hooks/use-alert-focus";
 import type { AcceptInvitationRequest } from "@/lib/api/types";
@@ -25,10 +25,6 @@ const newUserSchema = z.object({
 });
 
 type NewUserValues = z.infer<typeof newUserSchema>;
-
-function messageFrom(error: unknown, fallback: string): string {
-  return error instanceof ApiError ? error.message : fallback;
-}
 
 export function AcceptInvitePage() {
   const [params] = useSearchParams();
@@ -124,12 +120,10 @@ export function AcceptInvitePage() {
         noValidate
       >
         {acceptMutation.isError ? (
-          <ErrorBanner ref={alertRef} title="Couldn't accept the invitation">
-            {messageFrom(
-              acceptMutation.error,
-              "The invite may be expired or already used. Ask a workspace admin to send a new one.",
-            )}
-          </ErrorBanner>
+          <ErrorBanner
+            ref={alertRef}
+            title={describeAuthError(acceptMutation.error).message}
+          />
         ) : null}
         {isAuthenticated ? null : (
           <label className="flex items-center gap-2 text-body-md text-text-primary">

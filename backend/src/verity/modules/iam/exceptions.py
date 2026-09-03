@@ -29,7 +29,7 @@ class AlreadyMember(Conflict):
     """Inviting a person who already holds an active membership in this tenant."""
 
     code = "already_member"
-    message = "That person already has a membership in this workspace."
+    message = "That person is already a member of this workspace."
 
 
 class InvalidInvite(AuthenticationRequired):

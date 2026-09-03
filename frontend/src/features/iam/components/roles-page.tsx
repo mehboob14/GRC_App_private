@@ -3,6 +3,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Badge,
   Button,
+  ColumnPicker,
+  type ColumnDef,
   ConfirmDialog,
   Dialog,
   DialogBody,
@@ -28,16 +30,24 @@ import {
   THead,
   TR,
   TextField,
+  useColumnPrefs,
   useToast,
 } from "@/components/ui";
 import { SettingsPageHeader } from "@/features/iam/components/settings-page-header";
 import { iamApi } from "@/lib/api/endpoints";
-import { ApiError } from "@/lib/api/client";
+import { describeError, errorToast } from "@/lib/api/describe-error";
 import { useAuth } from "@/lib/auth/auth-context";
 import { useAlertFocus } from "@/features/iam/hooks/use-alert-focus";
 import { MemberPickerDialog } from "@/features/iam/components/member-picker-dialog";
 import { PermissionPicker } from "@/features/iam/components/permission-picker";
 import type { PermissionKey, Role } from "@/lib/api/types";
+
+/** Optional columns only — Role and the actions cell always render. */
+const ROLE_COLUMNS = [
+  { key: "description", label: "Description" },
+  { key: "permissions", label: "Permissions" },
+  { key: "assignments", label: "Assignments" },
+] as const satisfies readonly ColumnDef<string>[];
 
 export function RolesPage() {
   const { principal } = useAuth();
@@ -56,6 +66,7 @@ export function RolesPage() {
   const [assigning, setAssigning] = useState<Role | null>(null);
   const [assignError, setAssignError] = useState<string | null>(null);
   const alertRef = useAlertFocus(error !== null);
+  const cols = useColumnPrefs("verity.roles.columns", ROLE_COLUMNS);
 
   const query = useQuery({
     queryKey: ["roles", principal?.tenant_id],
@@ -114,11 +125,7 @@ export function RolesPage() {
       });
     },
     onError: (err: unknown) => {
-      setError(
-        err instanceof ApiError
-          ? err.message
-          : "The role didn't reach the server. Check your connection and try again.",
-      );
+      setError(errorToast(err, "role"));
     },
   });
 
@@ -146,11 +153,7 @@ export function RolesPage() {
       });
     },
     onError: (err: unknown) => {
-      setAssignError(
-        err instanceof ApiError
-          ? err.message
-          : "The assignment didn't reach the server. Try again.",
-      );
+      setAssignError(errorToast(err, "role assignment"));
     },
   });
 
@@ -163,13 +166,7 @@ export function RolesPage() {
     },
     onError: (err: unknown) => {
       setToDelete(null);
-      toast({
-        title:
-          err instanceof ApiError
-            ? err.message
-            : "Couldn't delete the role. Try again.",
-        tone: "danger",
-      });
+      toast({ title: errorToast(err, "role"), tone: "danger" });
     },
   });
 
@@ -178,20 +175,13 @@ export function RolesPage() {
   }
 
   if (query.isError) {
+    const failure = describeError(query.error, "role list");
     return (
       <ErrorState
-        title="Couldn’t load roles"
-        description={
-          query.error instanceof ApiError
-            ? query.error.message
-            : "The request failed. Retry, or contact support if it keeps happening."
-        }
-        referenceId={
-          query.error instanceof ApiError
-            ? query.error.correlationId
-            : undefined
-        }
-        onRetry={() => void query.refetch()}
+        title={failure.title}
+        description={failure.message}
+        referenceId={failure.referenceId}
+        onRetry={failure.retryable ? () => void query.refetch() : undefined}
       />
     );
   }
@@ -221,13 +211,17 @@ export function RolesPage() {
           description="Built-in roles should always exist. Retry, or contact support if this persists."
         />
       ) : (
-        <Table density="standard">
+        <Table density="standard" actions={<ColumnPicker {...cols} />}>
           <THead>
             <TR>
               <TH>Role</TH>
-              <TH>Description</TH>
-              <TH numeric>Permissions</TH>
-              <TH numeric>Assignments</TH>
+              {cols.isVisible("description") ? <TH>Description</TH> : null}
+              {cols.isVisible("permissions") ? (
+                <TH numeric>Permissions</TH>
+              ) : null}
+              {cols.isVisible("assignments") ? (
+                <TH numeric>Assignments</TH>
+              ) : null}
               <TH>
                 <span className="sr-only">Actions</span>
               </TH>
@@ -246,17 +240,23 @@ export function RolesPage() {
                     )}
                   </div>
                 </TD>
-                <TD className="max-w-[24rem]">
-                  {role.description ? (
-                    <span className="line-clamp-2 text-text-secondary">
-                      {role.description}
-                    </span>
-                  ) : (
-                    <span className="text-text-faint">—</span>
-                  )}
-                </TD>
-                <TD numeric>{role.permission_keys.length}</TD>
-                <TD numeric>{role.assignment_count}</TD>
+                {cols.isVisible("description") ? (
+                  <TD className="max-w-[24rem]">
+                    {role.description ? (
+                      <span className="line-clamp-2 text-text-secondary">
+                        {role.description}
+                      </span>
+                    ) : (
+                      <span className="text-text-faint">—</span>
+                    )}
+                  </TD>
+                ) : null}
+                {cols.isVisible("permissions") ? (
+                  <TD numeric>{role.permission_keys.length}</TD>
+                ) : null}
+                {cols.isVisible("assignments") ? (
+                  <TD numeric>{role.assignment_count}</TD>
+                ) : null}
                 <TD className="text-right">
                   {canManage ? (
                     <DropdownMenu>

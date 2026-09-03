@@ -1,59 +1,47 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   Avatar,
   Badge,
   Button,
+  CodeChip,
+  DetailHeader,
   Dialog,
+  DialogBody,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  ErrorState,
   Icon,
-  Select,
-  SelectContent,
-  SelectField,
-  SelectItem,
-  SelectTrigger,
   StatusPill,
   Table,
+  TabStrip,
   TBody,
   TD,
   TH,
   THead,
-  Tooltip,
   TR,
 } from "@/components/ui";
 import type { StatusFamily } from "@/components/ui/status-pill";
 import { cn } from "@/lib/cn";
 import { useToast } from "@/components/ui";
 import { useAuth } from "@/lib/auth/auth-context";
-import { iamApi } from "@/lib/api/endpoints";
+import { describeError, errorToast } from "@/lib/api/describe-error";
 import {
   acknowledgeDocument,
-  decideApproval,
   getDocumentDetail,
-  publishDocument,
-  submitDocument,
+  updateDocument,
 } from "@/features/documents/api";
-import type {
-  ApprovalTier,
-  Classification,
-  DocType,
-  Lifecycle,
-} from "@/features/documents/types";
+import type { ApprovalTier, Document, Lifecycle } from "@/features/documents/types";
 import { DocumentContentViewer } from "./document-content-viewer";
 import { DocumentCampaignsPanel } from "./document-campaigns-panel";
 import { DocumentFormDialog } from "./document-form-dialog";
+import { TierApprovalCard } from "./tier-approval-card";
+import { OwnerSelect } from "@/features/iam/components/owner-select";
+import { CLASS_LABEL, TYPE_LABEL } from "../labels";
 
-const TYPE_LABEL: Record<DocType, string> = {
-  policy: "Policy", standard: "Standard", procedure: "Procedure",
-  guideline: "Guideline", charter: "Charter",
-};
-const CLASS_LABEL: Record<Classification, string> = {
-  public: "Public", internal: "Internal", confidential: "Confidential", restricted: "Restricted",
-};
 const LIFECYCLE_META: Record<Lifecycle, { label: string; family: StatusFamily }> = {
   draft: { label: "Draft", family: "neutral" },
   needs_approval: { label: "Needs approval", family: "pending" },
@@ -61,9 +49,6 @@ const LIFECYCLE_META: Record<Lifecycle, { label: string; family: StatusFamily }>
   published: { label: "Published", family: "success" },
   expired: { label: "Expired", family: "danger" },
   archived: { label: "Archived", family: "neutral" },
-};
-const APPROVAL_FAMILY: Record<ApprovalTier["status"], StatusFamily> = {
-  approved: "success", pending: "pending", rejected: "danger", not_started: "neutral",
 };
 const APPROVAL_LABEL: Record<ApprovalTier["status"], string> = {
   approved: "Approved", pending: "Pending", rejected: "Rejected", not_started: "Not started",
@@ -74,6 +59,26 @@ function fmtDate(value: string | null): string {
   return new Date(value).toLocaleDateString(undefined, {
     year: "numeric", month: "long", day: "numeric",
   });
+}
+
+// The backend only creates a tier's row once it is first assigned, so a fresh
+// draft has zero rows to render. Fill in placeholders up to the fixed 2-tier
+// maximum so the owner always has an "Assign" affordance to start with.
+const APPROVAL_TIER_COUNT = 2;
+function tierCards(approvals: ApprovalTier[]): ApprovalTier[] {
+  const byTier = new Map(approvals.map((a) => [a.tier, a]));
+  return Array.from({ length: APPROVAL_TIER_COUNT }, (_, i) => i + 1).map(
+    (tier) =>
+      byTier.get(tier) ?? {
+        tier,
+        name: `Tier ${tier}`,
+        status: "not_started",
+        decided_on: null,
+        targets: [],
+        assignees: [],
+        my_decision: null,
+      },
+  );
 }
 
 const TABS = [
@@ -93,28 +98,16 @@ export function DocumentDetailPage() {
   const { principal } = useAuth();
   const [tab, setTab] = useState<TabId>("overview");
   const [editing, setEditing] = useState(false);
-  const [submitOpen, setSubmitOpen] = useState(false);
-  const [reviewerId, setReviewerId] = useState("");
-  const [approverId, setApproverId] = useState("");
-
-  const canReadMembers = Boolean(principal?.permissions.includes("members:read"));
-  const membersQuery = useQuery({
-    queryKey: ["members"],
-    queryFn: () => iamApi.listMembers(),
-    enabled: canReadMembers,
-  });
-  const members = membersQuery.data ?? [];
+  const [assigningOwner, setAssigningOwner] = useState(false);
 
   const canManage = Boolean(principal?.permissions.includes("documents:manage"));
-  const canApprove = Boolean(principal?.permissions.includes("documents:approve"));
-  const canPublish = Boolean(principal?.permissions.includes("documents:publish"));
 
   const action = useMutation({
     mutationFn: (run: () => Promise<unknown>) => run(),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["documents"] });
     },
-    onError: () => toast({ title: "Action failed", tone: "danger" }),
+    onError: (error: unknown) => toast({ title: errorToast(error, "document"), tone: "danger" }),
   });
 
   const query = useQuery({
@@ -125,84 +118,52 @@ export function DocumentDetailPage() {
   const doc = query.data;
 
   if (query.isLoading) {
-    return <p className="mx-auto max-w-[1000px] text-body-md text-text-subtle">Loading…</p>;
+    return <p className="w-full text-body-md text-text-subtle">Loading…</p>;
+  }
+  if (query.isError) {
+    const e = describeError(query.error, "document");
+    return (
+      <div className="w-full">
+        <DetailHeader backTo="/documents" backLabel="Back to documents" title="Document" />
+        <ErrorState
+          title={e.title}
+          description={e.message}
+          referenceId={e.referenceId}
+          onRetry={e.retryable ? () => void query.refetch() : undefined}
+        />
+      </div>
+    );
   }
   if (!doc) {
     return (
-      <div className="mx-auto max-w-[1000px]">
-        <Link to="/documents" className="text-body-sm text-text-link">
-          Policies &amp; Documents
-        </Link>
-        <p className="mt-4 text-body-md text-text-secondary">Document not found.</p>
+      <div className="w-full">
+        <DetailHeader
+          backTo="/documents"
+          backLabel="Back to documents"
+          title="Document not found"
+        />
       </div>
     );
   }
 
   const life = LIFECYCLE_META[doc.lifecycle];
-  const pendingTier = doc.approvals.find((a) => a.status === "pending")?.tier ?? null;
   const openEditor = () =>
     window.open(`/documents/${doc.id}/edit`, "_blank");
 
   return (
-    <div className="mx-auto max-w-[1100px]">
-      <Link
-        to="/documents"
-        className="inline-flex items-center gap-1.5 text-body-sm text-text-link hover:underline"
-      >
-        <Icon name="arrowl" className="size-4" />
-        Back to library
-      </Link>
-
-      <div className="mt-3 flex items-start justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <span className="rounded-sm bg-surface-sunken px-2 py-1 font-mono text-caption text-text-subtle">
-            {doc.code}
-          </span>
-          <h1 className="font-display text-heading-lg text-text-primary">{doc.title}</h1>
-          <Badge variant="neutral">{TYPE_LABEL[doc.doc_type]}</Badge>
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
-          {canManage && (doc.lifecycle === "draft" || doc.lifecycle === "expired") ? (
-            doc.owner ? (
-              <Button onClick={() => setSubmitOpen(true)}>Send for review</Button>
-            ) : (
-              <Tooltip content="Assign an owner before sending for review">
-                <span tabIndex={0} className="rounded-sm">
-                  <Button disabled>Send for review</Button>
-                </span>
-              </Tooltip>
-            )
-          ) : null}
-          {canApprove && doc.lifecycle === "needs_approval" && pendingTier != null ? (
-            <>
-              <Button
-                variant="secondary"
-                loading={action.isPending}
-                onClick={() =>
-                  action.mutate(() => decideApproval(doc.id, pendingTier, "rejected"))
-                }
-              >
-                Reject
-              </Button>
-              <Button
-                loading={action.isPending}
-                onClick={() =>
-                  action.mutate(() => decideApproval(doc.id, pendingTier, "approved"))
-                }
-              >
-                Approve tier {pendingTier}
-              </Button>
-            </>
-          ) : null}
-          {canPublish && doc.lifecycle === "approved" ? (
-            <Button
-              loading={action.isPending}
-              onClick={() => action.mutate(() => publishDocument(doc.id))}
-            >
-              Publish
-            </Button>
-          ) : null}
-          {doc.lifecycle === "published" && !doc.acknowledged_by_me ? (
+    <div className="w-full">
+      <DetailHeader
+        backTo="/documents"
+        backLabel="Back to documents"
+        title={doc.title}
+        chips={
+          <>
+            <CodeChip code={doc.code} />
+            <Badge variant="neutral">{TYPE_LABEL[doc.doc_type]}</Badge>
+          </>
+        }
+        actions={
+          doc.lifecycle === "published" && !doc.acknowledged_by_me ? (
             <Button
               variant="secondary"
               loading={action.isPending}
@@ -211,11 +172,11 @@ export function DocumentDetailPage() {
               <Icon name="check" className="size-4" />
               Acknowledge
             </Button>
-          ) : null}
-        </div>
-      </div>
+          ) : undefined
+        }
+      />
 
-      <div className="mt-3 flex flex-wrap items-center gap-x-8 gap-y-2">
+      <div className="flex flex-wrap items-center gap-x-8 gap-y-2">
         <Field label="Status"><StatusPill status={life.family} label={life.label} /></Field>
         <Field label="Version"><Plain>{doc.version}</Plain></Field>
         <Field label="Created on"><Plain>{fmtDate(doc.created_on)}</Plain></Field>
@@ -233,27 +194,16 @@ export function DocumentDetailPage() {
         </Field>
       </div>
 
-      {/* Tabs */}
-      <nav className="mt-6 flex items-center gap-1 border-b border-border">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            onClick={() => setTab(t.id)}
-            className={cn(
-              "relative px-3 py-2 text-label-sm",
-              tab === t.id ? "text-text-primary" : "text-text-subtle hover:text-text-secondary",
-            )}
-          >
-            {t.label}
-            {tab === t.id ? (
-              <span className="absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-action-accent" />
-            ) : null}
-          </button>
-        ))}
-      </nav>
+      <TabStrip
+        label="Document sections"
+        items={TABS}
+        value={tab}
+        onSelect={(id) => setTab(id as TabId)}
+        className="mt-6"
+        inline
+      />
 
-      <div className="mt-5">
+      <div>
         {tab === "overview" ? (
           <div className="grid gap-4 lg:grid-cols-[1fr_20rem]">
             <Panel
@@ -284,29 +234,16 @@ export function DocumentDetailPage() {
             </Panel>
 
             <div className="space-y-4">
-              <Panel title="Approval">
-                <StatusPill status={life.family} label={life.label} />
-                <div className="mt-3 space-y-2">
-                  {doc.approvals.map((tier) => (
-                    <div
-                      key={tier.tier}
-                      className="rounded-sm border border-border px-3 py-2"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-body-md text-text-primary">{tier.name}</span>
-                        <StatusPill
-                          status={APPROVAL_FAMILY[tier.status]}
-                          label={APPROVAL_LABEL[tier.status]}
-                        />
-                      </div>
-                      {tier.approver ? (
-                        <p className="mt-0.5 text-caption text-text-subtle">{tier.approver}</p>
-                      ) : null}
-                    </div>
-                  ))}
-                </div>
-              </Panel>
-              <Panel title="Owner">
+              <Panel
+                title="Owner"
+                action={
+                  canManage ? (
+                    <Button variant="secondary" size="sm" onClick={() => setAssigningOwner(true)}>
+                      Assign
+                    </Button>
+                  ) : undefined
+                }
+              >
                 {doc.owner ? (
                   <span className="flex items-center gap-2">
                     <Avatar name={doc.owner.name} size="sm" />
@@ -316,6 +253,20 @@ export function DocumentDetailPage() {
                   <Plain>Unassigned</Plain>
                 )}
               </Panel>
+              {tierCards(doc.approvals).map((tier, i, all) => (
+                <TierApprovalCard
+                  key={tier.tier}
+                  documentId={doc.id}
+                  tier={tier}
+                  canManage={canManage}
+                  blockedReason={
+                    i > 0 && all[i - 1].targets.length === 0
+                      ? `Assign tier ${all[i - 1].tier} first.`
+                      : undefined
+                  }
+                  onAssigned={(next) => queryClient.setQueryData(["documents", documentId], next)}
+                />
+              ))}
             </div>
           </div>
         ) : null}
@@ -329,7 +280,7 @@ export function DocumentDetailPage() {
             <Table>
               <THead>
                 <TR>
-                  <TH>Version</TH>
+                  <TH numeric>Version</TH>
                   <TH>Change</TH>
                   <TH>Date</TH>
                   <TH>By</TH>
@@ -340,7 +291,7 @@ export function DocumentDetailPage() {
               <TBody>
                 {doc.versions.map((v) => (
                   <TR key={v.version}>
-                    <TD><span className="tabular font-medium text-text-primary">{v.version}</span></TD>
+                    <TD numeric><span className="font-medium text-text-primary">{v.version}</span></TD>
                     <TD><Badge variant="neutral">{v.change_type}</Badge></TD>
                     <TD>{fmtDate(v.created_on)}</TD>
                     <TD>{v.created_by}</TD>
@@ -360,9 +311,9 @@ export function DocumentDetailPage() {
 
         {tab === "workflows" ? (
           <div className="grid gap-4 lg:grid-cols-2">
-            <Panel title="Approval workflow">
+            <Panel title="Approval history">
               <ol className="space-y-3">
-                {doc.approvals.map((tier) => (
+                {tierCards(doc.approvals).map((tier) => (
                   <li key={tier.tier} className="flex items-start gap-3">
                     <span
                       className={cn(
@@ -382,7 +333,9 @@ export function DocumentDetailPage() {
                       <p className="text-body-md text-text-primary">{tier.name}</p>
                       <p className="text-caption text-text-subtle">
                         {APPROVAL_LABEL[tier.status]}
-                        {tier.approver ? ` · ${tier.approver}` : ""}
+                        {tier.assignees.length
+                          ? ` · ${tier.assignees.filter((a) => a.decision === "approved").length}/${tier.assignees.length} signed off`
+                          : ""}
                         {tier.decided_on ? ` · ${fmtDate(tier.decided_on)}` : ""}
                       </p>
                     </div>
@@ -439,67 +392,71 @@ export function DocumentDetailPage() {
         onOpenChange={setEditing}
       />
 
-      <Dialog open={submitOpen} onOpenChange={setSubmitOpen}>
-        <DialogContent size="md">
-          <DialogHeader>
-            <DialogTitle>Send for review</DialogTitle>
-            <p className="text-body-md text-text-secondary">
-              Choose who reviews and who gives final approval. They sign off in order.
-            </p>
-          </DialogHeader>
-          <div className="space-y-3">
-            <SelectField label="Reviewer (tier 1)" optional>
-              <Select
-                value={reviewerId || "none"}
-                onValueChange={(v) => setReviewerId(v === "none" ? "" : v)}
-              >
-                <SelectTrigger aria-label="Reviewer" />
-                <SelectContent>
-                  <SelectItem value="none">Unassigned</SelectItem>
-                  {members.map((m) => (
-                    <SelectItem key={m.membership_id} value={m.membership_id}>
-                      {m.full_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </SelectField>
-            <SelectField label="Approver (tier 2)" optional>
-              <Select
-                value={approverId || "none"}
-                onValueChange={(v) => setApproverId(v === "none" ? "" : v)}
-              >
-                <SelectTrigger aria-label="Approver" />
-                <SelectContent>
-                  <SelectItem value="none">Unassigned</SelectItem>
-                  {members.map((m) => (
-                    <SelectItem key={m.membership_id} value={m.membership_id}>
-                      {m.full_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </SelectField>
-          </div>
-          <DialogFooter>
-            <Button variant="secondary" onClick={() => setSubmitOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              loading={action.isPending}
-              onClick={() => {
-                action.mutate(() =>
-                  submitDocument(doc.id, [reviewerId, approverId].filter(Boolean)),
-                );
-                setSubmitOpen(false);
-              }}
-            >
-              Send for review
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {assigningOwner ? (
+        <AssignOwnerDialog
+          documentId={doc.id}
+          currentOwnerId={doc.owner?.membership_id ?? null}
+          currentOwnerName={doc.owner?.name ?? null}
+          onOpenChange={setAssigningOwner}
+          onAssigned={(next) => {
+            queryClient.setQueryData(["documents", documentId], next);
+            queryClient.invalidateQueries({ queryKey: ["documents"] });
+          }}
+        />
+      ) : null}
     </div>
+  );
+}
+
+function AssignOwnerDialog({
+  documentId,
+  currentOwnerId,
+  currentOwnerName,
+  onOpenChange,
+  onAssigned,
+}: {
+  documentId: string;
+  currentOwnerId: string | null;
+  currentOwnerName: string | null;
+  onOpenChange: (open: boolean) => void;
+  onAssigned: (doc: Document) => void;
+}) {
+  const { toast } = useToast();
+  const [ownerId, setOwnerId] = useState(currentOwnerId);
+
+  const assign = useMutation({
+    mutationFn: () => updateDocument(documentId, { owner_membership_id: ownerId }),
+    onSuccess: (doc) => {
+      toast({ title: "Owner assigned", tone: "success" });
+      onAssigned(doc);
+      onOpenChange(false);
+    },
+    onError: (error: unknown) => toast({ title: errorToast(error, "document"), tone: "danger" }),
+  });
+
+  return (
+    <Dialog open onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Assign owner</DialogTitle>
+        </DialogHeader>
+        <DialogBody>
+          <OwnerSelect value={ownerId} valueLabel={currentOwnerName} onChange={setOwnerId} />
+        </DialogBody>
+        <DialogFooter>
+          <Button variant="secondary" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button
+            loading={assign.isPending}
+            disabled={ownerId === currentOwnerId}
+            onClick={() => assign.mutate()}
+          >
+            Save
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 

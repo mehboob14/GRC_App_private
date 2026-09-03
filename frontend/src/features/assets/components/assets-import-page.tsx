@@ -1,10 +1,10 @@
 import { useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   Badge,
   Button,
-  Icon,
+  DetailHeader,
   Table,
   TBody,
   TD,
@@ -14,6 +14,7 @@ import {
   useToast,
 } from "@/components/ui";
 import { cn } from "@/lib/cn";
+import { describeError, errorToast } from "@/lib/api/describe-error";
 import { ASSET_TEMPLATE_COLUMNS, assetImportTemplateCsv, importAssets, listMembers, type AssetInput } from "../api";
 import {
   ASSET_TYPES,
@@ -186,21 +187,14 @@ export function AssetsImportPage() {
       toast({ title: `Imported ${res.created} asset${res.created === 1 ? "" : "s"}`, tone: "success" });
       navigate("/assets");
     },
-    onError: () => toast({ title: "Import failed.", tone: "danger" }),
+    onError: (error) => toast({ title: errorToast(error, "asset import"), tone: "danger" }),
   });
 
   return (
-    <div className="mx-auto max-w-[1000px] pb-16">
-      <Link to="/assets" className="inline-flex items-center gap-1.5 text-body-sm text-text-link hover:underline">
-        <Icon name="arrowl" className="size-4" />
-        Back to inventory
-      </Link>
-      <h1 className="mt-3 font-display text-heading-lg text-text-primary">Import assets</h1>
-      <p className="mt-1 text-body-md text-text-secondary">
-        Populate your inventory from a CSV now, or connect a scanner to sync it automatically.
-      </p>
+    <div className="w-full pb-16">
+      <DetailHeader backTo="/assets" backLabel="Back to assets" title="Import assets" />
 
-      <div className="mt-6 grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-2">
         {/* CSV — available now. */}
         <div className="rounded-lg border border-border bg-surface-primary p-5">
           <h2 className="font-display text-title-sm text-text-primary">Upload a CSV</h2>
@@ -228,6 +222,12 @@ export function AssetsImportPage() {
           <p className="mt-3 text-caption text-text-subtle">
             Columns: {ASSET_TEMPLATE_COLUMNS.join(", ")}. Required: name, asset_type.
           </p>
+          {/* Owner columns resolve against the member list, so say when it is missing. */}
+          {membersQuery.isError ? (
+            <p className="mt-2 text-body-sm text-status-danger-text">
+              {describeError(membersQuery.error, "team list").message} Owner columns will not be matched.
+            </p>
+          ) : null}
         </div>
 
         {/* Scanners — automated discovery, coming soon. */}
@@ -263,8 +263,8 @@ export function AssetsImportPage() {
       {rows ? (
         <div className="mt-6">
           <div className="mb-3 flex items-center gap-3 text-body-sm">
-            <Badge variant="success">{valid.length} ready</Badge>
-            {invalid.length ? <Badge variant="danger">{invalid.length} with errors</Badge> : null}
+            <Badge variant="statusPass">{valid.length} ready</Badge>
+            {invalid.length ? <Badge variant="statusFail">{invalid.length} with errors</Badge> : null}
           </div>
           <Table>
             <THead>

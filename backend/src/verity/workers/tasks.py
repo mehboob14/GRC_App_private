@@ -110,6 +110,27 @@ async def _scan_slas() -> dict[str, Any]:
     return {"notifications_written": written}
 
 
+@celery_app.task(name="verity.workers.tasks.refresh_vulnerabilities")
+def refresh_vulnerabilities() -> dict[str, Any]:
+    """Daily: re-enrich open vulnerability definitions from EPSS/KEV/public-exploit,
+    recompute their risk scores, and expire lapsed risk acceptances (ADR-0010).
+    Idempotent — re-enriching and re-scoring converge on the same values."""
+    return asyncio.run(_refresh_vulnerabilities())
+
+
+async def _refresh_vulnerabilities() -> dict[str, Any]:
+    from verity.modules.vulnerabilities.service import vulnerability_service  # noqa: PLC0415
+
+    totals = {"enriched": 0, "rescored": 0, "expired": 0, "escalated": 0}
+    for tenant_id in await _active_tenant_ids():
+        async with session_scope(tenant_id) as session:
+            result = await vulnerability_service.refresh_and_sweep(session, tenant_id=tenant_id)
+            for key in totals:
+                totals[key] += result.get(key, 0)
+    logger.info("worker.refresh_vulnerabilities", **totals)
+    return totals
+
+
 @celery_app.task(name="verity.workers.tasks.flush_notification_emails")
 def flush_notification_emails() -> dict[str, Any]:
     """Deliver the email copy of any notification that asked for one. The outbox

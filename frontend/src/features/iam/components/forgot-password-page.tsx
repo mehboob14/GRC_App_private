@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { AuthSplitLayout } from "@/features/iam/components/auth-split-layout";
 import { Button, ErrorBanner, Icon, TextField } from "@/components/ui";
 import { authApi } from "@/lib/api/endpoints";
-import { ApiError } from "@/lib/api/client";
+import { describeAuthError } from "@/lib/api/describe-error";
 import { useAlertFocus } from "@/features/iam/hooks/use-alert-focus";
 
 const schema = z.object({
@@ -82,11 +82,10 @@ export function ForgotPasswordPage() {
         noValidate
       >
         {mutation.isError ? (
-          <ErrorBanner ref={alertRef} title="Couldn’t send the reset link">
-            {mutation.error instanceof ApiError
-              ? mutation.error.message
-              : "The request didn’t reach the server. Check your connection and try again."}
-          </ErrorBanner>
+          <ErrorBanner
+            ref={alertRef}
+            title={describeAuthError(mutation.error).message}
+          />
         ) : null}
         <TextField
           label="Work email"

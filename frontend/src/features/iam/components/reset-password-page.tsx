@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { AuthSplitLayout } from "@/features/iam/components/auth-split-layout";
 import { Button, ErrorBanner, Icon, PasswordField } from "@/components/ui";
 import { authApi } from "@/lib/api/endpoints";
-import { ApiError } from "@/lib/api/client";
+import { describeAuthError } from "@/lib/api/describe-error";
 import { useAlertFocus } from "@/features/iam/hooks/use-alert-focus";
 
 const schema = z
@@ -92,14 +92,14 @@ export function ResetPasswordPage() {
         noValidate
       >
         {mutation.isError ? (
-          <ErrorBanner ref={alertRef} title="Couldn’t reset your password">
-            {mutation.error instanceof ApiError
-              ? mutation.error.message
-              : "The request didn’t reach the server. Check your connection and try again."}{" "}
+          <ErrorBanner
+            ref={alertRef}
+            title={describeAuthError(mutation.error).message}
+          >
+            {/* Not a restatement of the message: the way out of a dead link. */}
             <Link className="font-semibold underline" to="/forgot-password">
               Request a new link
             </Link>
-            .
           </ErrorBanner>
         ) : null}
         <PasswordField

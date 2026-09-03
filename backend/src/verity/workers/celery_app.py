@@ -61,6 +61,12 @@ celery_app.conf.update(
             "task": "verity.workers.tasks.flush_notification_emails",
             "schedule": 120.0,
         },
+        # Daily: refresh EPSS/KEV/public-exploit on open findings, recompute risk,
+        # and expire lapsed risk acceptances (ADR-0010 daily enrichment).
+        "refresh-vulnerabilities": {
+            "task": "verity.workers.tasks.refresh_vulnerabilities",
+            "schedule": 24 * 3600.0,
+        },
     },
 )
 

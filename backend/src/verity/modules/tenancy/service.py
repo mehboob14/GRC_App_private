@@ -104,6 +104,19 @@ __all__ = [
 ]
 
 _UNIFORM_LOGIN_DETAIL: Final = "provider login refused; see the auth_attempt audit row"
+# One sentence for every login refusal: wrong email, wrong password, disabled
+# account. A message that told them apart would let anyone test which emails are
+# admins, one attempt at a time.
+_UNIFORM_LOGIN_MESSAGE: Final = "Incorrect email or password."
+# Likewise for the second factor: unknown or disabled admin, wrong code, spent
+# recovery code and unreadable secret all read the same from outside.
+_UNIFORM_MFA_MESSAGE: Final = (
+    "We could not verify that code. Check your authenticator app and try again, "
+    "or use one of your recovery codes."
+)
+# A tenant that is missing may equally be one this caller may not see, so the
+# wording never distinguishes the two.
+_TENANT_GONE_MESSAGE: Final = "This workspace no longer exists. It may have been deleted."
 
 # ---------------------------------------------------------------------------
 # Recovery codes — single-use, returned once in plaintext, stored as argon2id
@@ -246,7 +259,7 @@ class ProviderAuthService:
                     expires_at=issued.expires_at,
                 )
         if challenge is None:
-            raise AuthenticationRequired(detail=_UNIFORM_LOGIN_DETAIL)
+            raise AuthenticationRequired(_UNIFORM_LOGIN_MESSAGE, detail=_UNIFORM_LOGIN_DETAIL)
         return challenge
 
     async def verify_mfa(
@@ -263,7 +276,11 @@ class ProviderAuthService:
         is consumed by the check that accepts it.
         """
         if (code is None) == (recovery_code is None):
-            raise InvalidInput(detail="exactly one of code and recovery_code is required")
+            raise InvalidInput(
+                "Enter either the code from your authenticator app or one of your "
+                "recovery codes, not both.",
+                detail="exactly one of code and recovery_code is required",
+            )
         claims = decode_token(challenge_token, expected_typ="challenge", expected_plane="provider")
 
         grant: SessionGrant | None = None
@@ -314,7 +331,9 @@ class ProviderAuthService:
                     admin.recovery_codes_encrypted = remaining
                     grant = await self._grant_session(session, admin, method="recovery_code")
         if grant is None:
-            raise AuthenticationRequired(detail="provider MFA verification refused")
+            raise AuthenticationRequired(
+                _UNIFORM_MFA_MESSAGE, detail="provider MFA verification refused"
+            )
         return grant
 
     async def start_enrollment(self, *, challenge_token: str) -> EnrollmentStart:
@@ -356,7 +375,10 @@ class ProviderAuthService:
         if conflict:
             raise EnrollmentConflict(detail="MFA is already enabled for this admin")
         if start is None:
-            raise AuthenticationRequired(detail="enrollment refused: admin missing or disabled")
+            raise AuthenticationRequired(
+                "We could not start authenticator setup. Sign in again, then retry.",
+                detail="enrollment refused: admin missing or disabled",
+            )
         return start
 
     async def confirm_enrollment(self, *, challenge_token: str, code: str) -> EnrollmentGrant:
@@ -414,7 +436,11 @@ class ProviderAuthService:
                 detail="already enabled, or confirmation before enrollment started"
             )
         if grant is None:
-            raise AuthenticationRequired(detail="provider MFA confirmation refused")
+            raise AuthenticationRequired(
+                "We could not confirm that code. Check your authenticator app and enter "
+                "the current code, or start setup again.",
+                detail="provider MFA confirmation refused",
+            )
         return grant
 
     @staticmethod
@@ -699,7 +725,11 @@ class TenancyService:
                     )
                 original = await self._tenants.get(session, recorded.tenant_id)
                 if original is None:
-                    raise NotFound(detail=f"recorded tenant {recorded.tenant_id} is gone")
+                    raise NotFound(
+                        "The workspace this request already created no longer exists. "
+                        "Start the registration again.",
+                        detail=f"recorded tenant {recorded.tenant_id} is gone",
+                    )
                 return original
 
         if await self._tenants.get_by_slug(session, profile.slug) is not None:
@@ -782,7 +812,7 @@ class TenancyService:
     async def get_tenant(self, session: AsyncSession, tenant_id: uuid.UUID) -> Tenant:
         tenant = await self._tenants.get(session, tenant_id)
         if tenant is None:
-            raise NotFound(detail=f"tenant {tenant_id} not found")
+            raise NotFound(_TENANT_GONE_MESSAGE, detail=f"tenant {tenant_id} not found")
         return tenant
 
     async def list_tenants(
@@ -850,7 +880,11 @@ class TenancyService:
     async def get_branding(self, session: AsyncSession, tenant_id: uuid.UUID) -> TenantBranding:
         branding = await self._tenants.get_branding(session, tenant_id)
         if branding is None:
-            raise NotFound(detail=f"branding for tenant {tenant_id} not found")
+            raise NotFound(
+                "No branding has been set up for this workspace yet. Save branding "
+                "settings first.",
+                detail=f"branding for tenant {tenant_id} not found",
+            )
         return branding
 
     async def put_branding(
@@ -868,7 +902,7 @@ class TenancyService:
         omitted field clears its column; that is what "full replace" means.
         """
         if await self._tenants.get(session, tenant_id) is None:
-            raise NotFound(detail=f"tenant {tenant_id} not found")
+            raise NotFound(_TENANT_GONE_MESSAGE, detail=f"tenant {tenant_id} not found")
         branding = await self._tenants.get_branding(session, tenant_id)
         if branding is None:
             # Unreachable for tenants registered here; kept so a future signup path
@@ -1027,7 +1061,11 @@ class TenancyService:
             return others_done and await self._gates.active_admin_membership_exists(
                 session, tenant.id
             )
-        raise Conflict(detail=f"unknown provisioning step {step_name!r}")
+        raise Conflict(
+            "That setup step is not one this workspace has, so it cannot be completed. "
+            "Refresh the page and try again.",
+            detail=f"unknown provisioning step {step_name!r}",
+        )
 
     # -- tenant-plane reads ---------------------------------------------------
 

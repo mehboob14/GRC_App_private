@@ -19,7 +19,7 @@ import {
 } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { controlsApi, evidenceApi, iamApi } from "@/lib/api/endpoints";
-import { ApiError } from "@/lib/api/client";
+import { describeError, errorToast } from "@/lib/api/describe-error";
 import { useAuth } from "@/lib/auth/auth-context";
 import type { Control } from "@/lib/api/types";
 
@@ -440,10 +440,7 @@ export function ControlFormDialog({
       onOpenChange(false);
     },
     onError: (error: unknown) =>
-      toast({
-        title: error instanceof ApiError ? error.message : "Couldn't save the control.",
-        tone: "danger",
-      }),
+      toast({ title: errorToast(error, "control"), tone: "danger" }),
   });
 
   const canSubmit =
@@ -483,24 +480,33 @@ export function ControlFormDialog({
           {mode === "edit" ? (
             <TextField label="Code" value={code} disabled onChange={() => {}} />
           ) : null}
-          <SelectField label="Category">
-            <Select
-              value={category}
-              onValueChange={(value) => {
-                setCategory(value);
-                setSubCategory("");
-              }}
-            >
-              <SelectTrigger aria-label="Category" />
-              <SelectContent>
-                {(vocab?.categories ?? []).map((cat) => (
-                  <SelectItem key={cat} value={cat}>
-                    {cat}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </SelectField>
+          {/* The vocabulary feeds Category, Type and Automation, so one line
+              covers all three rather than repeating the same failure. */}
+          <div>
+            <SelectField label="Category">
+              <Select
+                value={category}
+                onValueChange={(value) => {
+                  setCategory(value);
+                  setSubCategory("");
+                }}
+              >
+                <SelectTrigger aria-label="Category" />
+                <SelectContent>
+                  {(vocab?.categories ?? []).map((cat) => (
+                    <SelectItem key={cat} value={cat}>
+                      {cat}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </SelectField>
+            {vocabularyQuery.isError ? (
+              <p className="mt-1 text-body-sm text-status-danger-text">
+                {describeError(vocabularyQuery.error, "category list").message}
+              </p>
+            ) : null}
+          </div>
 
           <SelectField label="Sub-category" optional>
             <Select
@@ -555,18 +561,25 @@ export function ControlFormDialog({
             </Select>
           </SelectField>
 
-          <SelectField label="Owner">
-            <Select value={ownerId} onValueChange={setOwnerId}>
-              <SelectTrigger aria-label="Owner" />
-              <SelectContent>
-                {members.map((member) => (
-                  <SelectItem key={member.membership_id} value={member.membership_id}>
-                    {member.full_name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </SelectField>
+          <div>
+            <SelectField label="Owner">
+              <Select value={ownerId} onValueChange={setOwnerId}>
+                <SelectTrigger aria-label="Owner" />
+                <SelectContent>
+                  {members.map((member) => (
+                    <SelectItem key={member.membership_id} value={member.membership_id}>
+                      {member.full_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </SelectField>
+            {membersQuery.isError ? (
+              <p className="mt-1 text-body-sm text-status-danger-text">
+                {describeError(membersQuery.error, "team list").message}
+              </p>
+            ) : null}
+          </div>
           <div />
 
           <div className="col-span-2">
@@ -582,6 +595,13 @@ export function ControlFormDialog({
               note={canReadEvidence ? undefined : "Requires evidence access"}
               emptyText="No evidence yet."
             />
+            {/* Without this the picker reads "No evidence yet", which is a
+                claim about the library rather than about the request. */}
+            {evidenceQuery.isError ? (
+              <p className="mt-1 text-body-sm text-status-danger-text">
+                {describeError(evidenceQuery.error, "evidence library").message}
+              </p>
+            ) : null}
           </div>
 
           {/* Risk, asset and vulnerability registers are not built yet

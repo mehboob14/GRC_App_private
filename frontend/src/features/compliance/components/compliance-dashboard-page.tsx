@@ -13,7 +13,7 @@ import {
 } from "@/components/ui";
 import { Donut } from "@/features/dashboard/donut";
 import { controlsApi, engagementApi } from "@/lib/api/endpoints";
-import { ApiError } from "@/lib/api/client";
+import { describeError, errorToast } from "@/lib/api/describe-error";
 import { useAuth } from "@/lib/auth/auth-context";
 import { cn } from "@/lib/cn";
 import type {
@@ -446,13 +446,7 @@ export function ComplianceDashboardPage() {
       toast({ title: "Control re-enabled", tone: "success" });
     },
     onError: (error: unknown) =>
-      toast({
-        title:
-          error instanceof ApiError
-            ? error.message
-            : "Couldn't re-enable the control.",
-        tone: "danger",
-      }),
+      toast({ title: errorToast(error, "control"), tone: "danger" }),
   });
 
   const statusSegments = useMemo(
@@ -474,11 +468,13 @@ export function ComplianceDashboardPage() {
     );
   }
   if (query.isError) {
+    const failure = describeError(query.error, "dashboard");
     return (
       <ErrorState
-        title="Couldn't load the dashboard"
-        description="The compliance dashboard did not come back."
-        onRetry={() => void query.refetch()}
+        title={failure.title}
+        description={failure.message}
+        referenceId={failure.referenceId}
+        onRetry={failure.retryable ? () => void query.refetch() : undefined}
       />
     );
   }

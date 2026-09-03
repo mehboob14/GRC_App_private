@@ -8,8 +8,10 @@ import {
   DropdownMenuTrigger,
   Icon,
   Tooltip,
+  useToast,
 } from "@/components/ui";
 import { cn } from "@/lib/cn";
+import { describeError, errorToast } from "@/lib/api/describe-error";
 import { useAuth } from "@/lib/auth/auth-context";
 import {
   fetchInbox,
@@ -36,6 +38,7 @@ function relativeTime(iso: string): string {
 export function NotificationBell() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const { principal } = useAuth();
 
   const inboxQuery = useQuery({
@@ -52,14 +55,24 @@ export function NotificationBell() {
   const readMutation = useMutation({
     mutationFn: markNotificationRead,
     onSuccess: invalidate,
+    onError: (error) =>
+      toast({ title: errorToast(error, "notification"), tone: "danger" }),
   });
   const readAllMutation = useMutation({
     mutationFn: markAllNotificationsRead,
     onSuccess: invalidate,
+    onError: (error) =>
+      toast({ title: errorToast(error, "notification"), tone: "danger" }),
   });
 
   const items = inboxQuery.data?.items ?? [];
   const unread = inboxQuery.data?.unread_count ?? 0;
+  // A bell that fails silently is invisible: an empty popover would read as
+  // "all caught up" when the inbox never loaded. Too small for an ErrorState,
+  // so it says so in one line instead.
+  const failure = inboxQuery.isError
+    ? describeError(inboxQuery.error, "notification")
+    : null;
 
   function open(notification: Notification) {
     if (!notification.read_at) readMutation.mutate(notification.id);
@@ -106,7 +119,11 @@ export function NotificationBell() {
           ) : null}
         </div>
 
-        {items.length === 0 ? (
+        {failure ? (
+          <p className="px-3 py-4 text-body-sm text-status-danger-text">
+            {failure.message}
+          </p>
+        ) : items.length === 0 ? (
           <div className="flex flex-col items-center px-4 pb-4 pt-3 text-center">
             <span className="flex size-10 items-center justify-center rounded-md bg-surface-hover">
               <Icon name="bell" className="size-5 text-text-subtle" />

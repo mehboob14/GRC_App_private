@@ -3,7 +3,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { Button, ErrorBanner, Icon, useToast } from "@/components/ui";
 import { authApi } from "@/lib/api/endpoints";
-import { ApiError } from "@/lib/api/client";
+import { describeAuthError } from "@/lib/api/describe-error";
 import { useAuth } from "@/lib/auth/auth-context";
 import { resumePendingAuth } from "@/lib/auth/resume-auth";
 import { onEmailVerified } from "@/lib/auth/verify-signal";
@@ -95,11 +95,10 @@ export function CheckEmailPanel({
       ) : null}
 
       {resendMutation.isError ? (
-        <ErrorBanner ref={alertRef} title="Couldn't resend the email">
-          {resendMutation.error instanceof ApiError
-            ? resendMutation.error.message
-            : "The request didn't reach the server. Check your connection and try again."}
-        </ErrorBanner>
+        <ErrorBanner
+          ref={alertRef}
+          title={describeAuthError(resendMutation.error).message}
+        />
       ) : null}
 
       <div className="flex flex-wrap gap-2">

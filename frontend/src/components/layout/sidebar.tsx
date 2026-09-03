@@ -1,13 +1,13 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { Avatar, Badge, BrandMark, Icon, Tooltip } from "@/components/ui";
+import { Badge, BrandMark, Icon, Tooltip } from "@/components/ui";
 import { cn } from "@/lib/cn";
-import { useAuth } from "@/lib/auth/auth-context";
 import {
   FOOTER_ITEMS,
   NAV_SECTIONS,
   type NavItem,
 } from "@/components/layout/nav-config";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { WorkspaceSwitcher } from "@/components/layout/workspace-switcher";
 import { DARK_MODE_ENABLED } from "@/lib/theme";
 
 const NAV_ROW =
@@ -71,7 +71,6 @@ function NavRow({ item, active }: { item: NavItem; active?: boolean }) {
 
 export function Sidebar() {
   const location = useLocation();
-  const { principal } = useAuth();
   const settingsActive = location.pathname.startsWith("/settings");
 
   return (
@@ -128,23 +127,10 @@ export function Sidebar() {
             }
           />
         ))}
+        {/* Workspace switcher lives at the foot of the rail and opens upward. */}
         <div className="mt-2 flex items-center gap-1.5">
-          {/* Identity display only — account actions live in the topbar user
-              menu, so this is not a (dead) button. */}
-          <div className="flex min-w-0 flex-1 items-center gap-2 rounded-md border border-border bg-surface-sunken px-2 py-2">
-            <Avatar
-              name={principal?.user.full_name ?? "User"}
-              seed={principal?.user.email}
-              size="md"
-            />
-            <span className="min-w-0 flex-1">
-              <span className="block truncate text-label-sm text-text-primary">
-                {principal?.user.full_name ?? "User"}
-              </span>
-              <span className="block truncate text-caption text-text-subtle">
-                {principal?.role_names[0] ?? "Member"}
-              </span>
-            </span>
+          <div className="min-w-0 flex-1">
+            <WorkspaceSwitcher />
           </div>
           {DARK_MODE_ENABLED ? <ThemeToggle /> : null}
         </div>

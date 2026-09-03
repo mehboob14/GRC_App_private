@@ -10,7 +10,7 @@ import {
   useToast,
 } from "@/components/ui";
 import { tenantApi } from "@/lib/api/endpoints";
-import { ApiError } from "@/lib/api/client";
+import { describeError, errorToast } from "@/lib/api/describe-error";
 import { useAuth } from "@/lib/auth/auth-context";
 import { cn } from "@/lib/cn";
 import type { SecuritySettings, SecuritySettingsPatch } from "@/lib/api/types";
@@ -177,18 +177,14 @@ export function PasswordPolicyCard() {
       toast({ title: "Password policy updated", tone: "success" });
     },
     onError: (error: unknown) =>
-      toast({
-        title:
-          error instanceof ApiError ? error.message : "Couldn't save the policy.",
-        tone: "danger",
-      }),
+      toast({ title: errorToast(error, "password policy"), tone: "danger" }),
   });
 
   if (settingsQuery.isError) {
     return (
       <div className="rounded-lg border border-status-danger-border bg-status-danger-bg px-5 py-4">
         <p className="text-body-md text-status-danger-text">
-          Couldn’t load the security policy.
+          {describeError(settingsQuery.error, "password policy").message}
         </p>
       </div>
     );

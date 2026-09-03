@@ -15,7 +15,7 @@ import {
   Skeleton,
 } from "@/components/ui";
 import { iamApi } from "@/lib/api/endpoints";
-import { ApiError } from "@/lib/api/client";
+import { describeError } from "@/lib/api/describe-error";
 import { useAuth } from "@/lib/auth/auth-context";
 import type { Member } from "@/lib/api/types";
 
@@ -82,6 +82,8 @@ export function MemberPickerDialog({
     );
   }, [members, search]);
 
+  const failure = query.isError ? describeError(query.error, "people list") : null;
+
   const added = selected.filter((id) => !initialSelected.includes(id));
   const removed = initialSelected.filter((id) => !selected.includes(id));
   const dirty = added.length > 0 || removed.length > 0;
@@ -117,22 +119,21 @@ export function MemberPickerDialog({
               // Never render "nobody is here" for a request that failed — an
               // admin acting on that would draw the wrong conclusion.
               <div className="p-4">
-                <p className="text-body-md text-text-primary">
-                  Couldn’t load people.
-                </p>
+                <p className="text-body-md text-text-primary">{failure?.title}</p>
                 <p className="mt-1 text-body-sm text-text-secondary">
-                  {query.error instanceof ApiError
-                    ? query.error.message
-                    : "The request failed."}
+                  {failure?.message}
                 </p>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  className="mt-3"
-                  onClick={() => void query.refetch()}
-                >
-                  Retry
-                </Button>
+                {/* No "Try again" on a 403 or a 404: it would never work. */}
+                {failure?.retryable ? (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="mt-3"
+                    onClick={() => void query.refetch()}
+                  >
+                    Retry
+                  </Button>
+                ) : null}
               </div>
             ) : visible.length === 0 ? (
               <p className="p-4 text-body-md text-text-secondary">

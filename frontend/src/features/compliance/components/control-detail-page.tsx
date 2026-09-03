@@ -4,6 +4,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Badge,
   Button,
+  CodeChip,
+  DetailHeader,
   EmptyState,
   ErrorState,
   Icon,
@@ -20,7 +22,7 @@ import {
   evidenceApi,
   iamApi,
 } from "@/lib/api/endpoints";
-import { ApiError } from "@/lib/api/client";
+import { describeError, errorToast } from "@/lib/api/describe-error";
 import { useAuth } from "@/lib/auth/auth-context";
 import {
   AttachEvidenceDialog,
@@ -58,21 +60,6 @@ const FRESHNESS: Record<
   stale: { label: "Stale", family: "danger" },
   no_expiry: { label: "No expiry", family: "neutral" },
 };
-
-/** DS §6.4 code chip. A criterion or control code renders identically wherever
- *  it appears. */
-function CodeChip({ code, className }: { code: string; className?: string }) {
-  return (
-    <span
-      className={cn(
-        "inline-flex rounded-xs bg-action-accent-tint px-1.5 py-0.5 font-display text-caption font-bold text-text-link",
-        className,
-      )}
-    >
-      {code}
-    </span>
-  );
-}
 
 function Panel({
   title,
@@ -280,7 +267,8 @@ export function ControlDetailPage() {
       ]);
       toast({ title: "Owner updated", tone: "success" });
     },
-    onError: () => toast({ title: "Couldn't set the owner.", tone: "danger" }),
+    onError: (error: unknown) =>
+      toast({ title: errorToast(error, "control"), tone: "danger" }),
   });
   const frameworksQuery = useQuery({
     queryKey: ["frameworks"],
@@ -369,16 +357,17 @@ export function ControlDetailPage() {
   ).length;
 
   if (controlQuery.isError) {
+    const failure = describeError(controlQuery.error, "control");
     return (
-      <div className="mx-auto max-w-[1200px]">
+      <div className="w-full">
         <ErrorState
-          title="Couldn’t load this control"
-          description={
-            controlQuery.error instanceof ApiError
-              ? controlQuery.error.message
-              : "The request failed. Retry, or contact support if it keeps happening."
+          title={failure.title}
+          description={failure.message}
+          referenceId={failure.referenceId}
+          // A deleted control or a permission gap will not resolve on a retry.
+          onRetry={
+            failure.retryable ? () => void controlQuery.refetch() : undefined
           }
-          onRetry={() => void controlQuery.refetch()}
         />
       </div>
     );
@@ -386,7 +375,7 @@ export function ControlDetailPage() {
 
   if (controlQuery.isLoading || !control) {
     return (
-      <div className="mx-auto max-w-[1200px] space-y-4">
+      <div className="w-full space-y-4">
         <Skeleton className="h-6 w-64" />
         <Skeleton className="h-10 w-[28rem]" />
         <div className="grid gap-4 lg:grid-cols-[1fr_20rem]">
@@ -407,25 +396,13 @@ export function ControlDetailPage() {
   ];
 
   return (
-    <div className="mx-auto max-w-[1200px]">
-      {/* Breadcrumb — the trail an auditor follows back up. */}
-      <nav
-        aria-label="Breadcrumb"
-        className="mb-3 flex items-center gap-1.5 text-body-sm"
-      >
-        <Link
-          className="text-text-subtle hover:text-text-primary"
-          to="/controls"
-        >
-          Controls
-        </Link>
-        <Icon name="chevr" className="size-3.5 text-text-faint" aria-hidden />
-        <span className="font-semibold text-text-primary">{control.code}</span>
-      </nav>
-
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="mb-2 flex flex-wrap items-center gap-2">
+    <div className="w-full">
+      <DetailHeader
+        backTo="/controls"
+        backLabel="Back to controls"
+        title={control.name}
+        chips={
+          <>
             <CodeChip code={control.code} />
             <StatusPill
               status={statusFamily}
@@ -437,11 +414,10 @@ export function ControlDetailPage() {
             {control.origin === "custom" ? (
               <Badge variant="role">Custom</Badge>
             ) : null}
-          </div>
-          <h1 className="font-display text-heading-lg text-text-primary">
-            {control.name}
-          </h1>
-          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-body-sm text-text-secondary">
+          </>
+        }
+        meta={
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
             {/* Framework controls carry no Preventive/Detective classification,
                 so the chip is absent rather than empty. */}
             {control.control_type ? (
@@ -470,27 +446,28 @@ export function ControlDetailPage() {
             </span>
             <Badge variant="neutral">{control.category}</Badge>
           </div>
-        </div>
-
-        <div className="flex shrink-0 items-center gap-2">
-          {canManage ? (
-            <Button variant="secondary" onClick={() => setEditing(true)}>
-              <Icon name="gear" className="size-4" />
-              Edit
-            </Button>
-          ) : null}
-          {/* Honest later-phase affordance (DS): keyboard-reachable, explicitly
-              not enabled, and the tooltip says when it arrives. */}
-          <Tooltip content="Automated testing arrives with connectors in Phase 2">
-            <span tabIndex={0} className="rounded-sm">
-              <Button disabled>
-                <Icon name="activity" className="size-4" />
-                Run test
+        }
+        actions={
+          <>
+            {canManage ? (
+              <Button variant="secondary" onClick={() => setEditing(true)}>
+                <Icon name="gear" className="size-4" />
+                Edit
               </Button>
-            </span>
-          </Tooltip>
-        </div>
-      </div>
+            ) : null}
+            {/* Honest later-phase affordance (DS): keyboard-reachable, explicitly
+                not enabled, and the tooltip says when it arrives. */}
+            <Tooltip content="Automated testing arrives with connectors in Phase 2">
+              <span tabIndex={0} className="rounded-sm">
+                <Button disabled>
+                  <Icon name="activity" className="size-4" />
+                  Run test
+                </Button>
+              </span>
+            </Tooltip>
+          </>
+        }
+      />
 
       <nav
         aria-label="Control sections"
@@ -604,6 +581,12 @@ export function ControlDetailPage() {
             >
               {evidenceQuery.isLoading ? (
                 <Skeleton className="h-24 w-full rounded-md" />
+              ) : evidenceQuery.isError ? (
+                // "No evidence linked yet" on a failed read would be a
+                // fabricated compliance finding about this control.
+                <p className="text-body-sm text-status-danger-text">
+                  {describeError(evidenceQuery.error, "evidence list").message}
+                </p>
               ) : evidence.length === 0 ? (
                 <EmptyState
                   icon="doc"
@@ -674,6 +657,10 @@ export function ControlDetailPage() {
                 />
               ) : historyQuery.isLoading ? (
                 <Skeleton className="h-32 w-full rounded-md" />
+              ) : historyQuery.isError ? (
+                <p className="text-body-sm text-status-danger-text">
+                  {describeError(historyQuery.error, "audit trail").message}
+                </p>
               ) : history.length === 0 ? (
                 <EmptyState
                   icon="audit"
@@ -725,7 +712,19 @@ export function ControlDetailPage() {
                 </span>
               }
             >
-              {criteria.length === 0 ? (
+              {/* The criterion text comes from the framework, so a failure
+                  there must not read as "this control maps to nothing" —
+                  that is a coverage claim, not a loading state. */}
+              {requirementsQuery.isError || frameworksQuery.isError ? (
+                <p className="text-body-sm text-status-danger-text">
+                  {
+                    describeError(
+                      requirementsQuery.error ?? frameworksQuery.error,
+                      "criteria list",
+                    ).message
+                  }
+                </p>
+              ) : criteria.length === 0 ? (
                 <EmptyState
                   icon="shield"
                   title="Not mapped to any criterion"

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Badge, Button, Icon } from "@/components/ui";
+import { describeError } from "@/lib/api/describe-error";
 import { listDocumentCampaigns } from "../api";
 import type { CampaignSummary } from "../types";
 import { CreateCampaignDialog } from "./create-campaign-dialog";
@@ -62,7 +63,11 @@ export function DocumentCampaignsPanel({
         ) : null}
       </div>
 
-      {campaigns.length === 0 ? (
+      {campaignsQuery.isError ? (
+        <p className="text-body-sm text-status-danger-text">
+          {describeError(campaignsQuery.error, "campaign list").message}
+        </p>
+      ) : campaigns.length === 0 ? (
         <p className="text-body-sm text-text-subtle">
           No campaigns yet. Start one to ask reviewers and approvers to read and sign this document.
         </p>

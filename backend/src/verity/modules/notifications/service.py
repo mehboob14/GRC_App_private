@@ -195,7 +195,10 @@ class NotificationService:
                 )
             ).first()
             if owned is None:
-                raise NotFound(detail=f"notification {notification_id}")
+                raise NotFound(
+                    "This notification no longer exists. It may have been deleted.",
+                    detail=f"notification {notification_id}",
+                )
 
     async def mark_all_read(
         self, session: AsyncSession, *, tenant_id: uuid.UUID, membership_id: uuid.UUID

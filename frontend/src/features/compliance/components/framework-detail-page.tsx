@@ -1,13 +1,14 @@
 import { useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   Badge,
   Button,
+  CodeChip,
+  DetailHeader,
   EmptyState,
   ErrorState,
   FilterFacet,
-  Icon,
   SearchInput,
   Table,
   TableSkeleton,
@@ -15,21 +16,12 @@ import {
   TD,
   TH,
   THead,
+  Toolbar,
   TR,
 } from "@/components/ui";
 import { complianceApi } from "@/lib/api/endpoints";
-import { ApiError } from "@/lib/api/client";
+import { describeError } from "@/lib/api/describe-error";
 import type { Requirement } from "@/lib/api/types";
-
-/** DS §6.4 code chip — Sora on the accent tint. A criterion renders the same
- *  way on every screen it appears. */
-function CodeChip({ code }: { code: string }) {
-  return (
-    <span className="inline-flex rounded-xs bg-action-accent-tint px-1.5 py-0.5 font-display text-caption font-bold text-text-link">
-      {code}
-    </span>
-  );
-}
 
 export function FrameworkDetailPage() {
   const { frameworkId = "" } = useParams();
@@ -86,52 +78,49 @@ export function FrameworkDetailPage() {
   }
 
   if (requirementsQuery.isError) {
+    const failure = describeError(requirementsQuery.error, "framework");
     return (
-      <div className="mx-auto max-w-[1200px]">
+      <div className="w-full">
         <ErrorState
-          title="Couldn’t load criteria"
-          description={
-            requirementsQuery.error instanceof ApiError
-              ? requirementsQuery.error.message
-              : "The request failed. Retry, or contact support if it keeps happening."
-          }
-          referenceId={
-            requirementsQuery.error instanceof ApiError
-              ? requirementsQuery.error.correlationId
+          title={failure.title}
+          description={failure.message}
+          referenceId={failure.referenceId}
+          onRetry={
+            failure.retryable
+              ? () => void requirementsQuery.refetch()
               : undefined
           }
-          onRetry={() => void requirementsQuery.refetch()}
         />
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-[1200px]">
-      <Link
-        to="/frameworks/list"
-        className="mb-3 inline-flex items-center gap-1.5 text-body-sm font-semibold text-text-link"
+    <div className="w-full">
+      <DetailHeader
+        backTo="/frameworks/list"
+        backLabel="Back to frameworks"
+        title={framework?.name ?? "Framework"}
+        meta={framework?.description}
+      />
+
+      <Toolbar
+        searchLabel="Filter criteria"
+        search={
+          <SearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder="Search by code or text…"
+            aria-label="Search criteria"
+          />
+        }
+        actions={
+          <p aria-live="polite" className="text-caption text-text-subtle">
+            Showing <span className="tabular">{visible.length}</span> of{" "}
+            <span className="tabular">{requirements.length}</span> criteria
+          </p>
+        }
       >
-        <Icon name="chevr" className="size-3.5 rotate-180" aria-hidden />
-        Frameworks
-      </Link>
-
-      <h1 className="font-display text-heading-lg text-text-primary">
-        {framework?.name ?? "Framework"}
-      </h1>
-      <p className="mt-2 max-w-2xl text-body-lg text-text-secondary">
-        Every criterion in this framework, and how many shipped control
-        templates satisfy each one.
-      </p>
-
-      <div className="mb-4 mt-5 flex flex-wrap items-center gap-2">
-        <SearchInput
-          value={search}
-          onChange={setSearch}
-          placeholder="Search by code or text…"
-          aria-label="Search criteria"
-          className="w-full sm:w-72"
-        />
         {categoryOptions.length > 1 ? (
           <FilterFacet
             label="Category"
@@ -145,11 +134,7 @@ export function FrameworkDetailPage() {
             Clear filters
           </Button>
         ) : null}
-        <p aria-live="polite" className="ml-auto text-caption text-text-subtle">
-          Showing <span className="tabular">{visible.length}</span> of{" "}
-          <span className="tabular">{requirements.length}</span> criteria
-        </p>
-      </div>
+      </Toolbar>
 
       {requirementsQuery.isLoading ? (
         <TableSkeleton rows={8} density="comfortable" />

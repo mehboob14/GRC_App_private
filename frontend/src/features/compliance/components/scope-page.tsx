@@ -14,7 +14,7 @@ import {
   useToast,
 } from "@/components/ui";
 import { complianceApi, engagementApi } from "@/lib/api/endpoints";
-import { ApiError } from "@/lib/api/client";
+import { describeError, errorToast } from "@/lib/api/describe-error";
 import { useAuth } from "@/lib/auth/auth-context";
 import type { AuditType } from "@/lib/api/types";
 
@@ -82,11 +82,7 @@ export function ScopePage() {
       toast({ title: "Scope saved", tone: "success" });
     },
     onError: (error: unknown) =>
-      toast({
-        title:
-          error instanceof ApiError ? error.message : "Couldn't save the engagement.",
-        tone: "danger",
-      }),
+      toast({ title: errorToast(error, "engagement"), tone: "danger" }),
   });
 
 
@@ -94,15 +90,24 @@ export function ScopePage() {
     auditType === "type_2" && (!windowStart || !windowEnd);
 
   if (frameworksQuery.isError || engagementQuery.isError) {
+    const failure = describeError(
+      engagementQuery.error ?? frameworksQuery.error,
+      "engagement",
+    );
     return (
       <div>
         <ErrorState
-          title="Couldn’t load the engagement"
-          description="The request failed. Retry, or contact support if it keeps happening."
-          onRetry={() => {
-            void frameworksQuery.refetch();
-            void engagementQuery.refetch();
-          }}
+          title={failure.title}
+          description={failure.message}
+          referenceId={failure.referenceId}
+          onRetry={
+            failure.retryable
+              ? () => {
+                  void frameworksQuery.refetch();
+                  void engagementQuery.refetch();
+                }
+              : undefined
+          }
         />
       </div>
     );
@@ -110,18 +115,17 @@ export function ScopePage() {
 
   return (
     <div>
-      <h1 className="font-display text-heading-lg text-text-primary">
-        Scope &amp; coverage
-      </h1>
-      <p className="mt-2 max-w-2xl text-body-lg text-text-secondary">
+      {/* Instructional, not decorative: this form is filled in once and the
+          election decides what the whole platform measures. */}
+      <p className="mb-4 max-w-2xl text-body-md text-text-secondary">
         Choose the audit you are preparing for and which Trust Services
         Categories it covers. Only criteria in scope are measured.
       </p>
 
       {engagementQuery.isLoading || frameworksQuery.isLoading ? (
-        <Skeleton className="mt-5 h-64 w-full rounded-lg" />
+        <Skeleton className="h-64 w-full rounded-lg" />
       ) : (
-        <div className="mt-5 rounded-lg border border-border bg-surface-primary p-5">
+        <div className="rounded-lg border border-border bg-surface-primary p-5">
           <h2 className="font-display text-title-md text-text-primary">
             Engagement setup
           </h2>

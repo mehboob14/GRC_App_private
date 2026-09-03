@@ -7,6 +7,7 @@
  * renders NEEDS_ASSESSMENT ("— assess"), never an invented value.
  */
 
+import type { IconName } from "@/components/ui/icon";
 import type { StatusFamily } from "@/components/ui";
 import type {
   AssetStatus,
@@ -23,13 +24,13 @@ export function displayTier(c: Criticality): CriticalityTier | null {
   return c.tier_override ?? c.tier;
 }
 
-export const ASSET_TYPE_META: Record<AssetType, { label: string }> = {
-  application: { label: "Application" },
-  infrastructure: { label: "Infrastructure" },
-  data: { label: "Data store" },
-  cloud: { label: "Cloud resource" },
-  third_party: { label: "Third party" },
-  business_service: { label: "Business service" },
+export const ASSET_TYPE_META: Record<AssetType, { label: string; icon: IconName }> = {
+  application: { label: "Application", icon: "appWindow" },
+  infrastructure: { label: "Infrastructure", icon: "server" },
+  data: { label: "Data store", icon: "database" },
+  cloud: { label: "Cloud resource", icon: "cloud" },
+  third_party: { label: "Third party", icon: "briefcase" },
+  business_service: { label: "Business service", icon: "layers" },
 };
 
 /** Criticality reads as a heat scale, hottest first. */

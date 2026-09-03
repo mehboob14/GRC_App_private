@@ -362,7 +362,10 @@ class ControlService:
     ) -> Control:
         control = await session.get(Control, control_id)
         if control is None or control.tenant_id != tenant_id:
-            raise NotFound(detail=f"control {control_id}")
+            raise NotFound(
+                "This control no longer exists. It may have been deleted.",
+                detail=f"control {control_id}",
+            )
         return control
 
     # -- writes --------------------------------------------------------------------
@@ -390,7 +393,10 @@ class ControlService:
             select(Control.id).where(Control.tenant_id == tenant_id, Control.code == resolved_code)
         )
         if clash.first() is not None:
-            raise Conflict(detail=f"a control with code {resolved_code!r} already exists")
+            raise Conflict(
+                "Another control already uses this code. Pick a different one.",
+                detail=f"a control with code {resolved_code!r} already exists",
+            )
 
         control = Control(
             id=uuid7(),
@@ -450,7 +456,11 @@ class ControlService:
     ) -> ControlView:
         control = await self._load(session, tenant_id, control_id)
         if control.disabled_at is not None:
-            raise InvalidInput(detail="a disabled control cannot be edited; re-enable it first")
+            raise InvalidInput(
+                "This control is disabled, so it cannot be edited. "
+                "Re-enable it first, then make your changes.",
+                detail="a disabled control cannot be edited; re-enable it first",
+            )
 
         before = AuditService.snapshot(control, fields=_CONTROL_SNAPSHOT)
         evidence_before = (
@@ -516,11 +526,17 @@ class ControlService:
         """
         justification = reason.strip()
         if not justification:
-            raise InvalidInput(detail="a reason is required to disable a control")
+            raise InvalidInput(
+                "Give a reason before disabling this control.",
+                detail="a reason is required to disable a control",
+            )
 
         control = await self._load(session, tenant_id, control_id)
         if control.disabled_at is not None:
-            raise Conflict(detail="control is already disabled")
+            raise Conflict(
+                "This control is already disabled.",
+                detail="control is already disabled",
+            )
 
         before = AuditService.snapshot(control, fields=_CONTROL_SNAPSHOT)
         control.disabled_at = datetime.now(UTC)
@@ -547,7 +563,10 @@ class ControlService:
     ) -> ControlView:
         control = await self._load(session, tenant_id, control_id)
         if control.disabled_at is None:
-            raise Conflict(detail="control is not disabled")
+            raise Conflict(
+                "This control is already active, so there is nothing to re-enable.",
+                detail="control is not disabled",
+            )
 
         before = AuditService.snapshot(control, fields=_CONTROL_SNAPSHOT)
         control.disabled_at = None

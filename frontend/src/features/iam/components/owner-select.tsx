@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Avatar, SearchableSelect } from "@/components/ui";
+import { describeError } from "@/lib/api/describe-error";
 import { iamApi } from "@/lib/api/endpoints";
 import { useAuth } from "@/lib/auth/auth-context";
 
@@ -46,7 +47,16 @@ function useAssignableMembers() {
         ]
       : [];
 
-  return { members, isLoading: membersQuery.isLoading && canReadMembers };
+  return {
+    members,
+    isLoading: membersQuery.isLoading && canReadMembers,
+    // A picker offering nobody looks like an empty workspace. When the list
+    // failed to load, say so instead of letting it read that way.
+    loadError:
+      canReadMembers && membersQuery.isError
+        ? describeError(membersQuery.error, "people list").message
+        : null,
+  };
 }
 
 export function OwnerSelect({
@@ -65,7 +75,7 @@ export function OwnerSelect({
   className?: string;
   placeholder?: string;
 }) {
-  const { members } = useAssignableMembers();
+  const { members, loadError } = useAssignableMembers();
 
   const options = members.map((member) => ({
     value: member.membership_id,
@@ -87,6 +97,7 @@ export function OwnerSelect({
   }
 
   return (
+    <>
     <SearchableSelect
       options={options}
       value={value}
@@ -121,5 +132,9 @@ export function OwnerSelect({
         </>
       )}
     />
+    {loadError ? (
+      <p className="mt-1 text-body-sm text-status-danger-text">{loadError}</p>
+    ) : null}
+    </>
   );
 }

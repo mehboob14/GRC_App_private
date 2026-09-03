@@ -3,7 +3,8 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
 import DOMPurify from "dompurify";
 import mammoth from "mammoth";
-import { Button, Icon, useToast } from "@/components/ui";
+import { Button, CodeChip, ErrorState, Icon, useToast } from "@/components/ui";
+import { describeError, errorToast } from "@/lib/api/describe-error";
 import {
   downloadDocumentBlob,
   getDocumentDetail,
@@ -20,6 +21,9 @@ export function DocumentEditorPage() {
   const { toast } = useToast();
   const [html, setHtml] = useState<string | null>(null);
   const [dirty, setDirty] = useState(false);
+  // A failed Word conversion must not open an empty editor over a real policy:
+  // saving that would replace the content with nothing.
+  const [convertError, setConvertError] = useState<string | null>(null);
 
   const query = useQuery({
     queryKey: ["documents", documentId],
@@ -43,7 +47,9 @@ export function DocumentEditorPage() {
           });
           setHtml(DOMPurify.sanitize(value) || "<p></p>");
         })
-        .catch(() => setHtml("<p></p>"));
+        .catch((error: unknown) =>
+          setConvertError(describeError(error, "document").message),
+        );
     }
   }, [doc, html]);
 
@@ -53,7 +59,7 @@ export function DocumentEditorPage() {
       setDirty(false);
       toast({ title: "Content saved as a new version", tone: "success" });
     },
-    onError: () => toast({ title: "Couldn't save the content.", tone: "danger" }),
+    onError: (error: unknown) => toast({ title: errorToast(error, "document"), tone: "danger" }),
   });
 
   // Warn before leaving with unsaved edits.
@@ -72,6 +78,20 @@ export function DocumentEditorPage() {
     return (
       <div className="flex h-screen items-center justify-center text-body-md text-text-subtle">
         Loading editor…
+      </div>
+    );
+  }
+  if (query.isError) {
+    const e = describeError(query.error, "document");
+    return (
+      <div className="flex h-screen items-center justify-center p-6">
+        <ErrorState
+          className="max-w-lg"
+          title={e.title}
+          description={e.message}
+          referenceId={e.referenceId}
+          onRetry={e.retryable ? () => void query.refetch() : undefined}
+        />
       </div>
     );
   }
@@ -95,6 +115,17 @@ export function DocumentEditorPage() {
       </div>
     );
   }
+  if (convertError !== null) {
+    return (
+      <div className="flex h-screen items-center justify-center p-6">
+        <ErrorState
+          className="max-w-lg"
+          title="This document could not be opened for editing"
+          description={convertError}
+        />
+      </div>
+    );
+  }
   if (html === null) {
     return (
       <div className="flex h-screen items-center justify-center text-body-md text-text-subtle">
@@ -107,9 +138,7 @@ export function DocumentEditorPage() {
     <div className="flex h-screen flex-col bg-surface-page">
       <header className="flex shrink-0 items-center justify-between gap-4 border-b border-border bg-surface-primary px-4 py-2.5">
         <div className="flex min-w-0 items-center gap-3">
-          <span className="rounded-sm bg-surface-sunken px-2 py-1 font-mono text-caption text-text-subtle">
-            {doc.code}
-          </span>
+          <CodeChip code={doc.code} />
           <div className="min-w-0">
             <p className="truncate text-body-md font-medium text-text-primary">{doc.title}</p>
             <p className="text-caption text-text-subtle">

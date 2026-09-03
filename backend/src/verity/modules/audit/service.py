@@ -113,6 +113,9 @@ class AuditLabels:
     users: dict[uuid.UUID, str]
     roles: dict[uuid.UUID, str]
     groups: dict[uuid.UUID, str]
+    assets: dict[uuid.UUID, str]
+    tasks: dict[uuid.UUID, str]  # task -> its code, e.g. TSK-0014
+    findings: dict[uuid.UUID, str]  # vuln_instance -> its CVE, else the title
 
     def actor(self, actor_type: str, actor_id: uuid.UUID | None) -> str | None:
         if actor_type == ACTOR_TYPE_MEMBERSHIP and actor_id is not None:
@@ -120,15 +123,17 @@ class AuditLabels:
         return None
 
     def obj(self, object_type: str, object_id: uuid.UUID) -> str | None:
-        if object_type in ("tenant_membership", "membership"):
-            return self.members.get(object_id)
-        if object_type == "role":
-            return self.roles.get(object_id)
-        if object_type == "group":
-            return self.groups.get(object_id)
-        if object_type == "user":
-            return self.users.get(object_id)
-        return None
+        by_type: dict[str, dict[uuid.UUID, str]] = {
+            "tenant_membership": self.members,
+            "membership": self.members,
+            "role": self.roles,
+            "group": self.groups,
+            "user": self.users,
+            "asset": self.assets,
+            "task": self.tasks,
+            "vuln_instance": self.findings,
+        }
+        return by_type.get(object_type, {}).get(object_id)
 
 
 def encode_cursor(occurred_at: datetime, entry_id: uuid.UUID) -> str:
@@ -255,6 +260,9 @@ class AuditService:
         user_ids: set[uuid.UUID] = set()
         role_ids: set[uuid.UUID] = set()
         group_ids: set[uuid.UUID] = set()
+        asset_ids: set[uuid.UUID] = set()
+        task_ids: set[uuid.UUID] = set()
+        finding_ids: set[uuid.UUID] = set()
         for e in entries:
             if e.actor_type == ACTOR_TYPE_MEMBERSHIP and e.actor_id is not None:
                 member_ids.add(e.actor_id)
@@ -266,6 +274,12 @@ class AuditService:
                 group_ids.add(e.object_id)
             elif e.object_type == "user":
                 user_ids.add(e.object_id)
+            elif e.object_type == "asset":
+                asset_ids.add(e.object_id)
+            elif e.object_type == "task":
+                task_ids.add(e.object_id)
+            elif e.object_type == "vuln_instance":
+                finding_ids.add(e.object_id)
         return AuditLabels(
             members=await self._names(
                 session,
@@ -281,6 +295,21 @@ class AuditService:
             ),
             groups=await self._names(
                 session, "SELECT id, name FROM groups WHERE id = ANY(:ids)", group_ids
+            ),
+            assets=await self._names(
+                session, "SELECT id, name FROM assets WHERE id = ANY(:ids)", asset_ids
+            ),
+            tasks=await self._names(
+                session, "SELECT id, code AS name FROM tasks WHERE id = ANY(:ids)", task_ids
+            ),
+            # A finding has no name of its own — it is identified by the CVE on
+            # its definition, falling back to that definition's title.
+            findings=await self._names(
+                session,
+                "SELECT i.id AS id, COALESCE(d.cve_id, d.title) AS name "
+                "FROM vuln_instances i JOIN vuln_definitions d ON d.id = i.definition_id "
+                "WHERE i.id = ANY(:ids)",
+                finding_ids,
             ),
         )
 

@@ -16,7 +16,7 @@ import {
   useToast,
 } from "@/components/ui";
 import { controlsApi, evidenceApi, iamApi } from "@/lib/api/endpoints";
-import { ApiError } from "@/lib/api/client";
+import { describeError, errorToast } from "@/lib/api/describe-error";
 import type { Control, ControlStatus } from "@/lib/api/types";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -83,11 +83,7 @@ export function EditControlDialog({
       onOpenChange(false);
     },
     onError: (error: unknown) =>
-      toast({
-        title:
-          error instanceof ApiError ? error.message : "Couldn't save the control.",
-        tone: "danger",
-      }),
+      toast({ title: errorToast(error, "control"), tone: "danger" }),
   });
 
   return (
@@ -139,31 +135,46 @@ export function EditControlDialog({
             </p>
           </div>
 
-          <SelectField label="Status">
-            <Select value={status} onValueChange={setStatus}>
-              <SelectTrigger aria-label="Status" />
-              <SelectContent>
-                {(vocabularyQuery.data?.statuses ?? []).map((value) => (
-                  <SelectItem key={value} value={value}>
-                    {STATUS_LABEL[value] ?? value}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </SelectField>
+          <div>
+            <SelectField label="Status">
+              <Select value={status} onValueChange={setStatus}>
+                <SelectTrigger aria-label="Status" />
+                <SelectContent>
+                  {(vocabularyQuery.data?.statuses ?? []).map((value) => (
+                    <SelectItem key={value} value={value}>
+                      {STATUS_LABEL[value] ?? value}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </SelectField>
+            {/* An empty picker with no explanation reads as "no statuses exist". */}
+            {vocabularyQuery.isError ? (
+              <p className="mt-1 text-body-sm text-status-danger-text">
+                {describeError(vocabularyQuery.error, "status list").message}
+              </p>
+            ) : null}
+          </div>
 
-          <SelectField label="Owner" optional>
-            <Select value={ownerId} onValueChange={setOwnerId}>
-              <SelectTrigger aria-label="Owner" />
-              <SelectContent>
-                {(membersQuery.data ?? []).map((member) => (
-                  <SelectItem key={member.membership_id} value={member.membership_id}>
-                    {member.full_name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </SelectField>
+          <div>
+            <SelectField label="Owner" optional>
+              <Select value={ownerId} onValueChange={setOwnerId}>
+                <SelectTrigger aria-label="Owner" />
+                <SelectContent>
+                  {(membersQuery.data ?? []).map((member) => (
+                    <SelectItem key={member.membership_id} value={member.membership_id}>
+                      {member.full_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </SelectField>
+            {membersQuery.isError ? (
+              <p className="mt-1 text-body-sm text-status-danger-text">
+                {describeError(membersQuery.error, "team list").message}
+              </p>
+            ) : null}
+          </div>
         </div>
 
         <DialogFooter>
@@ -240,13 +251,7 @@ export function AttachEvidenceDialog({
       onOpenChange(false);
     },
     onError: (error: unknown) =>
-      toast({
-        title:
-          error instanceof ApiError
-            ? error.message
-            : "Couldn't attach the evidence.",
-        tone: "danger",
-      }),
+      toast({ title: errorToast(error, "evidence item"), tone: "danger" }),
   });
 
   return (
@@ -264,7 +269,13 @@ export function AttachEvidenceDialog({
             placeholder="Filter by title…"
           />
           <div className="max-h-80 overflow-y-auto rounded-md border border-border">
-            {candidates.length === 0 ? (
+            {/* A failed load must not read as an empty library: that would send
+                someone off to re-upload evidence they already have. */}
+            {libraryQuery.isError ? (
+              <p className="p-4 text-body-sm text-status-danger-text">
+                {describeError(libraryQuery.error, "evidence library").message}
+              </p>
+            ) : candidates.length === 0 ? (
               <p className="p-4 text-body-sm text-text-subtle">
                 {(libraryQuery.data ?? []).length === 0
                   ? "The library is empty. Use Add evidence to upload one."

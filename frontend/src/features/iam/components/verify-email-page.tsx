@@ -8,7 +8,7 @@ import { AuthSplitLayout } from "@/features/iam/components/auth-split-layout";
 import { CheckEmailPanel } from "@/features/iam/components/check-email-panel";
 import { Button, ErrorBanner, Icon, TextField } from "@/components/ui";
 import { authApi } from "@/lib/api/endpoints";
-import { ApiError } from "@/lib/api/client";
+import { describeAuthError } from "@/lib/api/describe-error";
 import { announceEmailVerified } from "@/lib/auth/verify-signal";
 import { useAlertFocus } from "@/features/iam/hooks/use-alert-focus";
 
@@ -17,10 +17,6 @@ const resendSchema = z.object({
 });
 
 type ResendValues = z.infer<typeof resendSchema>;
-
-function messageFrom(error: unknown, fallback: string): string {
-  return error instanceof ApiError ? error.message : fallback;
-}
 
 export function VerifyEmailPage() {
   const [params] = useSearchParams();
@@ -113,13 +109,12 @@ export function VerifyEmailPage() {
         title="Verify your email"
         subtitle="We couldn't confirm this link. Enter your email and we'll send a fresh one."
       >
+        {/* Not always "expired": a dropped connection used to read that way. */}
         <ErrorBanner
           ref={verifyAlertRef}
           className="mb-4"
-          title="This link is invalid or has expired."
-        >
-          Enter the email you signed up with to get a new verification link.
-        </ErrorBanner>
+          title={describeAuthError(verifyQuery.error).message}
+        />
         <form
           className="flex flex-col gap-3"
           onSubmit={(e) =>
@@ -130,12 +125,10 @@ export function VerifyEmailPage() {
           noValidate
         >
           {resendMutation.isError ? (
-            <ErrorBanner ref={resendAlertRef} title="Couldn't send the email">
-              {messageFrom(
-                resendMutation.error,
-                "The request didn't reach the server. Check your connection and try again.",
-              )}
-            </ErrorBanner>
+            <ErrorBanner
+              ref={resendAlertRef}
+              title={describeAuthError(resendMutation.error).message}
+            />
           ) : null}
           <TextField
             label="Work email"

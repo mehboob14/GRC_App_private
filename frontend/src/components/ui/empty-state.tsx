@@ -40,7 +40,7 @@ export function EmptyState({
       )}
     >
       {comingSoon ? (
-        <span className="mb-3 rounded-full bg-action-accent-tint px-2.5 py-1 type-overline text-action-accent">
+        <span className="mb-3 rounded-full bg-action-accent-tint px-2.5 py-1 font-sans text-overline uppercase text-action-accent">
           Coming soon
         </span>
       ) : (

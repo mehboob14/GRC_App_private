@@ -28,6 +28,7 @@ from verity.modules.documents.schemas import (
     AcknowledgeCampaignRequest,
     ApprovalDecision,
     ArchiveRequest,
+    AssignApprovalRequest,
     CampaignCommentCreate,
     CampaignCreate,
     CampaignOut,
@@ -39,8 +40,8 @@ from verity.modules.documents.schemas import (
     DocumentOut,
     DocumentUpdate,
     DocumentVocabularyOut,
+    PendingApprovalOut,
     PendingCampaignOut,
-    SubmitRequest,
 )
 from verity.modules.documents.service import RecipientSelection, document_service
 
@@ -185,6 +186,38 @@ async def my_pending_campaign_count(
 ) -> dict[str, int]:
     assert principal.membership_id is not None  # noqa: S101
     count = await document_service.my_pending_count(
+        session, tenant_id=context.tenant_id, membership_id=principal.membership_id
+    )
+    return {"count": count}
+
+
+@documents_router.get(
+    "/approvals/pending",
+    response_model=list[PendingApprovalOut],
+    summary="Tiers waiting on my decision",
+)
+async def pending_approvals(
+    principal: Annotated[Principal, Depends(require_read)],
+    context: Annotated[TenantContext, Depends(get_tenant_context)],
+    session: Annotated[AsyncSession, Depends(get_tenant_session)],
+) -> list[PendingApprovalOut]:
+    assert principal.membership_id is not None  # noqa: S101
+    views = await document_service.my_pending_approvals(
+        session, tenant_id=context.tenant_id, membership_id=principal.membership_id
+    )
+    return [PendingApprovalOut.model_validate(v) for v in views]
+
+
+@documents_router.get(
+    "/approvals/pending/count", summary="Count of tiers waiting on my decision"
+)
+async def pending_approval_count(
+    principal: Annotated[Principal, Depends(require_read)],
+    context: Annotated[TenantContext, Depends(get_tenant_context)],
+    session: Annotated[AsyncSession, Depends(get_tenant_session)],
+) -> dict[str, int]:
+    assert principal.membership_id is not None  # noqa: S101
+    count = await document_service.my_pending_approval_count(
         session, tenant_id=context.tenant_id, membership_id=principal.membership_id
     )
     return {"count": count}
@@ -434,21 +467,29 @@ async def save_content(
 
 
 @documents_router.post(
-    "/{document_id}/submit", response_model=DocumentOut, summary="Submit for approval"
+    "/{document_id}/approvals/{tier}/assign",
+    response_model=DocumentOut,
+    summary="Assign who reviews/approves a tier",
 )
-async def submit_document(
+async def assign_approval_tier(  # noqa: PLR0913, PLR0917
     document_id: uuid.UUID,
-    body: SubmitRequest,
+    tier: int,
+    body: AssignApprovalRequest,
     principal: Annotated[Principal, Depends(require_manage)],
     context: Annotated[TenantContext, Depends(get_tenant_context)],
     session: Annotated[AsyncSession, Depends(get_tenant_session)],
 ) -> DocumentOut:
-    view = await document_service.submit_for_approval(
+    view = await document_service.assign_approval_tier(
         session,
         tenant_id=context.tenant_id,
         actor=_actor(principal),
         document_id=document_id,
-        approver_ids=body.approver_ids,
+        tier=tier,
+        targets=RecipientSelection(
+            user_ids=body.targets.user_ids,
+            role_ids=body.targets.role_ids,
+            group_ids=body.targets.group_ids,
+        ),
     )
     return DocumentOut.model_validate(view)
 
@@ -456,7 +497,7 @@ async def submit_document(
 @documents_router.post(
     "/{document_id}/approvals/{tier}/decide",
     response_model=DocumentOut,
-    summary="Approve or reject an approval tier",
+    summary="Approve or reject an approval tier you were assigned",
 )
 async def decide_approval(  # noqa: PLR0913, PLR0917
     document_id: uuid.UUID,
@@ -466,7 +507,7 @@ async def decide_approval(  # noqa: PLR0913, PLR0917
     context: Annotated[TenantContext, Depends(get_tenant_context)],
     session: Annotated[AsyncSession, Depends(get_tenant_session)],
 ) -> DocumentOut:
-    view = await document_service.decide_approval(
+    view = await document_service.decide_approval_tier(
         session,
         tenant_id=context.tenant_id,
         actor=_actor(principal),

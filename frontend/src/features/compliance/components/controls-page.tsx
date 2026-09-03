@@ -6,6 +6,7 @@ import {
   Badge,
   Button,
   Checkbox,
+  ColumnPicker,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -13,7 +14,6 @@ import {
   DialogHeader,
   DialogTitle,
   DropdownMenu,
-  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
@@ -22,6 +22,7 @@ import {
   ErrorState,
   FilterFacet,
   Icon,
+  PageHeader,
   Pagination,
   SearchInput,
   Select,
@@ -37,12 +38,16 @@ import {
   TextField,
   TH,
   THead,
+  Toolbar,
   TR,
+  useColumnPrefs,
+  useTableSort,
   useToast,
+  type ColumnDef,
 } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { complianceApi, controlsApi, evidenceApi } from "@/lib/api/endpoints";
-import { ApiError } from "@/lib/api/client";
+import { describeError, errorToast } from "@/lib/api/describe-error";
 import { useAuth } from "@/lib/auth/auth-context";
 import type { Control, ControlStatus } from "@/lib/api/types";
 import { OwnerSelect } from "@/features/iam/components/owner-select";
@@ -59,6 +64,9 @@ import {
   downloadControlReport,
   printControlReport,
 } from "@/features/compliance/control-report-export";
+
+/** A facet option that also states how many rows it would leave. */
+const withCount = (label: string, n: number) => (n ? `${label} (${n})` : label);
 
 /** DS §6.1 — a control's implementation state, mapped once so every screen
  *  renders the same word the same way. */
@@ -168,13 +176,7 @@ function ControlDetailDialog({
       toast({ title: "Status updated", tone: "success" });
     },
     onError: (error: unknown) =>
-      toast({
-        title:
-          error instanceof ApiError
-            ? error.message
-            : "Couldn't update the status.",
-        tone: "danger",
-      }),
+      toast({ title: errorToast(error, "control"), tone: "danger" }),
   });
 
   const disableMutation = useMutation({
@@ -187,13 +189,7 @@ function ControlDetailDialog({
       toast({ title: "Control disabled", tone: "neutral" });
     },
     onError: (error: unknown) =>
-      toast({
-        title:
-          error instanceof ApiError
-            ? error.message
-            : "Couldn't disable the control.",
-        tone: "danger",
-      }),
+      toast({ title: errorToast(error, "control"), tone: "danger" }),
   });
 
   const enableMutation = useMutation({
@@ -203,13 +199,7 @@ function ControlDetailDialog({
       toast({ title: "Control re-enabled", tone: "success" });
     },
     onError: (error: unknown) =>
-      toast({
-        title:
-          error instanceof ApiError
-            ? error.message
-            : "Couldn't re-enable the control.",
-        tone: "danger",
-      }),
+      toast({ title: errorToast(error, "control"), tone: "danger" }),
   });
 
   // `clear_owner` wins over `owner_membership_id` server-side, so unassigning
@@ -227,11 +217,7 @@ function ControlDetailDialog({
       toast({ title: "Owner updated", tone: "success" });
     },
     onError: (error: unknown) =>
-      toast({
-        title:
-          error instanceof ApiError ? error.message : "Couldn't set the owner.",
-        tone: "danger",
-      }),
+      toast({ title: errorToast(error, "control"), tone: "danger" }),
   });
 
   return (
@@ -396,6 +382,15 @@ function ControlDetailDialog({
                       </li>
                     ))}
                   </ul>
+                ) : evidenceQuery.isError ? (
+                  // "No evidence linked yet" on a failed read is a fabricated
+                  // compliance finding, so say what actually happened.
+                  <p className="text-body-sm text-status-danger-text">
+                    {
+                      describeError(evidenceQuery.error, "evidence list")
+                        .message
+                    }
+                  </p>
                 ) : (
                   <p className="text-body-sm text-status-warning-text">
                     No evidence linked yet
@@ -516,34 +511,13 @@ function ControlDetailDialog({
  *  columns are structural and always shown. Choice persists per browser. */
 const TOGGLEABLE_COLUMNS = [
   { key: "description", label: "Description" },
-  { key: "trust", label: "Trust Services" },
+  { key: "trust", label: "Trust services" },
   { key: "criteria", label: "Criteria" },
   { key: "frameworks", label: "Frameworks" },
   { key: "owner", label: "Owner" },
   { key: "evidence", label: "Evidence" },
   { key: "status", label: "Status" },
-] as const;
-
-type ColKey = (typeof TOGGLEABLE_COLUMNS)[number]["key"];
-
-const COLUMN_PREFS_KEY = "verity.controls.columns";
-
-function loadColumnPrefs(): Record<ColKey, boolean> {
-  const all = Object.fromEntries(
-    TOGGLEABLE_COLUMNS.map((c) => [c.key, true]),
-  ) as Record<ColKey, boolean>;
-  try {
-    const raw = localStorage.getItem(COLUMN_PREFS_KEY);
-    if (!raw) return all;
-    const saved = JSON.parse(raw) as Partial<Record<ColKey, boolean>>;
-    for (const { key } of TOGGLEABLE_COLUMNS) {
-      if (typeof saved[key] === "boolean") all[key] = saved[key] as boolean;
-    }
-  } catch {
-    // Corrupt/absent pref is not worth failing the page over — show everything.
-  }
-  return all;
-}
+] as const satisfies readonly ColumnDef<string>[];
 
 /** Controls — the tenant's working library, instantiated from the shipped
  *  templates. Code, description, Trust Services, mapped criteria, owner and
@@ -554,18 +528,11 @@ export function ControlsPage() {
   const { toast } = useToast();
   const canManage = Boolean(principal?.permissions.includes("controls:manage"));
   const canExport = Boolean(principal?.permissions.includes("frameworks:read"));
-  const [exporting, setExporting] = useState<null | "csv" | "xlsx" | "pdf">(null);
-
-  const [visibleCols, setVisibleCols] = useState<Record<ColKey, boolean>>(
-    loadColumnPrefs,
+  const [exporting, setExporting] = useState<null | "csv" | "xlsx" | "pdf">(
+    null,
   );
-  useEffect(() => {
-    localStorage.setItem(COLUMN_PREFS_KEY, JSON.stringify(visibleCols));
-  }, [visibleCols]);
-  const hiddenColCount = TOGGLEABLE_COLUMNS.filter(
-    (c) => !visibleCols[c.key],
-  ).length;
 
+  const cols = useColumnPrefs("verity.controls.columns", TOGGLEABLE_COLUMNS);
 
   async function handleExport(format: "csv" | "xlsx" | "pdf") {
     if (exporting) return;
@@ -586,7 +553,6 @@ export function ControlsPage() {
       setExporting(null);
     }
   }
-
 
   // The dashboard deep-links here with filters pre-applied (e.g.
   // ?status=not_started, ?owner=unassigned, ?evidence=none). Read once as the
@@ -719,13 +685,7 @@ export function ControlsPage() {
       });
     },
     onError: (error: unknown) =>
-      toast({
-        title:
-          error instanceof ApiError
-            ? error.message
-            : "Couldn't build the library.",
-        tone: "danger",
-      }),
+      toast({ title: errorToast(error, "control library"), tone: "danger" }),
   });
 
   const controls = useMemo(
@@ -799,6 +759,20 @@ export function ControlsPage() {
     [controls, checkedIds],
   );
 
+  // --- Sorting --------------------------------------------------------------
+  // Sorts the whole filtered set, not the page, so page 2 is the continuation
+  // of page 1 rather than its own little ordering.
+  const { thProps, sortRows } = useTableSort<
+    Control,
+    "control" | "owner" | "evidence" | "status"
+  >(null, {
+    control: (control) => control.code,
+    owner: (control) => control.owner_name,
+    evidence: (control) => evidenceCounts.get(control.id) ?? 0,
+    status: (control) => displayStatus(control).label,
+  });
+  const ordered = useMemo(() => sortRows(visible), [sortRows, visible]);
+
   // --- Paging ---------------------------------------------------------------
   const pageCount = Math.max(1, Math.ceil(visible.length / pageSize));
   // Clamp rather than reset: narrowing a filter while on page 9 should land on
@@ -806,8 +780,8 @@ export function ControlsPage() {
   const currentPage = Math.min(page, pageCount);
   const pageStart = (currentPage - 1) * pageSize;
   const paged = useMemo(
-    () => visible.slice(pageStart, pageStart + pageSize),
-    [visible, pageStart, pageSize],
+    () => ordered.slice(pageStart, pageStart + pageSize),
+    [ordered, pageStart, pageSize],
   );
 
   // Select-all applies to the rows actually on screen, which is this page.
@@ -854,13 +828,8 @@ export function ControlsPage() {
     return [...all].sort().map((f) => ({ value: f, label: f }));
   }, [controls]);
 
-  // Header summary — real counts only, so the line stays true as data changes.
-  const frameworkSummary = useMemo(() => {
-    const list = frameworkOptions.map((option) => option.label);
-    if (list.length === 0) return "no framework yet";
-    if (list.length === 1) return list[0];
-    return `${list.slice(0, -1).join(", ")} and ${list[list.length - 1]}`;
-  }, [frameworkOptions]);
+  // The two numbers the deleted header summary carried. They now ride on the
+  // facet option that filters to exactly that set.
   const unowned = controls.filter(
     (control) => !control.owner_membership_id && !control.disabled_at,
   ).length;
@@ -875,7 +844,9 @@ export function ControlsPage() {
     ...frameworkFilter.map((f) => `Framework: ${f}`),
     ...owners.map((o) => `Owner: ${ownerLabel(o)}`),
     ...statuses.map((s) => `Status: ${STATUS_LABEL[s as ControlStatus] ?? s}`),
-    ...evidence.map((e) => `Evidence: ${e === "with" ? "Has evidence" : "None"}`),
+    ...evidence.map(
+      (e) => `Evidence: ${e === "with" ? "Has evidence" : "None"}`,
+    ),
     ...(search.trim() ? [`Search: ${search.trim()}`] : []),
   ];
 
@@ -890,131 +861,45 @@ export function ControlsPage() {
   }
 
   if (controlsQuery.isError) {
+    const failure = describeError(controlsQuery.error, "control library");
     return (
-      <div className="mx-auto max-w-[1200px]">
+      <div className="w-full">
         <ErrorState
-          title="Couldn’t load controls"
-          description={
-            controlsQuery.error instanceof ApiError
-              ? controlsQuery.error.message
-              : "The request failed. Retry, or contact support if it keeps happening."
+          title={failure.title}
+          description={failure.message}
+          referenceId={failure.referenceId}
+          // No "Try again" on a 403 or a 404: retrying changes nothing.
+          onRetry={
+            failure.retryable ? () => void controlsQuery.refetch() : undefined
           }
-          referenceId={
-            controlsQuery.error instanceof ApiError
-              ? controlsQuery.error.correlationId
-              : undefined
-          }
-          onRetry={() => void controlsQuery.refetch()}
         />
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-[1200px]">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="type-overline text-text-subtle">Compliance</p>
-          <h1 className="mt-1 font-display text-heading-lg text-text-primary">
-            Controls library
-          </h1>
-          <p className="mt-1.5 text-body-lg text-text-secondary">
-            <span className="tabular">{controls.length}</span> controls across{" "}
-            {frameworkSummary}
-            {unowned > 0 ? (
-              <>
-                {" · "}
-                <span className="font-semibold text-status-warning-text">
-                  {unowned} unassigned
-                </span>
-              </>
-            ) : null}
-            {evidenceKnown && noEvidence > 0 ? (
-              <>
-                {" · "}
-                <span className="font-semibold text-text-primary">
-                  {noEvidence} without evidence
-                </span>
-              </>
-            ) : null}
-          </p>
-        </div>
-        <div className="ml-auto flex shrink-0 items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="secondary">
-                <Icon name="layers" className="size-4" />
-                Columns
-                {hiddenColCount > 0 ? (
-                  <span className="tabular text-caption text-text-subtle">
-                    {TOGGLEABLE_COLUMNS.length - hiddenColCount}/
-                    {TOGGLEABLE_COLUMNS.length}
-                  </span>
-                ) : null}
-                <Icon name="chev" className="size-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {TOGGLEABLE_COLUMNS.map((col) => (
-                <DropdownMenuCheckboxItem
-                  key={col.key}
-                  checked={visibleCols[col.key]}
-                  onCheckedChange={(next) =>
-                    setVisibleCols((prev) => ({ ...prev, [col.key]: next }))
-                  }
-                >
-                  {col.label}
-                </DropdownMenuCheckboxItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          {canExport ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="secondary" loading={exporting !== null}>
-                  <Icon name="download" className="size-4" />
-                  Export
-                  <Icon name="chev" className="size-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onSelect={() => void handleExport("pdf")}>
-                  PDF report
-                </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => void handleExport("xlsx")}>
-                  Excel workbook
-                </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => void handleExport("csv")}>
-                  CSV
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : null}
-          {canManage ? (
+    <div className="w-full">
+      <PageHeader eyebrow="Compliance" title="Controls library" />
+
+      <Toolbar
+        searchLabel="Filter controls"
+        search={
+          <SearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder="Search by name, code or criterion…"
+            aria-label="Search controls"
+          />
+        }
+        actions={
+          canManage ? (
             <Button onClick={() => setCreating(true)}>
               <Icon name="plus" className="size-4" />
               New control
             </Button>
-          ) : null}
-        </div>
-      </div>
-
-      {/* Search · filters · primary action share one band. It wraps as a whole
-          rather than reflowing column by column: the search takes the full row
-          on a phone, the facets flow beneath it, and the action stays pinned to
-          the end of the band at every width. */}
-      <div
-        role="search"
-        aria-label="Filter controls"
-        className="mb-3 mt-5 flex flex-wrap items-center gap-2"
+          ) : null
+        }
       >
-        <SearchInput
-          value={search}
-          onChange={setSearch}
-          placeholder="Search by name, code or criterion…"
-          aria-label="Search controls"
-          className="w-full min-w-0 sm:w-64 lg:w-72"
-        />
         {vocabulary ? (
           <>
             <FilterFacet
@@ -1040,7 +925,11 @@ export function ControlsPage() {
             />
             <FilterFacet
               label="Owner"
-              options={ownerOptions}
+              options={ownerOptions.map((option) =>
+                option.value === "unassigned"
+                  ? { ...option, label: withCount(option.label, unowned) }
+                  : option,
+              )}
               values={owners}
               onChange={setOwners}
             />
@@ -1060,7 +949,12 @@ export function ControlsPage() {
               label="Evidence"
               options={[
                 { value: "with", label: "Has evidence" },
-                { value: "none", label: "No evidence" },
+                {
+                  value: "none",
+                  label: evidenceKnown
+                    ? withCount("No evidence", noEvidence)
+                    : "No evidence",
+                },
               ]}
               values={evidence}
               onChange={setEvidence}
@@ -1069,10 +963,10 @@ export function ControlsPage() {
         ) : null}
         {activeFilters.length > 0 ? (
           <Button variant="ghost" size="sm" onClick={clearFilters}>
-            Clear
+            Clear filters
           </Button>
         ) : null}
-      </div>
+      </Toolbar>
 
       <p aria-live="polite" className="mb-4 text-caption text-text-subtle">
         Showing <span className="tabular">{visible.length}</span> of{" "}
@@ -1108,7 +1002,38 @@ export function ControlsPage() {
           onClearFilters={clearFilters}
         />
       ) : (
-        <Table density="comfortable">
+        <Table
+          density="comfortable"
+          actions={
+            <>
+              <ColumnPicker {...cols} />
+              {canExport ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="secondary" loading={exporting !== null}>
+                      <Icon name="download" className="size-4" />
+                      Export
+                      <Icon name="chev" className="size-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onSelect={() => void handleExport("pdf")}>
+                      PDF report
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onSelect={() => void handleExport("xlsx")}
+                    >
+                      Excel workbook
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => void handleExport("csv")}>
+                      CSV
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : null}
+            </>
+          }
+        >
           <THead>
             <TR>
               {/* Selection exists to drive bulk actions — without the
@@ -1137,15 +1062,25 @@ export function ControlsPage() {
                   />
                 </TH>
               ) : null}
-              <TH>Control</TH>
-              {visibleCols.description ? <TH>Description</TH> : null}
-              {visibleCols.trust ? <TH>Trust Services</TH> : null}
-              {visibleCols.criteria ? <TH>Criteria</TH> : null}
-              {visibleCols.frameworks ? <TH>Frameworks</TH> : null}
-              {visibleCols.owner ? <TH>Owner</TH> : null}
-              {visibleCols.evidence ? <TH numeric>Evidence</TH> : null}
-              {visibleCols.status ? <TH>Status</TH> : null}
-              <TH className="w-20 text-right">Actions</TH>
+              <TH {...thProps("control")}>Control</TH>
+              {cols.isVisible("description") ? <TH>Description</TH> : null}
+              {cols.isVisible("trust") ? <TH>Trust services</TH> : null}
+              {cols.isVisible("criteria") ? <TH>Criteria</TH> : null}
+              {cols.isVisible("frameworks") ? <TH>Frameworks</TH> : null}
+              {cols.isVisible("owner") ? (
+                <TH {...thProps("owner")}>Owner</TH>
+              ) : null}
+              {cols.isVisible("evidence") ? (
+                <TH numeric {...thProps("evidence")}>
+                  Evidence
+                </TH>
+              ) : null}
+              {cols.isVisible("status") ? (
+                <TH {...thProps("status")}>Status</TH>
+              ) : null}
+              <TH className="w-12">
+                <span className="sr-only">Actions</span>
+              </TH>
             </TR>
           </THead>
           <TBody>
@@ -1199,19 +1134,21 @@ export function ControlsPage() {
                       </span>
                     </div>
                   </TD>
-                  {visibleCols.description ? (
+                  {cols.isVisible("description") ? (
                     <TD>
                       <p
                         className="line-clamp-2 max-w-[360px] text-body-sm text-text-secondary"
                         title={control.description}
                       >
                         {control.description || (
-                          <span className="text-text-subtle">No description</span>
+                          <span className="text-text-subtle">
+                            No description
+                          </span>
                         )}
                       </p>
                     </TD>
                   ) : null}
-                  {visibleCols.trust ? (
+                  {cols.isVisible("trust") ? (
                     <TD>
                       {tsc.length ? (
                         <div className="flex flex-wrap gap-1">
@@ -1224,7 +1161,7 @@ export function ControlsPage() {
                       )}
                     </TD>
                   ) : null}
-                  {visibleCols.criteria ? (
+                  {cols.isVisible("criteria") ? (
                     <TD>
                       <div className="flex max-w-[140px] flex-wrap gap-1">
                         {control.requirement_keys.length ? (
@@ -1244,7 +1181,7 @@ export function ControlsPage() {
                       </div>
                     </TD>
                   ) : null}
-                  {visibleCols.frameworks ? (
+                  {cols.isVisible("frameworks") ? (
                     <TD>
                       {frameworks.length ? (
                         <div className="flex flex-wrap gap-1">
@@ -1257,7 +1194,7 @@ export function ControlsPage() {
                       )}
                     </TD>
                   ) : null}
-                  {visibleCols.owner ? (
+                  {cols.isVisible("owner") ? (
                     <TD>
                       {control.owner_name ? (
                         <span className="flex items-center gap-2">
@@ -1273,7 +1210,7 @@ export function ControlsPage() {
                       )}
                     </TD>
                   ) : null}
-                  {visibleCols.evidence ? (
+                  {cols.isVisible("evidence") ? (
                     <TD numeric>
                       {evidenceKnown ? (
                         <span
@@ -1292,7 +1229,7 @@ export function ControlsPage() {
                       )}
                     </TD>
                   ) : null}
-                  {visibleCols.status ? (
+                  {cols.isVisible("status") ? (
                     <TD>
                       <StatusPill
                         status={displayStatus(control).family}

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Button,
   Dialog,
@@ -8,72 +8,18 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  PeopleSelect,
-  type Person,
+  ErrorBanner,
+  Icon,
   TextField,
   useToast,
+  EMPTY_RECIPIENTS as EMPTY,
+  isEmptyRecipients as isEmpty,
+  RecipientPicker,
+  useRecipientOptions,
 } from "@/components/ui";
-import { ApiError } from "@/lib/api/client";
-import { iamApi } from "@/lib/api/endpoints";
+import { errorToast } from "@/lib/api/describe-error";
 import { createCampaign } from "../api";
 import type { Campaign, RecipientSelectionInput } from "../types";
-
-const EMPTY: RecipientSelectionInput = { user_ids: [], role_ids: [], group_ids: [] };
-
-/** People, roles and groups pickers for one recipient kind (reviewers/approvers). */
-function RecipientPicker({
-  label,
-  people,
-  roles,
-  groups,
-  value,
-  onChange,
-}: {
-  label: string;
-  people: Person[];
-  roles: Person[];
-  groups: Person[];
-  value: RecipientSelectionInput;
-  onChange: (next: RecipientSelectionInput) => void;
-}) {
-  return (
-    <fieldset className="rounded-md border border-border p-3">
-      <legend className="px-1 text-label-md font-bold text-text-primary">{label}</legend>
-      <div className="space-y-3">
-        <div>
-          <span className="mb-1 block text-caption text-text-subtle">People</span>
-          <PeopleSelect
-            people={people}
-            values={value.user_ids}
-            onChange={(user_ids) => onChange({ ...value, user_ids })}
-            placeholder="Add people…"
-          />
-        </div>
-        <div>
-          <span className="mb-1 block text-caption text-text-subtle">Roles</span>
-          <PeopleSelect
-            people={roles}
-            values={value.role_ids}
-            onChange={(role_ids) => onChange({ ...value, role_ids })}
-            placeholder="Add roles…"
-          />
-        </div>
-        <div>
-          <span className="mb-1 block text-caption text-text-subtle">Groups</span>
-          <PeopleSelect
-            people={groups}
-            values={value.group_ids}
-            onChange={(group_ids) => onChange({ ...value, group_ids })}
-            placeholder="Add groups…"
-          />
-        </div>
-      </div>
-    </fieldset>
-  );
-}
-
-const isEmpty = (s: RecipientSelectionInput) =>
-  s.user_ids.length === 0 && s.role_ids.length === 0 && s.group_ids.length === 0;
 
 /**
  * Start an acknowledgement campaign against a document. The owner names the
@@ -100,25 +46,12 @@ export function CreateCampaignDialog({
   const [reviewers, setReviewers] = useState<RecipientSelectionInput>(EMPTY);
   const [approvers, setApprovers] = useState<RecipientSelectionInput>(EMPTY);
 
-  const membersQuery = useQuery({ queryKey: ["members"], queryFn: () => iamApi.listMembers() });
-  const rolesQuery = useQuery({ queryKey: ["roles"], queryFn: () => iamApi.listRoles() });
-  const groupsQuery = useQuery({ queryKey: ["groups"], queryFn: () => iamApi.listGroups() });
+  const { people, roles, groups, error: recipientsError } = useRecipientOptions();
 
-  const people: Person[] = (membersQuery.data ?? []).map((m) => ({
-    id: m.membership_id,
-    name: m.full_name,
-    email: m.email,
-  }));
-  const roles: Person[] = (rolesQuery.data ?? []).map((r) => ({
-    id: r.id,
-    name: r.name,
-    email: `${r.assignment_count} assigned`,
-  }));
-  const groups: Person[] = (groupsQuery.data ?? []).map((g) => ({
-    id: g.id,
-    name: g.name,
-    email: `${g.member_count} members`,
-  }));
+  const reviewerCount =
+    reviewers.user_ids.length + reviewers.role_ids.length + reviewers.group_ids.length;
+  const approverCount =
+    approvers.user_ids.length + approvers.role_ids.length + approvers.group_ids.length;
 
   const create = useMutation({
     mutationFn: () =>
@@ -136,10 +69,7 @@ export function CreateCampaignDialog({
       onOpenChange(false);
     },
     onError: (error: unknown) =>
-      toast({
-        title: error instanceof ApiError ? error.message : "Couldn't start the campaign.",
-        tone: "danger",
-      }),
+      toast({ title: errorToast(error, "campaign"), tone: "danger" }),
   });
 
   const nobody = isEmpty(reviewers) && isEmpty(approvers);
@@ -149,8 +79,14 @@ export function CreateCampaignDialog({
       <DialogContent className="max-h-[92vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Start an acknowledgement campaign</DialogTitle>
+          <p className="text-body-md text-text-secondary">
+            Ask a chosen set of people to read {documentTitle} and sign that they have.
+          </p>
         </DialogHeader>
-        <DialogBody className="space-y-4">
+        <DialogBody className="space-y-5">
+          {recipientsError ? (
+            <ErrorBanner title="Recipients could not be loaded">{recipientsError}</ErrorBanner>
+          ) : null}
           <TextField
             label="Campaign title"
             value={title}
@@ -169,26 +105,38 @@ export function CreateCampaignDialog({
               className="w-full rounded-sm border border-border bg-surface-primary px-3 py-2 text-body-sm text-text-primary"
             />
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <RecipientPicker
-              label="Reviewers"
-              people={people}
-              roles={roles}
-              groups={groups}
-              value={reviewers}
-              onChange={setReviewers}
-            />
-            <RecipientPicker
-              label="Approvers"
-              people={people}
-              roles={roles}
-              groups={groups}
-              value={approvers}
-              onChange={setApprovers}
-            />
+          <div>
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <span className="text-label-md font-semibold text-text-primary">Recipients</span>
+              {reviewerCount + approverCount > 0 ? (
+                <span className="text-caption text-text-subtle">
+                  {reviewerCount} reviewer{reviewerCount === 1 ? "" : "s"} ·{" "}
+                  {approverCount} approver{approverCount === 1 ? "" : "s"} selected
+                </span>
+              ) : null}
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <RecipientPicker
+                label="Reviewers"
+                people={people}
+                roles={roles}
+                groups={groups}
+                value={reviewers}
+                onChange={setReviewers}
+              />
+              <RecipientPicker
+                label="Approvers"
+                people={people}
+                roles={roles}
+                groups={groups}
+                value={approvers}
+                onChange={setApprovers}
+              />
+            </div>
           </div>
           <div className="max-w-[220px]">
-            <span className="mb-1 block text-label-md font-semibold text-text-primary">
+            <span className="mb-1 flex items-center gap-1.5 text-label-md font-semibold text-text-primary">
+              <Icon name="clock" className="size-3.5" />
               Due date <span className="font-normal text-text-subtle">(optional)</span>
             </span>
             <input

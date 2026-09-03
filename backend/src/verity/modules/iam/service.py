@@ -56,6 +56,7 @@ from verity.core.errors import (
     InvalidToken,
     NotFound,
 )
+from verity.core.logging import get_logger
 from verity.core.rls import bind_tenant_context
 from verity.core.security import (
     IssuedToken,
@@ -140,6 +141,40 @@ MIN_PASSWORD_LENGTH: Final = 10
 TRIAL_PLAN: Final = "trial"
 
 _UNIFORM_LOGIN_DETAIL: Final = "tenant login refused; see the auth_attempt audit row"
+
+# Reader-facing copy that has to be identical everywhere it is used.
+#
+# The two link messages are deliberately uniform across every failure mode of
+# their flow: "no such account", "already used" and "expired" must look the
+# same to whoever is holding the link, or the difference becomes an
+# account-enumeration oracle. The MFA one is not in that category (a password
+# was already accepted before the code is checked), so it can be specific.
+# The "gone" messages never echo an id back and never say whether the row
+# exists in some other workspace.
+_VERIFY_LINK_MESSAGE: Final = (
+    "This verification link is invalid or has expired. Request a new one from the sign-in page."
+)
+_RESET_LINK_MESSAGE: Final = (
+    "This password reset link is invalid or has expired. Request a new one from the sign-in page."
+)
+_MFA_CODE_MESSAGE: Final = (
+    "That code is not valid or has expired. Check your authenticator app and try again."
+)
+_WORKSPACE_UNAVAILABLE_MESSAGE: Final = (
+    "That workspace is not available to you. Choose another one, "
+    "or ask a workspace admin to check your access."
+)
+_MEMBER_GONE_MESSAGE: Final = (
+    "This member no longer exists. They may have been removed from the workspace."
+)
+_ROLE_GONE_MESSAGE: Final = "This role no longer exists. It may have been deleted."
+_GROUP_GONE_MESSAGE: Final = "This group no longer exists. It may have been deleted."
+_UNKNOWN_PERMISSIONS_MESSAGE: Final = (
+    "One or more of the permissions you picked are not available. "
+    "Refresh the page and choose again."
+)
+
+logger = get_logger(__name__)
 
 _TENANT_STATUS_ACTIVE: Final = "active"
 """Mirrors ``tenancy.models.TENANT_STATUS_ACTIVE`` by value: iam reaches tenancy
@@ -351,7 +386,10 @@ def derive_slug_candidates(company_name: str, email: str) -> tuple[str, str]:
 
 def _validate_window(valid_from: date | None, valid_until: date | None) -> None:
     if valid_from is not None and valid_until is not None and valid_from > valid_until:
-        raise InvalidInput(detail="valid_from is after valid_until")
+        raise InvalidInput(
+            "The start date must be on or before the end date.",
+            detail="valid_from is after valid_until",
+        )
 
 
 def tenant_display_name(legal_name: str, trading_name: str | None) -> str:
@@ -726,7 +764,10 @@ class IamAuthService:
         factor). An idempotent replay returns the account's current step instead.
         """
         if not accept_terms:
-            raise InvalidInput(detail="the Terms and Privacy Policy must be accepted")
+            raise InvalidInput(
+                "Accept the Terms and the Privacy Policy to create your workspace.",
+                detail="the Terms and Privacy Policy must be accepted",
+            )
         email_n = normalize_email(email)
         validate_password(password)
         base_slug, fallback_slug = derive_slug_candidates(company_name.strip(), email_n)
@@ -868,15 +909,22 @@ class IamAuthService:
         try:
             claims = decode_token(token, expected_typ="email_verify", expected_plane="tenant")
         except InvalidToken as exc:
-            raise InvalidInput(detail="verification token failed validation") from exc
+            raise InvalidInput(
+                _VERIFY_LINK_MESSAGE, detail="verification token failed validation"
+            ) from exc
 
         async with provider_session_scope() as session:
             user = await self._users.get(session, claims.subject)
             if user is None or user.status != USER_STATUS_ACTIVE:
-                raise InvalidInput(detail=f"user {claims.subject} is gone or disabled")
+                raise InvalidInput(
+                    _VERIFY_LINK_MESSAGE, detail=f"user {claims.subject} is gone or disabled"
+                )
             memberships = await self._active_memberships(session, user)
             if not memberships:
-                raise InvalidInput(detail=f"user {user.id} has no membership to verify into")
+                raise InvalidInput(
+                    _VERIFY_LINK_MESSAGE,
+                    detail=f"user {user.id} has no membership to verify into",
+                )
             membership = memberships[0]
             await bind_tenant_context(session, membership.tenant_id)
 
@@ -955,21 +1003,27 @@ class IamAuthService:
         try:
             claims = decode_token(token, expected_typ="password_reset", expected_plane="tenant")
         except InvalidToken as exc:
-            raise InvalidInput(detail="password-reset token failed validation") from exc
+            raise InvalidInput(
+                _RESET_LINK_MESSAGE, detail="password-reset token failed validation"
+            ) from exc
 
         notify: str | None = None
         async with provider_session_scope() as session:
             user = await self._users.get(session, claims.subject)
             if user is None or user.status != USER_STATUS_ACTIVE:
-                raise InvalidInput(detail="this reset link is no longer valid")
+                raise InvalidInput(_RESET_LINK_MESSAGE, detail="this reset link is no longer valid")
             credentials = await self._users.get_credentials_for_update(session, user.id)
             if credentials is None:
-                raise InvalidInput(detail="this account has no password to reset")
+                raise InvalidInput(
+                    _RESET_LINK_MESSAGE, detail="this account has no password to reset"
+                )
             if (
                 credentials.credentials_changed_at is not None
                 and claims.issued_at < credentials.credentials_changed_at
             ):
-                raise InvalidInput(detail="this reset link has already been used")
+                raise InvalidInput(
+                    _RESET_LINK_MESSAGE, detail="this reset link has already been used"
+                )
 
             # The policy of the workspace this person belongs to. Checked here,
             # inside the transaction, rather than before it: the tenant is only
@@ -1084,13 +1138,19 @@ class IamAuthService:
                         session, memberships[0], user, credentials
                     )
         if outcome is None:
-            # Uniform in production (no email enumeration); specific in dev, where a
-            # developer needs to know whether it was the email, the password, the
-            # account state, or the membership.
-            message = "Incorrect email or password."
-            if refused is not None and not get_settings().is_deployed:
-                message = f"Sign-in refused: {refused} (this detail is shown in development only)."
-            raise AuthenticationRequired(message, detail=_UNIFORM_LOGIN_DETAIL)
+            # Uniform to the caller in EVERY environment. Distinguishing "no such
+            # email" from "wrong password" is an account-enumeration oracle, and
+            # the old dev-only variant put developer copy ("this detail is shown
+            # in development only") in front of whoever was signing in.
+            #
+            # A developer debugging a refused sign-in reads the reason here and
+            # the full attribution on the auth_attempt audit row. The reason is a
+            # fixed category, never the submitted credential.
+            if refused is not None:
+                logger.info("login.refused", reason=refused)
+            raise AuthenticationRequired(
+                "Incorrect email or password.", detail=_UNIFORM_LOGIN_DETAIL
+            )
         return outcome
 
     # -- MFA -----------------------------------------------------------------------
@@ -1108,7 +1168,10 @@ class IamAuthService:
         protection — and a recovery code is consumed by the check that accepts it.
         """
         if (code is None) == (recovery_code is None):
-            raise InvalidInput(detail="exactly one of code and recovery_code is required")
+            raise InvalidInput(
+                "Enter either the code from your authenticator app or one recovery code.",
+                detail="exactly one of code and recovery_code is required",
+            )
         claims = decode_token(challenge_token, expected_typ="challenge", expected_plane="tenant")
 
         grant: SessionIssued | None = None
@@ -1167,7 +1230,9 @@ class IamAuthService:
                             session, membership, user, credentials, method="recovery_code"
                         )
         if grant is None:
-            raise AuthenticationRequired(detail="tenant MFA verification refused")
+            raise AuthenticationRequired(
+                _MFA_CODE_MESSAGE, detail="tenant MFA verification refused"
+            )
         return grant
 
     async def start_enrollment(self, *, challenge_token: str) -> EnrollmentStarted:
@@ -1210,9 +1275,15 @@ class IamAuthService:
                         otpauth_url=totp_provisioning_uri(secret, user.email),
                     )
         if conflict:
-            raise MfaEnrollmentConflict(detail="MFA is already enabled for this user")
+            raise MfaEnrollmentConflict(
+                "Two step verification is already set up on this account.",
+                detail="MFA is already enabled for this user",
+            )
         if started is None:
-            raise AuthenticationRequired(detail="enrollment refused: subject missing or disabled")
+            raise AuthenticationRequired(
+                "We could not start two step verification setup. Sign in again and retry.",
+                detail="enrollment refused: subject missing or disabled",
+            )
         return started
 
     async def confirm_enrollment(self, *, challenge_token: str, code: str) -> SessionIssued:
@@ -1275,10 +1346,14 @@ class IamAuthService:
                         )
         if conflict:
             raise MfaEnrollmentConflict(
-                detail="already enabled, or confirmation before enrollment started"
+                "There is no two step verification setup waiting to be confirmed. "
+                "Start the setup again.",
+                detail="already enabled, or confirmation before enrollment started",
             )
         if grant is None:
-            raise AuthenticationRequired(detail="tenant MFA confirmation refused")
+            raise AuthenticationRequired(
+                _MFA_CODE_MESSAGE, detail="tenant MFA confirmation refused"
+            )
         return grant
 
     # -- workspaces -----------------------------------------------------------------
@@ -1287,7 +1362,10 @@ class IamAuthService:
         async with provider_session_scope() as session:
             user = await self._users.get(session, user_id)
             if user is None:
-                raise AuthenticationRequired(detail=f"user {user_id} not found")
+                raise AuthenticationRequired(
+                    "Your account is no longer available. Sign in again.",
+                    detail=f"user {user_id} not found",
+                )
             return await self._workspaces(session, user)
 
     async def select_workspace(
@@ -1322,17 +1400,27 @@ class IamAuthService:
             or membership.status != MEMBERSHIP_STATUS_ACTIVE
         ):
             # Not this user's membership, or not usable: absent, not forbidden.
-            raise NotFound(detail=f"membership {membership_id} not usable for user {user_id}")
+            raise NotFound(
+                _WORKSPACE_UNAVAILABLE_MESSAGE,
+                detail=f"membership {membership_id} not usable for user {user_id}",
+            )
         user = await self._users.get(session, user_id)
         if user is None or user.status != USER_STATUS_ACTIVE:
-            raise AuthenticationRequired(detail=f"user {user_id} missing or disabled")
+            raise AuthenticationRequired(
+                "Your account is no longer active. Ask a workspace admin to restore your access.",
+                detail=f"user {user_id} missing or disabled",
+            )
         if not await self._tenant_is_active(session, membership.tenant_id):
-            raise NotFound(detail=f"tenant {membership.tenant_id} is not active")
+            raise NotFound(
+                _WORKSPACE_UNAVAILABLE_MESSAGE,
+                detail=f"tenant {membership.tenant_id} is not active",
+            )
         if not await self._has_active_role(session, membership):
             # The membership's only role assignment is out of window (the expired
             # guest-auditor): not usable, and absent rather than forbidden.
             raise NotFound(
-                detail=f"membership {membership_id} holds no in-window role for user {user_id}"
+                _WORKSPACE_UNAVAILABLE_MESSAGE,
+                detail=f"membership {membership_id} holds no in-window role for user {user_id}",
             )
         credentials = await self._users.get_credentials(session, user.id)
         return await self._post_password_step(session, membership, user, credentials)
@@ -1375,7 +1463,10 @@ class IamAuthService:
             credentials = await self._users.get_credentials(session, user.id)
             if credentials is None:
                 if password is None:
-                    raise InvalidInput(detail="a new user must set a password on accept")
+                    raise InvalidInput(
+                        "Choose a password to finish setting up your account.",
+                        detail="a new user must set a password on accept",
+                    )
                 # The inviting workspace's policy — this is the path a guest or
                 # auditor takes to their first password, so it is the one that
                 # has to hold.
@@ -1477,7 +1568,11 @@ class IamAuthService:
         if await self._requires_mfa(session, membership):
             return self._mfa_step(membership, user, credentials)
         if credentials is None:
-            raise AuthenticationRequired(detail=f"user {user.id} has no credentials")
+            raise AuthenticationRequired(
+                "This account does not have a password yet. "
+                "Use your invitation link to set one, then sign in.",
+                detail=f"user {user.id} has no credentials",
+            )
         return await self._grant_session(session, membership, user, credentials, method="password")
 
     def _mfa_step(
@@ -1565,10 +1660,16 @@ class IamAuthService:
         async with provider_session_scope() as session:
             membership = await self._memberships.get(session, membership_id)
             if membership is None or membership.user_id != user_id:
-                raise NotFound(detail=f"membership {membership_id} is not this user's")
+                raise NotFound(
+                    "Your access to this workspace is no longer available. Sign in again.",
+                    detail=f"membership {membership_id} is not this user's",
+                )
             user = await self._users.get(session, membership.user_id)
             if user is None:
-                raise NotFound(detail=f"user behind membership {membership_id} is gone")
+                raise NotFound(
+                    "Your access to this workspace is no longer available. Sign in again.",
+                    detail=f"user behind membership {membership_id} is gone",
+                )
             return await self._principal_snapshot(session, membership, user)
 
     async def _principal_snapshot(
@@ -2002,14 +2103,16 @@ class IamService:
         _validate_window(valid_from, valid_until)
         role = await self._roles.get_for_tenant(session, tenant_id, role_id)
         if role is None:
-            raise NotFound(detail=f"role {role_id} not in tenant {tenant_id}")
+            raise NotFound(_ROLE_GONE_MESSAGE, detail=f"role {role_id} not in tenant {tenant_id}")
         # Resolved before anything is written, so a bad group id is a clean 404
         # rather than a rollback of a half-built invite.
         group = None
         if group_id is not None:
             group = await self._groups.get_for_tenant(session, tenant_id, group_id)
             if group is None:
-                raise NotFound(detail=f"group {group_id} not in tenant {tenant_id}")
+                raise NotFound(
+                    _GROUP_GONE_MESSAGE, detail=f"group {group_id} not in tenant {tenant_id}"
+                )
         actor = MembershipActor(actor_membership_id)
         email_n = normalize_email(email)
 
@@ -2020,7 +2123,11 @@ class IamService:
             else None
         )
         if membership is not None and membership.status == MEMBERSHIP_STATUS_ACTIVE:
-            raise AlreadyMember(detail=f"membership {membership.id} is already active")
+            raise AlreadyMember(
+                "That person is already a member of this workspace. "
+                "Change their role from the members list instead.",
+                detail=f"membership {membership.id} is already active",
+            )
 
         if user is None:
             # The person does not exist yet: a user row with **no credentials**.
@@ -2156,14 +2263,21 @@ class IamService:
         """
         membership = await self._memberships.get_for_tenant(session, tenant_id, membership_id)
         if membership is None:
-            raise NotFound(detail=f"membership {membership_id} not in tenant {tenant_id}")
+            raise NotFound(
+                _MEMBER_GONE_MESSAGE, detail=f"membership {membership_id} not in tenant {tenant_id}"
+            )
         user = await self._users.get(session, membership.user_id)
         if user is None:
-            raise NotFound(detail=f"user behind membership {membership_id} is gone")
+            raise NotFound(
+                _MEMBER_GONE_MESSAGE, detail=f"user behind membership {membership_id} is gone"
+            )
 
         cleaned = full_name.strip()
         if not cleaned:
-            raise InvalidInput(detail="a member's name cannot be blank")
+            raise InvalidInput(
+                "Enter a name for this member.",
+                detail="a member's name cannot be blank",
+            )
 
         if cleaned != user.full_name:
             before = AuditService.snapshot(user, fields=_USER_SNAPSHOT)
@@ -2191,10 +2305,14 @@ class IamService:
     ) -> MemberView:
         membership = await self._memberships.get_for_tenant(session, tenant_id, membership_id)
         if membership is None:
-            raise NotFound(detail=f"membership {membership_id} not in tenant {tenant_id}")
+            raise NotFound(
+                _MEMBER_GONE_MESSAGE, detail=f"membership {membership_id} not in tenant {tenant_id}"
+            )
         user = await self._users.get(session, membership.user_id)
         if user is None:
-            raise NotFound(detail=f"user behind membership {membership_id} is gone")
+            raise NotFound(
+                _MEMBER_GONE_MESSAGE, detail=f"user behind membership {membership_id} is gone"
+            )
         if membership.status != MEMBERSHIP_STATUS_DISABLED:
             before = AuditService.snapshot(membership, fields=_MEMBERSHIP_SNAPSHOT)
             membership.status = MEMBERSHIP_STATUS_DISABLED
@@ -2226,13 +2344,17 @@ class IamService:
         the caller named — the Week 1 contract is single-role members."""
         membership = await self._memberships.get_for_tenant(session, tenant_id, membership_id)
         if membership is None:
-            raise NotFound(detail=f"membership {membership_id} not in tenant {tenant_id}")
+            raise NotFound(
+                _MEMBER_GONE_MESSAGE, detail=f"membership {membership_id} not in tenant {tenant_id}"
+            )
         user = await self._users.get(session, membership.user_id)
         if user is None:
-            raise NotFound(detail=f"user behind membership {membership_id} is gone")
+            raise NotFound(
+                _MEMBER_GONE_MESSAGE, detail=f"user behind membership {membership_id} is gone"
+            )
         role = await self._roles.get_for_tenant(session, tenant_id, role_id)
         if role is None:
-            raise NotFound(detail=f"role {role_id} not in tenant {tenant_id}")
+            raise NotFound(_ROLE_GONE_MESSAGE, detail=f"role {role_id} not in tenant {tenant_id}")
         actor = MembershipActor(actor_membership_id)
         await self._replace_direct_roles(session, actor, tenant_id, membership.id, role)
         return await self._member_view_for(session, tenant_id, membership, user)
@@ -2258,7 +2380,10 @@ class IamService:
     ) -> GroupView:
         name = name.strip()
         if await self._groups.get_by_name(session, tenant_id, name) is not None:
-            raise NameConflict(detail=f"group {name!r} exists in tenant {tenant_id}")
+            raise NameConflict(
+                "A group with that name already exists in this workspace. Pick another name.",
+                detail=f"group {name!r} exists in tenant {tenant_id}",
+            )
         group = Group(
             id=uuid7(),
             tenant_id=tenant_id,
@@ -2293,10 +2418,14 @@ class IamService:
         behind this check, not instead of it."""
         group = await self._groups.get_for_tenant(session, tenant_id, group_id)
         if group is None:
-            raise NotFound(detail=f"group {group_id} not in tenant {tenant_id}")
+            raise NotFound(
+                _GROUP_GONE_MESSAGE, detail=f"group {group_id} not in tenant {tenant_id}"
+            )
         membership = await self._memberships.get_for_tenant(session, tenant_id, membership_id)
         if membership is None:
-            raise NotFound(detail=f"membership {membership_id} not in tenant {tenant_id}")
+            raise NotFound(
+                _MEMBER_GONE_MESSAGE, detail=f"membership {membership_id} not in tenant {tenant_id}"
+            )
         existing = await self._groups.get_member(session, tenant_id, group_id, membership_id)
         if existing is None:
             member = GroupMember(
@@ -2333,13 +2462,18 @@ class IamService:
         """Rename or re-describe a group (D17). Absent fields are left alone."""
         group = await self._groups.get_for_tenant(session, tenant_id, group_id)
         if group is None:
-            raise NotFound(detail=f"group {group_id} not in tenant {tenant_id}")
+            raise NotFound(
+                _GROUP_GONE_MESSAGE, detail=f"group {group_id} not in tenant {tenant_id}"
+            )
         before = AuditService.snapshot(group, fields=_GROUP_SNAPSHOT)
         if name is not None:
             name = name.strip()
             clash = await self._groups.get_by_name(session, tenant_id, name)
             if clash is not None and clash.id != group_id:
-                raise NameConflict(detail=f"group {name!r} exists in tenant {tenant_id}")
+                raise NameConflict(
+                    "A group with that name already exists in this workspace. Pick another name.",
+                    detail=f"group {name!r} exists in tenant {tenant_id}",
+                )
             group.name = name
         if description is not None:
             group.description = description.strip() or None
@@ -2371,7 +2505,9 @@ class IamService:
         written before the delete so the snapshot is of a row that still exists."""
         group = await self._groups.get_for_tenant(session, tenant_id, group_id)
         if group is None:
-            raise NotFound(detail=f"group {group_id} not in tenant {tenant_id}")
+            raise NotFound(
+                _GROUP_GONE_MESSAGE, detail=f"group {group_id} not in tenant {tenant_id}"
+            )
         await self._record(
             session,
             MembershipActor(actor_membership_id),
@@ -2397,7 +2533,9 @@ class IamService:
         group is a no-op, not a 404 — a retried removal should succeed."""
         group = await self._groups.get_for_tenant(session, tenant_id, group_id)
         if group is None:
-            raise NotFound(detail=f"group {group_id} not in tenant {tenant_id}")
+            raise NotFound(
+                _GROUP_GONE_MESSAGE, detail=f"group {group_id} not in tenant {tenant_id}"
+            )
         member = await self._groups.get_member(session, tenant_id, group_id, membership_id)
         if member is not None:
             await self._record(
@@ -2454,12 +2592,18 @@ class IamService:
     ) -> RoleView:
         name = name.strip()
         if await self._roles.get_by_name(session, tenant_id, name) is not None:
-            raise NameConflict(detail=f"role {name!r} exists in tenant {tenant_id}")
+            raise NameConflict(
+                "A role with that name already exists in this workspace. Pick another name.",
+                detail=f"role {name!r} exists in tenant {tenant_id}",
+            )
         requested = sorted(set(permission_keys))
         known = await self._roles.existing_permission_keys(session, requested)
         unknown = sorted(set(requested) - known)
         if unknown:
-            raise InvalidInput(detail=f"unknown permission keys: {unknown}")
+            raise InvalidInput(
+                _UNKNOWN_PERMISSIONS_MESSAGE,
+                detail=f"unknown permission keys: {unknown}",
+            )
         role = Role(
             id=uuid7(),
             tenant_id=tenant_id,
@@ -2536,11 +2680,13 @@ class IamService:
             return
 
         raise Conflict(
+            "This change would leave the workspace with no one able to manage roles. "
+            "Give another role with active members permission to manage roles first.",
             detail=(
                 "this would leave the workspace with no role that can manage "
                 "roles and has an active member — grant roles:manage to another "
                 "role with members first"
-            )
+            ),
         )
 
     async def update_role(  # noqa: PLR0913 — the editable fields, all keyword-only
@@ -2560,7 +2706,7 @@ class IamService:
         supplied are touched; the change is audited before/after."""
         role = await self._roles.get_for_tenant(session, tenant_id, role_id)
         if role is None:
-            raise NotFound(detail=f"role {role_id} not in tenant {tenant_id}")
+            raise NotFound(_ROLE_GONE_MESSAGE, detail=f"role {role_id} not in tenant {tenant_id}")
         if permission_keys is not None:
             await self._assert_admin_capability_survives(
                 session, tenant_id, role_id=role_id, future_keys=permission_keys
@@ -2577,10 +2723,16 @@ class IamService:
         if name is not None:
             new_name = name.strip()
             if not new_name:
-                raise InvalidInput(detail="role name must not be empty")
+                raise InvalidInput(
+                    "Enter a name for this role.",
+                    detail="role name must not be empty",
+                )
             clash = await self._roles.get_by_name(session, tenant_id, new_name)
             if clash is not None and clash.id != role_id:
-                raise NameConflict(detail=f"role {new_name!r} exists in tenant {tenant_id}")
+                raise NameConflict(
+                    "A role with that name already exists in this workspace. Pick another name.",
+                    detail=f"role {new_name!r} exists in tenant {tenant_id}",
+                )
             role.name = new_name
             await session.flush([role])
 
@@ -2590,7 +2742,10 @@ class IamService:
             known = await self._roles.existing_permission_keys(session, requested)
             unknown = sorted(set(requested) - known)
             if unknown:
-                raise InvalidInput(detail=f"unknown permission keys: {unknown}")
+                raise InvalidInput(
+                    _UNKNOWN_PERMISSIONS_MESSAGE,
+                    detail=f"unknown permission keys: {unknown}",
+                )
             await self._roles.replace_permission_keys(session, role_id, requested)
             final_keys = requested
 
@@ -2630,7 +2785,7 @@ class IamService:
         to manage roles."""
         role = await self._roles.get_for_tenant(session, tenant_id, role_id)
         if role is None:
-            raise NotFound(detail=f"role {role_id} not in tenant {tenant_id}")
+            raise NotFound(_ROLE_GONE_MESSAGE, detail=f"role {role_id} not in tenant {tenant_id}")
         await self._assert_admin_capability_survives(
             session, tenant_id, role_id=role_id, future_keys=None
         )
@@ -2679,15 +2834,24 @@ class IamService:
         _validate_window(valid_from, valid_until)
         role = await self._roles.get_for_tenant(session, tenant_id, role_id)
         if role is None:
-            raise NotFound(detail=f"role {role_id} not in tenant {tenant_id}")
+            raise NotFound(_ROLE_GONE_MESSAGE, detail=f"role {role_id} not in tenant {tenant_id}")
         if assignee_type == ASSIGNEE_TYPE_MEMBERSHIP:
             if await self._memberships.get_for_tenant(session, tenant_id, assignee_id) is None:
-                raise NotFound(detail=f"membership {assignee_id} not in tenant {tenant_id}")
+                raise NotFound(
+                    _MEMBER_GONE_MESSAGE,
+                    detail=f"membership {assignee_id} not in tenant {tenant_id}",
+                )
         elif assignee_type == ASSIGNEE_TYPE_GROUP:
             if await self._groups.get_for_tenant(session, tenant_id, assignee_id) is None:
-                raise NotFound(detail=f"group {assignee_id} not in tenant {tenant_id}")
+                raise NotFound(
+                    _GROUP_GONE_MESSAGE,
+                    detail=f"group {assignee_id} not in tenant {tenant_id}",
+                )
         else:
-            raise InvalidInput(detail=f"unknown assignee_type {assignee_type!r}")
+            raise InvalidInput(
+                "Choose whether this role goes to a member or to a group.",
+                detail=f"unknown assignee_type {assignee_type!r}",
+            )
         duplicate = await self._roles.find_assignment(
             session,
             tenant_id,
@@ -2732,7 +2896,10 @@ class IamService:
     ) -> None:
         assignment = await self._roles.get_assignment(session, tenant_id, assignment_id)
         if assignment is None or assignment.role_id != role_id:
-            raise NotFound(detail=f"assignment {assignment_id} not on role {role_id}")
+            raise NotFound(
+                "This role assignment no longer exists. It may have been removed.",
+                detail=f"assignment {assignment_id} not on role {role_id}",
+            )
         await self._record(
             session,
             MembershipActor(actor_membership_id),
@@ -2787,7 +2954,11 @@ class IamService:
             )
         membership = await self._memberships.get_by_tenant_user(session, tenant.id, user.id)
         if membership is not None and membership.status == MEMBERSHIP_STATUS_ACTIVE:
-            raise AlreadyMember(detail=f"membership {membership.id} is already active")
+            raise AlreadyMember(
+                "That person is already a member of this workspace. "
+                "Change their role from the members list instead.",
+                detail=f"membership {membership.id} is already active",
+            )
         if membership is None:
             membership = TenantMembership(
                 id=uuid7(),
@@ -2809,7 +2980,11 @@ class IamService:
             )
         admin_role = await self._roles.get_by_name(session, tenant.id, ADMIN_ROLE_NAME)
         if admin_role is None:  # pragma: no cover — seeded three lines above
-            raise NotFound(detail=f"Admin role missing in tenant {tenant.id}")
+            raise NotFound(
+                "This workspace has no Admin role, so the invitation cannot be sent. "
+                "Contact support.",
+                detail=f"Admin role missing in tenant {tenant.id}",
+            )
         existing = await self._roles.find_assignment(
             session,
             tenant.id,

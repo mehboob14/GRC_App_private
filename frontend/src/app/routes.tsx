@@ -30,6 +30,7 @@ import { EvidenceDetailPage } from "@/features/evidence/components/evidence-deta
 import { DocumentsRegisterPage } from "@/features/documents/components/documents-register-page";
 import { DocumentDetailPage } from "@/features/documents/components/document-detail-page";
 import { CampaignPage } from "@/features/documents/components/campaign-page";
+import { DocumentApprovalPage } from "@/features/documents/components/document-approval-page";
 import { DocumentEditorPage } from "@/features/documents/components/document-editor-page";
 import { TasksLayout } from "@/features/tasks/components/tasks-layout";
 import { TasksRegisterPage } from "@/features/tasks/components/tasks-register-page";
@@ -40,8 +41,12 @@ import { AssetsLayout } from "@/features/assets/components/assets-layout";
 import { AssetsRegisterPage } from "@/features/assets/components/assets-register-page";
 import { AssetsOverviewPage } from "@/features/assets/components/assets-overview-page";
 import { AssetDetailPage } from "@/features/assets/components/asset-detail-page";
-import { AssetFormPage } from "@/features/assets/components/asset-form-page";
 import { AssetsImportPage } from "@/features/assets/components/assets-import-page";
+import { VulnerabilitiesRegisterPage } from "@/features/vulnerabilities/components/vulnerabilities-register-page";
+import { VulnerabilitiesOverviewPage } from "@/features/vulnerabilities/components/vulnerabilities-overview-page";
+import { VulnerabilitiesImportPage } from "@/features/vulnerabilities/components/vulnerabilities-import-page";
+import { VulnerabilitiesSettingsPage } from "@/features/vulnerabilities/components/vulnerabilities-settings-page";
+import { VulnerabilityDetailPage } from "@/features/vulnerabilities/components/vulnerability-detail-page";
 import { ScopePage } from "@/features/compliance/components/scope-page";
 import { CoveragePage } from "@/features/compliance/components/coverage-page";
 import { ComplianceDashboardPage } from "@/features/compliance/components/compliance-dashboard-page";
@@ -107,6 +112,10 @@ export function AppRoutes() {
           <Route path="evidence/:evidenceId" element={<EvidenceDetailPage />} />
           <Route path="documents" element={<DocumentsRegisterPage />} />
           <Route path="documents/campaigns/:campaignId" element={<CampaignPage />} />
+          <Route
+            path="documents/:documentId/approvals/:tier"
+            element={<DocumentApprovalPage />}
+          />
           <Route path="documents/:documentId" element={<DocumentDetailPage />} />
           <Route path="tasks" element={<TasksLayout />}>
             <Route index element={<TasksRegisterPage />} />
@@ -120,9 +129,13 @@ export function AppRoutes() {
             <Route path="overview" element={<AssetsOverviewPage />} />
           </Route>
           <Route path="assets/import" element={<AssetsImportPage />} />
-          <Route path="assets/new" element={<AssetFormPage />} />
           <Route path="assets/:assetId" element={<AssetDetailPage />} />
-          <Route path="assets/:assetId/edit" element={<AssetFormPage />} />
+          <Route path="vulnerabilities" element={<VulnerabilitiesRegisterPage />} />
+          <Route path="vulnerabilities/overview" element={<VulnerabilitiesOverviewPage />} />
+          <Route path="vulnerabilities/import" element={<VulnerabilitiesImportPage />} />
+          {/* Literal segments must precede the :instanceId route below. */}
+          <Route path="vulnerabilities/settings" element={<VulnerabilitiesSettingsPage />} />
+          <Route path="vulnerabilities/:instanceId" element={<VulnerabilityDetailPage />} />
           <Route
             path="scope"
             element={<Navigate to="/frameworks/scope" replace />}

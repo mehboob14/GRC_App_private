@@ -94,7 +94,9 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         aria-busy={loading || undefined}
         disabled={disabled || loading}
         className={cn(
-          "inline-flex items-center justify-center font-sans transition-colors duration-80 ease-state",
+          // whitespace-nowrap: a compressed toolbar must not wrap a two-word
+          // label inside the fixed h-9 and clip it.
+          "inline-flex items-center justify-center whitespace-nowrap font-sans transition-colors duration-80 ease-state",
           "disabled:pointer-events-none disabled:opacity-45",
           "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-accent",
           variants[variant],

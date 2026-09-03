@@ -197,7 +197,11 @@ class EvidenceService:
         tenant, so one tenant's key cannot address another's object."""
         row = await self._load(session, tenant_id, evidence_id)
         if row.kind != "file" or row.object_key is None:
-            raise InvalidInput(detail="this evidence item is a link, not a stored file")
+            raise InvalidInput(
+                "This evidence item is a link, so there is no file to download. "
+                "Open the link instead.",
+                detail="this evidence item is a link, not a stored file",
+            )
         data = self._store.open(tenant_id, row.object_key)
         return (
             data,
@@ -396,7 +400,10 @@ class EvidenceService:
     ) -> Evidence:
         row = await session.get(Evidence, evidence_id)
         if row is None or row.tenant_id != tenant_id:
-            raise NotFound(detail=f"evidence {evidence_id}")
+            raise NotFound(
+                "This evidence item no longer exists. It may have been deleted.",
+                detail=f"evidence {evidence_id}",
+            )
         return row
 
     # -- writes ---------------------------------------------------------------
@@ -462,7 +469,10 @@ class EvidenceService:
     ) -> EvidenceView:
         url = link_url.strip()
         if not url.lower().startswith(("http://", "https://")):
-            raise InvalidInput(detail="a link must be an http or https URL")
+            raise InvalidInput(
+                "Enter a web address that starts with http:// or https://.",
+                detail="a link must be an http or https URL",
+            )
         row = Evidence(
             id=uuid7(),
             tenant_id=tenant_id,
@@ -589,10 +599,16 @@ class EvidenceService:
         part of the tenant's record.
         """
         if decision not in ("approved", "rejected"):
-            raise InvalidInput(detail="a review decision is 'approved' or 'rejected'")
+            raise InvalidInput(
+                "Choose either approve or reject to record your review.",
+                detail="a review decision is 'approved' or 'rejected'",
+            )
         cleaned = (note or "").strip()
         if decision == "rejected" and not cleaned:
-            raise InvalidInput(detail="a rejection must include a reason")
+            raise InvalidInput(
+                "Add a reason when you reject evidence, so the owner knows what to fix.",
+                detail="a rejection must include a reason",
+            )
 
         row = await self._load(session, tenant_id, evidence_id)
         before = AuditService.snapshot(row, fields=_SNAPSHOT)

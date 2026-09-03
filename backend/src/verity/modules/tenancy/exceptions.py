@@ -9,7 +9,9 @@ class SlugConflict(Conflict):
     """The requested slug is already a tenant's subdomain."""
 
     code = "slug_conflict"
-    message = "A tenant with this slug already exists."
+    # "tenant" and "slug" are our words, not the reader's: they are choosing a
+    # workspace address on a signup form.
+    message = "That workspace address is already taken. Choose a different one."
 
 
 class IdempotencyKeyConflict(Conflict):
@@ -39,4 +41,7 @@ class EnrollmentConflict(Conflict):
     """
 
     code = "mfa_enrollment_conflict"
-    message = "MFA enrollment cannot proceed from the current state."
+    message = (
+        "Two step verification cannot be set up right now. It may already be on, or setup "
+        "was not started. Reload the page and try again."
+    )

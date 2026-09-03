@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Badge, Button, Card, Icon } from "@/components/ui";
+import { Badge, Button, Card, Icon, SegmentedControl } from "@/components/ui";
 import type { IconName } from "@/components/ui/icon";
 import { cn } from "@/lib/cn";
 import { useAuth } from "@/lib/auth/auth-context";
@@ -100,17 +100,15 @@ export function MyDayDashboard() {
   const [scope, setScope] = useState<"Mine" | "Team">("Mine");
 
   return (
-    <div className="mx-auto max-w-[1200px]">
+    <div className="w-full">
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
+          {/* No summary line: the overdue and due-today counts it hardcoded are
+              the first two tiles of the stat row directly below. */}
           <h1 className="font-display text-heading-lg text-text-primary">
             {greeting()}, {firstName}
           </h1>
-          <p className="mt-2 text-body-lg text-text-secondary">
-            You have <span className="font-semibold text-status-danger-text">3 items overdue</span> and{" "}
-            <span className="font-semibold text-text-primary">5 due today</span> across 4 modules. Here&rsquo;s your day.
-          </p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="secondary" size="sm">
@@ -148,23 +146,15 @@ export function MyDayDashboard() {
                 Prioritized across every module · SLA-ranked
               </p>
             </div>
-            <div className="flex shrink-0 rounded-md border border-border p-0.5">
-              {(["Mine", "Team"] as const).map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => setScope(s)}
-                  className={cn(
-                    "rounded-sm px-3 py-1 text-label-sm transition-colors duration-80 ease-state",
-                    scope === s
-                      ? "bg-action-accent-tint text-action-accent"
-                      : "text-text-secondary hover:text-text-primary",
-                  )}
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
+            <SegmentedControl
+              label="Queue scope"
+              value={scope}
+              onChange={setScope}
+              items={[
+                { id: "Mine", label: "Mine" },
+                { id: "Team", label: "Team" },
+              ]}
+            />
           </div>
           <ul className="divide-y divide-border">
             {TASKS.map((task) => {
@@ -210,8 +200,10 @@ export function MyDayDashboard() {
         <div className="flex flex-col gap-6">
           {/* My open work — donut + legend */}
           <Card className="p-5">
+            {/* The count lives in the donut centre, so the heading does not
+                repeat it. */}
             <h2 className="mb-4 font-display text-title-md text-text-primary">
-              My open work <span className="text-text-subtle">· 27 items</span>
+              My open work
             </h2>
             <div className="flex items-center gap-5">
               <Donut size={116} stroke={16} segments={OPEN_WORK}>

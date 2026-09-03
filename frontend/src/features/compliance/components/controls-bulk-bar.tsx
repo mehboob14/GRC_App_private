@@ -18,7 +18,7 @@ import {
 } from "@/components/ui";
 import { OwnerSelect } from "@/features/iam/components/owner-select";
 import { controlsApi } from "@/lib/api/endpoints";
-import { ApiError } from "@/lib/api/client";
+import { errorToast } from "@/lib/api/describe-error";
 import { cn } from "@/lib/cn";
 import type { Control, ControlStatus } from "@/lib/api/types";
 
@@ -174,10 +174,7 @@ export function ControlsBulkBar({
       }
     },
     onError: (error: unknown) =>
-      toast({
-        title: error instanceof ApiError ? error.message : "Couldn't update the controls.",
-        tone: "danger",
-      }),
+      toast({ title: errorToast(error, "control"), tone: "danger" }),
   });
 
   function exportCsv() {

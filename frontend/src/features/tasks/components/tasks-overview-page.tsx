@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Avatar, ErrorState, Skeleton } from "@/components/ui";
 import { cn } from "@/lib/cn";
+import { describeError } from "@/lib/api/describe-error";
 import { getSummary } from "../api";
 import { PRIORITIES } from "../types";
 import { PRIORITY_META, SEVERITY_LABEL } from "../tokens";
@@ -36,8 +37,14 @@ export function TasksOverviewPage() {
     );
   }
   if (query.isError || !query.data) {
+    const e = describeError(query.error, "overview");
     return (
-      <ErrorState title="Couldn’t load the overview" description="The request failed. Retry, or contact support." onRetry={() => void query.refetch()} />
+      <ErrorState
+        title={e.title}
+        description={e.message}
+        referenceId={e.referenceId}
+        onRetry={e.retryable ? () => void query.refetch() : undefined}
+      />
     );
   }
 

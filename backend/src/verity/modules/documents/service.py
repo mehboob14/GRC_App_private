@@ -10,6 +10,7 @@ append-only ``document_versions`` row.
 from __future__ import annotations
 
 import uuid
+from collections import defaultdict
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime
@@ -18,7 +19,7 @@ from typing import TYPE_CHECKING, Any, Final
 from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from verity.core.errors import Conflict, InvalidInput, NotFound
+from verity.core.errors import Conflict, InvalidInput, NotFound, PermissionDenied
 from verity.core.storage import ObjectStore, get_object_store
 from verity.modules.audit.service import Actor, AuditService, audit_service
 from verity.modules.documents.models import (
@@ -30,6 +31,8 @@ from verity.modules.documents.models import (
     DocumentAckCampaignRecipient,
     DocumentAcknowledgement,
     DocumentApproval,
+    DocumentApprovalAssignee,
+    DocumentApprovalTarget,
     DocumentControl,
     DocumentFramework,
     DocumentVersion,
@@ -85,12 +88,31 @@ class VersionView:
 
 
 @dataclass(frozen=True)
+class ApprovalTargetView:
+    target_type: str
+    target_id: uuid.UUID
+    target_name: str
+
+
+@dataclass(frozen=True)
+class ApprovalAssigneeView:
+    membership_id: uuid.UUID
+    name: str
+    decision: str
+    decided_at: datetime | None
+    note: str | None
+
+
+@dataclass(frozen=True)
 class ApprovalView:
     tier: int
     status: str
-    approver_name: str | None
     decided_at: datetime | None
     note: str | None
+    targets: list[ApprovalTargetView] = field(default_factory=list)
+    assignees: list[ApprovalAssigneeView] = field(default_factory=list)
+    # This viewer's own decision on this tier, or None if they are not on it.
+    my_decision: str | None = None
 
 
 @dataclass(frozen=True)
@@ -214,6 +236,14 @@ class PendingCampaignView:
     created_by_name: str
 
 
+@dataclass(frozen=True)
+class PendingApprovalView:
+    document_id: uuid.UUID
+    document_code: str
+    document_title: str
+    tier: int
+
+
 def _next_version(current: str | None, change_type: str) -> str:
     """Bump a MAJOR.MINOR version. `major` → next major .0, else next minor."""
     if current is None:
@@ -265,7 +295,10 @@ class DocumentService:
     ) -> Document:
         doc = await session.get(Document, document_id)
         if doc is None or doc.tenant_id != tenant_id:
-            raise NotFound(detail=f"document {document_id}")
+            raise NotFound(
+                "This document no longer exists. It may have been deleted.",
+                detail=f"document {document_id}",
+            )
         return doc
 
     async def _links(
@@ -462,6 +495,9 @@ class DocumentService:
             .scalars()
             .all()
         )
+        approval_targets, approval_assignees = await self._approval_children(
+            session, tenant_id, [a.id for a in approvals], owners
+        )
 
         current = next((v for v in versions if v.id == doc.current_version_id), None)
         base = self._view(
@@ -512,11 +548,18 @@ class DocumentService:
                 ApprovalView(
                     tier=a.tier,
                     status=a.status,
-                    approver_name=(
-                        owners.get(a.approver_membership_id) if a.approver_membership_id else None
-                    ),
                     decided_at=a.decided_at,
                     note=a.note,
+                    targets=approval_targets.get(a.id, []),
+                    assignees=approval_assignees.get(a.id, []),
+                    my_decision=next(
+                        (
+                            asn.decision
+                            for asn in approval_assignees.get(a.id, [])
+                            if me is not None and asn.membership_id == me
+                        ),
+                        None,
+                    ),
                 )
                 for a in approvals
             ],
@@ -595,7 +638,10 @@ class DocumentService:
         control_ids: Sequence[uuid.UUID] | None = None,
     ) -> DocumentView:
         if doc_type not in DOC_TYPES:
-            raise InvalidInput(detail=f"unknown document type {doc_type!r}")
+            raise InvalidInput(
+                "Pick a document type from the list before saving.",
+                detail=f"unknown document type {doc_type!r}",
+            )
         code = await self._next_code(session, tenant_id, doc_type)
         doc = Document(
             id=uuid7(),
@@ -660,7 +706,10 @@ class DocumentService:
         control_ids: Sequence[uuid.UUID] | None = None,
     ) -> DocumentView:
         if doc_type not in DOC_TYPES:
-            raise InvalidInput(detail=f"unknown document type {doc_type!r}")
+            raise InvalidInput(
+                "Pick a document type from the list before uploading.",
+                detail=f"unknown document type {doc_type!r}",
+            )
         fmt = "pdf" if filename.lower().endswith(".pdf") else "docx"
         stored = self._store.put(tenant_id, filename, data)
         code = await self._next_code(session, tenant_id, doc_type)
@@ -734,7 +783,11 @@ class DocumentService:
     ) -> DocumentView:
         doc = await self._load(session, tenant_id, document_id)
         if doc.archived_at is not None:
-            raise InvalidInput(detail="an archived document cannot be edited; nothing to do")
+            raise InvalidInput(
+                "This document is archived, so its details can no longer be changed. "
+                "Create a new document if you need an up to date version.",
+                detail="an archived document cannot be edited; nothing to do",
+            )
         before = AuditService.snapshot(doc, fields=_DOC_SNAPSHOT)
         for attr, value in (
             ("title", title.strip() if title else None),
@@ -808,7 +861,11 @@ class DocumentService:
     ) -> DocumentDetailView:
         doc = await self._load(session, tenant_id, document_id)
         if doc.archived_at is not None:
-            raise InvalidInput(detail="an archived document cannot be edited")
+            raise InvalidInput(
+                "This document is archived, so its content can no longer be edited. "
+                "Create a new document if you need an up to date version.",
+                detail="an archived document cannot be edited",
+            )
         # Editing an uploaded (PDF/Word) document converts it to an authored
         # HTML document from this version on (the file was parsed in the editor).
         doc.content_format = "html"
@@ -855,7 +912,11 @@ class DocumentService:
             else None
         )
         if current is None or current.object_key is None:
-            raise InvalidInput(detail="this document has no uploaded file to download")
+            raise InvalidInput(
+                "There is no file to download for this document. "
+                "It was written in the editor, so open it to read the current version.",
+                detail="this document has no uploaded file to download",
+            )
         data = self._store.open(tenant_id, current.object_key)
         return (
             data,
@@ -865,55 +926,339 @@ class DocumentService:
 
     # -- workflow ------------------------------------------------------------
 
-    async def submit_for_approval(
+    async def _approval_children(
+        self,
+        session: AsyncSession,
+        tenant_id: uuid.UUID,
+        approval_ids: Sequence[uuid.UUID],
+        names: dict[uuid.UUID, str],
+    ) -> tuple[
+        dict[uuid.UUID, list[ApprovalTargetView]], dict[uuid.UUID, list[ApprovalAssigneeView]]
+    ]:
+        """Targets and assignees for a batch of tiers, one query each."""
+        if not approval_ids:
+            return {}, {}
+        target_rows = (
+            (
+                await session.execute(
+                    select(DocumentApprovalTarget)
+                    .where(
+                        DocumentApprovalTarget.tenant_id == tenant_id,
+                        DocumentApprovalTarget.approval_id.in_(approval_ids),
+                    )
+                    .order_by(
+                        DocumentApprovalTarget.target_type, DocumentApprovalTarget.target_name
+                    )
+                )
+            )
+            .scalars()
+            .all()
+        )
+        assignee_rows = (
+            (
+                await session.execute(
+                    select(DocumentApprovalAssignee).where(
+                        DocumentApprovalAssignee.tenant_id == tenant_id,
+                        DocumentApprovalAssignee.approval_id.in_(approval_ids),
+                    )
+                )
+            )
+            .scalars()
+            .all()
+        )
+        targets: dict[uuid.UUID, list[ApprovalTargetView]] = defaultdict(list)
+        for t in target_rows:
+            targets[t.approval_id].append(
+                ApprovalTargetView(
+                    target_type=t.target_type, target_id=t.target_id, target_name=t.target_name
+                )
+            )
+        assignees: dict[uuid.UUID, list[ApprovalAssigneeView]] = defaultdict(list)
+        for a in assignee_rows:
+            assignees[a.approval_id].append(
+                ApprovalAssigneeView(
+                    membership_id=a.membership_id,
+                    name=names.get(a.membership_id, "Unknown"),
+                    decision=a.decision,
+                    decided_at=a.decided_at,
+                    note=a.note,
+                )
+            )
+        return dict(targets), dict(assignees)
+
+    async def _resolve_tier_targets(
+        self, session: AsyncSession, tenant_id: uuid.UUID, targets: RecipientSelection
+    ) -> tuple[list[tuple[str, uuid.UUID, str]], dict[uuid.UUID, list[uuid.UUID]]]:
+        """Turn a (users, roles, groups) selection into rows to store, plus the
+        membership -> [target_id] map to create assignees from. The SELECTION is
+        kept (not just the resolved people), because a tier's completion rule
+        needs it: every named person, and at least one from each role/group
+        (mirrors campaigns' ``_resolve_recipients``, but for that reason cannot
+        reuse it as-is)."""
+        from verity.modules.iam.service import iam_service  # noqa: PLC0415
+
+        members = await iam_service.list_members(session, tenant_id=tenant_id)
+        roles = await iam_service.list_roles(session, tenant_id=tenant_id)
+        groups = await iam_service.list_groups(session, tenant_id=tenant_id)
+        valid = {m.membership_id for m in members}
+        name_by_member = {m.membership_id: m.full_name for m in members}
+        role_by_id = {r.id: r for r in roles}
+        group_by_id = {g.id: g for g in groups}
+        members_by_role: dict[str, list[uuid.UUID]] = defaultdict(list)
+        for m in members:
+            for rn in m.role_names:
+                members_by_role[rn].append(m.membership_id)
+
+        rows: list[tuple[str, uuid.UUID, str]] = []
+        member_targets: dict[uuid.UUID, list[uuid.UUID]] = defaultdict(list)
+
+        for uid in targets.user_ids:
+            if uid not in valid:
+                continue
+            rows.append(("user", uid, name_by_member[uid]))
+            member_targets[uid].append(uid)
+        for rid in targets.role_ids:
+            role = role_by_id.get(rid)
+            if role is None:
+                continue
+            rows.append(("role", rid, role.name))
+            for mid in members_by_role.get(role.name, []):
+                member_targets[mid].append(rid)
+        for gid in targets.group_ids:
+            group = group_by_id.get(gid)
+            if group is None:
+                continue
+            rows.append(("group", gid, group.name))
+            for mid in group.member_ids:
+                if mid in valid:
+                    member_targets[mid].append(gid)
+        return rows, dict(member_targets)
+
+    async def _tier_row(
+        self, session: AsyncSession, tenant_id: uuid.UUID, document_id: uuid.UUID, tier: int
+    ) -> DocumentApproval | None:
+        return (
+            await session.execute(
+                select(DocumentApproval).where(
+                    DocumentApproval.tenant_id == tenant_id,
+                    DocumentApproval.document_id == document_id,
+                    DocumentApproval.tier == tier,
+                )
+            )
+        ).scalar_one_or_none()
+
+    async def _tier_has_targets(
+        self, session: AsyncSession, tenant_id: uuid.UUID, approval_id: uuid.UUID
+    ) -> bool:
+        return (
+            await session.execute(
+                select(DocumentApprovalTarget.id)
+                .where(
+                    DocumentApprovalTarget.tenant_id == tenant_id,
+                    DocumentApprovalTarget.approval_id == approval_id,
+                )
+                .limit(1)
+            )
+        ).first() is not None
+
+    async def _tier_satisfied(
+        self, session: AsyncSession, tenant_id: uuid.UUID, approval_id: uuid.UUID
+    ) -> bool:
+        """Every named person on the tier approved, and at least one resolved
+        member of each role/group did. Stored, not re-resolved: a role/group
+        membership change after assignment does not retroactively unlock or
+        lock a tier."""
+        target_ids = (
+            (
+                await session.execute(
+                    select(DocumentApprovalTarget.target_id).where(
+                        DocumentApprovalTarget.tenant_id == tenant_id,
+                        DocumentApprovalTarget.approval_id == approval_id,
+                    )
+                )
+            )
+            .scalars()
+            .all()
+        )
+        assignees = (
+            (
+                await session.execute(
+                    select(DocumentApprovalAssignee).where(
+                        DocumentApprovalAssignee.tenant_id == tenant_id,
+                        DocumentApprovalAssignee.approval_id == approval_id,
+                    )
+                )
+            )
+            .scalars()
+            .all()
+        )
+        satisfied: set[uuid.UUID] = set()
+        for a in assignees:
+            if a.decision == "approved":
+                satisfied.update(uuid.UUID(x) for x in a.source_target_ids)
+        return all(tid in satisfied for tid in target_ids)
+
+    async def assign_approval_tier(  # noqa: PLR0912, PLR0913, PLR0915
         self,
         session: AsyncSession,
         *,
         tenant_id: uuid.UUID,
         actor: Actor,
         document_id: uuid.UUID,
-        approver_ids: Sequence[uuid.UUID] | None = None,
+        tier: int,
+        targets: RecipientSelection,
     ) -> DocumentView:
+        """Set who reviews/approves a tier. Assigning tier 1 on a draft (or
+        expired) document IS what starts the review: it moves the document to
+        ``needs_approval`` and notifies every assignee immediately, there is no
+        separate "send for review" step. Assigning tier 2 while tier 1 is still
+        open just stages it - its assignees are notified once tier 1 clears."""
+        if tier not in range(1, _APPROVAL_TIERS + 1):
+            raise InvalidInput("There is no such review step.", detail=f"tier {tier} out of range")
         doc = await self._load(session, tenant_id, document_id)
-        if doc.lifecycle not in ("draft", "expired"):
-            raise InvalidInput(detail=f"a {doc.lifecycle} document cannot be submitted")
         if doc.owner_membership_id is None:
-            raise InvalidInput(detail="assign an owner before sending for review")
-        approvers = list(approver_ids or [])
-        await session.execute(
-            delete(DocumentApproval).where(
-                DocumentApproval.tenant_id == tenant_id,
-                DocumentApproval.document_id == document_id,
+            raise InvalidInput(
+                "Give this document an owner before assigning reviewers or approvers.",
+                detail="assign an owner before assigning a tier",
             )
-        )
-        for tier in range(1, _APPROVAL_TIERS + 1):
-            session.add(
-                DocumentApproval(
-                    id=uuid7(),
-                    tenant_id=tenant_id,
-                    document_id=doc.id,
-                    tier=tier,
-                    status="pending" if tier == 1 else "not_started",
-                    approver_membership_id=approvers[tier - 1]
-                    if tier - 1 < len(approvers)
-                    else None,
+        if doc.lifecycle not in ("draft", "expired", "needs_approval"):
+            raise InvalidInput(
+                "This document is not open for review right now. Refresh the page to see "
+                "where it stands.",
+                detail=f"cannot assign a tier on a {doc.lifecycle} document",
+            )
+        if tier > 1:
+            first = await self._tier_row(session, tenant_id, doc.id, 1)
+            if first is None or not await self._tier_has_targets(session, tenant_id, first.id):
+                raise InvalidInput(
+                    "Assign tier 1 first. Tiers sign off in order.",
+                    detail="tier 1 has no targets yet",
+                )
+
+        # First assignment on a draft/expired document starts a fresh review -
+        # clear anything left from an earlier, rejected pass (rows cascade to
+        # their targets and assignees) and recreate every tier row.
+        if tier == 1 and doc.lifecycle in ("draft", "expired"):
+            await session.execute(
+                delete(DocumentApproval).where(
+                    DocumentApproval.tenant_id == tenant_id,
+                    DocumentApproval.document_id == document_id,
                 )
             )
-        before = AuditService.snapshot(doc, fields=_DOC_SNAPSHOT)
-        doc.lifecycle = "needs_approval"
-        await self._audit.record(
-            session,
-            action="transition",
-            object_type="document",
-            object_id=doc.id,
-            actor=actor,
-            tenant_id=tenant_id,
-            before=before,
-            after=AuditService.snapshot(doc, fields=_DOC_SNAPSHOT),
+            await session.flush()
+            for t in range(1, _APPROVAL_TIERS + 1):
+                session.add(
+                    DocumentApproval(
+                        id=uuid7(), tenant_id=tenant_id, document_id=doc.id, tier=t,
+                        status="not_started",
+                    )
+                )
+            await session.flush()
+
+        approval = await self._tier_row(session, tenant_id, doc.id, tier)
+        if approval is None:
+            # Tier 2 assigned before tier 1 has ever run in this pass: make sure
+            # every row up to this tier exists so it has somewhere to stage.
+            for t in range(1, tier + 1):
+                if await self._tier_row(session, tenant_id, doc.id, t) is None:
+                    session.add(
+                        DocumentApproval(
+                            id=uuid7(), tenant_id=tenant_id, document_id=doc.id, tier=t,
+                            status="not_started",
+                        )
+                    )
+            await session.flush()
+            approval = await self._tier_row(session, tenant_id, doc.id, tier)
+        assert approval is not None  # noqa: S101 - the row was just ensured above
+
+        if approval.status in ("approved", "rejected"):
+            raise Conflict(
+                "This step has already been decided, so it can no longer be reassigned. "
+                "Resubmit the document to start a new review.",
+                detail=f"tier {tier} is already {approval.status}",
+            )
+
+        target_rows, member_targets = await self._resolve_tier_targets(session, tenant_id, targets)
+        if not target_rows:
+            raise InvalidInput(
+                "Choose at least one person, role or group for this step.",
+                detail="no targets resolved",
+            )
+
+        existing = {
+            a.membership_id: a
+            for a in (
+                await session.execute(
+                    select(DocumentApprovalAssignee).where(
+                        DocumentApprovalAssignee.tenant_id == tenant_id,
+                        DocumentApprovalAssignee.approval_id == approval.id,
+                    )
+                )
+            ).scalars()
+        }
+        await session.execute(
+            delete(DocumentApprovalTarget).where(
+                DocumentApprovalTarget.tenant_id == tenant_id,
+                DocumentApprovalTarget.approval_id == approval.id,
+            )
         )
+        for t_type, t_id, t_name in target_rows:
+            session.add(
+                DocumentApprovalTarget(
+                    id=uuid7(), tenant_id=tenant_id, approval_id=approval.id,
+                    target_type=t_type, target_id=t_id, target_name=t_name,
+                )
+            )
+
+        newly_added: list[uuid.UUID] = []
+        for mid, tids in member_targets.items():
+            row = existing.pop(mid, None)
+            if row is None:
+                row = DocumentApprovalAssignee(
+                    id=uuid7(), tenant_id=tenant_id, approval_id=approval.id, membership_id=mid,
+                )
+                session.add(row)
+                newly_added.append(mid)
+            row.source_target_ids = [str(x) for x in tids]
+        # Anyone no longer covered by any target on this tier: their old
+        # decision no longer means anything against the new picks.
+        for row in existing.values():
+            await session.delete(row)
+        await session.flush()
+
+        before = AuditService.snapshot(doc, fields=_DOC_SNAPSHOT)
+        starting_review = doc.lifecycle in ("draft", "expired")
+        prior = await self._tier_row(session, tenant_id, doc.id, tier - 1) if tier > 1 else None
+        gate_open = tier == 1 or (prior is not None and prior.status == "approved")
+        if starting_review:
+            doc.lifecycle = "needs_approval"
+        if gate_open:
+            approval.status = "pending"
+        await self._audit.record(
+            session, action="update", object_type="document_approval", object_id=approval.id,
+            actor=actor, tenant_id=tenant_id,
+            after={"tier": tier, "targets": [name for _t, _i, name in target_rows]},
+        )
+        if starting_review:
+            await self._audit.record(
+                session, action="transition", object_type="document", object_id=doc.id,
+                actor=actor, tenant_id=tenant_id, before=before,
+                after=AuditService.snapshot(doc, fields=_DOC_SNAPSHOT),
+            )
+
+        if gate_open and newly_added:
+            await self._notify().notify_many(
+                session, tenant_id=tenant_id, recipients=newly_added, kind="assigned",
+                title=f"Please review: {doc.title}",
+                body=(
+                    f"You've been asked to review {doc.code} (tier {tier}). Open it to read, "
+                    "comment and confirm."
+                ),
+                object_type="document_approval", object_id=approval.id,
+            )
         return await self._one(session, tenant_id, doc.id)
 
-    async def decide_approval(  # noqa: PLR0913
+    async def decide_approval_tier(  # noqa: PLR0913
         self,
         session: AsyncSession,
         *,
@@ -924,63 +1269,185 @@ class DocumentService:
         decision: str,
         note: str | None = None,
     ) -> DocumentView:
+        """A single assignee's own decision on a tier they were asked to sign
+        off - never a blanket "approve tier N" by anyone with the permission.
+        Approving may cascade: it can satisfy the tier, which activates and
+        notifies the next tier's assignees, or, on the last tier, both approves
+        AND publishes the document in one motion (no separate publish click)."""
         doc = await self._load(session, tenant_id, document_id)
-        if doc.lifecycle != "needs_approval":
-            raise InvalidInput(detail="this document is not awaiting approval")
-        approval = (
+        approval = await self._tier_row(session, tenant_id, doc.id, tier)
+        if approval is None or approval.status != "pending":
+            raise Conflict(
+                "This step is not open for a decision right now. Refresh the page to see "
+                "where it stands.",
+                detail=f"tier {tier} is not pending",
+            )
+        my_id = _membership(actor)
+        assignee = (
             await session.execute(
-                select(DocumentApproval).where(
-                    DocumentApproval.tenant_id == tenant_id,
-                    DocumentApproval.document_id == document_id,
-                    DocumentApproval.tier == tier,
+                select(DocumentApprovalAssignee).where(
+                    DocumentApprovalAssignee.tenant_id == tenant_id,
+                    DocumentApprovalAssignee.approval_id == approval.id,
+                    DocumentApprovalAssignee.membership_id == my_id,
                 )
             )
         ).scalar_one_or_none()
-        if approval is None:
-            raise NotFound(detail=f"approval tier {tier}")
-        if approval.status != "pending":
-            raise Conflict(detail=f"tier {tier} is not pending")
-        approval.status = decision
-        approval.approver_membership_id = _membership(actor)
-        approval.decided_at = datetime.now(UTC)
-        approval.note = note
+        if assignee is None:
+            raise PermissionDenied(
+                "You were not asked to review this step, so you cannot decide it.",
+                detail=f"{my_id} is not an assignee of tier {tier}",
+            )
+        if assignee.decision != "pending":
+            raise Conflict(
+                "You already made a decision on this step.",
+                detail=f"assignee {assignee.id} already decided {assignee.decision}",
+            )
 
-        before = AuditService.snapshot(doc, fields=_DOC_SNAPSHOT)
+        now = datetime.now(UTC)
+        assignee.decision = decision
+        assignee.decided_at = now
+        assignee.note = note
+        await session.flush()
+        await self._audit.record(
+            session, action="approve", object_type="document_approval_assignee",
+            object_id=assignee.id, actor=actor, tenant_id=tenant_id,
+            after={"tier": tier, "decision": decision},
+        )
+
         if decision == "rejected":
+            before = AuditService.snapshot(doc, fields=_DOC_SNAPSHOT)
+            approval.status = "rejected"
+            approval.decided_at = now
+            approval.note = note
             doc.lifecycle = "draft"
-        else:
-            nxt = (
-                await session.execute(
-                    select(DocumentApproval).where(
-                        DocumentApproval.tenant_id == tenant_id,
-                        DocumentApproval.document_id == document_id,
-                        DocumentApproval.tier == tier + 1,
+            await self._audit.record(
+                session, action="transition", object_type="document", object_id=doc.id,
+                actor=actor, tenant_id=tenant_id, before=before,
+                after=AuditService.snapshot(doc, fields=_DOC_SNAPSHOT),
+            )
+            return await self._one(session, tenant_id, doc.id)
+
+        if not await self._tier_satisfied(session, tenant_id, approval.id):
+            # Other assignees on this tier still have to weigh in.
+            return await self._one(session, tenant_id, doc.id)
+
+        approval.status = "approved"
+        approval.decided_at = now
+        await self._audit.record(
+            session, action="transition", object_type="document_approval", object_id=approval.id,
+            actor=actor, tenant_id=tenant_id, after={"status": "approved"},
+        )
+
+        nxt = await self._tier_row(session, tenant_id, doc.id, tier + 1)
+        if nxt is not None and await self._tier_has_targets(session, tenant_id, nxt.id):
+            nxt.status = "pending"
+            await self._audit.record(
+                session, action="transition", object_type="document_approval", object_id=nxt.id,
+                actor=actor, tenant_id=tenant_id, after={"status": "pending"},
+            )
+            pending_next = (
+                (
+                    await session.execute(
+                        select(DocumentApprovalAssignee.membership_id).where(
+                            DocumentApprovalAssignee.tenant_id == tenant_id,
+                            DocumentApprovalAssignee.approval_id == nxt.id,
+                            DocumentApprovalAssignee.decision == "pending",
+                        )
                     )
                 )
-            ).scalar_one_or_none()
-            if nxt is not None:
-                nxt.status = "pending"
-            else:
-                doc.lifecycle = "approved"
-                doc.approved_at = datetime.now(UTC)
-        await self._audit.record(
-            session,
-            action="transition",
-            object_type="document",
-            object_id=doc.id,
-            actor=actor,
-            tenant_id=tenant_id,
-            before=before,
-            after=AuditService.snapshot(doc, fields=_DOC_SNAPSHOT),
-        )
+                .scalars()
+                .all()
+            )
+            if pending_next:
+                await self._notify().notify_many(
+                    session, tenant_id=tenant_id, recipients=pending_next, kind="assigned",
+                    title=f"Please review: {doc.title}",
+                    body=(
+                        f"You've been asked to review {doc.code} (tier {nxt.tier}). Open it "
+                        "to read, comment and confirm."
+                    ),
+                    object_type="document_approval", object_id=nxt.id,
+                )
+            return await self._one(session, tenant_id, doc.id)
+
+        if nxt is None:
+            # No further tier at all: fully approved, publish in the same motion.
+            before = AuditService.snapshot(doc, fields=_DOC_SNAPSHOT)
+            doc.approved_at = now
+            doc.lifecycle = "approved"
+            await self._audit.record(
+                session, action="transition", object_type="document", object_id=doc.id,
+                actor=actor, tenant_id=tenant_id, before=before,
+                after=AuditService.snapshot(doc, fields=_DOC_SNAPSHOT),
+            )
+            before = AuditService.snapshot(doc, fields=_DOC_SNAPSHOT)
+            doc.published_at = now
+            doc.lifecycle = "published"
+            await self._audit.record(
+                session, action="transition", object_type="document", object_id=doc.id,
+                actor=actor, tenant_id=tenant_id, before=before,
+                after=AuditService.snapshot(doc, fields=_DOC_SNAPSHOT),
+            )
+        # else: tier N+1 exists but the owner has not assigned it yet - the
+        # document stays needs_approval until they do.
         return await self._one(session, tenant_id, doc.id)
+
+    async def my_pending_approvals(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, membership_id: uuid.UUID
+    ) -> list[PendingApprovalView]:
+        rows = (
+            await session.execute(
+                select(DocumentApprovalAssignee, DocumentApproval, Document)
+                .join(DocumentApproval, DocumentApprovalAssignee.approval_id == DocumentApproval.id)
+                .join(Document, DocumentApproval.document_id == Document.id)
+                .where(
+                    DocumentApprovalAssignee.tenant_id == tenant_id,
+                    DocumentApprovalAssignee.membership_id == membership_id,
+                    DocumentApprovalAssignee.decision == "pending",
+                    DocumentApproval.status == "pending",
+                )
+                .order_by(DocumentApprovalAssignee.created_at)
+            )
+        ).all()
+        return [
+            PendingApprovalView(
+                document_id=doc.id,
+                document_code=doc.code,
+                document_title=doc.title,
+                tier=appr.tier,
+            )
+            for _assignee, appr, doc in rows
+        ]
+
+    async def my_pending_approval_count(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, membership_id: uuid.UUID
+    ) -> int:
+        return (
+            await session.execute(
+                select(func.count())
+                .select_from(DocumentApprovalAssignee)
+                .join(
+                    DocumentApproval, DocumentApproval.id == DocumentApprovalAssignee.approval_id
+                )
+                .where(
+                    DocumentApprovalAssignee.tenant_id == tenant_id,
+                    DocumentApprovalAssignee.membership_id == membership_id,
+                    DocumentApprovalAssignee.decision == "pending",
+                    DocumentApproval.status == "pending",
+                )
+            )
+        ).scalar_one()
 
     async def publish(
         self, session: AsyncSession, *, tenant_id: uuid.UUID, actor: Actor, document_id: uuid.UUID
     ) -> DocumentView:
         doc = await self._load(session, tenant_id, document_id)
         if doc.lifecycle != "approved":
-            raise InvalidInput(detail="only an approved document can be published")
+            raise InvalidInput(
+                "This document has to be fully approved before it can be published. "
+                "Send it for review first.",
+                detail="only an approved document can be published",
+            )
         before = AuditService.snapshot(doc, fields=_DOC_SNAPSHOT)
         doc.lifecycle = "published"
         doc.published_at = datetime.now(UTC)
@@ -1006,9 +1473,17 @@ class DocumentService:
     ) -> None:
         doc = await self._load(session, tenant_id, document_id)
         if doc.lifecycle != "published":
-            raise InvalidInput(detail="only a published document can be acknowledged")
+            raise InvalidInput(
+                "This document can only be acknowledged once it has been published. "
+                "Check back when the owner publishes it.",
+                detail="only a published document can be acknowledged",
+            )
         if doc.current_version_id is None:
-            raise InvalidInput(detail="this document has no current version")
+            raise InvalidInput(
+                "This document has no content yet, so there is nothing to acknowledge. "
+                "Ask the owner to add content and publish it.",
+                detail="this document has no current version",
+            )
         existing = (
             await session.execute(
                 select(DocumentAcknowledgement.id).where(
@@ -1038,7 +1513,10 @@ class DocumentService:
     ) -> DocumentAckCampaign:
         camp = await session.get(DocumentAckCampaign, campaign_id)
         if camp is None or camp.tenant_id != tenant_id:
-            raise NotFound(detail=f"campaign {campaign_id}")
+            raise NotFound(
+                "This acknowledgement request no longer exists. It may have been deleted.",
+                detail=f"campaign {campaign_id}",
+            )
         return camp
 
     async def _resolve_recipients(
@@ -1107,7 +1585,11 @@ class DocumentService:
             session, tenant_id, reviewers, approvers
         )
         if not resolved:
-            raise InvalidInput(detail="select at least one person, role or group to acknowledge")
+            raise InvalidInput(
+                "Choose at least one person, role or group to acknowledge this document. "
+                "If you already picked someone, they may no longer be a member here.",
+                detail="select at least one person, role or group to acknowledge",
+            )
 
         camp = DocumentAckCampaign(
             id=uuid7(),
@@ -1268,7 +1750,11 @@ class DocumentService:
     ) -> CampaignView:
         camp = await self._load_campaign(session, tenant_id, campaign_id)
         if camp.status != "active":
-            raise InvalidInput(detail="this campaign is closed")
+            raise InvalidInput(
+                "This acknowledgement request has been closed, so it can no longer be signed. "
+                "Contact the person who sent it if you still need to respond.",
+                detail="this campaign is closed",
+            )
         rec = (
             await session.execute(
                 select(DocumentAckCampaignRecipient).where(
@@ -1279,7 +1765,11 @@ class DocumentService:
             )
         ).scalar_one_or_none()
         if rec is None:
-            raise NotFound(detail="you are not a recipient of this campaign")
+            raise NotFound(
+                "You have not been asked to acknowledge this document, so there is nothing "
+                "to sign. Contact the person who sent the request if you think that is wrong.",
+                detail="you are not a recipient of this campaign",
+            )
         if rec.status != "acknowledged":
             before = AuditService.snapshot(rec, fields=_RECIPIENT_SNAPSHOT)
             rec.status = "acknowledged"

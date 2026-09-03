@@ -18,8 +18,10 @@ import {
   useToast,
 } from "@/components/ui";
 import { cn } from "@/lib/cn";
+import { describeError, errorToast } from "@/lib/api/describe-error";
 import { complianceApi, controlsApi, iamApi } from "@/lib/api/endpoints";
 import { useAuth } from "@/lib/auth/auth-context";
+import { CLASS_LABEL, TYPE_LABEL } from "../labels";
 import {
   createDocument,
   updateDocument,
@@ -33,19 +35,6 @@ import {
   type DocType,
 } from "@/features/documents/types";
 
-const TYPE_LABEL: Record<DocType, string> = {
-  policy: "Policy",
-  standard: "Standard",
-  procedure: "Procedure",
-  guideline: "Guideline",
-  charter: "Charter",
-};
-const CLASS_LABEL: Record<Classification, string> = {
-  public: "Public",
-  internal: "Internal",
-  confidential: "Confidential",
-  restricted: "Restricted",
-};
 
 type Option = { value: string; label: string };
 
@@ -57,6 +46,7 @@ function MultiSelect({
   selected,
   onChange,
   loading,
+  error,
 }: {
   label: string;
   placeholder: string;
@@ -64,6 +54,8 @@ function MultiSelect({
   selected: string[];
   onChange: (next: string[]) => void;
   loading?: boolean;
+  /** Set when the option list failed to load, so the empty list does not read as "none exist". */
+  error?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -135,7 +127,9 @@ function MultiSelect({
             />
           </div>
           <div className="max-h-40 overflow-y-auto">
-            {loading ? (
+            {error ? (
+              <p className="px-3 py-4 text-center text-body-sm text-status-danger-text">{error}</p>
+            ) : loading ? (
               <p className="px-3 py-4 text-center text-caption text-text-subtle">Loading…</p>
             ) : filtered.length === 0 ? (
               <p className="px-3 py-4 text-center text-caption text-text-subtle">No matches.</p>
@@ -290,7 +284,7 @@ export function DocumentFormDialog({
       onOpenChange(false);
       void queryClient.invalidateQueries({ queryKey: ["documents"] });
     },
-    onError: () => toast({ title: "Couldn't save the document.", tone: "danger" }),
+    onError: (error: unknown) => toast({ title: errorToast(error, "document"), tone: "danger" }),
   });
 
   const canSubmit =
@@ -413,6 +407,11 @@ export function DocumentFormDialog({
                   ))}
                 </SelectContent>
               </Select>
+              {membersQuery.isError ? (
+                <p className="mt-1 text-body-sm text-status-danger-text">
+                  {describeError(membersQuery.error, "member list").message}
+                </p>
+              ) : null}
             </SelectField>
             <div />
 
@@ -423,6 +422,11 @@ export function DocumentFormDialog({
               selected={frameworkIds}
               onChange={setFrameworkIds}
               loading={frameworksQuery.isLoading}
+              error={
+                frameworksQuery.isError
+                  ? describeError(frameworksQuery.error, "framework list").message
+                  : undefined
+              }
             />
             <MultiSelect
               label="Controls"
@@ -431,6 +435,11 @@ export function DocumentFormDialog({
               selected={controlIds}
               onChange={setControlIds}
               loading={controlsQuery.isLoading}
+              error={
+                controlsQuery.isError
+                  ? describeError(controlsQuery.error, "control list").message
+                  : undefined
+              }
             />
           </div>
         </div>

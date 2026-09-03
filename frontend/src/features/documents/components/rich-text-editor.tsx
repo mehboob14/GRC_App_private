@@ -188,7 +188,7 @@ export function RichTextEditor({
     editorProps: {
       attributes: {
         class:
-          "prose-doc mx-auto max-w-[820px] min-h-[60vh] px-10 py-8 outline-none",
+          "prose-doc w-full min-h-[60vh] px-10 py-8 outline-none",
       },
     },
   });

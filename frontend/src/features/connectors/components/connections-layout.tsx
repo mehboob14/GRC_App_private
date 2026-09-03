@@ -17,8 +17,10 @@ const MANAGE: { label: string; icon: IconName }[] = [
 export function ConnectionsLayout() {
   return (
     <div className="flex gap-8">
-      <aside className="w-56 shrink-0" aria-label="Connections sections">
-        <p className="mb-5 px-2.5 font-display text-heading-md text-text-primary">
+      <aside className="w-56 shrink-0" aria-label="Connections navigation">
+        {/* The page itself carries the h1; the rail only names the group, so it
+            sits a rank below rather than repeating the title at heading size. */}
+        <p className="mb-5 px-2.5 text-label-md text-text-secondary">
           Connections
         </p>
         <div className="flex flex-col gap-0.5">
@@ -41,7 +43,7 @@ export function ConnectionsLayout() {
                     isActive ? "text-action-accent" : "text-text-secondary",
                   )}
                 >
-                  All Connections
+                  All connections
                 </span>
               </>
             )}
@@ -62,9 +64,7 @@ export function ConnectionsLayout() {
                   <span className="min-w-0 flex-1 truncate text-text-secondary opacity-70">
                     {item.label}
                   </span>
-                  <span className="font-sans text-overline uppercase text-text-subtle">
-                    Soon
-                  </span>
+                  <span className="type-overline">Soon</span>
                 </button>
               </Tooltip>
             ))}

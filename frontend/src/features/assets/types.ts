@@ -260,16 +260,6 @@ export type AssetFilters = {
   /** Exposure facet — internet- or customer-facing, or either. */
   exposure: "internet_facing" | "customer_facing" | null;
   owner: string | null; // membership_id, "me", or "unassigned"
-  /** Hygiene issues or stale — the "needs attention" facet. */
-  needs_attention: boolean;
-};
-
-export type SavedView = {
-  id: string;
-  name: string;
-  filters: Partial<AssetFilters>;
-  is_shared: boolean;
-  position: number;
 };
 
 // -- dashboard ---------------------------------------------------------------

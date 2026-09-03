@@ -1,10 +1,11 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Avatar,
   Badge,
   Button,
+  ColumnPicker,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -22,10 +23,24 @@ import {
   TD,
   TH,
   THead,
+  Toolbar,
   TR,
+  useColumnPrefs,
+  useTableSort,
+  type ColumnDef,
 } from "@/components/ui";
 import { cn } from "@/lib/cn";
-import { getFacets, getSummary, listAssets, listMembers, listSavedViews } from "../api";
+import { describeError } from "@/lib/api/describe-error";
+import {
+  assetImportTemplateCsv,
+  assetsExportCsv,
+  downloadCsv,
+  getFacets,
+  getSummary,
+  listAssets,
+  listMembers,
+} from "../api";
+import { AssetFormDrawer } from "./asset-form-drawer";
 import {
   ASSET_STATUSES,
   ASSET_TYPES,
@@ -39,7 +54,6 @@ import {
   type CriticalityTier,
   type DataClassification,
   type Environment,
-  type SavedView,
 } from "../types";
 import {
   ASSET_TYPE_META,
@@ -54,6 +68,21 @@ import {
 
 const PAGE_SIZE = 25;
 
+type SortKey = "name" | "type" | "owner" | "criticality" | "lifecycle" | "lastSeen" | "value";
+
+// Optional columns only. Asset (identity) and the actions column always render.
+const COLUMNS = [
+  { key: "type", label: "Type" },
+  { key: "owner", label: "Owner" },
+  { key: "criticality", label: "Criticality" },
+  { key: "cia", label: "CIA" },
+  { key: "lifecycle", label: "Lifecycle" },
+  { key: "lastSeen", label: "Last seen" },
+  { key: "value", label: "Value" },
+] as const satisfies readonly ColumnDef<string>[];
+
+type ColKey = (typeof COLUMNS)[number]["key"];
+
 const EMPTY: AssetFilters = {
   search: "",
   asset_type: "all",
@@ -63,24 +92,41 @@ const EMPTY: AssetFilters = {
   classifications: [],
   exposure: null,
   owner: null,
-  needs_attention: false,
 };
 
 export function AssetsRegisterPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [filters, setFilters] = useState<AssetFilters>(EMPTY);
-  const [activeView, setActiveView] = useState<string | null>(null);
   const [page, setPage] = useState(1);
+  const [editingId, setEditingId] = useState<string | undefined>(undefined);
+  const [formOpen, setFormOpen] = useState(false);
+  const openCreate = () => {
+    setEditingId(undefined);
+    setFormOpen(true);
+  };
+  const openEdit = (id: string) => {
+    setEditingId(id);
+    setFormOpen(true);
+  };
+  const onSaved = () => {
+    queryClient.invalidateQueries({ queryKey: ["assets"] });
+    queryClient.invalidateQueries({ queryKey: ["asset-summary"] });
+    queryClient.invalidateQueries({ queryKey: ["asset-facets"] });
+  };
+  // No backend export endpoint for assets yet: export exactly what the
+  // register is currently showing, same idiom as the import template.
+  const handleExport = () => downloadCsv("assets.csv", assetsExportCsv(query.data?.items ?? []));
+  const handleTemplate = () => downloadCsv("asset-import-template.csv", assetImportTemplateCsv());
+  const cols = useColumnPrefs("verity.assets.columns", COLUMNS);
 
   const set = <K extends keyof AssetFilters>(key: K, value: AssetFilters[K]) => {
     setFilters((f) => ({ ...f, [key]: value }));
-    setActiveView(null);
     setPage(1);
   };
 
   const summaryQuery = useQuery({ queryKey: ["asset-summary"], queryFn: getSummary });
   const facetsQuery = useQuery({ queryKey: ["asset-facets"], queryFn: getFacets });
-  const viewsQuery = useQuery({ queryKey: ["asset-saved-views"], queryFn: listSavedViews });
   const membersQuery = useQuery({ queryKey: ["asset-members"], queryFn: listMembers });
   const query = useQuery({
     queryKey: ["assets", filters, page],
@@ -99,12 +145,6 @@ export function AssetsRegisterPage() {
     [membersQuery.data],
   );
 
-  function applyView(v: SavedView) {
-    setFilters({ ...EMPTY, ...v.filters });
-    setActiveView(v.id);
-    setPage(1);
-  }
-
   const activeCount =
     filters.tiers.length +
     filters.statuses.length +
@@ -112,13 +152,27 @@ export function AssetsRegisterPage() {
     filters.classifications.length +
     (filters.asset_type !== "all" ? 1 : 0) +
     (filters.exposure ? 1 : 0) +
-    (filters.owner ? 1 : 0) +
-    (filters.needs_attention ? 1 : 0);
+    (filters.owner ? 1 : 0);
 
+  // Sorts the page the server returned, not the whole register.
+  const { thProps, sortRows } = useTableSort<Asset, SortKey>(null, {
+    name: (a) => a.name,
+    type: (a) => ASSET_TYPE_META[a.asset_type].label,
+    owner: (a) => a.ownership.primary_owner?.name ?? null,
+    // Hottest tier is the highest number, so "desc" reads critical first.
+    criticality: (a) => {
+      const tier = displayTier(a.criticality);
+      return tier ? CRITICALITY_TIERS.length - CRITICALITY_TIERS.indexOf(tier) : null;
+    },
+    lifecycle: (a) => STATUS_META[a.status].label,
+    lastSeen: (a) => (a.last_seen_at ? new Date(a.last_seen_at) : null),
+    value: (a) => a.valuation,
+  });
+
+  const listError = query.isError ? describeError(query.error, "asset register") : null;
   const total = query.data?.total ?? 0;
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const s = summaryQuery.data;
-  const savedViews = viewsQuery.data ?? [];
 
   return (
     <div>
@@ -131,24 +185,38 @@ export function AssetsRegisterPage() {
         <Kpi label="Stale > 90d" value={s?.stale} tone="warning" />
       </div>
 
-      {/* Toolbar — search left, actions right, all one line. */}
-      <div className="mt-4 flex items-center gap-2">
-        <SearchInput
-          value={filters.search}
-          onChange={(v) => set("search", v)}
-          placeholder="Search name, host or IP…"
-          className="w-64"
-        />
-        <div className="ml-auto flex items-center gap-2">
-          <Button variant="secondary" onClick={() => navigate("/assets/import")}>
-            Import
-          </Button>
-          <Button onClick={() => navigate("/assets/new")}>New asset</Button>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div className="mt-2 flex flex-wrap items-center gap-2">
+      {/* Toolbar — search, filters and actions on one line. */}
+      <Toolbar
+        searchLabel="Filter assets"
+        search={
+          <SearchInput
+            value={filters.search}
+            onChange={(v) => set("search", v)}
+            placeholder="Search name, host or IP…"
+            aria-label="Search assets"
+          />
+        }
+        actions={
+          <>
+            <Button variant="secondary" onClick={handleExport}>
+              <Icon name="download" className="size-4" />
+              Export
+            </Button>
+            <Button variant="secondary" onClick={handleTemplate}>
+              <Icon name="spreadsheet" className="size-4" />
+              Template
+            </Button>
+            <Button variant="secondary" onClick={() => navigate("/assets/import")}>
+              <Icon name="upload" className="size-4" />
+              Import
+            </Button>
+            <Button onClick={openCreate}>
+              <Icon name="plus" className="size-4" />
+              Add asset
+            </Button>
+          </>
+        }
+      >
         <FilterFacet
           label="Type"
           options={ASSET_TYPES.map((t) => ({ value: t, label: withCount(ASSET_TYPE_META[t].label, facets?.asset_type[t]) }))}
@@ -185,78 +253,36 @@ export function AssetsRegisterPage() {
           values={filters.owner ? [filters.owner] : []}
           onChange={(v) => set("owner", v[v.length - 1] ?? null)}
         />
-        <button
-          type="button"
-          onClick={() => set("exposure", filters.exposure === "internet_facing" ? null : "internet_facing")}
-          className={cn(
-            "inline-flex items-center gap-1.5 rounded-sm border px-2.5 py-1.5 text-body-sm transition-colors",
-            filters.exposure === "internet_facing"
-              ? "border-action-accent bg-action-accent-tint text-action-accent"
-              : "border-border text-text-secondary hover:border-border-strong",
-          )}
-        >
-          <Icon name="globe" className="size-3.5" />
-          Internet-facing
-        </button>
-        <button
-          type="button"
-          onClick={() => set("needs_attention", !filters.needs_attention)}
-          className={cn(
-            "inline-flex items-center gap-1.5 rounded-sm border px-2.5 py-1.5 text-body-sm transition-colors",
-            filters.needs_attention
-              ? "border-status-warning-border bg-status-warning-bg text-status-warning-text"
-              : "border-border text-text-secondary hover:border-border-strong",
-          )}
-        >
-          <Icon name="alert" className="size-3.5" />
-          Needs attention
-          {facets?.needs_attention ? <span className="tabular">· {facets.needs_attention}</span> : null}
-        </button>
+        <FilterFacet
+          label="Exposure"
+          options={[{ value: "internet_facing", label: "Internet-facing" }]}
+          values={filters.exposure === "internet_facing" ? ["internet_facing"] : []}
+          onChange={(v) => set("exposure", v.length > 0 ? "internet_facing" : null)}
+        />
         {activeCount > 0 || filters.search ? (
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => {
               setFilters(EMPTY);
-              setActiveView(null);
               setPage(1);
             }}
-            className="text-body-sm font-semibold text-text-link"
           >
-            Clear
-          </button>
+            Clear filters
+          </Button>
         ) : null}
-      </div>
-
-      {/* Saved views — only when the tenant has some. */}
-      {savedViews.length > 0 ? (
-        <div className="mt-2 flex flex-wrap items-center gap-1.5">
-          {savedViews.map((v) => (
-            <button
-              key={v.id}
-              type="button"
-              onClick={() => applyView(v)}
-              className={cn(
-                "rounded-full border px-3 py-1 text-body-sm transition-colors",
-                activeView === v.id
-                  ? "border-action-accent bg-action-accent-tint text-action-accent"
-                  : "border-border bg-surface-primary text-text-secondary hover:border-border-strong",
-              )}
-            >
-              {v.name}
-            </button>
-          ))}
-        </div>
-      ) : null}
+      </Toolbar>
 
       {/* Table */}
       <div className="mt-4">
         {query.isLoading ? (
           <TableSkeleton rows={8} />
-        ) : query.isError ? (
+        ) : listError ? (
           <ErrorState
-            title="Couldn’t load assets"
-            description="The request failed. Retry, or contact support if it keeps happening."
-            onRetry={() => void query.refetch()}
+            title={listError.title}
+            description={listError.message}
+            referenceId={listError.referenceId}
+            onRetry={listError.retryable ? () => void query.refetch() : undefined}
           />
         ) : total === 0 ? (
           <EmptyState
@@ -267,30 +293,37 @@ export function AssetsRegisterPage() {
                 ? "Adjust or clear the filters to see more."
                 : "Add an asset, or import your inventory from a CSV, to start."
             }
-            action={<Button onClick={() => navigate("/assets/new")}>New asset</Button>}
+            action={<Button onClick={openCreate}>Add asset</Button>}
           />
         ) : (
-          <Table>
+          <Table actions={<ColumnPicker {...cols} />}>
             <THead>
               <TR>
-                <TH>Asset</TH>
-                <TH>Type</TH>
-                <TH>Owner</TH>
-                <TH>Criticality</TH>
-                <TH>CIA</TH>
-                <TH>Lifecycle</TH>
-                <TH>Last seen</TH>
-                <TH>Value</TH>
-                <TH className="w-10" />
+                <TH {...thProps("name")}>Asset</TH>
+                {cols.isVisible("type") ? <TH {...thProps("type")}>Type</TH> : null}
+                {cols.isVisible("owner") ? <TH {...thProps("owner")}>Owner</TH> : null}
+                {cols.isVisible("criticality") ? <TH {...thProps("criticality")}>Criticality</TH> : null}
+                {cols.isVisible("cia") ? <TH>CIA</TH> : null}
+                {cols.isVisible("lifecycle") ? <TH {...thProps("lifecycle")}>Lifecycle</TH> : null}
+                {cols.isVisible("lastSeen") ? <TH {...thProps("lastSeen")}>Last seen</TH> : null}
+                {cols.isVisible("value") ? (
+                  <TH numeric {...thProps("value")}>
+                    Value
+                  </TH>
+                ) : null}
+                <TH className="w-12">
+                  <span className="sr-only">Actions</span>
+                </TH>
               </TR>
             </THead>
             <TBody>
-              {query.data!.items.map((a) => (
+              {sortRows(query.data!.items).map((a) => (
                 <AssetRow
                   key={a.id}
                   asset={a}
+                  isVisible={cols.isVisible}
                   onOpen={() => navigate(`/assets/${a.id}`)}
-                  onEdit={() => navigate(`/assets/${a.id}/edit`)}
+                  onEdit={() => openEdit(a.id)}
                 />
               ))}
             </TBody>
@@ -306,6 +339,8 @@ export function AssetsRegisterPage() {
           <Pagination page={page} pageCount={pageCount} onPageChange={setPage} />
         </div>
       ) : null}
+
+      <AssetFormDrawer open={formOpen} onOpenChange={setFormOpen} assetId={editingId} onSaved={onSaved} />
     </div>
   );
 }
@@ -339,7 +374,17 @@ function CiaCell({ asset }: { asset: Asset }) {
   );
 }
 
-function AssetRow({ asset, onOpen, onEdit }: { asset: Asset; onOpen: () => void; onEdit: () => void }) {
+function AssetRow({
+  asset,
+  isVisible,
+  onOpen,
+  onEdit,
+}: {
+  asset: Asset;
+  isVisible: (key: ColKey) => boolean;
+  onOpen: () => void;
+  onEdit: () => void;
+}) {
   const tier = displayTier(asset.criticality);
   const tierMeta = tier ? TIER_META[tier] : null;
   const regulated = asset.regulated_data_type || asset.compliance_scope.includes("PCI");
@@ -352,45 +397,59 @@ function AssetRow({ asset, onOpen, onEdit }: { asset: Asset; onOpen: () => void;
           <span className="flex items-center gap-2 text-caption text-text-subtle">
             {host ? <span className="font-mono">{host}</span> : null}
             {asset.vuln_count > 0 ? <span className="text-status-danger-text">· {asset.vuln_count} vulns</span> : null}
-            {regulated ? <Badge variant="warning">Regulated</Badge> : null}
+            {regulated ? <Badge variant="countWarn">Regulated</Badge> : null}
           </span>
         </div>
       </TD>
-      <TD>
-        <span className="text-body-sm text-text-secondary">{ASSET_TYPE_META[asset.asset_type].label}</span>
-      </TD>
-      <TD>
-        {asset.ownership.primary_owner ? (
-          <span className="inline-flex items-center gap-2">
-            <Avatar name={asset.ownership.primary_owner.name} size="sm" />
-            <span className="text-body-sm text-text-secondary">{asset.ownership.primary_owner.name}</span>
+      {isVisible("type") ? (
+        <TD>
+          <span className="text-body-sm text-text-secondary">{ASSET_TYPE_META[asset.asset_type].label}</span>
+        </TD>
+      ) : null}
+      {isVisible("owner") ? (
+        <TD>
+          {asset.ownership.primary_owner ? (
+            <span className="inline-flex items-center gap-2">
+              <Avatar name={asset.ownership.primary_owner.name} size="sm" />
+              <span className="text-body-sm text-text-secondary">{asset.ownership.primary_owner.name}</span>
+            </span>
+          ) : (
+            <span className="text-body-sm text-status-warning-text">Unassigned</span>
+          )}
+        </TD>
+      ) : null}
+      {isVisible("criticality") ? (
+        <TD>
+          {tier && tierMeta ? (
+            <StatusPill status={tierMeta.family} label={tierMeta.label} />
+          ) : (
+            <span className="text-caption text-text-subtle">Not rated</span>
+          )}
+        </TD>
+      ) : null}
+      {isVisible("cia") ? (
+        <TD>
+          <CiaCell asset={asset} />
+        </TD>
+      ) : null}
+      {isVisible("lifecycle") ? (
+        <TD>
+          <StatusPill status={STATUS_META[asset.status].family} label={STATUS_META[asset.status].label} />
+        </TD>
+      ) : null}
+      {isVisible("lastSeen") ? (
+        <TD>
+          <span className={cn("text-body-sm", asset.hygiene.is_stale ? "text-status-danger-text" : "text-text-secondary")}>
+            {relativeTime(asset.last_seen_at)}
           </span>
-        ) : (
-          <span className="text-body-sm text-status-warning-text">Unassigned</span>
-        )}
-      </TD>
-      <TD>
-        {tier && tierMeta ? (
-          <StatusPill status={tierMeta.family} label={tierMeta.label} />
-        ) : (
-          <span className="text-caption text-text-subtle">Not rated</span>
-        )}
-      </TD>
-      <TD>
-        <CiaCell asset={asset} />
-      </TD>
-      <TD>
-        <StatusPill status={STATUS_META[asset.status].family} label={STATUS_META[asset.status].label} />
-      </TD>
-      <TD>
-        <span className={cn("text-body-sm", asset.hygiene.is_stale ? "text-status-danger-text" : "text-text-secondary")}>
-          {relativeTime(asset.last_seen_at)}
-        </span>
-      </TD>
-      <TD>
-        <span className="text-body-sm text-text-secondary tabular">{fmtMoney(asset.valuation)}</span>
-      </TD>
-      <TD onClick={(e) => e.stopPropagation()} className="w-10">
+        </TD>
+      ) : null}
+      {isVisible("value") ? (
+        <TD numeric>
+          <span className="text-body-sm text-text-secondary">{fmtMoney(asset.valuation)}</span>
+        </TD>
+      ) : null}
+      <TD onClick={(e) => e.stopPropagation()} className="w-12">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button

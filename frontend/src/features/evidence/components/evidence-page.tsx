@@ -5,6 +5,7 @@ import {
   Avatar,
   Badge,
   Button,
+  ColumnPicker,
   Dialog,
   DialogContent,
   DialogFooter,
@@ -25,6 +26,7 @@ import {
   ErrorState,
   FilterFacet,
   Icon,
+  PageHeader,
   SearchInput,
   Select,
   SelectContent,
@@ -39,12 +41,16 @@ import {
   TextField,
   TH,
   THead,
+  Toolbar,
   TR,
+  useColumnPrefs,
+  useTableSort,
   useToast,
+  type ColumnDef,
 } from "@/components/ui";
 import { Donut } from "@/features/dashboard/donut";
 import { complianceApi, controlsApi, evidenceApi, iamApi } from "@/lib/api/endpoints";
-import { ApiError } from "@/lib/api/client";
+import { describeError, errorToast } from "@/lib/api/describe-error";
 import { cn } from "@/lib/cn";
 import { useAuth } from "@/lib/auth/auth-context";
 import { getAccessToken } from "@/lib/auth/session";
@@ -88,6 +94,18 @@ const REVIEW_META: Record<
 };
 
 const REVIEW_ORDER: ReviewStatus[] = ["pending", "approved", "rejected"];
+
+/** The optional register columns. Evidence (identity) and the row-actions cell
+ *  are not here: a row you cannot name or act on is not a row. Labels match the
+ *  TH text exactly so the picker and the header cannot drift. */
+const EVIDENCE_COLUMNS = [
+  { key: "type", label: "Type" },
+  { key: "controls", label: "Controls" },
+  { key: "owner", label: "Owner" },
+  { key: "renewal", label: "Renewal" },
+  { key: "freshness", label: "Freshness" },
+  { key: "review", label: "Review" },
+] as const satisfies readonly ColumnDef<string>[];
 
 /** The freshness families as solid fills, for the overview bar and dots.
  *  Colour here is status (fresh / expiring / expired), which the DS allows. */
@@ -153,7 +171,8 @@ function EvidenceOverview({
   onPickFreshness,
 }: {
   items: Evidence[];
-  controlsTotal: number;
+  /** null when the control list could not be loaded. */
+  controlsTotal: number | null;
   onPickFreshness: (state: EvidenceFreshness) => void;
 }) {
   const total = items.length;
@@ -307,7 +326,7 @@ function EvidenceOverview({
         <div className="flex justify-around">
           <MiniRing
             value={controlsWithEvidence}
-            total={controlsTotal}
+            total={controlsTotal ?? 0}
             color="rgb(var(--color-action-accent))"
             label="Controls"
           />
@@ -326,7 +345,12 @@ function EvidenceOverview({
         </div>
         <ul className="mt-4 border-t border-border pt-3">
           {[
-            ["Controls with evidence", `${controlsWithEvidence} / ${controlsTotal}`],
+            [
+              "Controls with evidence",
+              // null = the control list failed to load. "/ 0" would read as a
+              // real denominator and make the ratio a lie.
+              `${controlsWithEvidence} / ${controlsTotal ?? "?"}`,
+            ],
             ["Evidence with an owner", `${owned} / ${total}`],
             ["Avg. evidence age", `${avgAge} days`],
           ].map(([label, value]) => (
@@ -599,11 +623,7 @@ export function AddEvidenceDialog({
       onOpenChange(false);
     },
     onError: (error: unknown) =>
-      toast({
-        title:
-          error instanceof ApiError ? error.message : "Couldn't add the evidence.",
-        tone: "danger",
-      }),
+      toast({ title: errorToast(error, "evidence item"), tone: "danger" }),
   });
 
   const canSubmit =
@@ -704,6 +724,12 @@ export function AddEvidenceDialog({
                   ))}
                 </SelectContent>
               </Select>
+              {/* An empty dropdown reads as "there are no types". Say why. */}
+              {vocabularyQuery.isError ? (
+                <p className="mt-1 text-body-sm text-status-danger-text">
+                  {describeError(vocabularyQuery.error, "evidence type list").message}
+                </p>
+              ) : null}
             </SelectField>
 
             <SelectField label="Owner">
@@ -790,12 +816,18 @@ export function AddEvidenceDialog({
                   </Select>
                 </div>
               </div>
-              <ControlPicker
-                groups={groups}
-                value={controlIds}
-                onChange={setControlIds}
-                loading={controlsQuery.isLoading}
-              />
+              {controlsQuery.isError ? (
+                <p className="text-body-sm text-status-danger-text">
+                  {describeError(controlsQuery.error, "control list").message}
+                </p>
+              ) : (
+                <ControlPicker
+                  groups={groups}
+                  value={controlIds}
+                  onChange={setControlIds}
+                  loading={controlsQuery.isLoading}
+                />
+              )}
             </div>
           </div>
         </div>
@@ -985,6 +1017,7 @@ export function EvidencePage() {
   const [reviewFilter, setReviewFilter] = useState<string[]>([]);
   const [selected, setSelected] = useState<Evidence | null>(null);
   const [adding, setAdding] = useState(false);
+  const cols = useColumnPrefs("verity.evidence.columns", EVIDENCE_COLUMNS);
 
   const evidenceQuery = useQuery({
     queryKey: ["evidence"],
@@ -1018,6 +1051,16 @@ export function EvidencePage() {
     );
   }, [items, search, freshnessFilter, typeFilter, reviewFilter]);
 
+  // Freshness and review sort by their own severity order, not alphabetically,
+  // so "stale first" is one click rather than a reading exercise.
+  const { thProps, sortRows } = useTableSort<Evidence, string>(null, {
+    title: (item) => item.title,
+    type: (item) => item.evidence_type,
+    owner: (item) => item.owner_name,
+    renewal: (item) => item.renewal_date,
+    freshness: (item) => FRESHNESS_ORDER.indexOf(item.freshness),
+    review: (item) => REVIEW_ORDER.indexOf(item.review_status),
+  });
 
   const activeFilters = [
     ...reviewFilter.map(
@@ -1038,61 +1081,56 @@ export function EvidencePage() {
   }
 
   if (evidenceQuery.isError) {
+    const failure = describeError(evidenceQuery.error, "evidence library");
     return (
-      <div className="mx-auto max-w-[1200px]">
+      <div className="w-full">
         <ErrorState
-          title="Couldn’t load evidence"
-          description={
-            evidenceQuery.error instanceof ApiError
-              ? evidenceQuery.error.message
-              : "The request failed. Retry, or contact support if it keeps happening."
-          }
-          onRetry={() => void evidenceQuery.refetch()}
+          title={failure.title}
+          description={failure.message}
+          referenceId={failure.referenceId}
+          onRetry={failure.retryable ? () => void evidenceQuery.refetch() : undefined}
         />
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-[1200px]">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h1 className="font-display text-heading-lg text-text-primary">
-            Evidence
-          </h1>
-          <p className="mt-2 max-w-2xl text-body-lg text-text-secondary">
-            Every artefact that proves a control operates. One item can support
-            more than one control.
-          </p>
-        </div>
-        {canManage ? (
-          <Button className="shrink-0" onClick={() => setAdding(true)}>
-            <Icon name="plus" className="size-4" />
-            Add evidence
-          </Button>
-        ) : null}
-      </div>
+    <div className="w-full">
+      <PageHeader eyebrow="Compliance" title="Evidence" />
 
       {items.length > 0 ? (
         <EvidenceOverview
           items={items}
-          controlsTotal={controlsQuery.data?.length ?? 0}
+          controlsTotal={controlsQuery.isError ? null : (controlsQuery.data?.length ?? 0)}
           onPickFreshness={(state) => setFreshnessFilter([state])}
         />
       ) : null}
 
-      <div
-        role="search"
-        aria-label="Filter evidence"
-        className="mb-4 mt-5 flex flex-wrap items-center gap-2"
+      <Toolbar
+        searchLabel="Filter evidence"
+        search={
+          <SearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder="Search by title, source or control…"
+            aria-label="Search evidence"
+          />
+        }
+        actions={
+          <>
+            <p aria-live="polite" className="text-caption text-text-subtle">
+              Showing <span className="tabular">{visible.length}</span> of{" "}
+              <span className="tabular">{items.length}</span> items
+            </p>
+            {canManage ? (
+              <Button onClick={() => setAdding(true)}>
+                <Icon name="plus" className="size-4" />
+                Add evidence
+              </Button>
+            ) : null}
+          </>
+        }
       >
-        <SearchInput
-          value={search}
-          onChange={setSearch}
-          placeholder="Search by title, source or control…"
-          aria-label="Search evidence"
-          className="w-full sm:w-72"
-        />
         <FilterFacet
           label="Review"
           options={REVIEW_ORDER.map((state) => ({
@@ -1127,11 +1165,7 @@ export function EvidencePage() {
             Clear filters
           </Button>
         ) : null}
-        <p aria-live="polite" className="ml-auto text-caption text-text-subtle">
-          Showing <span className="tabular">{visible.length}</span> of{" "}
-          <span className="tabular">{items.length}</span> items
-        </p>
-      </div>
+      </Toolbar>
 
       {evidenceQuery.isLoading ? (
         <TableSkeleton rows={6} density="comfortable" />
@@ -1156,23 +1190,29 @@ export function EvidencePage() {
           onClearFilters={clearFilters}
         />
       ) : (
-        <Table density="comfortable">
+        <Table density="comfortable" actions={<ColumnPicker {...cols} />}>
           <THead>
             <TR>
-              <TH>Evidence</TH>
-              <TH>Type</TH>
-              <TH>Controls</TH>
-              <TH>Owner</TH>
-              <TH>Renewal</TH>
-              <TH>Freshness</TH>
-              <TH>Review</TH>
+              <TH {...thProps("title")}>Evidence</TH>
+              {cols.isVisible("type") ? <TH {...thProps("type")}>Type</TH> : null}
+              {cols.isVisible("controls") ? <TH>Controls</TH> : null}
+              {cols.isVisible("owner") ? <TH {...thProps("owner")}>Owner</TH> : null}
+              {cols.isVisible("renewal") ? (
+                <TH {...thProps("renewal")}>Renewal</TH>
+              ) : null}
+              {cols.isVisible("freshness") ? (
+                <TH {...thProps("freshness")}>Freshness</TH>
+              ) : null}
+              {cols.isVisible("review") ? (
+                <TH {...thProps("review")}>Review</TH>
+              ) : null}
               <TH>
                 <span className="sr-only">Actions</span>
               </TH>
             </TR>
           </THead>
           <TBody>
-            {visible.map((item) => (
+            {sortRows(visible).map((item) => (
               <TR
                 key={item.id}
                 onClick={() => navigate(`/evidence/${item.id}`)}
@@ -1190,74 +1230,86 @@ export function EvidencePage() {
                     ) : null}
                   </span>
                 </TD>
-                <TD>
-                  <Badge variant="neutral">
-                    {item.evidence_type.replace(/_/g, " ")}
-                  </Badge>
-                </TD>
-                <TD>
-                  <div className="flex flex-wrap gap-1">
-                    {item.control_links.length ? (
-                      item.control_links.map((link) => (
-                        <span
-                          key={link.code}
-                          className="inline-flex flex-col rounded-xs bg-surface-sunken px-1.5 py-0.5 leading-tight"
-                        >
-                          <span className="text-caption font-medium text-text-secondary">
-                            {link.code}
-                          </span>
-                          {link.criteria.length ? (
-                            <span className="text-[10px] text-text-subtle">
-                              {link.criteria.join(" · ")}
+                {cols.isVisible("type") ? (
+                  <TD>
+                    <Badge variant="neutral">
+                      {item.evidence_type.replace(/_/g, " ")}
+                    </Badge>
+                  </TD>
+                ) : null}
+                {cols.isVisible("controls") ? (
+                  <TD>
+                    <div className="flex flex-wrap gap-1">
+                      {item.control_links.length ? (
+                        item.control_links.map((link) => (
+                          <span
+                            key={link.code}
+                            className="inline-flex flex-col rounded-xs bg-surface-sunken px-1.5 py-0.5 leading-tight"
+                          >
+                            <span className="text-caption font-medium text-text-secondary">
+                              {link.code}
                             </span>
-                          ) : null}
+                            {link.criteria.length ? (
+                              <span className="text-[10px] text-text-subtle">
+                                {link.criteria.join(" · ")}
+                              </span>
+                            ) : null}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-caption text-status-warning-text">
+                          None
                         </span>
-                      ))
+                      )}
+                    </div>
+                  </TD>
+                ) : null}
+                {cols.isVisible("owner") ? (
+                  <TD>
+                    {item.owner_name ? (
+                      <span className="flex items-center gap-2">
+                        <Avatar name={item.owner_name} size="sm" />
+                        <span className="truncate text-body-sm text-text-primary">
+                          {item.owner_name}
+                        </span>
+                      </span>
                     ) : (
-                      <span className="text-caption text-status-warning-text">
-                        None
+                      <span className="flex items-center gap-2">
+                        <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-surface-sunken text-[10px] font-bold text-text-subtle">
+                          ?
+                        </span>
+                        <span className="text-body-sm text-text-subtle">
+                          Unassigned
+                        </span>
                       </span>
                     )}
-                  </div>
-                </TD>
-                <TD>
-                  {item.owner_name ? (
-                    <span className="flex items-center gap-2">
-                      <Avatar name={item.owner_name} size="sm" />
-                      <span className="truncate text-body-sm text-text-primary">
-                        {item.owner_name}
-                      </span>
+                  </TD>
+                ) : null}
+                {cols.isVisible("renewal") ? (
+                  <TD>
+                    <span className="tabular text-body-sm text-text-secondary">
+                      {formatDate(item.renewal_date)}
                     </span>
-                  ) : (
-                    <span className="flex items-center gap-2">
-                      <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-surface-sunken text-[10px] font-bold text-text-subtle">
-                        ?
-                      </span>
-                      <span className="text-body-sm text-text-subtle">
-                        Unassigned
-                      </span>
-                    </span>
-                  )}
-                </TD>
-                <TD>
-                  <span className="tabular text-body-sm text-text-secondary">
-                    {formatDate(item.renewal_date)}
-                  </span>
-                </TD>
-                <TD>
-                  <StatusPill
-                    kind="inline"
-                    status={FRESHNESS[item.freshness].family}
-                    label={FRESHNESS[item.freshness].label}
-                  />
-                </TD>
-                <TD>
-                  <StatusPill
-                    kind="inline"
-                    status={REVIEW_META[item.review_status].family}
-                    label={REVIEW_META[item.review_status].label}
-                  />
-                </TD>
+                  </TD>
+                ) : null}
+                {cols.isVisible("freshness") ? (
+                  <TD>
+                    <StatusPill
+                      kind="inline"
+                      status={FRESHNESS[item.freshness].family}
+                      label={FRESHNESS[item.freshness].label}
+                    />
+                  </TD>
+                ) : null}
+                {cols.isVisible("review") ? (
+                  <TD>
+                    <StatusPill
+                      kind="inline"
+                      status={REVIEW_META[item.review_status].family}
+                      label={REVIEW_META[item.review_status].label}
+                    />
+                  </TD>
+                ) : null}
                 {/* Row actions. The cell stops propagation so opening the menu
                     does not also navigate to the detail page. */}
                 <TD

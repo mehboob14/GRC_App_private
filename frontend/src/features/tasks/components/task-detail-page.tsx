@@ -5,6 +5,8 @@ import {
   Avatar,
   Badge,
   Button,
+  CodeChip,
+  DetailHeader,
   Dialog,
   DialogContent,
   DialogFooter,
@@ -15,6 +17,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  ErrorState,
   Icon,
   PeopleSelect,
   PersonSelect,
@@ -24,10 +27,12 @@ import {
   SelectItem,
   SelectTrigger,
   StatusPill,
+  TabStrip,
   TextField,
   useToast,
 } from "@/components/ui";
 import { cn } from "@/lib/cn";
+import { describeError, errorToast } from "@/lib/api/describe-error";
 import {
   addCapaAction,
   addComment,
@@ -91,23 +96,24 @@ type TabId = (typeof TABS)[number]["id"];
 
 export function TaskDetailPage() {
   const { taskId = "" } = useParams();
-  const navigate = useNavigate();
   return (
-    <div className="mx-auto max-w-[1100px]">
-      <button
-        type="button"
-        onClick={() => navigate("/tasks")}
-        className="mb-3 inline-flex items-center gap-1.5 text-body-sm text-text-link hover:underline"
-      >
-        <Icon name="arrowl" className="size-4" />
-        Back to register
-      </button>
-      <TaskDetail taskId={taskId} />
+    <div className="w-full">
+      <TaskDetail taskId={taskId} backTo="/tasks" />
     </div>
   );
 }
 
-export function TaskDetail({ taskId, onChanged }: { taskId: string; onChanged?: () => void }) {
+/** `backTo` is omitted when this renders as the register's embedded detail
+ *  pane, where there is nothing to navigate back to. */
+export function TaskDetail({
+  taskId,
+  backTo,
+  onChanged,
+}: {
+  taskId: string;
+  backTo?: string;
+  onChanged?: () => void;
+}) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -133,11 +139,22 @@ export function TaskDetail({ taskId, onChanged }: { taskId: string; onChanged?: 
       invalidate();
       toast({ title: decision === "approved" ? "Approved" : "Rejected", tone: decision === "approved" ? "success" : "neutral" });
     },
-    onError: () => toast({ title: "Couldn’t record the decision.", tone: "danger" }),
+    onError: (error) => toast({ title: errorToast(error, "task"), tone: "danger" }),
   });
 
   if (query.isLoading) {
     return <p className="text-body-md text-text-subtle">Loading…</p>;
+  }
+  if (query.isError) {
+    const e = describeError(query.error, "task");
+    return (
+      <ErrorState
+        title={e.title}
+        description={e.message}
+        referenceId={e.referenceId}
+        onRetry={e.retryable ? () => void query.refetch() : undefined}
+      />
+    );
   }
   if (!doc) {
     return <p className="text-body-md text-text-secondary">Task not found.</p>;
@@ -151,61 +168,65 @@ export function TaskDetail({ taskId, onChanged }: { taskId: string; onChanged?: 
 
   return (
     <div>
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-sm bg-surface-sunken px-2 py-0.5 font-mono text-caption text-text-subtle">{doc.code}</span>
+      <DetailHeader
+        backTo={backTo}
+        backLabel={backTo ? "Back to tasks" : undefined}
+        title={doc.title}
+        chips={
+          <>
+            <CodeChip code={doc.code} />
             <Badge variant="neutral">{cap(doc.task_kind)}</Badge>
             <Badge variant="neutral">{cap(doc.category)}</Badge>
             {doc.recurrence_summary ? (
               <span className="text-caption text-text-subtle">{doc.recurrence_summary}</span>
             ) : null}
-          </div>
-          <h1 className="mt-1.5 font-display text-heading-md text-text-primary">{doc.title}</h1>
-        </div>
-        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
-          {doc.approval.required && doc.approval.status === "pending" ? (
-            <>
-              <Button variant="secondary" loading={approve.isPending} onClick={() => approve.mutate("rejected")}>
-                Reject
-              </Button>
-              <Button loading={approve.isPending} onClick={() => approve.mutate("approved")}>
-                Approve
-              </Button>
-            </>
-          ) : null}
-          {primaryTo ? (
-            <Button onClick={() => setTransition(primaryTo)}>{transitionLabel(doc.status, primaryTo)}</Button>
-          ) : null}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                type="button"
-                aria-label="More actions"
-                className="inline-flex size-9 items-center justify-center rounded-sm border border-border text-text-secondary transition-colors hover:bg-surface-hover"
-              >
-                <Icon name="more" className="size-4" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onSelect={() => setEditing(true)}>Edit</DropdownMenuItem>
-              {otherTransitions.length > 0 ? <DropdownMenuSeparator /> : null}
-              {otherTransitions.map((to) => (
-                <DropdownMenuItem
-                  key={to}
-                  variant={to === "cancelled" ? "danger" : "default"}
-                  onSelect={() => setTransition(to)}
+          </>
+        }
+        actions={
+          <>
+            {doc.approval.required && doc.approval.status === "pending" ? (
+              <>
+                <Button variant="secondary" loading={approve.isPending} onClick={() => approve.mutate("rejected")}>
+                  Reject
+                </Button>
+                <Button loading={approve.isPending} onClick={() => approve.mutate("approved")}>
+                  Approve
+                </Button>
+              </>
+            ) : null}
+            {primaryTo ? (
+              <Button onClick={() => setTransition(primaryTo)}>{transitionLabel(doc.status, primaryTo)}</Button>
+            ) : null}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  aria-label="More actions"
+                  className="inline-flex size-9 items-center justify-center rounded-sm border border-border text-text-secondary transition-colors hover:bg-surface-hover"
                 >
-                  {transitionLabel(doc.status, to)}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
+                  <Icon name="more" className="size-4" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onSelect={() => setEditing(true)}>Edit</DropdownMenuItem>
+                {otherTransitions.length > 0 ? <DropdownMenuSeparator /> : null}
+                {otherTransitions.map((to) => (
+                  <DropdownMenuItem
+                    key={to}
+                    variant={to === "cancelled" ? "danger" : "default"}
+                    onSelect={() => setTransition(to)}
+                  >
+                    {transitionLabel(doc.status, to)}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </>
+        }
+      />
 
       {/* Facts */}
-      <div className="mt-4 flex flex-wrap items-center gap-x-8 gap-y-2">
+      <div className="flex flex-wrap items-center gap-x-8 gap-y-2">
         <Field label="Status">
           <StatusPill status={STATUS_META[doc.status].family} label={STATUS_META[doc.status].label} />
         </Field>
@@ -246,10 +267,15 @@ export function TaskDetail({ taskId, onChanged }: { taskId: string; onChanged?: 
       </div>
 
       {/* Tabs */}
-      <nav className="mt-6 flex items-center gap-1 border-b border-border">
-        {TABS.filter((t) => t.id !== "capa" || doc.task_kind === "issue").map((t) => {
-          const count =
-            t.id === "capa"
+      <TabStrip
+        label="Task detail sections"
+        value={tab}
+        onSelect={(id) => setTab(id as TabId)}
+        items={TABS.filter((t) => t.id !== "capa" || doc.task_kind === "issue").map((t) => ({
+          id: t.id,
+          label: t.label,
+          count:
+            (t.id === "capa"
               ? doc.capa_actions.length
               : t.id === "subtasks"
                 ? doc.subtask_count
@@ -257,26 +283,12 @@ export function TaskDetail({ taskId, onChanged }: { taskId: string; onChanged?: 
                   ? doc.link_count
                   : t.id === "comments"
                     ? doc.comment_count
-                    : undefined;
-          return (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => setTab(t.id)}
-              className={cn(
-                "relative flex items-center gap-1.5 px-3 py-2 text-label-sm",
-                tab === t.id ? "text-text-primary" : "text-text-subtle hover:text-text-secondary",
-              )}
-            >
-              {t.label}
-              {count ? <span className="tabular text-caption text-text-subtle">{count}</span> : null}
-              {tab === t.id ? <span className="absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-action-accent" /> : null}
-            </button>
-          );
-        })}
-      </nav>
+                    : 0) || undefined,
+        }))}
+        inline
+      />
 
-      <div className="mt-5">
+      <div>
         {tab === "overview" ? (
           <OverviewTab doc={doc} onEditAssignees={() => setEditingAssignees(true)} />
         ) : null}
@@ -407,6 +419,7 @@ function SubtasksTab({ doc, onChange, onOpen }: { doc: TaskDetail; onChange: () 
       onChange();
       toast({ title: "Sub-task added", tone: "success" });
     },
+    onError: (error) => toast({ title: errorToast(error, "sub-task"), tone: "danger" }),
   });
   return (
     <Panel title="Sub-tasks">
@@ -554,11 +567,12 @@ function CapaCard({ doc, action, onChange }: { doc: TaskDetail; action: CapaActi
   const move = useMutation({
     mutationFn: (to: CapaStatus) => transitionCapaAction(doc.id, action.id, to),
     onSuccess: onChange,
-    onError: (e) => toast({ title: e instanceof Error ? e.message : "Couldn’t update the action.", tone: "danger" }),
+    onError: (error) => toast({ title: errorToast(error, "action"), tone: "danger" }),
   });
   const promote = useMutation({
     mutationFn: () => promoteCapaToTask(doc.id, action.id),
     onSuccess: () => { onChange(); toast({ title: "Promoted to a task", tone: "success" }); },
+    onError: (error) => toast({ title: errorToast(error, "action"), tone: "danger" }),
   });
   const primary = capaPrimary[action.status];
   return (
@@ -666,7 +680,7 @@ function CapaDialog({
       onDone();
       toast({ title: action ? "Action updated" : "Action added", tone: "success" });
     },
-    onError: () => toast({ title: "Couldn’t save the action.", tone: "danger" }),
+    onError: (error) => toast({ title: errorToast(error, "action"), tone: "danger" }),
   });
 
   return (
@@ -723,6 +737,11 @@ function CapaDialog({
               clearLabel="Unassigned"
               aria-label="Owner"
             />
+            {membersQuery.isError ? (
+              <p className="text-body-sm text-status-danger-text">
+                {describeError(membersQuery.error, "list of people").message}
+              </p>
+            ) : null}
           </SelectField>
         </div>
         <DialogFooter>
@@ -740,12 +759,14 @@ function CapaDialog({
 
 function CommentsTab({ doc, onChange }: { doc: TaskDetail; onChange: () => void }) {
   const [body, setBody] = useState("");
+  const { toast } = useToast();
   const add = useMutation({
     mutationFn: () => addComment(doc.id, body),
     onSuccess: () => {
       setBody("");
       onChange();
     },
+    onError: (error) => toast({ title: errorToast(error, "comment"), tone: "danger" }),
   });
   return (
     <Panel title="Comments">
@@ -853,7 +874,7 @@ function TransitionDialog({
   const run = useMutation({
     mutationFn: () => transitionTask(doc.id, to, note.trim() || undefined),
     onSuccess: onDone,
-    onError: (e) => toast({ title: e instanceof Error ? e.message : "Transition failed", tone: "danger" }),
+    onError: (error) => toast({ title: errorToast(error, "task"), tone: "danger" }),
   });
   return (
     <Dialog open onOpenChange={onOpenChange}>
@@ -917,6 +938,7 @@ function AssigneeDialog({
       onDone();
       toast({ title: "Assignees updated", tone: "success" });
     },
+    onError: (error) => toast({ title: errorToast(error, "task"), tone: "danger" }),
   });
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -925,6 +947,11 @@ function AssigneeDialog({
           <DialogTitle>Assignees</DialogTitle>
         </DialogHeader>
         <PeopleSelect people={people} values={selected} onChange={setSelected} placeholder="Search and add people" />
+        {membersQuery.isError ? (
+          <p className="text-body-sm text-status-danger-text">
+            {describeError(membersQuery.error, "list of people").message}
+          </p>
+        ) : null}
         <DialogFooter>
           <Button variant="secondary" onClick={() => onOpenChange(false)}>
             Cancel

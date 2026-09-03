@@ -13,6 +13,7 @@ import {
   TR,
 } from "@/components/ui";
 import { engagementApi } from "@/lib/api/endpoints";
+import { describeError } from "@/lib/api/describe-error";
 import { useAuth } from "@/lib/auth/auth-context";
 import { cn } from "@/lib/cn";
 import type { ControlGap, CriterionCoverage } from "@/lib/api/types";
@@ -179,12 +180,27 @@ export function CoveragePage() {
     );
   }
 
-  if (coverageQuery.isError) {
+  // The engagement is checked here too: a failed read of it must not fall
+  // through to "Set your audit scope first", which would tell someone who has
+  // already set their scope to set it again.
+  if (coverageQuery.isError || engagementQuery.isError) {
+    const failure = describeError(
+      coverageQuery.error ?? engagementQuery.error,
+      "coverage report",
+    );
     return (
       <ErrorState
-        title="Couldn't load coverage"
-        description="The coverage report did not come back."
-        onRetry={() => void coverageQuery.refetch()}
+        title={failure.title}
+        description={failure.message}
+        referenceId={failure.referenceId}
+        onRetry={
+          failure.retryable
+            ? () => {
+                void coverageQuery.refetch();
+                void engagementQuery.refetch();
+              }
+            : undefined
+        }
       />
     );
   }

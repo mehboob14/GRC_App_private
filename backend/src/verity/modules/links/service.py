@@ -37,13 +37,21 @@ class LinkedObject:
     direction: str  # "outgoing" (queried object is the `from`) | "incoming"
 
 
+_UNKNOWN_TYPE_MESSAGE = (
+    "That is not something you can link here. Choose one of the item types offered."
+)
+
+
 def _validate(from_type: str, to_type: str, relation: str) -> None:
     if from_type not in LINK_TYPES:
-        raise InvalidInput(detail=f"unknown link type {from_type!r}")
+        raise InvalidInput(_UNKNOWN_TYPE_MESSAGE, detail=f"unknown link type {from_type!r}")
     if to_type not in LINK_TYPES:
-        raise InvalidInput(detail=f"unknown link type {to_type!r}")
+        raise InvalidInput(_UNKNOWN_TYPE_MESSAGE, detail=f"unknown link type {to_type!r}")
     if relation not in LINK_RELATIONS:
-        raise InvalidInput(detail=f"unknown relation {relation!r}")
+        raise InvalidInput(
+            "That is not a relationship you can use for a link. Choose one from the list.",
+            detail=f"unknown relation {relation!r}",
+        )
 
 
 class LinkService:
@@ -63,7 +71,10 @@ class LinkService:
         """Create the edge, or return the existing one — linking is idempotent."""
         _validate(from_type, to_type, relation)
         if from_type == to_type and from_id == to_id:
-            raise InvalidInput(detail="an object cannot be linked to itself")
+            raise InvalidInput(
+                "You cannot link an item to itself. Choose a different item.",
+                detail="an object cannot be linked to itself",
+            )
 
         existing = (
             await session.execute(
@@ -108,7 +119,10 @@ class LinkService:
             )
         ).scalar_one_or_none()
         if deleted is None:
-            raise NotFound(detail=f"link {link_id}")
+            raise NotFound(
+                "This link no longer exists. It may have been removed already.",
+                detail=f"link {link_id}",
+            )
 
     async def for_object(
         self,

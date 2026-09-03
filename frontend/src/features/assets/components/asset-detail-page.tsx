@@ -11,11 +11,13 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DetailHeader,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  ErrorState,
   Icon,
   Select,
   SelectContent,
@@ -27,6 +29,7 @@ import {
   useToast,
 } from "@/components/ui";
 import { cn } from "@/lib/cn";
+import { describeError, errorToast } from "@/lib/api/describe-error";
 import {
   addRelationship,
   decommissionAsset,
@@ -38,6 +41,9 @@ import {
 } from "../api";
 import { RELATIONSHIP_TYPES } from "../types";
 import type { AssetDetail, AssetStatus, HygieneFlag, LinkTarget, RelationshipType } from "../types";
+import { AssetFormDrawer } from "./asset-form-drawer";
+import { listVulnerabilities } from "@/features/vulnerabilities/api";
+import { SeverityBadge } from "@/features/vulnerabilities/components/severity-badge";
 import {
   ASSET_TYPE_META,
   CLASSIFICATION_META,
@@ -83,6 +89,7 @@ const TABS = [
   { id: "criticality", label: "Criticality" },
   { id: "ownership", label: "Ownership" },
   { id: "lifecycle", label: "Lifecycle" },
+  { id: "vulnerabilities", label: "Vulnerabilities" },
   { id: "relationships", label: "Relationships" },
   { id: "linked", label: "Related" },
   { id: "activity", label: "Activity" },
@@ -95,6 +102,7 @@ export function AssetDetailPage() {
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<TabId>("overview");
   const [transition, setTransition] = useState<AssetStatus | null>(null);
+  const [editing, setEditing] = useState(false);
 
   const query = useQuery({ queryKey: ["asset", assetId], queryFn: () => getAsset(assetId), enabled: assetId.length > 0 });
   const a = query.data;
@@ -107,11 +115,28 @@ export function AssetDetailPage() {
   };
 
   if (query.isLoading) {
-    return <p className="mx-auto max-w-[1000px] text-body-md text-text-subtle">Loading…</p>;
+    return <p className="w-full text-body-md text-text-subtle">Loading…</p>;
+  }
+  if (query.isError) {
+    const e = describeError(query.error, "asset");
+    return (
+      <div className="w-full">
+        <Link to="/assets" className="text-body-sm text-text-link">
+          Assets
+        </Link>
+        <ErrorState
+          className="mt-4"
+          title={e.title}
+          description={e.message}
+          referenceId={e.referenceId}
+          onRetry={e.retryable ? () => void query.refetch() : undefined}
+        />
+      </div>
+    );
   }
   if (!a) {
     return (
-      <div className="mx-auto max-w-[1000px]">
+      <div className="w-full">
         <Link to="/assets" className="text-body-sm text-text-link">
           Assets
         </Link>
@@ -128,15 +153,13 @@ export function AssetDetailPage() {
   const otherTransitions = a.allowed_transitions.filter((t) => t !== primaryTo);
 
   return (
-    <div className="mx-auto max-w-[1100px]">
-      <Link to="/assets" className="inline-flex items-center gap-1.5 text-body-sm text-text-link hover:underline">
-        <Icon name="arrowl" className="size-4" />
-        Back to inventory
-      </Link>
-
-      <div className="mt-3 flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
+    <div className="w-full">
+      <DetailHeader
+        backTo="/assets"
+        backLabel="Back to assets"
+        title={a.name}
+        chips={
+          <>
             <Badge variant="neutral">{ASSET_TYPE_META[a.asset_type].label}</Badge>
             {a.environment ? <Badge variant="neutral">{ENVIRONMENT_LABEL[a.environment]}</Badge> : null}
             {a.internet_facing ? (
@@ -145,44 +168,45 @@ export function AssetDetailPage() {
                 Internet-facing
               </span>
             ) : null}
-          </div>
-          <h1 className="mt-1.5 font-display text-heading-md text-text-primary">{a.name}</h1>
-          {a.hostname || a.fqdn || a.ip_address ? (
-            <p className="mt-1 font-mono text-caption text-text-subtle">
-              {[a.hostname, a.fqdn, a.ip_address].filter(Boolean).join(" · ")}
-            </p>
-          ) : null}
-        </div>
-        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
-          {primaryTo ? (
-            <Button onClick={() => setTransition(primaryTo)}>{lifecycleLabel(a.status, primaryTo)}</Button>
-          ) : null}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                type="button"
-                aria-label="More actions"
-                className="inline-flex size-9 items-center justify-center rounded-sm border border-border text-text-secondary transition-colors hover:bg-surface-hover"
-              >
-                <Icon name="more" className="size-4" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onSelect={() => navigate(`/assets/${a.id}/edit`)}>Edit</DropdownMenuItem>
-              {otherTransitions.length > 0 ? <DropdownMenuSeparator /> : null}
-              {otherTransitions.map((to) => (
-                <DropdownMenuItem
-                  key={to}
-                  variant={to === "decommissioned" || to === "retired" ? "danger" : "default"}
-                  onSelect={() => setTransition(to)}
+          </>
+        }
+        meta={
+          a.hostname || a.fqdn || a.ip_address ? (
+            <span className="font-mono">{[a.hostname, a.fqdn, a.ip_address].filter(Boolean).join(" · ")}</span>
+          ) : null
+        }
+        actions={
+          <>
+            {primaryTo ? (
+              <Button onClick={() => setTransition(primaryTo)}>{lifecycleLabel(a.status, primaryTo)}</Button>
+            ) : null}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  aria-label="More actions"
+                  className="inline-flex size-9 items-center justify-center rounded-sm border border-border text-text-secondary transition-colors hover:bg-surface-hover"
                 >
-                  {lifecycleLabel(a.status, to)}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
+                  <Icon name="more" className="size-4" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onSelect={() => setEditing(true)}>Edit</DropdownMenuItem>
+                {otherTransitions.length > 0 ? <DropdownMenuSeparator /> : null}
+                {otherTransitions.map((to) => (
+                  <DropdownMenuItem
+                    key={to}
+                    variant={to === "decommissioned" || to === "retired" ? "danger" : "default"}
+                    onSelect={() => setTransition(to)}
+                  >
+                    {lifecycleLabel(a.status, to)}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </>
+        }
+      />
 
       {/* Facts */}
       <div className="mt-4 flex flex-wrap items-center gap-x-8 gap-y-2">
@@ -261,6 +285,7 @@ export function AssetDetailPage() {
         {tab === "criticality" ? <CriticalityTab a={a} /> : null}
         {tab === "ownership" ? <OwnershipTab a={a} /> : null}
         {tab === "lifecycle" ? <LifecycleTab a={a} /> : null}
+        {tab === "vulnerabilities" ? <VulnerabilitiesTab assetId={a.id} onOpen={(id) => navigate(`/vulnerabilities/${id}`)} /> : null}
         {tab === "relationships" ? <RelationshipsTab a={a} onChange={invalidate} onOpen={(id) => navigate(`/assets/${id}`)} /> : null}
         {tab === "linked" ? <LinkedTab a={a} /> : null}
         {tab === "activity" ? <ActivityTab a={a} /> : null}
@@ -286,6 +311,13 @@ export function AssetDetailPage() {
           }}
         />
       ) : null}
+
+      <AssetFormDrawer
+        open={editing}
+        onOpenChange={setEditing}
+        assetId={a.id}
+        onSaved={() => invalidate()}
+      />
     </div>
   );
 }
@@ -366,6 +398,7 @@ function HygienePanel({ a, onChange }: { a: AssetDetail; onChange: () => void })
       onChange();
       toast({ title: "Inventory reviewed", tone: "success" });
     },
+    onError: (error) => toast({ title: errorToast(error, "asset"), tone: "danger" }),
   });
   return (
     <Panel
@@ -546,7 +579,12 @@ function LifecycleTab({ a }: { a: AssetDetail }) {
 
 function RelationshipsTab({ a, onChange, onOpen }: { a: AssetDetail; onChange: () => void; onOpen: (id: string) => void }) {
   const [adding, setAdding] = useState(false);
-  const remove = useMutation({ mutationFn: (relId: string) => deleteRelationship(a.id, relId), onSuccess: onChange });
+  const { toast } = useToast();
+  const remove = useMutation({
+    mutationFn: (relId: string) => deleteRelationship(a.id, relId),
+    onSuccess: onChange,
+    onError: (error) => toast({ title: errorToast(error, "relationship"), tone: "danger" }),
+  });
   return (
     <Panel
       title="Dependencies"
@@ -595,6 +633,7 @@ function RelationshipDialog({ a, onOpenChange, onDone }: { a: AssetDetail; onOpe
       onDone();
       toast({ title: "Relationship added", tone: "success" });
     },
+    onError: (error) => toast({ title: errorToast(error, "relationship"), tone: "danger" }),
   });
   return (
     <Dialog open onOpenChange={onOpenChange}>
@@ -637,6 +676,9 @@ function RelationshipDialog({ a, onOpenChange, onDone }: { a: AssetDetail; onOpe
               </SelectContent>
             </Select>
           </SelectField>
+          {candidatesQuery.isError ? (
+            <p className="text-body-sm text-status-danger-text">{describeError(candidatesQuery.error, "asset list").message}</p>
+          ) : null}
         </div>
         <DialogFooter>
           <Button variant="secondary" onClick={() => onOpenChange(false)}>
@@ -658,6 +700,65 @@ const LINKED_MODULES: { type: LinkTarget; label: string }[] = [
   { type: "evidence", label: "Evidence" },
   { type: "document", label: "Documents" },
 ];
+
+function VulnerabilitiesTab({ assetId, onOpen }: { assetId: string; onOpen: (id: string) => void }) {
+  const query = useQuery({
+    queryKey: ["asset-vulns", assetId],
+    queryFn: () => listVulnerabilities({ asset_id: assetId, state: "all" }),
+  });
+  const rows = query.data ?? [];
+  const open = rows.filter((r) => !["fixed", "accepted", "false_positive"].includes(r.state));
+
+  return (
+    <div className="rounded-lg border border-border bg-surface-primary p-5">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h2 className="font-display text-title-md text-text-primary">
+          Vulnerabilities
+          <span className="ml-2 tabular text-body-sm text-text-subtle">{open.length} open</span>
+        </h2>
+        <Link
+          to={`/vulnerabilities?asset_id=${assetId}`}
+          className="text-caption font-semibold text-text-link"
+        >
+          Open in register →
+        </Link>
+      </div>
+      {query.isLoading ? (
+        <p className="text-body-sm text-text-subtle">Loading…</p>
+      ) : query.isError ? (
+        <p className="text-body-sm text-status-danger-text">{describeError(query.error, "vulnerability list").message}</p>
+      ) : rows.length === 0 ? (
+        <p className="text-body-sm text-text-subtle">
+          No vulnerabilities on this asset. Findings imported for it appear here, prioritised by risk.
+        </p>
+      ) : (
+        <ul className="space-y-1.5">
+          {rows.map((v) => (
+            <li key={v.id}>
+              <button
+                type="button"
+                onClick={() => onOpen(v.id)}
+                className="flex w-full items-center gap-2.5 rounded-sm border border-border px-3 py-2 text-left transition-colors hover:border-border-strong hover:bg-surface-hover"
+              >
+                <SeverityBadge severity={v.severity} />
+                <span className="min-w-0 flex-1">
+                  {v.cve_id ? (
+                    <span className="mr-2 font-mono text-caption text-text-subtle">{v.cve_id}</span>
+                  ) : null}
+                  <span className="text-body-sm text-text-primary">{v.title}</span>
+                </span>
+                <span className="tabular text-caption font-semibold text-text-secondary">
+                  {v.risk_score ?? "—"} {v.priority_band}
+                </span>
+                <Badge variant="neutral">{v.state.replace(/_/g, " ")}</Badge>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 function LinkedTab({ a }: { a: AssetDetail }) {
   const groups = new Map<LinkTarget, typeof a.links>();
@@ -758,7 +859,7 @@ function TransitionDialog({
       onDone();
       toast({ title: "Asset updated", tone: "success" });
     },
-    onError: (e) => toast({ title: e instanceof Error ? e.message : "Transition failed", tone: "danger" }),
+    onError: (error) => toast({ title: errorToast(error, "asset"), tone: "danger" }),
   });
   return (
     <Dialog open onOpenChange={onOpenChange}>
@@ -825,7 +926,7 @@ function DecommissionDialog({ a, onOpenChange, onDone }: { a: AssetDetail; onOpe
       onDone();
       toast({ title: "Asset decommissioned", tone: "success" });
     },
-    onError: (e) => toast({ title: e instanceof Error ? e.message : "Failed", tone: "danger" }),
+    onError: (error) => toast({ title: errorToast(error, "asset"), tone: "danger" }),
   });
 
   return (
@@ -867,6 +968,9 @@ function DecommissionDialog({ a, onOpenChange, onDone }: { a: AssetDetail; onOpe
               </SelectContent>
             </Select>
           </SelectField>
+          {candidatesQuery.isError ? (
+            <p className="text-body-sm text-status-danger-text">{describeError(candidatesQuery.error, "asset list").message}</p>
+          ) : null}
           <TextField label="Disposal evidence reference" optional value={evidence} onChange={(e) => setEvidence(e.target.value)} placeholder="e.g. disposal-cert-2026-03" />
           <TextField label="Reason" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="End of life; workloads migrated." />
         </div>

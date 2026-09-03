@@ -86,6 +86,7 @@ export default {
           high: "rgb(var(--color-severity-high) / <alpha-value>)",
           medium: "rgb(var(--color-severity-medium) / <alpha-value>)",
           low: "rgb(var(--color-severity-low) / <alpha-value>)",
+          info: "rgb(var(--color-severity-info) / <alpha-value>)",
         },
         identity: {
           1: "rgb(var(--color-identity-1) / <alpha-value>)",

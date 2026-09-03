@@ -220,20 +220,32 @@ class EngagementService:
     ) -> Engagement:
         version = await session.get(FrameworkVersion, framework_version_id)
         if version is None:
-            raise NotFound(detail=f"framework version {framework_version_id}")
+            raise NotFound(
+                "That framework version is no longer available. "
+                "Pick a version from the list and try again.",
+                detail=f"framework version {framework_version_id}",
+            )
 
         # Enforced here as well as by the CHECK so the client gets a typed
         # message instead of a constraint-violation surfaced as a 500.
         if audit_type == "type_2" and (window_start is None or window_end is None):
             raise InvalidInput(
-                detail="a Type II engagement observes a period: both window dates are required"
+                "A Type II audit covers a period of time, "
+                "so add both a start date and an end date.",
+                detail="a Type II engagement observes a period: both window dates are required",
             )
         if audit_type == "type_1" and (window_start is not None or window_end is not None):
             raise InvalidInput(
-                detail="a Type I engagement is a point in time and takes no observation window"
+                "A Type I audit looks at a single point in time, "
+                "so remove the start and end dates.",
+                detail="a Type I engagement is a point in time and takes no observation window",
             )
         if window_start and window_end and window_end < window_start:
-            raise InvalidInput(detail="the observation window ends before it starts")
+            raise InvalidInput(
+                "The end date falls before the start date. "
+                "Choose an end date on or after the start date.",
+                detail="the observation window ends before it starts",
+            )
 
         existing = await self.get(session, tenant_id=tenant_id)
         before = AuditService.snapshot(existing, fields=_ENGAGEMENT_SNAPSHOT) if existing else None

@@ -1,11 +1,27 @@
 import { useState } from "react";
-import { Button, Card, Icon, StatusPill, statusFamilyFor } from "@/components/ui";
+import {
+  Button,
+  Card,
+  Donut,
+  FAMILY_CHART,
+  Icon,
+  PageHeader,
+  SegmentedControl,
+  StatusPill,
+  statusFamilyFor,
+  type ChartSegment,
+} from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { FrameworkLogo } from "@/features/iam/components/framework-logo";
-import { Donut } from "./donut";
+import { Donut as Ring } from "./donut";
 
-const ring = (pct: number, color: string) => [
-  { value: pct, color },
+// A single-value progress ring, which the shared `Donut` (a distribution chart
+// with its own legend) does not cover. `Ring` paints an SVG stroke, so its
+// colour arrives as `currentColor` from a literal Tailwind `text-*` class on
+// the wrapper — Tailwind's JIT scans source text, so a class assembled at
+// runtime would be purged from the build.
+const ring = (pct: number) => [
+  { value: pct, color: "currentColor" },
   { value: 100 - pct, color: "transparent" },
 ];
 
@@ -14,19 +30,20 @@ const ring = (pct: number, color: string) => [
 // "Connectors"). Charts replicate the reference: donut rings, stacked coverage
 // bars, and the risk heatmap. Mock data until each module's backend lands.
 
-const TOKEN = {
-  green: "rgb(var(--color-status-success-base))",
-  amber: "rgb(var(--color-status-warning-base))",
-  red: "rgb(var(--color-status-danger-base))",
-  blue: "rgb(var(--color-action-accent))",
-  neutral: "rgb(var(--color-status-neutral-base))",
-};
+/** Ring colours, as literal classes for the same JIT reason. Bars and legend
+ *  dots reuse the shared `FAMILY_CHART` map instead of restating them. */
+const RING = {
+  accent: "text-action-accent",
+  success: "text-status-success-base",
+  warning: "text-status-warning-base",
+  danger: "text-status-danger-base",
+} as const;
 
 // ── Data ─────────────────────────────────────────────────────────────────
 const FRAMEWORKS = [
-  { name: "SOC 2 Type II", phase: "Type II window", status: "On track", pct: 91, pass: 124, fail: 3, review: 4, color: TOKEN.green },
-  { name: "ISO 27001", phase: "Stage 2 · Nov", status: "At risk", pct: 78, pass: 74, fail: 6, review: 7, color: TOKEN.amber },
-  { name: "HIPAA Security", phase: "Readiness Q1", status: "Behind", pct: 64, pass: 59, fail: 9, review: 11, color: TOKEN.red },
+  { name: "SOC 2 Type II", phase: "Type II window", status: "On track", pct: 91, pass: 124, fail: 3, review: 4, ring: RING.success },
+  { name: "ISO 27001", phase: "Stage 2 · Nov", status: "At risk", pct: 78, pass: 74, fail: 6, review: 7, ring: RING.warning },
+  { name: "HIPAA Security", phase: "Readiness Q1", status: "Behind", pct: 64, pass: 59, fail: 9, review: 11, ring: RING.danger },
 ];
 
 // have = passing; the remainder splits into needs-review then failing.
@@ -38,11 +55,13 @@ const TSC = [
   { name: "Privacy", have: 5, total: 9, review: 2, fail: 2, pct: 56 },
 ];
 
-const VULN_SEGMENTS = [
-  { label: "Critical", value: 4, color: TOKEN.red },
-  { label: "High", value: 5, color: "#f97316" },
-  { label: "Medium", value: 4, color: "#eab308" },
-  { label: "Low", value: 1, color: TOKEN.neutral },
+// The severity axis (F12), not the status axis: "how bad", not "where in the
+// lifecycle".
+const VULN_SEGMENTS: ChartSegment[] = [
+  { key: "critical", label: "Critical", value: 4, strokeClass: "stroke-severity-critical", dotClass: "bg-severity-critical" },
+  { key: "high", label: "High", value: 5, strokeClass: "stroke-severity-high", dotClass: "bg-severity-high" },
+  { key: "medium", label: "Medium", value: 4, strokeClass: "stroke-severity-medium", dotClass: "bg-severity-medium" },
+  { key: "low", label: "Low", value: 1, strokeClass: "stroke-severity-low", dotClass: "bg-severity-low" },
 ];
 
 // Likelihood (row, top = highest) × impact (col, right = highest). Counts sum
@@ -64,9 +83,9 @@ const TOP_RISKS = [
 ];
 
 const ASSETS = [
-  { label: "Restricted", value: 24, color: TOKEN.red },
-  { label: "Confidential", value: 162, color: "#f97316" },
-  { label: "Internal / Public", value: 1098, color: TOKEN.blue },
+  { label: "Restricted", value: 24, bar: "bg-severity-critical" },
+  { label: "Confidential", value: 162, bar: "bg-severity-high" },
+  { label: "Internal / Public", value: 1098, bar: "bg-action-accent" },
 ];
 
 function riskScoreTone(score: number): string {
@@ -75,13 +94,15 @@ function riskScoreTone(score: number): string {
   return "bg-status-progress-bg text-status-progress-text";
 }
 
-// Heatmap cell colour by severity rank (likelihood + impact).
-function heatColor(rowFromTop: number, col: number): string {
+// Heatmap cell tone by severity rank (likelihood + impact). Solid bg/text
+// token pairs rather than opacity: a translucent fill has no fixed contrast
+// ratio, and the count sitting on it has to stay legible.
+function heatTone(rowFromTop: number, col: number): string {
   const sev = (4 - rowFromTop) + col; // 0..8
-  if (sev >= 6) return "bg-status-danger-base/80";
-  if (sev >= 4) return "bg-status-warning-base/70";
-  if (sev >= 2) return "bg-status-warning-base/25";
-  return "bg-status-success-base/25";
+  if (sev >= 6) return "bg-status-danger-bg text-status-danger-text";
+  if (sev >= 4) return "bg-status-warning-bg text-status-warning-text";
+  if (sev >= 2) return "bg-status-success-bg text-status-success-text";
+  return "bg-surface-sunken text-text-subtle";
 }
 
 export function AdminDashboard() {
@@ -89,29 +110,23 @@ export function AdminDashboard() {
   const assetMax = Math.max(...ASSETS.map((a) => a.value));
 
   return (
-    <div className="mx-auto max-w-[1200px]">
+    <div className="w-full">
+      <PageHeader title="Compliance posture" />
+
+      {/* The range switch governs the whole page, so it leads the page rather
+          than sitting over one section of it. The title itself is published to
+          the shell top bar, so this row carries the controls only. */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="font-display text-heading-lg text-text-primary">Compliance posture</h1>
+        <SegmentedControl
+          label="Posture range"
+          value={range}
+          onChange={setRange}
+          items={[
+            { id: "Live", label: "Live" },
+            { id: "Weekly", label: "Weekly" },
+          ]}
+        />
         <div className="flex flex-wrap items-center gap-3">
-          {/* The range switch governs the whole page, so it sits with the page
-              title rather than over one section of it. */}
-          <div className="flex shrink-0 rounded-md border border-border p-0.5">
-            {(["Live", "Weekly"] as const).map((r) => (
-              <button
-                key={r}
-                type="button"
-                onClick={() => setRange(r)}
-                className={cn(
-                  "rounded-sm px-3 py-1 text-label-sm transition-colors duration-80 ease-state",
-                  range === r
-                    ? "bg-action-accent-tint text-action-accent"
-                    : "text-text-secondary hover:text-text-primary",
-                )}
-              >
-                {r}
-              </button>
-            ))}
-          </div>
           <div className="flex items-center gap-2 rounded-md border border-status-success-border bg-status-success-bg px-3 py-1.5">
             <span className="text-body-sm text-text-subtle">Overall trust score</span>
             <span className="font-display text-title-sm font-bold text-status-success-text">A · Strong</span>
@@ -126,28 +141,21 @@ export function AdminDashboard() {
       {/* SOC 2 readiness — the headline number, so it leads the page. Full
           width: it is the only tile with a hero donut and a stat strip, and
           boxing it into two of three columns left it visually unbalanced. */}
-      <Card
-        className="mt-5 p-5"
-        style={{
-          background:
-            "linear-gradient(135deg, rgb(var(--color-action-accent) / 0.14), rgb(var(--color-action-accent) / 0.04))",
-          borderColor: "rgb(var(--color-action-accent) / 0.18)",
-        }}
-      >
+      <Card className="mt-5 p-5">
         <div className="flex items-center justify-between">
-          <p className="text-overline font-bold uppercase text-action-accent">
-            SOC 2 Type II readiness
-          </p>
-          <span className="inline-flex items-center gap-0.5 rounded-full bg-surface-primary px-2.5 py-1 text-caption font-bold text-status-success-text shadow-sm">
+          <p className="type-overline">SOC 2 Type II readiness</p>
+          <span className="inline-flex items-center gap-0.5 rounded-full bg-status-success-bg px-2.5 py-1 text-caption font-bold text-status-success-text">
             <Icon name="arrowup" className="size-3.5" />
             +4%
           </span>
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-6">
-          <Donut size={132} stroke={14} segments={ring(91, TOKEN.blue)}>
-            <span className="font-display text-numeral-lg tabular text-text-primary">91%</span>
-            <span className="mt-1 text-caption text-action-accent">124 / 136 controls</span>
-          </Donut>
+          <div className={cn("shrink-0", RING.accent)}>
+            <Ring size={132} stroke={14} segments={ring(91)}>
+              <span className="font-display text-numeral-lg tabular text-text-primary">91%</span>
+              <span className="mt-1 text-caption text-action-accent">124 / 136 controls</span>
+            </Ring>
+          </div>
           <div className="min-w-[240px] flex-1">
             <p className="font-display text-title-md text-text-primary">Audit-ready</p>
             <p className="mt-1 text-body-sm text-text-secondary">
@@ -160,7 +168,7 @@ export function AdminDashboard() {
             </div>
           </div>
         </div>
-        <div className="mt-4 grid grid-cols-2 gap-2 border-t border-action-accent/15 pt-4 sm:grid-cols-4">
+        <div className="mt-4 grid grid-cols-2 gap-2 border-t border-border pt-4 sm:grid-cols-4">
           {(
             [
               ["Controls", "124", "shield", "text-action-accent"],
@@ -201,9 +209,11 @@ export function AdminDashboard() {
               <StatusPill kind="inline" status={statusFamilyFor(fw.status) ?? "unknown"} label={fw.status} />
             </div>
             <div className="mt-3 flex items-center gap-4">
-              <Donut size={92} stroke={11} segments={ring(fw.pct, fw.color)}>
-                <span className="font-display text-numeral-md tabular text-text-primary">{fw.pct}%</span>
-              </Donut>
+              <div className={cn("shrink-0", fw.ring)}>
+                <Ring size={92} stroke={11} segments={ring(fw.pct)}>
+                  <span className="font-display text-numeral-md tabular text-text-primary">{fw.pct}%</span>
+                </Ring>
+              </div>
               <div className="flex-1 space-y-1.5 text-body-sm">
                 <div className="flex justify-between">
                   <span className="text-text-secondary">Passing</span>
@@ -239,9 +249,9 @@ export function AdminDashboard() {
             <div key={row.name} className="flex items-center gap-3">
               <span className="w-56 shrink-0 truncate text-body-md text-text-secondary">{row.name}</span>
               <div className="flex h-2.5 flex-1 overflow-hidden rounded-full bg-surface-sunken">
-                <div style={{ width: `${(row.have / row.total) * 100}%`, background: TOKEN.green }} />
-                <div style={{ width: `${(row.review / row.total) * 100}%`, background: TOKEN.amber }} />
-                <div style={{ width: `${(row.fail / row.total) * 100}%`, background: TOKEN.red }} />
+                <div className={FAMILY_CHART.success.bar} style={{ width: `${(row.have / row.total) * 100}%` }} />
+                <div className={FAMILY_CHART.warning.bar} style={{ width: `${(row.review / row.total) * 100}%` }} />
+                <div className={FAMILY_CHART.danger.bar} style={{ width: `${(row.fail / row.total) * 100}%` }} />
               </div>
               <span className="tabular w-14 shrink-0 text-right text-body-sm text-text-subtle">
                 {row.have}/{row.total}
@@ -253,9 +263,9 @@ export function AdminDashboard() {
           ))}
         </div>
         <div className="mt-4 flex items-center gap-4 border-t border-border pt-3 text-body-sm text-text-subtle">
-          <Legend color={TOKEN.green} label="Passing" />
-          <Legend color={TOKEN.amber} label="Needs review" />
-          <Legend color={TOKEN.red} label="Failing" />
+          <Legend dotClass={FAMILY_CHART.success.dot} label="Passing" />
+          <Legend dotClass={FAMILY_CHART.warning.dot} label="Needs review" />
+          <Legend dotClass={FAMILY_CHART.danger.dot} label="Failing" />
         </div>
       </Card>
 
@@ -268,22 +278,9 @@ export function AdminDashboard() {
             <h3 className="font-display text-title-sm text-text-primary">Vulnerabilities</h3>
             <Icon name="bug" className="size-4 text-status-danger-text" />
           </div>
-          <div className="flex items-center gap-4">
-            <Donut size={88} stroke={12} segments={VULN_SEGMENTS}>
-              <span className="font-display text-numeral-md tabular text-text-primary">64</span>
-            </Donut>
-            <div className="flex-1 space-y-1 text-body-sm">
-              {VULN_SEGMENTS.map((v) => (
-                <div key={v.label} className="flex items-center justify-between gap-2">
-                  <span className="flex items-center gap-1.5 text-text-secondary">
-                    <span className="size-2 rounded-full" style={{ background: v.color }} />
-                    {v.label}
-                  </span>
-                  <span className="tabular font-medium text-text-primary">{v.value}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+          {/* The shared distribution donut: same swatch/label/count legend the
+              tile hand-rolled, so percentages stay off (`showPercent`). */}
+          <Donut segments={VULN_SEGMENTS} size={88} thickness={12} centerValue={64} showPercent={false} />
           <p className="mt-3 text-body-sm text-status-danger-text">2 on CISA KEV · 3 past SLA</p>
         </Card>
 
@@ -294,9 +291,11 @@ export function AdminDashboard() {
             <Icon name="doc" className="size-4 text-text-secondary" />
           </div>
           <div className="flex items-center gap-4">
-            <Donut size={88} stroke={12} segments={ring(78, TOKEN.green)}>
-              <span className="font-display text-numeral-md tabular text-text-primary">78%</span>
-            </Donut>
+            <div className={cn("shrink-0", RING.success)}>
+              <Ring size={88} stroke={12} segments={ring(78)}>
+                <span className="font-display text-numeral-md tabular text-text-primary">78%</span>
+              </Ring>
+            </div>
             <div>
               <p className="font-display text-numeral-lg tabular text-text-primary">842</p>
               <p className="text-body-sm text-text-subtle">total items</p>
@@ -319,8 +318,8 @@ export function AdminDashboard() {
                   <span
                     key={`${r}-${c}`}
                     className={cn(
-                      "flex size-6 items-center justify-center rounded-xs text-caption font-semibold text-text-primary",
-                      heatColor(r, c),
+                      "flex size-6 items-center justify-center rounded-xs text-caption font-semibold",
+                      heatTone(r, c),
                     )}
                   >
                     {count > 0 ? count : ""}
@@ -357,7 +356,7 @@ export function AdminDashboard() {
                   <span className="tabular font-medium text-text-primary">{a.value.toLocaleString()}</span>
                 </div>
                 <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-surface-sunken">
-                  <div className="h-full rounded-full" style={{ width: `${(a.value / assetMax) * 100}%`, background: a.color }} />
+                  <div className={cn("h-full rounded-full", a.bar)} style={{ width: `${(a.value / assetMax) * 100}%` }} />
                 </div>
               </div>
             ))}
@@ -427,10 +426,10 @@ function MiniStat({ value, label, tone }: { value: string; label: string; tone?:
   );
 }
 
-function Legend({ color, label }: { color: string; label: string }) {
+function Legend({ dotClass, label }: { dotClass: string; label: string }) {
   return (
     <span className="flex items-center gap-1.5">
-      <span className="size-2.5 rounded-full" style={{ background: color }} />
+      <span className={cn("size-2.5 rounded-full", dotClass)} aria-hidden />
       {label}
     </span>
   );

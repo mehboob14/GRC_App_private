@@ -13,9 +13,12 @@ import {
   DialogTitle,
   EmptyState,
   FilterFacet,
+  PageHeader,
   SearchInput,
   StatusPill,
   statusFamilyFor,
+  TabStrip,
+  Toolbar,
   Tooltip,
 } from "@/components/ui";
 import { cn } from "@/lib/cn";
@@ -37,7 +40,6 @@ const NOT_CONNECTED = "Not connected";
 const notConnectedFamily = statusFamilyFor(NOT_CONNECTED) ?? "unknown";
 
 type Tab = "active" | "available";
-const TABS: Tab[] = ["active", "available"];
 
 /** Categories are a taxonomy, not a status — neutral chips (DS §1). */
 function CategoryChips({
@@ -148,34 +150,19 @@ export function ConnectionsPage() {
 
   return (
     <div>
-      <h1 className="font-display text-heading-lg text-text-primary">
-        All Connections
-      </h1>
+      <PageHeader title="All connections" />
 
-      <nav
-        className="mb-6 mt-4 flex gap-1 border-b border-border"
-        aria-label="Connections sections"
-      >
-        {TABS.map((t) => (
-          <button
-            key={t}
-            type="button"
-            onClick={() => setTab(t)}
-            aria-current={tab === t ? "page" : undefined}
-            className={cn(
-              "relative -mb-px px-3 py-2.5 text-label-md capitalize transition-colors duration-150 ease-state",
-              tab === t
-                ? "text-action-accent"
-                : "text-text-secondary hover:text-text-primary",
-            )}
-          >
-            {t}
-            {tab === t ? (
-              <span className="absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-action-accent" />
-            ) : null}
-          </button>
-        ))}
-      </nav>
+      <TabStrip
+        label="Connection sections"
+        value={tab}
+        onSelect={(id) => setTab(id as Tab)}
+        items={[
+          // Connecting a provider arrives in a later phase, so Active is
+          // honestly nil rather than a number with nothing behind it.
+          { id: "active", label: "Active", count: 0 },
+          { id: "available", label: "Available", count: CONNECTORS.length },
+        ]}
+      />
 
       {tab === "active" ? (
         <EmptyState
@@ -185,18 +172,23 @@ export function ConnectionsPage() {
         />
       ) : (
         <>
-          <div
-            role="search"
-            aria-label="Filter connectors"
-            className="mb-4 flex flex-wrap items-center gap-2"
+          <Toolbar
+            searchLabel="Filter connectors"
+            search={
+              <SearchInput
+                value={search}
+                onChange={setSearch}
+                placeholder="Search connectors…"
+                aria-label="Search connectors by name"
+              />
+            }
+            actions={
+              <p aria-live="polite" className="text-caption text-text-subtle">
+                Showing <span className="tabular">{visible.length}</span> of{" "}
+                <span className="tabular">{CONNECTORS.length}</span> connectors
+              </p>
+            }
           >
-            <SearchInput
-              value={search}
-              onChange={setSearch}
-              placeholder="Search connectors…"
-              aria-label="Search connectors by name"
-              className="w-full sm:w-64"
-            />
             <FilterFacet
               label="Category"
               options={CATEGORY_OPTIONS}
@@ -208,14 +200,7 @@ export function ConnectionsPage() {
                 Clear filters
               </Button>
             ) : null}
-            <p
-              aria-live="polite"
-              className="ml-auto text-caption text-text-subtle"
-            >
-              Showing <span className="tabular">{visible.length}</span> of{" "}
-              <span className="tabular">{CONNECTORS.length}</span> connectors
-            </p>
-          </div>
+          </Toolbar>
 
           {visible.length === 0 ? (
             <EmptyState

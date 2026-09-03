@@ -143,7 +143,10 @@ class ComplianceService:
     ) -> list[RequirementView]:
         framework = await self._frameworks.get(session, framework_id)
         if framework is None:
-            raise NotFound(detail=f"framework {framework_id}")
+            raise NotFound(
+                "This framework no longer exists. It may have been removed.",
+                detail=f"framework {framework_id}",
+            )
         if version_id is None:
             version = await self._frameworks.current_version(session, framework_id)
         else:
@@ -151,7 +154,10 @@ class ComplianceService:
             if version is not None and version.framework_id != framework_id:
                 version = None
         if version is None:
-            raise NotFound(detail=f"no published version for framework {framework_id}")
+            raise NotFound(
+                "This framework has no published version yet, so its requirements cannot be shown.",
+                detail=f"no published version for framework {framework_id}",
+            )
 
         requirements = await self._requirements.list_for_version(session, version.id)
         counts = await self._requirements.template_counts(session)
@@ -185,7 +191,10 @@ class ComplianceService:
     ) -> TemplateDetailView:
         template = await self._templates.get(session, template_id)
         if template is None:
-            raise NotFound(detail=f"control template {template_id}")
+            raise NotFound(
+                "This control template no longer exists. It may have been removed.",
+                detail=f"control template {template_id}",
+            )
         requirements = await self._requirements.list_for_template(session, template_id)
         counts = await self._requirements.template_counts(session)
         return TemplateDetailView(

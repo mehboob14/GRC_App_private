@@ -201,6 +201,23 @@ class AssetView:
 
 
 @dataclass(frozen=True, slots=True)
+class AssetRef:
+    """The lightweight asset facts a sibling module needs (rule 4) — no hygiene,
+    no ownership resolution. Used by vulnerabilities to inherit the owner and
+    weight prioritisation by criticality/exposure without an N+1 of get_asset."""
+
+    id: uuid.UUID
+    name: str
+    host: str | None
+    tier: str | None
+    internet_facing: bool
+    customer_facing: bool
+    primary_owner_membership_id: uuid.UUID | None
+    escalation_contact_membership_id: uuid.UUID | None
+    status: str
+
+
+@dataclass(frozen=True, slots=True)
 class DecommissionView:
     disposal_method: str
     media_sanitised: bool
@@ -307,6 +324,29 @@ class AssetService:
         members = await iam_service.list_members(session, tenant_id=tenant_id)
         return {m.membership_id: m.full_name for m in members}
 
+    async def _vuln_counts(
+        self, session: AsyncSession, tenant_id: uuid.UUID
+    ) -> dict[uuid.UUID, int]:
+        """Open-vulnerability count per asset (rule 4, service->service)."""
+        from verity.modules.vulnerabilities.service import (  # noqa: PLC0415
+            vulnerability_service,
+        )
+
+        return await vulnerability_service.open_counts_by_asset(session, tenant_id=tenant_id)
+
+    async def _rescore_vulns(
+        self, session: AsyncSession, tenant_id: uuid.UUID, asset_id: uuid.UUID
+    ) -> None:
+        """Re-prioritise the asset's open vulnerabilities after a criticality or
+        exposure change (rule 4, service->service)."""
+        from verity.modules.vulnerabilities.service import (  # noqa: PLC0415
+            vulnerability_service,
+        )
+
+        await vulnerability_service.rescore_for_asset(
+            session, tenant_id=tenant_id, asset_id=asset_id
+        )
+
     async def _group_names(
         self, session: AsyncSession, tenant_id: uuid.UUID
     ) -> dict[uuid.UUID, str]:
@@ -324,7 +364,10 @@ class AssetService:
         # through here does not read an expired server-computed column.
         asset = await session.get(Asset, asset_id, populate_existing=True)
         if asset is None or asset.tenant_id != tenant_id:
-            raise NotFound(detail=f"asset {asset_id}")
+            raise NotFound(
+                "This asset no longer exists. It may have been deleted.",
+                detail=f"asset {asset_id}",
+            )
         return asset
 
     def _actor_membership(self, actor: Actor) -> uuid.UUID | None:
@@ -369,7 +412,12 @@ class AssetService:
         asset.tier = result[1] if result else None
 
     def _to_view(
-        self, asset: Asset, names: dict[uuid.UUID, str], groups: dict[uuid.UUID, str], now: datetime
+        self,
+        asset: Asset,
+        names: dict[uuid.UUID, str],
+        groups: dict[uuid.UUID, str],
+        now: datetime,
+        vuln_counts: dict[uuid.UUID, int] | None = None,
     ) -> AssetView:
         score, missing, stale = compute_hygiene(asset, now=now)
         return AssetView(
@@ -420,7 +468,7 @@ class AssetService:
             updated_at=asset.updated_at,
             source=asset.source,
             hygiene=HygieneView(score=score, missing=missing, is_stale=stale),
-            vuln_count=0,
+            vuln_count=(vuln_counts or {}).get(asset.id, 0),
             link_count=0,
             relationship_count=0,
         )
@@ -475,7 +523,8 @@ class AssetService:
         now = datetime.now(UTC)
         names = await self._member_names(session, tenant_id)
         groups = await self._group_names(session, tenant_id)
-        views = [self._to_view(a, names, groups, now) for a in assets]
+        vuln_counts = await self._vuln_counts(session, tenant_id)
+        views = [self._to_view(a, names, groups, now, vuln_counts) for a in assets]
         if filters.needs_attention:
             views = [v for v in views if v.hygiene.missing or v.hygiene.is_stale]
 
@@ -483,6 +532,38 @@ class AssetService:
         total = len(views)
         start = (page - 1) * page_size
         return views[start : start + page_size], total
+
+    async def asset_refs(
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        asset_ids: Sequence[uuid.UUID] | None = None,
+    ) -> dict[uuid.UUID, AssetRef]:
+        """Lightweight (id -> AssetRef) map for sibling modules. Pass ``asset_ids``
+        to scope it, or omit for the whole tenant. The effective tier is the
+        override when set, else the derived tier."""
+        stmt = select(Asset).where(Asset.tenant_id == tenant_id)
+        if asset_ids is not None:
+            ids = list(asset_ids)
+            if not ids:
+                return {}
+            stmt = stmt.where(Asset.id.in_(ids))
+        rows = (await session.execute(stmt)).scalars()
+        return {
+            a.id: AssetRef(
+                id=a.id,
+                name=a.name,
+                host=a.hostname or a.fqdn or a.ip_address,
+                tier=a.tier_override or a.tier,
+                internet_facing=a.internet_facing,
+                customer_facing=a.customer_facing,
+                primary_owner_membership_id=a.primary_owner_membership_id,
+                escalation_contact_membership_id=a.escalation_contact_membership_id,
+                status=a.status,
+            )
+            for a in rows
+        }
 
     @staticmethod
     def _register_sort_key(v: AssetView) -> tuple[int, int, str]:
@@ -498,7 +579,8 @@ class AssetService:
         now = datetime.now(UTC)
         names = await self._member_names(session, tenant_id)
         groups = await self._group_names(session, tenant_id)
-        base = self._to_view(asset, names, groups, now)
+        vuln_counts = await self._vuln_counts(session, tenant_id)
+        base = self._to_view(asset, names, groups, now, vuln_counts)
 
         transitions = list(
             (
@@ -595,7 +677,10 @@ class AssetService:
         self, session: AsyncSession, *, tenant_id: uuid.UUID, actor: Actor, data: AssetInput
     ) -> AssetDetailView:
         if not data.name.strip():
-            raise InvalidInput(detail="an asset needs a name")
+            raise InvalidInput(
+                "Give this asset a name before saving it.",
+                detail="an asset needs a name",
+            )
         now = datetime.now(UTC)
         asset = Asset(
             id=uuid7(),
@@ -636,6 +721,7 @@ class AssetService:
     ) -> AssetDetailView:
         asset = await self._load(session, tenant_id, asset_id)
         before = _effective_tier(asset)
+        before_exposure = (asset.internet_facing, asset.customer_facing)
         self._assign(asset, data)
         self._apply_criticality(asset)
         asset.last_reviewed_at = datetime.now(UTC)
@@ -652,6 +738,10 @@ class AssetService:
             after={"name": asset.name, "tier": after},
         )
         await session.flush()
+        # Criticality/exposure feed vulnerability prioritisation — re-score this
+        # asset's open findings when either changed (rule 4, service->service).
+        if before != after or before_exposure != (asset.internet_facing, asset.customer_facing):
+            await self._rescore_vulns(session, tenant_id, asset.id)
         return await self.get_asset(session, tenant_id=tenant_id, asset_id=asset.id)
 
     async def transition(  # noqa: PLR0913
@@ -666,9 +756,17 @@ class AssetService:
     ) -> AssetDetailView:
         asset = await self._load(session, tenant_id, asset_id)
         if to_status not in LIFECYCLE_TRANSITIONS:
-            raise InvalidInput(detail=f"unknown status {to_status!r}")
+            raise InvalidInput(
+                "That is not a lifecycle status we recognise. "
+                "Choose one of the statuses offered for this asset.",
+                detail=f"unknown status {to_status!r}",
+            )
         if to_status not in LIFECYCLE_TRANSITIONS[asset.status]:
-            raise Conflict(detail=f"cannot move a {asset.status} asset to {to_status}")
+            raise Conflict(
+                "This asset cannot move to that status from where it is now. "
+                "Refresh the page to see the moves available.",
+                detail=f"cannot move a {asset.status} asset to {to_status}",
+            )
         old = asset.status
         asset.status = to_status
         await self._transition_row(session, asset, actor, "status", old, to_status, note)
@@ -700,9 +798,16 @@ class AssetService:
     ) -> AssetDetailView:
         asset = await self._load(session, tenant_id, asset_id)
         if "decommissioned" not in LIFECYCLE_TRANSITIONS[asset.status]:
-            raise Conflict(detail=f"cannot decommission a {asset.status} asset")
+            raise Conflict(
+                "This asset cannot be decommissioned from its current status. "
+                "Refresh the page to see the actions available for it.",
+                detail=f"cannot decommission a {asset.status} asset",
+            )
         if not reason.strip():
-            raise InvalidInput(detail="a reason is required to decommission an asset")
+            raise InvalidInput(
+                "Give a reason before decommissioning this asset.",
+                detail="a reason is required to decommission an asset",
+            )
         now = datetime.now(UTC)
         old = asset.status
         asset.status = "decommissioned"
@@ -721,8 +826,15 @@ class AssetService:
                 decommissioned_at=now,
             )
         )
-        # ponytail: closing the asset's open vulns happens here once the vulns
-        # module exists — the cascade hook lands with it.
+        # Retiring the host removes the exposure, so its open vulnerabilities close
+        # with a recorded reason (spec 123). Cross-module, service->service (rule 4).
+        from verity.modules.vulnerabilities.service import (  # noqa: PLC0415
+            vulnerability_service,
+        )
+
+        await vulnerability_service.close_open_for_asset(
+            session, tenant_id=tenant_id, actor=actor, asset_id=asset.id, reason=reason.strip()
+        )
         await self._transition_row(
             session, asset, actor, "status", old, "decommissioned", reason.strip()
         )

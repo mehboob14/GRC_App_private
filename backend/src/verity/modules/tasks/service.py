@@ -75,6 +75,16 @@ _CAPA_TRANSITIONS: Final[dict[str, tuple[str, ...]]] = {
     "cancelled": ("planned",),  # reinstate
 }
 
+# Reader-facing copy repeated across several raises. Same wording every time, so it
+# lives once (the pattern audit/service.py uses for _CURSOR_ERROR).
+_CODE_ERROR: Final = "We could not save this just now. Please try again in a moment."
+_PRIORITY_ERROR: Final = "Pick a priority from the list: critical, high, medium or low."
+_CATEGORY_ERROR: Final = "Pick a category from the list shown on the form."
+_ACTION_TYPE_ERROR: Final = (
+    "Pick an action type from the list: corrective, preventive, containment or verification."
+)
+_ACTION_TITLE_ERROR: Final = "Give this action a title before saving it."
+
 # The built-in automation catalogue. `available` follows which modules exist today;
 # a rule that watches an unbuilt module reads as "Soon" and cannot be enabled. Only
 # enabled/creates/owner_rule/priority/due_in_days are tenant-customisable (stored in
@@ -384,7 +394,10 @@ class TaskService:
         # and async SQLAlchemy cannot lazily reload an expired column on attribute access.
         task = await session.get(Task, task_id, populate_existing=True)
         if task is None or task.tenant_id != tenant_id:
-            raise NotFound(detail=f"task {task_id}")
+            raise NotFound(
+                "This task no longer exists. It may have been deleted.",
+                detail=f"task {task_id}",
+            )
         return task
 
     async def _assignees_by_task(
@@ -792,11 +805,14 @@ class TaskService:
         raised_from_type: str | None = None,
     ) -> TaskDetailView:
         if task_kind not in TASK_KINDS:
-            raise InvalidInput(detail=f"unknown task kind {task_kind!r}")
+            raise InvalidInput(
+                "Choose whether this is a task or an issue, then try again.",
+                detail=f"unknown task kind {task_kind!r}",
+            )
         if priority not in PRIORITIES:
-            raise InvalidInput(detail=f"unknown priority {priority!r}")
+            raise InvalidInput(_PRIORITY_ERROR, detail=f"unknown priority {priority!r}")
         if category not in CATEGORIES:
-            raise InvalidInput(detail=f"unknown category {category!r}")
+            raise InvalidInput(_CATEGORY_ERROR, detail=f"unknown category {category!r}")
 
         member = self._actor_membership(actor)
         now = datetime.now(UTC)
@@ -829,7 +845,7 @@ class TaskService:
             except IntegrityError:
                 await session.rollback()
         else:
-            raise Conflict(detail="could not allocate a task code")
+            raise Conflict(_CODE_ERROR, detail="could not allocate a task code")
 
         for mid in dict.fromkeys(assignee_ids):
             session.add(
@@ -859,7 +875,10 @@ class TaskService:
     ) -> Task:
         task = await self._load(session, tenant_id, task_id)
         if task.task_kind != "issue":
-            raise InvalidInput(detail="CAPA actions exist only on issues")
+            raise InvalidInput(
+                "Corrective and preventive actions can only be added to an issue, not a task.",
+                detail="CAPA actions exist only on issues",
+            )
         return task
 
     async def _load_action(
@@ -871,7 +890,10 @@ class TaskService:
     ) -> IssueAction:
         action = await session.get(IssueAction, action_id, populate_existing=True)
         if action is None or action.tenant_id != tenant_id or action.task_id != task_id:
-            raise NotFound(detail=f"issue action {action_id}")
+            raise NotFound(
+                "This action no longer exists. It may have been deleted.",
+                detail=f"issue action {action_id}",
+            )
         return action
 
     async def ensure_initial_capa(
@@ -925,9 +947,9 @@ class TaskService:
     ) -> TaskDetailView:
         await self._load_issue(session, tenant_id, task_id)
         if action_type not in CAPA_TYPES:
-            raise InvalidInput(detail=f"unknown action type {action_type!r}")
+            raise InvalidInput(_ACTION_TYPE_ERROR, detail=f"unknown action type {action_type!r}")
         if not title.strip():
-            raise InvalidInput(detail="an action needs a title")
+            raise InvalidInput(_ACTION_TITLE_ERROR, detail="an action needs a title")
         action = IssueAction(
             id=uuid7(),
             tenant_id=tenant_id,
@@ -972,11 +994,13 @@ class TaskService:
         before = {"title": action.title, "type": action.action_type}
         if action_type is not None:
             if action_type not in CAPA_TYPES:
-                raise InvalidInput(detail=f"unknown action type {action_type!r}")
+                raise InvalidInput(
+                    _ACTION_TYPE_ERROR, detail=f"unknown action type {action_type!r}"
+                )
             action.action_type = action_type
         if title is not None:
             if not title.strip():
-                raise InvalidInput(detail="an action needs a title")
+                raise InvalidInput(_ACTION_TITLE_ERROR, detail="an action needs a title")
             action.title = title.strip()
         if description is not None:
             action.description = description or None
@@ -1012,9 +1036,16 @@ class TaskService:
         await self._load_issue(session, tenant_id, task_id)
         action = await self._load_action(session, tenant_id, task_id, action_id)
         if to_status not in CAPA_STATUSES:
-            raise InvalidInput(detail=f"unknown action status {to_status!r}")
+            raise InvalidInput(
+                "Pick a status from the list shown on the action.",
+                detail=f"unknown action status {to_status!r}",
+            )
         if to_status not in _CAPA_TRANSITIONS[action.status]:
-            raise Conflict(detail=f"cannot move a {action.status} action to {to_status}")
+            raise Conflict(
+                "This action cannot move to that status from where it is now. "
+                "Reload the page to see the moves available.",
+                detail=f"cannot move a {action.status} action to {to_status}",
+            )
         old = action.status
         now = datetime.now(UTC)
         action.status = to_status
@@ -1082,7 +1113,7 @@ class TaskService:
             except IntegrityError:
                 await session.rollback()
         else:
-            raise Conflict(detail="could not allocate a task code")
+            raise Conflict(_CODE_ERROR, detail="could not allocate a task code")
         if action.owner_membership_id is not None:
             session.add(
                 TaskAssignee(
@@ -1144,18 +1175,32 @@ class TaskService:
     ) -> dict[str, Any]:
         default = next((d for d in _AUTOMATION_CATALOGUE if d["id"] == automation_key), None)
         if default is None:
-            raise NotFound(detail=f"automation {automation_key}")
+            raise NotFound(
+                "This automation is no longer available. Reload the page to see the current list.",
+                detail=f"automation {automation_key}",
+            )
         if patch.get("enabled") and not default["available"]:
-            raise Conflict(detail="this automation's module is not available yet")
+            raise Conflict(
+                "This automation is not ready yet, so it cannot be turned on. "
+                "It will become available once the module it watches is live.",
+                detail="this automation's module is not available yet",
+            )
         creates = patch.get("creates")
         if creates is not None and creates not in TASK_KINDS:
-            raise InvalidInput(detail=f"unknown kind {creates!r}")
+            raise InvalidInput(
+                "Choose whether this automation should raise a task or an issue.",
+                detail=f"unknown kind {creates!r}",
+            )
         owner_rule = patch.get("owner_rule")
         if owner_rule is not None and owner_rule not in AUTOMATION_OWNER_RULES:
-            raise InvalidInput(detail=f"unknown owner rule {owner_rule!r}")
+            raise InvalidInput(
+                "Choose who should own what this automation raises, "
+                "either the source owner or nobody.",
+                detail=f"unknown owner rule {owner_rule!r}",
+            )
         priority = patch.get("priority")
         if priority is not None and priority not in PRIORITIES:
-            raise InvalidInput(detail=f"unknown priority {priority!r}")
+            raise InvalidInput(_PRIORITY_ERROR, detail=f"unknown priority {priority!r}")
 
         row = (
             await session.execute(
@@ -1218,12 +1263,12 @@ class TaskService:
             task.description = description.strip() or None
         if priority is not None and priority != task.priority:
             if priority not in PRIORITIES:
-                raise InvalidInput(detail=f"unknown priority {priority!r}")
+                raise InvalidInput(_PRIORITY_ERROR, detail=f"unknown priority {priority!r}")
             changed.append(("priority", task.priority, priority))
             task.priority = priority
         if category is not None and category != task.category:
             if category not in CATEGORIES:
-                raise InvalidInput(detail=f"unknown category {category!r}")
+                raise InvalidInput(_CATEGORY_ERROR, detail=f"unknown category {category!r}")
             changed.append(("category", task.category, category))
             task.category = category
         if sla_level is not None and sla_level != task.sla_level:
@@ -1266,11 +1311,21 @@ class TaskService:
     ) -> TaskDetailView:
         task = await self._load(session, tenant_id, task_id)
         if to_status not in TASK_STATUSES:
-            raise InvalidInput(detail=f"unknown status {to_status!r}")
+            raise InvalidInput(
+                "Pick a status from the list shown on the task.",
+                detail=f"unknown status {to_status!r}",
+            )
         if to_status not in ALLOWED_TRANSITIONS[task.status]:
-            raise Conflict(detail=f"cannot move a {task.status} task to {to_status}")
+            raise Conflict(
+                "This task cannot move to that status from where it is now. "
+                "Reload the page to see the moves available.",
+                detail=f"cannot move a {task.status} task to {to_status}",
+            )
         if to_status in ("closed", "cancelled") and not note:
-            raise InvalidInput(detail="a note is required to close or cancel a task")
+            raise InvalidInput(
+                "Add a note explaining why, then close or cancel this task.",
+                detail="a note is required to close or cancel a task",
+            )
 
         now = datetime.now(UTC)
         old = task.status
@@ -1387,7 +1442,10 @@ class TaskService:
     ) -> TaskDetailView:
         task = await self._load(session, tenant_id, task_id)
         if not body.strip():
-            raise InvalidInput(detail="a comment cannot be empty")
+            raise InvalidInput(
+                "Write something before posting your comment.",
+                detail="a comment cannot be empty",
+            )
         session.add(
             TaskComment(
                 id=uuid7(),
@@ -1420,7 +1478,11 @@ class TaskService:
     ) -> TaskDetailView:
         parent = await self._load(session, tenant_id, parent_id)
         if parent.parent_task_id is not None:
-            raise InvalidInput(detail="sub-tasks are one level deep")
+            raise InvalidInput(
+                "This is already a sub-task, so it cannot have sub-tasks of its own. "
+                "Add it to the parent task instead.",
+                detail="sub-tasks are one level deep",
+            )
         member = self._actor_membership(actor)
         for _ in range(5):
             code = await self._allocate_code(session, tenant_id)
@@ -1444,7 +1506,7 @@ class TaskService:
             except IntegrityError:
                 await session.rollback()
         else:
-            raise Conflict(detail="could not allocate a task code")
+            raise Conflict(_CODE_ERROR, detail="could not allocate a task code")
         await self._transition_row(session, child, actor, "created", None, code, None)
         await session.flush()
         return await self.get_task(session, tenant_id=tenant_id, task_id=parent.id)
@@ -1461,9 +1523,16 @@ class TaskService:
     ) -> TaskDetailView:
         task = await self._load(session, tenant_id, task_id)
         if decision not in ("approved", "rejected"):
-            raise InvalidInput(detail="decision must be approved or rejected")
+            raise InvalidInput(
+                "Choose either approve or reject to record your decision.",
+                detail="decision must be approved or rejected",
+            )
         if not task.requires_approval or task.approval_status != "pending":
-            raise Conflict(detail="this task is not awaiting approval")
+            raise Conflict(
+                "This task is not waiting for approval. "
+                "Someone may have already decided it, so reload the page to see where it stands.",
+                detail="this task is not awaiting approval",
+            )
         task.approval_status = decision
         task.approved_by_membership_id = self._actor_membership(actor)
         task.approved_at = datetime.now(UTC)
@@ -1597,7 +1666,10 @@ class TaskService:
     ) -> list[dict[str, Any]]:
         level = level.strip()
         if not level:
-            raise InvalidInput(detail="an SLA level needs a name")
+            raise InvalidInput(
+                "Give this SLA level a name before saving it.",
+                detail="an SLA level needs a name",
+            )
         # A rename drops the old customised row (a built-in level then re-defaults).
         if original_level and original_level != level:
             await session.execute(
@@ -1717,7 +1789,10 @@ class TaskService:
         resolve_hours: int,
     ) -> list[dict[str, Any]]:
         if impact not in IMPACTS or urgency not in URGENCIES:
-            raise InvalidInput(detail="invalid matrix cell")
+            raise InvalidInput(
+                "Pick an impact and an urgency of high, medium or low for this cell.",
+                detail="invalid matrix cell",
+            )
         cell = (
             await session.execute(
                 select(TaskSeverityMatrixCell).where(

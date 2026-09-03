@@ -18,6 +18,7 @@ import {
   useToast,
 } from "@/components/ui";
 import { cn } from "@/lib/cn";
+import { describeError, errorToast } from "@/lib/api/describe-error";
 import { createTask, listMembers, listSlaDefinitions, updateTask } from "../api";
 import {
   CATEGORIES,
@@ -115,7 +116,7 @@ export function TaskFormDialog({ mode, task, open, onOpenChange }: Props) {
       void queryClient.invalidateQueries({ queryKey: ["task-summary"] });
       if (mode === "edit" && task) void queryClient.invalidateQueries({ queryKey: ["task", task.id] });
     },
-    onError: () => toast({ title: "Couldn’t save.", tone: "danger" }),
+    onError: (error) => toast({ title: errorToast(error, "task"), tone: "danger" }),
   });
 
   const isIssue = kind === "issue";
@@ -200,6 +201,11 @@ export function TaskFormDialog({ mode, task, open, onOpenChange }: Props) {
                   ))}
                 </SelectContent>
               </Select>
+              {slaQuery.isError ? (
+                <p className="text-body-sm text-status-danger-text">
+                  {describeError(slaQuery.error, "SLA level list").message}
+                </p>
+              ) : null}
             </SelectField>
             <div>
               <span className="mb-1.5 block font-sans text-label-sm text-text-secondary">
@@ -224,6 +230,11 @@ export function TaskFormDialog({ mode, task, open, onOpenChange }: Props) {
               clearLabel={isIssue ? undefined : "Unassigned"}
               aria-label="Owner"
             />
+            {membersQuery.isError ? (
+              <p className="text-body-sm text-status-danger-text">
+                {describeError(membersQuery.error, "list of people").message}
+              </p>
+            ) : null}
           </SelectField>
 
           {/* Assignees — tasks only. */}

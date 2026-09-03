@@ -83,11 +83,14 @@
     --color-status-neutral-bg: 240 242 245; /* #F0F2F5 */
     --color-status-neutral-border: 214 219 227; /* #D6DBE3 */
 
-    /* Severity — a separate axis from status (F12) */
-    --color-severity-critical: 180 35 24; /* #B42318 */
-    --color-severity-high: 225 29 72; /* #E11D48 */
-    --color-severity-medium: 217 119 6; /* #D97706 */
-    --color-severity-low: 100 116 139; /* #64748B */
+    /* Severity — a separate axis from status (F12). An intuitive hot→cool
+       ramp: red danger, orange, amber/gold, green calm, cyan informational.
+       Each keeps >=3:1 under white bold chip text. */
+    --color-severity-critical: 217 45 32; /* #D92D20 */
+    --color-severity-high: 234 88 12; /* #EA580C */
+    --color-severity-medium: 202 138 4; /* #CA8A04 */
+    --color-severity-low: 22 163 74; /* #16A34A */
+    --color-severity-info: 8 145 178; /* #0891B2 */
 
     /* Identity ramp — per-person hashes for avatars, not semantic status.
        Not enumerated on the v1.0 board; carried from the shipped set. */
@@ -252,7 +255,13 @@
   }
 
   .type-overline {
-    @apply font-sans text-overline uppercase text-text-faint;
+    /* text-subtle, not text-faint. This utility is emitted after Tailwind's
+       generated colour classes, so a `text-text-*` written beside it loses on
+       source order: the ~10 call sites that tried to override the colour were
+       silently rendering faint anyway. Since it cannot be overridden in
+       practice it has to be the legible one. text-faint on surface-sunken is
+       2.51:1 light / 3.49:1 dark, which fails AA; subtle is 4.84:1 / 4.88:1. */
+    @apply font-sans text-overline uppercase text-text-subtle;
   }
 
   /* Skeleton shimmer (§7.4): 1.4s linear; reduced motion → static bone */

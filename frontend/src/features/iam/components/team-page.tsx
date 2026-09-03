@@ -7,6 +7,8 @@ import {
   Avatar,
   Badge,
   Button,
+  ColumnPicker,
+  type ColumnDef,
   ConfirmDialog,
   Dialog,
   DialogContent,
@@ -41,11 +43,12 @@ import {
   TH,
   THead,
   TR,
+  useColumnPrefs,
   useToast,
 } from "@/components/ui";
 import { SettingsPageHeader } from "@/features/iam/components/settings-page-header";
 import { iamApi } from "@/lib/api/endpoints";
-import { ApiError } from "@/lib/api/client";
+import { describeError, errorToast } from "@/lib/api/describe-error";
 import { useAuth } from "@/lib/auth/auth-context";
 import { useAlertFocus } from "@/features/iam/hooks/use-alert-focus";
 import type {
@@ -88,6 +91,16 @@ function timeAgo(iso: string | null): string {
 /** Radix Select forbids an empty string as an item value, so "no group" needs
  *  a sentinel that is mapped back to "" before it reaches the request. */
 const NO_GROUP = "__none__";
+
+/** Optional columns only — Member and the actions cell always render. */
+const TEAM_COLUMNS = [
+  { key: "role", label: "Role" },
+  { key: "groups", label: "Groups" },
+  { key: "mfa", label: "MFA" },
+  { key: "background", label: "Background" },
+  { key: "documents", label: "Documents" },
+  { key: "lastActive", label: "Last active" },
+] as const satisfies readonly ColumnDef<string>[];
 
 const inviteSchema = z
   .object({
@@ -165,6 +178,7 @@ export function TeamPage() {
   const [groupAdd, setGroupAdd] = useState<Member | null>(null);
   const [groupChoice, setGroupChoice] = useState("");
   const inviteAlertRef = useAlertFocus(inviteError !== null);
+  const cols = useColumnPrefs("verity.team.columns", TEAM_COLUMNS);
 
   const membersQuery = useQuery({
     queryKey: ["members", principal?.tenant_id],
@@ -226,11 +240,7 @@ export function TeamPage() {
       setInviteError(null);
     },
     onError: (error: unknown) => {
-      setInviteError(
-        error instanceof ApiError
-          ? error.message
-          : "The invite didn't reach the server. Check your connection and try again.",
-      );
+      setInviteError(errorToast(error, "invitation"));
     },
   });
 
@@ -290,13 +300,7 @@ export function TeamPage() {
     },
     onError: (error: unknown) => {
       setToDisable(null);
-      toast({
-        title:
-          error instanceof ApiError
-            ? error.message
-            : "Couldn't disable the membership. Try again.",
-        tone: "danger",
-      });
+      toast({ title: errorToast(error, "membership"), tone: "danger" });
     },
   });
 
@@ -322,13 +326,7 @@ export function TeamPage() {
       toast({ title: "Name updated", tone: "success" });
     },
     onError: (error: unknown) => {
-      toast({
-        title:
-          error instanceof ApiError
-            ? error.message
-            : "Couldn't update the name.",
-        tone: "danger",
-      });
+      toast({ title: errorToast(error, "member"), tone: "danger" });
     },
   });
 
@@ -344,13 +342,7 @@ export function TeamPage() {
       toast({ title: "Role updated", tone: "success" });
     },
     onError: (error: unknown) => {
-      toast({
-        title:
-          error instanceof ApiError
-            ? error.message
-            : "Couldn't update the role. Try again.",
-        tone: "danger",
-      });
+      toast({ title: errorToast(error, "role"), tone: "danger" });
     },
   });
 
@@ -372,13 +364,7 @@ export function TeamPage() {
       toast({ title: "Added to group", tone: "success" });
     },
     onError: (error: unknown) => {
-      toast({
-        title:
-          error instanceof ApiError
-            ? error.message
-            : "Couldn't add to the group. Try again.",
-        tone: "danger",
-      });
+      toast({ title: errorToast(error, "group membership"), tone: "danger" });
     },
   });
 
@@ -409,20 +395,13 @@ export function TeamPage() {
   }
 
   if (membersQuery.isError) {
+    const failure = describeError(membersQuery.error, "team list");
     return (
       <ErrorState
-        title="Couldn’t load team"
-        description={
-          membersQuery.error instanceof ApiError
-            ? membersQuery.error.message
-            : "The request failed. Retry, or contact support if it keeps happening."
-        }
-        referenceId={
-          membersQuery.error instanceof ApiError
-            ? membersQuery.error.correlationId
-            : undefined
-        }
-        onRetry={() => void membersQuery.refetch()}
+        title={failure.title}
+        description={failure.message}
+        referenceId={failure.referenceId}
+        onRetry={failure.retryable ? () => void membersQuery.refetch() : undefined}
       />
     );
   }
@@ -459,8 +438,8 @@ export function TeamPage() {
                           </>
                         ) : (
                           <>
-                            Email is not configured, so nothing was sent. Share
-                            this link with{" "}
+                            Email is not configured, so nothing was sent.
+                            Share this link with{" "}
                             <span className="font-semibold text-text-primary">
                               {inviteResult.member.email}
                             </span>
@@ -520,7 +499,9 @@ export function TeamPage() {
                     </DialogHeader>
                     <form
                       className="flex flex-col gap-3"
-                      onSubmit={(e) => void form.handleSubmit(submitInvite)(e)}
+                      onSubmit={(e) =>
+                        void form.handleSubmit(submitInvite)(e)
+                      }
                     >
                       {inviteError ? (
                         <ErrorBanner
@@ -556,7 +537,10 @@ export function TeamPage() {
                           }
                         >
                           <RadioGroupItem value="member" label="Member" />
-                          <RadioGroupItem value="guest" label="Guest auditor" />
+                          <RadioGroupItem
+                            value="guest"
+                            label="Guest auditor"
+                          />
                         </RadioGroup>
                       </fieldset>
                       {inviteAs === "guest" ? (
@@ -566,14 +550,18 @@ export function TeamPage() {
                               label="Access starts"
                               type="date"
                               optional
-                              error={form.formState.errors.valid_from?.message}
+                              error={
+                                form.formState.errors.valid_from?.message
+                              }
                               {...form.register("valid_from")}
                             />
                             <TextField
                               label="Access ends"
                               type="date"
                               optional
-                              error={form.formState.errors.valid_until?.message}
+                              error={
+                                form.formState.errors.valid_until?.message
+                              }
                               {...form.register("valid_until")}
                             />
                           </div>
@@ -597,6 +585,12 @@ export function TeamPage() {
                               ))}
                             </SelectContent>
                           </Select>
+                          {/* An empty role list is not "no roles exist". */}
+                          {rolesQuery.isError ? (
+                            <p className="mt-1 text-body-sm text-status-danger-text">
+                              {describeError(rolesQuery.error, "role list").message}
+                            </p>
+                          ) : null}
                         </SelectField>
                       )}
                       {groups.length > 0 ? (
@@ -612,7 +606,9 @@ export function TeamPage() {
                           >
                             <SelectTrigger aria-label="Group" />
                             <SelectContent>
-                              <SelectItem value={NO_GROUP}>No group</SelectItem>
+                              <SelectItem value={NO_GROUP}>
+                                No group
+                              </SelectItem>
                               {groups.map((group) => (
                                 <SelectItem key={group.id} value={group.id}>
                                   {group.name}
@@ -654,16 +650,16 @@ export function TeamPage() {
           description="Invite someone to this workspace."
         />
       ) : (
-        <Table>
+        <Table actions={<ColumnPicker {...cols} />}>
           <THead>
             <TR>
               <TH>Member</TH>
-              <TH>Role</TH>
-              <TH>Groups</TH>
-              <TH>MFA</TH>
-              <TH>Background</TH>
-              <TH>Documents</TH>
-              <TH>Last active</TH>
+              {cols.isVisible("role") ? <TH>Role</TH> : null}
+              {cols.isVisible("groups") ? <TH>Groups</TH> : null}
+              {cols.isVisible("mfa") ? <TH>MFA</TH> : null}
+              {cols.isVisible("background") ? <TH>Background</TH> : null}
+              {cols.isVisible("documents") ? <TH>Documents</TH> : null}
+              {cols.isVisible("lastActive") ? <TH>Last active</TH> : null}
               <TH>
                 <span className="sr-only">Actions</span>
               </TH>
@@ -695,50 +691,62 @@ export function TeamPage() {
                       </div>
                     </div>
                   </TD>
-                  <TD>
-                    <div className="flex flex-wrap gap-1">
-                      {member.role_names.map((role) => (
-                        <Badge key={role} variant={roleBadgeVariant(role)}>
-                          {role}
-                        </Badge>
-                      ))}
-                    </div>
-                  </TD>
-                  <TD>
-                    <span className="text-body-md text-text-secondary">
-                      {member.group_names.length
-                        ? member.group_names.join(" · ")
-                        : "—"}
-                    </span>
-                  </TD>
-                  <TD>
-                    <StatusPill
-                      kind="inline"
-                      status={member.mfa_enabled ? "success" : "warning"}
-                      label={member.mfa_enabled ? "Enabled" : "No MFA"}
-                    />
-                  </TD>
+                  {cols.isVisible("role") ? (
+                    <TD>
+                      <div className="flex flex-wrap gap-1">
+                        {member.role_names.map((role) => (
+                          <Badge key={role} variant={roleBadgeVariant(role)}>
+                            {role}
+                          </Badge>
+                        ))}
+                      </div>
+                    </TD>
+                  ) : null}
+                  {cols.isVisible("groups") ? (
+                    <TD>
+                      <span className="text-body-md text-text-secondary">
+                        {member.group_names.length
+                          ? member.group_names.join(" · ")
+                          : "—"}
+                      </span>
+                    </TD>
+                  ) : null}
+                  {cols.isVisible("mfa") ? (
+                    <TD>
+                      <StatusPill
+                        kind="inline"
+                        status={member.mfa_enabled ? "success" : "warning"}
+                        label={member.mfa_enabled ? "Enabled" : "No MFA"}
+                      />
+                    </TD>
+                  ) : null}
                   {/* Background checks & document acknowledgement aren't tracked
                         yet (no module) — honest "Unknown", never a fabricated pass. */}
-                  <TD>
-                    <StatusPill
-                      kind="inline"
-                      status="unknown"
-                      label="Unknown"
-                    />
-                  </TD>
-                  <TD>
-                    <StatusPill
-                      kind="inline"
-                      status="unknown"
-                      label="Unknown"
-                    />
-                  </TD>
-                  <TD>
-                    <span className="text-body-md text-text-secondary">
-                      {timeAgo(member.last_login_at)}
-                    </span>
-                  </TD>
+                  {cols.isVisible("background") ? (
+                    <TD>
+                      <StatusPill
+                        kind="inline"
+                        status="unknown"
+                        label="Unknown"
+                      />
+                    </TD>
+                  ) : null}
+                  {cols.isVisible("documents") ? (
+                    <TD>
+                      <StatusPill
+                        kind="inline"
+                        status="unknown"
+                        label="Unknown"
+                      />
+                    </TD>
+                  ) : null}
+                  {cols.isVisible("lastActive") ? (
+                    <TD>
+                      <span className="text-body-md text-text-secondary">
+                        {timeAgo(member.last_login_at)}
+                      </span>
+                    </TD>
+                  ) : null}
                   <TD className="text-right">
                     {hasActions ? (
                       <DropdownMenu>
@@ -918,6 +926,11 @@ export function TeamPage() {
                 ))}
               </SelectContent>
             </Select>
+            {rolesQuery.isError ? (
+              <p className="mt-1 text-body-sm text-status-danger-text">
+                {describeError(rolesQuery.error, "role list").message}
+              </p>
+            ) : null}
           </SelectField>
           <DialogFooter>
             <Button

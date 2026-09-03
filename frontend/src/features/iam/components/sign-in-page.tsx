@@ -18,7 +18,7 @@ import {
 } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { authApi } from "@/lib/api/endpoints";
-import { ApiError } from "@/lib/api/client";
+import { describeAuthError } from "@/lib/api/describe-error";
 import { useAuth } from "@/lib/auth/auth-context";
 import { useAlertFocus } from "@/features/iam/hooks/use-alert-focus";
 import type { LoginResponse, WorkspaceSummary } from "@/lib/api/types";
@@ -31,10 +31,6 @@ const schema = z.object({
 });
 
 type FormValues = z.infer<typeof schema>;
-
-function messageFrom(error: unknown, fallback: string): string {
-  return error instanceof ApiError ? error.message : fallback;
-}
 
 export function SignInPage() {
   const navigate = useNavigate();
@@ -195,13 +191,8 @@ export function SignInPage() {
           <ErrorBanner
             ref={selectAlertRef}
             className="mt-3"
-            title="Couldn't open the workspace"
-          >
-            {messageFrom(
-              selectMutation.error,
-              "The selection didn't reach the server. Check your connection and try again.",
-            )}
-          </ErrorBanner>
+            title={describeAuthError(selectMutation.error).message}
+          />
         ) : null}
         <Button
           variant="link"
@@ -228,19 +219,8 @@ export function SignInPage() {
           <ErrorBanner
             ref={verifyAlertRef}
             className="mb-4"
-            title={
-              recoveryMode
-                ? "Couldn't verify that recovery code"
-                : "Couldn't verify the code"
-            }
-          >
-            {messageFrom(
-              verifyMutation.error,
-              recoveryMode
-                ? "That recovery code didn't match, or it's already been used. Try another."
-                : "That code didn't match. Check your authenticator app and try again.",
-            )}
-          </ErrorBanner>
+            title={describeAuthError(verifyMutation.error).message}
+          />
         ) : null}
         {recoveryMode ? (
           <form
@@ -379,12 +359,12 @@ export function SignInPage() {
         noValidate
       >
         {loginMutation.isError ? (
-          <ErrorBanner ref={loginAlertRef} title="Sign-in failed">
-            {messageFrom(
-              loginMutation.error,
-              "The request didn't reach the server. Check your connection and try again.",
-            )}
-          </ErrorBanner>
+          // One line: "Sign-in failed" above "Sign-in refused: …" said the
+          // same thing twice.
+          <ErrorBanner
+            ref={loginAlertRef}
+            title={describeAuthError(loginMutation.error).message}
+          />
         ) : null}
         <TextField
           label="Work email"

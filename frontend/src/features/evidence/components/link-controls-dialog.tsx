@@ -10,7 +10,7 @@ import {
   TextField,
   useToast,
 } from "@/components/ui";
-import { ApiError } from "@/lib/api/client";
+import { errorToast } from "@/lib/api/describe-error";
 import type { Control } from "@/lib/api/types";
 
 /**
@@ -24,12 +24,16 @@ export function LinkControlsDialog({
   open,
   onOpenChange,
   controls,
+  loadError = null,
   linkedIds,
   onSave,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   controls: Control[];
+  /** Set when the control list itself failed to load, so the empty list can
+   *  say that instead of "no controls match", which would be a lie. */
+  loadError?: string | null;
   linkedIds: string[];
   onSave: (ids: string[]) => Promise<void>;
   /** Present for callers that unlink from outside the dialog; unused here. */
@@ -66,11 +70,7 @@ export function LinkControlsDialog({
     mutationFn: () => onSave(selected),
     onSuccess: () => onOpenChange(false),
     onError: (error: unknown) =>
-      toast({
-        title:
-          error instanceof ApiError ? error.message : "Couldn't update the links.",
-        tone: "danger",
-      }),
+      toast({ title: errorToast(error, "control links"), tone: "danger" }),
   });
 
   return (
@@ -94,7 +94,9 @@ export function LinkControlsDialog({
             selected. One item can support as many controls as it evidences.
           </p>
           <div className="max-h-80 overflow-y-auto rounded-md border border-border">
-            {visible.length === 0 ? (
+            {loadError ? (
+              <p className="p-4 text-body-sm text-status-danger-text">{loadError}</p>
+            ) : visible.length === 0 ? (
               <p className="p-4 text-body-sm text-text-subtle">
                 No controls match that search.
               </p>

@@ -36,6 +36,9 @@ dependencies = [
     # Pure-Python .xlsx writer for the gap-assessment export. No native deps, so
     # it installs the same on a laptop and in the container.
     "openpyxl>=3.1",
+    # Safe XML parsing for uploaded scanner reports (Nessus/generic) — hardens
+    # against entity-expansion / SSRF on untrusted uploads (rule 8).
+    "defusedxml>=0.7",
 ]
 
 [project.optional-dependencies]
@@ -184,7 +187,7 @@ untyped_calls_exclude = ["redis"]
 
 [[tool.mypy.overrides]]
 # Ships no type information and has no stub package.
-module = ["pyotp.*", "openpyxl.*"]
+module = ["pyotp.*", "openpyxl.*", "defusedxml.*"]
 ignore_missing_imports = true
 
 # ---------------------------------------------------------------------------
@@ -311,12 +314,15 @@ forbidden_modules = [
 name = "assets reaches no other module's data"
 type = "forbidden"
 source_modules = ["verity.modules.assets"]
-# assets calls AuditService (rule 5) and IamService (member + group names, rule 3)
+# assets calls AuditService (rule 5), IamService (member + group names, rule 3) and
+# VulnerabilityService (open-finding counts + the decommission cascade, spec 123)
 # through their service interfaces. Each service's use of its own repository/models
 # — and what iam pulls in transitively for signup (compliance, evidence, tenancy) —
 # is its private business, so those sanctioned legs are exempted (the same graph
 # tasks reaches).
 ignore_imports = [
+    "verity.modules.vulnerabilities.service -> verity.modules.vulnerabilities.models",
+    "verity.modules.notifications.service -> verity.modules.notifications.models",
     "verity.modules.compliance.control_service -> verity.modules.compliance.models",
     "verity.modules.compliance.control_service -> verity.modules.audit.service",
     "verity.modules.compliance.control_service -> verity.modules.iam.service",
@@ -703,6 +709,27 @@ forbidden_modules = [
 name = "vulnerabilities reaches no other module's data"
 type = "forbidden"
 source_modules = ["verity.modules.vulnerabilities"]
+# vulnerabilities calls AssetService (asset facts for owner inheritance +
+# prioritisation), IamService (member names), NotificationService (fan-out) and
+# AuditService (rule 5). What each does with its own repository/models is its
+# private business — that is a service->service call, not vuln reaching data.
+ignore_imports = [
+    "verity.modules.assets.service -> verity.modules.assets.models",
+    "verity.modules.assets.service -> verity.modules.audit.service",
+    "verity.modules.assets.service -> verity.modules.iam.service",
+    "verity.modules.iam.service -> verity.modules.iam.repository",
+    "verity.modules.iam.service -> verity.modules.iam.models",
+    "verity.modules.iam.service -> verity.modules.audit.service",
+    "verity.modules.iam.service -> verity.modules.tenancy.service",
+    # iam's own use of compliance is iam's business; vulnerabilities does not
+    # reach compliance/evidence/tasks — this cuts that transitive route.
+    "verity.modules.iam.service -> verity.modules.compliance.control_service",
+    "verity.modules.notifications.service -> verity.modules.notifications.models",
+    "verity.modules.audit.service -> verity.modules.audit.repository",
+    "verity.modules.audit.service -> verity.modules.audit.models",
+    "verity.modules.tenancy.service -> verity.modules.tenancy.repository",
+    "verity.modules.tenancy.service -> verity.modules.tenancy.models",
+]
 forbidden_modules = [
     "verity.modules.ai.repository", "verity.modules.ai.models",
     "verity.modules.approvals.repository", "verity.modules.approvals.models",

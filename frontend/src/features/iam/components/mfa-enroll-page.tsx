@@ -6,14 +6,10 @@ import { AuthSplitLayout } from "@/features/iam/components/auth-split-layout";
 import { RecoveryCodesPanel } from "@/features/iam/components/recovery-codes-panel";
 import { Button, ErrorBanner, Icon, Skeleton, TextField } from "@/components/ui";
 import { authApi } from "@/lib/api/endpoints";
-import { ApiError } from "@/lib/api/client";
+import { describeAuthError } from "@/lib/api/describe-error";
 import { useAuth } from "@/lib/auth/auth-context";
 import { useAlertFocus } from "@/features/iam/hooks/use-alert-focus";
 import type { LoginSuccess } from "@/lib/api/types";
-
-function messageFrom(error: unknown, fallback: string): string {
-  return error instanceof ApiError ? error.message : fallback;
-}
 
 export function MfaEnrollPage() {
   const [params] = useSearchParams();
@@ -91,19 +87,18 @@ export function MfaEnrollPage() {
       subtitle="Admins must enroll MFA before accessing the workspace."
     >
       {enrollQuery.isError ? (
-        <ErrorBanner
-          ref={enrollAlertRef}
-          className="mb-4"
-          title="Couldn't start MFA enrollment"
-        >
-          {messageFrom(
-            enrollQuery.error,
-            "The challenge may have expired. Sign in again to get a fresh one.",
-          )}{" "}
-          <Link className="font-semibold text-text-link" to="/sign-in">
-            Back to sign in
-          </Link>
-        </ErrorBanner>
+        <>
+          <ErrorBanner
+            ref={enrollAlertRef}
+            className="mb-2"
+            title={describeAuthError(enrollQuery.error).message}
+          />
+          <p className="mb-4">
+            <Link className="font-semibold text-text-link" to="/sign-in">
+              Back to sign in
+            </Link>
+          </p>
+        </>
       ) : null}
 
       <ol className="mb-5 list-decimal space-y-2 pl-4 text-body-md text-text-secondary">
@@ -148,13 +143,8 @@ export function MfaEnrollPage() {
         <ErrorBanner
           ref={confirmAlertRef}
           className="mb-4"
-          title="Couldn't confirm enrollment"
-        >
-          {messageFrom(
-            confirmMutation.error,
-            "That code didn't match. Check your authenticator app and try again.",
-          )}
-        </ErrorBanner>
+          title={describeAuthError(confirmMutation.error).message}
+        />
       ) : null}
       <form
         onSubmit={(e) => {

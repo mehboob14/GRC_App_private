@@ -65,7 +65,7 @@ export function FilterFacet({
     >
       <DropdownMenuPrimitive.Trigger
         className={cn(
-          "inline-flex h-9 max-w-[240px] items-center gap-1.5 rounded-full border px-3.5",
+          "group inline-flex h-9 max-w-[240px] items-center gap-1.5 rounded-full border px-3.5",
           "font-sans text-label-sm transition-colors duration-80 ease-state",
           "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-accent",
           active
@@ -78,7 +78,10 @@ export function FilterFacet({
         <span className={cn("truncate", active ? "font-bold" : "text-text-primary")}>
           {summarise(options, values)}
         </span>
-        <Icon name="chev" className="size-3.5 shrink-0 opacity-70" />
+        <Icon
+          name="chev"
+          className="size-3.5 shrink-0 opacity-70 transition-transform duration-200 group-data-[state=open]:rotate-180"
+        />
       </DropdownMenuPrimitive.Trigger>
 
       <DropdownMenuPrimitive.Portal>

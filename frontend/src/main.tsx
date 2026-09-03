@@ -6,7 +6,8 @@ import { AppRoutes } from "@/app/routes";
 import { ToastProvider, TooltipProvider } from "@/components/ui";
 import { ThemeProvider } from "@/lib/theme-provider";
 import { AuthProvider } from "@/lib/auth/auth-provider";
-import { mocksEnabled } from "@/lib/api/client";
+import { ApiError, mocksEnabled } from "@/lib/api/client";
+import { ErrorBoundary } from "@/components/error-boundary";
 
 import "@fontsource/inter/400.css";
 import "@fontsource/inter/500.css";
@@ -21,8 +22,18 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 30_000,
-      retry: 1,
+      // A blanket `retry: 1` retried 403s and 404s, which can never succeed, and
+      // gave a dropped connection only one attempt. Retry what is transient
+      // (offline, timeout, 429, 5xx) and fail the rest immediately so the
+      // reader sees the real answer without waiting through a pointless round.
+      retry: (failureCount, error) =>
+        error instanceof ApiError && error.retryable && failureCount < 3,
+      retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 8000),
       refetchOnWindowFocus: false,
+    },
+    mutations: {
+      // Never auto-retry a write: it could double-apply a side effect.
+      retry: false,
     },
   },
 });
@@ -61,9 +72,11 @@ void enableMocks().then(() => {
           <ToastProvider>
             <TooltipProvider>
               <BrowserRouter>
-                <AuthProvider>
-                  <AppRoutes />
-                </AuthProvider>
+                <ErrorBoundary>
+                  <AuthProvider>
+                    <AppRoutes />
+                  </AuthProvider>
+                </ErrorBoundary>
               </BrowserRouter>
             </TooltipProvider>
           </ToastProvider>

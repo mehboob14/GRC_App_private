@@ -1,6 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
-import { useEffect, useRef, useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   Avatar,
   DropdownMenu,
@@ -10,237 +8,92 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   Icon,
-  identityBgClass,
-  SearchInput,
   Tooltip,
 } from "@/components/ui";
-import { cn } from "@/lib/cn";
-import { authApi } from "@/lib/api/endpoints";
 import { useAuth } from "@/lib/auth/auth-context";
-import { resumePendingAuth } from "@/lib/auth/resume-auth";
 import { NotificationBell } from "@/features/notifications/components/notification-bell";
 import { AcknowledgementsBell } from "@/features/documents/components/acknowledgements-bell";
+import { useShellHeader } from "@/components/layout/shell-header";
+import { FOOTER_ITEMS, NAV_SECTIONS } from "@/components/layout/nav-config";
 
-/** Workspace tile — identity-ramp mark, same vocabulary as person avatars. */
-function WorkspaceMark({
-  tenantId,
-  name,
-  className,
-}: {
-  tenantId: string;
-  name: string;
-  className?: string;
-}) {
-  return (
-    <span
-      className={cn(
-        // identityBgClass supplies both the tint and its matching text colour.
-        "flex items-center justify-center rounded-sm font-display font-extrabold",
-        identityBgClass(tenantId),
-        className,
-      )}
-    >
-      {name.slice(0, 1).toUpperCase()}
-    </span>
-  );
+/** Fallback title from the active nav item — used on drill-down pages (which
+ *  carry their own DetailHeader) so the bar is never blank. A page that renders
+ *  <PageHeader> overrides this with its own title. */
+function navTitleForPath(pathname: string): string {
+  const items = [...NAV_SECTIONS.flatMap((s) => s.items), ...FOOTER_ITEMS];
+  const match = items
+    .filter((i) => i.to && pathname.startsWith(i.to))
+    .sort((a, b) => (b.to?.length ?? 0) - (a.to?.length ?? 0))[0];
+  return match?.label ?? "";
 }
 
 export function Topbar() {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const { principal, switchWorkspace, signOut } = useAuth();
-  const [switching, setSwitching] = useState(false);
-  const searchRef = useRef<HTMLInputElement | null>(null);
+  const location = useLocation();
+  const { principal, signOut } = useAuth();
+  const shell = useShellHeader();
 
-  // ⌘K / Ctrl+K focuses global search. The full command palette is a later
-  // phase; the shortcut contract starts now so the reflex carries over.
-  useEffect(() => {
-    function onKeyDown(event: KeyboardEvent) {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
-        event.preventDefault();
-        searchRef.current?.focus();
-      }
-    }
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
-
-  const workspacesQuery = useQuery({
-    queryKey: ["workspaces", principal?.user.id],
-    queryFn: () => authApi.listWorkspaces(),
-    enabled: Boolean(principal),
-  });
-
-  const switchMutation = useMutation({
-    mutationFn: (membershipId: string) => {
-      setSwitching(true);
-      return switchWorkspace(membershipId);
-    },
-    onSuccess: async (response) => {
-      if (response.status === "authenticated") {
-        // New session applied in place — refresh all workspace-scoped data.
-        await queryClient.invalidateQueries();
-        return;
-      }
-      // The target workspace needs another auth step (Admin memberships
-      // require MFA). Those steps live on PublicOnly routes, and the current
-      // session isn't valid for the target — so drop it and hand off to the
-      // sign-in surface, which owns the challenge / enrollment / choice UI.
-      signOut();
-      resumePendingAuth(response, navigate);
-    },
-    onSettled: () => setSwitching(false),
-  });
-
-  const workspaces = workspacesQuery.data ?? [];
-  const activeName = principal?.tenant_name ?? "Workspace";
+  const title = shell?.title ?? navTitleForPath(location.pathname);
 
   return (
-    <header className="flex h-topbar shrink-0 items-center gap-3.5 border-b border-border bg-surface-primary px-5">
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
+    <header className="flex shrink-0 flex-col border-b border-border bg-surface-primary">
+      {/* Row 1 — module title (left) + global actions (right) */}
+      <div className="flex h-topbar items-center gap-3.5 px-5">
+        <h1 className="min-w-0 flex-1 truncate font-display text-heading-md text-text-primary">
+          {title}
+        </h1>
+
+        <Tooltip content="Help & docs arrive in a later phase">
           <button
             type="button"
-            className="flex shrink-0 items-center gap-2.5 rounded-md border border-border py-1 pl-1.5 pr-2.5 transition-colors duration-80 ease-state hover:bg-surface-hover"
-            aria-label="Switch workspace"
-            disabled={switching}
+            aria-label="Help, arrives in a later phase"
+            aria-disabled
+            className="flex size-9 shrink-0 cursor-not-allowed items-center justify-center rounded-sm border border-border bg-surface-primary"
           >
-            <WorkspaceMark
-              tenantId={principal?.tenant_id ?? activeName}
-              name={activeName}
-              className="size-7 shrink-0 text-body-sm"
-            />
-            {/* Truncates instead of forcing the bar wider — a long workspace
-                name is the usual cause of a topbar that overflows. */}
-            <span className="flex min-w-0 flex-col items-start">
-              <span className="max-w-[140px] truncate text-label-md font-bold text-text-primary">
-                {activeName}
-              </span>
-              <span className="max-w-[140px] truncate text-caption text-text-subtle">
-                {principal?.role_names[0] ?? "Member"}
-              </span>
-            </span>
-            <Icon name="chev" className="size-4 shrink-0 text-text-subtle" />
+            <Icon name="help" className="size-4 text-text-subtle" />
           </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-[280px]">
-          <DropdownMenuLabel>Workspaces</DropdownMenuLabel>
-          {workspaces.map((ws) => {
-            const active = ws.membership_id === principal?.membership_id;
-            return (
-              <DropdownMenuItem
-                key={ws.membership_id}
-                disabled={switching}
-                aria-current={active || undefined}
-                onSelect={() => {
-                  if (!active) switchMutation.mutate(ws.membership_id);
-                }}
-                className="h-auto py-1.5"
-              >
-                <WorkspaceMark
-                  tenantId={ws.tenant_id}
-                  name={ws.tenant_name}
-                  className="size-7 text-caption"
-                />
-                <span className="flex min-w-0 flex-1 flex-col">
-                  <span className="truncate text-body-md font-semibold">
-                    {ws.tenant_name}
-                  </span>
-                  <span className="text-caption text-text-subtle">
-                    {ws.role_name}
-                  </span>
-                </span>
-                {active ? (
-                  <Icon
-                    name="check"
-                    aria-label="Current workspace"
-                    className="size-4 shrink-0 text-action-accent"
-                  />
-                ) : null}
-              </DropdownMenuItem>
-            );
-          })}
-          {workspaces.length > 1 ? (
-            <p className="px-2.5 pb-1 pt-1.5 text-caption text-text-subtle">
-              Signed in across{" "}
-              <span className="tabular">{workspaces.length}</span> workspaces.
-              Switching is audited
-            </p>
-          ) : null}
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-      <SearchInput
-        ref={searchRef}
-        // Hidden until there is room for it: with a 240px sidebar the bar runs
-        // out of space around lg, and a 37px search field is worse than none.
-        // min-w-0 lets it absorb the remaining squeeze instead of overflowing.
-        className="hidden min-w-0 max-w-[460px] flex-1 lg:flex"
-        placeholder="Search controls, evidence, risks, vendors…"
-        shortcut="⌘K"
-        readOnly
-        aria-label="Global search"
-        title="Search arrives with the compliance modules. ⌘K already focuses it"
-      />
-
-      <div className="flex-1" />
-
-      {/* Docs are a later phase — same honest affordance as the sidebar. */}
-      <Tooltip content="Help & docs arrive in a later phase">
-        <button
-          type="button"
-          aria-label="Help, arrives in a later phase"
-          aria-disabled
-          className="flex size-9 shrink-0 cursor-not-allowed items-center justify-center rounded-sm border border-border bg-surface-primary"
-        >
-          <Icon name="help" className="size-4 text-text-subtle" />
-        </button>
-      </Tooltip>
-
-      {/* Documents awaiting the signed-in member's acknowledgement — the
-          "please sign" indicator beside the inbox and profile. */}
-      <AcknowledgementsBell />
-
-      {/* §7.2 bell + popover channel — live inbox, wired to the notifications
-          module (assignments, comments, SLA alerts). */}
-      <NotificationBell />
-
-      <div className="mx-1 h-6 w-px shrink-0 bg-border" />
-
-      <DropdownMenu>
-        <Tooltip content="Account">
-          <DropdownMenuTrigger asChild>
-            <button
-              type="button"
-              className="flex shrink-0 items-center gap-2 rounded-md p-0.5 transition-colors duration-80 ease-state hover:bg-surface-hover"
-              aria-label="User menu"
-            >
-              <Avatar
-                name={principal?.user.full_name ?? "User"}
-                seed={principal?.user.email}
-              />
-              <Icon name="chev" className="size-4 shrink-0 text-text-subtle" />
-            </button>
-          </DropdownMenuTrigger>
         </Tooltip>
-        <DropdownMenuContent align="end">
-          <DropdownMenuLabel>
-            {principal?.user.full_name ?? "Account"}
-          </DropdownMenuLabel>
-          <DropdownMenuItem onSelect={() => navigate("/settings/security/mfa")}>
-            Security
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            onSelect={() => {
-              signOut();
-              navigate("/sign-in", { replace: true });
-            }}
-          >
-            Sign out
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+
+        <AcknowledgementsBell />
+        <NotificationBell />
+
+        <div className="mx-1 h-6 w-px shrink-0 bg-border" />
+
+        <DropdownMenu>
+          <Tooltip content="Account">
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="flex shrink-0 items-center gap-2 rounded-md p-0.5 transition-colors duration-80 ease-state hover:bg-surface-hover"
+                aria-label="User menu"
+              >
+                <Avatar name={principal?.user.full_name ?? "User"} seed={principal?.user.email} />
+                <Icon name="chev" className="size-4 shrink-0 text-text-subtle" />
+              </button>
+            </DropdownMenuTrigger>
+          </Tooltip>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>{principal?.user.full_name ?? "Account"}</DropdownMenuLabel>
+            <DropdownMenuItem onSelect={() => navigate("/settings/security/mfa")}>
+              Security
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onSelect={() => {
+                signOut();
+                navigate("/sign-in", { replace: true });
+              }}
+            >
+              Sign out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      {/* Row 2 — the module's tab strip portals in here, separated from the
+          heading by its own divider (reference layout). `empty:hidden`
+          collapses the row — and its border — on pages that have no tabs. */}
+      <div ref={shell?.setTabsSlot} className="border-t border-border px-5 empty:hidden" />
     </header>
   );
 }

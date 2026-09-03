@@ -9,7 +9,7 @@ import {
   Skeleton,
 } from "@/components/ui";
 import { complianceApi } from "@/lib/api/endpoints";
-import { ApiError } from "@/lib/api/client";
+import { describeError } from "@/lib/api/describe-error";
 import type { Framework } from "@/lib/api/types";
 
 function FrameworkCard({ framework }: { framework: Framework }) {
@@ -67,38 +67,22 @@ export function FrameworksPage() {
     queryKey: ["frameworks"],
     queryFn: () => complianceApi.listFrameworks(),
   });
+  const failure = query.isError ? describeError(query.error, "framework catalogue") : null;
 
   return (
     <div>
-      <h1 className="font-display text-heading-lg text-text-primary">
-        Frameworks
-      </h1>
-      <p className="mt-2 max-w-2xl text-body-lg text-text-secondary">
-        The compliance frameworks Verity ships, with their criteria and the
-        control templates that satisfy them.
-      </p>
-
-      <div className="mt-5">
-        {query.isLoading ? (
+      {query.isLoading ? (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {[0, 1, 2].map((i) => (
               <Skeleton key={i} className="h-[168px] w-full rounded-lg" />
             ))}
           </div>
-        ) : query.isError ? (
+        ) : failure ? (
           <ErrorState
-            title="Couldn’t load frameworks"
-            description={
-              query.error instanceof ApiError
-                ? query.error.message
-                : "The request failed. Retry, or contact support if it keeps happening."
-            }
-            referenceId={
-              query.error instanceof ApiError
-                ? query.error.correlationId
-                : undefined
-            }
-            onRetry={() => void query.refetch()}
+            title={failure.title}
+            description={failure.message}
+            referenceId={failure.referenceId}
+            onRetry={failure.retryable ? () => void query.refetch() : undefined}
           />
         ) : (query.data ?? []).length === 0 ? (
           <EmptyState
@@ -113,7 +97,6 @@ export function FrameworksPage() {
             ))}
           </div>
         )}
-      </div>
     </div>
   );
 }

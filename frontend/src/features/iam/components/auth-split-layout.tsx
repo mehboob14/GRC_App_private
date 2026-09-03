@@ -127,7 +127,7 @@ export function AuthSplitLayout({
           </div>
 
           <div className="flex min-h-0 max-w-lg flex-col justify-center gap-6 py-4">
-            <p className="auth-fade-up type-overline text-action-accent">
+            <p className="auth-fade-up font-sans text-overline uppercase text-action-accent">
               AI-native enterprise GRC
             </p>
 

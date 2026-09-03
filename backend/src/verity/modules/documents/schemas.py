@@ -56,12 +56,28 @@ class DocumentVersionOut(_Response):
     is_current: bool
 
 
+class ApprovalTargetOut(_Response):
+    target_type: str
+    target_id: uuid.UUID
+    target_name: str
+
+
+class ApprovalAssigneeOut(_Response):
+    membership_id: uuid.UUID
+    name: str
+    decision: str
+    decided_at: UtcDateTime | None
+    note: str | None
+
+
 class ApprovalOut(_Response):
     tier: int
     status: str
-    approver_name: str | None
     decided_at: UtcDateTime | None
     note: str | None
+    targets: list[ApprovalTargetOut] = Field(default_factory=list)
+    assignees: list[ApprovalAssigneeOut] = Field(default_factory=list)
+    my_decision: str | None = None
 
 
 class DocumentDetailOut(DocumentOut):
@@ -122,12 +138,6 @@ class ArchiveRequest(_Request):
     reason: str = Field(min_length=1, max_length=500)
 
 
-class SubmitRequest(_Request):
-    """Approvers per tier, in order (tier 1 = reviewer, tier 2 = approver)."""
-
-    approver_ids: list[uuid.UUID] = Field(default_factory=list)
-
-
 class ApprovalDecision(_Request):
     decision: str = Field(pattern="^(approved|rejected)$")
     note: str | None = Field(default=None, max_length=2000)
@@ -143,6 +153,14 @@ class RecipientSelectionIn(_Request):
     user_ids: list[uuid.UUID] = Field(default_factory=list)
     role_ids: list[uuid.UUID] = Field(default_factory=list)
     group_ids: list[uuid.UUID] = Field(default_factory=list)
+
+
+class AssignApprovalRequest(_Request):
+    """Who reviews/approves this tier: any mix of named people, roles and
+    groups. Assigning tier 1 on a draft document starts the review; there is
+    no separate "submit" step."""
+
+    targets: RecipientSelectionIn
 
 
 class CampaignCreate(_Request):
@@ -227,3 +245,10 @@ class PendingCampaignOut(_Response):
     due_at: UtcDateTime | None
     created_at: UtcDateTime
     created_by_name: str
+
+
+class PendingApprovalOut(_Response):
+    document_id: uuid.UUID
+    document_code: str
+    document_title: str
+    tier: int

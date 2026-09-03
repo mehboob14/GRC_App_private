@@ -223,7 +223,7 @@ Never introduce a size between steps. Tabular numerals mandatory in tables, KPIs
 | `label-md` | 13 / 16 | Inter 600 | 0 | button & tab labels |
 | `label-sm` | 12 / 15 | Inter 600 | 0 | form labels, facets |
 | `caption` | 11 / 15 | Inter 400–600 | 0 | timestamps, meta, badges |
-| `overline` | 10 / 14 | Inter 700 | +5% caps (+0.5px) | table headers (11px), eyebrows |
+| `overline` | 10 / 14 | Inter 700 | +5% caps (+0.5px) | eyebrows and section labels |
 | `code-chip` | 12 / 16 | Sora 700 | 0 | entity codes, accent colored |
 | `numeral-lg` | 28 / 32 | Sora 800 | −2% (−0.56px) | KPI values |
 | `numeral-md` | 24 / 28 | Sora 800 | −2% (−0.48px) | stat cards |
@@ -471,11 +471,18 @@ tabular-nums (F11).
 | standard | 48 | logs & simple lists (single-line cell) |
 | compact | 40 | audit trails, drawers (header drops to 36) |
 
-- Header: `surface-sunken` fill, bottom border `border-default`, labels overline (Inter 700
-  10.5–11, +5% tracking, `text-faint`), sort icon 13, height 40 (36 compact).
+- Header: `surface-sunken` fill, bottom border `border-default`, labels overline (Inter 700 10,
+  +0.5px tracking, uppercase) in **`text-secondary`**, sort icon 13, height 40 (36 compact).
+  The colour is load-bearing: the old `text-faint` measured 2.51:1 light and 3.49:1 dark on
+  `surface-sunken`, failing AA and the 3:1 non-text floor. `text-secondary` is 7.48:1 / 6.42:1.
+  Uppercase is fine; faint was the defect.
 - Rows: `surface-primary`, 1px `border-default` between, padding-x 16.
 - Alignment: text left; sortable numeric columns right + `tabular-nums`; dates right,
   `text-subtle`.
+- Right-alignment uses the TH `numeric` prop, never a `text-right` className.
+- Table-owned controls (Columns, Export) render in the `Table` `actions` slot: a right-aligned
+  bar inside the table card, above and outside the horizontal scroll area. Page-level actions
+  (the primary button, Import, result counts) stay in the `Toolbar`.
 - Row hover `surface-hover`; selected row `action-accent-tint`.
 
 ### 6.4 Canonical cell patterns
@@ -638,6 +645,7 @@ Run before any design or PR review.
 **COMPONENTS**
 - [ ] One primary button per region; labels are verb + object
 - [ ] Tables: correct density, sticky header, right-aligned numerics
+- [ ] Detail pages use DetailHeader; module roots use PageHeader + TabStrip; registers use one Toolbar
 - [ ] Overlay follows peek / commit / act / navigate
 - [ ] Forms: labels above, actionable errors, validate on blur
 

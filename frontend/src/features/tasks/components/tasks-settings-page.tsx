@@ -12,6 +12,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  ErrorState,
   Icon,
   Select,
   SelectContent,
@@ -24,6 +25,7 @@ import {
   useToast,
 } from "@/components/ui";
 import { cn } from "@/lib/cn";
+import { describeError, errorToast } from "@/lib/api/describe-error";
 import { useAuth } from "@/lib/auth/auth-context";
 import { hasPermission } from "@/lib/auth/session";
 import {
@@ -79,6 +81,20 @@ export function TasksSettingsPage() {
 
 const cardCls = "rounded-lg border border-border bg-surface-primary p-5";
 
+/** A card body that could not load. Retry is only offered when retrying helps. */
+function LoadFailed({ error, subject, onRetry }: { error: unknown; subject: string; onRetry: () => void }) {
+  const e = describeError(error, subject);
+  return (
+    <ErrorState
+      title={e.title}
+      description={e.message}
+      referenceId={e.referenceId}
+      onRetry={e.retryable ? onRetry : undefined}
+      className="mt-3"
+    />
+  );
+}
+
 function AutomationsCard({ canEdit }: { canEdit: boolean }) {
   const query = useQuery({ queryKey: ["task-automations"], queryFn: listAutomations });
   return (
@@ -87,7 +103,9 @@ function AutomationsCard({ canEdit }: { canEdit: boolean }) {
       <p className="mt-1 text-body-sm text-text-subtle">
         Open a task or issue automatically when something happens in another module.
       </p>
-      {query.isLoading ? (
+      {query.isError ? (
+        <LoadFailed error={query.error} subject="automation list" onRetry={() => void query.refetch()} />
+      ) : query.isLoading ? (
         <Skeleton className="mt-3 h-40 rounded-md" />
       ) : (
         <ul className="mt-3">
@@ -107,7 +125,7 @@ function AutomationRow({ automation: a, canEdit }: { automation: Automation; can
   const save = useMutation({
     mutationFn: (patch: AutomationPatch) => updateAutomation(a.id, patch),
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["task-automations"] }),
-    onError: (e) => toast({ title: e instanceof Error ? e.message : "Couldn’t update the automation.", tone: "danger" }),
+    onError: (error) => toast({ title: errorToast(error, "automation"), tone: "danger" }),
   });
   const locked = !canEdit || !a.available;
   const ownerText = a.owner_rule === "source_owner" ? cap(a.owner_label) : "Unassigned";
@@ -217,7 +235,9 @@ function SeverityMatrixCard({ canEdit }: { canEdit: boolean }) {
     <div className="rounded-lg border border-border bg-surface-primary p-5">
       <h2 className="mb-4 font-display text-title-md text-text-primary">Severity matrix</h2>
 
-      {query.isLoading ? (
+      {query.isError ? (
+        <LoadFailed error={query.error} subject="severity matrix" onRetry={() => void query.refetch()} />
+      ) : query.isLoading ? (
         <Skeleton className="h-56 rounded-md" />
       ) : (
         <div className="overflow-x-auto">
@@ -293,6 +313,7 @@ function MatrixCellDialog({ cell, onOpenChange }: { cell: SeverityMatrixCell; on
       onOpenChange(false);
       toast({ title: "Matrix updated", tone: "success" });
     },
+    onError: (error) => toast({ title: errorToast(error, "severity matrix"), tone: "danger" }),
   });
 
   return (
@@ -348,6 +369,7 @@ function SlaCard({ canEdit }: { canEdit: boolean }) {
       void queryClient.invalidateQueries({ queryKey: ["task-sla-defs"] });
       toast({ title: "SLA level removed", tone: "success" });
     },
+    onError: (error) => toast({ title: errorToast(error, "SLA level"), tone: "danger" }),
   });
 
   return (
@@ -360,7 +382,11 @@ function SlaCard({ canEdit }: { canEdit: boolean }) {
           </Button>
         ) : null}
       </div>
-      {query.isLoading ? (
+      {query.isError ? (
+        <p className="text-body-sm text-status-danger-text">
+          {describeError(query.error, "SLA level list").message}
+        </p>
+      ) : query.isLoading ? (
         <Skeleton className="h-32 rounded-md" />
       ) : (
         <ul className="divide-y divide-border">
@@ -424,6 +450,7 @@ function SlaDialog({ initial, onOpenChange }: { initial: SlaDefinition | null; o
       onOpenChange(false);
       toast({ title: initial ? "SLA level updated" : "SLA level added", tone: "success" });
     },
+    onError: (error) => toast({ title: errorToast(error, "SLA level"), tone: "danger" }),
   });
 
   return (
@@ -474,7 +501,11 @@ function TemplatesCard() {
   return (
     <div className="rounded-lg border border-border bg-surface-primary p-5">
       <h2 className="mb-3 font-display text-title-md text-text-primary">Templates</h2>
-      {query.isLoading ? (
+      {query.isError ? (
+        <p className="text-body-sm text-status-danger-text">
+          {describeError(query.error, "template list").message}
+        </p>
+      ) : query.isLoading ? (
         <Skeleton className="h-32 rounded-md" />
       ) : (
         <ul className="space-y-3">

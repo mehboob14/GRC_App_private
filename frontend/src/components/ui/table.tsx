@@ -30,18 +30,31 @@ const rowHeight: Record<TableDensity, string> = {
 
 type TableProps = HTMLAttributes<HTMLTableElement> & {
   density?: TableDensity;
+  /**
+   * Controls that belong to the table itself (Columns, Export), rendered as a
+   * bar across the top of the table card. They sit OUTSIDE the horizontal
+   * scroll area, so they stay put while the columns scroll under them.
+   */
+  actions?: ReactNode;
 };
 
-export function Table({ className, density = "comfortable", ...props }: TableProps) {
+export function Table({ className, density = "comfortable", actions, ...props }: TableProps) {
   return (
     <TableDensityContext.Provider value={density}>
       <div
         className={cn(
-          "w-full overflow-x-auto rounded-lg border border-border bg-surface-primary",
+          "w-full overflow-hidden rounded-lg border border-border bg-surface-primary",
           className,
         )}
       >
-        <table className="w-full border-collapse text-left" {...props} />
+        {actions ? (
+          <div className="flex flex-wrap items-center justify-end gap-2 border-b border-border px-3 py-2">
+            {actions}
+          </div>
+        ) : null}
+        <div className="w-full overflow-x-auto">
+          <table className="w-full border-collapse text-left" {...props} />
+        </div>
       </div>
     </TableDensityContext.Provider>
   );
@@ -125,10 +138,15 @@ export function TH({
   ...props
 }: THProps) {
   const density = useContext(TableDensityContext);
+  // Uppercase micro-label, per the reference design, but at text-secondary
+  // rather than the old text-faint. Only the COLOUR was ever the defect:
+  // faint on surface-sunken measured 2.51:1 light and 3.49:1 dark, failing AA
+  // and even the 3:1 non-text floor. Secondary measures 7.48:1 and 6.42:1.
   const content = (
     <span
       className={cn(
-        "inline-flex items-center gap-1 type-overline",
+        "inline-flex items-center gap-1 font-sans text-overline uppercase text-text-secondary transition-colors duration-80",
+        sortable && "group-hover:text-text-primary",
         numeric && "justify-end",
       )}
     >
@@ -137,9 +155,9 @@ export function TH({
         <Icon
           name="chev"
           className={cn(
-            "size-[13px] opacity-50",
-            sorted === "asc" && "rotate-180 opacity-100",
-            sorted === "desc" && "opacity-100",
+            "size-[13px] text-text-subtle",
+            sorted === "asc" && "rotate-180 text-text-primary",
+            sorted === "desc" && "text-text-primary",
           )}
         />
       ) : null}
@@ -169,7 +187,7 @@ export function TH({
         <button
           type="button"
           onClick={onSort}
-          className="inline-flex items-center gap-1 rounded-2xs hover:text-text-primary"
+          className="group inline-flex items-center gap-1 rounded-2xs"
         >
           {content}
         </button>

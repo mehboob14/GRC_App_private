@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Badge,
   Button,
+  DetailHeader,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -19,7 +20,7 @@ import {
   useToast,
 } from "@/components/ui";
 import { controlsApi, evidenceApi } from "@/lib/api/endpoints";
-import { ApiError } from "@/lib/api/client";
+import { describeError, errorToast } from "@/lib/api/describe-error";
 import { useAuth } from "@/lib/auth/auth-context";
 import { getAccessToken } from "@/lib/auth/session";
 import type { Evidence, EvidenceFreshness, ReviewStatus } from "@/lib/api/types";
@@ -202,6 +203,8 @@ export function EvidenceDetailPage() {
       await queryClient.invalidateQueries({ queryKey: ["audit"] });
       toast({ title: "Control unlinked", tone: "neutral" });
     },
+    onError: (error: unknown) =>
+      toast({ title: errorToast(error, "control link"), tone: "danger" }),
   });
 
   const reviewMutation = useMutation({
@@ -218,10 +221,7 @@ export function EvidenceDetailPage() {
       });
     },
     onError: (error: unknown) =>
-      toast({
-        title: error instanceof ApiError ? error.message : "Couldn't record the review.",
-        tone: "danger",
-      }),
+      toast({ title: errorToast(error, "review"), tone: "danger" }),
   });
 
   const meta = useMemo(
@@ -230,16 +230,15 @@ export function EvidenceDetailPage() {
   );
 
   if (itemQuery.isError) {
+    const failure = describeError(itemQuery.error, "evidence item");
     return (
-      <div className="mx-auto max-w-[1200px]">
+      <div className="w-full">
         <ErrorState
-          title="Couldn’t load this evidence"
-          description={
-            itemQuery.error instanceof ApiError
-              ? itemQuery.error.message
-              : "The request failed. Retry, or contact support if it keeps happening."
-          }
-          onRetry={() => void itemQuery.refetch()}
+          title={failure.title}
+          description={failure.message}
+          referenceId={failure.referenceId}
+          // A 403 or a 404 will not change on a second try, so no retry offered.
+          onRetry={failure.retryable ? () => void itemQuery.refetch() : undefined}
         />
       </div>
     );
@@ -247,7 +246,7 @@ export function EvidenceDetailPage() {
 
   if (itemQuery.isLoading || !item || !meta) {
     return (
-      <div className="mx-auto max-w-[1200px] space-y-4">
+      <div className="w-full space-y-4">
         <Skeleton className="h-6 w-56" />
         <Skeleton className="h-10 w-[26rem]" />
         <Skeleton className="h-20 w-full rounded-lg" />
@@ -257,34 +256,25 @@ export function EvidenceDetailPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[1200px]">
-      <nav aria-label="Breadcrumb" className="mb-3 flex items-center gap-1.5 text-body-sm">
-        <Link className="text-text-subtle hover:text-text-primary" to="/evidence">
-          Evidence
-        </Link>
-        <Icon name="chevr" className="size-3.5 text-text-faint" aria-hidden />
-        <span className="truncate font-semibold text-text-primary">{item.title}</span>
-      </nav>
-
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="mb-2 flex flex-wrap items-center gap-2">
+    <div className="w-full">
+      <DetailHeader
+        backTo="/evidence"
+        backLabel="Back to evidence"
+        title={item.title}
+        chips={
+          <>
             <StatusPill status={meta.family} label={meta.label} />
             <Badge variant="neutral">{item.kind === "file" ? "File" : "Link"}</Badge>
             <Badge variant="neutral">{item.evidence_type.replace(/_/g, " ")}</Badge>
-          </div>
-          <h1 className="font-display text-heading-lg text-text-primary">
-            {item.title}
-          </h1>
-          {item.description ? (
-            <p className="mt-2 max-w-2xl text-body-lg text-text-secondary">
-              {item.description}
-            </p>
-          ) : null}
-        </div>
-
-        <div className="flex shrink-0 items-center gap-2">
-          {item.kind === "file" ? (
+          </>
+        }
+        meta={
+          item.description ? (
+            <span className="block max-w-2xl">{item.description}</span>
+          ) : null
+        }
+        actions={
+          item.kind === "file" ? (
             <>
               <Button onClick={() => setPreviewing(true)}>
                 <Icon name="search" className="size-4" />
@@ -309,11 +299,11 @@ export function EvidenceDetailPage() {
                 Open link
               </a>
             </Button>
-          ) : null}
-        </div>
-      </div>
+          ) : null
+        }
+      />
 
-      <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_20rem]">
+      <div className="grid gap-4 lg:grid-cols-[1fr_20rem]">
         <div className="min-w-0 space-y-4">
           {/* Controls lead: what this item actually supports is the point of the
               record. The artefact itself opens from the header, on request. */}
@@ -470,6 +460,11 @@ export function EvidenceDetailPage() {
         open={linking}
         onOpenChange={setLinking}
         controls={controlsQuery.data ?? []}
+        loadError={
+          controlsQuery.isError
+            ? describeError(controlsQuery.error, "control list").message
+            : null
+        }
         linkedIds={item.control_ids}
         onSave={async (ids) => {
           await evidenceApi.update(evidenceId, { control_ids: ids });
@@ -495,7 +490,7 @@ export function EvidenceDetailPage() {
               onChange={(e) => setRejectNote(e.target.value)}
               rows={3}
               autoFocus
-              placeholder="e.g. This screenshot is from staging — attach the production console."
+              placeholder="e.g. This screenshot is from staging, attach the production console."
               className="w-full rounded-sm border border-border bg-surface-primary px-3 py-2 text-body-md text-text-primary placeholder:text-text-faint focus:border-action-accent focus:outline-none"
             />
           </div>

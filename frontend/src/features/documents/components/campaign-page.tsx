@@ -1,16 +1,18 @@
 import { useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Avatar,
   Badge,
   Button,
+  DetailHeader,
+  ErrorState,
   Icon,
   PeopleSelect,
   type Person,
   useToast,
 } from "@/components/ui";
-import { ApiError } from "@/lib/api/client";
+import { describeError, errorToast } from "@/lib/api/describe-error";
 import { useAuth } from "@/lib/auth/auth-context";
 import {
   acknowledgeCampaign,
@@ -22,6 +24,24 @@ import {
 import type { Campaign, CampaignRecipient } from "../types";
 import { DocumentContentViewer } from "./document-content-viewer";
 import { PENDING_CAMPAIGNS_KEY } from "./acknowledgements-bell";
+
+/** Typed in full to sign off. Deliberate beats one-click for a legal attestation. */
+const ACK_WORD = "acknowledge";
+
+/** "needs_approval" -> "Needs approval". The enums are already plain words. */
+const humanize = (v: string) => {
+  const t = v.replace(/_/g, " ");
+  return t.charAt(0).toUpperCase() + t.slice(1);
+};
+
+function Fact({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3">
+      <dt className="shrink-0 text-caption text-text-subtle">{label}</dt>
+      <dd className="min-w-0 truncate text-right text-body-sm text-text-primary">{value}</dd>
+    </div>
+  );
+}
 
 function relativeTime(iso: string): string {
   const seconds = Math.round((Date.now() - new Date(iso).getTime()) / 1000);
@@ -89,13 +109,13 @@ function Card({ title, action, children }: { title: string; action?: React.React
  */
 export function CampaignPage() {
   const { campaignId = "" } = useParams();
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { principal } = useAuth();
   const me = principal?.membership_id ?? null;
 
   const [ackComment, setAckComment] = useState("");
+  const [ackConfirm, setAckConfirm] = useState("");
   const [commentBody, setCommentBody] = useState("");
   const [mentioned, setMentioned] = useState<string[]>([]);
 
@@ -120,10 +140,10 @@ export function CampaignPage() {
       applyCampaign(next);
       queryClient.invalidateQueries({ queryKey: PENDING_CAMPAIGNS_KEY });
       setAckComment("");
+      setAckConfirm("");
       toast({ title: "Acknowledged", tone: "success" });
     },
-    onError: (error: unknown) =>
-      toast({ title: error instanceof ApiError ? error.message : "Couldn't acknowledge.", tone: "danger" }),
+    onError: (error: unknown) => toast({ title: errorToast(error, "campaign"), tone: "danger" }),
   });
 
   const comment = useMutation({
@@ -133,8 +153,7 @@ export function CampaignPage() {
       setCommentBody("");
       setMentioned([]);
     },
-    onError: (error: unknown) =>
-      toast({ title: error instanceof ApiError ? error.message : "Couldn't post the comment.", tone: "danger" }),
+    onError: (error: unknown) => toast({ title: errorToast(error, "comment"), tone: "danger" }),
   });
 
   const close = useMutation({
@@ -143,18 +162,35 @@ export function CampaignPage() {
       applyCampaign(next);
       toast({ title: "Campaign closed", tone: "success" });
     },
+    onError: (error: unknown) => toast({ title: errorToast(error, "campaign"), tone: "danger" }),
   });
 
   if (campaignQuery.isLoading) {
-    return <p className="mx-auto max-w-[1100px] text-body-md text-text-subtle">Loading…</p>;
+    return <p className="w-full text-body-md text-text-subtle">Loading…</p>;
+  }
+  if (campaignQuery.isError) {
+    const e = describeError(campaignQuery.error, "campaign");
+    return (
+      <div className="w-full">
+        <DetailHeader backTo="/documents" backLabel="Back to documents" title="Campaign" />
+        <ErrorState
+          title={e.title}
+          description={e.message}
+          referenceId={e.referenceId}
+          onRetry={e.retryable ? () => void campaignQuery.refetch() : undefined}
+        />
+      </div>
+    );
   }
   if (!campaign) {
     return (
-      <div className="mx-auto max-w-[1100px]">
-        <Link to="/documents" className="text-body-sm text-text-link">
-          ← Documents
-        </Link>
-        <p className="mt-4 text-body-md text-text-subtle">This campaign no longer exists.</p>
+      <div className="w-full">
+        <DetailHeader
+          backTo="/documents"
+          backLabel="Back to documents"
+          title="Campaign not found"
+        />
+        <p className="text-body-md text-text-subtle">This campaign no longer exists.</p>
       </div>
     );
   }
@@ -162,6 +198,8 @@ export function CampaignPage() {
   const myRecipient = me ? campaign.recipients.find((r) => r.membership_id === me) ?? null : null;
   const isOwner = Boolean(me && campaign.created_by_membership_id === me);
   const canAcknowledge = Boolean(myRecipient && myRecipient.status === "pending" && campaign.status === "active");
+  // Case and stray whitespace should not stand between a reader and signing off.
+  const ackConfirmed = ackConfirm.trim().toLowerCase() === ACK_WORD;
   const active = campaign.status === "active";
 
   // Participants that can be tagged: recipients plus the owner.
@@ -175,36 +213,35 @@ export function CampaignPage() {
   const doc = docQuery.data ?? null;
 
   return (
-    <div className="mx-auto max-w-[1200px]">
-      <button
-        type="button"
-        onClick={() => navigate(`/documents/${campaign.document_id}`)}
-        className="flex items-center gap-1.5 text-body-sm text-text-subtle transition-colors hover:text-text-primary"
-      >
-        <Icon name="arrowl" className="size-4" />
-        {campaign.document_code} · {campaign.document_title}
-      </button>
-
-      <div className="mb-5 mt-2 flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="font-display text-heading-md text-text-primary">{campaign.title}</h1>
-          <p className="mt-1 text-body-sm text-text-subtle">
+    <div className="w-full">
+      <DetailHeader
+        backTo={`/documents/${campaign.document_id}`}
+        backLabel={`Back to ${campaign.document_code}`}
+        title={campaign.title}
+        chips={
+          <>
+            <Badge variant={active ? "statusReview" : "neutral"}>
+              {active ? "Active" : "Closed"}
+            </Badge>
+            <span className="tabular text-body-sm text-text-secondary">
+              {campaign.acknowledged}/{campaign.total} acknowledged
+            </span>
+          </>
+        }
+        meta={
+          <>
             Started by {campaign.created_by_name}
             {campaign.due_at ? ` · due ${fmtDate(campaign.due_at)}` : ""}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Badge variant={active ? "statusReview" : "neutral"}>{active ? "Active" : "Closed"}</Badge>
-          <span className="tabular text-body-sm text-text-secondary">
-            {campaign.acknowledged}/{campaign.total} acknowledged
-          </span>
-          {isOwner && active ? (
-            <Button variant="secondary" size="sm" loading={close.isPending} onClick={() => close.mutate()}>
-              Close
+          </>
+        }
+        actions={
+          isOwner && active ? (
+            <Button variant="secondary" loading={close.isPending} onClick={() => close.mutate()}>
+              Close campaign
             </Button>
-          ) : null}
-        </div>
-      </div>
+          ) : null
+        }
+      />
 
       {campaign.message ? (
         <p className="mb-5 rounded-md border border-border bg-surface-hover px-4 py-3 text-body-sm text-text-secondary">
@@ -215,7 +252,24 @@ export function CampaignPage() {
       <div className="grid gap-4 lg:grid-cols-[1.7fr_1fr]">
         <div className="rounded-lg border border-border bg-surface-primary p-1">
           {doc ? (
-            <DocumentContentViewer doc={doc} onEdit={() => navigate(`/documents/${campaign.document_id}/edit`)} />
+            <DocumentContentViewer
+              doc={doc}
+              // A new tab, like document-detail does it. The editor's only exit
+              // is window.close(), which silently does nothing unless the tab
+              // was opened by script, so navigating here in-place traps the
+              // reader in the editor with a dead Close button.
+              onEdit={() =>
+                window.open(
+                  `/documents/${campaign.document_id}/edit`,
+                  "_blank",
+                  "noopener,noreferrer",
+                )
+              }
+            />
+          ) : docQuery.isError ? (
+            <p className="p-6 text-body-sm text-status-danger-text">
+              {describeError(docQuery.error, "document").message}
+            </p>
           ) : (
             <p className="p-6 text-body-sm text-text-subtle">
               {docQuery.isLoading ? "Loading the document…" : "The document is unavailable."}
@@ -224,6 +278,29 @@ export function CampaignPage() {
         </div>
 
         <div className="space-y-4">
+          {/* What you are being asked to sign, before the box that signs it. */}
+          {doc ? (
+            <Card title="Document">
+              <dl className="space-y-2">
+                <Fact label="Owner" value={doc.owner?.name ?? "Unassigned"} />
+                <Fact label="Reference" value={<span className="font-mono">{doc.code}</span>} />
+                <Fact label="Version" value={doc.version} />
+                <Fact label="Type" value={humanize(doc.doc_type)} />
+                <Fact label="Classification" value={humanize(doc.classification)} />
+                <Fact label="Status" value={humanize(doc.lifecycle)} />
+                {doc.published_on ? (
+                  <Fact label="Published" value={fmtDate(doc.published_on)} />
+                ) : null}
+                {doc.renewal_date ? (
+                  <Fact label="Next review" value={fmtDate(doc.renewal_date)} />
+                ) : null}
+                {doc.frameworks.length > 0 ? (
+                  <Fact label="Frameworks" value={doc.frameworks.join(", ")} />
+                ) : null}
+              </dl>
+            </Card>
+          ) : null}
+
           {/* My sign-off */}
           {myRecipient ? (
             <Card title="Your acknowledgement">
@@ -236,18 +313,54 @@ export function CampaignPage() {
                   </span>
                 </div>
               ) : canAcknowledge ? (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <p className="text-body-sm text-text-secondary">
-                    Confirm you have read the document. You can add a comment.
+                    Confirm you have read this document. Your name, the time, and anything you
+                    write here are recorded on the audit trail.
                   </p>
-                  <textarea
-                    value={ackComment}
-                    onChange={(e) => setAckComment(e.target.value)}
-                    placeholder="Optional comment…"
-                    rows={2}
-                    className="w-full rounded-sm border border-border bg-surface-primary px-3 py-2 text-body-sm text-text-primary"
-                  />
-                  <Button className="w-full" loading={acknowledge.isPending} onClick={() => acknowledge.mutate()}>
+                  <div>
+                    <label
+                      htmlFor="ack-comment"
+                      className="mb-1 block text-label-md font-semibold text-text-primary"
+                    >
+                      Comment <span className="font-normal text-text-subtle">(optional)</span>
+                    </label>
+                    <textarea
+                      id="ack-comment"
+                      value={ackComment}
+                      onChange={(e) => setAckComment(e.target.value)}
+                      placeholder="A question or a note for the owner…"
+                      rows={2}
+                      className="w-full rounded-sm border border-border bg-surface-primary px-3 py-2 text-body-sm text-text-primary"
+                    />
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="ack-confirm"
+                      className="mb-1 block text-label-md font-semibold text-text-primary"
+                    >
+                      Type <span className="font-mono text-text-link">{ACK_WORD}</span> to sign off
+                    </label>
+                    <input
+                      id="ack-confirm"
+                      value={ackConfirm}
+                      onChange={(e) => setAckConfirm(e.target.value)}
+                      autoComplete="off"
+                      spellCheck={false}
+                      aria-describedby="ack-confirm-help"
+                      placeholder={ACK_WORD}
+                      className="w-full rounded-sm border border-border bg-surface-primary px-3 py-2 text-body-sm text-text-primary"
+                    />
+                    <p id="ack-confirm-help" className="mt-1 text-caption text-text-subtle">
+                      Typing it deliberately is what makes this a signature, not a stray click.
+                    </p>
+                  </div>
+                  <Button
+                    className="w-full"
+                    disabled={!ackConfirmed}
+                    loading={acknowledge.isPending}
+                    onClick={() => acknowledge.mutate()}
+                  >
                     <Icon name="check" className="size-4" />
                     Acknowledge
                   </Button>

@@ -1,13 +1,14 @@
 import { useMemo, useState } from "react";
 import { useQueries } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { Button, Icon, Skeleton } from "@/components/ui";
+import { Button, ErrorState, Icon, PageHeader, Skeleton } from "@/components/ui";
 import {
   controlsApi,
   engagementApi,
   iamApi,
   tenantApi,
 } from "@/lib/api/endpoints";
+import { describeError } from "@/lib/api/describe-error";
 import { useAuth } from "@/lib/auth/auth-context";
 import { cn } from "@/lib/cn";
 
@@ -176,9 +177,12 @@ export function QuickStartPage() {
     ],
   });
 
-  const loading = [profileQ, securityQ, membersQ, engagementQ, controlsQ].some(
-    (query) => query.isLoading,
-  );
+  const queries = [profileQ, securityQ, membersQ, engagementQ, controlsQ];
+  const loading = queries.some((query) => query.isLoading);
+  // Every tick here is a claim about the workspace. If any of the five reads
+  // failed, the unticked rows would be a claim about the request instead, so
+  // the checklist is withheld rather than shown wrong.
+  const failed = queries.find((query) => query.isError);
 
   const profile = profileQ.data;
   const security = securityQ.data;
@@ -321,7 +325,6 @@ export function QuickStartPage() {
 
   const allTasks = sections.flatMap((section) => section.tasks);
   const doneCount = allTasks.filter((task) => task.done).length;
-  const remaining = allTasks.length - doneCount;
 
   // Open the first section with work left: opening everything is a wall,
   // opening nothing hides the next action. `""` means the user closed it.
@@ -333,7 +336,7 @@ export function QuickStartPage() {
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-[860px] space-y-3">
+      <div className="mx-auto w-4/5 space-y-3">
         <Skeleton className="h-9 w-56" />
         <Skeleton className="h-28 w-full rounded-lg" />
         <Skeleton className="h-28 w-full rounded-lg" />
@@ -342,17 +345,35 @@ export function QuickStartPage() {
     );
   }
 
-  return (
-    <div className="mx-auto max-w-[860px]">
-      <h1 className="font-display text-heading-lg text-text-primary">
-        Get started
-      </h1>
-      <p className="mt-2 text-body-lg text-text-secondary">
-        {remaining === 0
-          ? "Setup complete."
-          : `${remaining} of ${allTasks.length} steps remaining.`}
-      </p>
+  if (failed) {
+    const failure = describeError(failed.error, "checklist");
+    return (
+      <div className="mx-auto w-4/5">
+        <PageHeader title="Get started" />
+        <div className="mt-5">
+          <ErrorState
+            title={failure.title}
+            description={failure.message}
+            referenceId={failure.referenceId}
+            onRetry={
+              failure.retryable
+                ? () => queries.forEach((query) => void query.refetch())
+                : undefined
+            }
+          />
+        </div>
+      </div>
+    );
+  }
 
+  return (
+    // The checklist reads as a single column, so it is held to ~80% of the
+    // content area rather than stretching the full width.
+    <div className="mx-auto w-4/5">
+      <PageHeader title="Get started" />
+
+      {/* The progress row is the only place the numbers live now: the subtitle
+          that restated them is gone. */}
       <div className="mt-5 flex items-center gap-3">
         <ProgressTrack done={doneCount} total={allTasks.length} />
         <span className="shrink-0 text-label-sm tabular text-text-secondary">

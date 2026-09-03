@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Button,
+  ColumnPicker,
+  type ColumnDef,
   ConfirmDialog,
   Dialog,
   DialogBody,
@@ -27,15 +29,22 @@ import {
   THead,
   TR,
   TextField,
+  useColumnPrefs,
   useToast,
 } from "@/components/ui";
 import { SettingsPageHeader } from "@/features/iam/components/settings-page-header";
 import { iamApi } from "@/lib/api/endpoints";
-import { ApiError } from "@/lib/api/client";
+import { describeError, errorToast } from "@/lib/api/describe-error";
 import { useAuth } from "@/lib/auth/auth-context";
 import { useAlertFocus } from "@/features/iam/hooks/use-alert-focus";
 import { MemberPickerDialog } from "@/features/iam/components/member-picker-dialog";
 import type { Group } from "@/lib/api/types";
+
+/** Optional columns only — Name and the actions cell always render. */
+const GROUP_COLUMNS = [
+  { key: "description", label: "Description" },
+  { key: "members", label: "Members" },
+] as const satisfies readonly ColumnDef<string>[];
 
 export function GroupsPage() {
   const { principal } = useAuth();
@@ -53,6 +62,7 @@ export function GroupsPage() {
   const [managing, setManaging] = useState<Group | null>(null);
   const [memberError, setMemberError] = useState<string | null>(null);
   const alertRef = useAlertFocus(error !== null);
+  const cols = useColumnPrefs("verity.groups.columns", GROUP_COLUMNS);
 
   const query = useQuery({
     queryKey: ["groups", principal?.tenant_id],
@@ -106,11 +116,7 @@ export function GroupsPage() {
       });
     },
     onError: (err: unknown) => {
-      setError(
-        err instanceof ApiError
-          ? err.message
-          : "The group didn't reach the server. Check your connection and try again.",
-      );
+      setError(errorToast(err, "group"));
     },
   });
 
@@ -123,13 +129,7 @@ export function GroupsPage() {
     },
     onError: (err: unknown) => {
       setToDelete(null);
-      toast({
-        title:
-          err instanceof ApiError
-            ? err.message
-            : "Couldn't delete the group. Try again.",
-        tone: "danger",
-      });
+      toast({ title: errorToast(err, "group"), tone: "danger" });
     },
   });
 
@@ -165,11 +165,7 @@ export function GroupsPage() {
       });
     },
     onError: (err: unknown) => {
-      setMemberError(
-        err instanceof ApiError
-          ? err.message
-          : "The change didn't reach the server. Try again.",
-      );
+      setMemberError(errorToast(err, "group membership"));
     },
   });
 
@@ -178,20 +174,13 @@ export function GroupsPage() {
   }
 
   if (query.isError) {
+    const failure = describeError(query.error, "group list");
     return (
       <ErrorState
-        title="Couldn’t load groups"
-        description={
-          query.error instanceof ApiError
-            ? query.error.message
-            : "The request failed. Retry, or contact support if it keeps happening."
-        }
-        referenceId={
-          query.error instanceof ApiError
-            ? query.error.correlationId
-            : undefined
-        }
-        onRetry={() => void query.refetch()}
+        title={failure.title}
+        description={failure.message}
+        referenceId={failure.referenceId}
+        onRetry={failure.retryable ? () => void query.refetch() : undefined}
       />
     );
   }
@@ -221,12 +210,12 @@ export function GroupsPage() {
           description="Create a group to assign people together. Reviews and role changes then move group-by-group."
         />
       ) : (
-        <Table density="standard">
+        <Table density="standard" actions={<ColumnPicker {...cols} />}>
           <THead>
             <TR>
               <TH>Name</TH>
-              <TH>Description</TH>
-              <TH numeric>Members</TH>
+              {cols.isVisible("description") ? <TH>Description</TH> : null}
+              {cols.isVisible("members") ? <TH numeric>Members</TH> : null}
               <TH>
                 <span className="sr-only">Actions</span>
               </TH>
@@ -236,16 +225,20 @@ export function GroupsPage() {
             {groups.map((group) => (
               <TR key={group.id}>
                 <TD className="font-semibold">{group.name}</TD>
-                <TD className="max-w-[24rem]">
-                  {group.description ? (
-                    <span className="line-clamp-2 text-text-secondary">
-                      {group.description}
-                    </span>
-                  ) : (
-                    <span className="text-text-faint">—</span>
-                  )}
-                </TD>
-                <TD numeric>{group.member_count}</TD>
+                {cols.isVisible("description") ? (
+                  <TD className="max-w-[24rem]">
+                    {group.description ? (
+                      <span className="line-clamp-2 text-text-secondary">
+                        {group.description}
+                      </span>
+                    ) : (
+                      <span className="text-text-faint">—</span>
+                    )}
+                  </TD>
+                ) : null}
+                {cols.isVisible("members") ? (
+                  <TD numeric>{group.member_count}</TD>
+                ) : null}
                 <TD className="text-right">
                   {canManage ? (
                     <DropdownMenu>
