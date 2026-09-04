@@ -710,6 +710,10 @@ export type Evidence = {
   source: string | null;
   /** Review / approval — pending until someone with evidence:review signs off. */
   review_status: ReviewStatus;
+  /** Whether a verdict is called for at all. Evidence proves a control; until
+   *  one is linked there is nothing to review it against, so a bare upload is
+   *  not pending anybody. Derived server-side from the control mappings. */
+  review_required: boolean;
   reviewed_by_membership_id: string | null;
   reviewed_by_name: string | null;
   reviewed_at: string | null;

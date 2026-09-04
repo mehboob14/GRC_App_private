@@ -153,7 +153,10 @@ export function EvidenceDetailPage() {
         chips={
           <>
             <StatusPill status={freshness.family} label={freshness.label} />
-            <StatusPill status={review.family} label={review.label} />
+            {/* Only once a control is linked is a verdict actually due. */}
+            {item.review_required ? (
+              <StatusPill status={review.family} label={review.label} />
+            ) : null}
             <Badge variant="neutral">{item.kind === "file" ? "File" : "Link"}</Badge>
             <Badge variant="neutral">{item.evidence_type.replace(/_/g, " ")}</Badge>
           </>
@@ -265,8 +268,23 @@ export function EvidenceDetailPage() {
         <aside className="space-y-4">
           {/* Review — the four-eyes step. Evidence is a claim until someone with
               evidence:review signs off. */}
-          <Panel title="Review" action={<StatusPill status={review.family} label={review.label} />}>
-            {item.reviewed_by_name ? (
+          <Panel
+            title="Review"
+            action={
+              item.review_required ? (
+                <StatusPill status={review.family} label={review.label} />
+              ) : (
+                <span className="text-caption text-text-subtle">Not required yet</span>
+              )
+            }
+          >
+            {!item.review_required ? (
+              <p className="text-body-sm text-text-subtle">
+                Review starts once this evidence is linked to a control. The control's owner
+                approves it, rejects it, or asks for a change — a verdict on evidence that
+                supports no control would be a verdict on nothing.
+              </p>
+            ) : item.reviewed_by_name ? (
               <p className="text-body-sm text-text-secondary">
                 {item.review_status === "approved" ? "Approved" : "Rejected"} by{" "}
                 <span className="font-semibold text-text-primary">{item.reviewed_by_name}</span>
@@ -282,7 +300,7 @@ export function EvidenceDetailPage() {
                 “{item.review_note}”
               </p>
             ) : null}
-            {canReview ? (
+            {canReview && item.review_required ? (
               <div className="mt-3 flex gap-2">
                 <Button
                   size="sm"

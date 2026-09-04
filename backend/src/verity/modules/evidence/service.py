@@ -114,6 +114,12 @@ class EvidenceView:
     source: str | None
     link_url: str | None
     review_status: str
+    #: Whether a reviewer's verdict is called for at all. Evidence proves a
+    #: control; until one is linked there is nothing to review it against, so a
+    #: bare upload is not "pending" anybody. Derived from the mappings, never
+    #: stored - linking a control makes review due, unlinking the last one
+    #: makes it moot, and neither should need a write.
+    review_required: bool
     reviewed_by_membership_id: uuid.UUID | None
     reviewed_by_name: str | None
     reviewed_at: datetime | None
@@ -406,6 +412,7 @@ class EvidenceService:
             link_url=row.link_url,
             source=row.source,
             review_status=row.review_status,
+            review_required=bool(mapped),
             reviewed_by_membership_id=row.reviewed_by_membership_id,
             reviewed_by_name=(
                 owners.get(row.reviewed_by_membership_id) if row.reviewed_by_membership_id else None
@@ -416,6 +423,20 @@ class EvidenceService:
             control_codes=[link.code for link in mapped],
             control_links=list(mapped),
         )
+
+    async def _has_control_links(
+        self, session: AsyncSession, tenant_id: uuid.UUID, evidence_id: uuid.UUID
+    ) -> bool:
+        """Whether this evidence is mapped to any control."""
+        found = await session.scalar(
+            select(EvidenceControl.control_id)
+            .where(
+                EvidenceControl.tenant_id == tenant_id,
+                EvidenceControl.evidence_id == evidence_id,
+            )
+            .limit(1)
+        )
+        return found is not None
 
     async def _load(
         self, session: AsyncSession, tenant_id: uuid.UUID, evidence_id: uuid.UUID
@@ -633,6 +654,14 @@ class EvidenceService:
             )
 
         row = await self._load(session, tenant_id, evidence_id)
+        # Reviewing evidence that supports no control approves it against
+        # nothing. The reviewer signs off that it proves a control, so a control
+        # has to be linked first.
+        if not await self._has_control_links(session, tenant_id, evidence_id):
+            raise InvalidInput(
+                "Link this evidence to a control before reviewing it.",
+                detail="review requires at least one control mapping",
+            )
         before = AuditService.snapshot(row, fields=_SNAPSHOT)
         row.review_status = decision
         row.reviewed_by_membership_id = reviewer_membership_id

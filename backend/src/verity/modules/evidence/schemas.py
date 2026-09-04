@@ -48,6 +48,7 @@ class EvidenceOut(_Response):
     source: str | None
     # Review / approval — pending until a reviewer signs off.
     review_status: str
+    review_required: bool
     reviewed_by_membership_id: uuid.UUID | None
     reviewed_by_name: str | None
     reviewed_at: UtcDateTime | None

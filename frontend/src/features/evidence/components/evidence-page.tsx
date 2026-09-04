@@ -872,6 +872,7 @@ export function EvidencePage() {
           freshnessFilter.includes(item.freshness)) &&
         (typeFilter.length === 0 || typeFilter.includes(item.evidence_type)) &&
         (reviewFilter.length === 0 ||
+          item.review_required &&
           reviewFilter.includes(item.review_status)) &&
         (query === "" ||
           item.title.toLowerCase().includes(query) ||
@@ -1132,11 +1133,17 @@ export function EvidencePage() {
                 ) : null}
                 {cols.isVisible("review") ? (
                   <TD>
-                    <StatusPill
-                      kind="inline"
-                      status={REVIEW_META[item.review_status].family}
-                      label={REVIEW_META[item.review_status].label}
-                    />
+                    {/* No control linked means nothing to review against, so
+                        the row says so rather than claiming to be pending. */}
+                    {item.review_required ? (
+                      <StatusPill
+                        kind="inline"
+                        status={REVIEW_META[item.review_status].family}
+                        label={REVIEW_META[item.review_status].label}
+                      />
+                    ) : (
+                      <span className="text-caption text-text-subtle">Not required</span>
+                    )}
                   </TD>
                 ) : null}
                 {/* Row actions. The cell stops propagation so opening the menu
