@@ -54,6 +54,13 @@ export {
 export { EmptyState } from "./empty-state";
 export { ErrorBanner } from "./error-banner";
 export { ErrorState } from "./error-state";
+export {
+  FileDownloadButton,
+  FileViewer,
+  detectFileKind,
+  saveBlob,
+  type FileKind,
+} from "./file-viewer";
 export { FilterFacet, type FilterFacetOption } from "./filter-facet";
 export { Icon, type IconName } from "./icon";
 export { Pagination } from "./pagination";

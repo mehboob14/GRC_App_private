@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import UTC, date, datetime, timedelta
 from typing import Final
 
@@ -31,6 +31,13 @@ from verity.modules.evidence.models import (
     EvidenceControl,
 )
 from verity.shared.ids import uuid7
+
+#: Types evidence may be linked to. A subset of the links table's own
+#: constraint - those whose module ships a detail view the resolver can read.
+LINKABLE_TYPES: Final[frozenset[str]] = frozenset({"task", "document", "asset", "vulnerability"})
+
+#: Stand-in until the resolver's result is paired with the edge it came from.
+_UNSET_LINK_ID: Final = uuid.UUID(int=0)
 
 AGING_WINDOW_DAYS: Final = 30
 """How long before its renewal date an item starts reading as 'aging'. A cliff
@@ -130,15 +137,30 @@ class SuggestionView:
 
 
 @dataclass(frozen=True, slots=True)
-class LinkedTaskView:
-    """A task this evidence is linked to — the remediation or work it supports."""
+class LinkTarget:
+    """What a link points at. One value rather than two loose arguments, so the
+    pair cannot be passed in the wrong order."""
+
+    type: str
+    id: uuid.UUID
+
+
+@dataclass(frozen=True, slots=True)
+class LinkedRecordView:
+    """A record this evidence is linked to, in one shape regardless of module.
+
+    ``code`` is the human handle its own module uses (a task code, a document
+    code, a CVE, an asset hostname) and is empty when that module has none;
+    ``detail`` is the module's second fact - a task kind, a doc type, a severity.
+    """
 
     link_id: uuid.UUID
-    task_id: uuid.UUID
+    target_type: str
+    target_id: uuid.UUID
     code: str
     title: str
     status: str
-    task_kind: str
+    detail: str | None
 
 
 class EvidenceService:
@@ -784,61 +806,144 @@ class EvidenceService:
         )
         return await self.get(session, tenant_id=tenant_id, evidence_id=evidence_id)
 
-    async def linked_tasks(
-        self, session: AsyncSession, *, tenant_id: uuid.UUID, evidence_id: uuid.UUID
-    ) -> list[LinkedTaskView]:
-        """The tasks this evidence is linked to, resolved through the tasks service
-        (rule 4) so titles and status stay their module's business."""
-        from verity.modules.links.service import link_service  # noqa: PLC0415
+    # -- cross-module links ---------------------------------------------------
+    #
+    # One trio serves every linkable module. Each target type contributes a
+    # resolver that turns its own detail view into the common shape, so titles
+    # and status stay their module's business (rule 4: service -> service, never
+    # into another module's repository).
+
+    async def _resolve_link_target(
+        self,
+        session: AsyncSession,
+        tenant_id: uuid.UUID,
+        target_type: str,
+        target_id: uuid.UUID,
+    ) -> LinkedRecordView | None:
+        """The linked record as a common view, or None if it is gone or out of
+        scope - a dangling edge is skipped, never raised."""
+        from verity.modules.assets.service import asset_service  # noqa: PLC0415
+        from verity.modules.documents.service import document_service  # noqa: PLC0415
         from verity.modules.tasks.service import task_service  # noqa: PLC0415
+        from verity.modules.vulnerabilities.service import (  # noqa: PLC0415
+            vulnerability_service,
+        )
+
+        try:
+            if target_type == "task":
+                task = await task_service.get_task(session, tenant_id=tenant_id, task_id=target_id)
+                return LinkedRecordView(
+                    link_id=_UNSET_LINK_ID,
+                    target_type="task",
+                    target_id=task.id,
+                    code=task.code,
+                    title=task.title,
+                    status=task.status,
+                    detail=task.task_kind,
+                )
+            if target_type == "document":
+                doc = await document_service.get_document(
+                    session, tenant_id=tenant_id, document_id=target_id
+                )
+                return LinkedRecordView(
+                    link_id=_UNSET_LINK_ID,
+                    target_type="document",
+                    target_id=doc.id,
+                    code=doc.code,
+                    title=doc.title,
+                    status=doc.lifecycle,
+                    detail=doc.doc_type,
+                )
+            if target_type == "asset":
+                asset = await asset_service.get_asset(
+                    session, tenant_id=tenant_id, asset_id=target_id
+                )
+                return LinkedRecordView(
+                    link_id=_UNSET_LINK_ID,
+                    target_type="asset",
+                    target_id=asset.id,
+                    code=asset.hostname or "",
+                    title=asset.name,
+                    status=asset.status,
+                    detail=asset.asset_type,
+                )
+            if target_type == "vulnerability":
+                vuln = await vulnerability_service.get_instance(
+                    session, tenant_id=tenant_id, instance_id=target_id
+                )
+                return LinkedRecordView(
+                    link_id=_UNSET_LINK_ID,
+                    target_type="vulnerability",
+                    target_id=vuln.id,
+                    code=vuln.cve_id or "",
+                    title=vuln.title,
+                    status=vuln.state,
+                    detail=vuln.severity,
+                )
+        except NotFound:
+            return None
+        return None
+
+    async def linked_records(
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        evidence_id: uuid.UUID,
+        target_type: str | None = None,
+    ) -> list[LinkedRecordView]:
+        """Every record this evidence is linked to, optionally of one type."""
+        from verity.modules.links.service import link_service  # noqa: PLC0415
 
         edges = await link_service.for_object(
             session, tenant_id=tenant_id, obj_type="evidence", obj_id=evidence_id
         )
-        out: list[LinkedTaskView] = []
+        out: list[LinkedRecordView] = []
         for edge in edges:
-            if edge.other_type != "task":
+            if target_type is not None and edge.other_type != target_type:
                 continue
-            try:
-                task = await task_service.get_task(
-                    session, tenant_id=tenant_id, task_id=edge.other_id
-                )
-            except NotFound:
-                continue  # task removed or out of scope; skip the dangling edge
-            out.append(
-                LinkedTaskView(
-                    link_id=edge.link_id,
-                    task_id=task.id,
-                    code=task.code,
-                    title=task.title,
-                    status=task.status,
-                    task_kind=task.task_kind,
-                )
+            view = await self._resolve_link_target(
+                session, tenant_id, edge.other_type, edge.other_id
             )
-        out.sort(key=lambda t: t.code)
+            if view is None:
+                continue  # target removed or out of scope; skip the dangling edge
+            out.append(replace(view, link_id=edge.link_id))
+        out.sort(key=lambda r: (r.target_type, r.code, r.title))
         return out
 
-    async def link_task(
+    async def link_record(
         self,
         session: AsyncSession,
         *,
         tenant_id: uuid.UUID,
         actor: Actor,
         evidence_id: uuid.UUID,
-        task_id: uuid.UUID,
-    ) -> list[LinkedTaskView]:
-        """Link this evidence to a task (idempotent). Audited on the evidence."""
+        target: LinkTarget,
+    ) -> list[LinkedRecordView]:
+        """Link this evidence to another record (idempotent). Audited on the
+        evidence, in the same transaction as the link (rule 5)."""
         from verity.modules.links.service import link_service  # noqa: PLC0415
 
+        target_type, target_id = target.type, target.id
+        if target_type not in LINKABLE_TYPES:
+            raise InvalidInput(
+                "evidence.link_type_unsupported",
+                detail=f"{target_type!r} is not a type evidence can be linked to",
+            )
         await self._load(session, tenant_id, evidence_id)  # 404 if the evidence is gone
+        # Resolve before writing: a link to a record that does not exist is a
+        # dangling edge nothing will ever render, and the caller deserves a 404
+        # rather than a silent success.
+        if await self._resolve_link_target(session, tenant_id, target_type, target_id) is None:
+            raise NotFound("evidence.link_target_missing", detail=f"{target_type} {target_id}")
         member = actor.id if isinstance(actor, Membership) else None
         await link_service.create(
             session,
             tenant_id=tenant_id,
             from_type="evidence",
             from_id=evidence_id,
-            to_type="task",
-            to_id=task_id,
+            to_type=target_type,
+            to_id=target_id,
             created_by_membership_id=member,
         )
         await self._audit.record(
@@ -849,11 +954,11 @@ class EvidenceService:
             actor=actor,
             tenant_id=tenant_id,
             before=None,
-            after={"linked_task": str(task_id)},
+            after={"linked": f"{target_type}:{target_id}"},
         )
-        return await self.linked_tasks(session, tenant_id=tenant_id, evidence_id=evidence_id)
+        return await self.linked_records(session, tenant_id=tenant_id, evidence_id=evidence_id)
 
-    async def unlink_task(
+    async def unlink_record(
         self,
         session: AsyncSession,
         *,
@@ -861,7 +966,7 @@ class EvidenceService:
         actor: Actor,
         evidence_id: uuid.UUID,
         link_id: uuid.UUID,
-    ) -> list[LinkedTaskView]:
+    ) -> list[LinkedRecordView]:
         from verity.modules.links.service import link_service  # noqa: PLC0415
 
         await self._load(session, tenant_id, evidence_id)
@@ -873,10 +978,10 @@ class EvidenceService:
             object_id=evidence_id,
             actor=actor,
             tenant_id=tenant_id,
-            before={"unlinked_task": str(link_id)},
+            before={"unlinked_link_id": str(link_id)},
             after=None,
         )
-        return await self.linked_tasks(session, tenant_id=tenant_id, evidence_id=evidence_id)
+        return await self.linked_records(session, tenant_id=tenant_id, evidence_id=evidence_id)
 
 
 evidence_service = EvidenceService()

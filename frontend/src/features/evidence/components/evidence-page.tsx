@@ -15,13 +15,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  Drawer,
-  DrawerBody,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
   EmptyState,
   ErrorState,
   FilterFacet,
@@ -381,12 +374,6 @@ function formatDate(iso: string | null): string {
   }
 }
 
-function formatBytes(bytes: number | null): string {
-  if (bytes === null) return "—";
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
-  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
-}
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -848,163 +835,6 @@ export function AddEvidenceDialog({
     </Dialog>
   );
 }
-
-function EvidenceDrawer({
-  item,
-  onClose,
-}: {
-  item: Evidence | null;
-  onClose: () => void;
-}) {
-  const { toast } = useToast();
-  const meta = item ? FRESHNESS[item.freshness] : null;
-
-  return (
-    <Drawer open={item !== null} onOpenChange={(open) => !open && onClose()}>
-      <DrawerContent size="lg">
-        {item && meta ? (
-          <>
-            <DrawerHeader>
-              <DrawerTitle>{item.title}</DrawerTitle>
-              <DrawerDescription>
-                {item.description || "No description recorded."}
-              </DrawerDescription>
-            </DrawerHeader>
-
-            <DrawerBody className="space-y-5">
-              <div className="flex flex-wrap items-center gap-2">
-                <StatusPill status={meta.family} label={meta.label} />
-                <Badge variant="neutral">
-                  {item.kind === "file" ? "File" : "Link"}
-                </Badge>
-                <Badge variant="neutral">
-                  {item.evidence_type.replace(/_/g, " ")}
-                </Badge>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="type-overline mb-1.5">Owner</p>
-                  <p className="text-body-sm text-text-secondary">
-                    {item.owner_name ?? "Unassigned"}
-                  </p>
-                </div>
-                <div>
-                  <p className="type-overline mb-1.5">Source</p>
-                  <p className="text-body-sm text-text-secondary">
-                    {item.source_label ?? "—"}
-                  </p>
-                </div>
-                <div>
-                  <p className="type-overline mb-1.5">Collected</p>
-                  <p className="text-body-sm text-text-secondary">
-                    {formatDate(item.collected_at)}
-                  </p>
-                </div>
-                <div>
-                  <p className="type-overline mb-1.5">Renewal</p>
-                  <p className="text-body-sm text-text-secondary">
-                    {formatDate(item.renewal_date)}
-                  </p>
-                </div>
-              </div>
-
-              <div>
-                <p className="type-overline mb-1.5">Supports controls</p>
-                {item.control_codes.length ? (
-                  <div className="flex flex-wrap gap-1">
-                    {item.control_codes.map((code) => (
-                      <span
-                        key={code}
-                        className="rounded-xs bg-action-accent-tint px-1.5 py-0.5 font-display text-caption font-bold text-text-link"
-                      >
-                        {code}
-                      </span>
-                    ))}
-                  </div>
-                ) : (
-                  // Unattached evidence proves nothing — say so rather than
-                  // leaving an empty space that reads as fine.
-                  <p className="text-body-sm text-status-warning-text">
-                    Not attached to any control
-                  </p>
-                )}
-              </div>
-
-              {item.kind === "file" ? (
-                <div className="rounded-md border border-border bg-surface-sunken p-3.5">
-                  <p className="type-overline mb-2">Stored file</p>
-                  <dl className="space-y-1.5 text-body-sm">
-                    <div className="flex gap-2">
-                      <dt className="w-24 shrink-0 text-text-subtle">Filename</dt>
-                      <dd className="min-w-0 break-all text-text-secondary">
-                        {item.filename}
-                      </dd>
-                    </div>
-                    <div className="flex gap-2">
-                      <dt className="w-24 shrink-0 text-text-subtle">Type</dt>
-                      <dd className="text-text-secondary">{item.content_type}</dd>
-                    </div>
-                    <div className="flex gap-2">
-                      <dt className="w-24 shrink-0 text-text-subtle">Size</dt>
-                      <dd className="tabular text-text-secondary">
-                        {formatBytes(item.size_bytes)}
-                      </dd>
-                    </div>
-                    <div className="flex gap-2">
-                      <dt className="w-24 shrink-0 text-text-subtle">SHA-256</dt>
-                      <dd className="min-w-0 break-all font-mono text-caption text-text-secondary">
-                        {item.sha256}
-                      </dd>
-                    </div>
-                  </dl>
-                  <p className="mt-2 text-caption text-text-subtle">
-                    Recorded at upload. Re-hash a download and compare to prove
-                    the file has not changed since.
-                  </p>
-                </div>
-              ) : (
-                <div>
-                  <p className="type-overline mb-1.5">Link</p>
-                  <a
-                    href={item.link_url ?? "#"}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="break-all text-body-sm font-semibold text-text-link"
-                  >
-                    {item.link_url}
-                  </a>
-                </div>
-              )}
-            </DrawerBody>
-
-            {item.kind === "file" ? (
-              <DrawerFooter>
-                <Button
-                  variant="secondary"
-                  onClick={() =>
-                    void downloadEvidence(item).catch(() =>
-                      toast({
-                        title: "Couldn't download the file.",
-                        tone: "danger",
-                      }),
-                    )
-                  }
-                >
-                  <Icon name="doc" className="size-4" />
-                  Download
-                </Button>
-              </DrawerFooter>
-            ) : null}
-          </>
-        ) : null}
-      </DrawerContent>
-    </Drawer>
-  );
-}
-
-/** Evidence library — every artefact, what it proves, and whether it is still
- *  good. Freshness comes from the server, derived from the renewal date. */
 export function EvidencePage() {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -1015,7 +845,6 @@ export function EvidencePage() {
   const [freshnessFilter, setFreshnessFilter] = useState<string[]>([]);
   const [typeFilter, setTypeFilter] = useState<string[]>([]);
   const [reviewFilter, setReviewFilter] = useState<string[]>([]);
-  const [selected, setSelected] = useState<Evidence | null>(null);
   const [adding, setAdding] = useState(false);
   const cols = useColumnPrefs("verity.evidence.columns", EVIDENCE_COLUMNS);
 
@@ -1382,7 +1211,6 @@ export function EvidencePage() {
       )}
 
       <AddEvidenceDialog open={adding} onOpenChange={setAdding} />
-      <EvidenceDrawer item={selected} onClose={() => setSelected(null)} />
     </div>
   );
 }

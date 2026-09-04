@@ -400,9 +400,13 @@ ignore_imports = [
     # EvidenceService.control_ids_with_evidence, never by reading
     # evidence_controls from here.
     "verity.modules.evidence.service -> verity.modules.evidence.models",
-    # EvidenceService in turn resolves linked tasks through TaskService; that
-    # onward call is evidence's private business, not compliance reaching tasks.
+    # EvidenceService in turn resolves its linked records through those
+    # modules' services; that onward call is evidence's private business, not
+    # compliance reaching tasks, documents, assets or vulnerabilities.
     "verity.modules.evidence.service -> verity.modules.tasks.service",
+    "verity.modules.evidence.service -> verity.modules.documents.service",
+    "verity.modules.evidence.service -> verity.modules.assets.service",
+    "verity.modules.evidence.service -> verity.modules.vulnerabilities.service",
 ]
 forbidden_modules = [
     "verity.modules.ai.repository", "verity.modules.ai.models",
@@ -506,9 +510,15 @@ ignore_imports = [
     "verity.modules.iam.service -> verity.modules.tenancy.service",
     "verity.modules.tenancy.service -> verity.modules.tenancy.repository",
     "verity.modules.tenancy.service -> verity.modules.tenancy.models",
-    # evidence links to and resolves tasks through TaskService (linked_tasks,
-    # rule 4). What TaskService does with its own graph is its private business.
+    # evidence links to and resolves other records through their own services
+    # (linked_records, rule 4) — never by reading their tables. What each of
+    # those does with its own graph is its private business. These four are the
+    # whole of LINKABLE_TYPES in evidence/service.py; adding a fifth means
+    # adding it here too, deliberately.
     "verity.modules.evidence.service -> verity.modules.tasks.service",
+    "verity.modules.evidence.service -> verity.modules.documents.service",
+    "verity.modules.evidence.service -> verity.modules.assets.service",
+    "verity.modules.evidence.service -> verity.modules.vulnerabilities.service",
 ]
 forbidden_modules = [
     "verity.modules.ai.repository", "verity.modules.ai.models",

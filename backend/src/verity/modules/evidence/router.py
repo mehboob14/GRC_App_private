@@ -36,12 +36,12 @@ from verity.modules.evidence.schemas import (
     EvidenceTypeOut,
     EvidenceUpdate,
     EvidenceVocabularyOut,
-    LinkedTaskOut,
-    LinkTaskRequest,
+    LinkedRecordOut,
+    LinkRecordRequest,
     MappingSuggestionOut,
     MappingSuggestionsOut,
 )
-from verity.modules.evidence.service import evidence_service
+from verity.modules.evidence.service import LinkTarget, evidence_service
 
 evidence_router = APIRouter(prefix="/evidence", tags=["evidence"])
 
@@ -305,61 +305,65 @@ async def approve_mapping(
 
 
 @evidence_router.get(
-    "/{evidence_id}/tasks",
-    response_model=list[LinkedTaskOut],
-    summary="Tasks this evidence is linked to",
+    "/{evidence_id}/links",
+    response_model=list[LinkedRecordOut],
+    summary="Records this evidence is linked to",
 )
-async def linked_tasks(
+async def linked_records(
     evidence_id: uuid.UUID,
     _principal: Annotated[Principal, Depends(require_evidence_read)],
     context: Annotated[TenantContext, Depends(get_tenant_context)],
     session: Annotated[AsyncSession, Depends(get_tenant_session)],
-) -> list[LinkedTaskOut]:
-    views = await evidence_service.linked_tasks(
-        session, tenant_id=context.tenant_id, evidence_id=evidence_id
+    target_type: str | None = None,
+) -> list[LinkedRecordOut]:
+    views = await evidence_service.linked_records(
+        session,
+        tenant_id=context.tenant_id,
+        evidence_id=evidence_id,
+        target_type=target_type,
     )
-    return [LinkedTaskOut.model_validate(v) for v in views]
+    return [LinkedRecordOut.model_validate(v) for v in views]
 
 
 @evidence_router.post(
-    "/{evidence_id}/tasks",
-    response_model=list[LinkedTaskOut],
-    summary="Link a task to this evidence",
+    "/{evidence_id}/links",
+    response_model=list[LinkedRecordOut],
+    summary="Link a record to this evidence",
 )
-async def link_task(
+async def link_record(
     evidence_id: uuid.UUID,
-    body: LinkTaskRequest,
+    body: LinkRecordRequest,
     principal: Annotated[Principal, Depends(require_evidence_manage)],
     context: Annotated[TenantContext, Depends(get_tenant_context)],
     session: Annotated[AsyncSession, Depends(get_tenant_session)],
-) -> list[LinkedTaskOut]:
-    views = await evidence_service.link_task(
+) -> list[LinkedRecordOut]:
+    views = await evidence_service.link_record(
         session,
         tenant_id=context.tenant_id,
         actor=_actor(principal),
         evidence_id=evidence_id,
-        task_id=body.task_id,
+        target=LinkTarget(type=body.target_type, id=body.target_id),
     )
-    return [LinkedTaskOut.model_validate(v) for v in views]
+    return [LinkedRecordOut.model_validate(v) for v in views]
 
 
 @evidence_router.delete(
-    "/{evidence_id}/tasks/{link_id}",
-    response_model=list[LinkedTaskOut],
-    summary="Unlink a task from this evidence",
+    "/{evidence_id}/links/{link_id}",
+    response_model=list[LinkedRecordOut],
+    summary="Unlink a record from this evidence",
 )
-async def unlink_task(
+async def unlink_record(
     evidence_id: uuid.UUID,
     link_id: uuid.UUID,
     principal: Annotated[Principal, Depends(require_evidence_manage)],
     context: Annotated[TenantContext, Depends(get_tenant_context)],
     session: Annotated[AsyncSession, Depends(get_tenant_session)],
-) -> list[LinkedTaskOut]:
-    views = await evidence_service.unlink_task(
+) -> list[LinkedRecordOut]:
+    views = await evidence_service.unlink_record(
         session,
         tenant_id=context.tenant_id,
         actor=_actor(principal),
         evidence_id=evidence_id,
         link_id=link_id,
     )
-    return [LinkedTaskOut.model_validate(v) for v in views]
+    return [LinkedRecordOut.model_validate(v) for v in views]

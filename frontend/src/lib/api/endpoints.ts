@@ -23,7 +23,8 @@ import type {
   EvidenceQuery,
   EvidenceUpdate,
   EvidenceVocabulary,
-  LinkedTask,
+  LinkedRecord,
+  LinkTargetType,
   MappingSuggestions,
   Framework,
   Group,
@@ -371,13 +372,18 @@ export const evidenceApi = {
       method: "POST",
       body: JSON.stringify({ control_id: controlId }),
     }),
-  linkedTasks: (id: string) => apiFetch<LinkedTask[]>(`/evidence/${id}/tasks`),
-  linkTask: (id: string, taskId: string) =>
-    apiFetch<LinkedTask[]>(`/evidence/${id}/tasks`, {
+  /** Records of every module this evidence is linked to. One endpoint serves
+   *  them all; pass a targetType to narrow it to one. */
+  links: (id: string, targetType?: LinkTargetType) =>
+    apiFetch<LinkedRecord[]>(
+      `/evidence/${id}/links${targetType ? `?target_type=${targetType}` : ""}`,
+    ),
+  link: (id: string, targetType: LinkTargetType, targetId: string) =>
+    apiFetch<LinkedRecord[]>(`/evidence/${id}/links`, {
       method: "POST",
-      body: JSON.stringify({ task_id: taskId }),
+      body: JSON.stringify({ target_type: targetType, target_id: targetId }),
     }),
-  unlinkTask: (id: string, linkId: string) =>
-    apiFetch<LinkedTask[]>(`/evidence/${id}/tasks/${linkId}`, { method: "DELETE" }),
+  unlink: (id: string, linkId: string) =>
+    apiFetch<LinkedRecord[]>(`/evidence/${id}/links/${linkId}`, { method: "DELETE" }),
   downloadUrl: (id: string) => `/api/v1/evidence/${id}/download`,
 };

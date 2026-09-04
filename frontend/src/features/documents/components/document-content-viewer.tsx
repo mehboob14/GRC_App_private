@@ -5,7 +5,7 @@ import { Button, Icon, useToast } from "@/components/ui";
 import { describeError, errorToast } from "@/lib/api/describe-error";
 import { downloadDocumentBlob } from "@/features/documents/api";
 import type { DocumentDetail } from "@/features/documents/types";
-import "../document-prose.css";
+import "@/styles/document-prose.css";
 
 const MIN = 60;
 const MAX = 200;

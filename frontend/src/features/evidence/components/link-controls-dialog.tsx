@@ -36,8 +36,6 @@ export function LinkControlsDialog({
   loadError?: string | null;
   linkedIds: string[];
   onSave: (ids: string[]) => Promise<void>;
-  /** Present for callers that unlink from outside the dialog; unused here. */
-  onUnlink?: (id: string) => void;
 }) {
   const { toast } = useToast();
   const [selected, setSelected] = useState<string[]>(linkedIds);

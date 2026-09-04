@@ -719,6 +719,23 @@ export type Evidence = {
   control_links: { code: string; criteria: string[] }[];
 };
 
+/** The modules a piece of evidence can be linked to. Mirrors LINKABLE_TYPES in
+ *  the backend's evidence service — adding one means adding it there first. */
+export type LinkTargetType = "task" | "document" | "asset" | "vulnerability";
+
+/** A record this evidence is linked to, in one shape for every module. `code`
+ *  is that module's human handle (task code, doc code, CVE, hostname) and is
+ *  empty where it has none; `detail` is its second fact. */
+export type LinkedRecord = {
+  link_id: string;
+  target_type: LinkTargetType;
+  target_id: string;
+  code: string;
+  title: string;
+  status: string;
+  detail: string | null;
+};
+
 export type EvidenceType = {
   value: string;
   label: string;
@@ -778,11 +795,3 @@ export type MappingSuggestions = {
 };
 
 /** A task this evidence is linked to — the remediation or work it supports. */
-export type LinkedTask = {
-  link_id: string;
-  task_id: string;
-  code: string;
-  title: string;
-  status: string;
-  task_kind: string;
-};

@@ -8,7 +8,7 @@ import { useRef } from "react";
 import { Icon } from "@/components/ui";
 import type { IconName } from "@/components/ui/icon";
 import { cn } from "@/lib/cn";
-import "../document-prose.css";
+import "@/styles/document-prose.css";
 
 const FONTS = [
   { label: "Default", value: "" },

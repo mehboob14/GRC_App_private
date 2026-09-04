@@ -123,16 +123,18 @@ class ApproveMappingRequest(_Request):
     control_id: uuid.UUID
 
 
-class LinkedTaskOut(_Response):
-    """A task this evidence supports — the remediation or work it evidences."""
+class LinkedRecordOut(_Response):
+    """A record this evidence is linked to, in one shape for every module."""
 
     link_id: uuid.UUID
-    task_id: uuid.UUID
+    target_type: str
+    target_id: uuid.UUID
     code: str
     title: str
     status: str
-    task_kind: str
+    detail: str | None
 
 
-class LinkTaskRequest(_Request):
-    task_id: uuid.UUID
+class LinkRecordRequest(_Request):
+    target_type: str
+    target_id: uuid.UUID
