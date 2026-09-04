@@ -129,7 +129,22 @@ export type VulnException = {
   expires_at: string | null;
 };
 
+/** A primary source behind one of the facts on a finding, so a reader can check
+ *  the KEV badge, the EPSS score or the patch claim rather than trust it. */
+export type VulnReference = {
+  /** Which fact it backs: cve | kev | epss | exploit | patch */
+  backs: string;
+  label: string;
+  url: string;
+  detail: string;
+};
+
 export type VulnInstanceDetail = VulnInstance & {
+  kev_vendor: string | null;
+  kev_product: string | null;
+  kev_required_action: string | null;
+  kev_due_at: string | null;
+  references: VulnReference[];
   exception: VulnException | null;
   kev_added_at: string | null;
   risk_breakdown: RiskBreakdown | null;

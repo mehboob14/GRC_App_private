@@ -40,6 +40,8 @@ from verity.modules.vulnerabilities.models import (
     VulnSlaPolicy,
     VulnTransition,
 )
+from verity.modules.vulnerabilities.references import Reference
+from verity.modules.vulnerabilities.references import build as build_references
 from verity.modules.vulnerabilities.scoring import (
     DEFAULT_SLA_DAYS,
     PRIORITY_BANDS,
@@ -192,6 +194,16 @@ class InstanceDetailView(InstanceView):
     #: the first enrichment; a reader needs it to judge how long the clock has
     #: been running.
     kev_added_at: datetime | None = None
+    kev_vendor: str | None = None
+    kev_product: str | None = None
+    kev_required_action: str | None = None
+    #: CISA's own remediation deadline. Shown, never computed against — a
+    #: second clock beside sla_due_at would change what "overdue" means.
+    kev_due_at: datetime | None = None
+    #: Primary sources behind the facts on this finding, so a reader can
+    #: check the KEV badge, the EPSS score and the patch claim rather than
+    #: take them on trust. Derived on read; nothing is stored.
+    references: list[Reference] = field(default_factory=list)
     #: How the risk score was reached, recomputed on read from the same pure
     #: function that wrote it. Derived, never stored - a score whose derivation
     #: is stored can drift from the score itself.
@@ -665,6 +677,19 @@ class VulnerabilityService:
             false_positive_reason=inst.false_positive_reason,
             report_id=inst.report_id,
             kev_added_at=defn.kev_added_at,
+            kev_vendor=defn.kev_vendor,
+            kev_product=defn.kev_product,
+            kev_required_action=defn.kev_required_action,
+            kev_due_at=defn.kev_due_at,
+            references=build_references(
+                cve_id=defn.cve_id,
+                kev_flag=defn.kev_flag,
+                epss_score=defn.epss_score,
+                public_exploit_count=defn.public_exploit_count,
+                exploit_refs=list(defn.exploit_refs or []),
+                advisory_url=defn.advisory_url,
+                patch_source=defn.patch_source,
+            ),
             risk_breakdown=compute_breakdown(
                 severity=defn.severity,
                 cvss_score=defn.cvss_score,
@@ -1786,6 +1811,10 @@ class VulnerabilityService:
                     defn.kev_flag = e.kev_flag
                     defn.kev_ransomware = e.kev_ransomware
                     defn.kev_added_at = e.kev_added_at
+                    defn.kev_vendor = e.kev_vendor
+                    defn.kev_product = e.kev_product
+                    defn.kev_required_action = e.kev_required_action
+                    defn.kev_due_at = e.kev_due_at
                 if e.exploit_ok:
                     defn.public_exploit_count = e.public_exploit_count
                     defn.exploit_refs = e.exploit_refs

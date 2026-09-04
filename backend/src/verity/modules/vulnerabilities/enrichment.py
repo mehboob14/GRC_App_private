@@ -44,6 +44,18 @@ _KEV_TTL = 6 * 3600
 _GITHUB_REF_CAP = 5
 
 
+@dataclass(frozen=True, slots=True)
+class KevEntry:
+    """One row of CISA's known-exploited catalogue, as published."""
+
+    added_at: datetime | None = None
+    ransomware: bool = False
+    vendor: str | None = None
+    product: str | None = None
+    required_action: str | None = None
+    due_at: datetime | None = None
+
+
 @dataclass(frozen=True)
 class Enrichment:
     epss_score: float | None = None
@@ -51,6 +63,10 @@ class Enrichment:
     kev_flag: bool = False
     kev_ransomware: bool = False
     kev_added_at: datetime | None = None
+    kev_vendor: str | None = None
+    kev_product: str | None = None
+    kev_required_action: str | None = None
+    kev_due_at: datetime | None = None
     public_exploit_count: int | None = None
     exploit_refs: list[dict[str, object]] = field(default_factory=list)
     # vendor patch intelligence (spec 128)
@@ -66,7 +82,7 @@ class Enrichment:
 
 
 # in-process caches: (fetched_at, payload)
-_kev_cache: tuple[float, dict[str, tuple[datetime | None, bool]]] | None = None
+_kev_cache: tuple[float, dict[str, KevEntry]] | None = None
 _exploitdb_cache: tuple[float, dict[str, int]] | None = None
 
 _NVD_DETAIL = "https://nvd.nist.gov/vuln/detail/"
@@ -122,7 +138,7 @@ async def enrich_cves(
     out: dict[str, Enrichment] = {}
     for cve in wanted:
         e_score, e_pct = epss.get(cve, (None, None))
-        kev_added, kev_ransom = kev.get(cve, (None, False))
+        entry = kev.get(cve) or KevEntry()
         gh_count, gh_refs = github.get(cve, (None, []))
         edb_count = exploitdb.get(cve)
         # public exploit count: the richer of the keyless Exploit-DB baseline and
@@ -133,8 +149,12 @@ async def enrich_cves(
             epss_score=e_score,
             epss_percentile=e_pct,
             kev_flag=cve in kev,
-            kev_ransomware=kev_ransom,
-            kev_added_at=kev_added,
+            kev_ransomware=entry.ransomware,
+            kev_added_at=entry.added_at,
+            kev_vendor=entry.vendor,
+            kev_product=entry.product,
+            kev_required_action=entry.required_action,
+            kev_due_at=entry.due_at,
             public_exploit_count=max(counts) if counts else None,
             exploit_refs=gh_refs,
             patch_available=True if fixed_versions else None,
@@ -268,14 +288,14 @@ async def _fetch_epss(
     return out
 
 
-async def _fetch_kev() -> dict[str, tuple[datetime | None, bool]] | None:
+async def _fetch_kev() -> dict[str, KevEntry] | None:
     """None == KEV was unavailable and no cache exists (keep stored kev_flag); a
     dict (fresh or cached) == authoritative, so a CVE absent from it is not KEV."""
     global _kev_cache  # noqa: PLW0603 — module-level TTL cache, single value
     now = time.time()
     if _kev_cache is not None and now - _kev_cache[0] < _KEV_TTL:
         return _kev_cache[1]
-    catalogue: dict[str, tuple[datetime | None, bool]] = {}
+    catalogue: dict[str, KevEntry] = {}
     try:
         async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
             resp = await client.get(_KEV_URL)
@@ -284,8 +304,14 @@ async def _fetch_kev() -> dict[str, tuple[datetime | None, bool]] | None:
                 cve = str(row.get("cveID", "")).upper()
                 if not cve:
                     continue
-                ransom = str(row.get("knownRansomwareCampaignUse", "")).lower() == "known"
-                catalogue[cve] = (_as_date(row.get("dateAdded")), ransom)
+                catalogue[cve] = KevEntry(
+                    added_at=_as_date(row.get("dateAdded")),
+                    ransomware=str(row.get("knownRansomwareCampaignUse", "")).lower() == "known",
+                    vendor=(str(row.get("vendorProject") or "").strip() or None),
+                    product=(str(row.get("product") or "").strip() or None),
+                    required_action=(str(row.get("requiredAction") or "").strip() or None),
+                    due_at=_as_date(row.get("dueDate")),
+                )
         _kev_cache = (now, catalogue)
     except Exception:
         logger.warning("kev_fetch_failed")

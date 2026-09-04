@@ -163,6 +163,15 @@ class ExceptionDecisionIn(_Request):
     note: str | None = Field(default=None, max_length=2000)
 
 
+class ReferenceOut(_Response):
+    """A primary source behind one of the facts on a finding."""
+
+    backs: str
+    label: str
+    url: str
+    detail: str
+
+
 class InstanceDetailOut(InstanceOut):
     # cvss_vector / cwe_id / epss_percentile / patch_available are inherited
     # from InstanceOut — the register shows them too.
@@ -190,6 +199,11 @@ class InstanceDetailOut(InstanceOut):
     false_positive_reason: str | None
     report_id: uuid.UUID | None
     kev_added_at: UtcDateTime | None = None
+    kev_vendor: str | None = None
+    kev_product: str | None = None
+    kev_required_action: str | None = None
+    kev_due_at: UtcDateTime | None = None
+    references: list[ReferenceOut] = []
     risk_breakdown: RiskBreakdownOut | None = None
     asset_criticality: AssetCiaOut | None = None
     exception: ExceptionOut | None = None

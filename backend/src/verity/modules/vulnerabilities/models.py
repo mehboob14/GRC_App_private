@@ -104,6 +104,15 @@ class VulnDefinition(UUIDPrimaryKey, TenantScoped, Timestamped, Integratable, Ba
     kev_flag: Mapped[bool] = mapped_column(default=False, server_default=text("false"))
     kev_ransomware: Mapped[bool] = mapped_column(default=False, server_default=text("false"))
     kev_added_at: Mapped[datetime | None] = mapped_column(default=None)
+    #: The rest of what CISA publishes for a known-exploited CVE. Stored so a
+    #: reader can check the claim rather than trust the badge. ``kev_due_at`` is
+    #: CISA's own remediation deadline — displayed only; nothing computes
+    #: against it, because a second clock beside sla_due_at would change what
+    #: "overdue" means on the register.
+    kev_vendor: Mapped[str | None] = mapped_column(default=None)
+    kev_product: Mapped[str | None] = mapped_column(default=None)
+    kev_required_action: Mapped[str | None] = mapped_column(default=None)
+    kev_due_at: Mapped[datetime | None] = mapped_column(default=None)
     public_exploit_count: Mapped[int | None] = mapped_column(default=None)
     exploit_refs: Mapped[list[dict[str, object]]] = mapped_column(
         postgresql.JSONB, default=list, server_default=text("'[]'::jsonb")
