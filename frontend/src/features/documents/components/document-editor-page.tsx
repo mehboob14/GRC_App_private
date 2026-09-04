@@ -3,13 +3,29 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
 import DOMPurify from "dompurify";
 import mammoth from "mammoth";
-import { Button, CodeChip, ErrorState, Icon, useToast } from "@/components/ui";
+import {
+  Button,
+  CodeChip,
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  ErrorState,
+  Icon,
+  SegmentedControl,
+  TextField,
+  useToast,
+} from "@/components/ui";
 import { describeError, errorToast } from "@/lib/api/describe-error";
 import {
   downloadDocumentBlob,
   getDocumentDetail,
   saveDocumentContent,
 } from "@/features/documents/api";
+import type { ChangeType } from "@/features/documents/types";
 import { RichTextEditor } from "./rich-text-editor";
 
 /**
@@ -54,13 +70,20 @@ export function DocumentEditorPage() {
   }, [doc, html]);
 
   const saveMutation = useMutation({
-    mutationFn: () => saveDocumentContent(documentId!, html ?? ""),
+    mutationFn: ({ summary, changeType }: { summary: string; changeType: ChangeType }) =>
+      saveDocumentContent(documentId!, html ?? "", changeType, summary || undefined),
     onSuccess: () => {
       setDirty(false);
+      setSaving(false);
+      setSummary("");
       toast({ title: "Content saved as a new version", tone: "success" });
     },
     onError: (error: unknown) => toast({ title: errorToast(error, "document"), tone: "danger" }),
   });
+
+  const [saving, setSaving] = useState(false);
+  const [summary, setSummary] = useState("");
+  const [changeType, setChangeType] = useState<ChangeType>("minor");
 
   // Warn before leaving with unsaved edits.
   useEffect(() => {
@@ -151,11 +174,7 @@ export function DocumentEditorPage() {
           <Button variant="secondary" onClick={() => window.close()}>
             Close
           </Button>
-          <Button
-            loading={saveMutation.isPending}
-            disabled={!dirty}
-            onClick={() => saveMutation.mutate()}
-          >
+          <Button loading={saveMutation.isPending} disabled={!dirty} onClick={() => setSaving(true)}>
             <Icon name="check" className="size-4" />
             Save
           </Button>
@@ -171,6 +190,66 @@ export function DocumentEditorPage() {
           }}
         />
       </div>
+      {/* Every save writes a version, and the version list is what someone
+          reads months later to answer "what changed and why". Asking for one
+          line here is the difference between a history of "Content edited."
+          and a history that means something. */}
+      <Dialog
+        open={saving}
+        onOpenChange={(next) => {
+          if (!next) setSaving(false);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Save a new version</DialogTitle>
+            <DialogDescription>
+              This creates a new version. The previous one stays in the history and can be
+              restored at any time.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogBody className="space-y-4">
+            <TextField
+              label="What changed?"
+              value={summary}
+              onChange={(event) => setSummary(event.target.value)}
+              placeholder="e.g. Tightened the access review cadence to monthly"
+              hint="Shown on the version history row. Leave blank and it records 'Content edited.'"
+            />
+            <div>
+              <span className="mb-1 block text-label-md font-semibold text-text-primary">
+                Significance
+              </span>
+              <SegmentedControl
+                value={changeType}
+                onChange={(next) => setChangeType(next as ChangeType)}
+                label="Version significance"
+                items={[
+                  { id: "patch", label: "Patch" },
+                  { id: "minor", label: "Minor" },
+                  { id: "major", label: "Major" },
+                ]}
+              />
+              <p className="mt-1 text-caption text-text-subtle">
+                Sets the next version number. Major for a rewrite that needs re-approval, patch
+                for a typo.
+              </p>
+            </div>
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setSaving(false)}>
+              Cancel
+            </Button>
+            <Button
+              loading={saveMutation.isPending}
+              onClick={() => saveMutation.mutate({ summary: summary.trim(), changeType })}
+            >
+              Save version
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 }

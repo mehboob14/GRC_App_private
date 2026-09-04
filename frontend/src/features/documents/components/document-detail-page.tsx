@@ -16,13 +16,7 @@ import {
   ErrorState,
   Icon,
   StatusPill,
-  Table,
   TabStrip,
-  TBody,
-  TD,
-  TH,
-  THead,
-  TR,
 } from "@/components/ui";
 import type { StatusFamily } from "@/components/ui/status-pill";
 import { cn } from "@/lib/cn";
@@ -35,6 +29,7 @@ import {
   updateDocument,
   mergeIntoDocumentDetail,
 } from "@/features/documents/api";
+import { VersionHistory } from "./version-history";
 import type { ApprovalTier, Document, Lifecycle } from "@/features/documents/types";
 import { DocumentContentViewer } from "./document-content-viewer";
 import { DocumentCampaignsPanel } from "./document-campaigns-panel";
@@ -278,35 +273,12 @@ export function DocumentDetailPage() {
 
         {tab === "history" ? (
           <Panel title="Version history">
-            <Table>
-              <THead>
-                <TR>
-                  <TH numeric>Version</TH>
-                  <TH>Change</TH>
-                  <TH>Date</TH>
-                  <TH>By</TH>
-                  <TH>Summary</TH>
-                  <TH>Status</TH>
-                </TR>
-              </THead>
-              <TBody>
-                {doc.versions.map((v) => (
-                  <TR key={v.version}>
-                    <TD numeric><span className="font-medium text-text-primary">{v.version}</span></TD>
-                    <TD><Badge variant="neutral">{v.change_type}</Badge></TD>
-                    <TD>{fmtDate(v.created_on)}</TD>
-                    <TD>{v.created_by}</TD>
-                    <TD><span className="text-body-sm text-text-secondary">{v.summary}</span></TD>
-                    <TD>
-                      <StatusPill
-                        status={v.status === "current" ? "success" : "neutral"}
-                        label={v.status === "current" ? "Current" : "Superseded"}
-                      />
-                    </TD>
-                  </TR>
-                ))}
-              </TBody>
-            </Table>
+            <VersionHistory
+              documentId={documentId}
+              versions={doc.versions}
+              canManage={canManage}
+              lifecycle={doc.lifecycle}
+            />
           </Panel>
         ) : null}
 

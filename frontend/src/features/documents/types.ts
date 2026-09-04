@@ -72,12 +72,52 @@ export type Document = {
 export type ChangeType = "major" | "minor" | "patch";
 
 export type DocumentVersion = {
+  /** Needed to ask what this version changed, and to restore it. */
+  id: string;
   version: string;
   change_type: ChangeType;
-  created_on: string;
+  /** The full timestamp. "Who changed and when" needs the time of day, not
+   *  just the date — two edits on one afternoon are otherwise indistinguishable. */
+  created_at: string;
   created_by: string;
   summary: string;
   status: "current" | "superseded";
+};
+
+/** A run of words in a diff, and whether it survived the edit. Text only: the
+ *  backend deliberately sends no markup, so nothing here is ever injected. */
+export type DiffSegment = {
+  kind: "equal" | "added" | "removed";
+  text: string;
+};
+
+export type DiffBlock = {
+  kind: "equal" | "added" | "removed" | "changed";
+  tag: string;
+  segments: DiffSegment[];
+};
+
+export type DiffStats = {
+  blocks_added: number;
+  blocks_removed: number;
+  blocks_changed: number;
+  words_added: number;
+  words_removed: number;
+};
+
+/** One version and what it changed, against the version before it. */
+export type VersionDiff = {
+  version_id: string;
+  version_no: string;
+  compared_with: string | null;
+  created_at: string;
+  created_by_name: string | null;
+  summary: string | null;
+  blocks: DiffBlock[];
+  stats: DiffStats;
+  /** False for an uploaded PDF/Word version, which has no text to compare. */
+  comparable: boolean;
+  reason: string | null;
 };
 
 export type ApprovalTargetType = "user" | "role" | "group";

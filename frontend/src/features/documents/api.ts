@@ -12,6 +12,7 @@ import type {
   Classification,
   Document,
   DocumentDetail,
+  VersionDiff,
   DocumentKpis,
   DocumentVersion,
   DocType,
@@ -53,6 +54,7 @@ type RawDocument = {
 };
 
 type RawVersion = {
+  id: string;
   version_no: string;
   change_type: "major" | "minor" | "patch";
   created_at: string;
@@ -124,9 +126,12 @@ function toDocument(r: RawDocument): Document {
 
 function toVersion(v: RawVersion): DocumentVersion {
   return {
+    id: v.id,
     version: v.version_no,
     change_type: v.change_type,
-    created_on: day(v.created_at) ?? "",
+    // The full timestamp, not day(): history has to distinguish two edits made
+    // the same afternoon.
+    created_at: v.created_at,
     created_by: v.created_by_name ?? "System",
     summary: v.summary ?? "",
     status: v.is_current ? "current" : "superseded",
@@ -401,5 +406,32 @@ export function mergeIntoDocumentDetail(
   queryClient.setQueryData<DocumentDetail | undefined>(
     ["documents", documentId],
     (prev) => (prev ? { ...prev, ...next } : undefined),
+  );
+}
+
+/** What this version changed, against the version before it. Computed
+ *  server-side with difflib and returned as tagged text, so the diff never
+ *  reaches `dangerouslySetInnerHTML`. */
+export async function getVersionDiff(
+  documentId: string,
+  versionId: string,
+): Promise<VersionDiff> {
+  return apiFetch<VersionDiff>(`/documents/${documentId}/versions/${versionId}/diff`);
+}
+
+/** Put an earlier version's text back, as a NEW version.
+ *
+ * `document_versions` is append-only, so this only ever moves forward: the
+ * version you left stays in the list, and restoring it again is the redo. On an
+ * approved or published document this sends it back to draft, because the text
+ * the approvals were given against no longer exists. */
+export async function restoreVersion(
+  documentId: string,
+  versionId: string,
+): Promise<DocumentDetail> {
+  return toDetail(
+    await apiFetch<RawDetail>(`/documents/${documentId}/versions/${versionId}/restore`, {
+      method: "POST",
+    }),
   );
 }

@@ -22,6 +22,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from verity.core.errors import Conflict, InvalidInput, NotFound, PermissionDenied
 from verity.core.storage import ObjectStore, get_object_store
 from verity.modules.audit.service import Actor, AuditService, audit_service
+from verity.modules.documents.diffing import (
+    DiffBlock,
+    DiffSummary,
+    diff_html,
+    summarise,
+)
 from verity.modules.documents.models import (
     DOC_TYPES,
     TYPE_PREFIX,
@@ -71,6 +77,26 @@ _RECIPIENT_SNAPSHOT: Final = (
     "status",
     "acknowledged_at",
 )
+
+
+@dataclass(frozen=True, slots=True)
+class VersionDiffView:
+    """One version, and what it changed relative to the version before it.
+
+    ``blocks`` is tagged text, never markup — the diff path deliberately gives
+    the client nothing to inject.
+    """
+
+    version_id: uuid.UUID
+    version_no: str
+    compared_with: str | None
+    created_at: datetime
+    created_by_name: str | None
+    summary: str | None
+    blocks: list[DiffBlock]
+    stats: DiffSummary
+    comparable: bool
+    reason: str | None
 
 
 @dataclass(frozen=True)
@@ -866,6 +892,42 @@ class DocumentService:
                 "Create a new document if you need an up to date version.",
                 detail="an archived document cannot be edited",
             )
+        # Changing the text of an approved or published policy invalidates the
+        # sign-off on it: the tiers were approved against words that no longer
+        # exist, and every acknowledgement was given against them too. So the
+        # document goes back to draft and its tiers reset, the same way a
+        # rejection already sends it back (see decide_approval_tier). Without
+        # this, a published policy could be rewritten while still reporting
+        # itself approved, signed on the old dates, and fully acknowledged.
+        demoted_from = None
+        if doc.lifecycle in ("approved", "published"):
+            demoted_from = doc.lifecycle
+            doc_before = AuditService.snapshot(doc, fields=_DOC_SNAPSHOT)
+            doc.lifecycle = "draft"
+            doc.approved_at = None
+            doc.published_at = None
+            approvals = (
+                await session.execute(
+                    select(DocumentApproval).where(
+                        DocumentApproval.tenant_id == tenant_id,
+                        DocumentApproval.document_id == doc.id,
+                    )
+                )
+            ).scalars()
+            for approval in approvals:
+                approval.status = "not_started"
+                approval.decided_at = None
+                approval.note = None
+            await self._audit.record(
+                session,
+                action="transition",
+                object_type="document",
+                object_id=doc.id,
+                actor=actor,
+                tenant_id=tenant_id,
+                before=doc_before,
+                after=AuditService.snapshot(doc, fields=_DOC_SNAPSHOT),
+            )
         # Editing an uploaded (PDF/Word) document converts it to an authored
         # HTML document from this version on (the file was parsed in the editor).
         doc.content_format = "html"
@@ -895,8 +957,14 @@ class DocumentService:
             object_id=doc.id,
             actor=actor,
             tenant_id=tenant_id,
-            before={"version": current.version_no if current else None},
-            after={"version": version.version_no},
+            before={
+                "version": current.version_no if current else None,
+                **({"lifecycle": demoted_from} if demoted_from else {}),
+            },
+            after={
+                "version": version.version_no,
+                **({"lifecycle": "draft"} if demoted_from else {}),
+            },
         )
         return await self.get_document(
             session, tenant_id=tenant_id, document_id=doc.id, me=_membership(actor)
@@ -2004,6 +2072,125 @@ class DocumentService:
         # DocumentDetailView is a DocumentView; the detail load also fills the
         # current version_no, which the base view needs.
         return await self.get_document(session, tenant_id=tenant_id, document_id=document_id)
+
+
+    # -- version history: what changed, and putting it back -------------------
+
+    async def _version(
+        self,
+        session: AsyncSession,
+        tenant_id: uuid.UUID,
+        document_id: uuid.UUID,
+        version_id: uuid.UUID,
+    ) -> DocumentVersion:
+        row = await session.get(DocumentVersion, version_id)
+        if row is None or row.tenant_id != tenant_id or row.document_id != document_id:
+            raise NotFound(
+                "That version of this document no longer exists.",
+                detail=f"version {version_id} not on document {document_id}",
+            )
+        return row
+
+    async def version_diff(
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        document_id: uuid.UUID,
+        version_id: uuid.UUID,
+    ) -> VersionDiffView:
+        """What this version changed, against the version immediately before it."""
+        target = await self._version(session, tenant_id, document_id, version_id)
+        previous = (
+            await session.execute(
+                select(DocumentVersion)
+                .where(
+                    DocumentVersion.tenant_id == tenant_id,
+                    DocumentVersion.document_id == document_id,
+                    DocumentVersion.created_at < target.created_at,
+                )
+                .order_by(DocumentVersion.created_at.desc())
+                .limit(1)
+            )
+        ).scalar_one_or_none()
+
+        names = await self._member_names(session, tenant_id)
+        author = (
+            names.get(target.created_by_membership_id)
+            if target.created_by_membership_id
+            else None
+        )
+        # An uploaded PDF or Word version has no text to compare. Say so rather
+        # than rendering it as an empty document, which reads like a deletion.
+        uploaded = target.content_html is None or (
+            previous is not None and previous.content_html is None
+        )
+        if uploaded:
+            return VersionDiffView(
+                version_id=target.id,
+                version_no=target.version_no,
+                compared_with=previous.version_no if previous else None,
+                created_at=target.created_at,
+                created_by_name=author,
+                summary=target.summary,
+                blocks=[],
+                stats=summarise([]),
+                comparable=False,
+                reason="This version is an uploaded file, so there is no text to compare.",
+            )
+
+        blocks = diff_html(previous.content_html if previous else None, target.content_html)
+        return VersionDiffView(
+            version_id=target.id,
+            version_no=target.version_no,
+            compared_with=previous.version_no if previous else None,
+            created_at=target.created_at,
+            created_by_name=author,
+            summary=target.summary,
+            blocks=blocks,
+            stats=summarise(blocks),
+            comparable=True,
+            reason=None,
+        )
+
+    async def restore_version(
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        document_id: uuid.UUID,
+        version_id: uuid.UUID,
+    ) -> DocumentDetailView:
+        """Put an earlier version's text back, as a NEW version.
+
+        ``document_versions`` is append-only behind a database trigger, so a
+        restore can only ever move forward. That is the useful property: nothing
+        is overwritten, the version you left is still in the list, and restoring
+        it again is the redo. The version list is the undo stack, and it lives in
+        Postgres, so it survives a reload and a different person.
+        """
+        target = await self._version(session, tenant_id, document_id, version_id)
+        if target.content_html is None:
+            raise InvalidInput(
+                "That version is an uploaded file rather than authored text, so it "
+                "cannot be restored into the editor. Download it instead.",
+                detail="only an html version can be restored",
+            )
+        if target.id == (await self._load(session, tenant_id, document_id)).current_version_id:
+            raise Conflict(
+                "That version is already the current one.",
+                detail="cannot restore the current version",
+            )
+        return await self.save_content(
+            session,
+            tenant_id=tenant_id,
+            actor=actor,
+            document_id=document_id,
+            content_html=target.content_html,
+            change_type="minor",
+            summary=f"Restored from v{target.version_no}",
+        )
 
 
 def _with_version(view: DocumentView, version_no: str | None) -> DocumentView:

@@ -42,6 +42,7 @@ from verity.modules.documents.schemas import (
     DocumentVocabularyOut,
     PendingApprovalOut,
     PendingCampaignOut,
+    VersionDiffOut,
 )
 from verity.modules.documents.service import RecipientSelection, document_service
 
@@ -462,6 +463,55 @@ async def save_content(
         content_html=body.content_html,
         change_type=body.change_type,
         summary=body.summary,
+    )
+    return DocumentDetailOut.model_validate(view)
+
+
+@documents_router.get(
+    "/{document_id}/versions/{version_id}/diff",
+    response_model=VersionDiffOut,
+    summary="What this version changed, against the one before it",
+)
+async def version_diff(
+    document_id: uuid.UUID,
+    version_id: uuid.UUID,
+    _principal: Annotated[Principal, Depends(require_read)],
+    context: Annotated[TenantContext, Depends(get_tenant_context)],
+    session: Annotated[AsyncSession, Depends(get_tenant_session)],
+) -> VersionDiffOut:
+    """Reading history is a read: anyone who can open the document can see what
+    changed in it and who changed it."""
+    view = await document_service.version_diff(
+        session,
+        tenant_id=context.tenant_id,
+        document_id=document_id,
+        version_id=version_id,
+    )
+    return VersionDiffOut.model_validate(view)
+
+
+@documents_router.post(
+    "/{document_id}/versions/{version_id}/restore",
+    response_model=DocumentDetailOut,
+    summary="Put an earlier version's text back as a new version",
+)
+async def restore_version(
+    document_id: uuid.UUID,
+    version_id: uuid.UUID,
+    principal: Annotated[Principal, Depends(require_manage)],
+    context: Annotated[TenantContext, Depends(get_tenant_context)],
+    session: Annotated[AsyncSession, Depends(get_tenant_session)],
+) -> DocumentDetailOut:
+    """Restoring writes a NEW version carrying the old text — nothing is
+    overwritten, so the version you left is still there to restore forward to.
+    It routes through save_content, which means an approved or published
+    document goes back to draft here too."""
+    view = await document_service.restore_version(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(principal),
+        document_id=document_id,
+        version_id=version_id,
     )
     return DocumentDetailOut.model_validate(view)
 

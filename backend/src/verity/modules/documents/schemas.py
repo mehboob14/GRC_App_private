@@ -43,6 +43,44 @@ class DocumentOut(_Response):
     attestation_pct: float | None
 
 
+class DiffSegmentOut(_Response):
+    """A run of words, and whether it survived the edit. Text only — the diff
+    path never hands the client markup to inject."""
+
+    kind: str
+    text: str
+
+
+class DiffBlockOut(_Response):
+    kind: str
+    tag: str
+    segments: list[DiffSegmentOut]
+
+
+class DiffStatsOut(_Response):
+    blocks_added: int
+    blocks_removed: int
+    blocks_changed: int
+    words_added: int
+    words_removed: int
+
+
+class VersionDiffOut(_Response):
+    """One version and what it changed, against the version before it."""
+
+    version_id: uuid.UUID
+    version_no: str
+    compared_with: str | None
+    created_at: UtcDateTime
+    created_by_name: str | None
+    summary: str | None
+    blocks: list[DiffBlockOut]
+    stats: DiffStatsOut
+    #: False for an uploaded PDF/Word version, which has no text to compare.
+    comparable: bool
+    reason: str | None
+
+
 class DocumentVersionOut(_Response):
     id: uuid.UUID
     version_no: str
