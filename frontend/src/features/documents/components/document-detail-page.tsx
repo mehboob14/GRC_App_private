@@ -33,6 +33,7 @@ import {
   acknowledgeDocument,
   getDocumentDetail,
   updateDocument,
+  mergeIntoDocumentDetail,
 } from "@/features/documents/api";
 import type { ApprovalTier, Document, Lifecycle } from "@/features/documents/types";
 import { DocumentContentViewer } from "./document-content-viewer";
@@ -91,7 +92,7 @@ const TABS = [
 type TabId = (typeof TABS)[number]["id"];
 
 export function DocumentDetailPage() {
-  const { documentId } = useParams();
+  const { documentId = "" } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -264,7 +265,7 @@ export function DocumentDetailPage() {
                       ? `Assign tier ${all[i - 1].tier} first.`
                       : undefined
                   }
-                  onAssigned={(next) => queryClient.setQueryData(["documents", documentId], next)}
+                  onAssigned={(next) => mergeIntoDocumentDetail(queryClient, documentId, next)}
                 />
               ))}
             </div>
@@ -399,7 +400,7 @@ export function DocumentDetailPage() {
           currentOwnerName={doc.owner?.name ?? null}
           onOpenChange={setAssigningOwner}
           onAssigned={(next) => {
-            queryClient.setQueryData(["documents", documentId], next);
+            mergeIntoDocumentDetail(queryClient, documentId, next);
             queryClient.invalidateQueries({ queryKey: ["documents"] });
           }}
         />

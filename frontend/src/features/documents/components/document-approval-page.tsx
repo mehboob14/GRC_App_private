@@ -11,7 +11,7 @@ import {
 } from "@/components/ui";
 import { describeError, errorToast } from "@/lib/api/describe-error";
 import { useAuth } from "@/lib/auth/auth-context";
-import { decideApproval, getDocumentDetail } from "../api";
+import { decideApproval, getDocumentDetail, mergeIntoDocumentDetail } from "../api";
 import type { ApprovalAssignee, Document } from "../types";
 import { DocumentContentViewer } from "./document-content-viewer";
 import { PENDING_APPROVALS_KEY } from "./acknowledgements-bell";
@@ -116,9 +116,7 @@ export function DocumentApprovalPage() {
     mutationFn: (decision: "approved" | "rejected") =>
       decideApproval(documentId, tierNumber, decision, note.trim() || undefined),
     onSuccess: (next: Document, decision) => {
-      queryClient.setQueryData(key, (prev: Document | undefined) =>
-        prev ? { ...prev, ...next } : next,
-      );
+      mergeIntoDocumentDetail(queryClient, documentId, next);
       queryClient.invalidateQueries({ queryKey: ["documents"] });
       queryClient.invalidateQueries({ queryKey: PENDING_APPROVALS_KEY });
       setConfirmText("");

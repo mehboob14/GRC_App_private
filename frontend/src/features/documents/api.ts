@@ -1,3 +1,4 @@
+import type { QueryClient } from "@tanstack/react-query";
 import { ApiError, apiFetch } from "@/lib/api/client";
 import { getAccessToken } from "@/lib/auth/session";
 import type {
@@ -376,4 +377,29 @@ export async function commentOnCampaign(
 
 export async function closeCampaign(campaignId: string): Promise<Campaign> {
   return apiFetch<Campaign>(`/documents/campaigns/${campaignId}/close`, { method: "POST" });
+}
+
+/** Merge a summary `Document` into the cached `DocumentDetail`, never replace it.
+ *
+ * `PATCH /documents/{id}`, the tier-assign route and the approve/reject route all
+ * answer with `DocumentOut`, which carries none of the detail-only fields —
+ * `approvals`, `versions`, `content_html`, `acknowledged`. Writing one straight
+ * into the detail cache strips those off, and the next synchronous render calls
+ * `tierCards(doc.approvals).map(...)` on `undefined` and takes the page down
+ * before the invalidation's refetch can land. That is exactly what assigning an
+ * owner used to do.
+ *
+ * With nothing cached this deliberately writes nothing: a bare `Document` under
+ * the detail key is the same bug in a rarer path, so it is left for the query to
+ * fetch in full.
+ */
+export function mergeIntoDocumentDetail(
+  queryClient: QueryClient,
+  documentId: string,
+  next: Document,
+): void {
+  queryClient.setQueryData<DocumentDetail | undefined>(
+    ["documents", documentId],
+    (prev) => (prev ? { ...prev, ...next } : undefined),
+  );
 }
