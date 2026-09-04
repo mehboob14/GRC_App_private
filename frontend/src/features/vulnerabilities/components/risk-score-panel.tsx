@@ -15,10 +15,13 @@ import type { AssetCriticality, RiskBreakdown } from "../types";
 
 /** Risk runs the other way from readiness: high is bad, so the bands are
  *  inverted against the default gauge. The boundaries are the P-band
- *  thresholds in scoring.py, not decoration. */
+ *  thresholds in scoring.py, not decoration.
+ *
+ *  Every family here must exist in tokens.css — `status-info` does not, and an
+ *  undefined CSS variable paints nothing, which showed as a hole in the arc. */
 const RISK_ZONES = [
   { to: 25, strokeClass: "stroke-status-success-base", textClass: "text-status-success-text" },
-  { to: 50, strokeClass: "stroke-status-info-base", textClass: "text-status-info-text" },
+  { to: 50, strokeClass: "stroke-status-progress-base", textClass: "text-status-progress-text" },
   { to: 75, strokeClass: "stroke-status-warning-base", textClass: "text-status-warning-text" },
   { to: 100, strokeClass: "stroke-status-danger-base", textClass: "text-status-danger-text" },
 ];

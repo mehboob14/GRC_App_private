@@ -69,7 +69,12 @@ export function THead({
       <thead
         className={cn(
           // Sticky within a scrolling wrapper; inert when the page scrolls.
-          "sticky top-0 z-sticky-table border-b border-border bg-surface-sunken",
+          // surface-hover, not surface-sunken: sunken is #FBFCFD against a
+          // #FFFFFF body — a 1.03 luminance ratio, so the band was invisible and
+          // the header read as a faded first data row. hover gives 1.10 light /
+          // 1.17 dark, and border-strong supplies the rule that actually
+          // separates labels from values.
+          "sticky top-0 z-sticky-table border-b border-border-strong bg-surface-hover",
           className,
         )}
         {...props}
@@ -145,7 +150,7 @@ export function TH({
   const content = (
     <span
       className={cn(
-        "inline-flex items-center gap-1 font-sans text-overline uppercase text-text-secondary transition-colors duration-80",
+        "inline-flex items-center gap-1 font-sans text-overline font-semibold uppercase tracking-wider text-text-secondary transition-colors duration-80",
         sortable && "group-hover:text-text-primary",
         numeric && "justify-end",
       )}
