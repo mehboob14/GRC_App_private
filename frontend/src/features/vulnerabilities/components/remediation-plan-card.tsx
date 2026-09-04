@@ -12,6 +12,7 @@ import {
 } from "../api";
 import type { BadgeVariant } from "@/components/ui";
 import type { RemediationPlan, RemediationStatus } from "../types";
+import { ReasonDialog } from "./reason-dialog";
 
 const STATUS: Record<RemediationStatus, { label: string; variant: BadgeVariant }> = {
   preview: { label: "Preview", variant: "neutral" },
@@ -42,6 +43,8 @@ export function RemediationPlanCard({ instanceId }: { instanceId: string }) {
     queryFn: () => getRemediationPlan(instanceId),
   });
   const { data: plan, isLoading } = planQuery;
+  const [verifyOpen, setVerifyOpen] = useState(false);
+  const [cancelOpen, setCancelOpen] = useState(false);
   const [showSteps, setShowSteps] = useState(false);
 
   // apply/verify change the finding's state, so refresh the instance + lists too.
@@ -252,10 +255,7 @@ export function RemediationPlanCard({ instanceId }: { instanceId: string }) {
             variant="primary"
             size="sm"
             loading={verify.isPending}
-            onClick={() => {
-              const evidence = window.prompt("Evidence the fix worked (retest result, scan output)?");
-              if (evidence && evidence.trim()) verify.mutate(evidence.trim());
-            }}
+            onClick={() => setVerifyOpen(true)}
           >
             <Icon name="check" className="size-4" />
             Verify fixed
@@ -266,10 +266,7 @@ export function RemediationPlanCard({ instanceId }: { instanceId: string }) {
             variant="ghost"
             size="sm"
             disabled={busy}
-            onClick={() => {
-              const reason = window.prompt("Why cancel this plan?");
-              if (reason && reason.trim()) cancel.mutate(reason.trim());
-            }}
+            onClick={() => setCancelOpen(true)}
           >
             Cancel plan
           </Button>
@@ -280,6 +277,36 @@ export function RemediationPlanCard({ instanceId }: { instanceId: string }) {
           </Button>
         ) : null}
       </div>
+      <ReasonDialog
+        open={verifyOpen}
+        onOpenChange={setVerifyOpen}
+        title="Verify the fix"
+        label="Evidence the fix worked"
+        placeholder="Retest result, scan output, ticket reference…"
+        confirmLabel="Mark verified"
+        required
+        loading={verify.isPending}
+        onConfirm={(note) => {
+          if (note) verify.mutate(note);
+          setVerifyOpen(false);
+        }}
+      />
+
+      <ReasonDialog
+        open={cancelOpen}
+        onOpenChange={setCancelOpen}
+        title="Cancel this plan"
+        label="Why is it being cancelled?"
+        placeholder="e.g. superseded by a vendor patch"
+        confirmLabel="Cancel plan"
+        required
+        loading={cancel.isPending}
+        onConfirm={(note) => {
+          if (note) cancel.mutate(note);
+          setCancelOpen(false);
+        }}
+      />
+
     </div>
   );
 }

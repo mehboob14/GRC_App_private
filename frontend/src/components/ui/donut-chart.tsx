@@ -154,6 +154,7 @@ export function Gauge({
   zones = DEFAULT_GAUGE_ZONES,
   label,
   badge,
+  unit = "%",
 }: {
   value: number;
   max?: number;
@@ -164,6 +165,9 @@ export function Gauge({
   zones?: GaugeZone[];
   label?: string;
   badge?: { text: string; toneClass: string };
+  /** Suffix on the hero number. A percentage by default; pass "" for a score
+   *  out of a maximum, which is a count and not a proportion. */
+  unit?: string;
 }) {
   const p = max > 0 ? Math.max(0, Math.min(100, (value / max) * 100)) : 0;
   const r = size / 2 - thickness;
@@ -205,13 +209,16 @@ export function Gauge({
         <line x1={cx} y1={cy} x2={needleX} y2={needleY} strokeWidth={2.5} strokeLinecap="round" className="stroke-text-primary" />
         <circle cx={cx} cy={cy} r={4} className="fill-text-primary" />
         <text x={cx - r} y={cy + 14} textAnchor="start" className="fill-text-faint" style={{ fontSize: 10 }}>
-          0%
+          0{unit}
         </text>
         <text x={cx + r} y={cy + 14} textAnchor="end" className="fill-text-faint" style={{ fontSize: 10 }}>
-          100%
+          100{unit}
         </text>
       </svg>
-      <p className={cn("-mt-1 font-display text-heading-lg tabular", heroZone.textClass)}>{Math.round(p)}%</p>
+      <p className={cn("-mt-1 font-display text-heading-lg tabular", heroZone.textClass)}>
+        {Math.round(p)}
+        {unit}
+      </p>
       {label ? <p className="text-caption text-text-subtle">{label}</p> : null}
       {badge ? (
         <span className={cn("mt-2 rounded-full px-2.5 py-0.5 text-caption font-semibold", badge.toneClass)}>{badge.text}</span>

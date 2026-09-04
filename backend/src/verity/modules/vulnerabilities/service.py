@@ -43,6 +43,8 @@ from verity.modules.vulnerabilities.scoring import (
     DEFAULT_SLA_DAYS,
     PRIORITY_BANDS,
     AssetRisk,
+    RiskBreakdown,
+    compute_breakdown,
     compute_risk,
     priority_band,
 )
@@ -176,9 +178,33 @@ class InstanceDetailView(InstanceView):
     escalated_at: datetime | None
     false_positive_reason: str | None
     report_id: uuid.UUID | None
+    #: When CISA added this CVE to the known-exploited catalogue. Stored since
+    #: the first enrichment; a reader needs it to judge how long the clock has
+    #: been running.
+    kev_added_at: datetime | None = None
+    #: How the risk score was reached, recomputed on read from the same pure
+    #: function that wrote it. Derived, never stored - a score whose derivation
+    #: is stored can drift from the score itself.
+    risk_breakdown: RiskBreakdown | None = None
+    #: The linked asset's criticality inputs, so the asset step of the breakdown
+    #: can name what it is weighing.
+    asset_criticality: AssetCriticalityView | None = None
     transitions: list[TransitionView] = field(default_factory=list)
     affected_assets: list[AffectedAssetView] = field(default_factory=list)
     assignment_targets: list[AssignmentTargetView] = field(default_factory=list)
+
+
+@dataclass(frozen=True, slots=True)
+class AssetCriticalityView:
+    """The linked asset's rating inputs. C/I/A are shown for context; only the
+    collapsed ``tier`` and the two exposure flags actually weigh the score."""
+
+    tier: str | None
+    internet_facing: bool
+    customer_facing: bool
+    confidentiality: int | None
+    integrity: int | None
+    availability: int | None
 
 
 @dataclass(frozen=True)
@@ -594,6 +620,31 @@ class VulnerabilityService:
             escalated_at=inst.escalated_at,
             false_positive_reason=inst.false_positive_reason,
             report_id=inst.report_id,
+            kev_added_at=defn.kev_added_at,
+            risk_breakdown=compute_breakdown(
+                severity=defn.severity,
+                cvss_score=defn.cvss_score,
+                epss_score=defn.epss_score,
+                kev_flag=defn.kev_flag,
+                public_exploit_count=defn.public_exploit_count,
+                asset=AssetRisk(
+                    tier=getattr(ref, "tier", None),
+                    internet_facing=bool(getattr(ref, "internet_facing", False)),
+                    customer_facing=bool(getattr(ref, "customer_facing", False)),
+                ),
+            ),
+            asset_criticality=(
+                AssetCriticalityView(
+                    tier=ref.tier,
+                    internet_facing=ref.internet_facing,
+                    customer_facing=ref.customer_facing,
+                    confidentiality=getattr(ref, "confidentiality", None),
+                    integrity=getattr(ref, "integrity", None),
+                    availability=getattr(ref, "availability", None),
+                )
+                if ref is not None
+                else None
+            ),
             transitions=transitions,
             affected_assets=affected,
             assignment_targets=targets,

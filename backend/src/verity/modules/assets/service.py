@@ -215,6 +215,12 @@ class AssetRef:
     primary_owner_membership_id: uuid.UUID | None
     escalation_contact_membership_id: uuid.UUID | None
     status: str
+    #: The C/I/A ratings (1-5, or None where not assessed). Prioritisation uses
+    #: only the collapsed ``tier``; these travel so a sibling module can show a
+    #: reader *why* an asset is rated the way it is, without an N+1 of get_asset.
+    confidentiality: int | None = None
+    integrity: int | None = None
+    availability: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -558,6 +564,9 @@ class AssetService:
                 tier=a.tier_override or a.tier,
                 internet_facing=a.internet_facing,
                 customer_facing=a.customer_facing,
+                confidentiality=a.confidentiality,
+                integrity=a.integrity,
+                availability=a.availability,
                 primary_owner_membership_id=a.primary_owner_membership_id,
                 escalation_contact_membership_id=a.escalation_contact_membership_id,
                 status=a.status,

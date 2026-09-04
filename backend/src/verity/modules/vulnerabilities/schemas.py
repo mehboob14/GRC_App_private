@@ -86,6 +86,44 @@ class AssignRequest(_Request):
     targets: list[AssignmentTargetIn] = Field(default_factory=list)
 
 
+class RiskFactorOut(_Response):
+    """One additive term of the base risk score."""
+
+    key: str
+    label: str
+    detail: str
+    points: float
+    max_points: float
+
+
+class RiskBreakdownOut(_Response):
+    """How the risk score was reached. Not a flat sum: three threat terms make a
+    base out of 100, the asset multiplies it, then the 100 cap and the KEV floor
+    can bind. Every step travels so the arithmetic is checkable on screen."""
+
+    score: float
+    band: str
+    reason: str
+    factors: list[RiskFactorOut]
+    base_score: float
+    asset_multiplier: float
+    asset_detail: str
+    adjusted_score: float
+    capped: bool
+    kev_floor_applied: bool
+
+
+class AssetCiaOut(_Response):
+    """The linked asset's criticality inputs, for showing why it weighs the score."""
+
+    tier: str | None
+    internet_facing: bool
+    customer_facing: bool
+    confidentiality: int | None
+    integrity: int | None
+    availability: int | None
+
+
 class InstanceDetailOut(InstanceOut):
     # cvss_vector / cwe_id / epss_percentile / patch_available are inherited
     # from InstanceOut — the register shows them too.
@@ -112,6 +150,9 @@ class InstanceDetailOut(InstanceOut):
     escalated_at: UtcDateTime | None
     false_positive_reason: str | None
     report_id: uuid.UUID | None
+    kev_added_at: UtcDateTime | None = None
+    risk_breakdown: RiskBreakdownOut | None = None
+    asset_criticality: AssetCiaOut | None = None
     transitions: list[TransitionOut]
     affected_assets: list[AffectedAssetOut]
     assignment_targets: list[AssignmentTargetOut]

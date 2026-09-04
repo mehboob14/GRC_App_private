@@ -67,7 +67,46 @@ export type AssignmentTarget = {
   name: string;
 };
 
+/** One additive term of the base risk score, with where its value came from. */
+export type RiskFactor = {
+  key: string;
+  label: string;
+  detail: string;
+  points: number;
+  max_points: number;
+};
+
+/** How the risk score was reached. Not a flat sum: three threat terms make a
+ *  base out of 100, the asset multiplies it, then the 100 cap and the KEV floor
+ *  can bind. Mirrors RiskBreakdown in the backend's scoring.py. */
+export type RiskBreakdown = {
+  score: number;
+  band: string;
+  reason: string;
+  factors: RiskFactor[];
+  base_score: number;
+  asset_multiplier: number;
+  asset_detail: string;
+  adjusted_score: number;
+  capped: boolean;
+  kev_floor_applied: boolean;
+};
+
+/** The linked asset's rating inputs. C/I/A travel for context; only `tier` and
+ *  the two exposure flags weigh the score. */
+export type AssetCriticality = {
+  tier: string | null;
+  internet_facing: boolean;
+  customer_facing: boolean;
+  confidentiality: number | null;
+  integrity: number | null;
+  availability: number | null;
+};
+
 export type VulnInstanceDetail = VulnInstance & {
+  kev_added_at: string | null;
+  risk_breakdown: RiskBreakdown | null;
+  asset_criticality: AssetCriticality | null;
   definition_id: string;
   description: string | null;
   recommendation: string | null;
