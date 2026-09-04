@@ -124,6 +124,45 @@ class AssetCiaOut(_Response):
     availability: int | None
 
 
+class ExceptionOut(_Response):
+    """A risk-acceptance request and the decision on it."""
+
+    id: uuid.UUID
+    status: str
+    duration_days: int
+    rationale: str
+    potential_risks: str
+    compensating_controls: str | None
+    requested_by_membership_id: uuid.UUID | None
+    requested_by_name: str | None
+    requested_at: UtcDateTime
+    decided_by_membership_id: uuid.UUID | None
+    decided_by_name: str | None
+    decided_at: UtcDateTime | None
+    decision_note: str | None
+    expires_at: UtcDateTime | None
+
+
+class ExceptionRequestIn(_Request):
+    """Ask for the risk on a finding to be accepted for a fixed period.
+
+    Duration rather than an absolute date: the requester is arguing for "90
+    days", and the clock should start when the approver says yes, not when the
+    form was filled in.
+    """
+
+    duration_days: int = Field(ge=1, le=365)
+    rationale: str = Field(min_length=1, max_length=4000)
+    potential_risks: str = Field(min_length=1, max_length=4000)
+    compensating_controls: str | None = Field(default=None, max_length=4000)
+
+
+class ExceptionDecisionIn(_Request):
+    approve: bool
+    #: Required on a rejection — enforced in the service, where the rule lives.
+    note: str | None = Field(default=None, max_length=2000)
+
+
 class InstanceDetailOut(InstanceOut):
     # cvss_vector / cwe_id / epss_percentile / patch_available are inherited
     # from InstanceOut — the register shows them too.
@@ -153,6 +192,7 @@ class InstanceDetailOut(InstanceOut):
     kev_added_at: UtcDateTime | None = None
     risk_breakdown: RiskBreakdownOut | None = None
     asset_criticality: AssetCiaOut | None = None
+    exception: ExceptionOut | None = None
     transitions: list[TransitionOut]
     affected_assets: list[AffectedAssetOut]
     assignment_targets: list[AssignmentTargetOut]

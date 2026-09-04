@@ -103,7 +103,34 @@ export type AssetCriticality = {
   availability: number | null;
 };
 
+/** A request to accept the risk on a finding, and the decision on it.
+ *  requested -> approved | rejected; approved -> expired | revoked. */
+export type ExceptionStatus =
+  | "requested"
+  | "approved"
+  | "rejected"
+  | "expired"
+  | "revoked";
+
+export type VulnException = {
+  id: string;
+  status: ExceptionStatus;
+  duration_days: number;
+  rationale: string;
+  potential_risks: string;
+  compensating_controls: string | null;
+  requested_by_membership_id: string | null;
+  requested_by_name: string | null;
+  requested_at: string;
+  decided_by_membership_id: string | null;
+  decided_by_name: string | null;
+  decided_at: string | null;
+  decision_note: string | null;
+  expires_at: string | null;
+};
+
 export type VulnInstanceDetail = VulnInstance & {
+  exception: VulnException | null;
   kev_added_at: string | null;
   risk_breakdown: RiskBreakdown | null;
   asset_criticality: AssetCriticality | null;

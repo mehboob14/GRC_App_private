@@ -22,7 +22,7 @@ import uuid
 from datetime import datetime
 from typing import Final
 
-from sqlalchemy import Float, ForeignKey, UniqueConstraint, text
+from sqlalchemy import Float, ForeignKey, UniqueConstraint, func, text
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -374,4 +374,65 @@ class VulnAssignmentTarget(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
             name="uq_vuln_assignment_targets__target",
         ),
         tenant_index("vuln_assignment_targets", "instance_id"),
+    )
+
+
+#: requested -> approved | rejected; approved -> expired | revoked. Terminal
+#: states are kept, never deleted (rule 6) — a withdrawn waiver is part of the
+#: record an auditor reads.
+EXCEPTION_STATUSES: Final[tuple[str, ...]] = (
+    "requested",
+    "approved",
+    "rejected",
+    "expired",
+    "revoked",
+)
+
+
+class VulnException(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
+    """A request to accept the risk on a finding, and the decision on it.
+
+    Acceptance used to be one act: an approver typed a reason and an expiry.
+    That records the outcome but not the case for it, and gives a reviewer
+    nowhere to state how long it is needed for, why, or what could go wrong if
+    it is granted. This row holds the argument; the decision is a second step by
+    a different person (segregation of duties is enforced in the service).
+
+    ``VulnInstance.accepted_*`` remains the denormalised current-waiver view —
+    the register, the KPI counts and the daily expiry sweep read those, and
+    approving an exception writes them, so nothing built on them changes.
+    """
+
+    __tablename__ = "vuln_exceptions"
+
+    instance_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("vuln_instances.id", ondelete="CASCADE")
+    )
+
+    # -- the request ---------------------------------------------------------
+    requested_by_membership_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("tenant_memberships.id", ondelete="SET NULL"), default=None
+    )
+    requested_at: Mapped[datetime] = mapped_column(server_default=func.now())
+    #: What the requester asked for. The absolute date is derived on approval —
+    #: a stored duration would mean a different date depending on when it was
+    #: decided.
+    duration_days: Mapped[int]
+    rationale: Mapped[str]
+    potential_risks: Mapped[str]
+    compensating_controls: Mapped[str | None] = mapped_column(default=None)
+
+    # -- the decision --------------------------------------------------------
+    status: Mapped[str] = mapped_column(default="requested", server_default=text("'requested'"))
+    decided_by_membership_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("tenant_memberships.id", ondelete="SET NULL"), default=None
+    )
+    decided_at: Mapped[datetime | None] = mapped_column(default=None)
+    decision_note: Mapped[str | None] = mapped_column(default=None)
+    expires_at: Mapped[datetime | None] = mapped_column(default=None)
+
+    __table_args__ = (
+        status_check("vuln_exceptions", "status", EXCEPTION_STATUSES),
+        tenant_index("vuln_exceptions", "instance_id"),
+        tenant_index("vuln_exceptions", "status"),
     )

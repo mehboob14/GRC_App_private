@@ -33,6 +33,7 @@ from verity.modules.vulnerabilities.models import (
     SEVERITIES,
     VulnAssignmentTarget,
     VulnDefinition,
+    VulnException,
     VulnInstance,
     VulnRemediationPlan,
     VulnReport,
@@ -71,6 +72,15 @@ _MANUAL_TRANSITIONS: Final[dict[str, frozenset[str]]] = {
 # Only pending_retest may be verified into "fixed" — the formal closure step.
 _VERIFIABLE_FROM: Final[frozenset[str]] = frozenset(("pending_retest",))
 _INSTANCE_SNAPSHOT: Final = ("id", "state", "risk_score", "owner_membership_id", "sla_due_at")
+#: What an exception audit row carries before/after (rule 5).
+_EXCEPTION_SNAPSHOT: Final = (
+    "id",
+    "status",
+    "duration_days",
+    "decided_by_membership_id",
+    "decided_at",
+    "expires_at",
+)
 _SEVERITY_RANK: Final = {"critical": 0, "high": 1, "medium": 2, "low": 3, "info": 4}
 
 # Reader-facing copy reused across several raises in this module.
@@ -189,9 +199,43 @@ class InstanceDetailView(InstanceView):
     #: The linked asset's criticality inputs, so the asset step of the breakdown
     #: can name what it is weighing.
     asset_criticality: AssetCriticalityView | None = None
+    #: The open request, or the decision that produced the current waiver. One
+    #: at a time: a partial unique index allows only a single 'requested' row
+    #: per finding.
+    exception: ExceptionView | None = None
     transitions: list[TransitionView] = field(default_factory=list)
     affected_assets: list[AffectedAssetView] = field(default_factory=list)
     assignment_targets: list[AssignmentTargetView] = field(default_factory=list)
+
+
+@dataclass(frozen=True, slots=True)
+class ExceptionRequest:
+    """What a requester states. One value rather than four loose arguments."""
+
+    duration_days: int
+    rationale: str
+    potential_risks: str
+    compensating_controls: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class ExceptionView:
+    """A risk-acceptance request and the decision on it."""
+
+    id: uuid.UUID
+    status: str
+    duration_days: int
+    rationale: str
+    potential_risks: str
+    compensating_controls: str | None
+    requested_by_membership_id: uuid.UUID | None
+    requested_by_name: str | None
+    requested_at: datetime
+    decided_by_membership_id: uuid.UUID | None
+    decided_by_name: str | None
+    decided_at: datetime | None
+    decision_note: str | None
+    expires_at: datetime | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -633,6 +677,7 @@ class VulnerabilityService:
                     customer_facing=bool(getattr(ref, "customer_facing", False)),
                 ),
             ),
+            exception=await self._current_exception(session, tenant_id, inst.id),
             asset_criticality=(
                 AssetCriticalityView(
                     tier=ref.tier,
@@ -2244,6 +2289,218 @@ class VulnerabilityService:
         )
         return await self.get_instance(session, tenant_id=tenant_id, instance_id=instance_id)
 
+    # -- risk exceptions -----------------------------------------------------
+    #
+    # Two steps on purpose. The requester states the case (how long, why, what
+    # could go wrong); a different person decides. Approving writes the
+    # denormalised accepted_* columns on the instance, so the register, the KPI
+    # counts and the daily expiry sweep keep working untouched.
+
+    async def _exception_view(
+        self, session: AsyncSession, tenant_id: uuid.UUID, row: VulnException
+    ) -> ExceptionView:
+        names = await self._member_names(session, tenant_id)
+        return ExceptionView(
+            id=row.id,
+            status=row.status,
+            duration_days=row.duration_days,
+            rationale=row.rationale,
+            potential_risks=row.potential_risks,
+            compensating_controls=row.compensating_controls,
+            requested_by_membership_id=row.requested_by_membership_id,
+            requested_by_name=names.get(row.requested_by_membership_id)
+            if row.requested_by_membership_id
+            else None,
+            requested_at=row.requested_at,
+            decided_by_membership_id=row.decided_by_membership_id,
+            decided_by_name=names.get(row.decided_by_membership_id)
+            if row.decided_by_membership_id
+            else None,
+            decided_at=row.decided_at,
+            decision_note=row.decision_note,
+            expires_at=row.expires_at,
+        )
+
+    async def _current_exception(
+        self, session: AsyncSession, tenant_id: uuid.UUID, instance_id: uuid.UUID
+    ) -> ExceptionView | None:
+        """The open request if there is one, else the most recent decision."""
+        row = await session.scalar(
+            select(VulnException)
+            .where(
+                VulnException.tenant_id == tenant_id,
+                VulnException.instance_id == instance_id,
+            )
+            .order_by(
+                # A pending request outranks any past decision.
+                (VulnException.status != "requested"),
+                VulnException.requested_at.desc(),
+            )
+            .limit(1)
+        )
+        return None if row is None else await self._exception_view(session, tenant_id, row)
+
+    async def request_exception(
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        instance_id: uuid.UUID,
+        request: ExceptionRequest,
+    ) -> InstanceDetailView:
+        """Ask for the risk on this finding to be accepted for a fixed period."""
+        inst = await self._load_instance(session, tenant_id, instance_id)
+        if inst.state in ("fixed", "false_positive"):
+            raise InvalidInput(
+                f"This finding is closed as {inst.state.replace('_', ' ')}, so there is no "
+                "risk to accept. Reopen it first.",
+                detail="a closed finding cannot carry a risk exception",
+            )
+        if inst.state == "accepted":
+            raise Conflict(
+                "The risk on this finding is already accepted. Reopen it before asking "
+                "for a new exception.",
+                detail="already accepted",
+            )
+        open_request = await session.scalar(
+            select(VulnException).where(
+                VulnException.tenant_id == tenant_id,
+                VulnException.instance_id == instance_id,
+                VulnException.status == "requested",
+            )
+        )
+        if open_request is not None:
+            raise Conflict(
+                "There is already an exception request waiting for a decision on this "
+                "finding.",
+                detail="one open exception request per finding",
+            )
+
+        row = VulnException(
+            id=uuid7(),
+            tenant_id=tenant_id,
+            instance_id=instance_id,
+            requested_by_membership_id=_membership(actor),
+            duration_days=request.duration_days,
+            rationale=request.rationale,
+            potential_risks=request.potential_risks,
+            compensating_controls=request.compensating_controls,
+            status="requested",
+        )
+        session.add(row)
+        await session.flush()
+        await self._audit.record(
+            session,
+            action="create",
+            object_type="vuln_exception",
+            object_id=row.id,
+            actor=actor,
+            tenant_id=tenant_id,
+            before=None,
+            after={
+                "instance_id": str(instance_id),
+                "status": "requested",
+                "duration_days": request.duration_days,
+            },
+        )
+        return await self.get_instance(session, tenant_id=tenant_id, instance_id=instance_id)
+
+    async def decide_exception(  # noqa: PLR0913
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        instance_id: uuid.UUID,
+        approve: bool,
+        note: str | None = None,
+    ) -> InstanceDetailView:
+        """Approve or reject the open request. Approving accepts the risk."""
+        inst = await self._load_instance(session, tenant_id, instance_id)
+        row = await session.scalar(
+            select(VulnException).where(
+                VulnException.tenant_id == tenant_id,
+                VulnException.instance_id == instance_id,
+                VulnException.status == "requested",
+            )
+        )
+        if row is None:
+            raise NotFound(
+                "There is no exception request waiting for a decision on this finding.",
+                detail=f"no open exception for instance {instance_id}",
+            )
+        # Segregation of duties: whoever asked cannot also approve. The same rule
+        # the one-step acceptance already applied to the finding's owner.
+        decider = _membership(actor)
+        if decider is not None and decider == row.requested_by_membership_id:
+            raise InvalidInput(
+                "You raised this exception, so you cannot decide it yourself. "
+                "Ask another approver to review it.",
+                detail="the requester cannot decide their own exception",
+            )
+        cleaned = (note or "").strip()
+        if not approve and not cleaned:
+            raise InvalidInput(
+                "Say why the exception is being rejected, so the requester knows what "
+                "would change the answer.",
+                detail="a rejection must include a reason",
+            )
+
+        before = AuditService.snapshot(row, fields=_EXCEPTION_SNAPSHOT)
+        now = datetime.now(UTC)
+        row.status = "approved" if approve else "rejected"
+        row.decided_by_membership_id = decider
+        row.decided_at = now
+        row.decision_note = cleaned or None
+
+        if approve:
+            row.expires_at = now + timedelta(days=row.duration_days)
+            # The denormalised current-waiver view the register, the KPI counts
+            # and the expiry sweep already read.
+            inst_before = AuditService.snapshot(inst, fields=_INSTANCE_SNAPSHOT)
+            from_state = inst.state
+            inst.state = "accepted"
+            inst.accepted_reason = row.rationale
+            inst.accepted_expires_at = row.expires_at
+            inst.accepted_by_membership_id = decider
+            inst.compensating_controls = row.compensating_controls
+            session.add(
+                VulnTransition(
+                    id=uuid7(),
+                    tenant_id=tenant_id,
+                    instance_id=inst.id,
+                    from_state=from_state,
+                    to_state="accepted",
+                    actor_membership_id=decider,
+                    note=f"Exception approved for {row.duration_days} days"
+                    + (f" — {cleaned}" if cleaned else ""),
+                )
+            )
+            await self._audit.record(
+                session,
+                action="update",
+                object_type="vuln_instance",
+                object_id=inst.id,
+                actor=actor,
+                tenant_id=tenant_id,
+                before=inst_before,
+                after=AuditService.snapshot(inst, fields=_INSTANCE_SNAPSHOT),
+            )
+
+        await self._audit.record(
+            session,
+            action="update",
+            object_type="vuln_exception",
+            object_id=row.id,
+            actor=actor,
+            tenant_id=tenant_id,
+            before=before,
+            after=AuditService.snapshot(row, fields=_EXCEPTION_SNAPSHOT),
+        )
+        await session.flush()
+        return await self.get_instance(session, tenant_id=tenant_id, instance_id=instance_id)
+
 
 # -- module-level helpers ----------------------------------------------------
 _SLUG_RE = re.compile(r"[^a-z0-9]+")
@@ -2491,6 +2748,4 @@ def _as_int(value: str | None) -> int | None:
         return int(value) if value else None
     except ValueError:
         return None
-
-
 vulnerability_service = VulnerabilityService()

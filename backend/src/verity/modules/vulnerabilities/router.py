@@ -29,6 +29,8 @@ from verity.modules.vulnerabilities.schemas import (
     AddFindingRequest,
     AssignRequest,
     CancelRemediationRequest,
+    ExceptionDecisionIn,
+    ExceptionRequestIn,
     ImportResultOut,
     InstanceDetailOut,
     InstanceOut,
@@ -45,7 +47,11 @@ from verity.modules.vulnerabilities.schemas import (
     VerifyRemediationRequest,
     VerifyRequest,
 )
-from verity.modules.vulnerabilities.service import FindingRow, vulnerability_service
+from verity.modules.vulnerabilities.service import (
+    ExceptionRequest,
+    FindingRow,
+    vulnerability_service,
+)
 
 vulnerabilities_router = APIRouter(prefix="/vulnerabilities", tags=["vulnerabilities"])
 
@@ -553,5 +559,59 @@ async def accept(
         reason=body.reason,
         expires_at=body.expires_at,
         compensating_controls=body.compensating_controls,
+    )
+    return InstanceDetailOut.model_validate(view)
+
+
+@vulnerabilities_router.post(
+    "/{instance_id}/exception",
+    response_model=InstanceDetailOut,
+    summary="Request a risk exception on this finding",
+)
+async def request_exception(
+    instance_id: uuid.UUID,
+    body: ExceptionRequestIn,
+    context: _Ctx,
+    session: _Db,
+    principal: Annotated[Principal, Depends(require_manage)],
+) -> InstanceDetailOut:
+    """Raising a request needs only ``vulnerabilities:manage`` — anyone working
+    the finding can make the case. Granting it is the privileged step."""
+    view = await vulnerability_service.request_exception(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(principal),
+        instance_id=instance_id,
+        request=ExceptionRequest(
+            duration_days=body.duration_days,
+            rationale=body.rationale,
+            potential_risks=body.potential_risks,
+            compensating_controls=body.compensating_controls,
+        ),
+    )
+    return InstanceDetailOut.model_validate(view)
+
+
+@vulnerabilities_router.post(
+    "/{instance_id}/exception/decide",
+    response_model=InstanceDetailOut,
+    summary="Approve or reject the open risk exception",
+)
+async def decide_exception(
+    instance_id: uuid.UUID,
+    body: ExceptionDecisionIn,
+    context: _Ctx,
+    session: _Db,
+    principal: Annotated[Principal, Depends(require_accept)],
+) -> InstanceDetailOut:
+    """Deciding is the waiver itself, so it needs ``vulnerabilities:accept``.
+    The service refuses a decision from whoever raised the request."""
+    view = await vulnerability_service.decide_exception(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(principal),
+        instance_id=instance_id,
+        approve=body.approve,
+        note=body.note,
     )
     return InstanceDetailOut.model_validate(view)

@@ -289,3 +289,33 @@ export async function importVulnerabilities(
   }
   return response.json();
 }
+
+/** Ask for the risk on a finding to be accepted for a fixed period. Duration,
+ *  not a date: the clock starts when the approver says yes. */
+export async function requestVulnException(
+  id: string,
+  body: {
+    duration_days: number;
+    rationale: string;
+    potential_risks: string;
+    compensating_controls?: string | null;
+  },
+): Promise<VulnInstanceDetail> {
+  return apiFetch<VulnInstanceDetail>(`/vulnerabilities/${id}/exception`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+/** Approve or reject the open request. The server refuses a decision from
+ *  whoever raised it, and requires a note on a rejection. */
+export async function decideVulnException(
+  id: string,
+  approve: boolean,
+  note?: string,
+): Promise<VulnInstanceDetail> {
+  return apiFetch<VulnInstanceDetail>(`/vulnerabilities/${id}/exception/decide`, {
+    method: "POST",
+    body: JSON.stringify({ approve, note: note ?? null }),
+  });
+}
