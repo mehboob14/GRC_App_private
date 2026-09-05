@@ -47,6 +47,7 @@ import {
   type Document,
   type Lifecycle,
 } from "@/features/documents/types";
+import { TemplatePickerDialog } from "./template-picker-dialog";
 import { DocumentFormDialog } from "./document-form-dialog";
 import { CLASS_LABEL, TYPE_LABEL } from "../labels";
 
@@ -142,6 +143,7 @@ export function DocumentsRegisterPage() {
   const [page, setPage] = useState(1);
 
   const [creating, setCreating] = useState(false);
+  const [pickingTemplate, setPickingTemplate] = useState(false);
   const [editing, setEditing] = useState<Document | null>(null);
   const [archiveTarget, setArchiveTarget] = useState<Document | null>(null);
 
@@ -325,6 +327,12 @@ export function DocumentsRegisterPage() {
               Showing <span className="tabular">{visible.length}</span> of{" "}
               <span className="tabular">{scoped.length}</span> documents
             </p>
+            {/* Templates first: starting from a written policy is the right
+                default, and a blank page is the harder path. */}
+            <Button variant="secondary" onClick={() => setPickingTemplate(true)}>
+              <Icon name="book" className="size-4" />
+              Templates
+            </Button>
             <Button onClick={() => setCreating(true)}>
               <Icon name="plus" className="size-4" />
               New document
@@ -608,6 +616,8 @@ export function DocumentsRegisterPage() {
         loading={archiveMutation.isPending}
         onConfirm={() => archiveTarget && archiveMutation.mutate(archiveTarget.id)}
       />
+      <TemplatePickerDialog open={pickingTemplate} onOpenChange={setPickingTemplate} />
+
     </div>
   );
 }

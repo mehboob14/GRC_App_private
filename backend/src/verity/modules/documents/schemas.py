@@ -81,6 +81,43 @@ class VersionDiffOut(_Response):
     reason: str | None
 
 
+class PlaceholderOut(_Response):
+    """A field the reader still has to decide, and how much text it affects."""
+
+    key: str
+    label: str
+    count: int
+
+
+class TemplateOut(_Response):
+    """A shipped policy someone can start a document from."""
+
+    id: uuid.UUID
+    key: str
+    title: str
+    doc_type: str
+    classification: str
+    summary: str | None
+    tags: list[str]
+    satisfies: dict[str, list[str]]
+    placeholders: list[PlaceholderOut]
+    word_count: int
+    optional_markers: int
+    already_used: bool
+    #: Attribution. This text is third-party content under its own licence, and
+    #: the picker says so rather than passing it off as the platform's.
+    source: str | None
+    source_url: str | None
+    license: str | None
+
+
+class CreateFromTemplateIn(_Request):
+    template_key: str
+    #: Defaults to the template's own title.
+    title: str | None = Field(default=None, max_length=300)
+    owner_membership_id: uuid.UUID | None = None
+
+
 class DocumentVersionOut(_Response):
     id: uuid.UUID
     version_no: str
@@ -125,6 +162,7 @@ class DocumentDetailOut(DocumentOut):
     acknowledged: int
     assigned_count: int
     acknowledged_by_me: bool
+    placeholders: list[PlaceholderOut] = []
 
 
 class DocumentKpisOut(_Response):

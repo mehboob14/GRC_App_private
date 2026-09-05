@@ -97,6 +97,9 @@ class Document(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
     # The version a reader sees. A plain pointer, not an FK: documents and
     # document_versions reference each other, and a hard FK either way needs a
     # deferrable/use_alter dance for no real gain — the service keeps it honest.
+    #: The shipped template this was started from, if any. A plain key,
+    #: not an FK: the tenant's copy outlives the template.
+    template_key: Mapped[str | None] = mapped_column(default=None)
     current_version_id: Mapped[uuid.UUID | None] = mapped_column(default=None)
 
     owner_membership_id: Mapped[uuid.UUID | None] = mapped_column(
@@ -384,3 +387,46 @@ class DocumentAckCampaignComment(UUIDPrimaryKey, TenantScoped, Timestamped, Base
     )
 
     __table_args__ = (tenant_index("document_ack_campaign_comments", "campaign_id"),)
+
+
+class DocumentTemplate(UUIDPrimaryKey, Timestamped, Base):
+    """A shipped policy a tenant can start a document from.
+
+    Global content, shared by every tenant — no ``tenant_id`` and no RLS, the
+    same shape as ``control_templates``. Instantiating one writes an ordinary
+    tenant-owned ``Document``; that is where tenancy applies, and from that
+    moment the tenant's copy is theirs to edit. Nothing links back, so two
+    tenants starting from the same template never see each other's wording.
+
+    ``placeholders`` is catalogued at build time rather than parsed on read: the
+    editor needs to know what still has to be decided, and re-scanning 30,000
+    words of policy on every page load to find out would be silly.
+    """
+
+    __tablename__ = "document_templates"
+
+    key: Mapped[str] = mapped_column(unique=True)
+    title: Mapped[str]
+    doc_type: Mapped[str] = mapped_column(default="policy", server_default=text("'policy'"))
+    classification: Mapped[str] = mapped_column(
+        default="internal", server_default=text("'internal'")
+    )
+    summary: Mapped[str | None] = mapped_column(default=None)
+    content_html: Mapped[str]
+    tags: Mapped[list[str]] = mapped_column(
+        postgresql.JSONB, default=list, server_default=text("'[]'::jsonb")
+    )
+    satisfies: Mapped[dict[str, list[str]]] = mapped_column(
+        postgresql.JSONB, default=dict, server_default=text("'{}'::jsonb")
+    )
+    placeholders: Mapped[list[dict[str, object]]] = mapped_column(
+        postgresql.JSONB, default=list, server_default=text("'[]'::jsonb")
+    )
+    word_count: Mapped[int] = mapped_column(default=0, server_default=text("0"))
+    optional_markers: Mapped[int] = mapped_column(default=0, server_default=text("0"))
+
+    # -- provenance: third-party content under Apache 2.0 --------------------
+    source: Mapped[str | None] = mapped_column(default=None)
+    source_url: Mapped[str | None] = mapped_column(default=None)
+    source_commit: Mapped[str | None] = mapped_column(default=None)
+    license: Mapped[str | None] = mapped_column(default=None)

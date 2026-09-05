@@ -33,6 +33,7 @@ from verity.modules.documents.schemas import (
     CampaignCreate,
     CampaignOut,
     CampaignSummaryOut,
+    CreateFromTemplateIn,
     DocumentContentUpdate,
     DocumentCreate,
     DocumentDetailOut,
@@ -42,6 +43,7 @@ from verity.modules.documents.schemas import (
     DocumentVocabularyOut,
     PendingApprovalOut,
     PendingCampaignOut,
+    TemplateOut,
     VersionDiffOut,
 )
 from verity.modules.documents.service import RecipientSelection, document_service
@@ -353,6 +355,47 @@ async def list_document_campaigns(
         session, tenant_id=context.tenant_id, document_id=document_id
     )
     return [CampaignSummaryOut.model_validate(v) for v in views]
+
+
+@documents_router.get(
+    "/templates",
+    response_model=list[TemplateOut],
+    summary="Shipped policy templates a document can be started from",
+)
+async def list_templates(
+    _principal: Annotated[Principal, Depends(require_read)],
+    context: Annotated[TenantContext, Depends(get_tenant_context)],
+    session: Annotated[AsyncSession, Depends(get_tenant_session)],
+) -> list[TemplateOut]:
+    """Browsing the library is a read. Starting a document from one is not."""
+    views = await document_service.list_templates(session, tenant_id=context.tenant_id)
+    return [TemplateOut.model_validate(v) for v in views]
+
+
+@documents_router.post(
+    "/from-template",
+    response_model=DocumentOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="Start a draft from a shipped policy template",
+)
+async def create_from_template(
+    body: CreateFromTemplateIn,
+    principal: Annotated[Principal, Depends(require_manage)],
+    context: Annotated[TenantContext, Depends(get_tenant_context)],
+    session: Annotated[AsyncSession, Depends(get_tenant_session)],
+) -> DocumentOut:
+    """The tenant gets a copy, not a reference: from here the wording is theirs.
+    `{{company_name}}` is filled in from the workspace; anything else is left for
+    someone to decide and is counted on the document."""
+    view = await document_service.create_from_template(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(principal),
+        template_key=body.template_key,
+        title=body.title,
+        owner_membership_id=body.owner_membership_id,
+    )
+    return DocumentOut.model_validate(view)
 
 
 @documents_router.get(

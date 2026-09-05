@@ -40,6 +40,7 @@ from verity.modules.compliance.models import (
     Requirement,
     TemplateRequirementMap,
 )
+from verity.modules.documents.models import DocumentTemplate
 from verity.shared.ids import uuid7
 
 logger = get_logger(__name__)
@@ -289,9 +290,58 @@ async def _load_crosswalk(
         result.table("template_requirement_map").pruned += 1
 
 
+async def _load_document_templates(
+    session: AsyncSession, docs: Sequence[dict[str, Any]], result: LoadResult
+) -> None:
+    """Upsert shipped policy templates, keyed on the pack's stable ``key``.
+
+    A template dropped upstream is pruned: nothing references these rows once a
+    document has been instantiated from one — the tenant's copy is independent
+    by design — so removing a retired template cannot orphan anyone's policy.
+    """
+    existing = {
+        row.key: row for row in (await session.execute(select(DocumentTemplate))).scalars()
+    }
+    for doc in docs:
+        values = {
+            "title": doc["title"],
+            "doc_type": doc.get("doc_type", "policy"),
+            "classification": doc.get("classification", "internal"),
+            "summary": doc.get("summary"),
+            "content_html": doc["content_html"],
+            "tags": doc.get("tags") or [],
+            "satisfies": doc.get("satisfies") or {},
+            "placeholders": doc.get("placeholders") or [],
+            "word_count": doc.get("word_count", 0),
+            "optional_markers": doc.get("optional_markers", 0),
+            "source": doc.get("source"),
+            "source_url": doc.get("source_url"),
+            "source_commit": doc.get("source_commit"),
+            "license": doc.get("license"),
+        }
+        row = existing.pop(doc["key"], None)
+        if row is None:
+            session.add(DocumentTemplate(id=uuid7(), key=doc["key"], **values))
+            result.table("document_templates").inserted += 1
+        elif _apply(row, values):
+            result.table("document_templates").updated += 1
+    for stale in existing.values():
+        await session.delete(stale)
+        result.table("document_templates").pruned += 1
+    await session.flush()
+
+
 async def load_pack(session: AsyncSession, pack: Path) -> LoadResult:
     """Load one content pack directory. Idempotent: a second run changes nothing."""
     result = LoadResult()
+    # Packs are not all the same shape: the policy library ships templates and
+    # no framework, so each section loads only if its file is present.
+    if (pack / "document_templates.json").exists():
+        await _load_document_templates(
+            session, _read(pack, "document_templates.json"), result
+        )
+    if not (pack / "framework.json").exists():
+        return result
     framework, version = await _load_framework(session, _read(pack, "framework.json"), result)
     requirements = await _load_requirements(
         session, framework, _read(pack, "requirements.json"), result

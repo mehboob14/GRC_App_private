@@ -12,6 +12,8 @@ import type {
   Classification,
   Document,
   DocumentDetail,
+  PolicyTemplate,
+  Placeholder,
   VersionDiff,
   DocumentKpis,
   DocumentVersion,
@@ -93,6 +95,7 @@ type RawDetail = RawDocument & {
   acknowledged: number;
   assigned_count: number;
   acknowledged_by_me: boolean;
+  placeholders: Placeholder[];
 };
 
 const day = (iso: string | null): string | null => (iso ? iso.slice(0, 10) : null);
@@ -167,6 +170,7 @@ function toDetail(r: RawDetail): DocumentDetail {
     acknowledged: r.acknowledged,
     assigned_count: r.assigned_count,
     acknowledged_by_me: r.acknowledged_by_me,
+    placeholders: r.placeholders ?? [],
   };
 }
 
@@ -432,6 +436,30 @@ export async function restoreVersion(
   return toDetail(
     await apiFetch<RawDetail>(`/documents/${documentId}/versions/${versionId}/restore`, {
       method: "POST",
+    }),
+  );
+}
+
+/** The shipped policy library. Read-only: starting a document from one is a
+ *  separate, permissioned action. */
+export async function listPolicyTemplates(): Promise<PolicyTemplate[]> {
+  return apiFetch<PolicyTemplate[]>("/documents/templates");
+}
+
+/** Start a tenant draft from a shipped policy.
+ *
+ * The tenant gets a copy, not a reference — from here the wording is theirs and
+ * nothing upstream can change it. `{{company_name}}` is filled in from the
+ * workspace; every other placeholder is left for someone to decide. */
+export async function createDocumentFromTemplate(body: {
+  template_key: string;
+  title?: string;
+  owner_membership_id?: string | null;
+}): Promise<Document> {
+  return toDocument(
+    await apiFetch<RawDocument>("/documents/from-template", {
+      method: "POST",
+      body: JSON.stringify(body),
     }),
   );
 }

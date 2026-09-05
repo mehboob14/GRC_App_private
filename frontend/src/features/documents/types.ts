@@ -71,6 +71,34 @@ export type Document = {
 
 export type ChangeType = "major" | "minor" | "patch";
 
+/** A field in a policy that someone still has to decide. */
+export type Placeholder = {
+  key: string;
+  label: string;
+  count: number;
+};
+
+/** A shipped policy a document can be started from. */
+export type PolicyTemplate = {
+  id: string;
+  key: string;
+  title: string;
+  doc_type: DocType;
+  classification: Classification;
+  summary: string | null;
+  tags: string[];
+  /** {"SOC 2": ["CC6.1", ...]} — the criteria this policy speaks to. */
+  satisfies: Record<string, string[]>;
+  placeholders: Placeholder[];
+  word_count: number;
+  optional_markers: number;
+  already_used: boolean;
+  /** Attribution: this is third-party text under its own licence. */
+  source: string | null;
+  source_url: string | null;
+  license: string | null;
+};
+
 export type DocumentVersion = {
   /** Needed to ask what this version changed, and to restore it. */
   id: string;
@@ -159,6 +187,8 @@ export type PendingApproval = {
 
 /** The extra detail a single document carries beyond the register row. */
 export type DocumentDetail = Document & {
+  /** Fields still carrying a {{placeholder}} in the current content. */
+  placeholders: Placeholder[];
   content_html: string | null;
   versions: DocumentVersion[];
   approvals: ApprovalTier[];

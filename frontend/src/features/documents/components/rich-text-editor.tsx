@@ -4,6 +4,7 @@ import { TextStyle, Color, FontFamily } from "@tiptap/extension-text-style";
 import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
+import { PlaceholderHighlight } from "./placeholder-highlight";
 import { useRef } from "react";
 import { Icon } from "@/components/ui";
 import type { IconName } from "@/components/ui/icon";
@@ -176,6 +177,9 @@ export function RichTextEditor({
   const editor = useEditor({
     extensions: [
       StarterKit,
+      // Marks the {{fields}} still to be decided. Decorations only — the
+      // saved HTML is untouched.
+      PlaceholderHighlight,
       TextStyle,
       Color,
       FontFamily,

@@ -22,6 +22,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from verity.core.errors import Conflict, InvalidInput, NotFound, PermissionDenied
 from verity.core.storage import ObjectStore, get_object_store
 from verity.modules.audit.service import Actor, AuditService, audit_service
+from verity.modules.documents import placeholders as placeholder_lib
 from verity.modules.documents.diffing import (
     DiffBlock,
     DiffSummary,
@@ -41,6 +42,7 @@ from verity.modules.documents.models import (
     DocumentApprovalTarget,
     DocumentControl,
     DocumentFramework,
+    DocumentTemplate,
     DocumentVersion,
 )
 from verity.shared.ids import uuid7
@@ -77,6 +79,39 @@ _RECIPIENT_SNAPSHOT: Final = (
     "status",
     "acknowledged_at",
 )
+
+
+@dataclass(frozen=True, slots=True)
+class PlaceholderView:
+    """A field the reader still has to decide, and how much text it affects."""
+
+    key: str
+    label: str
+    count: int
+
+
+@dataclass(frozen=True, slots=True)
+class TemplateView:
+    """A shipped policy someone can start from."""
+
+    id: uuid.UUID
+    key: str
+    title: str
+    doc_type: str
+    classification: str
+    summary: str | None
+    tags: list[str]
+    #: {"SOC 2": ["CC6.1", ...]} — the criteria this policy speaks to.
+    satisfies: dict[str, list[str]]
+    placeholders: list[PlaceholderView]
+    word_count: int
+    optional_markers: int
+    #: Whether this tenant already has a document started from this template.
+    #: Not a bar to starting another, just worth saying before they do.
+    already_used: bool
+    source: str | None
+    source_url: str | None
+    license: str | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -175,6 +210,9 @@ class DocumentDetailView(DocumentView):
     acknowledged: int = 0
     assigned_count: int = 0
     acknowledged_by_me: bool = False
+    #: Fields still carrying a {{placeholder}} in the current content. A
+    #: template that has not been filled in is not yet a policy.
+    placeholders: list[PlaceholderView] = field(default_factory=list)
 
 
 # -- acknowledgement-campaign views -----------------------------------------
@@ -551,6 +589,10 @@ class DocumentService:
         return DocumentDetailView(
             **{**base.__dict__, "version": current.version_no if current else None},
             content_html=current.content_html if current else None,
+            placeholders=[
+                PlaceholderView(key=ph.key, label=ph.label, count=ph.count)
+                for ph in placeholder_lib.find(current.content_html if current else None)
+            ],
             versions=[
                 VersionView(
                     id=v.id,
@@ -2191,6 +2233,118 @@ class DocumentService:
             change_type="minor",
             summary=f"Restored from v{target.version_no}",
         )
+
+
+    # -- shipped policy templates ---------------------------------------------
+
+    async def list_templates(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID
+    ) -> list[TemplateView]:
+        """Every shipped policy, with whether this tenant has used it already."""
+        rows = (
+            await session.execute(select(DocumentTemplate).order_by(DocumentTemplate.title))
+        ).scalars()
+        used = set(
+            (
+                await session.execute(
+                    select(Document.template_key).where(
+                        Document.tenant_id == tenant_id,
+                        Document.template_key.is_not(None),
+                    )
+                )
+            )
+            .scalars()
+            .all()
+        )
+        return [
+            TemplateView(
+                id=row.id,
+                key=row.key,
+                title=row.title,
+                doc_type=row.doc_type,
+                classification=row.classification,
+                summary=row.summary,
+                tags=list(row.tags or []),
+                satisfies={k: list(v) for k, v in (row.satisfies or {}).items()},
+                placeholders=[
+                    PlaceholderView(
+                        key=str(p.get("key")),
+                        label=placeholder_lib.LABELS.get(
+                            str(p.get("key")), str(p.get("key", "")).replace("_", " ").capitalize()
+                        ),
+                        count=int(str(p.get("count", 0) or 0)),
+                    )
+                    for p in (row.placeholders or [])
+                ],
+                word_count=row.word_count,
+                optional_markers=row.optional_markers,
+                already_used=row.key in used,
+                source=row.source,
+                source_url=row.source_url,
+                license=row.license,
+            )
+            for row in rows
+        ]
+
+    async def create_from_template(  # noqa: PLR0913 — the instantiation contract
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        template_key: str,
+        title: str | None = None,
+        owner_membership_id: uuid.UUID | None = None,
+    ) -> DocumentView:
+        """Start a tenant draft from a shipped policy.
+
+        The tenant gets a copy, not a reference: from here the text is theirs and
+        nothing upstream can change it. ``{{company_name}}`` is filled in from
+        the workspace name, because that is the one field the platform knows the
+        answer to; everything else is left in place for someone to decide, and
+        counted so the editor can say what is outstanding.
+        """
+        template = (
+            await session.execute(
+                select(DocumentTemplate).where(DocumentTemplate.key == template_key)
+            )
+        ).scalar_one_or_none()
+        if template is None:
+            raise NotFound(
+                "That policy template is no longer available.",
+                detail=f"template {template_key!r}",
+            )
+
+        tenant_name = await self._tenant_name(session, tenant_id)
+        content = placeholder_lib.fill(
+            template.content_html, {"company_name": tenant_name} if tenant_name else {}
+        )
+        view = await self.create_document(
+            session,
+            tenant_id=tenant_id,
+            actor=actor,
+            title=(title or template.title).strip(),
+            doc_type=template.doc_type,
+            classification=template.classification,
+            description=template.summary,
+            content_html=content,
+            owner_membership_id=owner_membership_id,
+        )
+        # Record where it came from, for the attribution the licence requires
+        # and so the picker can say a template has been used already.
+        doc = await self._load(session, tenant_id, view.id)
+        doc.template_key = template.key
+        await session.flush()
+        return view
+
+    async def _tenant_name(self, session: AsyncSession, tenant_id: uuid.UUID) -> str | None:
+        from verity.modules.tenancy.service import tenancy_service  # noqa: PLC0415
+
+        try:
+            tenant = await tenancy_service.get_tenant(session, tenant_id=tenant_id)
+        except Exception:
+            return None
+        return getattr(tenant, "legal_name", None) or getattr(tenant, "name", None)
 
 
 def _with_version(view: DocumentView, version_no: str | None) -> DocumentView:
