@@ -92,7 +92,20 @@ export function hasPermission(
   principal: SessionPrincipal | null,
   key: string,
 ): boolean {
-  return isPermissionKey(key) && Boolean(principal?.permissions.includes(key));
+  // The SERVER is the authority on what a principal may do. This used to also
+  // require `isPermissionKey(key)`, which made the frontend's own list a second
+  // gate — so a key the backend had issued but the list had not caught up with
+  // denied everyone who legitimately held it, with no error anywhere. That is
+  // how every `vulnerabilities:*` check silently returned false once the module
+  // shipped. The union stays for type-safety at call sites; it is not a runtime
+  // allowlist.
+  if (import.meta.env.DEV && !isPermissionKey(key)) {
+    console.warn(
+      `hasPermission("${key}"): not in PERMISSION_KEYS. Add it to lib/api/types.ts ` +
+        "so call sites stay type-checked.",
+    );
+  }
+  return Boolean((principal?.permissions as readonly string[] | undefined)?.includes(key));
 }
 
 export type AuthSnapshot = {

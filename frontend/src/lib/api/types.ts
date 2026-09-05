@@ -38,6 +38,14 @@ export const PERMISSION_KEYS = [
   "tasks:manage",
   "tasks:assign",
   "tasks:approve",
+  "assets:read",
+  "assets:manage",
+  "assets:import",
+  "assets:decommission",
+  "vulnerabilities:read",
+  "vulnerabilities:manage",
+  "vulnerabilities:import",
+  "vulnerabilities:accept",
 ] as const;
 
 export type PermissionKey = (typeof PERMISSION_KEYS)[number];

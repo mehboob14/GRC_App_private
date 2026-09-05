@@ -78,6 +78,34 @@ const PERMISSION_GROUPS = [
       { key: "tasks:approve", label: "Approve tasks" },
     ],
   },
+  {
+    group: "Assets",
+    summary: "Maintain the asset inventory and retire what leaves the estate.",
+    items: [
+      { key: "assets:read", label: "View assets" },
+      { key: "assets:manage", label: "Create & edit assets" },
+      { key: "assets:import", label: "Bulk import assets" },
+      {
+        key: "assets:decommission",
+        label: "Decommission assets",
+        hint: "Records a decommission with a reason; the asset is retired, never deleted.",
+      },
+    ],
+  },
+  {
+    group: "Vulnerabilities",
+    summary: "Work the findings register, import scans, and waive risk.",
+    items: [
+      { key: "vulnerabilities:read", label: "View findings" },
+      { key: "vulnerabilities:manage", label: "Triage, assign & transition findings" },
+      { key: "vulnerabilities:import", label: "Import scan results" },
+      {
+        key: "vulnerabilities:accept",
+        label: "Decide risk exceptions",
+        hint: "Approve or reject a time-boxed waiver. The requester can never decide their own.",
+      },
+    ],
+  },
 ] as const satisfies readonly {
   group: string;
   summary: string;
