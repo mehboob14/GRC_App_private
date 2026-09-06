@@ -1,0 +1,11 @@
+name,description,asset_type,host_name,ip_address,vendor,location,operating_system,confidentiality_rating,integrity_rating,availability_rating,data_classification,internet_facing,business_function,network_segment,compliance_scope,owner_name,owning_team,valuation,criticality,criticality_override_reason
+Payments API Gateway,Public API that authorises and settles card payments.,application,pay-api-gw-01,203.0.113.10,In-house,eu-west-1,Ubuntu 22.04,5,5,5,restricted,true,Payment processing,dmz,SOC2;PCI-DSS,,,4200000,,
+Customer Portal,Self-service portal where customers manage accounts and data.,application,portal-web-01,203.0.113.24,In-house,eu-west-1,Ubuntu 22.04,4,4,5,confidential,true,Customer data,dmz,SOC2;GDPR,,,2600000,,
+Core Banking Database,Primary ledger. System of record for balances and postings.,data,core-db-01,10.20.4.11,PostgreSQL,eu-west-1,RHEL 9,5,5,4,restricted,false,Financial reporting,data-tier,SOC2;PCI-DSS,,,7500000,,
+Identity Provider,SSO and MFA for staff and customers. Federated to every app.,third_party,sso.example.com,,Okta,SaaS,,5,5,4,confidential,true,Authentication / IAM,saas,SOC2;ISO27001,,,310000,,
+Corporate VPN Concentrator,Remote access for staff into the corporate network.,infrastructure,vpn-gw-01,203.0.113.40,Cisco,London DC,Cisco ASA 9.18,3,4,4,internal,true,Remote access,edge,SOC2,,,95000,,
+Clinical Records Store,Encrypted store for patient records. Regulated content.,data,phi-store-01,10.20.6.30,In-house,eu-west-1,RHEL 9,5,4,3,restricted,false,Regulated data (PHI),data-tier,SOC2;HIPAA,,,1800000,,
+Analytics Warehouse,Aggregated reporting warehouse. Nightly loads from the ledger.,cloud,warehouse.internal,10.30.1.5,Snowflake,eu-west-1,,4,3,2,confidential,false,Business intelligence,analytics,SOC2,,,420000,,
+CI Build Runners,Ephemeral build agents with deploy credentials.,infrastructure,ci-runner-03,10.40.2.61,GitLab,eu-west-1,Ubuntu 22.04,2,4,2,internal,false,Software delivery,build,SOC2,,,60000,,
+Marketing Website,Public brochure site. No customer data.,application,www.example.com,203.0.113.80,In-house,CDN,Nginx 1.25,1,2,3,public,true,Marketing,dmz,,,,45000,,
+Employee Laptop Fleet,Managed Windows and macOS endpoints across the company.,infrastructure,fleet-mdm,,Jamf,Distributed,Windows 11 / macOS 14,3,3,2,internal,false,End user computing,corp,SOC2,,,780000,,

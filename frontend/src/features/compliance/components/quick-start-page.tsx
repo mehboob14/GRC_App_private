@@ -416,8 +416,7 @@ export function QuickStartPage() {
       </div>
 
       <p className="mt-4 text-body-sm text-text-subtle">
-        Connecting systems and policy management arrive in a later phase, so
-        neither is counted above.
+        Connecting systems arrives in a later phase, so it is not counted above.
       </p>
     </div>
   );
