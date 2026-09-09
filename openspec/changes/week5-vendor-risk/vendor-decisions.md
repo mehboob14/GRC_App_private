@@ -277,7 +277,7 @@ RLS'd and surfaced, but every row in them will be typed in by a human until then
 |---|---|
 | `vendor_scorecards` | SecurityScorecard / BitSight / UpGuard — **not in the connector catalogue in any phase** |
 | `vendor_signals` | breach intel, adverse media, financial health — same, no catalogued connector |
-| `discovered_apps` | the identity connectors (Google Workspace, Okta, M365) — Phase 2 |
+| `vendor_discovered_apps` | the identity connectors (Google Workspace, Okta, M365) — Phase 2 |
 | `vendor_alert_rules` (slack channel) | the Slack connector — Phase 2 |
 
 Building them now is still the right call under the delivery plan's own rule — *"build the phase

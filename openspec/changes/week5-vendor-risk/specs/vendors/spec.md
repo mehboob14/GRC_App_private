@@ -326,7 +326,7 @@ everything anyone ever proposed.
 
 ### Requirement: A screen with no data source says so (V14)
 
-`vendor_scorecards`, `vendor_signals` and `discovered_apps` are built, but nothing feeds them
+`vendor_scorecards`, `vendor_signals` and `vendor_discovered_apps` are built, but nothing feeds them
 until Phase 2 connectors exist — and the scorecard providers are not in any phase's connector
 catalogue. Every row is manually entered until then.
 

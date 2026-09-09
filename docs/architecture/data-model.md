@@ -83,11 +83,40 @@ later joiners fall into the next campaign rather than appearing retroactively ov
 warning cannot go stale. `risk_source` + `origin_id` exist now so Phase 3 ERM extends this table
 instead of replacing it.
 
-**Vendors.** Vendor is the organisation; engagement is one use of it. Inherent and residual risk are
-separate fields with different jobs: inherent is scored before review and drives rigor; residual is
-the output of the completed review. Gates (`is_gate`) require an approval record to exit and are
-never skipped, regardless of tier. `next_reassessment_on` is computed from the cadence schedule, not
-from completion dates, so reviews cannot drift later each cycle.
+**Vendors.** Vendor is the organisation; **an engagement is one use of it, and the engagement is
+the unit of risk**. Stages, tiering runs, assessments and contracts all hang off an engagement, and
+every vendor gets one implicit default engagement at creation so nothing has to special-case a null
+one. `vendors.tier`, `current_residual_score`, `current_grade` and `annual_contract_value` are
+**caches of the worst engagement**, kept so a portfolio of hundreds sorts without a join — derived,
+never authoritative, and never the value an action is taken on. A vendor serving two departments
+with different data is two risks, not one averaged one. Inherent and residual risk stay separate
+fields with different jobs: inherent is scored before the review and decides how much review is
+proportionate; residual is the output of the completed one. **The lifecycle is rows, not a status
+column** — twelve stages in `vendor_stages` (intake, tiering, diligence, questionnaire, scoring,
+findings, contracting, approval, onboarding, monitoring, reassessment, offboarding), unique on
+`(tenant_id, engagement_id, cycle, stage)`, where `cycle` is a plain integer a reassessment
+increments and the previous cycle's rows stay readable. **`approval` is the only gate.** `tiering`
+is required and never skippable but is *not* a gate, because a gate is defined by needing an
+approval record to exit — a distinction the tier's skip matrix depends on. A database `CHECK`
+forbids `is_gate` and `status = 'skipped'` together, and a gate exits only on an approval with
+`decided_at >= stage.entered_at`, so a send-back invalidates a stale approval without mutating the
+append-only row. Exit criteria are **computed on read, never stored**: a stored blocker list goes
+stale the moment the record that clears it changes. `next_reassessment_on` is computed from the
+cadence schedule, not from completion dates, so reviews cannot drift later each cycle.
+`vendor_transitions` and `vendor_approvals` are append-only and their actor FKs are
+`ON DELETE NO ACTION`, because `SET NULL` issues an `UPDATE` that the append-only trigger refuses
+and the delete then fails. Four tables — `vendor_scorecards`, `vendor_signals`,
+`vendor_discovered_apps`, and Slack delivery on `vendor_alert_rules` — carry the rule-9 columns but
+have **no data source in any planned phase**, so their screens say "no data source connected"
+rather than rendering an empty table: on a monitoring surface, "watching and found nothing" and
+"not watching" look identical and mean opposite things. `vendor_findings.promoted_risk_id` ships
+nullable with **no FK and no promotion action** until `modules/risk/` exists. Twenty-seven tables:
+twenty-five tenant-owned, plus `questionnaire_templates` and `questionnaire_questions` on the global
+content plane with no `tenant_id` and no RLS. **Verbatim column lists for all of them, with every
+deviation from the ER named, are in
+[openspec/changes/week5-vendor-risk/design.md](../../openspec/changes/week5-vendor-risk/design.md)
+§1** — that section is the single build reference, and migrations are written from it rather than
+from the ER diagram images.
 
 **Assets.** Non-destructive merge: `source_asset_records` preserves every source's raw view,
 correlation matches on stable identifiers in strict order (cloud instance id, agent id, serial, MAC,
@@ -114,9 +143,9 @@ text with CHECK constraints, never enums. `tenant_id` leads every composite inde
 ## Scheduled jobs the model depends on
 
 Evidence staleness refresh; readiness snapshot writer; acceptance and waiver expiry; vulnerability
-SLA sweep; vendor reassessment queue; scheduled checks and connector syncs; acknowledgement
-reminders; vendor monitoring; asset hygiene; vulnerability enrichment (daily EPSS/KEV refresh,
-score recomputation, resurfacing check).
+SLA sweep; vendor reassessment queue; vendor document expiry; vendor SLA breach sweep; scheduled
+checks and connector syncs; acknowledgement reminders; vendor monitoring; asset hygiene;
+vulnerability enrichment (daily EPSS/KEV refresh, score recomputation, resurfacing check).
 
 Each is idempotent and safe to re-run.
 

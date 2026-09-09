@@ -59,7 +59,7 @@ it, issue a questionnaire, and log a finding"* — works end to end first.
   not fully satisfiable until the risk slice lands. **This is the one place the module knowingly
   falls short of the contract, and it is a sequencing gap, not a design one.**
 - **Live data in four connector-fed tables.** `vendor_scorecards`, `vendor_signals`,
-  `discovered_apps` and Slack alert delivery are **built, migrated and surfaced** under the
+  `vendor_discovered_apps` and Slack alert delivery are **built, migrated and surfaced** under the
   confirmed full-ER scope, but nothing feeds them until Phase 2 — and the scorecard providers
   (SecurityScorecard, BitSight, UpGuard) are not in the connector catalogue in **any** phase.
   Every row is typed in by a human until then. Those screens say "no data source connected"
@@ -88,6 +88,14 @@ approval conditions as their own table, scorecards, alert rules and discovered a
 It roughly doubles the build. It also means no later change has to alter what shipped, which is
 the delivery plan's own instruction — *"build the phase you are in, design the schema for all
 three"*.
+
+Transcribing those diagrams into `design.md` §1 settled the count at **27 tables — 25 tenant-owned
+plus 2 global**: the ER's 26, plus `vendor_transitions`, which the ER does not draw and which rule 5
+and every other module in this codebase require. One table an earlier draft of this change proposed,
+`vendor_reviewers`, was **cut** — the tiering policy and the team roster already answer spec ¶82's
+"required reviewers" between them. Seven of the ER's names are prefixed or pluralised to survive in a
+shared schema, and every rename and structural departure is listed in §1's deviation register rather
+than absorbed silently.
 
 ## Provenance
 

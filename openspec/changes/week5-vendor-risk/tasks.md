@@ -10,13 +10,24 @@ adds its policy in the same migration; the isolation tests ship in this change.
 
 - [x] 0.1 Decisions sent and answered. V1 twelve stages · V10 engagement is the unit of risk ·
       V13 Verity-authored bank only · V14 full ER, 26 tables.
-- [ ] 0.2 Write the agreed vendor model into `docs/architecture/data-model.md` as a module note.
-      CLAUDE.md forbids inventing schema; that file is the working summary and carries a Vendors
-      paragraph of principles with no column list. **Nothing below starts until this lands** —
-      it is the rule, not a formality.
-- [ ] 0.3 Transcribe the ER's verbatim column lists for all 26 tables into `design.md` §1 as the
-      single build reference, so every migration is written from one place rather than from ten
-      diagram images.
+- [x] 0.2 Vendor model written into `docs/architecture/data-model.md` as a module note — engagement
+      as the unit of risk, the cached-not-authoritative columns, twelve stages as rows with
+      `approval` the only gate, the `entered_at` gate-freshness rule, computed-not-stored exit
+      criteria, append-only actor FKs, the four unfed tables, and the count (27 = 25 tenant-owned
+      + 2 global). Points at `design.md` §1 for columns.
+- [x] 0.3 All 26 ER tables transcribed verbatim into `design.md` §1, plus `vendor_transitions`.
+      **§1 is now the single build reference — every migration is written from it.** Section 0
+      settled thirteen things the diagrams left open, all in §1's deviation register:
+      seven renames (`questionnaire_questions`, `vendor_tiering_policies`,
+      `vendor_assessment_responses`, `vendor_assessment_comments`, `vendor_soc_report_reviews`,
+      `vendor_discovered_apps`, `vendor_offboardings`); `questionnaire_templates` **keeps** its ER
+      name against the earlier `questionnaire_banks`; **`vendor_reviewers` is cut** — policy
+      `required_reviewer_roles_by_tier` ∩ `vendor_team_roster` covers spec ¶82 with no new table;
+      `vendor_stages.exit_blockers` is cut (computed, never stored); `started_at` → the ER's
+      `entered_at`; `portal_token` → hash + expiry + revocation (V11); `vendor_assessment_responses`
+      gains a PK the diagram omits; `questionnaire_questions` gains `body`.
+
+**Column lists live in `design.md` §1, not here.** A task naming a table means the block in §1.
 
 ## 1. Foundation
 
@@ -38,7 +49,9 @@ adds its policy in the same migration; the isolation tests ship in this change.
 
 - [ ] 2.1 `scoring.py` — pure inherent tiering (V6) returning the full breakdown, plus its unit
       tests. No session, no I/O.
-- [ ] 2.2 `vendor_tiering_policies` + `vendor_tiering_assessments`, migration, seeded defaults.
+- [ ] 2.2 `vendor_tiering_policies` + `vendor_tiering_assessments`, migration, seeded defaults —
+      including the two columns §1 adds, `stage_skip_matrix_by_tier` and
+      `required_reviewer_roles_by_tier`, which are what makes spec ¶82 more than a label.
 - [ ] 2.3 `vendor_stages` + `vendor_transitions` (append-only, `ON DELETE NO ACTION` on the actor
       FK), migration including the `CHECK` that a gate is never skipped.
 - [ ] 2.4 Stage materialisation: running tiering inserts the stage rows for the cycle and marks
@@ -53,9 +66,9 @@ adds its policy in the same migration; the isolation tests ship in this change.
 
 ## 3. Assessment and the portal
 
-- [ ] 3.1 Global `questionnaire_banks` + `questionnaire_questions` (no `tenant_id`, no RLS),
+- [ ] 3.1 Global `questionnaire_templates` + `questionnaire_questions` (no `tenant_id`, no RLS),
       seeded with the Verity-authored bank across the ten domains (V8, subject to V13).
-- [ ] 3.2 `vendor_assessments` + `vendor_responses`, migration. Token stored hashed with expiry
+- [ ] 3.2 `vendor_assessments` + `vendor_assessment_responses`, migration. Token stored hashed with expiry
       and revocation columns (V11).
 - [ ] 3.3 Issue a questionnaire: create the assessment, mint the token, notify the contact.
 - [ ] 3.4 Portal endpoints — unauthenticated, token-resolved tenant, rate limited, upload
@@ -71,12 +84,12 @@ adds its policy in the same migration; the isolation tests ship in this change.
 
 - [ ] 4.1 `vendor_approvals` (append-only), migration, four-valued decision (V3).
 - [ ] 4.2 Approve/defer/reject with segregation of duties enforced server-side (V4) and the
-      gate-freshness rule (`decided_at >= stage.started_at`). Tests for both.
+      gate-freshness rule (`decided_at >= stage.entered_at`). Tests for both.
 - [ ] 4.3 Conditions on an approval become tasks.
 - [ ] 4.4 `vendor_documents` + `vendor_contracts`, migration, coverage window and expiry,
       `evidence_id` link.
 - [ ] 4.5 `vendor_signals`, migration, with `source`/`external_id`/`synced_at` from day one.
-- [ ] 4.6 `soc_report_reviews`, migration. Structured fields: report kind, audit period,
+- [ ] 4.6 `vendor_soc_report_reviews`, migration. Structured fields: report kind, audit period,
       criteria, opinion, bridge letter, findings-material, CUEC reviewed, subservice orgs.
       **This is the CC9.2 artefact** (ER ¶110) — it earns its own review screen, not a form.
 - [ ] 4.7 `vendor_subprocessors`, migration. The fourth-party register with data location and
@@ -84,13 +97,13 @@ adds its policy in the same migration; the isolation tests ship in this change.
 - [ ] 4.8 `vendor_slas`, migration. Committed level vs measured, with the breach flag derived on
       read rather than stored.
 - [ ] 4.9 `vendor_approval_conditions`, migration; each condition also creates a task.
-- [ ] 4.10 `assessment_comments`, migration; the reviewer thread on an assessment.
+- [ ] 4.10 `vendor_assessment_comments`, migration; the reviewer thread on an assessment.
 - [ ] 4.11 `vendor_intake_requests`, migration; the front door, with its own approve/decline that
       creates the vendor on acceptance.
 - [ ] 4.12 `vendor_team_roster`, migration; roles as rows, not a JSON blob.
 - [ ] 4.13 `vendor_alert_rules`, migration. In-app delivery works now; the Slack channel is
       wired but inert until the Phase 2 connector.
-- [ ] 4.14 `vendor_scorecards` and `discovered_apps`, migrations, with rule-9 columns. **Manual
+- [ ] 4.14 `vendor_scorecards` and `vendor_discovered_apps`, migrations, with rule-9 columns. **Manual
       entry only** — no connector feeds either in any phase yet.
 - [ ] 4.15 `vendor_offboardings`, migration; archive-not-delete; attestation recorded as an
       assessment; certificate stored as evidence.
