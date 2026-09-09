@@ -31,19 +31,33 @@ adds its policy in the same migration; the isolation tests ship in this change.
 
 ## 1. Foundation
 
-- [ ] 1.1 `modules/vendors/models.py` — vocabularies as `Final` tuples, then `vendors`,
-      `vendor_engagements`, `vendor_contacts`.
-- [ ] 1.2 Migration part 1: those three tables, `enable_rls` + `grant_crud` each, tenant-first
-      indexes, and the four `INSERT INTO permissions` rows (`vendors:read`, `:manage`,
-      `:assess`, `:approve`).
-- [ ] 1.3 `service.py` — Views, `create_vendor` with the implicit default engagement (V10),
-      duplicate detection on save warning rather than blocking, `AuditService` on every write.
-- [ ] 1.4 `schemas.py` + `router.py` — register list, create, get, update. `_Ctx`/`_Db` aliases,
-      `require(...)` on every route, static paths before `/{id}`.
-- [ ] 1.5 Mount in `main.py`; add the `vendors reaches no other module's data` contract and the
-      four `ignore_imports` entries to `pyproject.toml`; confirm `lint-imports` still passes.
-- [ ] 1.6 Isolation test: a vendor in tenant A is invisible to tenant B through the service and
-      through raw SQL with the other tenant bound.
+- [x] 1.1 `modules/vendors/models.py` — vocabularies as `Final` tuples, then `vendors`,
+      `vendor_engagements`, `vendor_contacts`. `vendors` composes `Integratable`
+      (`docs/conventions/database.md` names the table). One `LIFECYCLE_STATUSES` tuple serves both
+      the vendor and the engagement: same states, independent values.
+- [x] 1.2 Migration `f4b7d2a90e18` — those three tables, `enable_rls` + `grant_crud` each,
+      tenant-first indexes, and the four `INSERT INTO permissions` rows (`vendors:read`,
+      `:manage`, `:assess`, `:approve`). Downgrade proven by running it and re-upgrading.
+      Also registered `vendors`, `documents`, `evidence` and `vulnerabilities` in
+      `migrations/env.py`, which imported only eight of twelve model modules — autogenerate would
+      have proposed dropping every table it could not see.
+- [x] 1.3 `service.py` — Views, `create_vendor` with the implicit default engagement (V10),
+      duplicate detection that warns rather than blocks, `AuditService` on every write. `_recache`
+      is the only writer of the cached worst-engagement columns. No `repository.py`: the six most
+      recent modules have none, and `backend/CLAUDE.md` was corrected to say so.
+- [x] 1.4 `schemas.py` + `router.py` — register list, create, get, update, plus engagement and
+      contact writes, `/facets` and `/duplicate-check`. `_Ctx`/`_Db` aliases, `require(...)` on
+      every route, static paths before `/{vendor_id}`. `vendors:assess` and `vendors:approve` are
+      seeded but attached to no route yet — sections 3 and 4 earn them.
+- [x] 1.5 Mounted in `main.py`; the `vendors reaches no other module's data` contract already
+      existed, so this added its `ignore_imports` for the sanctioned audit and iam legs.
+      `lint-imports`: 17 contracts kept, 0 broken.
+- [x] 1.6 Isolation test — six properties, all passing: the default engagement is written in the
+      same transaction; an unfiltered read returns only tenant A's rows on all three tables; the
+      register **and the duplicate check** stay inside the tenant (both tenants hold a vendor
+      named "Acme Cloud"); a B row is absent by id and `NotFound` through the service; an unbound
+      session sees nothing; and three forged writes carrying B's `tenant_id` are refused by
+      `WITH CHECK`. `test_rls_coverage` now covers the three new tables automatically.
 
 ## 2. Tiering and the lifecycle
 

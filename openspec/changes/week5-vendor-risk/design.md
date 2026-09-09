@@ -112,7 +112,15 @@ vendors                                       -- ER VENDORS
   annual_contract_value       numeric  -- cached from active contracts
   next_reassessment_on        date     -- computed from schedule, NOT from completion
   tags                        jsonb
++ source / external_id / synced_at        -- Integratable; see below
 ```
+
+`vendors` composes **`Integratable`**. `docs/conventions/database.md` names this table by name —
+*"Apply it even when the table is manual-only today — assets, vulnerabilities, tasks, users,
+vendors, discovered apps"* — so the register carries `source`, `external_id` and `synced_at` with
+`UNIQUE (tenant_id, source, external_id)` from its first migration, exactly like `vendor_signals`
+and `vendor_discovered_apps` do further down. A procurement or SSO connector is then an upsert, not
+a migration.
 
 The four cached columns exist for one reason: ranking a portfolio of hundreds without joining
 every engagement. **They are derived and never authoritative (V10).** A vendor serving two
@@ -601,9 +609,9 @@ them**, which is the point of checking.
 | Table | Column | State |
 |---|---|---|
 | `risks` | `risk_source` ∈ `manual`, `starter_library`, `vendor_finding`, `assessment`; `origin_id` | Reserved in the ER. `modules/risk/` has no tables yet, so nothing to alter. |
-| `assets` | `vendor_id` FK; `asset_type` includes `third_party` | ER section 3.8. Verify before assuming; add only if absent. |
+| `assets` | ER section 3.8 draws `vendor_id` FK | **Verified absent.** `assets.models` carries `vendor_ref: Mapped[str | None]` — free text, with the comment *"Free text until the vendors module lands; then it becomes a link."* The seam is therefore a `links` row, not a column, and the ER's FK is not built. Backfilling `vendor_ref` into links is **out of scope for this change** and gets its own task when the register has rows to match against. |
 | `approvals` | `object_type` includes `vendor_stage` | ER section 3.11. The vendor gate writes `vendor_approvals`, so this is a read-side concern only. |
-| `links` | `to_type` includes `vendor` | **Already live** in both the ORM constant and the database constraint. The linkage fabric owes no migration. |
+| `links` | `to_type` and `from_type` both include `vendor` | **Verified live.** `LINK_TYPES` in `modules/links/models.py` lists `vendor`, and `status_check` puts it in the database constraint on both columns. The linkage fabric owes no migration. |
 
 ---
 

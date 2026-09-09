@@ -43,6 +43,7 @@ from verity.modules.notifications.router import notifications_router
 from verity.modules.tasks.router import tasks_router
 from verity.modules.tenancy.provider_auth import router as provider_auth_router
 from verity.modules.tenancy.router import provider_tenants_router, tenant_router
+from verity.modules.vendors.router import vendors_router
 from verity.modules.vulnerabilities.router import vulnerabilities_router
 
 logger = get_logger(__name__)
@@ -135,6 +136,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(notifications_router, prefix=API_PREFIX)
     app.include_router(assets_router, prefix=API_PREFIX)
     app.include_router(vulnerabilities_router, prefix=API_PREFIX)
+    app.include_router(vendors_router, prefix=API_PREFIX)
     app.include_router(auth_router, prefix=API_PREFIX)
     app.include_router(members_router, prefix=API_PREFIX)
     app.include_router(groups_router, prefix=API_PREFIX)

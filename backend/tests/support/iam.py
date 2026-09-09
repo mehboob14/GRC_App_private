@@ -58,8 +58,11 @@ async def verify_signup_email(email: str) -> ChallengeIssued:
     return outcome
 
 
-SIGNUP_PASSWORD = "orbit-mango-quartz-42"  # noqa: S105 — test credential
-INVITEE_PASSWORD = "delta-crimson-otter-77"  # noqa: S105 — test credential
+# Both satisfy the default policy in TenantSettings: 12+ characters with an
+# upper, a lower and a digit. They were all-lowercase until the policy columns
+# landed, which failed every signup in this helper with WeakPassword.
+SIGNUP_PASSWORD = "Orbit-mango-quartz-42"  # noqa: S105 — test credential
+INVITEE_PASSWORD = "Delta-crimson-otter-77"  # noqa: S105 — test credential
 
 
 @dataclass(frozen=True, slots=True)

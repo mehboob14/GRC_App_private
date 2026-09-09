@@ -15,11 +15,20 @@ Every module under `src/verity/modules/<name>/` owns its full stack:
   router.py        FastAPI routes. HTTP only: parse, authorise, call service, shape response.
   schemas.py       Pydantic request/response models. Never expose ORM objects directly.
   models.py        SQLAlchemy models for this module's tables only.
-  service.py       Business logic. The only place rules live.
-  repository.py    Data access. All queries filter tenant_id explicitly.
-  exceptions.py    Module-specific errors, mapped to HTTP in the handler.
+  service.py       Business logic and data access. The only place rules live.
+  repository.py    Optional. See below.
+  exceptions.py    Module-specific errors, mapped to HTTP in the handler (optional).
   tasks.py         Celery tasks owned by this module (optional).
 ```
+
+**`repository.py` is optional, and new modules do not have one.** Only the four
+Week-1 modules — `audit`, `compliance`, `iam`, `tenancy` — separate it out. Every
+module built since (`assets`, `documents`, `evidence`, `links`, `notifications`,
+`tasks`, `vendors`, `vulnerabilities`) builds its `select()` in `service.py`, and
+the import-linter layers contract permits it: `"(repository)"` marks an *optional*
+layer, not a required one. Copy `assets/`, which is the reference shape. The layer
+rules below still hold — they describe responsibilities, and a service that queries
+directly still contains no HTTP types and still commits nothing.
 
 **Do not** create global `models.py`, `services.py`, or `crud.py`. Layer-first structure is what
 turns a codebase into mud at ~30 modules.

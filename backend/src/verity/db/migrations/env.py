@@ -23,11 +23,15 @@ from verity.db.base import Base
 from verity.modules.assets import models as _assets_models  # noqa: F401
 from verity.modules.audit import models as _audit_models  # noqa: F401
 from verity.modules.compliance import models as _compliance_models  # noqa: F401
+from verity.modules.documents import models as _documents_models  # noqa: F401
+from verity.modules.evidence import models as _evidence_models  # noqa: F401
 from verity.modules.iam import models as _iam_models  # noqa: F401
 from verity.modules.links import models as _links_models  # noqa: F401
 from verity.modules.notifications import models as _notifications_models  # noqa: F401
 from verity.modules.tasks import models as _tasks_models  # noqa: F401
 from verity.modules.tenancy import models as _tenancy_models  # noqa: F401
+from verity.modules.vendors import models as _vendors_models  # noqa: F401
+from verity.modules.vulnerabilities import models as _vulnerabilities_models  # noqa: F401
 
 target_metadata = Base.metadata
 
