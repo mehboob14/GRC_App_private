@@ -8,8 +8,8 @@ Verity convention.
 
 ## 1. Data model
 
-Sixteen tenant-owned tables and two global ones. The ER design specifies twenty-six; **V14**
-records what is absorbed rather than built and why.
+**V14 is confirmed as the full ER.** Twenty-four tenant-owned tables and two global ones —
+everything the ER draws, including the ten capabilities the requirements spec never mentions.
 
 Every tenant-owned table composes `UUIDPrimaryKey, TenantScoped, Timestamped, Base`, carries
 `tenant_id` as the first column of every composite index (rule 1), gets `enable_rls` +
@@ -72,17 +72,39 @@ like the SOC 2 control library **(V5)**. Questions carry `domain`, `weight`,
 **Subject to V13**: one Verity-authored bank across the ten domains. No SIG, CAIQ or HECVAT
 question text is seeded until there is a licensing answer.
 
-### Things deliberately not built
+### The ER-only tables, now in scope (V14)
 
-- **Remediations** — a finding's remediation is a **task**. The tasks module already has
-  assignment, SLA, transitions and CAPA. A `vendor_remediations` table would be a second, worse
-  tasks module that no dashboard knows about.
-- **Approval conditions** — JSONB on the approval row. "Approve with conditions" produces
-  conditions that are *read together with the decision they qualify*; splitting them into a table
-  buys a join and loses that.
-- **Subprocessors** — a typed edge in the existing `links` table, where `vendor` is already an
-  allowed type on both sides. A fourth party is a vendor.
-- **Scorecards, discovered apps, alert rules** — no data source until Phase 2 connectors.
+None of these appear in the signed requirements document; all are drawn in the ER and are built.
+
+| Table | What it is |
+|---|---|
+| `vendor_intake_requests` | A request to onboard a vendor, before it is one. The front door: who asked, for what, with what data. |
+| `vendor_team_roster` | Who plays which role on this engagement — the RACI backbone, as rows rather than the reference product's JSON blob. |
+| `soc_report_reviews` | Turns a SOC report PDF into queryable fields: report kind, audit period, criteria, the auditor's opinion, bridge-letter status, whether findings were material, whether CUECs were reviewed. **ER ¶110 calls this "precisely the CC9.2 evidence an auditor asks for."** |
+| `vendor_subprocessors` | The fourth-party register. A named table rather than the typed link this change first proposed — the ER draws it, and a subprocessor carries its own data-location and notification-obligation fields a link cannot hold. |
+| `vendor_slas` | Committed service levels and measured performance. |
+| `vendor_approval_conditions` | Conditions attached to an "approve with conditions" decision, as rows. Each also becomes a task. |
+| `assessment_comments` | The reviewer conversation on an assessment, which otherwise happens in email and is lost. |
+| `vendor_alert_rules` | What to notify on, and where. |
+| `vendor_scorecards` | External security ratings. **No connector in any phase — manual entry.** |
+| `discovered_apps` | Shadow IT from the identity connectors. **Phase 2 — no source until then.** |
+
+**Remediation is still a task**, not a `vendor_remediations` table. The ER does not draw one, and
+the tasks module already carries assignment, SLA, transitions and CAPA. A vendor-local to-do list
+would be a second, worse tasks module that no dashboard counts.
+
+### The four tables nothing feeds yet
+
+`vendor_scorecards`, `vendor_signals`, `discovered_apps` and Slack delivery for
+`vendor_alert_rules` are built and surfaced, but have **no data source until Phase 2** — and the
+scorecard providers are in no phase's connector catalogue at all. Two consequences the build must
+honour:
+
+1. They carry `source`, `external_id` and `synced_at` from their first migration (rule 9), so the
+   later connector is a sync and not a migration.
+2. Their screens must say **"no data source connected"**, never render an empty table. On a
+   monitoring surface, "we are watching and found nothing" and "we are not watching" look
+   identical and mean opposite things — and only one of them is safe to believe.
 
 ---
 

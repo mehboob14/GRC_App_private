@@ -58,12 +58,16 @@ it, issue a questionnaire, and log a finding"* — works end to end first.
   nullable and the action is absent rather than faked. Spec ¶85 and the ¶109 exit criterion are
   not fully satisfiable until the risk slice lands. **This is the one place the module knowingly
   falls short of the contract, and it is a sequencing gap, not a design one.**
-- **Connector-fed monitoring.** Scorecard sync, shadow-IT discovery and breach-intel signals need
-  connectors that are Phase 2 — and in the scorecard providers' case, are not in the connector
-  catalogue at all. The tables that receive them are designed now (per the delivery plan's
-  *"build the phase you are in, design the schema for all three"*), with manual entry meanwhile.
-- **SIG / CAIQ / HECVAT question text.** Licensed content. See decision V13 — this needs a legal
-  answer before a single question is seeded.
+- **Live data in four connector-fed tables.** `vendor_scorecards`, `vendor_signals`,
+  `discovered_apps` and Slack alert delivery are **built, migrated and surfaced** under the
+  confirmed full-ER scope, but nothing feeds them until Phase 2 — and the scorecard providers
+  (SecurityScorecard, BitSight, UpGuard) are not in the connector catalogue in **any** phase.
+  Every row is typed in by a human until then. Those screens say "no data source connected"
+  rather than showing an empty state that reads as "no risk found", because on a monitoring
+  surface those two look identical and mean opposite things.
+- **SIG / CAIQ / HECVAT question text.** Not shipped — **V13 confirmed**. Licensed content
+  belonging to Shared Assessments, CSA and EDUCAUSE. Verity ships its own bank across the ten
+  domains, mapped to those standards by name so an auditor recognises the coverage.
 
 ## Where this sits
 
@@ -74,10 +78,16 @@ documents (contracts and DPAs), and the links primitive — where `vendor` is **
 allowed type in both the ORM constant and the live database constraint, so the linkage fabric
 owes no migration.
 
-Two scope statements are in play and they disagree: the ER design specifies 26 vendor tables
-while the requirements spec's vendor section is 7 bullets, and the Week-5 build list is narrower
-than Deliverable 1.2. This change builds to the spec and sequences to the plan. Decision V14
-records exactly what that includes and excludes.
+Two scope statements were in play and they disagreed: the ER design specifies 26 vendor tables,
+the requirements spec's vendor section is 7 bullets, and the Week-5 build list is narrower still.
+**V14 is confirmed as the full ER — 26 tables**, which is broader than this change originally
+recommended. That pulls in ten capabilities the signed requirements document never mentions:
+SOC report reviews, SLAs, subprocessors, intake requests, team roster, assessment comments,
+approval conditions as their own table, scorecards, alert rules and discovered apps.
+
+It roughly doubles the build. It also means no later change has to alter what shipped, which is
+the delivery plan's own instruction — *"build the phase you are in, design the schema for all
+three"*.
 
 ## Provenance
 
@@ -97,8 +107,10 @@ decision log says so.
 
 ## Status
 
-**This proposal is not implementable as written.** `vendor-decisions.md` holds fourteen open
-decisions, five of them load-bearing enough that answering them after a tenant has data means a
-data repair rather than a migration. The two that most need answering are **V1** (eleven stages
-or twelve — the module's backbone) and **V13** (whether licensed questionnaire content can ship
-at all). Section 0 of `tasks.md` is the gate.
+**Ready to implement.** Four decisions are confirmed (2026-09-09): **V1** twelve stages,
+**V10** the engagement is the unit of risk, **V13** ship our own questionnaire bank, **V14** the
+full ER at 26 tables. The remaining ten stand as *recommendation taken* — they are built as
+written in `vendor-decisions.md` and each records what revisiting would cost.
+
+The one thing still outside this change's control is `modules/risk/`. Until a risk slice exists,
+spec ¶85 and the ¶109 exit criterion cannot be met.

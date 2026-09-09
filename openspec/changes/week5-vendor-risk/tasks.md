@@ -3,22 +3,20 @@
 Each task is at most two hours. Every migration that adds a tenant-owned table enables RLS and
 adds its policy in the same migration; the isolation tests ship in this change.
 
-`vendor-decisions.md` V1–V14 are **proposed, not confirmed**. Section 0 is the gate: if a
-decision is overridden, the affected design section changes before any migration is written.
+**V1, V10, V13 and V14 are confirmed (2026-09-09).** The other ten decisions stand as
+*recommendation taken* and are built as written in `vendor-decisions.md`.
 
-## 0. Decision gate — nothing below starts until this closes
+## 0. Before the first migration
 
-- [ ] 0.1 Send `vendor-decisions.md` for confirmation. Record each answer in place (status line
-      to `APPROVED`, with the date) or amend the decision and the affected `design.md` section.
-- [ ] 0.2 **V1 first.** Eleven stages or twelve decides the `CHECK` constraint, the skip matrix
-      and every stage row ever written. Nothing in section 2 starts before it is answered.
-- [ ] 0.3 **V13 needs a legal answer, not an engineering one.** If SIG/CAIQ/HECVAT text cannot
-      ship, task 3.1 seeds the Verity-authored bank only and the mapping-by-name stays.
-- [ ] 0.4 Confirm V14's scope line. If the ER-only tables are pulled in, this change grows by
-      roughly ten tables and needs re-planning rather than extending.
-- [ ] 0.5 Write the agreed vendor model into `docs/architecture/data-model.md` as a module note.
-      CLAUDE.md forbids inventing schema; that file is the working summary and currently has a
-      Vendors paragraph of principles but no column list.
+- [x] 0.1 Decisions sent and answered. V1 twelve stages · V10 engagement is the unit of risk ·
+      V13 Verity-authored bank only · V14 full ER, 26 tables.
+- [ ] 0.2 Write the agreed vendor model into `docs/architecture/data-model.md` as a module note.
+      CLAUDE.md forbids inventing schema; that file is the working summary and carries a Vendors
+      paragraph of principles with no column list. **Nothing below starts until this lands** —
+      it is the rule, not a formality.
+- [ ] 0.3 Transcribe the ER's verbatim column lists for all 26 tables into `design.md` §1 as the
+      single build reference, so every migration is written from one place rather than from ten
+      diagram images.
 
 ## 1. Foundation
 
@@ -78,12 +76,28 @@ decision is overridden, the affected design section changes before any migration
 - [ ] 4.4 `vendor_documents` + `vendor_contracts`, migration, coverage window and expiry,
       `evidence_id` link.
 - [ ] 4.5 `vendor_signals`, migration, with `source`/`external_id`/`synced_at` from day one.
-- [ ] 4.6 `vendor_offboardings`, migration; archive-not-delete; attestation recorded as an
+- [ ] 4.6 `soc_report_reviews`, migration. Structured fields: report kind, audit period,
+      criteria, opinion, bridge letter, findings-material, CUEC reviewed, subservice orgs.
+      **This is the CC9.2 artefact** (ER ¶110) — it earns its own review screen, not a form.
+- [ ] 4.7 `vendor_subprocessors`, migration. The fourth-party register with data location and
+      notification obligations.
+- [ ] 4.8 `vendor_slas`, migration. Committed level vs measured, with the breach flag derived on
+      read rather than stored.
+- [ ] 4.9 `vendor_approval_conditions`, migration; each condition also creates a task.
+- [ ] 4.10 `assessment_comments`, migration; the reviewer thread on an assessment.
+- [ ] 4.11 `vendor_intake_requests`, migration; the front door, with its own approve/decline that
+      creates the vendor on acceptance.
+- [ ] 4.12 `vendor_team_roster`, migration; roles as rows, not a JSON blob.
+- [ ] 4.13 `vendor_alert_rules`, migration. In-app delivery works now; the Slack channel is
+      wired but inert until the Phase 2 connector.
+- [ ] 4.14 `vendor_scorecards` and `discovered_apps`, migrations, with rule-9 columns. **Manual
+      entry only** — no connector feeds either in any phase yet.
+- [ ] 4.15 `vendor_offboardings`, migration; archive-not-delete; attestation recorded as an
       assessment; certificate stored as evidence.
-- [ ] 4.7 Reassessment: new cycle, carry intake and tiering forward, `next_reassessment_on`
+- [ ] 4.16 Reassessment: new cycle, carry intake and tiering forward, `next_reassessment_on`
       computed from cadence not completion. Test that a late review does not move the next one.
-- [ ] 4.8 Two celery-beat jobs — reassessment queue and document expiry — each iterating tenants
-      one transaction at a time.
+- [ ] 4.17 Three celery-beat jobs — reassessment queue, document expiry, SLA breach sweep — each
+      iterating tenants one transaction at a time.
 
 ## 5. Interface
 
@@ -106,7 +120,13 @@ decision is overridden, the affected design section changes before any migration
 - [ ] 5.9 Reassessment-as-diff: prior answers pre-filled, changed chips, "what changed since"
       panel with the score delta and its cause.
 - [ ] 5.10 Document rows with coverage window and countdown; renewal request action.
-- [ ] 5.11 Routes in `routes.tsx`; remove `comingSoon` from the nav entry; add the four permission
+- [ ] 5.11 SOC report review screen: the structured fields as a readable summary an auditor can
+      accept, not a form dump. Opinion and material-findings lead.
+- [ ] 5.12 Subprocessor register and SLA tab.
+- [ ] 5.13 Intake request queue with approve/decline.
+- [ ] 5.14 Monitoring tab: signals and scorecards, each with an explicit **"no data source
+      connected"** state rather than an empty table.
+- [ ] 5.15 Routes in `routes.tsx`; remove `comingSoon` from the nav entry; add the four permission
       keys to `PERMISSION_KEYS` **and** to `PERMISSION_GROUPS` — the compile guard will catch the
       second if it is forgotten.
 

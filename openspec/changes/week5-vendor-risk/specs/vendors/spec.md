@@ -1,18 +1,16 @@
 # Vendors (third-party risk)
 
-> **This spec is written against `vendor-decisions.md` V1–V14, which are PROPOSED and have not
-> been confirmed by the client.** It is not yet the agreed contract. Where a requirement below
-> depends on an unconfirmed decision it is tagged — **(V1)**, **(V6)**, and so on — and it
-> changes if the decision is overridden. The most load-bearing are **V1** (twelve stages, not
-> eleven), **V2** (approval is the only gate), **V5** (questionnaire banks are global content),
-> **V10** (the engagement is the unit of risk and the vendor caches the worst of them), **V11**
-> (portal token design), **V13** (whether licensed questionnaire content may ship at all) and
-> **V14** (which of the ER's twenty-six tables are in scope). An untagged requirement rests on
-> the signed requirements document, the ER design, or an existing Verity rule.
+> **Four decisions are CONFIRMED (2026-09-09): V1** twelve stages, **V10** the engagement is the
+> unit of risk, **V13** ship a Verity-authored questionnaire bank only, **V14** build the full ER
+> at twenty-six tables. The remaining ten stand as *recommendation taken* and are still tagged
+> below — **(V2)** approval is the only gate, **(V5)** banks are global content, **(V11)** portal
+> token design, and so on. A tagged requirement changes if that recommendation is overridden; an
+> untagged one rests on the signed requirements document, the ER design, or an existing Verity
+> rule.
 
 ## ADDED Requirements
 
-### Requirement: A vendor is an organisation; an engagement is one use of it (V10)
+### Requirement: A vendor is an organisation; an engagement is one use of it
 
 The register records the organisation. Risk is scoped to an engagement — one use of that vendor
 by one part of the business — because the same vendor serving two departments with different data
@@ -261,3 +259,86 @@ A reviewed document can stand as audit evidence and is linked to the evidence re
 - **THEN** the document row reads as expired with the coverage window shown
 - **AND** the vendor's next action is to request a current report
 - **AND** the reader never has to subtract two dates in their head to discover it
+
+---
+
+### Requirement: A SOC report is reviewed into fields, not filed as a PDF
+
+A vendor's SOC 2 report is recorded as a structured review — report kind and type, the audit
+period it covers, the criteria included, the auditor's opinion, bridge-letter status, whether
+findings were material, and whether the complementary user entity controls were reviewed
+(ER ¶110).
+
+The ER is explicit that this is the point: *"This structured review is precisely the CC9.2
+evidence an auditor asks for."* A PDF in a folder is not that. `SOC2:CC9.2` is already in Verity's
+seeded content and always in scope, so this is the artefact that lets a tenant answer it.
+
+The reviewed report links to the evidence record, and its coverage window drives the expiry
+countdown.
+
+#### Scenario: An unqualified opinion with material findings is not silently reassuring
+
+- **GIVEN** a SOC 2 Type II with an unqualified opinion but material findings noted
+- **WHEN** the review is recorded
+- **THEN** both facts are shown together at the top of the review
+- **AND** the opinion alone is never presented as the summary, because "unqualified" and "nothing
+  went wrong" are not the same statement
+
+---
+
+### Requirement: The fourth party is registered, not just scored
+
+Fourth-party reliance is one of the five tiering factors, and it is also a register: which
+subprocessors a vendor uses, where they hold data, and what the vendor is obliged to tell you
+when that list changes (ER ¶126).
+
+A subprocessor that is itself a vendor in the register is linked to that record rather than
+duplicated, using the `links` primitive where `vendor` is already an allowed type on both sides.
+
+#### Scenario: A shared subprocessor is visible across vendors
+
+- **GIVEN** two vendors that both subprocess to the same cloud provider
+- **WHEN** either vendor is opened
+- **THEN** the shared subprocessor is the same record, not two unlinked names
+- **AND** a concentration question — "how much of our estate depends on this one fourth party" —
+  is answerable
+
+---
+
+### Requirement: Intake is the front door, and a request is not yet a vendor
+
+A vendor begins as a request: who is asking, for what service, with what data, and why. A request
+that is declined is recorded with its reason and never becomes a vendor row; a request that is
+accepted creates the vendor and its first engagement in one transaction.
+
+This keeps the register a list of vendors the organisation actually uses, rather than a list of
+everything anyone ever proposed.
+
+#### Scenario: A declined request leaves a trail without polluting the register
+
+- **GIVEN** an intake request for a tool the security team rejects
+- **WHEN** it is declined with a reason
+- **THEN** no vendor or engagement is created
+- **AND** the request, its reason and its decider remain readable, so the same tool arriving again
+  next quarter is recognisable
+
+---
+
+### Requirement: A screen with no data source says so (V14)
+
+`vendor_scorecards`, `vendor_signals` and `discovered_apps` are built, but nothing feeds them
+until Phase 2 connectors exist — and the scorecard providers are not in any phase's connector
+catalogue. Every row is manually entered until then.
+
+Those surfaces state that no data source is connected. They do **not** render an empty table.
+
+On a monitoring surface, *"we are watching and found nothing"* and *"we are not watching"* look
+identical and mean opposite things. Only one of them is safe to act on, so the interface must
+never let the reader mistake the second for the first.
+
+#### Scenario: An unmonitored vendor does not look like a clean one
+
+- **GIVEN** a vendor with no scorecard provider connected
+- **WHEN** its monitoring tab is opened
+- **THEN** it reads "No rating source connected" with what connecting one would provide
+- **AND** it does not show a rating of zero, an empty chart, or a green state

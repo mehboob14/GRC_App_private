@@ -1,6 +1,14 @@
 # Vendor risk — decisions needed before the schema is cut
 
-**Status: PROPOSED. None of these are confirmed.**
+**Status: FOUR CONFIRMED 2026-09-09. The other ten stand as "recommendation taken" — they are
+implemented as written below unless you say otherwise, and each says what it costs to revisit.**
+
+| Confirmed 2026-09-09 | Answer |
+|---|---|
+| **V1** Lifecycle stages | **Twelve** — reassessment and offboarding are separate stages |
+| **V10** Vendor vs engagement | **The engagement is the unit of risk**; the vendor caches its worst |
+| **V13** Questionnaire content | **Ship a Verity-authored bank.** No SIG/CAIQ/HECVAT text |
+| **V14** Scope | **The full ER — 26 tables** (this overrode the recommendation of 16) |
 
 Every decision below is a place where the two signed documents disagree with each other, specify
 a thing in words but never numerically, or do not cover it at all. CLAUDE.md's working agreement
@@ -11,26 +19,26 @@ can simply confirm, and says what it costs to change later.
 The ones that are expensive to change after a tenant has data are marked **load-bearing**. The
 rest can be revised in a later migration without a data repair.
 
-| | Decision | Load-bearing | Recommendation |
+| | Decision | Load-bearing | Answer |
 |---|---|---|---|
-| V1 | Eleven stages or twelve | ●●● | Twelve |
-| V2 | Which stages are gates | ●●● | Approval only |
-| V3 | Which approval decision enum is authoritative | ●● | `vendor_approvals`, four-valued |
-| V4 | Segregation of duties — how many exclusions | ● | Two (the prose) |
-| V5 | Questionnaire banks: global or tenant-authorable | ●●● | Global in Phase 1 |
-| V6 | Inherent tiering weights and thresholds | ●● | As below |
-| V7 | Residual formula and grade bands | ●● | As below |
-| V8 | The ten risk domains | ● | As below |
-| V9 | Which stages each tier skips | ●● | As below |
-| V10 | Vendor-level vs engagement-level precedence | ●●● | Engagement wins, vendor caches worst |
-| V11 | Vendor portal token design | ●●● | Hashed, expiring, single-assessment |
-| V12 | Object-level scoping for vendors | ●● | Tenant-wide read, no owner scoping |
-| V13 | Shipping SIG / CAIQ / HECVAT question text | ●●● | Do not ship. Ship our own bank |
-| V14 | Scope: the ER-only tables, and the Week-5 vs 1.2 gap | ●●● | Build 1.2, sequence per Week 5 |
+| V1 | Eleven stages or twelve | ●●● | **CONFIRMED — twelve** |
+| V2 | Which stages are gates | ●●● | Approval only *(taken)* |
+| V3 | Which approval decision enum is authoritative | ●● | `vendor_approvals`, four-valued *(taken)* |
+| V4 | Segregation of duties — how many exclusions | ● | Two (the prose) *(taken)* |
+| V5 | Questionnaire banks: global or tenant-authorable | ●●● | Global in Phase 1 *(taken)* |
+| V6 | Inherent tiering weights and thresholds | ●● | As below *(taken)* |
+| V7 | Residual formula and grade bands | ●● | As below *(taken)* |
+| V8 | The ten risk domains | ● | As below *(taken)* |
+| V9 | Which stages each tier skips | ●● | As below *(taken)* |
+| V10 | Vendor-level vs engagement-level precedence | ●●● | **CONFIRMED — engagement wins** |
+| V11 | Vendor portal token design | ●●● | Hashed, expiring, single-assessment *(taken)* |
+| V12 | Object-level scoping for vendors | ●● | Tenant-wide read, no owner scoping *(taken)* |
+| V13 | Shipping SIG / CAIQ / HECVAT question text | ●●● | **CONFIRMED — our own bank** |
+| V14 | Scope: the ER-only tables, and the Week-5 vs 1.2 gap | ●●● | **CONFIRMED — full ER, 26 tables** |
 
 ---
 
-## V1 — Eleven stages, or twelve? **(load-bearing)**
+## V1 — Eleven stages, or twelve? **(load-bearing)** — APPROVED 2026-09-09: TWELVE
 
 The spec names **eleven**, fusing the last two:
 
@@ -43,9 +51,8 @@ monitoring reassessment offboarding`.
 **Recommendation: twelve.** Reassessment is recurring and offboarding is terminal; fusing them
 would mean a stage that is both. The spec's eleventh is a prose contraction, not a data model.
 
-**Cost of changing later:** the `CHECK` constraint on every existing stage row, and the skip
-matrix. This is the module's backbone — it is the one decision worth getting right before the
-first migration.
+**CONFIRMED: twelve.** `reassessment` and `offboarding` are separate stage rows. The spec's
+eleventh is read as prose shorthand. The `CHECK` constraint carries twelve values.
 
 ## V2 — Which stages are gates? **(load-bearing)**
 
@@ -176,7 +183,7 @@ A gate is never in that list regardless of tier (V2). A low-tier vendor therefor
 intake → tiering → contracting → approval → onboarding → monitoring → reassessment, which is
 the proportionality the spec is asking for.
 
-## V10 — When vendor and engagement disagree, which wins? **(load-bearing)**
+## V10 — When vendor and engagement disagree, which wins? **(load-bearing)** — APPROVED 2026-09-09
 
 ADR-0009 is accepted and separates the vendor (the organisation) from the engagement (one use of
 it). Its own Consequences say *"every vendor query must decide whether it operates at vendor or
@@ -191,6 +198,10 @@ engagement is scored. The register ranks on the cache; every workflow runs on an
 
 A vendor with no explicit engagement gets one implicit default engagement at creation, so the
 simple case stays simple exactly as ER ¶89 promises, and no query has to special-case null.
+
+**CONFIRMED.** The engagement is the unit of risk. Tiering, stages, assessments, approvals and
+contracts all run per engagement; `vendors.tier`, `current_residual_score` and `current_grade`
+are cached read-model columns holding the worst engagement's values.
 
 ## V11 — The vendor portal token needs designing, not transcribing **(load-bearing)**
 
@@ -220,7 +231,7 @@ vendor register that hides vendors from the compliance manager is worse than one
 `vendors:approve` is the segregation-of-duties key (V4), separate from `manage` for the same
 reason `vulnerabilities:accept` is separate.
 
-## V13 — SIG, CAIQ and HECVAT cannot simply be shipped **(load-bearing)**
+## V13 — SIG, CAIQ and HECVAT cannot simply be shipped **(load-bearing)** — APPROVED 2026-09-09
 
 ER ¶104 says the standard questionnaires *"ship as versioned question banks"*. But SIG is a
 licensed commercial product of Shared Assessments, CAIQ is CSA-licensed, and HECVAT is
@@ -232,9 +243,11 @@ covering the ten domains, and let a customer import their own SIG/CAIQ workbook 
 licensed for it. Mapping *to* those standards by name is fine; reproducing their question text
 is not.
 
-**This one needs a legal answer, not an engineering one.**
+**CONFIRMED: ship a Verity-authored bank only.** No SIG, CAIQ or HECVAT question text is
+seeded. Banks map to those standards **by name** so an auditor recognises the coverage, and a
+customer licensed for one may import their own workbook. No legal review blocks the build.
 
-## V14 — Scope: the ER-only tables, and the Week-5 gap **(load-bearing)**
+## V14 — Scope: the ER-only tables, and the Week-5 gap **(load-bearing)** — APPROVED 2026-09-09: FULL ER
 
 Two different scope statements are in play.
 
@@ -250,12 +263,27 @@ monitoring signals, reassessment cadence, structured offboarding and the portfol
 The build plan is a schedule; the spec is the contract — so those are Phase 1 obligations the
 schedule under-describes, not deferrals.
 
-**Recommendation: build to Deliverable 1.2, sequenced so the Week-5 review list works first.**
-Sixteen tenant tables, not 26. Deferred with the connector phasing, because they have no data
-source until Phase 2: `discovered_apps`, `vendor_scorecards`, connector-fed `vendor_signals`,
-`vendor_alert_rules`. Absorbed rather than built: subprocessors (a typed link, not a table),
-remediations (a task — the tasks module already does this), approval conditions (JSONB on the
-approval row).
+~~Recommendation: sixteen tables.~~ **OVERRIDDEN. CONFIRMED: build the full ER — 26 tables.**
+
+Everything the ER draws is built, including the tables the requirements spec never mentions:
+SOC report reviews, SLAs, subprocessors, intake requests, team roster, assessment comments,
+approval conditions as their own table, scorecards, alert rules and discovered apps.
+
+**One thing this decision does not change, and it must not be mistaken for scope:** four of
+those tables have **no data source until Phase 2 connectors exist**. They are built, migrated,
+RLS'd and surfaced, but every row in them will be typed in by a human until then:
+
+| Table | Fed by, when |
+|---|---|
+| `vendor_scorecards` | SecurityScorecard / BitSight / UpGuard — **not in the connector catalogue in any phase** |
+| `vendor_signals` | breach intel, adverse media, financial health — same, no catalogued connector |
+| `discovered_apps` | the identity connectors (Google Workspace, Okta, M365) — Phase 2 |
+| `vendor_alert_rules` (slack channel) | the Slack connector — Phase 2 |
+
+Building them now is still the right call under the delivery plan's own rule — *"build the phase
+you are in, design the schema for all three"* — and it means no later change has to alter what
+was shipped. But the UI must say "no data source connected yet" on those surfaces rather than
+render an empty state that reads as "no risk found".
 
 ---
 
