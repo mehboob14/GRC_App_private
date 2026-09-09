@@ -83,6 +83,11 @@ as the UI word for a published set of questions; the table is `questionnaire_tem
 | `~ vendor_stages.entered_at` is kept as the ER writes it | An earlier draft of this design said `started_at` in the gate-freshness rule. Same column, ER's name. The rule reads `approval.decided_at >= stage.entered_at`. |
 | `− vendor_stages.exit_blockers` — proposed, now **cut** | §2 states exit criteria are computed and never stored. A stored blocker list is a cache that goes stale the moment the record that clears it changes. |
 | `+ id` on `vendor_assessment_responses` | The ER diagram marks no PK on that box. It gets a UUIDv7 `id` like every other table, plus `UNIQUE (tenant_id, assessment_id, question_id)` which is the real identity. |
+| `+ vendor_tiering_assessments.policy_snapshot` — a JSONB column the ER does not draw | The weights and thresholds are a tenant-editable row. Without freezing the ones a run used, *"why is this vendor critical"* stops being answerable the moment somebody retunes the policy — and spec ¶82 requires the arithmetic be visible. One column, and it is what lets the defaults live in code. |
+| `vendor_tiering_policies` ships with **no seeded rows** | The defaults live in `vendors/scoring.py` and `vendors/lifecycle.py`; a row here is the override a tenant writes when they retune, merged field by field. That keeps a new tenant free of a provisioning step and keeps the migration from inserting a tenant-owned row it cannot see through that row's own policy — `FORCE` binds the owner too. |
+| `+ vendor_tiering_policies.stage_skip_matrix_by_tier` and `.required_reviewer_roles_by_tier` | Spec ¶82 promises the tier right-sizes assessment depth, **required reviewers** and cadence. The ER draws the depth and the cadence, and leaves the other two nowhere to live. |
+| `~ vendor_transitions` carries `occurred_at` alone | `docs/conventions/database.md`: an `updated_at` on a table that refuses `UPDATE` could only ever lie. This diverges from `vuln_transitions`, which composes `Timestamped` — that is the sibling drifting from the convention, not this one. |
+| `+ vendor_stages.cycle`, `is_required`, `skipped_by_membership_id`, `skipped_reason`, `skipped_by_policy` | `cycle` replaces a `vendor_cycles` table. `is_required` is V2's third flag. The three skip columns are why a skipped row is defensible and not merely recorded. |
 
 ---
 
@@ -659,6 +664,18 @@ blocker naming the object that clears it, so the UI can link straight to it:
 | monitoring | never exits; it is the steady state |
 | reassessment | a new cycle has been opened |
 | offboarding | terminal |
+
+**A check is three-valued, not two.** `ExitCheck.satisfied` is `True`, `False`, or
+`None` — and `None` means *the module that would answer this is not built yet*. Six stages depend
+on tables sections 3 and 4 create. Their rules are written and unit-tested now against synthetic
+facts, and until the facts exist they report pending: never blocking an advance, and never
+rendering as a tick either. That is rule 7's `error`-versus-`fail` distinction applied to a
+checklist, and it is why sections 3 and 4 widen the *fact collector* without touching a rule.
+
+**Contracting is conditional on tier.** A contract is demanded of critical and high engagements
+only. Requiring paperwork from a low-tier vendor is exactly the disproportionate work tiering
+exists to remove, so the check reports "no contract required at this tier" rather than silently
+passing — the reader sees the rule that let them through.
 
 **Auto-suspend.** An onboarded vendor that acquires an open critical finding moves to
 `flagged` automatically, and back when it clears. Both are audited. This is ER ¶125's rule, and

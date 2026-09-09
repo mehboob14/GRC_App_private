@@ -27,10 +27,10 @@ than a migration (rule 9).
 from __future__ import annotations
 
 import uuid
-from datetime import date
-from typing import Final
+from datetime import date, datetime
+from typing import Any, Final
 
-from sqlalchemy import CheckConstraint, Float, ForeignKey, text
+from sqlalchemy import CheckConstraint, Float, ForeignKey, UniqueConstraint, text
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql.elements import conv
@@ -45,6 +45,7 @@ from verity.db.base import (
     status_check,
     tenant_index,
 )
+from verity.modules.vendors.lifecycle import STAGE_STATUSES, STAGES, TRANSITION_ACTIONS
 
 VENDOR_TYPES: Final[tuple[str, ...]] = ("vendor", "supplier", "contractor", "partner")
 
@@ -82,6 +83,7 @@ DEFAULT_ENGAGEMENT_NAME: Final = "General use"
 
 _MEMBERSHIP_FK = "tenant_memberships.id"
 _VENDOR_FK = "vendors.id"
+_ENGAGEMENT_FK = "vendor_engagements.id"
 
 
 class Vendor(UUIDPrimaryKey, TenantScoped, Timestamped, Integratable, Base):
@@ -215,3 +217,186 @@ class VendorContact(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
 
     def __repr__(self) -> str:
         return f"VendorContact(id={self.id!r}, vendor_id={self.vendor_id!r}, name={self.name!r})"
+
+
+class VendorTieringPolicy(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
+    """Per-tenant tiering configuration. One row, and only if it was customised.
+
+    No row is seeded. ``scoring.DEFAULT_*`` and ``lifecycle.DEFAULT_*`` are the
+    defaults and this table is the override, so a new tenant needs no provisioning
+    step and no migration has to insert a tenant-owned row it cannot see through
+    that row's own RLS policy. What stops a later change to those defaults from
+    rewriting history is ``VendorTieringAssessment.policy_snapshot``, not this row.
+    """
+
+    __tablename__ = "vendor_tiering_policies"
+
+    factor_weights: Mapped[dict[str, Any]] = mapped_column(
+        postgresql.JSONB, default=dict, server_default=text("'{}'::jsonb")
+    )
+    tier_thresholds: Mapped[dict[str, Any]] = mapped_column(
+        postgresql.JSONB, default=dict, server_default=text("'{}'::jsonb")
+    )
+    cadence_days_by_tier: Mapped[dict[str, Any]] = mapped_column(
+        postgresql.JSONB, default=dict, server_default=text("'{}'::jsonb")
+    )
+    questionnaire_bundle_by_tier: Mapped[dict[str, Any]] = mapped_column(
+        postgresql.JSONB, default=dict, server_default=text("'{}'::jsonb")
+    )
+    finding_sla_days_by_severity: Mapped[dict[str, Any]] = mapped_column(
+        postgresql.JSONB, default=dict, server_default=text("'{}'::jsonb")
+    )
+    auto_approve_low_tier: Mapped[bool] = mapped_column(default=False, server_default=text("false"))
+    # The two the ER leaves implicit. Spec 82 promises the tier right-sizes
+    # assessment depth, required reviewers and cadence; the ER draws the depth and
+    # the cadence and gives the other two nowhere to live.
+    stage_skip_matrix_by_tier: Mapped[dict[str, Any]] = mapped_column(
+        postgresql.JSONB, default=dict, server_default=text("'{}'::jsonb")
+    )
+    required_reviewer_roles_by_tier: Mapped[dict[str, Any]] = mapped_column(
+        postgresql.JSONB, default=dict, server_default=text("'{}'::jsonb")
+    )
+
+    __table_args__ = (UniqueConstraint("tenant_id", name="uq_vendor_tiering_policies__tenant_id"),)
+
+
+class VendorTieringAssessment(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
+    """One scored tiering run. Immutable history: a retier writes a new row."""
+
+    __tablename__ = "vendor_tiering_assessments"
+
+    vendor_id: Mapped[uuid.UUID] = mapped_column(ForeignKey(_VENDOR_FK, ondelete="CASCADE"))
+    engagement_id: Mapped[uuid.UUID] = mapped_column(ForeignKey(_ENGAGEMENT_FK, ondelete="CASCADE"))
+    cycle: Mapped[int] = mapped_column(default=1, server_default=text("1"))
+
+    data_sensitivity: Mapped[int] = mapped_column(default=0, server_default=text("0"))
+    business_criticality: Mapped[int] = mapped_column(default=0, server_default=text("0"))
+    system_access: Mapped[int] = mapped_column(default=0, server_default=text("0"))
+    regulatory_scope: Mapped[int] = mapped_column(default=0, server_default=text("0"))
+    fourth_party_reliance: Mapped[int] = mapped_column(default=0, server_default=text("0"))
+
+    inherent_score: Mapped[float] = mapped_column(Float)
+    computed_tier: Mapped[str]
+    # A human beating the arithmetic, on the record, rather than by editing the
+    # inputs until the model agrees — which leaves no trace that it happened.
+    override_tier: Mapped[str | None] = mapped_column(default=None)
+    override_justification: Mapped[str | None] = mapped_column(default=None)
+
+    # The weights and thresholds this run used. Not in the ER, and it earns its
+    # width: the policy is tenant-editable, and without this "why is this vendor
+    # critical" stops being answerable the moment somebody retunes it.
+    policy_snapshot: Mapped[dict[str, Any]] = mapped_column(
+        postgresql.JSONB, default=dict, server_default=text("'{}'::jsonb")
+    )
+
+    assessed_by_membership_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey(_MEMBERSHIP_FK, ondelete="SET NULL"), default=None
+    )
+    assessed_at: Mapped[datetime | None] = mapped_column(default=None)
+
+    __table_args__ = (
+        status_check("vendor_tiering_assessments", "computed_tier", TIERS),
+        status_check("vendor_tiering_assessments", "override_tier", TIERS),
+        CheckConstraint(
+            "(override_tier IS NULL) OR (override_justification IS NOT NULL)",
+            name=conv("ck_vendor_tiering_assessments__override_has_reason"),
+        ),
+        CheckConstraint(
+            "data_sensitivity BETWEEN 0 AND 4 AND business_criticality BETWEEN 0 AND 4 AND "
+            "system_access BETWEEN 0 AND 4 AND regulatory_scope BETWEEN 0 AND 4 AND "
+            "fourth_party_reliance BETWEEN 0 AND 4",
+            name=conv("ck_vendor_tiering_assessments__factor_range"),
+        ),
+        tenant_index("vendor_tiering_assessments", "vendor_id"),
+        tenant_index("vendor_tiering_assessments", "engagement_id", "cycle"),
+    )
+
+
+class VendorStage(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
+    """The lifecycle as rows (ER 101), one set per engagement per cycle.
+
+    A skipped stage is a written row, never an omitted one. "Policy said this was
+    disproportionate" and "someone forgot" must not look the same to an auditor,
+    and a row that was never inserted cannot tell them apart.
+    """
+
+    __tablename__ = "vendor_stages"
+
+    vendor_id: Mapped[uuid.UUID] = mapped_column(ForeignKey(_VENDOR_FK, ondelete="CASCADE"))
+    engagement_id: Mapped[uuid.UUID] = mapped_column(ForeignKey(_ENGAGEMENT_FK, ondelete="CASCADE"))
+    # A plain integer rather than a vendor_cycles table: a reassessment increments
+    # it and inserts a fresh set of rows. A table would add a join to every
+    # lifecycle query in order to hold one integer the stage rows already imply.
+    cycle: Mapped[int] = mapped_column(default=1, server_default=text("1"))
+    stage: Mapped[str]
+    status: Mapped[str] = mapped_column(default="not_started", server_default="not_started")
+    is_gate: Mapped[bool] = mapped_column(default=False, server_default=text("false"))
+    is_required: Mapped[bool] = mapped_column(default=False, server_default=text("false"))
+    checklist: Mapped[list[Any]] = mapped_column(
+        postgresql.JSONB, default=list, server_default=text("'[]'::jsonb")
+    )
+    entered_at: Mapped[datetime | None] = mapped_column(default=None)
+    exited_at: Mapped[datetime | None] = mapped_column(default=None)
+    skipped_by_membership_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey(_MEMBERSHIP_FK, ondelete="SET NULL"), default=None
+    )
+    skipped_reason: Mapped[str | None] = mapped_column(default=None)
+    # The tier rule that skipped it, so a skip is defensible and not merely recorded.
+    skipped_by_policy: Mapped[str | None] = mapped_column(default=None)
+
+    __table_args__ = (
+        status_check("vendor_stages", "stage", STAGES),
+        status_check("vendor_stages", "status", STAGE_STATUSES),
+        # Spec 82's "approval gates are never skipped" as a constraint rather than
+        # a convention. It is the one rule in this module whose violation is a
+        # control failure and not a bug, so it lives in the database.
+        CheckConstraint(
+            "NOT (is_gate AND status = 'skipped')",
+            name=conv("ck_vendor_stages__gate_never_skipped"),
+        ),
+        UniqueConstraint(
+            "tenant_id",
+            "engagement_id",
+            "cycle",
+            "stage",
+            name="uq_vendor_stages__engagement_cycle_stage",
+        ),
+        tenant_index("vendor_stages", "vendor_id"),
+        tenant_index("vendor_stages", "engagement_id", "cycle"),
+        tenant_index("vendor_stages", "status"),
+    )
+
+
+class VendorTransition(UUIDPrimaryKey, TenantScoped, Base):
+    """Every stage movement, append-only. The module's columnar history.
+
+    Carries ``occurred_at`` alone, the documented exception in
+    docs/conventions/database.md: an ``updated_at`` on a table that refuses UPDATE
+    could only ever lie. Both FK actors are ``ON DELETE NO ACTION`` rather than the
+    ``SET NULL`` the sibling transition tables use — SET NULL issues an UPDATE, the
+    append-only trigger refuses it, and the membership delete fails. A null actor
+    means the system moved the stage, never a deleted person.
+    """
+
+    __tablename__ = "vendor_transitions"
+
+    vendor_id: Mapped[uuid.UUID] = mapped_column(ForeignKey(_VENDOR_FK, ondelete="CASCADE"))
+    engagement_id: Mapped[uuid.UUID] = mapped_column(ForeignKey(_ENGAGEMENT_FK, ondelete="CASCADE"))
+    stage_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("vendor_stages.id", ondelete="NO ACTION"), default=None
+    )
+    cycle: Mapped[int] = mapped_column(default=1, server_default=text("1"))
+    action: Mapped[str]
+    from_stage: Mapped[str | None] = mapped_column(default=None)
+    to_stage: Mapped[str | None] = mapped_column(default=None)
+    reason: Mapped[str | None] = mapped_column(default=None)
+    actor_membership_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey(_MEMBERSHIP_FK, ondelete="NO ACTION"), default=None
+    )
+    occurred_at: Mapped[datetime] = mapped_column()
+
+    __table_args__ = (
+        status_check("vendor_transitions", "action", TRANSITION_ACTIONS),
+        tenant_index("vendor_transitions", "vendor_id"),
+        tenant_index("vendor_transitions", "engagement_id", "cycle"),
+    )

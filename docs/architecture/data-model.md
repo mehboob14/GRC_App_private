@@ -83,8 +83,8 @@ later joiners fall into the next campaign rather than appearing retroactively ov
 warning cannot go stale. `risk_source` + `origin_id` exist now so Phase 3 ERM extends this table
 instead of replacing it.
 
-**Vendors.** Vendor is the organisation; **an engagement is one use of it, and the engagement is
-the unit of risk**. Stages, tiering runs, assessments and contracts all hang off an engagement, and
+**Vendors.** Vendor is the organisation; **an engagement is one use of it, and the engagement is the
+unit of risk**. Stages, tiering runs, assessments and contracts all hang off an engagement, and
 every vendor gets one implicit default engagement at creation so nothing has to special-case a null
 one. `vendors.tier`, `current_residual_score`, `current_grade` and `annual_contract_value` are
 **caches of the worst engagement**, kept so a portfolio of hundreds sorts without a join — derived,
@@ -103,20 +103,25 @@ forbids `is_gate` and `status = 'skipped'` together, and a gate exits only on an
 append-only row. Exit criteria are **computed on read, never stored**: a stored blocker list goes
 stale the moment the record that clears it changes. `next_reassessment_on` is computed from the
 cadence schedule, not from completion dates, so reviews cannot drift later each cycle.
-`vendor_transitions` and `vendor_approvals` are append-only and their actor FKs are
-`ON DELETE NO ACTION`, because `SET NULL` issues an `UPDATE` that the append-only trigger refuses
-and the delete then fails. Four tables — `vendor_scorecards`, `vendor_signals`,
-`vendor_discovered_apps`, and Slack delivery on `vendor_alert_rules` — carry the rule-9 columns but
-have **no data source in any planned phase**, so their screens say "no data source connected"
-rather than rendering an empty table: on a monitoring surface, "watching and found nothing" and
-"not watching" look identical and mean opposite things. `vendor_findings.promoted_risk_id` ships
-nullable with **no FK and no promotion action** until `modules/risk/` exists. Twenty-seven tables:
-twenty-five tenant-owned, plus `questionnaire_templates` and `questionnaire_questions` on the global
-content plane with no `tenant_id` and no RLS. **Verbatim column lists for all of them, with every
-deviation from the ER named, are in
-[openspec/changes/week5-vendor-risk/design.md](../../openspec/changes/week5-vendor-risk/design.md)
-§1** — that section is the single build reference, and migrations are written from it rather than
-from the ER diagram images.
+`vendor_transitions` and `vendor_approvals` are append-only and their actor FKs are `ON DELETE NO
+ACTION`, because `SET NULL` issues an `UPDATE` that the append-only trigger refuses and the delete
+then fails. Four tables — `vendor_scorecards`, `vendor_signals`, `vendor_discovered_apps`, and Slack
+delivery on `vendor_alert_rules` — carry the rule-9 columns but have **no data source in any planned
+phase**, so their screens say "no data source connected" rather than rendering an empty table: on a
+monitoring surface, "watching and found nothing" and "not watching" look identical and mean opposite
+things. `vendor_findings.promoted_risk_id` ships nullable with **no FK and no promotion action**
+until `modules/risk/` exists. The tiering policy row is an **override, not a seed**: the shipped
+defaults live in `vendors/scoring.py` and `vendors/lifecycle.py` and a tenant row merges over them
+field by field, so a new tenant needs no provisioning step. What keeps a later retune from rewriting
+history is `vendor_tiering_assessments.policy_snapshot`, which freezes the weights and thresholds
+each run used. A stage's exit checks are **three-valued** — satisfied, blocking, or pending because
+the module that answers them is not built yet; a pending check never blocks and never renders as a
+tick, the same distinction rule 7 draws between `error` and `fail`. Twenty-seven tables: twenty-five
+tenant-owned, plus `questionnaire_templates` and `questionnaire_questions` on the global content
+plane with no `tenant_id` and no RLS. **Verbatim column lists for all of them, with every deviation
+from the ER named, live in §1 of
+[the vendor-risk change's design](../../openspec/changes/week5-vendor-risk/design.md)** — the
+single build reference, from which migrations are written rather than from the ER diagram images.
 
 **Assets.** Non-destructive merge: `source_asset_records` preserves every source's raw view,
 correlation matches on stable identifiers in strict order (cloud instance id, agent id, serial, MAC,

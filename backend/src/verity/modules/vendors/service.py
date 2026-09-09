@@ -22,14 +22,15 @@ from __future__ import annotations
 import re
 import uuid
 from dataclasses import dataclass, field
-from datetime import date, datetime
+from datetime import UTC, date, datetime, timedelta
 from typing import Any, Final
 
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from verity.core.errors import InvalidInput, NotFound
-from verity.modules.audit.service import Actor, AuditService, audit_service
+from verity.core.errors import Conflict, InvalidInput, NotFound
+from verity.modules.audit.service import Actor, AuditService, Membership, audit_service
+from verity.modules.vendors import lifecycle, scoring
 from verity.modules.vendors.models import (
     CONTACT_TYPES,
     DATA_CLASSIFICATIONS,
@@ -40,6 +41,10 @@ from verity.modules.vendors.models import (
     Vendor,
     VendorContact,
     VendorEngagement,
+    VendorStage,
+    VendorTieringAssessment,
+    VendorTieringPolicy,
+    VendorTransition,
 )
 from verity.shared.ids import uuid7
 
@@ -62,6 +67,10 @@ _ENGAGEMENT_SNAPSHOT: Final[tuple[str, ...]] = ("name", "status", "tier", "busin
 # Reader-facing copy reused across several raises in this module.
 _VENDOR_GONE: Final = "This vendor no longer exists. It may have been deleted."
 _ENGAGEMENT_GONE: Final = "This engagement no longer exists. It may have been deleted."
+_STAGE_GONE: Final = (
+    "This lifecycle stage no longer exists. The review may have moved on. "
+    "Refresh the page to see where it is now."
+)
 
 _NOISE = re.compile(
     r"\b(inc|llc|ltd|limited|corp|corporation|gmbh|plc|co|sa|bv|ag|pty)\b|[^a-z0-9]+"
@@ -168,6 +177,11 @@ class VendorDetailView(VendorView):
     engagements: list[EngagementView] = field(default_factory=list)
     contacts: list[ContactView] = field(default_factory=list)
     duplicates: list[DuplicateMatch] = field(default_factory=list)
+    # Flat lists carrying engagement_id, not nested under the engagement: the
+    # rail and the tiering panel are separate screens and each wants its own
+    # collection whole.
+    stages: list[StageView] = field(default_factory=list)
+    tierings: list[TieringView] = field(default_factory=list)
 
 
 @dataclass(frozen=True, slots=True)
@@ -233,6 +247,86 @@ class ContactInput:
     email: str | None = None
     phone: str | None = None
     contact_type: str = "commercial"
+
+
+@dataclass(frozen=True, slots=True)
+class ResolvedPolicy:
+    """The tenant's tiering configuration, defaults already merged in."""
+
+    weights: dict[str, float]
+    thresholds: dict[str, float]
+    skip_matrix: dict[str, tuple[str, ...]]
+    reviewer_roles: dict[str, tuple[str, ...]]
+    cadence_days: dict[str, int]
+    is_customised: bool
+    """False means every value here is a shipped default. The settings screen says
+    so rather than presenting the defaults as choices somebody made."""
+
+
+@dataclass(frozen=True, slots=True)
+class TieringAnswers:
+    """The five factor answers, plus an optional human override of the result."""
+
+    data_sensitivity: int = 0
+    business_criticality: int = 0
+    system_access: int = 0
+    regulatory_scope: int = 0
+    fourth_party_reliance: int = 0
+    override_tier: str | None = None
+    override_justification: str | None = None
+
+    def as_dict(self) -> dict[str, int]:
+        return {key: getattr(self, key) for key in scoring.FACTOR_KEYS}
+
+
+@dataclass(frozen=True, slots=True)
+class TieringView:
+    """One scored run with its arithmetic recomputed from the stored answers.
+
+    The breakdown is derived on read from the answers and the run's own
+    ``policy_snapshot``, never from today's policy — which is the whole reason
+    that snapshot column exists.
+    """
+
+    id: uuid.UUID
+    engagement_id: uuid.UUID
+    cycle: int
+    factors: list[scoring.TieringFactor]
+    score: float
+    computed_tier: str
+    override_tier: str | None
+    override_justification: str | None
+    effective_tier: str
+    thresholds: dict[str, float]
+    points_to_higher_tier: float | None
+    points_to_lower_tier: float | None
+    assessed_by_name: str | None
+    assessed_at: datetime | None
+
+
+@dataclass(frozen=True, slots=True)
+class StageView:
+    """One row of the stage rail, with its exit checks already evaluated."""
+
+    id: uuid.UUID
+    engagement_id: uuid.UUID
+    cycle: int
+    stage: str
+    label: str
+    status: str
+    is_gate: bool
+    is_required: bool
+    entered_at: datetime | None
+    exited_at: datetime | None
+    skipped_reason: str | None
+    skipped_by_policy: str | None
+    checks: list[lifecycle.ExitCheck]
+    blockers: list[lifecycle.ExitCheck]
+    pending: list[lifecycle.ExitCheck]
+    """Checks whose answering module is not built yet. Never blocking, never a
+    tick either — the distinction rule 7 draws between error and fail."""
+    allowed_transitions: list[str]
+    """Served so the client never reimplements the machine in TypeScript."""
 
 
 # -- service ------------------------------------------------------------------
@@ -578,6 +672,14 @@ class VendorService:
         engagements = (await self._engagements_of(session, tenant_id, vendor.id)).get(vendor.id, [])
         contacts = (await self._contacts_of(session, tenant_id, vendor.id)).get(vendor.id, [])
         base = self._to_view(vendor, names, len(engagements), len(contacts))
+        stages: list[StageView] = []
+        tierings: list[TieringView] = []
+        for engagement in engagements:
+            cycle = await self._current_cycle(session, tenant_id, engagement.id)
+            stages.extend(await self._stage_views(session, tenant_id, vendor, engagement, cycle))
+            latest = await self._latest_tiering(session, tenant_id, engagement.id, cycle)
+            if latest is not None:
+                tierings.append(self._tiering_view(latest, names))
         return VendorDetailView(
             **{f: getattr(base, f) for f in base.__dataclass_fields__},
             engagements=[self._engagement_view(e, names) for e in engagements],
@@ -589,6 +691,40 @@ class VendorService:
                 website=vendor.website,
                 exclude_id=vendor.id,
             ),
+            stages=stages,
+            tierings=tierings,
+        )
+
+    @staticmethod
+    def _tiering_view(row: VendorTieringAssessment, names: dict[uuid.UUID, str]) -> TieringView:
+        """Recompute the arithmetic from the answers and the run's own snapshot.
+
+        Deliberately not from today's policy: an assessment has to keep meaning
+        what it meant when it was made, or "why is this vendor critical" becomes
+        unanswerable the moment somebody retunes the weights.
+        """
+        snapshot = row.policy_snapshot or {}
+        breakdown = scoring.compute_tier(
+            {key: getattr(row, key) for key in scoring.FACTOR_KEYS},
+            weights=snapshot.get("weights"),
+            thresholds=snapshot.get("thresholds"),
+        )
+        owner = row.assessed_by_membership_id
+        return TieringView(
+            id=row.id,
+            engagement_id=row.engagement_id,
+            cycle=row.cycle,
+            factors=list(breakdown.factors),
+            score=row.inherent_score,
+            computed_tier=row.computed_tier,
+            override_tier=row.override_tier,
+            override_justification=row.override_justification,
+            effective_tier=row.override_tier or row.computed_tier,
+            thresholds=breakdown.thresholds,
+            points_to_higher_tier=breakdown.points_to_higher_tier,
+            points_to_lower_tier=breakdown.points_to_lower_tier,
+            assessed_by_name=names.get(owner) if owner else None,
+            assessed_at=row.assessed_at,
         )
 
     async def get_ref(
@@ -614,6 +750,7 @@ class VendorService:
                 .order_by(Vendor.business_unit)
             )
         ).scalars()
+        policy = await self._resolved_policy(session, tenant_id)
         return {
             "vendor_types": list(VENDOR_TYPES),
             "statuses": list(LIFECYCLE_STATUSES),
@@ -621,6 +758,32 @@ class VendorService:
             "classifications": list(DATA_CLASSIFICATIONS),
             "contact_types": list(CONTACT_TYPES),
             "business_units": [u for u in units if u],
+            # The lifecycle vocabulary, served rather than reimplemented in
+            # TypeScript — which is how the two drift and the interface offers a
+            # move the API then refuses.
+            "stages": [
+                {
+                    "stage": stage,
+                    "label": lifecycle.STAGE_LABELS[stage],
+                    "is_gate": stage in lifecycle.GATES,
+                    "is_required": stage in lifecycle.REQUIRED_STAGES,
+                }
+                for stage in lifecycle.STAGES
+            ],
+            "skip_matrix_by_tier": {
+                tier: sorted(lifecycle.skips_for(tier, policy.skip_matrix)) for tier in TIERS
+            },
+            "tiering_factors": [
+                {
+                    "key": key,
+                    "label": scoring.FACTOR_LABELS[key],
+                    "weight": policy.weights.get(key, 0.0),
+                    "scale_max": scoring.FACTOR_SCALE_MAX,
+                }
+                for key in scoring.FACTOR_KEYS
+            ],
+            "tier_thresholds": policy.thresholds,
+            "policy_is_customised": policy.is_customised,
         }
 
     # -- writes ----------------------------------------------------------------
@@ -834,6 +997,518 @@ class VendorService:
         )
         await session.flush()
         return await self.get_vendor(session, tenant_id=tenant_id, vendor_id=vendor_id)
+
+    # -- tiering and the lifecycle (section 2) ---------------------------------
+
+    async def _policy(
+        self, session: AsyncSession, tenant_id: uuid.UUID
+    ) -> VendorTieringPolicy | None:
+        return (
+            await session.execute(
+                select(VendorTieringPolicy).where(VendorTieringPolicy.tenant_id == tenant_id)
+            )
+        ).scalar_one_or_none()
+
+    async def _resolved_policy(self, session: AsyncSession, tenant_id: uuid.UUID) -> ResolvedPolicy:
+        """The tenant's tuning, falling back to the shipped defaults field by field.
+
+        Field by field, not row or nothing: a tenant that overrode only the cadence
+        should not silently lose the default weights with it.
+        """
+        row = await self._policy(session, tenant_id)
+        skip_matrix = {
+            tier: tuple(stages)
+            for tier, stages in (row.stage_skip_matrix_by_tier if row else {}).items()
+        }
+        reviewers = {
+            tier: tuple(roles)
+            for tier, roles in (row.required_reviewer_roles_by_tier if row else {}).items()
+        }
+        return ResolvedPolicy(
+            weights={**scoring.DEFAULT_WEIGHTS, **((row.factor_weights if row else None) or {})},
+            thresholds={
+                **scoring.DEFAULT_THRESHOLDS,
+                **((row.tier_thresholds if row else None) or {}),
+            },
+            skip_matrix={**lifecycle.DEFAULT_SKIP_MATRIX, **skip_matrix},
+            reviewer_roles={**lifecycle.DEFAULT_REVIEWER_ROLES, **reviewers},
+            cadence_days={
+                **lifecycle.DEFAULT_CADENCE_DAYS,
+                **((row.cadence_days_by_tier if row else None) or {}),
+            },
+            is_customised=row is not None,
+        )
+
+    async def _stages_for(
+        self, session: AsyncSession, tenant_id: uuid.UUID, engagement_id: uuid.UUID, cycle: int
+    ) -> list[VendorStage]:
+        stmt = (
+            select(VendorStage)
+            .where(VendorStage.tenant_id == tenant_id)
+            .where(VendorStage.engagement_id == engagement_id)
+            .where(VendorStage.cycle == cycle)
+        )
+        rows = list((await session.execute(stmt)).scalars())
+        order = {stage: index for index, stage in enumerate(lifecycle.STAGES)}
+        rows.sort(key=lambda row: order[row.stage])
+        return rows
+
+    async def _current_cycle(
+        self, session: AsyncSession, tenant_id: uuid.UUID, engagement_id: uuid.UUID
+    ) -> int:
+        highest = (
+            await session.execute(
+                select(func.max(VendorStage.cycle))
+                .where(VendorStage.tenant_id == tenant_id)
+                .where(VendorStage.engagement_id == engagement_id)
+            )
+        ).scalar_one_or_none()
+        return int(highest or 1)
+
+    async def _latest_tiering(
+        self, session: AsyncSession, tenant_id: uuid.UUID, engagement_id: uuid.UUID, cycle: int
+    ) -> VendorTieringAssessment | None:
+        stmt = (
+            select(VendorTieringAssessment)
+            .where(VendorTieringAssessment.tenant_id == tenant_id)
+            .where(VendorTieringAssessment.engagement_id == engagement_id)
+            .where(VendorTieringAssessment.cycle == cycle)
+            .order_by(VendorTieringAssessment.created_at.desc())
+            .limit(1)
+        )
+        return (await session.execute(stmt)).scalar_one_or_none()
+
+    async def _facts(  # noqa: PLR0913, PLR0917
+        self,
+        session: AsyncSession,
+        tenant_id: uuid.UUID,
+        vendor: Vendor,
+        engagement: VendorEngagement,
+        stage: VendorStage,
+        policy: ResolvedPolicy,
+    ) -> lifecycle.StageFacts:
+        tiering = await self._latest_tiering(session, tenant_id, engagement.id, stage.cycle)
+        tier = engagement.tier
+        return lifecycle.StageFacts(
+            vendor_id=vendor.id,
+            vendor_name=vendor.name,
+            tier=tier,
+            business_owner_membership_id=vendor.business_owner_membership_id,
+            data_classification=vendor.data_classification,
+            tiering_assessment_id=tiering.id if tiering else None,
+            stage_entered_at=stage.entered_at,
+            next_cycle_opened=stage.cycle
+            < await self._current_cycle(session, tenant_id, engagement.id),
+            required_reviewer_roles=policy.reviewer_roles.get(tier or "", ()),
+            # vendor_team_roster is a section-4 table. Until it exists nobody is
+            # rostered, so every required role reports as missing — which is true
+            # and visible, rather than quietly passing.
+            assigned_reviewer_roles=(),
+        )
+
+    async def _stage_views(
+        self,
+        session: AsyncSession,
+        tenant_id: uuid.UUID,
+        vendor: Vendor,
+        engagement: VendorEngagement,
+        cycle: int,
+    ) -> list[StageView]:
+        policy = await self._resolved_policy(session, tenant_id)
+        skippable = lifecycle.skips_for(engagement.tier, policy.skip_matrix)
+        rows = await self._stages_for(session, tenant_id, engagement.id, cycle)
+        order = {stage: index for index, stage in enumerate(lifecycle.STAGES)}
+        views: list[StageView] = []
+        for row in rows:
+            checks = lifecycle.evaluate_exit(
+                row.stage, await self._facts(session, tenant_id, vendor, engagement, row, policy)
+            )
+            state = lifecycle.StageState(
+                stage=row.stage, status=row.status, is_gate=row.is_gate, is_required=row.is_required
+            )
+            views.append(
+                StageView(
+                    id=row.id,
+                    engagement_id=row.engagement_id,
+                    cycle=row.cycle,
+                    stage=row.stage,
+                    label=lifecycle.STAGE_LABELS[row.stage],
+                    status=row.status,
+                    is_gate=row.is_gate,
+                    is_required=row.is_required,
+                    entered_at=row.entered_at,
+                    exited_at=row.exited_at,
+                    skipped_reason=row.skipped_reason,
+                    skipped_by_policy=row.skipped_by_policy,
+                    checks=list(checks),
+                    blockers=list(lifecycle.blockers(checks)),
+                    pending=list(lifecycle.pending(checks)),
+                    allowed_transitions=list(
+                        lifecycle.allowed_transitions(
+                            state,
+                            checks,
+                            skippable=skippable,
+                            has_earlier_stage=order[row.stage] > 0,
+                        )
+                    ),
+                )
+            )
+        return views
+
+    async def _write_transition(  # noqa: PLR0913
+        self,
+        session: AsyncSession,
+        tenant_id: uuid.UUID,
+        stage: VendorStage,
+        actor: Actor,
+        action: str,
+        *,
+        to_stage: str | None,
+        reason: str | None,
+    ) -> None:
+        """Both records, one transaction: the columnar row and the audit row.
+
+        Two histories on purpose. ``vendor_transitions`` is the domain view an
+        operator reads down; ``audit_log`` is the platform trail an auditor reads
+        across. Writing only one of them makes the other lie by omission.
+        """
+        now = datetime.now(UTC)
+        session.add(
+            VendorTransition(
+                id=uuid7(),
+                tenant_id=tenant_id,
+                vendor_id=stage.vendor_id,
+                engagement_id=stage.engagement_id,
+                stage_id=stage.id,
+                cycle=stage.cycle,
+                action=action,
+                from_stage=stage.stage,
+                to_stage=to_stage,
+                reason=reason,
+                actor_membership_id=actor.id if isinstance(actor, Membership) else None,
+                occurred_at=now,
+            )
+        )
+        await session.flush()
+        await self._audit.record(
+            session,
+            action="transition",
+            object_type="vendor_stage",
+            object_id=stage.id,
+            actor=actor,
+            tenant_id=tenant_id,
+            before={"stage": stage.stage, "status": stage.status},
+            after={"action": action, "to_stage": to_stage, "reason": reason},
+        )
+
+    async def materialise_cycle(
+        self,
+        session: AsyncSession,
+        tenant_id: uuid.UUID,
+        engagement: VendorEngagement,
+        cycle: int,
+        policy: ResolvedPolicy,
+    ) -> list[VendorStage]:
+        """Write the twelve rows for one cycle, this tier's skips already marked.
+
+        Idempotent: an existing cycle is re-planned in place rather than
+        duplicated, so re-running tiering after a retier moves the skips instead
+        of colliding with the unique constraint.
+        """
+        existing = {
+            row.stage: row
+            for row in await self._stages_for(session, tenant_id, engagement.id, cycle)
+        }
+        rows: list[VendorStage] = []
+        for planned in lifecycle.plan_cycle(engagement.tier, policy.skip_matrix):
+            row = existing.get(planned.stage)
+            if row is None:
+                row = VendorStage(
+                    id=uuid7(),
+                    tenant_id=tenant_id,
+                    vendor_id=engagement.vendor_id,
+                    engagement_id=engagement.id,
+                    cycle=cycle,
+                    stage=planned.stage,
+                    status=planned.status,
+                    is_gate=planned.is_gate,
+                    is_required=planned.is_required,
+                    skipped_by_policy=planned.skipped_by_policy,
+                )
+                session.add(row)
+            elif row.status in {"not_started", "skipped"}:
+                # Never re-plan work already done or under way: a retier changes
+                # what is still ahead, not what has already been decided.
+                row.status = planned.status
+                row.skipped_by_policy = planned.skipped_by_policy
+            rows.append(row)
+        await session.flush()
+        return rows
+
+    async def tier_engagement(  # noqa: PLR0913
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        vendor_id: uuid.UUID,
+        engagement_id: uuid.UUID,
+        answers: TieringAnswers,
+    ) -> VendorDetailView:
+        """Score the five factors, set the tier, and lay out the cycle it implies.
+
+        This is the method spec paragraph 82 is about: the tier is computed here
+        and the *work* changes in the same transaction, because a tier that does
+        not change the workload has added a dropdown rather than a control.
+        """
+        engagement = await self._load_engagement(session, tenant_id, engagement_id)
+        if engagement.vendor_id != vendor_id:
+            raise NotFound(
+                _ENGAGEMENT_GONE,
+                detail=f"engagement {engagement_id} is not on vendor {vendor_id}",
+            )
+        vendor = await self._load(session, tenant_id, vendor_id)
+        if answers.override_tier and not (answers.override_justification or "").strip():
+            raise InvalidInput(
+                "Say why you are overriding the computed tier. The justification is "
+                "what makes the override defensible to an auditor.",
+                detail="override_tier without override_justification",
+            )
+        self._check_vocabulary(answers.override_tier, TIERS, field_name="override_tier")
+
+        policy = await self._resolved_policy(session, tenant_id)
+        breakdown = scoring.compute_tier(
+            answers.as_dict(), weights=policy.weights, thresholds=policy.thresholds
+        )
+        cycle = await self._current_cycle(session, tenant_id, engagement.id)
+        assessment = VendorTieringAssessment(
+            id=uuid7(),
+            tenant_id=tenant_id,
+            vendor_id=vendor.id,
+            engagement_id=engagement.id,
+            cycle=cycle,
+            data_sensitivity=answers.data_sensitivity,
+            business_criticality=answers.business_criticality,
+            system_access=answers.system_access,
+            regulatory_scope=answers.regulatory_scope,
+            fourth_party_reliance=answers.fourth_party_reliance,
+            inherent_score=breakdown.score,
+            computed_tier=breakdown.tier,
+            override_tier=answers.override_tier,
+            override_justification=(answers.override_justification or "").strip() or None,
+            # Frozen with the row, so a later retune of the policy cannot rewrite
+            # what this assessment meant when it was made.
+            policy_snapshot={"weights": policy.weights, "thresholds": policy.thresholds},
+            assessed_by_membership_id=actor.id if isinstance(actor, Membership) else None,
+            assessed_at=datetime.now(UTC),
+        )
+        session.add(assessment)
+        await session.flush([assessment])
+
+        engagement.tier = answers.override_tier or breakdown.tier
+        await self.materialise_cycle(session, tenant_id, engagement, cycle, policy)
+        await self._recache(session, tenant_id, vendor)
+        self._schedule_reassessment(vendor, engagement.tier, policy)
+
+        await self._audit.record(
+            session,
+            action="create",
+            object_type="vendor_tiering_assessment",
+            object_id=assessment.id,
+            actor=actor,
+            tenant_id=tenant_id,
+            before=None,
+            after={
+                "engagement_id": str(engagement.id),
+                "inherent_score": breakdown.score,
+                "computed_tier": breakdown.tier,
+                "override_tier": answers.override_tier,
+            },
+        )
+        await session.flush()
+        return await self.get_vendor(session, tenant_id=tenant_id, vendor_id=vendor.id)
+
+    @staticmethod
+    def _schedule_reassessment(vendor: Vendor, tier: str | None, policy: ResolvedPolicy) -> None:
+        """Set the next review date from the cadence, not from today's completion.
+
+        Anchored to the previous due date where one exists, so a review done late
+        does not push the next one late. Reviews that drift a little further out
+        every cycle is the failure this rule exists to prevent (ER 101).
+        """
+        days = policy.cadence_days.get(tier or "", 0)
+        if not days:
+            return
+        anchor = vendor.next_reassessment_on or datetime.now(UTC).date()
+        vendor.next_reassessment_on = anchor + timedelta(days=int(days))
+
+    async def _load_stage(
+        self,
+        session: AsyncSession,
+        tenant_id: uuid.UUID,
+        vendor_id: uuid.UUID,
+        stage_id: uuid.UUID,
+    ) -> VendorStage:
+        stage = await session.get(VendorStage, stage_id, populate_existing=True)
+        if stage is None or stage.tenant_id != tenant_id or stage.vendor_id != vendor_id:
+            raise NotFound(_STAGE_GONE, detail=f"vendor stage {stage_id} on vendor {vendor_id}")
+        return stage
+
+    async def advance_stage(  # noqa: PLR0913
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        vendor_id: uuid.UUID,
+        stage_id: uuid.UUID,
+        note: str | None = None,
+    ) -> VendorDetailView:
+        """Complete this stage and enter the next one that is not skipped."""
+        stage = await self._load_stage(session, tenant_id, vendor_id, stage_id)
+        engagement = await self._load_engagement(session, tenant_id, stage.engagement_id)
+        vendor = await self._load(session, tenant_id, vendor_id)
+        policy = await self._resolved_policy(session, tenant_id)
+
+        checks = lifecycle.evaluate_exit(
+            stage.stage, await self._facts(session, tenant_id, vendor, engagement, stage, policy)
+        )
+        outstanding = lifecycle.blockers(checks)
+        if outstanding:
+            raise Conflict(
+                "This stage still has work outstanding. Clear the blockers listed on "
+                "it and try again.",
+                detail=f"{stage.stage} blocked by {[c.code for c in outstanding]}",
+            )
+        if stage.stage == lifecycle.TERMINAL_STAGE:
+            raise Conflict(
+                "Offboarding is the end of the lifecycle. There is nothing after it.",
+                detail="advance from the terminal stage",
+            )
+
+        now = datetime.now(UTC)
+        stage.status = "complete"
+        stage.exited_at = now
+        rows = await self._stages_for(session, tenant_id, engagement.id, stage.cycle)
+        # Walk over the skipped rows, so a low-tier vendor goes from tiering to
+        # contracting in one move and the proportionality is visible.
+        target = lifecycle.next_actionable([(r.stage, r.status) for r in rows], stage.stage)
+        if target is not None:
+            nxt = next(r for r in rows if r.stage == target)
+            nxt.status = "in_progress"
+            nxt.entered_at = now
+        await self._write_transition(
+            session, tenant_id, stage, actor, "advance", to_stage=target, reason=note
+        )
+        await session.flush()
+        return await self.get_vendor(session, tenant_id=tenant_id, vendor_id=vendor.id)
+
+    async def send_back(  # noqa: PLR0913
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        vendor_id: uuid.UUID,
+        stage_id: uuid.UUID,
+        to_stage: str,
+        reason: str,
+    ) -> VendorDetailView:
+        """Return the engagement to an earlier stage, resetting everything after it.
+
+        Downstream work is invalidated **by design**. Combined with the
+        gate-freshness rule, a previously granted approval stops counting without
+        the append-only approval row ever being touched.
+        """
+        stage = await self._load_stage(session, tenant_id, vendor_id, stage_id)
+        vendor = await self._load(session, tenant_id, vendor_id)
+        if not reason.strip():
+            raise InvalidInput(
+                "Say why you are sending this back. The reason is what the owner "
+                "sees when they pick it up.",
+                detail="send_back without a reason",
+            )
+        order = {name: index for index, name in enumerate(lifecycle.STAGES)}
+        if to_stage not in order:
+            raise InvalidInput(
+                "That is not a stage in the lifecycle.", detail=f"unknown stage {to_stage!r}"
+            )
+        if order[to_stage] >= order[stage.stage]:
+            raise Conflict(
+                "A send-back only goes backwards. To move forward, clear this "
+                "stage's blockers and advance.",
+                detail=f"send_back from {stage.stage} to {to_stage}",
+            )
+
+        now = datetime.now(UTC)
+        rows = await self._stages_for(session, tenant_id, stage.engagement_id, stage.cycle)
+        for row in rows:
+            if order[row.stage] < order[to_stage] or row.status == "skipped":
+                continue
+            row.status = "in_progress" if row.stage == to_stage else "not_started"
+            row.entered_at = now if row.stage == to_stage else None
+            row.exited_at = None
+        await self._write_transition(
+            session, tenant_id, stage, actor, "send_back", to_stage=to_stage, reason=reason.strip()
+        )
+        await session.flush()
+        return await self.get_vendor(session, tenant_id=tenant_id, vendor_id=vendor.id)
+
+    async def skip_stage(  # noqa: PLR0913
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        vendor_id: uuid.UUID,
+        stage_id: uuid.UUID,
+        reason: str,
+    ) -> VendorDetailView:
+        """Mark a stage skipped, if this tier's policy permits it.
+
+        A gate is refused here and refused again by a database CHECK. Two layers
+        because spec paragraph 82's "approval gates are never skipped" is a
+        control statement, and a control enforced only in application code is a
+        control one bug away from not existing.
+        """
+        stage = await self._load_stage(session, tenant_id, vendor_id, stage_id)
+        engagement = await self._load_engagement(session, tenant_id, stage.engagement_id)
+        vendor = await self._load(session, tenant_id, vendor_id)
+        if not reason.strip():
+            raise InvalidInput(
+                "Say why this stage is being skipped. A skip with no reason is "
+                "indistinguishable from an oversight.",
+                detail="skip without a reason",
+            )
+        if stage.is_gate:
+            raise Conflict(
+                "An approval gate can never be skipped, whatever the tier.",
+                detail=f"skip refused on gate {stage.stage}",
+            )
+        if stage.is_required:
+            raise Conflict(
+                f"{lifecycle.STAGE_LABELS[stage.stage]} is required for every vendor "
+                "and cannot be skipped.",
+                detail=f"skip refused on required stage {stage.stage}",
+            )
+        policy = await self._resolved_policy(session, tenant_id)
+        if stage.stage not in lifecycle.skips_for(engagement.tier, policy.skip_matrix):
+            raise Conflict(
+                f"A {engagement.tier or 'vendor'}-tier engagement does not skip "
+                f"{lifecycle.STAGE_LABELS[stage.stage].lower()}. Retier it, or clear "
+                "the stage.",
+                detail=f"{stage.stage} not skippable at tier {engagement.tier}",
+            )
+
+        stage.status = "skipped"
+        stage.skipped_reason = reason.strip()
+        stage.skipped_by_membership_id = actor.id if isinstance(actor, Membership) else None
+        stage.exited_at = datetime.now(UTC)
+        await self._write_transition(
+            session, tenant_id, stage, actor, "skip", to_stage=None, reason=reason.strip()
+        )
+        await session.flush()
+        return await self.get_vendor(session, tenant_id=tenant_id, vendor_id=vendor.id)
 
 
 vendor_service = VendorService()

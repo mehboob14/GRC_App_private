@@ -30,10 +30,18 @@ from verity.core.db import dispose_engine, session_scope
 from verity.core.errors import NotFound
 from verity.db.base import Base
 from verity.modules.audit.service import Membership
-from verity.modules.vendors.models import Vendor, VendorContact, VendorEngagement
+from verity.modules.vendors.models import (
+    Vendor,
+    VendorContact,
+    VendorEngagement,
+    VendorStage,
+    VendorTieringAssessment,
+    VendorTransition,
+)
 from verity.modules.vendors.service import (
     ContactInput,
     EngagementInput,
+    TieringAnswers,
     VendorFilters,
     VendorInput,
     vendor_service,
@@ -42,8 +50,22 @@ from verity.shared.ids import uuid7
 
 pytestmark = [pytest.mark.isolation, pytest.mark.integration]
 
-TenantModel = Vendor | VendorEngagement | VendorContact
-TENANT_TABLES: tuple[type[TenantModel], ...] = (Vendor, VendorEngagement, VendorContact)
+TenantModel = (
+    Vendor
+    | VendorEngagement
+    | VendorContact
+    | VendorStage
+    | VendorTieringAssessment
+    | VendorTransition
+)
+TENANT_TABLES: tuple[type[TenantModel], ...] = (
+    Vendor,
+    VendorEngagement,
+    VendorContact,
+    VendorStage,
+    VendorTieringAssessment,
+    VendorTransition,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -78,7 +100,12 @@ async def _populate(workspace: Workspace, vendor_name: str) -> Seeded:
             session,
             tenant_id=workspace.tenant_id,
             actor=actor,
-            data=VendorInput(name=vendor_name, data_classification="confidential"),
+            data=VendorInput(
+                name=vendor_name,
+                # Intake blocks without both, and the seed advances past it.
+                data_classification="confidential",
+                business_owner_membership_id=workspace.membership_id,
+            ),
         )
         await vendor_service.add_contact(
             session,
@@ -86,6 +113,31 @@ async def _populate(workspace: Workspace, vendor_name: str) -> Seeded:
             actor=actor,
             vendor_id=vendor.id,
             data=ContactInput(name="Dana Reed", email="dana@example.test", contact_type="security"),
+        )
+        # Tier it so the lifecycle tables carry rows too — an empty table proves
+        # nothing about a policy, and the unfiltered sweep below asserts it did.
+        await vendor_service.tier_engagement(
+            session,
+            tenant_id=workspace.tenant_id,
+            actor=actor,
+            vendor_id=vendor.id,
+            engagement_id=vendor.engagements[0].id,
+            answers=TieringAnswers(data_sensitivity=4, business_criticality=4),
+        )
+        await vendor_service.advance_stage(
+            session,
+            tenant_id=workspace.tenant_id,
+            actor=actor,
+            vendor_id=vendor.id,
+            stage_id=next(
+                s.id
+                for s in (
+                    await vendor_service.get_vendor(
+                        session, tenant_id=workspace.tenant_id, vendor_id=vendor.id
+                    )
+                ).stages
+                if s.stage == "intake"
+            ),
         )
     return Seeded(
         workspace=workspace,
@@ -200,6 +252,13 @@ async def test_a_write_carrying_tenant_b_is_refused_by_with_check(
             tenant_id=tenants.b.workspace.tenant_id,
             vendor_id=tenants.a.vendor_id,
             name="Forged contact",
+        ),
+        VendorStage(
+            id=uuid7(),
+            tenant_id=tenants.b.workspace.tenant_id,
+            vendor_id=tenants.a.vendor_id,
+            engagement_id=tenants.a.engagement_id,
+            stage="intake",
         ),
     )
 

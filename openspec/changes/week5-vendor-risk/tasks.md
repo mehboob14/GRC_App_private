@@ -61,21 +61,34 @@ adds its policy in the same migration; the isolation tests ship in this change.
 
 ## 2. Tiering and the lifecycle
 
-- [ ] 2.1 `scoring.py` — pure inherent tiering (V6) returning the full breakdown, plus its unit
-      tests. No session, no I/O.
-- [ ] 2.2 `vendor_tiering_policies` + `vendor_tiering_assessments`, migration, seeded defaults —
-      including the two columns §1 adds, `stage_skip_matrix_by_tier` and
-      `required_reviewer_roles_by_tier`, which are what makes spec ¶82 more than a label.
-- [ ] 2.3 `vendor_stages` + `vendor_transitions` (append-only, `ON DELETE NO ACTION` on the actor
-      FK), migration including the `CHECK` that a gate is never skipped.
-- [ ] 2.4 Stage materialisation: running tiering inserts the stage rows for the cycle and marks
-      the tier's skipped stages with their reason (V9).
-- [ ] 2.5 `evaluate_exit(stage)` — blockers as structured objects naming the clearing record.
-      Unit tests per stage.
-- [ ] 2.6 The three transitions — advance / send back / skip — each writing both a
-      `vendor_transitions` row and an `audit_log` row in one transaction. Tests for the
-      send-back reset and for skip refusing a gate.
-- [ ] 2.7 `allowed_transitions` and the blocker list on the detail view, so the client never
+- [x] 2.1 `scoring.py` — pure inherent tiering (V6) returning the full breakdown, plus its unit
+      tests. No session, no I/O. Reports the distance to the band above **and** below, which is
+      spec ¶82's "what would change this" without re-running the form. `_tier_for` falls back per
+      band to the shipped default so a partial override from tenant-editable JSON retunes one band
+      instead of raising from inside a compliance calculation.
+- [x] 2.2 `vendor_tiering_policies` + `vendor_tiering_assessments`, migration. **No seeded rows**:
+      the defaults live in `scoring.py` / `lifecycle.py` and a row here is the override, merged
+      field by field. That frees a new tenant of a provisioning step and keeps the migration from
+      inserting a tenant-owned row it cannot see through that row's own policy. Adds
+      `stage_skip_matrix_by_tier` and `required_reviewer_roles_by_tier`, the two things spec ¶82
+      promises and the ER gives nowhere to live.
+- [x] 2.3 `vendor_stages` + `vendor_transitions` (append-only, `ON DELETE NO ACTION` on both actor
+      FKs, `occurred_at` alone), migration including `ck_vendor_stages__gate_never_skipped`.
+      Verified directly: a skipped gate is refused by the database even when the service is
+      bypassed.
+- [x] 2.4 Stage materialisation: tiering inserts the twelve rows for the cycle and marks the
+      tier's skipped stages with the policy that skipped them (V9). Idempotent — a retier re-plans
+      what is still ahead and never touches a stage already complete or under way.
+- [x] 2.5 `evaluate_exit(stage, facts)` — a checklist of `ExitCheck`, each naming the record that
+      clears it. **Three-valued**: `None` means the module answering it is not built yet, so it
+      never blocks and never renders as a tick. All twelve stages covered by unit tests against
+      synthetic facts.
+- [x] 2.6 The three transitions — advance / send back / skip — each writing a `vendor_transitions`
+      row **and** an `audit_log` row in one transaction. Tests for the send-back reset (stages
+      before the target untouched, skipped rows stay skipped), for skip refusing a gate and a
+      required stage, and for the append-only trigger refusing a rewrite.
+- [x] 2.7 `allowed_transitions` and the blocker/pending lists on every stage of the detail view,
+      plus the stage vocabulary, skip matrix and tiering factors on `/facets` — so the client never
       hardcodes the machine.
 
 ## 3. Assessment and the portal

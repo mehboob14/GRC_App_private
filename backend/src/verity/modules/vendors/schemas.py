@@ -148,10 +148,101 @@ class VendorOut(_Response):
     contact_count: int
 
 
+# -- lifecycle and tiering (section 2) ----------------------------------------
+
+
+class TieringWrite(_Request):
+    """The five factor answers, plus an optional human override of the result.
+
+    The score and the tier are absent by design: they are computed. A client that
+    could post a tier could set one the arithmetic never produced.
+    """
+
+    data_sensitivity: int = Field(default=0, ge=0, le=4)
+    business_criticality: int = Field(default=0, ge=0, le=4)
+    system_access: int = Field(default=0, ge=0, le=4)
+    regulatory_scope: int = Field(default=0, ge=0, le=4)
+    fourth_party_reliance: int = Field(default=0, ge=0, le=4)
+    override_tier: str | None = None
+    override_justification: str | None = Field(default=None, max_length=4000)
+
+
+class AdvanceWrite(_Request):
+    note: str | None = Field(default=None, max_length=4000)
+
+
+class SendBackWrite(_Request):
+    to_stage: str
+    reason: str = Field(min_length=1, max_length=4000)
+
+
+class SkipWrite(_Request):
+    reason: str = Field(min_length=1, max_length=4000)
+
+
+class ExitCheckOut(_Response):
+    code: str
+    label: str
+    satisfied: bool | None
+    """Three-valued. ``null`` means the module that answers this is not built yet —
+    render it as pending, never as a tick and never as a failure."""
+    detail: str | None
+    clears_with: str | None
+    clears_id: uuid.UUID | None
+
+
+class StageOut(_Response):
+    id: uuid.UUID
+    engagement_id: uuid.UUID
+    cycle: int
+    stage: str
+    label: str
+    status: str
+    is_gate: bool
+    is_required: bool
+    entered_at: UtcDateTime | None
+    exited_at: UtcDateTime | None
+    skipped_reason: str | None
+    skipped_by_policy: str | None
+    checks: list[ExitCheckOut]
+    blockers: list[ExitCheckOut]
+    pending: list[ExitCheckOut]
+    allowed_transitions: list[str]
+
+
+class TieringFactorOut(_Response):
+    key: str
+    label: str
+    answer: int
+    clamped: int
+    weight: float
+    points: float
+    max_points: float
+
+
+class TieringOut(_Response):
+    id: uuid.UUID
+    engagement_id: uuid.UUID
+    cycle: int
+    factors: list[TieringFactorOut]
+    score: float
+    computed_tier: str
+    override_tier: str | None
+    override_justification: str | None
+    effective_tier: str
+    thresholds: dict[str, float]
+    points_to_higher_tier: float | None
+    points_to_lower_tier: float | None
+    assessed_by_name: str | None
+    assessed_at: UtcDateTime | None
+
+
 class VendorDetailOut(VendorOut):
     engagements: list[EngagementOut]
     contacts: list[ContactOut]
     duplicates: list[DuplicateMatchOut]
+    stages: list[StageOut]
+    tierings: list[TieringOut]
 
 
 class VendorPageOut(_Response):
@@ -166,6 +257,12 @@ class VendorFacetsOut(_Response):
     classifications: list[str]
     contact_types: list[str]
     business_units: list[str]
+    # The lifecycle vocabulary, served rather than duplicated in TypeScript.
+    stages: list[dict[str, object]]
+    skip_matrix_by_tier: dict[str, list[str]]
+    tiering_factors: list[dict[str, object]]
+    tier_thresholds: dict[str, float]
+    policy_is_customised: bool
 
 
 class DuplicateCheckOut(_Response):
