@@ -131,7 +131,14 @@ async def invite_directly(  # noqa: PLR0913 — the invite contract's fields
     """
     async with session_scope(workspace.tenant_id) as session:
         roles = await iam_service.list_roles(session, tenant_id=workspace.tenant_id)
-        role = next(r for r in roles if r.name == role_name)
+        # Not a bare next(): inside a coroutine a StopIteration is re-raised as
+        # "RuntimeError: coroutine raised StopIteration", which says nothing
+        # about the missing role and takes every test using this helper down at
+        # fixture setup.
+        role = next((r for r in roles if r.name == role_name), None)
+        assert role is not None, (
+            f"no role named {role_name!r} in this tenant; it has {sorted(r.name for r in roles)}"
+        )
         return await iam_service.invite_member(
             session,
             tenant_id=workspace.tenant_id,

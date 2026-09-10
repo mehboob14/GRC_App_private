@@ -211,9 +211,7 @@ async def pending_approvals(
     return [PendingApprovalOut.model_validate(v) for v in views]
 
 
-@documents_router.get(
-    "/approvals/pending/count", summary="Count of tiers waiting on my decision"
-)
+@documents_router.get("/approvals/pending/count", summary="Count of tiers waiting on my decision")
 async def pending_approval_count(
     principal: Annotated[Principal, Depends(require_read)],
     context: Annotated[TenantContext, Depends(get_tenant_context)],

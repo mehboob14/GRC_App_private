@@ -77,26 +77,32 @@ def upgrade() -> None:
             "updated_at", sa.TIMESTAMP(timezone=True), server_default=sa.func.now(), nullable=False
         ),
         sa.ForeignKeyConstraint(
-            ["tenant_id"], ["tenants.id"], ondelete="CASCADE",
+            ["tenant_id"],
+            ["tenants.id"],
+            ondelete="CASCADE",
             name="fk_vuln_remediation_plans__tenant_id",
         ),
         sa.ForeignKeyConstraint(
-            ["instance_id"], ["vuln_instances.id"], ondelete="CASCADE",
+            ["instance_id"],
+            ["vuln_instances.id"],
+            ondelete="CASCADE",
             name="fk_vuln_remediation_plans__instance_id",
         ),
         sa.ForeignKeyConstraint(
-            ["approved_by_membership_id"], ["tenant_memberships.id"], ondelete="SET NULL",
+            ["approved_by_membership_id"],
+            ["tenant_memberships.id"],
+            ondelete="SET NULL",
             name="fk_vuln_remediation_plans__approved_by_membership_id",
         ),
         sa.ForeignKeyConstraint(
-            ["verified_by_membership_id"], ["tenant_memberships.id"], ondelete="SET NULL",
+            ["verified_by_membership_id"],
+            ["tenant_memberships.id"],
+            ondelete="SET NULL",
             name="fk_vuln_remediation_plans__verified_by_membership_id",
         ),
         _check("fix_type", FIX_TYPES),
         _check("status", PLAN_STATUSES),
-        sa.UniqueConstraint(
-            "tenant_id", "instance_id", name="uq_vuln_remediation_plans__instance"
-        ),
+        sa.UniqueConstraint("tenant_id", "instance_id", name="uq_vuln_remediation_plans__instance"),
     )
     op.create_index(
         "ix_vuln_remediation_plans__tenant_id_instance_id",

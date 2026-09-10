@@ -34,9 +34,25 @@ from typing import Final
 #: say now", not "which tags moved".
 _BLOCK_TAGS: Final[frozenset[str]] = frozenset(
     {
-        "p", "div", "h1", "h2", "h3", "h4", "h5", "h6",
-        "li", "blockquote", "pre", "tr", "td", "th",
-        "section", "article", "header", "footer", "figcaption",
+        "p",
+        "div",
+        "h1",
+        "h2",
+        "h3",
+        "h4",
+        "h5",
+        "h6",
+        "li",
+        "blockquote",
+        "pre",
+        "tr",
+        "td",
+        "th",
+        "section",
+        "article",
+        "header",
+        "footer",
+        "figcaption",
     }
 )
 
@@ -204,16 +220,10 @@ def summarise(diff: list[DiffBlock]) -> DiffSummary:
     removed = sum(1 for b in diff if b.kind == "removed")
     changed = sum(1 for b in diff if b.kind == "changed")
     words_added = sum(
-        len(_WORD.findall(s.text))
-        for b in diff
-        for s in b.segments
-        if s.kind == "added"
+        len(_WORD.findall(s.text)) for b in diff for s in b.segments if s.kind == "added"
     )
     words_removed = sum(
-        len(_WORD.findall(s.text))
-        for b in diff
-        for s in b.segments
-        if s.kind == "removed"
+        len(_WORD.findall(s.text)) for b in diff for s in b.segments if s.kind == "removed"
     )
     return DiffSummary(
         blocks_added=added,

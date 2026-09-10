@@ -254,7 +254,10 @@ class DocumentApprovalTarget(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
     __table_args__ = (
         status_check("document_approval_targets", "target_type", APPROVAL_TARGET_TYPES),
         UniqueConstraint(
-            "tenant_id", "approval_id", "target_type", "target_id",
+            "tenant_id",
+            "approval_id",
+            "target_type",
+            "target_id",
             name="uq_document_approval_targets__target",
         ),
         tenant_index("document_approval_targets", "approval_id"),
@@ -287,7 +290,9 @@ class DocumentApprovalAssignee(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
     __table_args__ = (
         status_check("document_approval_assignees", "decision", ASSIGNEE_DECISIONS),
         UniqueConstraint(
-            "tenant_id", "approval_id", "membership_id",
+            "tenant_id",
+            "approval_id",
+            "membership_id",
             name="uq_document_approval_assignees__member",
         ),
         tenant_index("document_approval_assignees", "approval_id"),
@@ -362,7 +367,9 @@ class DocumentAckCampaignRecipient(UUIDPrimaryKey, TenantScoped, Timestamped, Ba
         status_check("document_ack_campaign_recipients", "source", RECIPIENT_SOURCES),
         status_check("document_ack_campaign_recipients", "status", RECIPIENT_STATUSES),
         UniqueConstraint(
-            "tenant_id", "campaign_id", "membership_id",
+            "tenant_id",
+            "campaign_id",
+            "membership_id",
             name="uq_document_ack_campaign_recipients__member",
         ),
         tenant_index("document_ack_campaign_recipients", "membership_id"),

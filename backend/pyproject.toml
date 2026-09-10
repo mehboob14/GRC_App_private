@@ -126,6 +126,11 @@ classmethod-decorators = ["sqlalchemy.orm.declared_attr", "declared_attr"]
     "PLR2004", # a literal in an assertion is clearer than a named constant
     "ARG001",  # a fixture is requested by name and not always referenced
     "ARG002",  # a fake honours the real method signature without using every argument
+    # SIM300 reads a SCREAMING_CASE module constant as the literal and the set on
+    # the right as the variable, so `assert AUTO_FILLED == {"company_name"}` is
+    # flagged and the "fix" is the genuine Yoda condition. The subject of the
+    # assertion belongs on the left.
+    "SIM300",
 ]
 "tests/isolation/test_rls_policy.py" = [
     # The table name is a module constant in this file, not input. The test has to

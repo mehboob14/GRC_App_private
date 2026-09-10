@@ -35,9 +35,7 @@ _COLUMNS = ("kev_vendor", "kev_product", "kev_required_action")
 def upgrade() -> None:
     for name in _COLUMNS:
         op.add_column(_TABLE, sa.Column(name, sa.Text(), nullable=True))
-    op.add_column(
-        _TABLE, sa.Column("kev_due_at", sa.TIMESTAMP(timezone=True), nullable=True)
-    )
+    op.add_column(_TABLE, sa.Column("kev_due_at", sa.TIMESTAMP(timezone=True), nullable=True))
 
 
 def downgrade() -> None:

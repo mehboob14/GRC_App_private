@@ -12,6 +12,8 @@ Revises: afedee6a313a
 
 from __future__ import annotations
 
+from typing import Any
+
 import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects import postgresql
@@ -29,7 +31,7 @@ _TARGET_TYPES = ("user", "role", "group")
 _TABLE = "vuln_assignment_targets"
 
 
-def _ts() -> tuple[sa.Column, sa.Column]:
+def _ts() -> tuple[sa.Column[Any], sa.Column[Any]]:
     return (
         sa.Column(
             "created_at", sa.TIMESTAMP(timezone=True), server_default=sa.func.now(), nullable=False
@@ -71,9 +73,7 @@ def upgrade() -> None:
             name=f"uq_{_TABLE}__target",
         ),
     )
-    op.create_index(
-        f"ix_{_TABLE}__tenant_id_instance_id", _TABLE, ["tenant_id", "instance_id"]
-    )
+    op.create_index(f"ix_{_TABLE}__tenant_id_instance_id", _TABLE, ["tenant_id", "instance_id"])
     enable_rls(_TABLE)
     grant_crud(_TABLE)
 

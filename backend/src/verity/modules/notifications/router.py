@@ -68,9 +68,7 @@ async def inbox(
     )
 
 
-@notifications_router.post(
-    "/read-all", response_model=MarkedReadOut, summary="Mark all read"
-)
+@notifications_router.post("/read-all", response_model=MarkedReadOut, summary="Mark all read")
 async def mark_all_read(
     _p: Annotated[Principal, Depends(require_read)], context: _Ctx, session: _Db
 ) -> MarkedReadOut:

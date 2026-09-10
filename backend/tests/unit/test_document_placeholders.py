@@ -47,7 +47,9 @@ class TestDoesNotFlagOrdinaryProse:
         assert find("<p>[Optional] This section may be removed.</p>") == []
 
     def test_angle_brackets_and_html_are_not_fields(self) -> None:
-        assert find("<p>Escalate to <strong>the owner</strong> within <sup>2</sup> hours.</p>") == []
+        assert (
+            find("<p>Escalate to <strong>the owner</strong> within <sup>2</sup> hours.</p>") == []
+        )
 
     def test_currency_and_maths_are_not_fields(self) -> None:
         assert find("<p>Budget {{}} is not a field; ${{}} neither.</p>") == []

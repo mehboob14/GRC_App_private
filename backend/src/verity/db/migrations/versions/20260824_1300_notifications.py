@@ -57,9 +57,7 @@ def upgrade() -> None:
         sa.Column("body", sa.Text(), nullable=False),
         sa.Column("object_type", sa.Text(), nullable=True),
         sa.Column("object_id", postgresql.UUID(as_uuid=True), nullable=True),
-        sa.Column(
-            "email_requested", sa.Boolean(), nullable=False, server_default=sa.text("false")
-        ),
+        sa.Column("email_requested", sa.Boolean(), nullable=False, server_default=sa.text("false")),
         sa.Column("emailed_at", sa.TIMESTAMP(timezone=True), nullable=True),
         sa.Column("read_at", sa.TIMESTAMP(timezone=True), nullable=True),
         sa.Column(

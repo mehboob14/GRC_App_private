@@ -21,6 +21,7 @@ wrap them a second time (the model does the same via ``status_check``).
 from __future__ import annotations
 
 from collections.abc import Sequence
+from typing import Any
 
 import sqlalchemy as sa
 from alembic import op
@@ -65,7 +66,7 @@ def _check(table: str, column: str, values: tuple[str, ...]) -> sa.CheckConstrai
     return sa.CheckConstraint(f"{column} IN ({joined})", name=conv(f"ck_{table}__{column}_valid"))
 
 
-def _ts() -> tuple[sa.Column, sa.Column]:
+def _ts() -> tuple[sa.Column[Any], sa.Column[Any]]:
     return (
         sa.Column(
             "created_at", sa.TIMESTAMP(timezone=True), server_default=sa.func.now(), nullable=False

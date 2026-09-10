@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import base64
 import uuid
+from collections.abc import Collection
 from datetime import UTC, datetime
 from typing import cast
 
@@ -40,14 +41,20 @@ class FakeAuditLogRepository(AuditLogRepository):
     async def add(self, session: AsyncSession, entry: AuditLog) -> None:
         self.added.append(entry)
 
-    async def list_page(
+    async def list_page(  # noqa: PLR0913 — mirrors the real repository exactly
         self,
         session: AsyncSession,
         *,
         tenant_id: uuid.UUID | None,
         limit: int,
         before: tuple[datetime, uuid.UUID] | None = None,
+        exclude_object_types: Collection[str] | None = None,
+        object_type: str | None = None,
+        object_id: uuid.UUID | None = None,
     ) -> list[AuditLog]:
+        # The filters this fake ignores are exercised against the real
+        # repository in the integration suite; the signature still has to match,
+        # or the fake silently stops standing in for what it replaces.
         self.requested = (tenant_id, limit, before)
         return self.page[:limit]
 

@@ -1259,7 +1259,10 @@ class DocumentService:
             for t in range(1, _APPROVAL_TIERS + 1):
                 session.add(
                     DocumentApproval(
-                        id=uuid7(), tenant_id=tenant_id, document_id=doc.id, tier=t,
+                        id=uuid7(),
+                        tenant_id=tenant_id,
+                        document_id=doc.id,
+                        tier=t,
                         status="not_started",
                     )
                 )
@@ -1273,7 +1276,10 @@ class DocumentService:
                 if await self._tier_row(session, tenant_id, doc.id, t) is None:
                     session.add(
                         DocumentApproval(
-                            id=uuid7(), tenant_id=tenant_id, document_id=doc.id, tier=t,
+                            id=uuid7(),
+                            tenant_id=tenant_id,
+                            document_id=doc.id,
+                            tier=t,
                             status="not_started",
                         )
                     )
@@ -1315,8 +1321,12 @@ class DocumentService:
         for t_type, t_id, t_name in target_rows:
             session.add(
                 DocumentApprovalTarget(
-                    id=uuid7(), tenant_id=tenant_id, approval_id=approval.id,
-                    target_type=t_type, target_id=t_id, target_name=t_name,
+                    id=uuid7(),
+                    tenant_id=tenant_id,
+                    approval_id=approval.id,
+                    target_type=t_type,
+                    target_id=t_id,
+                    target_name=t_name,
                 )
             )
 
@@ -1325,7 +1335,10 @@ class DocumentService:
             row = existing.pop(mid, None)
             if row is None:
                 row = DocumentApprovalAssignee(
-                    id=uuid7(), tenant_id=tenant_id, approval_id=approval.id, membership_id=mid,
+                    id=uuid7(),
+                    tenant_id=tenant_id,
+                    approval_id=approval.id,
+                    membership_id=mid,
                 )
                 session.add(row)
                 newly_added.append(mid)
@@ -1345,26 +1358,39 @@ class DocumentService:
         if gate_open:
             approval.status = "pending"
         await self._audit.record(
-            session, action="update", object_type="document_approval", object_id=approval.id,
-            actor=actor, tenant_id=tenant_id,
+            session,
+            action="update",
+            object_type="document_approval",
+            object_id=approval.id,
+            actor=actor,
+            tenant_id=tenant_id,
             after={"tier": tier, "targets": [name for _t, _i, name in target_rows]},
         )
         if starting_review:
             await self._audit.record(
-                session, action="transition", object_type="document", object_id=doc.id,
-                actor=actor, tenant_id=tenant_id, before=before,
+                session,
+                action="transition",
+                object_type="document",
+                object_id=doc.id,
+                actor=actor,
+                tenant_id=tenant_id,
+                before=before,
                 after=AuditService.snapshot(doc, fields=_DOC_SNAPSHOT),
             )
 
         if gate_open and newly_added:
             await self._notify().notify_many(
-                session, tenant_id=tenant_id, recipients=newly_added, kind="assigned",
+                session,
+                tenant_id=tenant_id,
+                recipients=newly_added,
+                kind="assigned",
                 title=f"Please review: {doc.title}",
                 body=(
                     f"You've been asked to review {doc.code} (tier {tier}). Open it to read, "
                     "comment and confirm."
                 ),
-                object_type="document_approval", object_id=approval.id,
+                object_type="document_approval",
+                object_id=approval.id,
             )
         return await self._one(session, tenant_id, doc.id)
 
@@ -1419,8 +1445,12 @@ class DocumentService:
         assignee.note = note
         await session.flush()
         await self._audit.record(
-            session, action="approve", object_type="document_approval_assignee",
-            object_id=assignee.id, actor=actor, tenant_id=tenant_id,
+            session,
+            action="approve",
+            object_type="document_approval_assignee",
+            object_id=assignee.id,
+            actor=actor,
+            tenant_id=tenant_id,
             after={"tier": tier, "decision": decision},
         )
 
@@ -1431,8 +1461,13 @@ class DocumentService:
             approval.note = note
             doc.lifecycle = "draft"
             await self._audit.record(
-                session, action="transition", object_type="document", object_id=doc.id,
-                actor=actor, tenant_id=tenant_id, before=before,
+                session,
+                action="transition",
+                object_type="document",
+                object_id=doc.id,
+                actor=actor,
+                tenant_id=tenant_id,
+                before=before,
                 after=AuditService.snapshot(doc, fields=_DOC_SNAPSHOT),
             )
             return await self._one(session, tenant_id, doc.id)
@@ -1444,16 +1479,26 @@ class DocumentService:
         approval.status = "approved"
         approval.decided_at = now
         await self._audit.record(
-            session, action="transition", object_type="document_approval", object_id=approval.id,
-            actor=actor, tenant_id=tenant_id, after={"status": "approved"},
+            session,
+            action="transition",
+            object_type="document_approval",
+            object_id=approval.id,
+            actor=actor,
+            tenant_id=tenant_id,
+            after={"status": "approved"},
         )
 
         nxt = await self._tier_row(session, tenant_id, doc.id, tier + 1)
         if nxt is not None and await self._tier_has_targets(session, tenant_id, nxt.id):
             nxt.status = "pending"
             await self._audit.record(
-                session, action="transition", object_type="document_approval", object_id=nxt.id,
-                actor=actor, tenant_id=tenant_id, after={"status": "pending"},
+                session,
+                action="transition",
+                object_type="document_approval",
+                object_id=nxt.id,
+                actor=actor,
+                tenant_id=tenant_id,
+                after={"status": "pending"},
             )
             pending_next = (
                 (
@@ -1470,13 +1515,17 @@ class DocumentService:
             )
             if pending_next:
                 await self._notify().notify_many(
-                    session, tenant_id=tenant_id, recipients=pending_next, kind="assigned",
+                    session,
+                    tenant_id=tenant_id,
+                    recipients=pending_next,
+                    kind="assigned",
                     title=f"Please review: {doc.title}",
                     body=(
                         f"You've been asked to review {doc.code} (tier {nxt.tier}). Open it "
                         "to read, comment and confirm."
                     ),
-                    object_type="document_approval", object_id=nxt.id,
+                    object_type="document_approval",
+                    object_id=nxt.id,
                 )
             return await self._one(session, tenant_id, doc.id)
 
@@ -1486,16 +1535,26 @@ class DocumentService:
             doc.approved_at = now
             doc.lifecycle = "approved"
             await self._audit.record(
-                session, action="transition", object_type="document", object_id=doc.id,
-                actor=actor, tenant_id=tenant_id, before=before,
+                session,
+                action="transition",
+                object_type="document",
+                object_id=doc.id,
+                actor=actor,
+                tenant_id=tenant_id,
+                before=before,
                 after=AuditService.snapshot(doc, fields=_DOC_SNAPSHOT),
             )
             before = AuditService.snapshot(doc, fields=_DOC_SNAPSHOT)
             doc.published_at = now
             doc.lifecycle = "published"
             await self._audit.record(
-                session, action="transition", object_type="document", object_id=doc.id,
-                actor=actor, tenant_id=tenant_id, before=before,
+                session,
+                action="transition",
+                object_type="document",
+                object_id=doc.id,
+                actor=actor,
+                tenant_id=tenant_id,
+                before=before,
                 after=AuditService.snapshot(doc, fields=_DOC_SNAPSHOT),
             )
         # else: tier N+1 exists but the owner has not assigned it yet - the
@@ -1536,9 +1595,7 @@ class DocumentService:
             await session.execute(
                 select(func.count())
                 .select_from(DocumentApprovalAssignee)
-                .join(
-                    DocumentApproval, DocumentApproval.id == DocumentApprovalAssignee.approval_id
-                )
+                .join(DocumentApproval, DocumentApproval.id == DocumentApprovalAssignee.approval_id)
                 .where(
                     DocumentApprovalAssignee.tenant_id == tenant_id,
                     DocumentApprovalAssignee.membership_id == membership_id,
@@ -1691,9 +1748,7 @@ class DocumentService:
         due_at: datetime | None = None,
     ) -> CampaignView:
         doc = await self._load(session, tenant_id, document_id)
-        resolved, members = await self._resolve_recipients(
-            session, tenant_id, reviewers, approvers
-        )
+        resolved, members = await self._resolve_recipients(session, tenant_id, reviewers, approvers)
         if not resolved:
             raise InvalidInput(
                 "Choose at least one person, role or group to acknowledge this document. "
@@ -2075,9 +2130,7 @@ class DocumentService:
                 body=c.body,
                 mentioned_ids=list(c.mentioned_ids),
                 mentioned_names=[
-                    names.get(uuid.UUID(mid), "Unknown")
-                    for mid in c.mentioned_ids
-                    if _is_uuid(mid)
+                    names.get(uuid.UUID(mid), "Unknown") for mid in c.mentioned_ids if _is_uuid(mid)
                 ],
                 created_at=c.created_at,
             )
@@ -2114,7 +2167,6 @@ class DocumentService:
         # DocumentDetailView is a DocumentView; the detail load also fills the
         # current version_no, which the base view needs.
         return await self.get_document(session, tenant_id=tenant_id, document_id=document_id)
-
 
     # -- version history: what changed, and putting it back -------------------
 
@@ -2158,9 +2210,7 @@ class DocumentService:
 
         names = await self._member_names(session, tenant_id)
         author = (
-            names.get(target.created_by_membership_id)
-            if target.created_by_membership_id
-            else None
+            names.get(target.created_by_membership_id) if target.created_by_membership_id else None
         )
         # An uploaded PDF or Word version has no text to compare. Say so rather
         # than rendering it as an empty document, which reads like a deletion.
@@ -2233,7 +2283,6 @@ class DocumentService:
             change_type="minor",
             summary=f"Restored from v{target.version_no}",
         )
-
 
     # -- shipped policy templates ---------------------------------------------
 

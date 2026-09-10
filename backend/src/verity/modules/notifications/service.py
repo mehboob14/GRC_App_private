@@ -204,17 +204,21 @@ class NotificationService:
         self, session: AsyncSession, *, tenant_id: uuid.UUID, membership_id: uuid.UUID
     ) -> int:
         rows = (
-            await session.execute(
-                update(Notification)
-                .where(
-                    Notification.tenant_id == tenant_id,
-                    Notification.recipient_membership_id == membership_id,
-                    Notification.read_at.is_(None),
+            (
+                await session.execute(
+                    update(Notification)
+                    .where(
+                        Notification.tenant_id == tenant_id,
+                        Notification.recipient_membership_id == membership_id,
+                        Notification.read_at.is_(None),
+                    )
+                    .values(read_at=datetime.now(UTC))
+                    .returning(Notification.id)
                 )
-                .values(read_at=datetime.now(UTC))
-                .returning(Notification.id)
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
         return len(rows)
 
     # -- outbox (worker only) ----------------------------------------------------

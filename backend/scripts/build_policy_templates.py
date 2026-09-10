@@ -94,7 +94,8 @@ def _slug(path: Path) -> str:
 
 
 def build(source: Path, out: Path) -> int:
-    import markdown  # noqa: PLC0415 — build-time only, never imported at runtime
+    # Build-time only, never imported at runtime.
+    import markdown
 
     templates_dir = source / "templates"
     if not templates_dir.is_dir():
@@ -102,8 +103,8 @@ def build(source: Path, out: Path) -> int:
         return 1
 
     try:
-        commit = subprocess.run(  # noqa: S603, S607 — fixed args, local repo
-            ["git", "-C", str(source), "rev-parse", "HEAD"],
+        commit = subprocess.run(  # noqa: S603 — fixed args, local repo
+            ["git", "-C", str(source), "rev-parse", "HEAD"],  # noqa: S607 — git off PATH
             capture_output=True,
             text=True,
             check=True,
@@ -172,9 +173,7 @@ def build(source: Path, out: Path) -> int:
         },
         "generated": [{"path": "document_templates.json", "sha256": digest}],
     }
-    (out / "MANIFEST.json").write_text(
-        json.dumps(manifest, indent=2) + "\n", encoding="utf-8"
-    )
+    (out / "MANIFEST.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
 
     total_ph = sum(p["count"] for r in rows for p in r["placeholders"])
     print(f"{len(rows)} templates -> {out}")

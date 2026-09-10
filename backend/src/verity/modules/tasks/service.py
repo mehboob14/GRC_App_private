@@ -1562,9 +1562,7 @@ class TaskService:
 
     # -- jobs ----------------------------------------------------------------
 
-    async def sla_watchlist(
-        self, session: AsyncSession, *, tenant_id: uuid.UUID
-    ) -> list[SlaAlert]:
+    async def sla_watchlist(self, session: AsyncSession, *, tenant_id: uuid.UUID) -> list[SlaAlert]:
         """Active tasks that are breached or due within the same 2-day window
         ``sla_state`` uses. ``blocked`` (paused), ``closed`` and ``cancelled``
         never count. Read-only — turning these into notices is the job's call,
@@ -1590,9 +1588,7 @@ class TaskService:
         for t in tasks:
             recipients = tuple(
                 dict.fromkeys(
-                    m
-                    for m in (t.owner_membership_id, *assignees.get(t.id, []))
-                    if m is not None
+                    m for m in (t.owner_membership_id, *assignees.get(t.id, [])) if m is not None
                 )
             )
             assert t.sla_due_at is not None  # noqa: S101 — filtered above

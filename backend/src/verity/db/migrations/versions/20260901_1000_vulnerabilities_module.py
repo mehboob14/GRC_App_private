@@ -19,6 +19,7 @@ twice.
 from __future__ import annotations
 
 from collections.abc import Sequence
+from typing import Any
 
 import sqlalchemy as sa
 from alembic import op
@@ -34,8 +35,14 @@ depends_on: str | Sequence[str] | None = None
 
 SEVERITIES = ("critical", "high", "medium", "low", "info")
 INSTANCE_STATES = (
-    "new", "active", "in_progress", "pending_retest",
-    "fixed", "resurfaced", "accepted", "false_positive",
+    "new",
+    "active",
+    "in_progress",
+    "pending_retest",
+    "fixed",
+    "resurfaced",
+    "accepted",
+    "false_positive",
 )
 REPORT_TYPES = ("vulnerability_scan", "penetration_test", "code_review", "configuration_audit")
 REPORT_STATUSES = ("uploaded", "parsing", "parsed", "failed")
@@ -57,7 +64,7 @@ def _check(table: str, column: str, values: tuple[str, ...]) -> sa.CheckConstrai
     return sa.CheckConstraint(f"{column} IN ({joined})", name=conv(f"ck_{table}__{column}_valid"))
 
 
-def _ts() -> tuple[sa.Column, sa.Column]:
+def _ts() -> tuple[sa.Column[Any], sa.Column[Any]]:
     return (
         sa.Column(
             "created_at", sa.TIMESTAMP(timezone=True), server_default=sa.func.now(), nullable=False
@@ -80,7 +87,7 @@ def _member_fk(table: str, column: str, ondelete: str = "SET NULL") -> sa.Foreig
     )
 
 
-def _integratable() -> tuple[sa.Column, ...]:
+def _integratable() -> tuple[sa.Column[Any], ...]:
     return (
         sa.Column("source", sa.Text(), nullable=False, server_default="manual"),
         sa.Column("external_id", sa.Text(), nullable=True),
@@ -137,9 +144,7 @@ def upgrade() -> None:
         sa.Column("tenant_id", _UUID, nullable=False),
         sa.Column("name", sa.Text(), nullable=False),
         sa.Column("description", sa.Text(), nullable=True),
-        sa.Column(
-            "report_type", sa.Text(), nullable=False, server_default="vulnerability_scan"
-        ),
+        sa.Column("report_type", sa.Text(), nullable=False, server_default="vulnerability_scan"),
         sa.Column("scan_tool", sa.Text(), nullable=True),
         sa.Column("scan_date", sa.TIMESTAMP(timezone=True), nullable=True),
         sa.Column("file_key", sa.Text(), nullable=True),
@@ -194,21 +199,31 @@ def upgrade() -> None:
         *_ts(),
         _tenant_fk("vuln_instances"),
         sa.ForeignKeyConstraint(
-            ["definition_id"], ["vuln_definitions.id"], ondelete="CASCADE",
+            ["definition_id"],
+            ["vuln_definitions.id"],
+            ondelete="CASCADE",
             name="fk_vuln_instances__definition_id",
         ),
         sa.ForeignKeyConstraint(
-            ["asset_id"], ["assets.id"], ondelete="CASCADE", name="fk_vuln_instances__asset_id",
+            ["asset_id"],
+            ["assets.id"],
+            ondelete="CASCADE",
+            name="fk_vuln_instances__asset_id",
         ),
         sa.ForeignKeyConstraint(
-            ["report_id"], ["vuln_reports.id"], ondelete="SET NULL",
+            ["report_id"],
+            ["vuln_reports.id"],
+            ondelete="SET NULL",
             name="fk_vuln_instances__report_id",
         ),
         _member_fk("vuln_instances", "owner_membership_id"),
         _member_fk("vuln_instances", "accepted_by_membership_id"),
         _check("vuln_instances", "state", INSTANCE_STATES),
         sa.UniqueConstraint(
-            "tenant_id", "asset_id", "definition_id", "locator",
+            "tenant_id",
+            "asset_id",
+            "definition_id",
+            "locator",
             name="uq_vuln_instances__asset_def_locator",
         ),
     )
@@ -235,7 +250,9 @@ def upgrade() -> None:
         *_ts(),
         _tenant_fk("vuln_transitions"),
         sa.ForeignKeyConstraint(
-            ["instance_id"], ["vuln_instances.id"], ondelete="CASCADE",
+            ["instance_id"],
+            ["vuln_instances.id"],
+            ondelete="CASCADE",
             name="fk_vuln_transitions__instance_id",
         ),
         _member_fk("vuln_transitions", "actor_membership_id"),

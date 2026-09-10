@@ -7,16 +7,16 @@ from __future__ import annotations
 
 import pytest
 
-from verity.modules.vulnerabilities.references import build
+from verity.modules.vulnerabilities.references import Reference, build
 
 LOG4SHELL = "CVE-2021-44228"
 
 
-def _urls(refs: list, backs: str | None = None) -> list[str]:
+def _urls(refs: list[Reference], backs: str | None = None) -> list[str]:
     return [r.url for r in refs if backs is None or r.backs == backs]
 
 
-def _build(**overrides: object) -> list:
+def _build(**overrides: object) -> list[Reference]:
     kwargs: dict[str, object] = {
         "cve_id": LOG4SHELL,
         "kev_flag": False,
@@ -54,13 +54,21 @@ class TestOnlyLinksFactsThatExist:
         assert _urls(_build(epss_score=0.0), "epss")
 
     def test_no_exploitdb_link_without_a_known_exploit(self) -> None:
-        assert not [u for u in _urls(_build(public_exploit_count=0), "exploit")]
+        assert not _urls(_build(public_exploit_count=0), "exploit")
 
 
 class TestUnresolvableIds:
     @pytest.mark.parametrize(
         "cve",
-        ["", None, "CVE-2024-123", "2024-1234", "cve 2024 1234", "MS17-010", "CVE-2021-44228, CVE-2021-45046"],
+        [
+            "",
+            None,
+            "CVE-2024-123",
+            "2024-1234",
+            "cve 2024 1234",
+            "MS17-010",
+            "CVE-2021-44228, CVE-2021-45046",
+        ],
     )
     def test_no_derived_links_for_an_id_the_sources_cannot_resolve(self, cve: str | None) -> None:
         refs = _build(cve_id=cve, kev_flag=True, epss_score=0.5, public_exploit_count=3)
@@ -79,7 +87,11 @@ class TestStoredSources:
         refs = _build(
             public_exploit_count=2,
             exploit_refs=[
-                {"full_name": "someone/log4shell-poc", "url": "https://github.com/someone/log4shell-poc", "stars": 431}
+                {
+                    "full_name": "someone/log4shell-poc",
+                    "url": "https://github.com/someone/log4shell-poc",
+                    "stars": 431,
+                }
             ],
         )
         poc = [r for r in refs if r.url.startswith("https://github.com/")]
@@ -94,7 +106,10 @@ class TestStoredSources:
     def test_vendor_advisory_is_linked(self) -> None:
         (ref,) = [
             r
-            for r in _build(advisory_url="https://msrc.microsoft.com/update-guide/vulnerability/CVE-2021-34527", patch_source="msrc")
+            for r in _build(
+                advisory_url="https://msrc.microsoft.com/update-guide/vulnerability/CVE-2021-34527",
+                patch_source="msrc",
+            )
             if r.backs == "patch"
         ]
         assert "msrc.microsoft.com" in ref.url

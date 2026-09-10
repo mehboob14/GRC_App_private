@@ -128,9 +128,7 @@ class VulnDefinition(UUIDPrimaryKey, TenantScoped, Timestamped, Integratable, Ba
 
     __table_args__ = (
         status_check("vuln_definitions", "severity", SEVERITIES),
-        UniqueConstraint(
-            "tenant_id", "definition_key", name="uq_vuln_definitions__tenant_id_key"
-        ),
+        UniqueConstraint("tenant_id", "definition_key", name="uq_vuln_definitions__tenant_id_key"),
         tenant_index("vuln_definitions", "cve_id"),
         tenant_index("vuln_definitions", "severity"),
     )
@@ -328,9 +326,7 @@ class VulnRemediationPlan(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
         status_check("vuln_remediation_plans", "fix_type", FIX_TYPES),
         status_check("vuln_remediation_plans", "status", PLAN_STATUSES),
         # One plan per finding — regenerating replaces the content in place.
-        UniqueConstraint(
-            "tenant_id", "instance_id", name="uq_vuln_remediation_plans__instance"
-        ),
+        UniqueConstraint("tenant_id", "instance_id", name="uq_vuln_remediation_plans__instance"),
         tenant_index("vuln_remediation_plans", "instance_id"),
     )
 

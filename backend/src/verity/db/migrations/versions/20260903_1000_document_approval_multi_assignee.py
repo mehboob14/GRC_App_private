@@ -13,6 +13,8 @@ Revises: e2a5c7d93f42
 
 from __future__ import annotations
 
+from typing import Any
+
 import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects import postgresql
@@ -34,7 +36,7 @@ _ASSIGNEE_DECISIONS = ("pending", "approved", "rejected")
 _TABLES = ("document_approval_assignees", "document_approval_targets")
 
 
-def _ts() -> tuple[sa.Column, sa.Column]:
+def _ts() -> tuple[sa.Column[Any], sa.Column[Any]]:
     return (
         sa.Column(
             "created_at", sa.TIMESTAMP(timezone=True), server_default=sa.func.now(), nullable=False
@@ -75,12 +77,17 @@ def upgrade() -> None:
         *_ts(),
         _tenant_fk("document_approval_targets"),
         sa.ForeignKeyConstraint(
-            ["approval_id"], ["document_approvals.id"], ondelete="CASCADE",
+            ["approval_id"],
+            ["document_approvals.id"],
+            ondelete="CASCADE",
             name="fk_document_approval_targets__approval_id",
         ),
         _in("document_approval_targets", "target_type", _TARGET_TYPES),
         sa.UniqueConstraint(
-            "tenant_id", "approval_id", "target_type", "target_id",
+            "tenant_id",
+            "approval_id",
+            "target_type",
+            "target_id",
             name="uq_document_approval_targets__target",
         ),
     )
@@ -97,7 +104,9 @@ def upgrade() -> None:
         sa.Column("approval_id", _UUID, nullable=False),
         sa.Column("membership_id", _UUID, nullable=False),
         sa.Column(
-            "source_target_ids", postgresql.JSONB, nullable=False,
+            "source_target_ids",
+            postgresql.JSONB,
+            nullable=False,
             server_default=sa.text("'[]'::jsonb"),
         ),
         sa.Column("decision", sa.Text(), nullable=False, server_default=sa.text("'pending'")),
@@ -106,16 +115,22 @@ def upgrade() -> None:
         *_ts(),
         _tenant_fk("document_approval_assignees"),
         sa.ForeignKeyConstraint(
-            ["approval_id"], ["document_approvals.id"], ondelete="CASCADE",
+            ["approval_id"],
+            ["document_approvals.id"],
+            ondelete="CASCADE",
             name="fk_document_approval_assignees__approval_id",
         ),
         sa.ForeignKeyConstraint(
-            ["membership_id"], ["tenant_memberships.id"], ondelete="CASCADE",
+            ["membership_id"],
+            ["tenant_memberships.id"],
+            ondelete="CASCADE",
             name="fk_document_approval_assignees__membership_id",
         ),
         _in("document_approval_assignees", "decision", _ASSIGNEE_DECISIONS),
         sa.UniqueConstraint(
-            "tenant_id", "approval_id", "membership_id",
+            "tenant_id",
+            "approval_id",
+            "membership_id",
             name="uq_document_approval_assignees__member",
         ),
     )

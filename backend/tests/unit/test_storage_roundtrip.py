@@ -140,7 +140,9 @@ def test_an_unbuffered_stream_is_refused_rather_than_silently_truncated(
     payload = PDF + b"a" * 48
 
     with pytest.raises(TypeError):
-        store.put(TENANT_A, "evidence.pdf", RawTricklingStream(payload))
+        # Deliberately the wrong type: proving put refuses a raw stream is
+        # what this test is for.
+        store.put(TENANT_A, "evidence.pdf", RawTricklingStream(payload))  # type: ignore[arg-type]
 
     assert files_under(tmp_path) == []
 

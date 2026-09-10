@@ -385,9 +385,7 @@ class FindingRow:
 
 
 class VulnerabilityService:
-    def __init__(
-        self, audit: AuditService | None = None, store: ObjectStore | None = None
-    ) -> None:
+    def __init__(self, audit: AuditService | None = None, store: ObjectStore | None = None) -> None:
         self._audit = audit or audit_service
         self._store = store or get_object_store()
 
@@ -417,9 +415,7 @@ class VulnerabilityService:
 
     async def _sla_days(self, session: AsyncSession, tenant_id: uuid.UUID) -> dict[str, int | None]:
         rows = (
-            await session.execute(
-                select(VulnSlaPolicy).where(VulnSlaPolicy.tenant_id == tenant_id)
-            )
+            await session.execute(select(VulnSlaPolicy).where(VulnSlaPolicy.tenant_id == tenant_id))
         ).scalars()
         days: dict[str, int | None] = dict(DEFAULT_SLA_DAYS)
         for r in rows:
@@ -911,12 +907,23 @@ class VulnerabilityService:
             report.parse_error = str(exc)[:1000]
             await session.flush()
             await self._audit.record(
-                session, action="create", object_type="vuln_report", object_id=report.id,
-                actor=actor, tenant_id=tenant_id, after={"name": report_name, "status": "failed"},
+                session,
+                action="create",
+                object_type="vuln_report",
+                object_id=report.id,
+                actor=actor,
+                tenant_id=tenant_id,
+                after={"name": report_name, "status": "failed"},
             )
             return ImportResult(
-                report_id=report.id, created=0, resurfaced=0, updated=0, unmatched=0,
-                definitions=0, status="failed", parse_error=report.parse_error,
+                report_id=report.id,
+                created=0,
+                resurfaced=0,
+                updated=0,
+                unmatched=0,
+                definitions=0,
+                status="failed",
+                parse_error=report.parse_error,
             )
         result = await self._ingest(
             session, tenant_id=tenant_id, actor=actor, report=report, rows=rows
@@ -1008,12 +1015,22 @@ class VulnerabilityService:
                     inst.fixed_verified = False
                     inst.sla_due_at = self._sla_due(defn.severity, days, now)
                     self._append_transition(
-                        session, tenant_id, inst.id, "fixed", "resurfaced",
-                        "Scanner reported it again", now,
+                        session,
+                        tenant_id,
+                        inst.id,
+                        "fixed",
+                        "resurfaced",
+                        "Scanner reported it again",
+                        now,
                     )
                     await self._audit.record(
-                        session, action="transition", object_type="vuln_instance",
-                        object_id=inst.id, actor=actor, tenant_id=tenant_id, before=before,
+                        session,
+                        action="transition",
+                        object_type="vuln_instance",
+                        object_id=inst.id,
+                        actor=actor,
+                        tenant_id=tenant_id,
+                        before=before,
                         after=AuditService.snapshot(inst, fields=_INSTANCE_SNAPSHOT),
                     )
                     resurfaced += 1
@@ -1229,12 +1246,23 @@ class VulnerabilityService:
             report.parse_error = str(exc)[:1000]
             await session.flush()
             await self._audit.record(
-                session, action="update", object_type="vuln_report", object_id=report.id,
-                actor=actor, tenant_id=tenant_id, after={"status": "failed", "reparse": True},
+                session,
+                action="update",
+                object_type="vuln_report",
+                object_id=report.id,
+                actor=actor,
+                tenant_id=tenant_id,
+                after={"status": "failed", "reparse": True},
             )
             return ImportResult(
-                report_id=report.id, created=0, resurfaced=0, updated=0, unmatched=0,
-                definitions=0, status="failed", parse_error=report.parse_error,
+                report_id=report.id,
+                created=0,
+                resurfaced=0,
+                updated=0,
+                unmatched=0,
+                definitions=0,
+                status="failed",
+                parse_error=report.parse_error,
             )
         result = await self._ingest(
             session, tenant_id=tenant_id, actor=actor, report=report, rows=rows
@@ -1294,12 +1322,23 @@ class VulnerabilityService:
             inst.fixed_verified = True
             inst.resolution_notes = note
             self._append_transition(
-                session, tenant_id, inst.id, from_state, "fixed", note, now,
+                session,
+                tenant_id,
+                inst.id,
+                from_state,
+                "fixed",
+                note,
+                now,
                 actor_membership_id=_membership(actor),
             )
             await self._audit.record(
-                session, action="transition", object_type="vuln_instance", object_id=inst.id,
-                actor=actor, tenant_id=tenant_id, before=before,
+                session,
+                action="transition",
+                object_type="vuln_instance",
+                object_id=inst.id,
+                actor=actor,
+                tenant_id=tenant_id,
+                before=before,
                 after=AuditService.snapshot(inst, fields=_INSTANCE_SNAPSHOT),
             )
         await session.flush()
@@ -1333,14 +1372,24 @@ class VulnerabilityService:
             session, [defn], triples, include_github=True, include_patch=True
         )
         await self._audit.record(
-            session, action="update", object_type="vuln_instance", object_id=inst.id,
-            actor=actor, tenant_id=tenant_id, after={"reenriched": True},
+            session,
+            action="update",
+            object_type="vuln_instance",
+            object_id=inst.id,
+            actor=actor,
+            tenant_id=tenant_id,
+            after={"reenriched": True},
         )
         return await self.get_instance(session, tenant_id=tenant_id, instance_id=inst.id)
 
     async def link_asset(
-        self, session: AsyncSession, *, tenant_id: uuid.UUID, actor: Actor,
-        instance_id: uuid.UUID, asset_id: uuid.UUID,
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        instance_id: uuid.UUID,
+        asset_id: uuid.UUID,
     ) -> InstanceDetailView:
         """Record that the same finding also affects another asset — a new instance
         of the same definition on that asset (Verity's take on GRC-Tenant's
@@ -1388,19 +1437,35 @@ class VulnerabilityService:
         await session.flush()
         self._score_instances([(inst, defn, ref)])
         self._append_transition(
-            session, tenant_id, inst.id, None, "new", "Linked to asset", now,
+            session,
+            tenant_id,
+            inst.id,
+            None,
+            "new",
+            "Linked to asset",
+            now,
             actor_membership_id=_membership(actor),
         )
         await session.flush()
         await self._audit.record(
-            session, action="create", object_type="vuln_instance", object_id=inst.id,
-            actor=actor, tenant_id=tenant_id, after={"linked_asset": str(asset_id)},
+            session,
+            action="create",
+            object_type="vuln_instance",
+            object_id=inst.id,
+            actor=actor,
+            tenant_id=tenant_id,
+            after={"linked_asset": str(asset_id)},
         )
         return await self.get_instance(session, tenant_id=tenant_id, instance_id=inst.id)
 
     async def move_asset(
-        self, session: AsyncSession, *, tenant_id: uuid.UUID, actor: Actor,
-        instance_id: uuid.UUID, asset_id: uuid.UUID,
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        instance_id: uuid.UUID,
+        asset_id: uuid.UUID,
     ) -> InstanceDetailView:
         """Re-point a mis-attached finding to the correct asset (re-inherits owner,
         re-scores). Never a delete — the finding is preserved (rule 6)."""
@@ -1441,10 +1506,17 @@ class VulnerabilityService:
         self._score_instances([(inst, defn, ref)])
         await session.flush()
         await self._audit.record(
-            session, action="update", object_type="vuln_instance", object_id=inst.id,
-            actor=actor, tenant_id=tenant_id, before=before,
-            after={**AuditService.snapshot(inst, fields=_INSTANCE_SNAPSHOT),
-                   "moved_to_asset": str(asset_id)},
+            session,
+            action="update",
+            object_type="vuln_instance",
+            object_id=inst.id,
+            actor=actor,
+            tenant_id=tenant_id,
+            before=before,
+            after={
+                **AuditService.snapshot(inst, fields=_INSTANCE_SNAPSHOT),
+                "moved_to_asset": str(asset_id),
+            },
         )
         return await self.get_instance(session, tenant_id=tenant_id, instance_id=inst.id)
 
@@ -1603,8 +1675,12 @@ class VulnerabilityService:
         plan.cancelled_at = None
         await session.flush()
         await self._audit.record(
-            session, action="create", object_type="vuln_remediation_plan", object_id=plan.id,
-            actor=actor, tenant_id=tenant_id,
+            session,
+            action="create",
+            object_type="vuln_remediation_plan",
+            object_id=plan.id,
+            actor=actor,
+            tenant_id=tenant_id,
             after={"instance_id": str(inst.id), "source": draft.source},
         )
         return await self._plan_view(session, tenant_id, plan)
@@ -1644,8 +1720,13 @@ class VulnerabilityService:
         plan.change_window_end = now + timedelta(days=1)
         await session.flush()
         await self._audit.record(
-            session, action="approve", object_type="vuln_remediation_plan", object_id=plan.id,
-            actor=actor, tenant_id=tenant_id, after={"status": "approved"},
+            session,
+            action="approve",
+            object_type="vuln_remediation_plan",
+            object_id=plan.id,
+            actor=actor,
+            tenant_id=tenant_id,
+            after={"status": "approved"},
         )
         return await self._plan_view(session, tenant_id, plan)
 
@@ -1672,18 +1753,34 @@ class VulnerabilityService:
             from_state = inst.state
             inst.state = "pending_retest"
             self._append_transition(
-                session, tenant_id, inst.id, from_state, "pending_retest",
-                "Remediation applied (simulated)", now, actor_membership_id=_membership(actor),
+                session,
+                tenant_id,
+                inst.id,
+                from_state,
+                "pending_retest",
+                "Remediation applied (simulated)",
+                now,
+                actor_membership_id=_membership(actor),
             )
             await self._audit.record(
-                session, action="transition", object_type="vuln_instance", object_id=inst.id,
-                actor=actor, tenant_id=tenant_id, before=before,
+                session,
+                action="transition",
+                object_type="vuln_instance",
+                object_id=inst.id,
+                actor=actor,
+                tenant_id=tenant_id,
+                before=before,
                 after=AuditService.snapshot(inst, fields=_INSTANCE_SNAPSHOT),
             )
         await session.flush()
         await self._audit.record(
-            session, action="update", object_type="vuln_remediation_plan", object_id=plan.id,
-            actor=actor, tenant_id=tenant_id, after={"status": "applied"},
+            session,
+            action="update",
+            object_type="vuln_remediation_plan",
+            object_id=plan.id,
+            actor=actor,
+            tenant_id=tenant_id,
+            after={"status": "applied"},
         )
         return await self._plan_view(session, tenant_id, plan)
 
@@ -1705,7 +1802,10 @@ class VulnerabilityService:
                 detail="apply the plan before verifying",
             )
         await self.verify_instance(
-            session, tenant_id=tenant_id, actor=actor, instance_id=instance_id,
+            session,
+            tenant_id=tenant_id,
+            actor=actor,
+            instance_id=instance_id,
             resolution_notes=evidence,
         )
         now = datetime.now(UTC)
@@ -1716,8 +1816,13 @@ class VulnerabilityService:
         plan.risk_score_after = 0.0  # remediated
         await session.flush()
         await self._audit.record(
-            session, action="update", object_type="vuln_remediation_plan", object_id=plan.id,
-            actor=actor, tenant_id=tenant_id, after={"status": "verified"},
+            session,
+            action="update",
+            object_type="vuln_remediation_plan",
+            object_id=plan.id,
+            actor=actor,
+            tenant_id=tenant_id,
+            after={"status": "verified"},
         )
         return await self._plan_view(session, tenant_id, plan)
 
@@ -1741,8 +1846,13 @@ class VulnerabilityService:
         plan.cancelled_at = datetime.now(UTC)
         await session.flush()
         await self._audit.record(
-            session, action="update", object_type="vuln_remediation_plan", object_id=plan.id,
-            actor=actor, tenant_id=tenant_id, after={"status": "cancelled"},
+            session,
+            action="update",
+            object_type="vuln_remediation_plan",
+            object_id=plan.id,
+            actor=actor,
+            tenant_id=tenant_id,
+            after={"status": "cancelled"},
         )
         return await self._plan_view(session, tenant_id, plan)
 
@@ -1831,9 +1941,7 @@ class VulnerabilityService:
         await session.flush()
 
     @staticmethod
-    def _score_instances(
-        instances: Sequence[tuple[VulnInstance, VulnDefinition, Any]]
-    ) -> None:
+    def _score_instances(instances: Sequence[tuple[VulnInstance, VulnDefinition, Any]]) -> None:
         """(Re)compute risk_score/reason from the definition's intel and the asset's
         criticality/exposure — no external calls, so it is cheap to run whenever any
         parameter moves (enrichment, a manual edit, or an asset reclassification)."""
@@ -1916,7 +2024,13 @@ class VulnerabilityService:
         elif to_state == "active" and from_state in CLOSED_STATES:
             _clear_closure(inst)  # reopening drops the stale closure record
         self._append_transition(
-            session, tenant_id, inst.id, from_state, to_state, note, now,
+            session,
+            tenant_id,
+            inst.id,
+            from_state,
+            to_state,
+            note,
+            now,
             actor_membership_id=_membership(actor),
         )
         await session.flush()
@@ -1970,8 +2084,13 @@ class VulnerabilityService:
         inst.fixed_verified = True
         inst.resolution_notes = resolution_notes
         self._append_transition(
-            session, tenant_id, inst.id, from_state, "fixed",
-            resolution_notes or "Verified fixed", now,
+            session,
+            tenant_id,
+            inst.id,
+            from_state,
+            "fixed",
+            resolution_notes or "Verified fixed",
+            now,
             actor_membership_id=_membership(actor),
         )
         await session.flush()
@@ -2048,7 +2167,13 @@ class VulnerabilityService:
         inst.accepted_by_membership_id = _membership(actor)
         inst.compensating_controls = compensating_controls
         self._append_transition(
-            session, tenant_id, inst.id, from_state, "accepted", reason, now,
+            session,
+            tenant_id,
+            inst.id,
+            from_state,
+            "accepted",
+            reason,
+            now,
             actor_membership_id=_membership(actor),
         )
         await session.flush()
@@ -2113,8 +2238,13 @@ class VulnerabilityService:
                 session, tenant_id, inst.id, "accepted", "active", "Acceptance expired", now
             )
             await self._audit.record(
-                session, action="transition", object_type="vuln_instance", object_id=inst.id,
-                actor=System(), tenant_id=tenant_id, before=before,
+                session,
+                action="transition",
+                object_type="vuln_instance",
+                object_id=inst.id,
+                actor=System(),
+                tenant_id=tenant_id,
+                before=before,
                 after=AuditService.snapshot(inst, fields=_INSTANCE_SNAPSHOT),
             )
 
@@ -2126,9 +2256,8 @@ class VulnerabilityService:
                 continue
             ref = refs.get(inst.asset_id)
             contact = (
-                (ref.escalation_contact_membership_id if ref else None)
-                or inst.owner_membership_id
-            )
+                ref.escalation_contact_membership_id if ref else None
+            ) or inst.owner_membership_id
             if contact is None:
                 # No one to escalate to yet — leave the one-shot unspent so a later
                 # owner/escalation-contact assignment triggers it on a future sweep.
@@ -2138,8 +2267,13 @@ class VulnerabilityService:
             inst.escalated_at = now
             inst.escalated_to_membership_id = contact
             await self._audit.record(
-                session, action="update", object_type="vuln_instance", object_id=inst.id,
-                actor=System(), tenant_id=tenant_id, before=before,
+                session,
+                action="update",
+                object_type="vuln_instance",
+                object_id=inst.id,
+                actor=System(),
+                tenant_id=tenant_id,
+                before=before,
                 after={"escalation_level": 1, "escalated_to": str(contact)},
             )
             await self._notify().notify_once(
@@ -2198,22 +2332,23 @@ class VulnerabilityService:
             )
         )
 
-
-
-
     async def _assignment_targets(
         self, session: AsyncSession, tenant_id: uuid.UUID, instance_id: uuid.UUID
     ) -> list[AssignmentTargetView]:
         rows = (
-            await session.execute(
-                select(VulnAssignmentTarget)
-                .where(
-                    VulnAssignmentTarget.tenant_id == tenant_id,
-                    VulnAssignmentTarget.instance_id == instance_id,
+            (
+                await session.execute(
+                    select(VulnAssignmentTarget)
+                    .where(
+                        VulnAssignmentTarget.tenant_id == tenant_id,
+                        VulnAssignmentTarget.instance_id == instance_id,
+                    )
+                    .order_by(VulnAssignmentTarget.target_type, VulnAssignmentTarget.target_name)
                 )
-                .order_by(VulnAssignmentTarget.target_type, VulnAssignmentTarget.target_name)
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
         return [
             AssignmentTargetView(
                 target_type=r.target_type, target_id=r.target_id, name=r.target_name
@@ -2280,13 +2415,17 @@ class VulnerabilityService:
                 resolved.append((target_type, target_id, name))
 
         existing = (
-            await session.execute(
-                select(VulnAssignmentTarget).where(
-                    VulnAssignmentTarget.tenant_id == tenant_id,
-                    VulnAssignmentTarget.instance_id == instance_id,
+            (
+                await session.execute(
+                    select(VulnAssignmentTarget).where(
+                        VulnAssignmentTarget.tenant_id == tenant_id,
+                        VulnAssignmentTarget.instance_id == instance_id,
+                    )
                 )
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
         for row in existing:
             await session.delete(row)
         for target_type, target_id, name in resolved:
@@ -2401,8 +2540,7 @@ class VulnerabilityService:
         )
         if open_request is not None:
             raise Conflict(
-                "There is already an exception request waiting for a decision on this "
-                "finding.",
+                "There is already an exception request waiting for a decision on this finding.",
                 detail="one open exception request per finding",
             )
 
@@ -2535,6 +2673,7 @@ class VulnerabilityService:
 _SLUG_RE = re.compile(r"[^a-z0-9]+")
 _CVE_IN_TITLE = re.compile(r"CVE-\d{4}-\d{4,}", re.IGNORECASE)
 
+
 def _severity_from_cvss(score: float | None) -> str | None:
     """CVSS v3 qualitative band."""
     if score is None:
@@ -2594,8 +2733,14 @@ def _median(values: list[float]) -> float:
 
 
 _SEVERITY_WORDS: Final = {
-    "0": "info", "1": "low", "2": "medium", "3": "high", "4": "critical",
-    "informational": "info", "none": "info", "moderate": "medium",
+    "0": "info",
+    "1": "low",
+    "2": "medium",
+    "3": "high",
+    "4": "critical",
+    "informational": "info",
+    "none": "info",
+    "moderate": "medium",
 }
 
 
@@ -2777,4 +2922,6 @@ def _as_int(value: str | None) -> int | None:
         return int(value) if value else None
     except ValueError:
         return None
+
+
 vulnerability_service = VulnerabilityService()

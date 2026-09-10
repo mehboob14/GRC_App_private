@@ -881,8 +881,7 @@ class TenancyService:
         branding = await self._tenants.get_branding(session, tenant_id)
         if branding is None:
             raise NotFound(
-                "No branding has been set up for this workspace yet. Save branding "
-                "settings first.",
+                "No branding has been set up for this workspace yet. Save branding settings first.",
                 detail=f"branding for tenant {tenant_id} not found",
             )
         return branding

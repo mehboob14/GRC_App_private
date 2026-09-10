@@ -25,7 +25,7 @@ between people.
 from __future__ import annotations
 
 import uuid
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Sequence
 from dataclasses import dataclass
 
 import pytest
@@ -48,6 +48,7 @@ from verity.core.errors import InvalidToken, NotFound
 from verity.core.security import decode_token
 from verity.db.base import Base
 from verity.modules.iam.models import (
+    ADMIN_ROLE_NAME,
     Group,
     GroupMember,
     Role,
@@ -55,8 +56,10 @@ from verity.modules.iam.models import (
     TenantMembership,
 )
 from verity.modules.iam.service import (
+    BUILT_IN_ROLE_KEYS,
     ChallengeIssued,
     EmailVerificationRequired,
+    RoleView,
     SessionIssued,
     iam_auth_service,
     iam_service,
@@ -91,9 +94,33 @@ class TwoTenants:
     b: Workspace
 
 
+NON_ADMIN_ROLE_NAME: str = next(name for name in BUILT_IN_ROLE_KEYS if name != ADMIN_ROLE_NAME)
+"""A seeded role that is not Admin, taken from the product's own list.
+
+Three tests here used to name "Auditor" and "Employee", neither of which the
+product seeds any more. Deriving the name means these tests follow the built-in
+roles instead of pinning names that quietly stop existing."""
+
+
+def _a_non_admin_role(roles: Sequence[RoleView]) -> RoleView:
+    """Any seeded role that is not Admin — the group grant only has to exist."""
+    named = sorted(role.name for role in roles)
+    role = next((r for r in roles if r.name != ADMIN_ROLE_NAME), None)
+    assert role is not None, f"tenant seeded no role other than Admin; got {named}"
+    return role
+
+
 async def _populate(workspace: Workspace, group_name: str) -> None:
-    """A group holding the admin, and the Auditor role assigned to that group —
-    rows on every one of the five tables, written through the real service."""
+    """A group holding the admin, and a built-in role assigned to that group —
+    rows on every one of the five tables, written through the real service.
+
+    The role is picked out of what the tenant was actually seeded with rather
+    than pinned by name. These tests are about isolation, not about which role,
+    and the previous version named "Auditor", which the product stopped seeding:
+    a bare ``next()`` over an empty generator turned that into
+    ``RuntimeError: coroutine raised StopIteration`` at fixture setup, which
+    says nothing about the real cause and took seven tests down with it.
+    """
     async with session_scope(workspace.tenant_id) as session:
         group = await iam_service.create_group(
             session,
@@ -109,12 +136,12 @@ async def _populate(workspace: Workspace, group_name: str) -> None:
             membership_id=workspace.membership_id,
         )
         roles = await iam_service.list_roles(session, tenant_id=workspace.tenant_id)
-        auditor = next(role for role in roles if role.name == "Auditor")
+        granted = _a_non_admin_role(roles)
         await iam_service.create_assignment(
             session,
             tenant_id=workspace.tenant_id,
             actor_membership_id=workspace.membership_id,
-            role_id=auditor.id,
+            role_id=granted.id,
             assignee_type="group",
             assignee_id=group.id,
         )
@@ -186,7 +213,10 @@ async def test_a_user_in_both_tenants_cannot_see_their_own_b_membership(
     """The founder of A is invited into B and accepts. Bound to A, the person's
     own B membership — and everything reachable through it — does not exist."""
     invited = await invite_directly(
-        tenants.b, email=tenants.a.email, full_name="Alpha Founder", role_name="Auditor"
+        tenants.b,
+        email=tenants.a.email,
+        full_name="Alpha Founder",
+        role_name=NON_ADMIN_ROLE_NAME,
     )
     await iam_auth_service.accept_invitation(token=invited.invite_token)
 
@@ -309,7 +339,10 @@ async def test_a_non_admin_logs_in_without_totp(tenants: TwoTenants) -> None:
     """Decision 19: TOTP is required for Admin memberships; everyone else is
     password-only in Week 1."""
     invited = await invite_directly(
-        tenants.a, email="employee@alpha.example", full_name="Plain Employee", role_name="Employee"
+        tenants.a,
+        email="employee@alpha.example",
+        full_name="Plain Employee",
+        role_name=NON_ADMIN_ROLE_NAME,
     )
     await iam_auth_service.accept_invitation(
         token=invited.invite_token, full_name="Plain Employee", password=INVITEE_PASSWORD

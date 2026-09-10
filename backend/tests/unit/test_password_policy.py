@@ -80,7 +80,7 @@ def test_a_stricter_policy_is_honoured() -> None:
 def test_reuse_check_includes_the_password_currently_in_force() -> None:
     """The current hash is not in the history list until it is replaced, so a
     naive check over history alone would wave through "change it to itself"."""
-    credentials = Credentials(user_id=None, password_hash=hash_password(STRONG))  # type: ignore[arg-type]
+    credentials = Credentials(user_id=None, password_hash=hash_password(STRONG))
     with pytest.raises(WeakPassword) as raised:
         assert_not_reused(credentials, STRONG, depth=5)
     assert "last 5" in str(raised.value.message)
@@ -88,8 +88,8 @@ def test_reuse_check_includes_the_password_currently_in_force() -> None:
 
 def test_reuse_check_walks_the_history_and_respects_depth() -> None:
     old = "0ld!Passphrase-One"
-    credentials = Credentials(  # type: ignore[call-arg]
-        user_id=None,  # type: ignore[arg-type]
+    credentials = Credentials(
+        user_id=None,
         password_hash=hash_password(STRONG),
         previous_password_hashes=[hash_password(old)],
     )
@@ -103,8 +103,8 @@ def test_reuse_check_walks_the_history_and_respects_depth() -> None:
 
 
 def test_rotation_pushes_newest_first_and_trims_to_depth() -> None:
-    credentials = Credentials(  # type: ignore[call-arg]
-        user_id=None,  # type: ignore[arg-type]
+    credentials = Credentials(
+        user_id=None,
         password_hash="hash-current",  # noqa: S106 — a marker string, not a secret
         previous_password_hashes=["hash-1", "hash-2"],
     )

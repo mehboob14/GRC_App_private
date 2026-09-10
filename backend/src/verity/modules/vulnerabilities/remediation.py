@@ -102,13 +102,10 @@ def heuristic_plan(ctx: RemediationContext) -> PlanDraft:
             "the change window; re-run the service health check."
         )
     else:
-        artifact = (
-            (ctx.recommendation.strip() if ctx.recommendation else "")
-            or (
-                "No vendor patch is available. Reduce exposure with a compensating "
-                f"control (network ACL, WAF rule, or disabling the affected feature) on "
-                f"{ctx.asset_name}, then monitor for a fix."
-            )
+        artifact = (ctx.recommendation.strip() if ctx.recommendation else "") or (
+            "No vendor patch is available. Reduce exposure with a compensating "
+            f"control (network ACL, WAF rule, or disabling the affected feature) on "
+            f"{ctx.asset_name}, then monitor for a fix."
         )
         rollback = "Remove the compensating control once a permanent fix is applied and verified."
 
@@ -174,9 +171,7 @@ async def _ai_plan(ctx: RemediationContext) -> PlanDraft | None:
                 }
             )
         )
-        result = await get_chat_model().ainvoke(
-            [("system", "Return only JSON."), ("user", prompt)]
-        )
+        result = await get_chat_model().ainvoke([("system", "Return only JSON."), ("user", prompt)])
         data = json.loads(str(getattr(result, "content", result)))
         fix_type = str(data.get("fix_type", "patch"))
         valid_types = ("patch", "config", "script", "mitigation")

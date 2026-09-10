@@ -46,9 +46,7 @@ def upgrade() -> None:
         sa.Column("key", sa.Text(), nullable=False),
         sa.Column("title", sa.Text(), nullable=False),
         sa.Column("doc_type", sa.Text(), nullable=False, server_default="policy"),
-        sa.Column(
-            "classification", sa.Text(), nullable=False, server_default="internal"
-        ),
+        sa.Column("classification", sa.Text(), nullable=False, server_default="internal"),
         sa.Column("summary", sa.Text(), nullable=True),
         sa.Column("content_html", sa.Text(), nullable=False),
         sa.Column(

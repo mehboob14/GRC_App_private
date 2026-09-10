@@ -15,6 +15,8 @@ Revises: a7d2e9f10b34
 
 from __future__ import annotations
 
+from typing import Any
+
 import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects import postgresql
@@ -39,7 +41,7 @@ _PRIORITIES = ("critical", "high", "medium", "low")
 _TABLES = ("issue_actions", "task_automations")
 
 
-def _ts() -> tuple[sa.Column, sa.Column]:
+def _ts() -> tuple[sa.Column[Any], sa.Column[Any]]:
     return (
         sa.Column(
             "created_at", sa.TIMESTAMP(timezone=True), server_default=sa.func.now(), nullable=False
@@ -123,9 +125,7 @@ def upgrade() -> None:
         _in("task_automations", "creates", _TASK_KINDS),
         _in("task_automations", "owner_rule", _OWNER_RULES),
         _in("task_automations", "priority", _PRIORITIES),
-        sa.UniqueConstraint(
-            "tenant_id", "automation_key", name="uq_task_automations__tenant_key"
-        ),
+        sa.UniqueConstraint("tenant_id", "automation_key", name="uq_task_automations__tenant_key"),
     )
 
     for table in _TABLES:

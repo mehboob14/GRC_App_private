@@ -18,7 +18,7 @@ The three properties checked are the three that make isolation real:
 from __future__ import annotations
 
 import pytest
-from sqlalchemy import text
+from sqlalchemy import Table, text
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from verity.db.base import Base, TenantScoped
@@ -45,11 +45,17 @@ def _tenant_owned_tables() -> set[str]:
         with contextlib.suppress(ModuleNotFoundError):
             importlib.import_module(f"verity.modules.{module.name}.models")
 
-    return {
-        mapper.class_.__tablename__
-        for mapper in Base.registry.mappers
-        if issubclass(mapper.class_, TenantScoped)
-    }
+    # Read the name off the mapped table rather than the class: TenantScoped is
+    # a mixin and declares no __tablename__ of its own, so narrowing on it hides
+    # the attribute from the type checker.
+    tables: set[str] = set()
+    for mapper in Base.registry.mappers:
+        if not issubclass(mapper.class_, TenantScoped):
+            continue
+        table = mapper.local_table
+        if isinstance(table, Table):
+            tables.add(table.name)
+    return tables
 
 
 async def test_every_tenant_owned_table_has_forced_rls_and_a_policy(

@@ -12,6 +12,8 @@ Revises: f3b9c1a20e57
 
 from __future__ import annotations
 
+from typing import Any
+
 import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects import postgresql
@@ -39,7 +41,7 @@ _TABLES = (
 )
 
 
-def _ts() -> tuple[sa.Column, sa.Column]:
+def _ts() -> tuple[sa.Column[Any], sa.Column[Any]]:
     return (
         sa.Column(
             "created_at", sa.TIMESTAMP(timezone=True), server_default=sa.func.now(), nullable=False
@@ -82,7 +84,9 @@ def upgrade() -> None:
         *_ts(),
         _tenant_fk("document_ack_campaigns"),
         sa.ForeignKeyConstraint(
-            ["document_id"], ["documents.id"], ondelete="CASCADE",
+            ["document_id"],
+            ["documents.id"],
+            ondelete="CASCADE",
             name="fk_document_ack_campaigns__document_id",
         ),
         _member_fk("document_ack_campaigns", "created_by_membership_id", ondelete="SET NULL"),
@@ -108,7 +112,9 @@ def upgrade() -> None:
         *_ts(),
         _tenant_fk("document_ack_campaign_recipients"),
         sa.ForeignKeyConstraint(
-            ["campaign_id"], ["document_ack_campaigns.id"], ondelete="CASCADE",
+            ["campaign_id"],
+            ["document_ack_campaigns.id"],
+            ondelete="CASCADE",
             name="fk_document_ack_campaign_recipients__campaign_id",
         ),
         _member_fk("document_ack_campaign_recipients", "membership_id", ondelete="CASCADE"),
@@ -116,7 +122,9 @@ def upgrade() -> None:
         _in("document_ack_campaign_recipients", "source", _RECIPIENT_SOURCES),
         _in("document_ack_campaign_recipients", "status", _RECIPIENT_STATUSES),
         sa.UniqueConstraint(
-            "tenant_id", "campaign_id", "membership_id",
+            "tenant_id",
+            "campaign_id",
+            "membership_id",
             name="uq_document_ack_campaign_recipients__member",
         ),
     )
@@ -139,7 +147,9 @@ def upgrade() -> None:
         *_ts(),
         _tenant_fk("document_ack_campaign_comments"),
         sa.ForeignKeyConstraint(
-            ["campaign_id"], ["document_ack_campaigns.id"], ondelete="CASCADE",
+            ["campaign_id"],
+            ["document_ack_campaigns.id"],
+            ondelete="CASCADE",
             name="fk_document_ack_campaign_comments__campaign_id",
         ),
         _member_fk("document_ack_campaign_comments", "author_membership_id", ondelete="SET NULL"),
