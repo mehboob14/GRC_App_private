@@ -460,30 +460,29 @@ async def test_a_stage_belonging_to_another_vendor_is_not_found(seeded: Seeded) 
             )
 
 
-async def test_a_check_whose_module_is_not_built_yet_reports_pending(
+async def test_every_exit_check_is_answerable_now_that_all_four_modules_exist(
     seeded: Seeded,
 ) -> None:
-    """Three-valued checks, proven against what is and is not built.
+    """The three-valued check, at the end of the road it was designed for.
 
-    Section 3 built the questionnaire and the findings, so those checks answer now
-    — and nothing in ``lifecycle.py`` changed to make that happen, only the
-    collector. Contracting and approval are section 4, so theirs still report
-    pending: not blocking, and not a tick either.
+    Section 2 wrote all twelve stages' rules against facts that mostly did not
+    exist, and each one reported *pending* rather than passing or blocking.
+    Sections 3 and 4 built the questionnaire, the findings, the contracts and the
+    gate — and **not one rule in lifecycle.py changed**. Only the fact collector
+    moved, which is the whole point: a check that abstains honestly can be made to
+    answer later without anybody revisiting the policy it encodes.
+
+    So nothing abstains any more. That is the assertion.
     """
     detail = await _tier(seeded, data_sensitivity=4, business_criticality=4, system_access=4)
+
+    abstaining = {
+        stage.stage: [c.code for c in stage.pending] for stage in detail.stages if stage.pending
+    }
+    assert abstaining == {}, f"still abstaining: {abstaining}"
+
+    # And the checks that replaced them are real answers, not silent passes: a
+    # critical vendor with no contract and no decision is blocked on both.
     by_stage = {s.stage: s for s in detail.stages}
-
-    # Answerable now that section 3 exists: no questionnaire has been issued, so
-    # the check fails rather than abstaining.
-    questionnaire = by_stage["questionnaire"]
-    assert not questionnaire.pending, "the questionnaire module is built; nothing should abstain"
-
-    # Still unbuilt. A critical vendor needs a contract, and no contract table
-    # exists yet, so the check abstains rather than blocking the lifecycle.
-    contracting = by_stage["contracting"]
-    assert [c.code for c in contracting.pending] == ["contracting.contract_linked"]
-    assert not contracting.blockers
-    assert all(c.satisfied is None for c in contracting.pending)
-
-    approval = by_stage["approval"]
-    assert "approval.decided" in {c.code for c in approval.pending}
+    assert [c.code for c in by_stage["contracting"].blockers] == ["contracting.contract_linked"]
+    assert "approval.decided" in {c.code for c in by_stage["approval"].blockers}

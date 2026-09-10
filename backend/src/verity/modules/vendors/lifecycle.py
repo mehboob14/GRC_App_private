@@ -332,7 +332,12 @@ def _approval(f: StageFacts) -> list[ExitCheck]:
     elif f.approval_decided_at is None:
         decided = False
     elif f.stage_entered_at is None:
-        decided = True
+        # The stage has not been reached, so there is no attempt for a decision to
+        # belong to. This is not the harmless case it looks like: a send-back
+        # clears ``entered_at`` on every stage it resets, so treating "never
+        # entered" as fresh would let a pre-send-back approval satisfy the gate
+        # again the moment the engagement came back round to it.
+        decided = False
     else:
         # The gate-freshness rule. A send-back restarts the stage, so an approval
         # decided before that restart no longer satisfies it — without ever

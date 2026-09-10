@@ -31,18 +31,40 @@ from verity.modules.audit.service import Membership
 from verity.modules.vendors.schemas import (
     AcceptFindingWrite,
     AdvanceWrite,
+    ApproverOut,
+    ApproverPageOut,
     AssessmentOut,
     CloseFindingWrite,
+    ConditionCloseWrite,
+    ConditionOut,
     ContactWrite,
+    ContractOut,
+    ContractWrite,
+    DecisionWrite,
+    DocumentOut,
+    DocumentWrite,
     DuplicateCheckOut,
     EngagementWrite,
     FindingOut,
     FindingPageOut,
+    IntakeDecisionWrite,
+    IntakeOut,
+    IntakePageOut,
+    IntakeWrite,
     IssuedQuestionnaireOut,
     IssueQuestionnaireWrite,
+    OffboardingCompletionWrite,
+    OffboardWrite,
     RemediateWrite,
+    RosterOut,
+    RosterWrite,
     SendBackWrite,
     SkipWrite,
+    SocReviewOut,
+    SocReviewWrite,
+    SubprocessorOut,
+    SubprocessorPageOut,
+    SubprocessorWrite,
     TieringWrite,
     VendorCreate,
     VendorDetailOut,
@@ -52,8 +74,15 @@ from verity.modules.vendors.schemas import (
     VendorWrite,
 )
 from verity.modules.vendors.service import (
+    ConditionInput,
     ContactInput,
+    ContractInput,
+    DocumentInput,
     EngagementInput,
+    IntakeInput,
+    OffboardingCompletion,
+    SocReviewInput,
+    SubprocessorInput,
     TieringAnswers,
     VendorFilters,
     VendorInput,
@@ -571,3 +600,351 @@ async def close_finding(
         note=body.note,
     )
     return FindingOut.model_validate(view)
+
+
+# -- intake, the roster and the gate ------------------------------------------
+
+
+@vendors_router.get("/intake", response_model=IntakePageOut, summary="Intake queue")
+async def list_intake(
+    _p: Annotated[Principal, Depends(require_read)],
+    context: _Ctx,
+    session: _Db,
+    decision: str | None = None,
+) -> IntakePageOut:
+    items = await vendor_service.list_intake(
+        session, tenant_id=context.tenant_id, decision=decision
+    )
+    return IntakePageOut(items=[IntakeOut.model_validate(i) for i in items], total=len(items))
+
+
+@vendors_router.post(
+    "/intake",
+    response_model=IntakeOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="Request a vendor",
+)
+async def request_vendor(
+    _p: Annotated[Principal, Depends(require_read)],
+    context: _Ctx,
+    session: _Db,
+    body: IntakeWrite,
+) -> IntakeOut:
+    """Guarded by ``vendors:read``, not ``:manage``. Anyone who can see the register
+    may ask for a vendor; deciding is what needs the stronger key."""
+    view = await vendor_service.request_vendor(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(context),
+        data=IntakeInput(**body.model_dump()),
+    )
+    return IntakeOut.model_validate(view)
+
+
+@vendors_router.post(
+    "/intake/{request_id}/decide", response_model=IntakeOut, summary="Accept or decline a request"
+)
+async def decide_intake(
+    _p: Annotated[Principal, Depends(require_manage)],
+    context: _Ctx,
+    session: _Db,
+    request_id: uuid.UUID,
+    body: IntakeDecisionWrite,
+) -> IntakeOut:
+    view = await vendor_service.decide_intake(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(context),
+        request_id=request_id,
+        approve=body.approve,
+        reason=body.reason,
+    )
+    return IntakeOut.model_validate(view)
+
+
+@vendors_router.get("/roster", response_model=RosterOut, summary="Who plays which role")
+async def get_roster(
+    _p: Annotated[Principal, Depends(require_read)], context: _Ctx, session: _Db
+) -> RosterOut:
+    roster = await vendor_service.roster(session, tenant_id=context.tenant_id)
+    return RosterOut(roles={role: list(ids) for role, ids in roster.items()})
+
+
+@vendors_router.post("/roster", response_model=RosterOut, summary="Assign a role")
+async def set_roster_role(
+    _p: Annotated[Principal, Depends(require_manage)],
+    context: _Ctx,
+    session: _Db,
+    body: RosterWrite,
+) -> RosterOut:
+    roster = await vendor_service.set_roster_role(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(context),
+        role=body.role,
+        membership_id=body.membership_id,
+    )
+    return RosterOut(roles={role: list(ids) for role, ids in roster.items()})
+
+
+@vendors_router.get(
+    "/{vendor_id}/engagements/{engagement_id}/approvers",
+    response_model=ApproverPageOut,
+    summary="Who may decide this gate",
+)
+async def list_approvers(
+    _p: Annotated[Principal, Depends(require_read)],
+    context: _Ctx,
+    session: _Db,
+    vendor_id: uuid.UUID,
+    engagement_id: uuid.UUID,
+) -> ApproverPageOut:
+    """Served so the picker can grey a disqualified name **and say why**.
+
+    Enforcing segregation of duties only on submit means the user has written a
+    rationale and attached a document before learning the rule, and learns it as an
+    obstacle rather than a policy.
+    """
+    items = await vendor_service.approvers(
+        session,
+        tenant_id=context.tenant_id,
+        engagement_id=engagement_id,
+        vendor_id=vendor_id,
+    )
+    return ApproverPageOut(items=[ApproverOut.model_validate(a) for a in items])
+
+
+@vendors_router.post(
+    "/{vendor_id}/engagements/{engagement_id}/decision",
+    response_model=VendorDetailOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="Decide the approval gate",
+)
+async def decide(
+    _p: Annotated[Principal, Depends(require_approve)],
+    context: _Ctx,
+    session: _Db,
+    vendor_id: uuid.UUID,
+    engagement_id: uuid.UUID,
+    body: DecisionWrite,
+) -> VendorDetailOut:
+    """``vendors:approve``, which is a separate key from ``:manage`` for the same
+    reason ``vulnerabilities:accept`` is: deciding is not the same authority as
+    doing the work."""
+    view = await vendor_service.decide(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(context),
+        vendor_id=vendor_id,
+        engagement_id=engagement_id,
+        decision=body.decision,
+        rationale=body.rationale,
+        conditions=[
+            ConditionInput(
+                description=c.description,
+                owner_membership_id=c.owner_membership_id,
+                due_date=c.due_date,
+            )
+            for c in body.conditions
+        ],
+    )
+    return VendorDetailOut.model_validate(view)
+
+
+@vendors_router.post(
+    "/{vendor_id}/conditions/{condition_id}",
+    response_model=ConditionOut,
+    summary="Close or waive a condition",
+)
+async def close_condition(
+    _p: Annotated[Principal, Depends(require_manage)],
+    context: _Ctx,
+    session: _Db,
+    vendor_id: uuid.UUID,
+    condition_id: uuid.UUID,
+    body: ConditionCloseWrite,
+) -> ConditionOut:
+    view = await vendor_service.close_condition(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(context),
+        vendor_id=vendor_id,
+        condition_id=condition_id,
+        status=body.status,
+        waived_reason=body.waived_reason,
+    )
+    return ConditionOut.model_validate(view)
+
+
+# -- the paperwork -------------------------------------------------------------
+
+
+@vendors_router.post(
+    "/{vendor_id}/documents",
+    response_model=DocumentOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="Record a vendor document",
+)
+async def add_document(
+    _p: Annotated[Principal, Depends(require_manage)],
+    context: _Ctx,
+    session: _Db,
+    vendor_id: uuid.UUID,
+    body: DocumentWrite,
+) -> DocumentOut:
+    view = await vendor_service.add_document(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(context),
+        vendor_id=vendor_id,
+        data=DocumentInput(**body.model_dump()),
+    )
+    return DocumentOut.model_validate(view)
+
+
+@vendors_router.post(
+    "/{vendor_id}/soc-reviews",
+    response_model=SocReviewOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="Review a SOC report",
+)
+async def review_soc_report(
+    _p: Annotated[Principal, Depends(require_assess)],
+    context: _Ctx,
+    session: _Db,
+    vendor_id: uuid.UUID,
+    body: SocReviewWrite,
+) -> SocReviewOut:
+    """**The CC9.2 artefact** (ER 110). Structured rather than a file plus a note,
+    because "which of our critical vendors hold an unqualified SOC 2 Type II
+    covering the audit period" has to be a query and not a reading exercise."""
+    payload = body.model_dump()
+    payload["tsc_included"] = tuple(payload["tsc_included"])
+    view = await vendor_service.review_soc_report(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(context),
+        vendor_id=vendor_id,
+        data=SocReviewInput(**payload),
+    )
+    return SocReviewOut.model_validate(view)
+
+
+@vendors_router.post(
+    "/{vendor_id}/contracts",
+    response_model=ContractOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="Record a contract",
+)
+async def add_contract(
+    _p: Annotated[Principal, Depends(require_manage)],
+    context: _Ctx,
+    session: _Db,
+    vendor_id: uuid.UUID,
+    body: ContractWrite,
+) -> ContractOut:
+    view = await vendor_service.add_contract(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(context),
+        vendor_id=vendor_id,
+        data=ContractInput(**body.model_dump()),
+    )
+    return ContractOut.model_validate(view)
+
+
+@vendors_router.post(
+    "/{vendor_id}/subprocessors",
+    response_model=SubprocessorPageOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="Declare a fourth party",
+)
+async def add_subprocessor(
+    _p: Annotated[Principal, Depends(require_manage)],
+    context: _Ctx,
+    session: _Db,
+    vendor_id: uuid.UUID,
+    body: SubprocessorWrite,
+) -> SubprocessorPageOut:
+    items = await vendor_service.add_subprocessor(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(context),
+        vendor_id=vendor_id,
+        data=SubprocessorInput(**body.model_dump()),
+    )
+    return SubprocessorPageOut(items=[SubprocessorOut.model_validate(s) for s in items])
+
+
+# -- reassessment and the exit -------------------------------------------------
+
+
+@vendors_router.post(
+    "/{vendor_id}/engagements/{engagement_id}/reassess",
+    response_model=VendorDetailOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="Open the next review cycle",
+)
+async def open_reassessment(
+    _p: Annotated[Principal, Depends(require_assess)],
+    context: _Ctx,
+    session: _Db,
+    vendor_id: uuid.UUID,
+    engagement_id: uuid.UUID,
+) -> VendorDetailOut:
+    view = await vendor_service.open_reassessment(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(context),
+        vendor_id=vendor_id,
+        engagement_id=engagement_id,
+    )
+    return VendorDetailOut.model_validate(view)
+
+
+@vendors_router.post(
+    "/{vendor_id}/offboarding",
+    response_model=VendorDetailOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="Start the exit",
+)
+async def offboard(
+    _p: Annotated[Principal, Depends(require_manage)],
+    context: _Ctx,
+    session: _Db,
+    vendor_id: uuid.UUID,
+    body: OffboardWrite,
+) -> VendorDetailOut:
+    view = await vendor_service.offboard(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(context),
+        vendor_id=vendor_id,
+        engagement_id=body.engagement_id,
+        reason=body.reason,
+    )
+    return VendorDetailOut.model_validate(view)
+
+
+@vendors_router.post(
+    "/{vendor_id}/offboarding/{offboarding_id}",
+    response_model=VendorDetailOut,
+    summary="Record and complete exit steps",
+)
+async def complete_offboarding(
+    _p: Annotated[Principal, Depends(require_manage)],
+    context: _Ctx,
+    session: _Db,
+    vendor_id: uuid.UUID,
+    offboarding_id: uuid.UUID,
+    body: OffboardingCompletionWrite,
+) -> VendorDetailOut:
+    view = await vendor_service.complete_offboarding(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(context),
+        vendor_id=vendor_id,
+        offboarding_id=offboarding_id,
+        data=OffboardingCompletion(**body.model_dump()),
+    )
+    return VendorDetailOut.model_validate(view)

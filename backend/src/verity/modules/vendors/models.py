@@ -167,6 +167,110 @@ FINDING_STATUSES: Final[tuple[str, ...]] = ("open", "in_remediation", "accepted"
 FINDING_TREATMENTS: Final[tuple[str, ...]] = ("remediate", "mitigate", "transfer", "accept")
 OPEN_FINDING_STATUSES: Final[frozenset[str]] = frozenset(("open", "in_remediation"))
 
+# -- the decision, the paperwork and the exit (section 4) ---------------------
+
+ROSTER_ROLES: Final[tuple[str, ...]] = (
+    "tprm_lead",
+    "analyst",
+    "security",
+    "privacy",
+    "legal",
+    "procurement",
+    "exec_approver",
+    "it",
+)
+"""Who plays which part, tenant-wide. Roles as rows, not the reference product's
+JSON blob — and this is half of spec 82's "required reviewers", the other half
+being which roles a tier demands."""
+
+URGENCIES: Final[tuple[str, ...]] = ("low", "normal", "high")
+INTAKE_SCREENING: Final[tuple[str, ...]] = ("pending", "passed", "flagged")
+INTAKE_DECISIONS: Final[tuple[str, ...]] = ("pending", "approved", "auto_approved", "rejected")
+"""``auto_approved`` is distinct from ``approved`` on purpose: it is what
+``auto_approve_low_tier`` produces, and an auditor has to be able to tell a
+machine decision from a human one."""
+
+# V3. This table is authoritative and the ER's assessment-level decision column is
+# dropped: two tables holding overlapping decision state is a data-integrity trap.
+# Verbs, not participles, and four-valued — `defer` is not `reject`, and a product
+# offering only the two extremes gets `reject` used to mean "not yet", which then
+# reads as a refused vendor forever.
+APPROVAL_DECISIONS: Final[tuple[str, ...]] = (
+    "approve",
+    "approve_with_conditions",
+    "defer",
+    "reject",
+)
+CONDITION_STATUSES: Final[tuple[str, ...]] = ("open", "met", "overdue", "waived")
+
+DOC_TYPES: Final[tuple[str, ...]] = (
+    "soc_report",
+    "iso_cert",
+    "bridge_letter",
+    "dpa",
+    "pentest",
+    "insurance",
+    "financials",
+    "bcdr",
+    "policy",
+)
+DOC_COLLECTION_STATUSES: Final[tuple[str, ...]] = ("requested", "received", "reviewed")
+
+SOC_REPORT_KINDS: Final[tuple[str, ...]] = ("soc1", "soc2", "soc3")
+SOC_REPORT_TYPES: Final[tuple[str, ...]] = ("type_i", "type_ii")
+SOC_OPINIONS: Final[tuple[str, ...]] = ("unqualified", "qualified", "adverse", "disclaimer")
+
+CONTRACT_TYPES: Final[tuple[str, ...]] = ("master", "dpa", "sla", "security_addendum", "nda")
+CONTRACT_STATUSES: Final[tuple[str, ...]] = ("draft", "active", "expired", "terminated")
+SLA_STATUSES: Final[tuple[str, ...]] = ("on_track", "at_risk", "breached")
+
+SUBPROCESSOR_PROVENANCE: Final[tuple[str, ...]] = (
+    "vendor_declared",
+    "auto_detected",
+    "intelligence",
+)
+SUBPROCESSOR_STATUSES: Final[tuple[str, ...]] = ("active", "removed")
+
+SCORECARD_PROVIDERS: Final[tuple[str, ...]] = (
+    "securityscorecard",
+    "bitsight",
+    "upguard",
+    "manual",
+)
+SIGNAL_TYPES: Final[tuple[str, ...]] = (
+    "rating_change",
+    "breach",
+    "adverse_media",
+    "financial",
+    "sla_breach",
+    "cert_expiry",
+)
+SIGNAL_SOURCE_CLASSES: Final[tuple[str, ...]] = (
+    "rating_platform",
+    "breach_intel",
+    "media",
+    "financial_provider",
+    "internal",
+)
+SIGNAL_STATUSES: Final[tuple[str, ...]] = ("new", "acknowledged", "dismissed")
+ALERT_ACTIONS: Final[tuple[str, ...]] = ("notify", "create_task", "trigger_reassessment")
+ALERT_CHANNELS: Final[tuple[str, ...]] = ("in_app", "email", "slack")
+"""``slack`` is accepted and inert: the connector is Phase 2. Storing a channel the
+platform cannot deliver to is deliberate — the alternative is a customer
+configuring Slack, seeing it accepted, and never learning it does nothing."""
+
+DISCOVERED_DISPOSITIONS: Final[tuple[str, ...]] = (
+    "pending",
+    "added_as_vendor",
+    "linked_to_vendor",
+    "ignored",
+)
+
+COMMENT_AUTHOR_TYPES: Final[tuple[str, ...]] = ("internal_user", "vendor_contact")
+COMMENT_VISIBILITY: Final[tuple[str, ...]] = ("internal_only", "vendor_shared")
+"""``visibility`` is load-bearing. An ``internal_only`` comment reaching the portal
+is a disclosure incident, so the portal query filters on it and a test covers it."""
+
 DEFAULT_ENGAGEMENT_NAME: Final = "General use"
 
 _MEMBERSHIP_FK = "tenant_memberships.id"
@@ -628,7 +732,10 @@ class VendorAssessment(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
     score_snapshot: Mapped[dict[str, Any]] = mapped_column(
         postgresql.JSONB, default=dict, server_default=text("'{}'::jsonb")
     )
-    decision: Mapped[str] = mapped_column(default="pending", server_default="pending")
+    # No ``decision`` column, deliberately (V3). ``vendor_approvals`` is the record
+    # of who decided what, when and why; this table is the work product. Two tables
+    # holding overlapping decision state is a data-integrity trap, and the ER draws
+    # two enums here that disagree with each other.
 
     # The credential itself lives in VendorPortalToken, on the global plane —
     # see that class for why it cannot live on this tenant-owned row.
@@ -643,7 +750,6 @@ class VendorAssessment(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
         status_check("vendor_assessments", "assessment_domain", ASSESSMENT_DOMAINS),
         status_check("vendor_assessments", "status", ASSESSMENT_STATUSES),
         status_check("vendor_assessments", "grade", GRADES),
-        status_check("vendor_assessments", "decision", ASSESSMENT_DECISIONS),
         tenant_index("vendor_assessments", "vendor_id"),
         tenant_index("vendor_assessments", "engagement_id", "cycle"),
         tenant_index("vendor_assessments", "status"),
@@ -814,3 +920,564 @@ class VendorFinding(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
 
     def __repr__(self) -> str:
         return f"VendorFinding(id={self.id!r}, severity={self.severity!r}, status={self.status!r})"
+
+
+# ---------------------------------------------------------------------------
+# The decision (section 4)
+# ---------------------------------------------------------------------------
+
+
+class VendorApproval(UUIDPrimaryKey, TenantScoped, Base):
+    """The gate record. **Append-only** (ER 122).
+
+    A decision is a thing that happened, so it is never edited. Changing your mind
+    is a new row, and a send-back invalidates a stale approval without touching the
+    old one — the gate-freshness rule reads ``decided_at >= stage.entered_at``, so
+    the previous decision stays in the record and simply stops satisfying a stage
+    that restarted after it.
+
+    Both actor keys are ``ON DELETE NO ACTION``: ``SET NULL`` issues an UPDATE that
+    the append-only trigger refuses, which would fail the membership delete.
+    """
+
+    __tablename__ = "vendor_approvals"
+
+    vendor_id: Mapped[uuid.UUID] = mapped_column(ForeignKey(_VENDOR_FK, ondelete="CASCADE"))
+    engagement_id: Mapped[uuid.UUID] = mapped_column(ForeignKey(_ENGAGEMENT_FK, ondelete="CASCADE"))
+    stage_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("vendor_stages.id", ondelete="NO ACTION"), default=None
+    )
+    cycle: Mapped[int] = mapped_column(default=1, server_default=text("1"))
+    decision: Mapped[str]
+    rationale: Mapped[str]
+    # Who was excluded and why, frozen at decision time. Not derivable later: the
+    # business owner can change, and an auditor asking "was segregation of duties
+    # applied here" needs the answer this row held when it was written.
+    excluded_membership_ids: Mapped[list[str]] = mapped_column(
+        postgresql.JSONB, default=list, server_default=text("'[]'::jsonb")
+    )
+    decided_by_membership_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey(_MEMBERSHIP_FK, ondelete="NO ACTION"), default=None
+    )
+    decided_at: Mapped[datetime] = mapped_column()
+
+    __table_args__ = (
+        status_check("vendor_approvals", "decision", APPROVAL_DECISIONS),
+        # A decision with no reasoning is a signature with no basis, and it is the
+        # first thing an auditor asks to see.
+        CheckConstraint(
+            "length(btrim(rationale)) > 0", name=conv("ck_vendor_approvals__rationale_present")
+        ),
+        tenant_index("vendor_approvals", "vendor_id"),
+        tenant_index("vendor_approvals", "engagement_id", "cycle"),
+        tenant_index("vendor_approvals", "stage_id"),
+    )
+
+
+class VendorApprovalCondition(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
+    """A condition attached to an "approve with conditions" decision.
+
+    Each one becomes a real task. A condition nobody is assigned and nothing chases
+    is the difference between a conditional approval and an unconditional one that
+    was written down more elaborately.
+    """
+
+    __tablename__ = "vendor_approval_conditions"
+
+    approval_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("vendor_approvals.id", ondelete="CASCADE")
+    )
+    description: Mapped[str]
+    owner_membership_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey(_MEMBERSHIP_FK, ondelete="SET NULL"), default=None
+    )
+    due_date: Mapped[date | None] = mapped_column(default=None)
+    status: Mapped[str] = mapped_column(default="open", server_default="open")
+    # A bare uuid, and a real FK in the migration: an ORM relationship here would
+    # make the vendors mapper resolve the tasks table at configuration time.
+    task_id: Mapped[uuid.UUID | None] = mapped_column(default=None)
+    waived_reason: Mapped[str | None] = mapped_column(default=None)
+
+    __table_args__ = (
+        status_check("vendor_approval_conditions", "status", CONDITION_STATUSES),
+        CheckConstraint(
+            "(status <> 'waived') OR (waived_reason IS NOT NULL)",
+            name=conv("ck_vendor_approval_conditions__waiver_has_reason"),
+        ),
+        tenant_index("vendor_approval_conditions", "approval_id"),
+        tenant_index("vendor_approval_conditions", "status"),
+    )
+
+
+# ---------------------------------------------------------------------------
+# The paperwork
+# ---------------------------------------------------------------------------
+
+
+class VendorDocument(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
+    """A SOC report, certificate, DPA or policy the vendor supplied.
+
+    ``valid_until`` is what drives the expiry sweep, and ``evidence_id`` is what
+    lets a reviewed document stand as audit evidence for CC9.2 without being
+    uploaded a second time into the evidence library (ER 109).
+    """
+
+    __tablename__ = "vendor_documents"
+
+    vendor_id: Mapped[uuid.UUID] = mapped_column(ForeignKey(_VENDOR_FK, ondelete="CASCADE"))
+    doc_type: Mapped[str]
+    title: Mapped[str]
+    file_ref: Mapped[str | None] = mapped_column(default=None)
+    issue_date: Mapped[date | None] = mapped_column(default=None)
+    valid_until: Mapped[date | None] = mapped_column(default=None)
+    collection_status: Mapped[str] = mapped_column(default="requested", server_default="requested")
+    review_notes: Mapped[str | None] = mapped_column(default=None)
+    reviewed_by_membership_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey(_MEMBERSHIP_FK, ondelete="SET NULL"), default=None
+    )
+    reviewed_at: Mapped[datetime | None] = mapped_column(default=None)
+    evidence_id: Mapped[uuid.UUID | None] = mapped_column(default=None)
+
+    __table_args__ = (
+        status_check("vendor_documents", "doc_type", DOC_TYPES),
+        status_check("vendor_documents", "collection_status", DOC_COLLECTION_STATUSES),
+        CheckConstraint(
+            "(issue_date IS NULL) OR (valid_until IS NULL) OR (valid_until >= issue_date)",
+            name=conv("ck_vendor_documents__coverage_window_ordered"),
+        ),
+        tenant_index("vendor_documents", "vendor_id"),
+        tenant_index("vendor_documents", "doc_type"),
+        # The expiry sweep's query, so it stays an index scan as the register grows.
+        tenant_index("vendor_documents", "valid_until"),
+    )
+
+
+class VendorSocReportReview(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
+    """A SOC report turned from a PDF into queryable fields.
+
+    **ER 110 calls this "precisely the CC9.2 evidence an auditor asks for."** It is
+    why the module can satisfy a control the platform already ships and currently
+    cannot answer. ``opinion`` and ``findings_material`` lead every rendering of it,
+    because those two decide whether anything else on the record matters.
+    """
+
+    __tablename__ = "vendor_soc_report_reviews"
+
+    vendor_id: Mapped[uuid.UUID] = mapped_column(ForeignKey(_VENDOR_FK, ondelete="CASCADE"))
+    document_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("vendor_documents.id", ondelete="SET NULL"), default=None
+    )
+    assessment_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("vendor_assessments.id", ondelete="SET NULL"), default=None
+    )
+    report_kind: Mapped[str] = mapped_column(default="soc2", server_default="soc2")
+    report_type: Mapped[str] = mapped_column(default="type_ii", server_default="type_ii")
+    audit_period_start: Mapped[date | None] = mapped_column(default=None)
+    audit_period_end: Mapped[date | None] = mapped_column(default=None)
+    tsc_included: Mapped[list[str]] = mapped_column(
+        postgresql.JSONB, default=list, server_default=text("'[]'::jsonb")
+    )
+    opinion: Mapped[str] = mapped_column(default="unqualified", server_default="unqualified")
+    bridge_letter_received: Mapped[bool] = mapped_column(
+        default=False, server_default=text("false")
+    )
+    findings_material: Mapped[bool] = mapped_column(default=False, server_default=text("false"))
+    # Complementary user-entity controls: the things the report assumes *we* do.
+    # Unreviewed CUECs are the most commonly missed part of reading a SOC report.
+    cuec_reviewed: Mapped[bool] = mapped_column(default=False, server_default=text("false"))
+    cuec_notes: Mapped[str | None] = mapped_column(default=None)
+    subservice_orgs: Mapped[str | None] = mapped_column(default=None)
+    cpa_firm: Mapped[str | None] = mapped_column(default=None)
+    reviewed_by_membership_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey(_MEMBERSHIP_FK, ondelete="SET NULL"), default=None
+    )
+    reviewed_at: Mapped[datetime | None] = mapped_column(default=None)
+
+    __table_args__ = (
+        status_check("vendor_soc_report_reviews", "report_kind", SOC_REPORT_KINDS),
+        status_check("vendor_soc_report_reviews", "report_type", SOC_REPORT_TYPES),
+        status_check("vendor_soc_report_reviews", "opinion", SOC_OPINIONS),
+        CheckConstraint(
+            "(audit_period_start IS NULL) OR (audit_period_end IS NULL) OR "
+            "(audit_period_end >= audit_period_start)",
+            name=conv("ck_vendor_soc_report_reviews__period_ordered"),
+        ),
+        tenant_index("vendor_soc_report_reviews", "vendor_id"),
+        tenant_index("vendor_soc_report_reviews", "audit_period_end"),
+    )
+
+
+class VendorContract(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
+    """Term dates and the security clauses that are otherwise buried in a PDF.
+
+    The five clause flags each answer a question a questionnaire asks and an
+    auditor checks. They are booleans on a row rather than prose in a file because
+    "do our vendors have a right-to-audit clause" should be a query.
+    """
+
+    __tablename__ = "vendor_contracts"
+
+    vendor_id: Mapped[uuid.UUID] = mapped_column(ForeignKey(_VENDOR_FK, ondelete="CASCADE"))
+    engagement_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey(_ENGAGEMENT_FK, ondelete="CASCADE"), default=None
+    )
+    contract_type: Mapped[str] = mapped_column(default="master", server_default="master")
+    title: Mapped[str]
+    start_date: Mapped[date | None] = mapped_column(default=None)
+    end_date: Mapped[date | None] = mapped_column(default=None)
+    renewal_date: Mapped[date | None] = mapped_column(default=None)
+    auto_renew: Mapped[bool] = mapped_column(default=False, server_default=text("false"))
+    notice_period_days: Mapped[int | None] = mapped_column(default=None)
+    breach_notification_hours: Mapped[int | None] = mapped_column(default=None)
+    right_to_audit: Mapped[bool] = mapped_column(default=False, server_default=text("false"))
+    subprocessor_terms: Mapped[bool] = mapped_column(default=False, server_default=text("false"))
+    exit_data_return_clause: Mapped[bool] = mapped_column(
+        default=False, server_default=text("false")
+    )
+    value: Mapped[float | None] = mapped_column(Float, default=None)
+    status: Mapped[str] = mapped_column(default="draft", server_default="draft")
+    file_ref: Mapped[str | None] = mapped_column(default=None)
+    evidence_id: Mapped[uuid.UUID | None] = mapped_column(default=None)
+
+    __table_args__ = (
+        status_check("vendor_contracts", "contract_type", CONTRACT_TYPES),
+        status_check("vendor_contracts", "status", CONTRACT_STATUSES),
+        CheckConstraint(
+            "(start_date IS NULL) OR (end_date IS NULL) OR (end_date >= start_date)",
+            name=conv("ck_vendor_contracts__term_ordered"),
+        ),
+        tenant_index("vendor_contracts", "vendor_id"),
+        tenant_index("vendor_contracts", "status"),
+        tenant_index("vendor_contracts", "renewal_date"),
+    )
+
+
+class VendorSla(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
+    """A committed service level, and what was actually measured.
+
+    ``status`` is stored because the ER draws it, but **the breach flag the
+    interface shows is derived on read** from the measurement against the target.
+    A stored breach goes stale between sweeps, and "breached" that quietly means
+    "was breached last Tuesday" is worse than no flag at all.
+    """
+
+    __tablename__ = "vendor_slas"
+
+    contract_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("vendor_contracts.id", ondelete="CASCADE")
+    )
+    vendor_id: Mapped[uuid.UUID] = mapped_column(ForeignKey(_VENDOR_FK, ondelete="CASCADE"))
+    name: Mapped[str]
+    target: Mapped[str]
+    measurement: Mapped[str | None] = mapped_column(default=None)
+    measured_at: Mapped[date | None] = mapped_column(default=None)
+    cure_period_days: Mapped[int | None] = mapped_column(default=None)
+    status: Mapped[str] = mapped_column(default="on_track", server_default="on_track")
+
+    __table_args__ = (
+        status_check("vendor_slas", "status", SLA_STATUSES),
+        tenant_index("vendor_slas", "contract_id"),
+        tenant_index("vendor_slas", "vendor_id", "status"),
+    )
+
+
+class VendorSubprocessor(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
+    """The fourth-party register.
+
+    ``linked_vendor_id`` is what makes concentration risk visible — the same cloud
+    provider sitting under nine of your vendors is a fact you can only see once the
+    subprocessor rows point at the vendor row.
+    """
+
+    __tablename__ = "vendor_subprocessors"
+
+    vendor_id: Mapped[uuid.UUID] = mapped_column(ForeignKey(_VENDOR_FK, ondelete="CASCADE"))
+    name: Mapped[str]
+    service: Mapped[str] = mapped_column(default="", server_default=text("''"))
+    data_location: Mapped[str | None] = mapped_column(default=None)
+    provenance: Mapped[str] = mapped_column(
+        default="vendor_declared", server_default="vendor_declared"
+    )
+    linked_vendor_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey(_VENDOR_FK, ondelete="SET NULL"), default=None
+    )
+    notification_obligation: Mapped[str | None] = mapped_column(default=None)
+    status: Mapped[str] = mapped_column(default="active", server_default="active")
+
+    __table_args__ = (
+        status_check("vendor_subprocessors", "provenance", SUBPROCESSOR_PROVENANCE),
+        status_check("vendor_subprocessors", "status", SUBPROCESSOR_STATUSES),
+        # A vendor that subprocesses to itself is a data-entry slip, not a fact.
+        CheckConstraint(
+            "linked_vendor_id IS NULL OR linked_vendor_id <> vendor_id",
+            name=conv("ck_vendor_subprocessors__not_self_referential"),
+        ),
+        tenant_index("vendor_subprocessors", "vendor_id"),
+        tenant_index("vendor_subprocessors", "linked_vendor_id"),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Intake, the roster, and the exit
+# ---------------------------------------------------------------------------
+
+
+class VendorIntakeRequest(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
+    """A request to onboard a vendor, before it is one.
+
+    The front door. A declined request keeps its reason and its decider and never
+    becomes a vendor row, which is what keeps the register a list of vendors the
+    organisation actually uses rather than everything anyone ever proposed.
+    """
+
+    __tablename__ = "vendor_intake_requests"
+
+    requested_by_membership_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey(_MEMBERSHIP_FK, ondelete="SET NULL"), default=None
+    )
+    vendor_name: Mapped[str]
+    department: Mapped[str | None] = mapped_column(default=None)
+    proposed_service: Mapped[str] = mapped_column(default="", server_default=text("''"))
+    data_types_shared: Mapped[list[str]] = mapped_column(
+        postgresql.JSONB, default=list, server_default=text("'[]'::jsonb")
+    )
+    urgency: Mapped[str] = mapped_column(default="normal", server_default="normal")
+    screening_status: Mapped[str] = mapped_column(default="pending", server_default="pending")
+    decision: Mapped[str] = mapped_column(default="pending", server_default="pending")
+    decision_reason: Mapped[str | None] = mapped_column(default=None)
+    decided_by_membership_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey(_MEMBERSHIP_FK, ondelete="SET NULL"), default=None
+    )
+    decided_at: Mapped[datetime | None] = mapped_column(default=None)
+    created_vendor_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey(_VENDOR_FK, ondelete="SET NULL"), default=None
+    )
+
+    __table_args__ = (
+        status_check("vendor_intake_requests", "urgency", URGENCIES),
+        status_check("vendor_intake_requests", "screening_status", INTAKE_SCREENING),
+        status_check("vendor_intake_requests", "decision", INTAKE_DECISIONS),
+        # A refusal with no stated reason is the request arriving again next
+        # quarter with nobody able to say why it was turned down.
+        CheckConstraint(
+            "(decision <> 'rejected') OR (decision_reason IS NOT NULL)",
+            name=conv("ck_vendor_intake_requests__rejection_has_reason"),
+        ),
+        tenant_index("vendor_intake_requests", "decision"),
+        tenant_index("vendor_intake_requests", "requested_by_membership_id"),
+    )
+
+
+class VendorTeamRosterEntry(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
+    """Who plays which role on third-party risk, tenant-wide.
+
+    Roles as rows rather than the reference product's JSON blob, and the resolution
+    half of spec 82's "required reviewers": the tiering policy says which roles a
+    tier demands, and this says who holds them.
+    """
+
+    __tablename__ = "vendor_team_roster"
+
+    role: Mapped[str]
+    membership_id: Mapped[uuid.UUID] = mapped_column(ForeignKey(_MEMBERSHIP_FK, ondelete="CASCADE"))
+
+    __table_args__ = (
+        status_check("vendor_team_roster", "role", ROSTER_ROLES),
+        UniqueConstraint(
+            "tenant_id", "role", "membership_id", name="uq_vendor_team_roster__role_member"
+        ),
+        tenant_index("vendor_team_roster", "role"),
+    )
+
+
+class VendorOffboarding(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
+    """The evidenced exit (ER 127).
+
+    ``engagement_id`` is the point: ending one department's use of a vendor is not
+    terminating the vendor, and a module that cannot tell those apart revokes too
+    much or too little. Nothing hard-deletes — a terminated vendor is archived.
+    """
+
+    __tablename__ = "vendor_offboardings"
+
+    vendor_id: Mapped[uuid.UUID] = mapped_column(ForeignKey(_VENDOR_FK, ondelete="CASCADE"))
+    engagement_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey(_ENGAGEMENT_FK, ondelete="CASCADE"), default=None
+    )
+    reason: Mapped[str]
+    access_revoked_at: Mapped[datetime | None] = mapped_column(default=None)
+    revoked_by_membership_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey(_MEMBERSHIP_FK, ondelete="SET NULL"), default=None
+    )
+    data_return_attested_at: Mapped[datetime | None] = mapped_column(default=None)
+    attestation_assessment_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("vendor_assessments.id", ondelete="SET NULL"), default=None
+    )
+    contract_provisions_reviewed: Mapped[bool] = mapped_column(
+        default=False, server_default=text("false")
+    )
+    final_payments_settled: Mapped[bool] = mapped_column(
+        default=False, server_default=text("false")
+    )
+    certificate_evidence_id: Mapped[uuid.UUID | None] = mapped_column(default=None)
+    completed_at: Mapped[datetime | None] = mapped_column(default=None)
+    notes: Mapped[str | None] = mapped_column(default=None)
+
+    __table_args__ = (
+        tenant_index("vendor_offboardings", "vendor_id"),
+        tenant_index("vendor_offboardings", "engagement_id"),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Monitoring — built, surfaced, and fed by nothing until Phase 2
+# ---------------------------------------------------------------------------
+
+
+class VendorScorecard(UUIDPrimaryKey, TenantScoped, Timestamped, Integratable, Base):
+    """An external security rating. **Manual entry only, in every planned phase.**
+
+    SecurityScorecard, BitSight and UpGuard are in no phase's connector catalogue,
+    so every row here is typed in by a person. Rule-9 columns ride anyway, so if
+    that ever changes the connector is a sync and not a migration.
+    """
+
+    __tablename__ = "vendor_scorecards"
+
+    vendor_id: Mapped[uuid.UUID] = mapped_column(ForeignKey(_VENDOR_FK, ondelete="CASCADE"))
+    provider: Mapped[str] = mapped_column(default="manual", server_default="manual")
+    score: Mapped[float | None] = mapped_column(Float, default=None)
+    overall_grade: Mapped[str | None] = mapped_column(default=None)
+    factor_scores: Mapped[dict[str, Any]] = mapped_column(
+        postgresql.JSONB, default=dict, server_default=text("'{}'::jsonb")
+    )
+    as_of: Mapped[datetime] = mapped_column()
+
+    __table_args__ = (
+        status_check("vendor_scorecards", "provider", SCORECARD_PROVIDERS),
+        integration_unique("vendor_scorecards"),
+        tenant_index("vendor_scorecards", "vendor_id", "as_of"),
+    )
+
+
+class VendorSignal(UUIDPrimaryKey, TenantScoped, Timestamped, Integratable, Base):
+    """An adverse event about a vendor. Nothing feeds this until Phase 2.
+
+    ``dedup_key`` is what makes the eventual connector idempotent: the same breach
+    reported twice is one signal, and without it a re-sync would replay every
+    event a customer has already acknowledged.
+    """
+
+    __tablename__ = "vendor_signals"
+
+    vendor_id: Mapped[uuid.UUID] = mapped_column(ForeignKey(_VENDOR_FK, ondelete="CASCADE"))
+    signal_type: Mapped[str]
+    source_class: Mapped[str] = mapped_column(default="internal", server_default="internal")
+    severity: Mapped[str] = mapped_column(default="medium", server_default="medium")
+    title: Mapped[str]
+    detail: Mapped[str] = mapped_column(default="", server_default=text("''"))
+    dedup_key: Mapped[str | None] = mapped_column(default=None)
+    status: Mapped[str] = mapped_column(default="new", server_default="new")
+    acknowledged_by_membership_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey(_MEMBERSHIP_FK, ondelete="SET NULL"), default=None
+    )
+    acknowledged_at: Mapped[datetime | None] = mapped_column(default=None)
+    triggered_assessment_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("vendor_assessments.id", ondelete="SET NULL"), default=None
+    )
+    observed_at: Mapped[datetime] = mapped_column()
+
+    __table_args__ = (
+        status_check("vendor_signals", "signal_type", SIGNAL_TYPES),
+        status_check("vendor_signals", "source_class", SIGNAL_SOURCE_CLASSES),
+        status_check("vendor_signals", "severity", FINDING_SEVERITIES),
+        status_check("vendor_signals", "status", SIGNAL_STATUSES),
+        integration_unique("vendor_signals"),
+        # The same event arriving twice is one signal, whoever reported it.
+        UniqueConstraint("tenant_id", "dedup_key", name="uq_vendor_signals__dedup_key"),
+        tenant_index("vendor_signals", "vendor_id", "status"),
+        tenant_index("vendor_signals", "observed_at"),
+    )
+
+
+class VendorAlertRule(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
+    """What to notify on, and where. In-app works; Slack is wired and inert."""
+
+    __tablename__ = "vendor_alert_rules"
+
+    name: Mapped[str]
+    tier_scope: Mapped[list[str]] = mapped_column(
+        postgresql.JSONB, default=list, server_default=text("'[]'::jsonb")
+    )
+    signal_types: Mapped[list[str]] = mapped_column(
+        postgresql.JSONB, default=list, server_default=text("'[]'::jsonb")
+    )
+    min_severity: Mapped[str] = mapped_column(default="medium", server_default="medium")
+    action: Mapped[str] = mapped_column(default="notify", server_default="notify")
+    channel: Mapped[str] = mapped_column(default="in_app", server_default="in_app")
+    is_enabled: Mapped[bool] = mapped_column(default=True, server_default=text("true"))
+
+    __table_args__ = (
+        status_check("vendor_alert_rules", "min_severity", FINDING_SEVERITIES),
+        status_check("vendor_alert_rules", "action", ALERT_ACTIONS),
+        status_check("vendor_alert_rules", "channel", ALERT_CHANNELS),
+        tenant_index("vendor_alert_rules", "is_enabled"),
+    )
+
+
+class VendorDiscoveredApp(UUIDPrimaryKey, TenantScoped, Timestamped, Integratable, Base):
+    """Shadow IT from the identity connectors. **Phase 2 — no source until then.**"""
+
+    __tablename__ = "vendor_discovered_apps"
+
+    # No FK: connector_connections does not exist yet, and inventing one to point
+    # at would be schema for a module that has not been designed.
+    source_connection_id: Mapped[uuid.UUID | None] = mapped_column(default=None)
+    app_name: Mapped[str]
+    oauth_scopes: Mapped[list[str]] = mapped_column(
+        postgresql.JSONB, default=list, server_default=text("'[]'::jsonb")
+    )
+    authorizing_users: Mapped[int] = mapped_column(default=0, server_default=text("0"))
+    first_seen_at: Mapped[datetime | None] = mapped_column(default=None)
+    disposition: Mapped[str] = mapped_column(default="pending", server_default="pending")
+    vendor_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey(_VENDOR_FK, ondelete="SET NULL"), default=None
+    )
+
+    __table_args__ = (
+        status_check("vendor_discovered_apps", "disposition", DISCOVERED_DISPOSITIONS),
+        integration_unique("vendor_discovered_apps"),
+        tenant_index("vendor_discovered_apps", "disposition"),
+    )
+
+
+class VendorAssessmentComment(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
+    """The reviewer conversation on an assessment, which otherwise happens in email.
+
+    ``author_type`` + ``author_id`` is the same polymorphic pair ``audit_log`` uses,
+    for the same reason: one foreign key cannot point at both a membership and a
+    vendor contact. ``visibility`` is load-bearing — an ``internal_only`` comment
+    reaching the portal is a disclosure incident.
+    """
+
+    __tablename__ = "vendor_assessment_comments"
+
+    assessment_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("vendor_assessments.id", ondelete="CASCADE")
+    )
+    question_id: Mapped[uuid.UUID | None] = mapped_column(default=None)
+    author_type: Mapped[str] = mapped_column(
+        default="internal_user", server_default="internal_user"
+    )
+    author_id: Mapped[uuid.UUID | None] = mapped_column(default=None)
+    visibility: Mapped[str] = mapped_column(default="internal_only", server_default="internal_only")
+    body: Mapped[str]
+
+    __table_args__ = (
+        status_check("vendor_assessment_comments", "author_type", COMMENT_AUTHOR_TYPES),
+        status_check("vendor_assessment_comments", "visibility", COMMENT_VISIBILITY),
+        # Just the assessment: adding visibility would take the generated name
+        # past Postgres' 63-character identifier limit, and the thread is short
+        # enough that filtering visibility after the index scan costs nothing.
+        tenant_index("vendor_assessment_comments", "assessment_id"),
+    )

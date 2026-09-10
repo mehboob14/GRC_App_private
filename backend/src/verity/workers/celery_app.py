@@ -61,6 +61,22 @@ celery_app.conf.update(
             "task": "verity.workers.tasks.flush_notification_emails",
             "schedule": 120.0,
         },
+        # Daily: vendor reviews whose cadence has come round. Notifies the owner;
+        # opening the cycle stays a person's decision.
+        "queue-vendor-reassessments": {
+            "task": "verity.workers.tasks.queue_vendor_reassessments",
+            "schedule": 24 * 3600.0,
+        },
+        # Daily: vendor certificates and reports that have lapsed or are about to.
+        "sweep-vendor-documents": {
+            "task": "verity.workers.tasks.sweep_vendor_documents",
+            "schedule": 24 * 3600.0,
+        },
+        # Daily: raise a finding per breached vendor service level, idempotently.
+        "sweep-vendor-slas": {
+            "task": "verity.workers.tasks.sweep_vendor_slas",
+            "schedule": 24 * 3600.0,
+        },
         # Daily: refresh EPSS/KEV/public-exploit on open findings, recompute risk,
         # and expire lapsed risk acceptances (ADR-0010 daily enrichment).
         "refresh-vulnerabilities": {

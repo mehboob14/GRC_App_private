@@ -243,6 +243,11 @@ class VendorDetailOut(VendorOut):
     duplicates: list[DuplicateMatchOut]
     stages: list[StageOut]
     tierings: list[TieringOut]
+    approvals: list[ApprovalOut] = Field(default_factory=list)
+    documents: list[DocumentOut] = Field(default_factory=list)
+    contracts: list[ContractOut] = Field(default_factory=list)
+    soc_reviews: list[SocReviewOut] = Field(default_factory=list)
+    subprocessors: list[SubprocessorOut] = Field(default_factory=list)
 
 
 class VendorPageOut(_Response):
@@ -353,7 +358,7 @@ class AssessmentOut(_Response):
     review_format: str
     assessment_domain: str
     status: str
-    decision: str
+    # No decision field: the approval row is authoritative (V3).
     due_date: date | None
     residual_score: float | None
     grade: str | None
@@ -384,3 +389,253 @@ class AcceptFindingWrite(_Request):
 
 class CloseFindingWrite(_Request):
     note: str | None = Field(default=None, max_length=4000)
+
+
+# -- the decision, the paperwork and the exit (section 4) ---------------------
+
+
+class ConditionWrite(_Request):
+    description: str = Field(min_length=1, max_length=2000)
+    owner_membership_id: uuid.UUID | None = None
+    due_date: date | None = None
+
+
+class DecisionWrite(_Request):
+    """The gate decision. Four-valued (V3), and the rationale is not optional."""
+
+    decision: str
+    rationale: str = Field(min_length=1, max_length=8000)
+    conditions: list[ConditionWrite] = Field(default_factory=list)
+
+
+class ConditionCloseWrite(_Request):
+    status: str
+    waived_reason: str | None = Field(default=None, max_length=4000)
+
+
+class ConditionOut(_Response):
+    id: uuid.UUID
+    approval_id: uuid.UUID
+    description: str
+    owner_membership_id: uuid.UUID | None
+    owner_name: str | None
+    due_date: date | None
+    status: str
+    task_id: uuid.UUID | None
+    waived_reason: str | None
+
+
+class ApprovalOut(_Response):
+    id: uuid.UUID
+    engagement_id: uuid.UUID
+    cycle: int
+    stage_id: uuid.UUID | None
+    decision: str
+    rationale: str
+    decided_by_membership_id: uuid.UUID | None
+    decided_by_name: str | None
+    excluded_membership_ids: list[str]
+    decided_at: UtcDateTime
+    conditions: list[ConditionOut]
+
+
+class ApproverOut(_Response):
+    membership_id: uuid.UUID
+    name: str
+    is_designated_approver: bool
+    disqualified_reason: str | None
+    """Why this person may not decide. Present so the picker can grey the name and
+    explain, rather than refusing after a rationale has been written."""
+
+
+class ApproverPageOut(_Response):
+    items: list[ApproverOut]
+
+
+class DocumentWrite(_Request):
+    title: str = Field(min_length=1, max_length=300)
+    doc_type: str = "soc_report"
+    issue_date: date | None = None
+    valid_until: date | None = None
+    collection_status: str = "requested"
+    evidence_id: uuid.UUID | None = None
+
+
+class DocumentOut(_Response):
+    id: uuid.UUID
+    vendor_id: uuid.UUID
+    doc_type: str
+    title: str
+    issue_date: date | None
+    valid_until: date | None
+    expires_in_days: int | None
+    is_expired: bool
+    collection_status: str
+    review_notes: str | None
+    reviewed_by_name: str | None
+    reviewed_at: UtcDateTime | None
+    evidence_id: uuid.UUID | None
+
+
+class SocReviewWrite(_Request):
+    report_kind: str = "soc2"
+    report_type: str = "type_ii"
+    document_id: uuid.UUID | None = None
+    audit_period_start: date | None = None
+    audit_period_end: date | None = None
+    tsc_included: list[str] = Field(default_factory=list)
+    opinion: str = "unqualified"
+    bridge_letter_received: bool = False
+    findings_material: bool = False
+    cuec_reviewed: bool = False
+    cuec_notes: str | None = Field(default=None, max_length=8000)
+    subservice_orgs: str | None = Field(default=None, max_length=4000)
+    cpa_firm: str | None = Field(default=None, max_length=300)
+
+
+class SocReviewOut(_Response):
+    id: uuid.UUID
+    vendor_id: uuid.UUID
+    document_id: uuid.UUID | None
+    report_kind: str
+    report_type: str
+    audit_period_start: date | None
+    audit_period_end: date | None
+    tsc_included: list[str]
+    opinion: str
+    bridge_letter_received: bool
+    findings_material: bool
+    cuec_reviewed: bool
+    cuec_notes: str | None
+    subservice_orgs: str | None
+    cpa_firm: str | None
+    reviewed_at: UtcDateTime | None
+    period_is_stale: bool
+    needs_bridge_letter: bool
+
+
+class ContractWrite(_Request):
+    title: str = Field(min_length=1, max_length=300)
+    contract_type: str = "master"
+    engagement_id: uuid.UUID | None = None
+    start_date: date | None = None
+    end_date: date | None = None
+    renewal_date: date | None = None
+    auto_renew: bool = False
+    notice_period_days: int | None = Field(default=None, ge=0, le=1095)
+    breach_notification_hours: int | None = Field(default=None, ge=0, le=8760)
+    right_to_audit: bool = False
+    subprocessor_terms: bool = False
+    exit_data_return_clause: bool = False
+    value: float | None = None
+    status: str = "draft"
+
+
+class ContractOut(_Response):
+    id: uuid.UUID
+    vendor_id: uuid.UUID
+    engagement_id: uuid.UUID | None
+    contract_type: str
+    title: str
+    start_date: date | None
+    end_date: date | None
+    renewal_date: date | None
+    renews_in_days: int | None
+    auto_renew: bool
+    notice_period_days: int | None
+    breach_notification_hours: int | None
+    right_to_audit: bool
+    subprocessor_terms: bool
+    exit_data_return_clause: bool
+    value: float | None
+    status: str
+    clauses_present: int
+    notice_deadline: date | None
+
+
+class SubprocessorWrite(_Request):
+    name: str = Field(min_length=1, max_length=300)
+    service: str = Field(default="", max_length=4000)
+    data_location: str | None = Field(default=None, max_length=300)
+    provenance: str = "vendor_declared"
+    linked_vendor_id: uuid.UUID | None = None
+    notification_obligation: str | None = Field(default=None, max_length=2000)
+
+
+class SubprocessorOut(_Response):
+    id: uuid.UUID
+    vendor_id: uuid.UUID
+    name: str
+    service: str
+    data_location: str | None
+    provenance: str
+    linked_vendor_id: uuid.UUID | None
+    notification_obligation: str | None
+    status: str
+    also_used_by_vendors: int
+
+
+class SubprocessorPageOut(_Response):
+    items: list[SubprocessorOut]
+
+
+class IntakeWrite(_Request):
+    vendor_name: str = Field(min_length=1, max_length=300)
+    department: str | None = Field(default=None, max_length=300)
+    proposed_service: str = Field(default="", max_length=8000)
+    data_types_shared: list[str] = Field(default_factory=list)
+    urgency: str = "normal"
+
+
+class IntakeDecisionWrite(_Request):
+    approve: bool
+    reason: str | None = Field(default=None, max_length=4000)
+
+
+class IntakeOut(_Response):
+    id: uuid.UUID
+    vendor_name: str
+    department: str | None
+    proposed_service: str
+    data_types_shared: list[str]
+    urgency: str
+    screening_status: str
+    decision: str
+    decision_reason: str | None
+    requested_by_name: str | None
+    decided_by_name: str | None
+    decided_at: UtcDateTime | None
+    created_vendor_id: uuid.UUID | None
+    duplicates: list[DuplicateMatchOut]
+    created_at: UtcDateTime
+
+
+class IntakePageOut(_Response):
+    items: list[IntakeOut]
+    total: int
+
+
+class RosterWrite(_Request):
+    role: str
+    membership_id: uuid.UUID
+
+
+class RosterOut(_Response):
+    roles: dict[str, list[uuid.UUID]]
+
+
+class OffboardWrite(_Request):
+    reason: str = Field(min_length=1, max_length=4000)
+    engagement_id: uuid.UUID | None = None
+    """Omitted means the whole relationship. Ending one department's use of a
+    vendor is not terminating the vendor."""
+
+
+class OffboardingCompletionWrite(_Request):
+    access_revoked: bool = False
+    data_returned: bool = False
+    contract_provisions_reviewed: bool = False
+    final_payments_settled: bool = False
+    certificate_evidence_id: uuid.UUID | None = None
+    notes: str | None = Field(default=None, max_length=8000)
+    complete: bool = False

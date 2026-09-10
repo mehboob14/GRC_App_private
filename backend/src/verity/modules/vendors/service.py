@@ -33,29 +33,56 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from verity.core import ratelimit
 from verity.core.config import get_settings
 from verity.core.errors import Conflict, InvalidInput, NotFound
-from verity.modules.audit.service import Actor, AuditService, Membership, audit_service
+from verity.modules.audit.service import (
+    Actor,
+    AuditService,
+    Membership,
+    System,
+    audit_service,
+)
 from verity.modules.vendors import lifecycle, scoring
 from verity.modules.vendors.models import (
+    APPROVAL_DECISIONS,
     BUNDLE_BY_TIER,
+    CONDITION_STATUSES,
     CONTACT_TYPES,
+    CONTRACT_STATUSES,
+    CONTRACT_TYPES,
     DATA_CLASSIFICATIONS,
     DEFAULT_ENGAGEMENT_NAME,
+    DOC_TYPES,
     FINDING_SEVERITIES,
     LIFECYCLE_STATUSES,
     OPEN_FINDING_STATUSES,
     RISK_DOMAIN_LABELS,
+    ROSTER_ROLES,
+    SOC_OPINIONS,
+    SOC_REPORT_KINDS,
+    SOC_REPORT_TYPES,
+    SUBPROCESSOR_PROVENANCE,
     TIERS,
+    URGENCIES,
     VENDOR_TYPES,
     QuestionnaireQuestion,
     QuestionnaireTemplate,
     Vendor,
+    VendorApproval,
+    VendorApprovalCondition,
     VendorAssessment,
     VendorAssessmentResponse,
     VendorContact,
+    VendorContract,
+    VendorDocument,
     VendorEngagement,
     VendorFinding,
+    VendorIntakeRequest,
+    VendorOffboarding,
     VendorPortalToken,
+    VendorSla,
+    VendorSocReportReview,
     VendorStage,
+    VendorSubprocessor,
+    VendorTeamRosterEntry,
     VendorTieringAssessment,
     VendorTieringPolicy,
     VendorTransition,
@@ -198,6 +225,11 @@ class VendorDetailView(VendorView):
     # collection whole.
     stages: list[StageView] = field(default_factory=list)
     tierings: list[TieringView] = field(default_factory=list)
+    approvals: list[ApprovalView] = field(default_factory=list)
+    documents: list[DocumentView] = field(default_factory=list)
+    contracts: list[ContractView] = field(default_factory=list)
+    soc_reviews: list[SocReviewView] = field(default_factory=list)
+    subprocessors: list[SubprocessorView] = field(default_factory=list)
 
 
 @dataclass(frozen=True, slots=True)
@@ -483,7 +515,6 @@ class AssessmentView:
     review_format: str
     assessment_domain: str
     status: str
-    decision: str
     due_date: date | None
     residual_score: float | None
     grade: str | None
@@ -503,6 +534,262 @@ class AssessmentView:
     portal_link_expires_at: datetime | None
     created_at: datetime
     updated_at: datetime
+
+
+# -- the decision, the paperwork and the exit (section 4) ---------------------
+
+_CONDITION_GONE: Final = "This condition no longer exists. The approval may have been superseded."
+_INTAKE_GONE: Final = "This request no longer exists. It may already have been decided."
+_OFFBOARDING_GONE: Final = "This offboarding record no longer exists."
+
+_SOC_PERIOD_STALE_DAYS: Final = 365
+"""A SOC report whose audit period ended more than a year ago no longer describes
+the vendor you have today, whatever its opinion said."""
+_SOC_BRIDGE_AFTER_DAYS: Final = 90
+"""Past this gap, the accepted practice is a bridge letter covering the interval
+between the period end and now."""
+
+_DOCUMENT_SNAPSHOT: Final[tuple[str, ...]] = (
+    "doc_type",
+    "title",
+    "valid_until",
+    "collection_status",
+)
+_CONTRACT_SNAPSHOT: Final[tuple[str, ...]] = (
+    "contract_type",
+    "title",
+    "status",
+    "renewal_date",
+    "right_to_audit",
+    "exit_data_return_clause",
+)
+
+
+@dataclass(frozen=True, slots=True)
+class ConditionInput:
+    description: str
+    owner_membership_id: uuid.UUID | None = None
+    due_date: date | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class ConditionView:
+    id: uuid.UUID
+    approval_id: uuid.UUID
+    description: str
+    owner_membership_id: uuid.UUID | None
+    owner_name: str | None
+    due_date: date | None
+    status: str
+    task_id: uuid.UUID | None
+    waived_reason: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class ApprovalView:
+    id: uuid.UUID
+    engagement_id: uuid.UUID
+    cycle: int
+    stage_id: uuid.UUID | None
+    decision: str
+    rationale: str
+    decided_by_membership_id: uuid.UUID | None
+    decided_by_name: str | None
+    excluded_membership_ids: list[str]
+    """Who was barred from deciding, frozen at decision time. The business owner
+    can change afterwards, and "was segregation of duties applied here" has to stay
+    answerable from the row."""
+    decided_at: datetime
+    conditions: list[ConditionView]
+
+
+@dataclass(frozen=True, slots=True)
+class ApproverView:
+    """A candidate decider, with the reason if they are barred (V4).
+
+    The reason travels with the name so the picker can grey it *and* explain. A
+    rule enforced only on submit is learned as an obstacle, after the user has
+    already written their rationale.
+    """
+
+    membership_id: uuid.UUID
+    name: str
+    is_designated_approver: bool
+    disqualified_reason: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class DocumentInput:
+    title: str
+    doc_type: str = "soc_report"
+    issue_date: date | None = None
+    valid_until: date | None = None
+    collection_status: str = "requested"
+    evidence_id: uuid.UUID | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class DocumentView:
+    id: uuid.UUID
+    vendor_id: uuid.UUID
+    doc_type: str
+    title: str
+    issue_date: date | None
+    valid_until: date | None
+    expires_in_days: int | None
+    is_expired: bool
+    collection_status: str
+    review_notes: str | None
+    reviewed_by_name: str | None
+    reviewed_at: datetime | None
+    evidence_id: uuid.UUID | None
+
+
+@dataclass(frozen=True, slots=True)
+class SocReviewInput:
+    report_kind: str = "soc2"
+    report_type: str = "type_ii"
+    document_id: uuid.UUID | None = None
+    audit_period_start: date | None = None
+    audit_period_end: date | None = None
+    tsc_included: tuple[str, ...] = ()
+    opinion: str = "unqualified"
+    bridge_letter_received: bool = False
+    findings_material: bool = False
+    cuec_reviewed: bool = False
+    cuec_notes: str | None = None
+    subservice_orgs: str | None = None
+    cpa_firm: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class SocReviewView:
+    id: uuid.UUID
+    vendor_id: uuid.UUID
+    document_id: uuid.UUID | None
+    report_kind: str
+    report_type: str
+    audit_period_start: date | None
+    audit_period_end: date | None
+    tsc_included: list[str]
+    opinion: str
+    bridge_letter_received: bool
+    findings_material: bool
+    cuec_reviewed: bool
+    cuec_notes: str | None
+    subservice_orgs: str | None
+    cpa_firm: str | None
+    reviewed_at: datetime | None
+    period_is_stale: bool
+    needs_bridge_letter: bool
+
+
+@dataclass(frozen=True, slots=True)
+class ContractInput:
+    title: str
+    contract_type: str = "master"
+    engagement_id: uuid.UUID | None = None
+    start_date: date | None = None
+    end_date: date | None = None
+    renewal_date: date | None = None
+    auto_renew: bool = False
+    notice_period_days: int | None = None
+    breach_notification_hours: int | None = None
+    right_to_audit: bool = False
+    subprocessor_terms: bool = False
+    exit_data_return_clause: bool = False
+    value: float | None = None
+    status: str = "draft"
+
+
+@dataclass(frozen=True, slots=True)
+class ContractView:
+    id: uuid.UUID
+    vendor_id: uuid.UUID
+    engagement_id: uuid.UUID | None
+    contract_type: str
+    title: str
+    start_date: date | None
+    end_date: date | None
+    renewal_date: date | None
+    renews_in_days: int | None
+    auto_renew: bool
+    notice_period_days: int | None
+    breach_notification_hours: int | None
+    right_to_audit: bool
+    subprocessor_terms: bool
+    exit_data_return_clause: bool
+    value: float | None
+    status: str
+    clauses_present: int
+    notice_deadline: date | None
+    """The last day to give notice before an auto-renewing contract renews itself.
+    Derived, because the date somebody actually needs is never the one on the page."""
+
+
+@dataclass(frozen=True, slots=True)
+class SubprocessorInput:
+    name: str
+    service: str = ""
+    data_location: str | None = None
+    provenance: str = "vendor_declared"
+    linked_vendor_id: uuid.UUID | None = None
+    notification_obligation: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class SubprocessorView:
+    id: uuid.UUID
+    vendor_id: uuid.UUID
+    name: str
+    service: str
+    data_location: str | None
+    provenance: str
+    linked_vendor_id: uuid.UUID | None
+    notification_obligation: str | None
+    status: str
+    also_used_by_vendors: int
+    """How many other vendors declare this same fourth party. The concentration
+    number, and the reason the register links subprocessors to vendor rows."""
+
+
+@dataclass(frozen=True, slots=True)
+class IntakeInput:
+    vendor_name: str
+    department: str | None = None
+    proposed_service: str = ""
+    data_types_shared: tuple[str, ...] = ()
+    urgency: str = "normal"
+
+
+@dataclass(frozen=True, slots=True)
+class IntakeView:
+    id: uuid.UUID
+    vendor_name: str
+    department: str | None
+    proposed_service: str
+    data_types_shared: list[str]
+    urgency: str
+    screening_status: str
+    decision: str
+    decision_reason: str | None
+    requested_by_name: str | None
+    decided_by_name: str | None
+    decided_at: datetime | None
+    created_vendor_id: uuid.UUID | None
+    duplicates: list[DuplicateMatch]
+    created_at: datetime
+
+
+@dataclass(frozen=True, slots=True)
+class OffboardingCompletion:
+    access_revoked: bool = False
+    data_returned: bool = False
+    contract_provisions_reviewed: bool = False
+    final_payments_settled: bool = False
+    certificate_evidence_id: uuid.UUID | None = None
+    notes: str | None = None
+    complete: bool = False
 
 
 # -- service ------------------------------------------------------------------
@@ -869,6 +1156,43 @@ class VendorService:
             ),
             stages=stages,
             tierings=tierings,
+            approvals=await self._approvals_for(session, tenant_id, vendor.id),
+            documents=[
+                self._document_view(d, names)
+                for d in (
+                    await session.execute(
+                        select(VendorDocument)
+                        .where(VendorDocument.tenant_id == tenant_id)
+                        .where(VendorDocument.vendor_id == vendor.id)
+                        .order_by(VendorDocument.valid_until)
+                    )
+                ).scalars()
+            ],
+            contracts=[
+                self._contract_view(c)
+                for c in (
+                    await session.execute(
+                        select(VendorContract)
+                        .where(VendorContract.tenant_id == tenant_id)
+                        .where(VendorContract.vendor_id == vendor.id)
+                        .order_by(VendorContract.renewal_date)
+                    )
+                ).scalars()
+            ],
+            soc_reviews=[
+                self._soc_view(r)
+                for r in (
+                    await session.execute(
+                        select(VendorSocReportReview)
+                        .where(VendorSocReportReview.tenant_id == tenant_id)
+                        .where(VendorSocReportReview.vendor_id == vendor.id)
+                        .order_by(VendorSocReportReview.audit_period_end.desc())
+                    )
+                ).scalars()
+            ],
+            subprocessors=await self.subprocessors(
+                session, tenant_id=tenant_id, vendor_id=vendor.id
+            ),
         )
 
     @staticmethod
@@ -914,6 +1238,23 @@ class VendorService:
             tier=vendor.tier,
             lifecycle_status=vendor.lifecycle_status,
         )
+
+    async def owner_of(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, vendor_id: uuid.UUID
+    ) -> uuid.UUID | None:
+        """The vendor's business owner, or nothing.
+
+        Nothing is a real answer, and the scheduled jobs treat it as one: an
+        unowned vendor gets no notification rather than one sent to everybody. The
+        register already surfaces unowned rows by sorting them to the top.
+        """
+        return (
+            await session.execute(
+                select(Vendor.business_owner_membership_id)
+                .where(Vendor.tenant_id == tenant_id)
+                .where(Vendor.id == vendor_id)
+            )
+        ).scalar_one_or_none()
 
     async def facets(self, session: AsyncSession, *, tenant_id: uuid.UUID) -> dict[str, Any]:
         """The register's filter vocabularies, served rather than hardcoded."""
@@ -1268,6 +1609,55 @@ class VendorService:
             )
         ).scalar_one_or_none()
 
+    async def _contract_count(
+        self, session: AsyncSession, tenant_id: uuid.UUID, engagement: VendorEngagement
+    ) -> int:
+        """Active contracts covering this engagement, or the vendor as a whole.
+
+        A master agreement with no engagement named covers every engagement — which
+        is how most vendors are actually contracted, and demanding a per-engagement
+        contract would fail the common case.
+        """
+        return (
+            await session.execute(
+                select(func.count())
+                .select_from(VendorContract)
+                .where(VendorContract.tenant_id == tenant_id)
+                .where(VendorContract.vendor_id == engagement.vendor_id)
+                .where(VendorContract.status == "active")
+                .where(
+                    or_(
+                        VendorContract.engagement_id == engagement.id,
+                        VendorContract.engagement_id.is_(None),
+                    )
+                )
+            )
+        ).scalar_one()
+
+    async def _latest_approval_at(
+        self,
+        session: AsyncSession,
+        tenant_id: uuid.UUID,
+        engagement: VendorEngagement,
+        stage: VendorStage,
+    ) -> datetime | None:
+        """When this cycle was last approved, if it was.
+
+        Only ``approve`` and ``approve_with_conditions`` count. A ``defer`` or a
+        ``reject`` is a decision that was made and recorded, and it is not a pass.
+        """
+        return (
+            await session.execute(
+                select(VendorApproval.decided_at)
+                .where(VendorApproval.tenant_id == tenant_id)
+                .where(VendorApproval.engagement_id == engagement.id)
+                .where(VendorApproval.cycle == stage.cycle)
+                .where(VendorApproval.decision.in_(["approve", "approve_with_conditions"]))
+                .order_by(VendorApproval.decided_at.desc())
+                .limit(1)
+            )
+        ).scalar_one_or_none()
+
     async def _facts(  # noqa: PLR0913, PLR0917
         self,
         session: AsyncSession,
@@ -1314,10 +1704,17 @@ class VendorService:
             open_critical_findings=await self.open_critical_count(
                 session, tenant_id=tenant_id, vendor_id=vendor.id
             ),
-            # vendor_team_roster is a section-4 table. Until it exists nobody is
-            # rostered, so every required role reports as missing — which is true
-            # and visible, rather than quietly passing.
-            assigned_reviewer_roles=(),
+            # Section 4 built the contracts and the gate, so the last two checks
+            # answer now. Every rule in lifecycle.py is unchanged since section 2 —
+            # only this collector moved, which is what the three-valued check was
+            # designed to make possible.
+            contracts_available=True,
+            contract_count=await self._contract_count(session, tenant_id, engagement),
+            approvals_available=True,
+            approval_decided_at=await self._latest_approval_at(
+                session, tenant_id, engagement, stage
+            ),
+            assigned_reviewer_roles=tuple((await self.roster(session, tenant_id=tenant_id)).keys()),
         )
 
     async def _stage_views(
@@ -2300,7 +2697,6 @@ class VendorService:
             review_format=assessment.review_format,
             assessment_domain=assessment.assessment_domain,
             status=assessment.status,
-            decision=assessment.decision,
             due_date=assessment.due_date,
             residual_score=assessment.residual_score,
             grade=assessment.grade,
@@ -2600,6 +2996,1255 @@ class VendorService:
         await session.flush()
         names = await self._member_names(session, tenant_id)
         return self._finding_view(finding, names)
+
+    # -- the roster, and who may decide (section 4) ----------------------------
+
+    async def roster(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID
+    ) -> dict[str, tuple[uuid.UUID, ...]]:
+        """Role -> the memberships holding it. The resolution half of spec 82."""
+        rows = list(
+            (
+                await session.execute(
+                    select(VendorTeamRosterEntry).where(
+                        VendorTeamRosterEntry.tenant_id == tenant_id
+                    )
+                )
+            ).scalars()
+        )
+        by_role: dict[str, list[uuid.UUID]] = {}
+        for row in rows:
+            by_role.setdefault(row.role, []).append(row.membership_id)
+        return {role: tuple(ids) for role, ids in by_role.items()}
+
+    async def set_roster_role(
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        role: str,
+        membership_id: uuid.UUID,
+    ) -> dict[str, tuple[uuid.UUID, ...]]:
+        self._check_vocabulary(role, ROSTER_ROLES, field_name="role")
+        existing = (
+            await session.execute(
+                select(VendorTeamRosterEntry)
+                .where(VendorTeamRosterEntry.tenant_id == tenant_id)
+                .where(VendorTeamRosterEntry.role == role)
+                .where(VendorTeamRosterEntry.membership_id == membership_id)
+            )
+        ).scalar_one_or_none()
+        if existing is None:
+            session.add(
+                VendorTeamRosterEntry(
+                    id=uuid7(), tenant_id=tenant_id, role=role, membership_id=membership_id
+                )
+            )
+            await self._audit.record(
+                session,
+                action="create",
+                object_type="vendor_team_roster",
+                object_id=membership_id,
+                actor=actor,
+                tenant_id=tenant_id,
+                before=None,
+                after={"role": role, "membership_id": str(membership_id)},
+            )
+        await session.flush()
+        return await self.roster(session, tenant_id=tenant_id)
+
+    async def _disqualified_approvers(
+        self, session: AsyncSession, tenant_id: uuid.UUID, engagement: VendorEngagement
+    ) -> dict[uuid.UUID, str]:
+        """Who may not decide this gate, and why (V4).
+
+        **Two exclusions, not one.** ER 122's prose excludes the vendor's business
+        owner *and* whoever submitted the stage; the diagram annotation names only
+        the submitter. The prose is the stricter reading and the one an auditor
+        expects, and it has a consequence worth stating: a one-admin workspace
+        cannot approve its own vendors. That is correct, and it is the same rule
+        the vulnerability exception flow already enforces.
+
+        Returned as reasons rather than a set, so the approver picker can grey a
+        name *and say why* — enforcing this only on submit means the user has
+        already written a rationale before learning the rule.
+        """
+        vendor = await self._load(session, tenant_id, engagement.vendor_id)
+        blocked: dict[uuid.UUID, str] = {}
+        if vendor.business_owner_membership_id:
+            blocked[vendor.business_owner_membership_id] = "business owner of this vendor"
+        submitter = await self._stage_submitter(session, tenant_id, engagement)
+        if submitter is not None:
+            blocked.setdefault(submitter, "submitted this stage for approval")
+        return blocked
+
+    async def _stage_submitter(
+        self, session: AsyncSession, tenant_id: uuid.UUID, engagement: VendorEngagement
+    ) -> uuid.UUID | None:
+        """Who advanced the engagement into the approval stage.
+
+        Read from the transition history rather than stored on the stage: the
+        history is append-only, so this answer cannot be edited after the fact by
+        anybody, including us.
+        """
+        row = (
+            await session.execute(
+                select(VendorTransition)
+                .where(VendorTransition.tenant_id == tenant_id)
+                .where(VendorTransition.engagement_id == engagement.id)
+                .where(VendorTransition.to_stage == "approval")
+                .order_by(VendorTransition.occurred_at.desc())
+                .limit(1)
+            )
+        ).scalar_one_or_none()
+        return row.actor_membership_id if row else None
+
+    async def approvers(
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        engagement_id: uuid.UUID,
+        vendor_id: uuid.UUID | None = None,
+    ) -> list[ApproverView]:
+        """Everyone who could decide, with the disqualified ones marked and reasoned.
+
+        Served so the interface can grey a name at the moment of choosing rather
+        than refusing it after a rationale has been written.
+        """
+        engagement = await self._load_engagement(session, tenant_id, engagement_id)
+        if vendor_id is not None and engagement.vendor_id != vendor_id:
+            raise NotFound(
+                _ENGAGEMENT_GONE, detail=f"engagement {engagement_id} not on {vendor_id}"
+            )
+        blocked = await self._disqualified_approvers(session, tenant_id, engagement)
+        names = await self._member_names(session, tenant_id)
+        roster = await self.roster(session, tenant_id=tenant_id)
+        approver_roles = {
+            m for role in ("exec_approver", "tprm_lead") for m in roster.get(role, ())
+        }
+        return [
+            ApproverView(
+                membership_id=member_id,
+                name=name,
+                is_designated_approver=member_id in approver_roles,
+                disqualified_reason=blocked.get(member_id),
+            )
+            for member_id, name in sorted(names.items(), key=lambda kv: kv[1].lower())
+        ]
+
+    # -- the gate --------------------------------------------------------------
+
+    async def decide(  # noqa: PLR0913
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        vendor_id: uuid.UUID,
+        engagement_id: uuid.UUID,
+        decision: str,
+        rationale: str,
+        conditions: Sequence[ConditionInput] = (),
+    ) -> VendorDetailView:
+        """Decide the approval gate. Four-valued, segregated, and append-only (V3, V4).
+
+        ``defer`` is deliberately not ``reject``: a product offering only the two
+        extremes gets ``reject`` used to mean "not yet", which then reads as a
+        refused vendor forever.
+
+        The decision does not itself advance the stage. It writes the record the
+        gate's exit rule looks for, and the advance stays an explicit act — which
+        is what makes the gate-freshness rule work, because a send-back can then
+        restart the stage without anything having to un-approve.
+        """
+        self._check_vocabulary(decision, APPROVAL_DECISIONS, field_name="decision")
+        if not rationale.strip():
+            raise InvalidInput(
+                "Say why. A decision with no reasoning is a signature with no basis, "
+                "and it is the first thing an auditor asks to see.",
+                detail="approval without a rationale",
+            )
+        engagement = await self._load_engagement(session, tenant_id, engagement_id)
+        if engagement.vendor_id != vendor_id:
+            raise NotFound(
+                _ENGAGEMENT_GONE, detail=f"engagement {engagement_id} not on {vendor_id}"
+            )
+        vendor = await self._load(session, tenant_id, vendor_id)
+
+        deciding = actor.id if isinstance(actor, Membership) else None
+        blocked = await self._disqualified_approvers(session, tenant_id, engagement)
+        if deciding is not None and deciding in blocked:
+            names = await self._member_names(session, tenant_id)
+            raise Conflict(
+                f"{names.get(deciding, 'You')} cannot approve this vendor — "
+                f"{blocked[deciding]}. Somebody else has to decide.",
+                detail=f"segregation of duties: {deciding} is {blocked[deciding]}",
+            )
+        if decision == "approve_with_conditions" and not conditions:
+            raise InvalidInput(
+                "An approval with conditions needs at least one condition. Without "
+                "one it is an unconditional approval written more elaborately.",
+                detail="approve_with_conditions with no conditions",
+            )
+
+        cycle = await self._current_cycle(session, tenant_id, engagement.id)
+        stage = await self._stage_row(session, tenant_id, engagement.id, cycle, "approval")
+        # The gate has to have been reached. Without this a reviewer could approve
+        # at intake, before a single stage of the review had happened — which
+        # would make the whole lifecycle decorative.
+        if stage is None or stage.entered_at is None:
+            raise Conflict(
+                "This engagement has not reached the approval stage yet. Work through "
+                "the lifecycle first; the gate is the last thing, not the first.",
+                detail=f"approval stage not entered on engagement {engagement.id}",
+            )
+        if stage.status == "complete":
+            raise Conflict(
+                "This gate has already been passed. Send the review back if it needs "
+                "deciding again.",
+                detail=f"approval stage already complete on engagement {engagement.id}",
+            )
+        now = datetime.now(UTC)
+        approval = VendorApproval(
+            id=uuid7(),
+            tenant_id=tenant_id,
+            vendor_id=vendor.id,
+            engagement_id=engagement.id,
+            stage_id=stage.id,
+            cycle=cycle,
+            decision=decision,
+            rationale=rationale.strip(),
+            # Frozen here: the business owner can change, and "was segregation of
+            # duties applied" has to stay answerable from the row itself.
+            excluded_membership_ids=[str(m) for m in blocked],
+            decided_by_membership_id=deciding,
+            decided_at=now,
+        )
+        session.add(approval)
+        await session.flush([approval])
+
+        for condition in conditions:
+            await self._add_condition(session, tenant_id, actor, vendor, approval, condition)
+
+        if decision == "reject":
+            engagement.status = "on_hold"
+        elif decision in {"approve", "approve_with_conditions"}:
+            engagement.status = "approved"
+        await self._audit.record(
+            session,
+            action="approve",
+            object_type="vendor_approval",
+            object_id=approval.id,
+            actor=actor,
+            tenant_id=tenant_id,
+            before=None,
+            after={
+                "decision": decision,
+                "engagement_id": str(engagement.id),
+                "conditions": len(conditions),
+                "excluded": approval.excluded_membership_ids,
+            },
+        )
+        await session.flush()
+        return await self.get_vendor(session, tenant_id=tenant_id, vendor_id=vendor.id)
+
+    async def _stage_row(
+        self,
+        session: AsyncSession,
+        tenant_id: uuid.UUID,
+        engagement_id: uuid.UUID,
+        cycle: int,
+        stage: str,
+    ) -> VendorStage | None:
+        return (
+            await session.execute(
+                select(VendorStage)
+                .where(VendorStage.tenant_id == tenant_id)
+                .where(VendorStage.engagement_id == engagement_id)
+                .where(VendorStage.cycle == cycle)
+                .where(VendorStage.stage == stage)
+            )
+        ).scalar_one_or_none()
+
+    async def _add_condition(  # noqa: PLR0913, PLR0917
+        self,
+        session: AsyncSession,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        vendor: Vendor,
+        approval: VendorApproval,
+        data: ConditionInput,
+    ) -> VendorApprovalCondition:
+        """A condition, and the real task that chases it.
+
+        A condition with no task is a note in a record nobody opens again. The
+        tasks module already has assignment, SLA and transitions, so the condition
+        row holds the compliance meaning and the task holds the work.
+        """
+        if not data.description.strip():
+            raise InvalidInput("Say what the condition is.", detail="condition with no description")
+        condition = VendorApprovalCondition(
+            id=uuid7(),
+            tenant_id=tenant_id,
+            approval_id=approval.id,
+            description=data.description.strip(),
+            owner_membership_id=data.owner_membership_id,
+            due_date=data.due_date,
+        )
+        session.add(condition)
+        await session.flush([condition])
+
+        from verity.modules.tasks.service import task_service  # noqa: PLC0415
+
+        task = await task_service.create_task(
+            session,
+            tenant_id=tenant_id,
+            actor=actor,
+            task_kind="task",
+            title=f"{vendor.name}: {data.description.strip()[:180]}",
+            description=(
+                f"A condition of the approval decided on "
+                f"{approval.decided_at.date().isoformat()}.\n\n{approval.rationale}"
+            ),
+            priority="high",
+            category="vendor",
+            owner_membership_id=data.owner_membership_id,
+            due_at=(
+                datetime.combine(data.due_date, datetime.min.time(), tzinfo=UTC)
+                if data.due_date
+                else None
+            ),
+            raised_from_type="vendor_approval_condition",
+        )
+        condition.task_id = task.id
+        await session.flush()
+        return condition
+
+    async def close_condition(  # noqa: PLR0913
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        vendor_id: uuid.UUID,
+        condition_id: uuid.UUID,
+        status: str,
+        waived_reason: str | None = None,
+    ) -> ConditionView:
+        """Mark a condition met or waived. A waiver states why; being met does not."""
+        self._check_vocabulary(status, CONDITION_STATUSES, field_name="status")
+        condition = await session.get(VendorApprovalCondition, condition_id, populate_existing=True)
+        if condition is None or condition.tenant_id != tenant_id:
+            raise NotFound(_CONDITION_GONE, detail=f"vendor approval condition {condition_id}")
+        # The path names a vendor; a condition on a different vendor's approval is
+        # a stale link, not something to act on.
+        approval = await session.get(VendorApproval, condition.approval_id)
+        if approval is None or approval.vendor_id != vendor_id:
+            raise NotFound(_CONDITION_GONE, detail=f"condition {condition_id} not on {vendor_id}")
+        if status == "waived" and not (waived_reason or "").strip():
+            raise InvalidInput(
+                "Say why the condition is being waived. A waiver with no reason is "
+                "indistinguishable from it having been forgotten.",
+                detail="waiver with no reason",
+            )
+        before = AuditService.snapshot(condition, fields=("status", "waived_reason"))
+        condition.status = status
+        condition.waived_reason = (waived_reason or "").strip() or None
+        await self._audit.record(
+            session,
+            action="update",
+            object_type="vendor_approval_condition",
+            object_id=condition.id,
+            actor=actor,
+            tenant_id=tenant_id,
+            before=before,
+            after=AuditService.snapshot(condition, fields=("status", "waived_reason")),
+        )
+        await session.flush()
+        names = await self._member_names(session, tenant_id)
+        return self._condition_view(condition, names)
+
+    @staticmethod
+    def _condition_view(row: VendorApprovalCondition, names: dict[uuid.UUID, str]) -> ConditionView:
+        owner = row.owner_membership_id
+        return ConditionView(
+            id=row.id,
+            approval_id=row.approval_id,
+            description=row.description,
+            owner_membership_id=owner,
+            owner_name=names.get(owner) if owner else None,
+            due_date=row.due_date,
+            status=row.status,
+            task_id=row.task_id,
+            waived_reason=row.waived_reason,
+        )
+
+    async def _approvals_for(
+        self, session: AsyncSession, tenant_id: uuid.UUID, vendor_id: uuid.UUID
+    ) -> list[ApprovalView]:
+        rows = list(
+            (
+                await session.execute(
+                    select(VendorApproval)
+                    .where(VendorApproval.tenant_id == tenant_id)
+                    .where(VendorApproval.vendor_id == vendor_id)
+                    .order_by(VendorApproval.decided_at.desc())
+                )
+            ).scalars()
+        )
+        if not rows:
+            return []
+        conditions = list(
+            (
+                await session.execute(
+                    select(VendorApprovalCondition)
+                    .where(VendorApprovalCondition.tenant_id == tenant_id)
+                    .where(VendorApprovalCondition.approval_id.in_([r.id for r in rows]))
+                )
+            ).scalars()
+        )
+        names = await self._member_names(session, tenant_id)
+        by_approval: dict[uuid.UUID, list[ConditionView]] = {}
+        for condition in conditions:
+            by_approval.setdefault(condition.approval_id, []).append(
+                self._condition_view(condition, names)
+            )
+        return [
+            ApprovalView(
+                id=row.id,
+                engagement_id=row.engagement_id,
+                cycle=row.cycle,
+                stage_id=row.stage_id,
+                decision=row.decision,
+                rationale=row.rationale,
+                decided_by_membership_id=row.decided_by_membership_id,
+                decided_by_name=names.get(row.decided_by_membership_id)
+                if row.decided_by_membership_id
+                else None,
+                excluded_membership_ids=list(row.excluded_membership_ids or []),
+                decided_at=row.decided_at,
+                conditions=by_approval.get(row.id, []),
+            )
+            for row in rows
+        ]
+
+    # -- the paperwork ---------------------------------------------------------
+
+    async def add_document(
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        vendor_id: uuid.UUID,
+        data: DocumentInput,
+    ) -> DocumentView:
+        """Record a SOC report, certificate or DPA and the window it covers.
+
+        ``valid_until`` is what the expiry sweep reads, so a document with no
+        expiry is accepted but reported as such rather than treated as permanent.
+        """
+        vendor = await self._load(session, tenant_id, vendor_id)
+        self._check_vocabulary(data.doc_type, DOC_TYPES, field_name="doc_type")
+        if data.issue_date and data.valid_until and data.valid_until < data.issue_date:
+            raise InvalidInput(
+                "The document expires before it was issued. Check the dates.",
+                detail=f"valid_until {data.valid_until} precedes issue_date {data.issue_date}",
+            )
+        row = VendorDocument(
+            id=uuid7(),
+            tenant_id=tenant_id,
+            vendor_id=vendor.id,
+            doc_type=data.doc_type,
+            title=self._require_name(data.title, what="document"),
+            issue_date=data.issue_date,
+            valid_until=data.valid_until,
+            collection_status=data.collection_status,
+            evidence_id=data.evidence_id,
+        )
+        session.add(row)
+        await session.flush([row])
+        await self._audit.record(
+            session,
+            action="create",
+            object_type="vendor_document",
+            object_id=row.id,
+            actor=actor,
+            tenant_id=tenant_id,
+            before=None,
+            after=AuditService.snapshot(row, fields=_DOCUMENT_SNAPSHOT),
+        )
+        await session.flush()
+        names = await self._member_names(session, tenant_id)
+        return self._document_view(row, names)
+
+    @staticmethod
+    def _document_view(row: VendorDocument, names: dict[uuid.UUID, str]) -> DocumentView:
+        today = datetime.now(UTC).date()
+        expires_in = (row.valid_until - today).days if row.valid_until else None
+        reviewer = row.reviewed_by_membership_id
+        return DocumentView(
+            id=row.id,
+            vendor_id=row.vendor_id,
+            doc_type=row.doc_type,
+            title=row.title,
+            issue_date=row.issue_date,
+            valid_until=row.valid_until,
+            # Derived on read, never stored: a stored "expired" flag is wrong for
+            # however long it is between the expiry and the next sweep.
+            expires_in_days=expires_in,
+            is_expired=bool(row.valid_until and row.valid_until < today),
+            collection_status=row.collection_status,
+            review_notes=row.review_notes,
+            reviewed_by_name=names.get(reviewer) if reviewer else None,
+            reviewed_at=row.reviewed_at,
+            evidence_id=row.evidence_id,
+        )
+
+    async def review_soc_report(
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        vendor_id: uuid.UUID,
+        data: SocReviewInput,
+    ) -> SocReviewView:
+        """Turn a SOC report into queryable fields — the CC9.2 artefact (ER 110).
+
+        This is the record that lets the platform answer a control it already ships
+        and currently cannot. It is structured rather than a file plus a note
+        because "which of our critical vendors have an unqualified SOC 2 Type II
+        covering the audit period" has to be a query, not a reading exercise.
+        """
+        vendor = await self._load(session, tenant_id, vendor_id)
+        self._check_vocabulary(data.report_kind, SOC_REPORT_KINDS, field_name="report_kind")
+        self._check_vocabulary(data.report_type, SOC_REPORT_TYPES, field_name="report_type")
+        self._check_vocabulary(data.opinion, SOC_OPINIONS, field_name="opinion")
+        if (
+            data.audit_period_start
+            and data.audit_period_end
+            and (data.audit_period_end < data.audit_period_start)
+        ):
+            raise InvalidInput(
+                "The audit period ends before it starts. Check the dates.",
+                detail="audit period reversed",
+            )
+        row = VendorSocReportReview(
+            id=uuid7(),
+            tenant_id=tenant_id,
+            vendor_id=vendor.id,
+            document_id=data.document_id,
+            report_kind=data.report_kind,
+            report_type=data.report_type,
+            audit_period_start=data.audit_period_start,
+            audit_period_end=data.audit_period_end,
+            tsc_included=list(data.tsc_included),
+            opinion=data.opinion,
+            bridge_letter_received=data.bridge_letter_received,
+            findings_material=data.findings_material,
+            cuec_reviewed=data.cuec_reviewed,
+            cuec_notes=data.cuec_notes,
+            subservice_orgs=data.subservice_orgs,
+            cpa_firm=data.cpa_firm,
+            reviewed_by_membership_id=actor.id if isinstance(actor, Membership) else None,
+            reviewed_at=datetime.now(UTC),
+        )
+        session.add(row)
+        await session.flush([row])
+
+        # A qualified or adverse opinion, or material findings, is a finding in its
+        # own right. Recording the review and leaving the reader to notice is how a
+        # bad report gets filed and forgotten.
+        if data.opinion in {"qualified", "adverse", "disclaimer"} or data.findings_material:
+            session.add(
+                VendorFinding(
+                    id=uuid7(),
+                    tenant_id=tenant_id,
+                    vendor_id=vendor.id,
+                    title=f"SOC report: {data.opinion} opinion"
+                    if data.opinion != "unqualified"
+                    else "SOC report: material findings",
+                    detail=(
+                        f"{data.report_kind.upper()} {data.report_type} covering "
+                        f"{data.audit_period_start} to {data.audit_period_end}, "
+                        f"opinion {data.opinion}."
+                    ),
+                    finding_source="document_review",
+                    severity="high" if data.opinion == "unqualified" else "critical",
+                    sla_due=datetime.now(UTC).date() + timedelta(days=30),
+                )
+            )
+        await self._audit.record(
+            session,
+            action="create",
+            object_type="vendor_soc_report_review",
+            object_id=row.id,
+            actor=actor,
+            tenant_id=tenant_id,
+            before=None,
+            after={
+                "opinion": data.opinion,
+                "findings_material": data.findings_material,
+                "report": f"{data.report_kind} {data.report_type}",
+            },
+        )
+        await session.flush()
+        return self._soc_view(row)
+
+    @staticmethod
+    def _soc_view(row: VendorSocReportReview) -> SocReviewView:
+        today = datetime.now(UTC).date()
+        return SocReviewView(
+            id=row.id,
+            vendor_id=row.vendor_id,
+            document_id=row.document_id,
+            report_kind=row.report_kind,
+            report_type=row.report_type,
+            audit_period_start=row.audit_period_start,
+            audit_period_end=row.audit_period_end,
+            tsc_included=list(row.tsc_included or []),
+            opinion=row.opinion,
+            bridge_letter_received=row.bridge_letter_received,
+            findings_material=row.findings_material,
+            cuec_reviewed=row.cuec_reviewed,
+            cuec_notes=row.cuec_notes,
+            subservice_orgs=row.subservice_orgs,
+            cpa_firm=row.cpa_firm,
+            reviewed_at=row.reviewed_at,
+            # A report whose period ended more than a year ago is stale whatever
+            # its opinion said, and a bridge letter is what covers the gap.
+            period_is_stale=bool(
+                row.audit_period_end
+                and (today - row.audit_period_end).days > _SOC_PERIOD_STALE_DAYS
+            ),
+            needs_bridge_letter=bool(
+                row.audit_period_end
+                and (today - row.audit_period_end).days > _SOC_BRIDGE_AFTER_DAYS
+                and not row.bridge_letter_received
+            ),
+        )
+
+    async def add_contract(
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        vendor_id: uuid.UUID,
+        data: ContractInput,
+    ) -> ContractView:
+        vendor = await self._load(session, tenant_id, vendor_id)
+        self._check_vocabulary(data.contract_type, CONTRACT_TYPES, field_name="contract_type")
+        self._check_vocabulary(data.status, CONTRACT_STATUSES, field_name="status")
+        if data.start_date and data.end_date and data.end_date < data.start_date:
+            raise InvalidInput(
+                "The contract ends before it starts. Check the dates.",
+                detail="contract term reversed",
+            )
+        row = VendorContract(
+            id=uuid7(),
+            tenant_id=tenant_id,
+            vendor_id=vendor.id,
+            engagement_id=data.engagement_id,
+            contract_type=data.contract_type,
+            title=self._require_name(data.title, what="contract"),
+            start_date=data.start_date,
+            end_date=data.end_date,
+            renewal_date=data.renewal_date,
+            auto_renew=data.auto_renew,
+            notice_period_days=data.notice_period_days,
+            breach_notification_hours=data.breach_notification_hours,
+            right_to_audit=data.right_to_audit,
+            subprocessor_terms=data.subprocessor_terms,
+            exit_data_return_clause=data.exit_data_return_clause,
+            value=data.value,
+            status=data.status,
+        )
+        session.add(row)
+        await session.flush([row])
+        await self._recache_contract_value(session, tenant_id, vendor)
+        await self._audit.record(
+            session,
+            action="create",
+            object_type="vendor_contract",
+            object_id=row.id,
+            actor=actor,
+            tenant_id=tenant_id,
+            before=None,
+            after=AuditService.snapshot(row, fields=_CONTRACT_SNAPSHOT),
+        )
+        await session.flush()
+        return self._contract_view(row)
+
+    async def _recache_contract_value(
+        self, session: AsyncSession, tenant_id: uuid.UUID, vendor: Vendor
+    ) -> None:
+        """Sum the active contracts onto the vendor's cached annual value (V10)."""
+        total = (
+            await session.execute(
+                select(func.sum(VendorContract.value))
+                .where(VendorContract.tenant_id == tenant_id)
+                .where(VendorContract.vendor_id == vendor.id)
+                .where(VendorContract.status == "active")
+            )
+        ).scalar_one_or_none()
+        vendor.annual_contract_value = float(total) if total is not None else None
+
+    @staticmethod
+    def _contract_view(row: VendorContract) -> ContractView:
+        today = datetime.now(UTC).date()
+        renews_in = (row.renewal_date - today).days if row.renewal_date else None
+        return ContractView(
+            id=row.id,
+            vendor_id=row.vendor_id,
+            engagement_id=row.engagement_id,
+            contract_type=row.contract_type,
+            title=row.title,
+            start_date=row.start_date,
+            end_date=row.end_date,
+            renewal_date=row.renewal_date,
+            renews_in_days=renews_in,
+            auto_renew=row.auto_renew,
+            notice_period_days=row.notice_period_days,
+            breach_notification_hours=row.breach_notification_hours,
+            right_to_audit=row.right_to_audit,
+            subprocessor_terms=row.subprocessor_terms,
+            exit_data_return_clause=row.exit_data_return_clause,
+            value=row.value,
+            status=row.status,
+            # The clause flags an auditor asks about, counted so a register can
+            # sort on "which contracts are missing protections".
+            clauses_present=sum(
+                (row.right_to_audit, row.subprocessor_terms, row.exit_data_return_clause)
+            ),
+            # auto_renew plus a notice period is the trap: miss the window and the
+            # contract renews itself for another term.
+            notice_deadline=(
+                row.renewal_date - timedelta(days=row.notice_period_days)
+                if row.renewal_date and row.notice_period_days and row.auto_renew
+                else None
+            ),
+        )
+
+    async def add_subprocessor(
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        vendor_id: uuid.UUID,
+        data: SubprocessorInput,
+    ) -> list[SubprocessorView]:
+        vendor = await self._load(session, tenant_id, vendor_id)
+        self._check_vocabulary(data.provenance, SUBPROCESSOR_PROVENANCE, field_name="provenance")
+        if data.linked_vendor_id == vendor.id:
+            raise InvalidInput(
+                "A vendor cannot be its own subprocessor.",
+                detail="self-referential subprocessor",
+            )
+        session.add(
+            VendorSubprocessor(
+                id=uuid7(),
+                tenant_id=tenant_id,
+                vendor_id=vendor.id,
+                name=self._require_name(data.name, what="subprocessor"),
+                service=data.service.strip(),
+                data_location=self._clean(data.data_location),
+                provenance=data.provenance,
+                linked_vendor_id=data.linked_vendor_id,
+                notification_obligation=self._clean(data.notification_obligation),
+            )
+        )
+        await self._audit.record(
+            session,
+            action="create",
+            object_type="vendor_subprocessor",
+            object_id=vendor.id,
+            actor=actor,
+            tenant_id=tenant_id,
+            before=None,
+            after={"name": data.name, "provenance": data.provenance},
+        )
+        await session.flush()
+        return await self.subprocessors(session, tenant_id=tenant_id, vendor_id=vendor.id)
+
+    async def subprocessors(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, vendor_id: uuid.UUID
+    ) -> list[SubprocessorView]:
+        rows = list(
+            (
+                await session.execute(
+                    select(VendorSubprocessor)
+                    .where(VendorSubprocessor.tenant_id == tenant_id)
+                    .where(VendorSubprocessor.vendor_id == vendor_id)
+                    .order_by(VendorSubprocessor.name)
+                )
+            ).scalars()
+        )
+        # How many *other* vendors also declare this fourth party. The concentration
+        # question — "how much of our estate depends on this one supplier" — is only
+        # answerable because the subprocessor rows point at a vendor row.
+        shared: dict[uuid.UUID, int] = {}
+        linked = [r.linked_vendor_id for r in rows if r.linked_vendor_id]
+        if linked:
+            counts = await session.execute(
+                select(
+                    VendorSubprocessor.linked_vendor_id,
+                    func.count(func.distinct(VendorSubprocessor.vendor_id)),
+                )
+                .where(VendorSubprocessor.tenant_id == tenant_id)
+                .where(VendorSubprocessor.linked_vendor_id.in_(linked))
+                .group_by(VendorSubprocessor.linked_vendor_id)
+            )
+            shared = {row[0]: row[1] for row in counts.all()}
+        return [
+            SubprocessorView(
+                id=r.id,
+                vendor_id=r.vendor_id,
+                name=r.name,
+                service=r.service,
+                data_location=r.data_location,
+                provenance=r.provenance,
+                linked_vendor_id=r.linked_vendor_id,
+                notification_obligation=r.notification_obligation,
+                status=r.status,
+                also_used_by_vendors=max(shared.get(r.linked_vendor_id, 1) - 1, 0)
+                if r.linked_vendor_id
+                else 0,
+            )
+            for r in rows
+        ]
+
+    # -- intake: the front door ------------------------------------------------
+
+    async def request_vendor(
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        data: IntakeInput,
+    ) -> IntakeView:
+        """Ask for a vendor. This is not yet a vendor row, and that is the point.
+
+        A register that fills with everything anyone ever proposed stops being a
+        list of who has our data.
+        """
+        row = VendorIntakeRequest(
+            id=uuid7(),
+            tenant_id=tenant_id,
+            requested_by_membership_id=actor.id if isinstance(actor, Membership) else None,
+            vendor_name=self._require_name(data.vendor_name, what="vendor"),
+            department=self._clean(data.department),
+            proposed_service=data.proposed_service.strip(),
+            data_types_shared=list(data.data_types_shared),
+            urgency=data.urgency,
+        )
+        self._check_vocabulary(data.urgency, URGENCIES, field_name="urgency")
+        # Screening is a name match against the register, not a judgement: if we
+        # already deal with them, the requester should know before anyone reviews.
+        duplicates = await self.find_duplicates(session, tenant_id=tenant_id, name=row.vendor_name)
+        row.screening_status = "flagged" if duplicates else "passed"
+        session.add(row)
+        await session.flush([row])
+        await self._audit.record(
+            session,
+            action="create",
+            object_type="vendor_intake_request",
+            object_id=row.id,
+            actor=actor,
+            tenant_id=tenant_id,
+            before=None,
+            after={"vendor_name": row.vendor_name, "screening_status": row.screening_status},
+        )
+        await session.flush()
+        return self._intake_view(row, await self._member_names(session, tenant_id), duplicates)
+
+    async def decide_intake(  # noqa: PLR0913
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        request_id: uuid.UUID,
+        approve: bool,
+        reason: str | None = None,
+    ) -> IntakeView:
+        """Accept or decline. Accepting creates the vendor and its first engagement
+        in the same transaction; declining creates nothing and keeps the reason."""
+        row = await session.get(VendorIntakeRequest, request_id, populate_existing=True)
+        if row is None or row.tenant_id != tenant_id:
+            raise NotFound(_INTAKE_GONE, detail=f"vendor intake request {request_id}")
+        if row.decision != "pending":
+            raise Conflict(
+                "This request has already been decided.",
+                detail=f"intake {request_id} is {row.decision}",
+            )
+        if not approve and not (reason or "").strip():
+            raise InvalidInput(
+                "Say why the request is being declined. The same tool will be asked "
+                "for again next quarter, and the reason is what makes it recognisable.",
+                detail="intake rejection with no reason",
+            )
+
+        now = datetime.now(UTC)
+        row.decided_by_membership_id = actor.id if isinstance(actor, Membership) else None
+        row.decided_at = now
+        row.decision_reason = (reason or "").strip() or None
+        if approve:
+            created = await self.create_vendor(
+                session,
+                tenant_id=tenant_id,
+                actor=actor,
+                data=VendorInput(
+                    name=row.vendor_name,
+                    business_unit=row.department,
+                    services_provided=row.proposed_service,
+                    data_types_in_scope=tuple(row.data_types_shared or []),
+                ),
+            )
+            row.decision = "approved"
+            row.created_vendor_id = created.id
+        else:
+            row.decision = "rejected"
+        await self._audit.record(
+            session,
+            action="approve" if approve else "update",
+            object_type="vendor_intake_request",
+            object_id=row.id,
+            actor=actor,
+            tenant_id=tenant_id,
+            before={"decision": "pending"},
+            after={
+                "decision": row.decision,
+                "created_vendor_id": str(row.created_vendor_id) if row.created_vendor_id else None,
+                "reason": row.decision_reason,
+            },
+        )
+        await session.flush()
+        return self._intake_view(row, await self._member_names(session, tenant_id), [])
+
+    @staticmethod
+    def _intake_view(
+        row: VendorIntakeRequest,
+        names: dict[uuid.UUID, str],
+        duplicates: Sequence[DuplicateMatch],
+    ) -> IntakeView:
+        requester = row.requested_by_membership_id
+        decider = row.decided_by_membership_id
+        return IntakeView(
+            id=row.id,
+            vendor_name=row.vendor_name,
+            department=row.department,
+            proposed_service=row.proposed_service,
+            data_types_shared=list(row.data_types_shared or []),
+            urgency=row.urgency,
+            screening_status=row.screening_status,
+            decision=row.decision,
+            decision_reason=row.decision_reason,
+            requested_by_name=names.get(requester) if requester else None,
+            decided_by_name=names.get(decider) if decider else None,
+            decided_at=row.decided_at,
+            created_vendor_id=row.created_vendor_id,
+            duplicates=list(duplicates),
+            created_at=row.created_at,
+        )
+
+    async def list_intake(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, decision: str | None = None
+    ) -> list[IntakeView]:
+        """The intake queue. Pending first, because that is the work."""
+        stmt = select(VendorIntakeRequest).where(VendorIntakeRequest.tenant_id == tenant_id)
+        if decision:
+            stmt = stmt.where(VendorIntakeRequest.decision == decision)
+        rows = list((await session.execute(stmt)).scalars())
+        names = await self._member_names(session, tenant_id)
+        views = [self._intake_view(r, names, []) for r in rows]
+        views.sort(key=lambda v: (v.decision != "pending", v.created_at), reverse=False)
+        return views
+
+    # -- the exit --------------------------------------------------------------
+
+    async def offboard(  # noqa: PLR0913
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        vendor_id: uuid.UUID,
+        engagement_id: uuid.UUID | None,
+        reason: str,
+    ) -> VendorDetailView:
+        """Start the evidenced exit (ER 127). Archive, never delete.
+
+        Offboarding one engagement is not terminating the vendor, which is why the
+        engagement is optional and its absence means the whole relationship.
+        """
+        vendor = await self._load(session, tenant_id, vendor_id)
+        if not reason.strip():
+            raise InvalidInput(
+                "Say why the relationship is ending. It is the first thing anyone "
+                "reviewing the exit will ask.",
+                detail="offboarding with no reason",
+            )
+        row = VendorOffboarding(
+            id=uuid7(),
+            tenant_id=tenant_id,
+            vendor_id=vendor.id,
+            engagement_id=engagement_id,
+            reason=reason.strip(),
+        )
+        session.add(row)
+        if engagement_id is not None:
+            engagement = await self._load_engagement(session, tenant_id, engagement_id)
+            engagement.status = "offboarding"
+        else:
+            vendor.lifecycle_status = "offboarding"
+        await self._audit.record(
+            session,
+            action="transition",
+            object_type="vendor_offboarding",
+            object_id=row.id,
+            actor=actor,
+            tenant_id=tenant_id,
+            before={"lifecycle_status": vendor.lifecycle_status},
+            after={"reason": reason.strip(), "engagement_id": str(engagement_id or "")},
+        )
+        await session.flush()
+        return await self.get_vendor(session, tenant_id=tenant_id, vendor_id=vendor.id)
+
+    async def complete_offboarding(  # noqa: PLR0913
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        vendor_id: uuid.UUID,
+        offboarding_id: uuid.UUID,
+        data: OffboardingCompletion,
+    ) -> VendorDetailView:
+        """Close the exit, once every step is evidenced.
+
+        Refuses while a step is outstanding. An offboarding marked complete with
+        access still live is exactly the record an auditor uses to show the process
+        is theatre.
+        """
+        row = await session.get(VendorOffboarding, offboarding_id, populate_existing=True)
+        if row is None or row.tenant_id != tenant_id or row.vendor_id != vendor_id:
+            raise NotFound(
+                _OFFBOARDING_GONE, detail=f"vendor offboarding {offboarding_id} on {vendor_id}"
+            )
+        now = datetime.now(UTC)
+        if data.access_revoked:
+            row.access_revoked_at = row.access_revoked_at or now
+            row.revoked_by_membership_id = actor.id if isinstance(actor, Membership) else None
+        if data.data_returned:
+            row.data_return_attested_at = row.data_return_attested_at or now
+        row.contract_provisions_reviewed = (
+            row.contract_provisions_reviewed or data.contract_provisions_reviewed
+        )
+        row.final_payments_settled = row.final_payments_settled or data.final_payments_settled
+        row.certificate_evidence_id = data.certificate_evidence_id or row.certificate_evidence_id
+        row.notes = self._clean(data.notes) or row.notes
+
+        outstanding = [
+            label
+            for label, done in (
+                ("access revoked", row.access_revoked_at is not None),
+                ("data return attested", row.data_return_attested_at is not None),
+                ("contract provisions reviewed", row.contract_provisions_reviewed),
+                ("final payments settled", row.final_payments_settled),
+            )
+            if not done
+        ]
+        if data.complete and outstanding:
+            raise Conflict(
+                "The exit is not finished: " + ", ".join(outstanding) + ".",
+                detail=f"offboarding {offboarding_id} outstanding: {outstanding}",
+            )
+        vendor = await self._load(session, tenant_id, row.vendor_id)
+        if data.complete:
+            row.completed_at = now
+            # Archived, never deleted (rule 6). An auditor's first question about a
+            # missing vendor is who removed it and why.
+            if row.engagement_id is None:
+                vendor.lifecycle_status = "archived"
+            else:
+                engagement = await self._load_engagement(session, tenant_id, row.engagement_id)
+                engagement.status = "archived"
+        await self._audit.record(
+            session,
+            action="transition",
+            object_type="vendor_offboarding",
+            object_id=row.id,
+            actor=actor,
+            tenant_id=tenant_id,
+            before=None,
+            after={
+                "completed": row.completed_at is not None,
+                "outstanding": outstanding,
+            },
+        )
+        await session.flush()
+        return await self.get_vendor(session, tenant_id=tenant_id, vendor_id=vendor.id)
+
+    # -- reassessment ----------------------------------------------------------
+
+    async def open_reassessment(
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        vendor_id: uuid.UUID,
+        engagement_id: uuid.UUID,
+    ) -> VendorDetailView:
+        """Start the next cycle, carrying the tier forward.
+
+        The new cycle's stages are laid out from the *current* tier, so a vendor
+        that has since been retiered is reviewed at the depth it now warrants
+        rather than the depth it warranted last year.
+
+        ``next_reassessment_on`` is **not** recomputed from today. It moves on the
+        cadence from where it already was, so a review completed late does not push
+        the next one late — reviews drifting a little further out every cycle is
+        the failure this rule exists to prevent (ER 101).
+        """
+        engagement = await self._load_engagement(session, tenant_id, engagement_id)
+        if engagement.vendor_id != vendor_id:
+            raise NotFound(
+                _ENGAGEMENT_GONE, detail=f"engagement {engagement_id} not on {vendor_id}"
+            )
+        vendor = await self._load(session, tenant_id, vendor_id)
+        policy = await self._resolved_policy(session, tenant_id)
+        cycle = await self._current_cycle(session, tenant_id, engagement.id) + 1
+        await self.materialise_cycle(session, tenant_id, engagement, cycle, policy)
+        self._schedule_reassessment(vendor, engagement.tier, policy)
+        await self._audit.record(
+            session,
+            action="transition",
+            object_type="vendor_engagement",
+            object_id=engagement.id,
+            actor=actor,
+            tenant_id=tenant_id,
+            before={"cycle": cycle - 1},
+            after={"cycle": cycle, "next_reassessment_on": str(vendor.next_reassessment_on)},
+        )
+        await session.flush()
+        return await self.get_vendor(session, tenant_id=tenant_id, vendor_id=vendor_id)
+
+    async def due_for_reassessment(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, on: date | None = None
+    ) -> list[uuid.UUID]:
+        """Vendors whose next review has come round. What the scheduled job reads."""
+        cutoff = on or datetime.now(UTC).date()
+        return list(
+            (
+                await session.execute(
+                    select(Vendor.id)
+                    .where(Vendor.tenant_id == tenant_id)
+                    .where(Vendor.next_reassessment_on.is_not(None))
+                    .where(Vendor.next_reassessment_on <= cutoff)
+                    .where(Vendor.lifecycle_status.not_in(["archived", "terminated"]))
+                )
+            ).scalars()
+        )
+
+    async def expiring_documents(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, within_days: int = 30
+    ) -> list[DocumentView]:
+        """Documents already expired or about to be. What the expiry sweep reads."""
+        horizon = datetime.now(UTC).date() + timedelta(days=within_days)
+        rows = list(
+            (
+                await session.execute(
+                    select(VendorDocument)
+                    .where(VendorDocument.tenant_id == tenant_id)
+                    .where(VendorDocument.valid_until.is_not(None))
+                    .where(VendorDocument.valid_until <= horizon)
+                    .order_by(VendorDocument.valid_until)
+                )
+            ).scalars()
+        )
+        names = await self._member_names(session, tenant_id)
+        return [self._document_view(r, names) for r in rows]
+
+    async def raise_sla_findings(self, session: AsyncSession, *, tenant_id: uuid.UUID) -> int:
+        """One finding per breached service level, idempotent per SLA.
+
+        A breached SLA is a fact the vendor has already caused, so the sweep is
+        allowed to write it — unlike the reassessment and expiry sweeps, which only
+        tell somebody. The idempotency is what makes a nightly job safe: an open
+        finding for the same service level suppresses a second.
+
+        The actor is ``System``: nobody asked for this, the clock did.
+        """
+        breached = list(
+            (
+                await session.execute(
+                    select(VendorSla)
+                    .where(VendorSla.tenant_id == tenant_id)
+                    .where(VendorSla.status == "breached")
+                )
+            ).scalars()
+        )
+        raised = 0
+        for sla in breached:
+            title = f"SLA breached: {sla.name}"
+            already = (
+                await session.execute(
+                    select(VendorFinding.id)
+                    .where(VendorFinding.tenant_id == tenant_id)
+                    .where(VendorFinding.vendor_id == sla.vendor_id)
+                    .where(VendorFinding.finding_source == "sla_breach")
+                    .where(VendorFinding.title == title)
+                    .where(VendorFinding.status.in_(list(OPEN_FINDING_STATUSES)))
+                )
+            ).scalar_one_or_none()
+            if already is not None:
+                continue
+            finding = VendorFinding(
+                id=uuid7(),
+                tenant_id=tenant_id,
+                vendor_id=sla.vendor_id,
+                title=title,
+                detail=f"Committed {sla.target}; measured {sla.measurement or 'not recorded'}.",
+                finding_source="sla_breach",
+                severity="high",
+                sla_due=datetime.now(UTC).date() + timedelta(days=_FINDING_SLA_DAYS["high"]),
+            )
+            session.add(finding)
+            await session.flush([finding])
+            await self._audit.record(
+                session,
+                action="create",
+                object_type="vendor_finding",
+                object_id=finding.id,
+                actor=System(),
+                tenant_id=tenant_id,
+                before=None,
+                after=AuditService.snapshot(finding, fields=_FINDING_SNAPSHOT),
+            )
+            raised += 1
+        await session.flush()
+        return raised
+
+    async def breaching_slas(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID
+    ) -> list[uuid.UUID]:
+        """SLA rows whose measurement is at risk or breached. The sweep's input."""
+        return list(
+            (
+                await session.execute(
+                    select(VendorSla.id)
+                    .where(VendorSla.tenant_id == tenant_id)
+                    .where(VendorSla.status.in_(["at_risk", "breached"]))
+                )
+            ).scalars()
+        )
 
 
 vendor_service = VendorService()

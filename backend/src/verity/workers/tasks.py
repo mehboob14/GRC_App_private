@@ -37,7 +37,7 @@ from __future__ import annotations
 import asyncio
 import uuid
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, Final
 
 from sqlalchemy import text
 
@@ -60,6 +60,11 @@ async def _active_tenant_ids() -> list[uuid.UUID]:
     async with provider_session_scope() as session:
         rows = await session.execute(text("SELECT id FROM tenants WHERE status = 'active'"))
         return [row[0] for row in rows]
+
+
+_VENDOR_DOC_HORIZON_DAYS: Final = 30
+"""How far ahead to warn about a lapsing vendor document. Long enough to renew a
+certificate, short enough that the warning still means something on arrival."""
 
 
 @celery_app.task(name="verity.workers.tasks.heartbeat")
@@ -178,3 +183,121 @@ async def _flush_notification_emails() -> dict[str, Any]:
             await notification_service.mark_emailed(session, tenant_id=tenant_id, ids=done)
     logger.info("worker.flush_notification_emails", emails_sent=sent)
     return {"emails_sent": sent}
+
+
+@celery_app.task(name="verity.workers.tasks.queue_vendor_reassessments")
+def queue_vendor_reassessments() -> dict[str, Any]:
+    """Tell owners which vendor reviews have come round.
+
+    It does **not** open the cycle. Starting a reassessment retiers the engagement
+    and lays out fresh stages, which is a decision with consequences — a job doing
+    it unasked would move every vendor's lifecycle overnight. Idempotent through
+    ``notify_once``: one nudge per vendor per owner, however often this runs.
+    """
+    return asyncio.run(_queue_vendor_reassessments())
+
+
+async def _queue_vendor_reassessments() -> dict[str, Any]:
+    from verity.modules.notifications.service import notification_service  # noqa: PLC0415
+    from verity.modules.vendors.service import vendor_service  # noqa: PLC0415
+
+    written = 0
+    for tenant_id in await _active_tenant_ids():
+        async with session_scope(tenant_id) as session:
+            for vendor_id in await vendor_service.due_for_reassessment(
+                session, tenant_id=tenant_id
+            ):
+                owner = await vendor_service.owner_of(
+                    session, tenant_id=tenant_id, vendor_id=vendor_id
+                )
+                if owner is None:
+                    continue
+                ref = await vendor_service.get_ref(
+                    session, tenant_id=tenant_id, vendor_id=vendor_id
+                )
+                written += int(
+                    await notification_service.notify_once(
+                        session,
+                        tenant_id=tenant_id,
+                        recipient_membership_id=owner,
+                        kind="vendor_reassessment_due",
+                        title=f"{ref.name} is due for review",
+                        body="The reassessment cadence for this vendor has come round.",
+                        object_type="vendor",
+                        object_id=vendor_id,
+                        email=True,
+                    )
+                )
+    logger.info("worker.queue_vendor_reassessments", notifications_written=written)
+    return {"notifications_written": written}
+
+
+@celery_app.task(name="verity.workers.tasks.sweep_vendor_documents")
+def sweep_vendor_documents() -> dict[str, Any]:
+    """Warn on vendor documents that have lapsed or lapse within thirty days.
+
+    Raises no finding: an expired SOC report is a fact about the paperwork, not a
+    failed control, and turning every lapsed certificate into a finding is how a
+    findings list stops being read.
+    """
+    return asyncio.run(_sweep_vendor_documents())
+
+
+async def _sweep_vendor_documents() -> dict[str, Any]:
+    from verity.modules.notifications.service import notification_service  # noqa: PLC0415
+    from verity.modules.vendors.service import vendor_service  # noqa: PLC0415
+
+    written = 0
+    for tenant_id in await _active_tenant_ids():
+        async with session_scope(tenant_id) as session:
+            for document in await vendor_service.expiring_documents(
+                session, tenant_id=tenant_id, within_days=_VENDOR_DOC_HORIZON_DAYS
+            ):
+                owner = await vendor_service.owner_of(
+                    session, tenant_id=tenant_id, vendor_id=document.vendor_id
+                )
+                if owner is None:
+                    continue
+                title = (
+                    f"{document.title} has expired"
+                    if document.is_expired
+                    else f"{document.title} expires in {document.expires_in_days} days"
+                )
+                written += int(
+                    await notification_service.notify_once(
+                        session,
+                        tenant_id=tenant_id,
+                        recipient_membership_id=owner,
+                        kind="vendor_document_expiring",
+                        title=title,
+                        body="Request an updated copy from the vendor.",
+                        object_type="vendor",
+                        object_id=document.vendor_id,
+                        email=True,
+                    )
+                )
+    logger.info("worker.sweep_vendor_documents", notifications_written=written)
+    return {"notifications_written": written}
+
+
+@celery_app.task(name="verity.workers.tasks.sweep_vendor_slas")
+def sweep_vendor_slas() -> dict[str, Any]:
+    """Raise a finding for each breached vendor service level.
+
+    This one writes, and the difference from the two above is deliberate: a
+    breached SLA is a contractual fact the vendor has already caused, not a
+    judgement the platform is making. Idempotent per service level — an open
+    finding for the same SLA suppresses a second.
+    """
+    return asyncio.run(_sweep_vendor_slas())
+
+
+async def _sweep_vendor_slas() -> dict[str, Any]:
+    from verity.modules.vendors.service import vendor_service  # noqa: PLC0415
+
+    raised = 0
+    for tenant_id in await _active_tenant_ids():
+        async with session_scope(tenant_id) as session:
+            raised += await vendor_service.raise_sla_findings(session, tenant_id=tenant_id)
+    logger.info("worker.sweep_vendor_slas", findings_raised=raised)
+    return {"findings_raised": raised}

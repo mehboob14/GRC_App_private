@@ -150,35 +150,64 @@ adds its policy in the same migration; the isolation tests ship in this change.
 
 ## 4. Decision, contract and exit
 
-- [ ] 4.1 `vendor_approvals` (append-only), migration, four-valued decision (V3).
-- [ ] 4.2 Approve/defer/reject with segregation of duties enforced server-side (V4) and the
-      gate-freshness rule (`decided_at >= stage.entered_at`). Tests for both.
-- [ ] 4.3 Conditions on an approval become tasks.
-- [ ] 4.4 `vendor_documents` + `vendor_contracts`, migration, coverage window and expiry,
-      `evidence_id` link.
-- [ ] 4.5 `vendor_signals`, migration, with `source`/`external_id`/`synced_at` from day one.
-- [ ] 4.6 `vendor_soc_report_reviews`, migration. Structured fields: report kind, audit period,
-      criteria, opinion, bridge letter, findings-material, CUEC reviewed, subservice orgs.
-      **This is the CC9.2 artefact** (ER ¶110) — it earns its own review screen, not a form.
-- [ ] 4.7 `vendor_subprocessors`, migration. The fourth-party register with data location and
-      notification obligations.
-- [ ] 4.8 `vendor_slas`, migration. Committed level vs measured, with the breach flag derived on
-      read rather than stored.
-- [ ] 4.9 `vendor_approval_conditions`, migration; each condition also creates a task.
-- [ ] 4.10 `vendor_assessment_comments`, migration; the reviewer thread on an assessment.
-- [ ] 4.11 `vendor_intake_requests`, migration; the front door, with its own approve/decline that
-      creates the vendor on acceptance.
-- [ ] 4.12 `vendor_team_roster`, migration; roles as rows, not a JSON blob.
-- [ ] 4.13 `vendor_alert_rules`, migration. In-app delivery works now; the Slack channel is
-      wired but inert until the Phase 2 connector.
-- [ ] 4.14 `vendor_scorecards` and `vendor_discovered_apps`, migrations, with rule-9 columns. **Manual
-      entry only** — no connector feeds either in any phase yet.
-- [ ] 4.15 `vendor_offboardings`, migration; archive-not-delete; attestation recorded as an
-      assessment; certificate stored as evidence.
-- [ ] 4.16 Reassessment: new cycle, carry intake and tiering forward, `next_reassessment_on`
-      computed from cadence not completion. Test that a late review does not move the next one.
-- [ ] 4.17 Three celery-beat jobs — reassessment queue, document expiry, SLA breach sweep — each
-      iterating tenants one transaction at a time.
+- [x] 4.1 `vendor_approvals` (append-only, `decided_at` alone, both actor FKs `ON DELETE NO
+      ACTION`), migration, four-valued decision (V3). **`vendor_assessments.decision` is dropped**
+      in the same migration: the ER draws two decision enums that disagree, and two tables holding
+      overlapping decision state is the trap V3 names.
+- [x] 4.2 Approve/defer/reject with segregation of duties enforced server-side (V4 — **two**
+      exclusions, the business owner *and* the stage submitter, taking the ER's prose over its
+      diagram) and the gate-freshness rule. The submitter is read from the append-only transition
+      history, so it cannot be edited after the fact. Who was barred is **frozen onto the approval
+      row**: the business owner can change, and "was segregation of duties applied here" has to
+      stay answerable. `approvers()` returns the disqualified with their reason so the picker greys
+      a name *and explains*, rather than refusing after a rationale has been written.
+- [x] 4.3 Conditions on an approval become tasks, and an `approve_with_conditions` with no
+      conditions is refused — it is an unconditional approval written more elaborately.
+- [x] 4.4 `vendor_documents` + `vendor_contracts`, migration, coverage window and expiry,
+      `evidence_id` link. Expiry and the auto-renew **notice deadline** are derived on read, never
+      stored: the date somebody actually needs is never the one printed on the contract.
+- [x] 4.5 `vendor_signals`, migration, with `source`/`external_id`/`synced_at` and a `dedup_key`
+      unique per tenant from day one.
+- [x] 4.6 `vendor_soc_report_reviews`, migration. **The CC9.2 artefact** (ER ¶110), structured so
+      "which critical vendors hold an unqualified SOC 2 Type II covering the period" is a query. A
+      qualified opinion or material findings raises a finding rather than being filed — recording
+      the review and leaving the reader to notice is how a bad report gets forgotten.
+- [x] 4.7 `vendor_subprocessors`, migration. `linked_vendor_id` makes concentration visible: the
+      register reports how many other vendors declare the same fourth party.
+- [x] 4.8 `vendor_slas`, migration. The stored status feeds the sweep; the breach flag the
+      interface shows is derived on read.
+- [x] 4.9 `vendor_approval_conditions`, migration; each condition creates a task, and a waiver
+      states why.
+- [x] 4.10 `vendor_assessment_comments`, migration. `visibility` is load-bearing — an
+      `internal_only` comment reaching the portal is a disclosure incident.
+- [x] 4.11 `vendor_intake_requests`, migration; the front door. Screening name-matches against the
+      register so a duplicate is flagged before anyone reviews it. Accepting creates the vendor and
+      its first engagement in one transaction; declining creates nothing and keeps its reason.
+- [x] 4.12 `vendor_team_roster`, migration; roles as rows. With the tiering policy's
+      `required_reviewer_roles_by_tier` this completes spec ¶82's "required reviewers" — and it
+      needed no table of its own, which is why `vendor_reviewers` was cut in section 0.
+- [x] 4.13 `vendor_alert_rules`, migration. In-app and email work; `slack` is accepted and inert
+      until the Phase-2 connector, because a customer configuring Slack and never learning it does
+      nothing is worse than one told it is unavailable.
+- [x] 4.14 `vendor_scorecards` and `vendor_discovered_apps`, migrations, with rule-9 columns.
+      **Manual entry only** — no connector feeds either in any phase yet.
+- [x] 4.15 `vendor_offboardings`, migration; archive-not-delete, and completion is **refused while
+      a step is outstanding**. An exit marked complete with access still live is the record an
+      auditor uses to show the process is theatre.
+- [x] 4.16 Reassessment: new cycle, stages laid out from the *current* tier, `next_reassessment_on`
+      moved on the cadence from where it already was. Tested that a late review does not move the
+      next one, and that an archived vendor drops out of the queue.
+- [x] 4.17 Three celery-beat jobs — reassessment queue, document expiry, SLA breach sweep — each
+      iterating tenants one transaction at a time, because the tenant setting is transaction-local
+      and a job looping inside one transaction would read every tenant after the first with the
+      wrong tenant bound. The first two only notify; only the SLA sweep writes, because a breached
+      SLA is a fact the vendor caused rather than a judgement the platform is making.
+- [x] 4.18 **The gate could be decided before it was reached.** Found by the send-back test: a
+      reviewer could approve at intake, before a single stage of the review had happened, which
+      would make the lifecycle decorative. `decide()` now requires the stage to have been entered,
+      and `lifecycle` treats a never-entered stage as *not* satisfying the freshness rule — a
+      send-back clears `entered_at`, so the old reading let a pre-send-back approval satisfy the
+      gate again.
 
 ## 5. Interface
 
