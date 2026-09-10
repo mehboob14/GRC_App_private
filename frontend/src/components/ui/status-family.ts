@@ -64,6 +64,33 @@ export const STATUS_WORD_FAMILY: Readonly<Record<string, StatusFamily>> = {
   enrolled: "success",
   "not enrolled": "warning",
   enforced: "success",
+  // Week 5 third-party risk. The vendor lifecycle, the assessment states and
+  // the gate decisions, mapped once here so "Approved" is the same green
+  // whether it labels a vendor, an intake request or a gate decision.
+  requested: "pending",
+  "under review": "progress",
+  approved: "success",
+  "approved with conditions": "warning",
+  flagged: "danger",
+  "on hold": "warning",
+  offboarding: "warning",
+  terminated: "neutral",
+  submitted: "progress",
+  scored: "success",
+  skipped: "neutral",
+  deferred: "pending",
+  rejected: "danger",
+  declined: "danger",
+  "in remediation": "progress",
+  accepted: "pending",
+  met: "success",
+  waived: "neutral",
+  received: "progress",
+  reviewed: "success",
+  "not screened": "pending",
+  screened: "success",
+  "not tiered": "neutral",
+  "not scored": "neutral",
 };
 
 /** Family for a canonical status word, or undefined for unmapped words. */

@@ -101,6 +101,7 @@ export { SegmentedControl, type SegmentedItem } from "./segmented-control";
 export { TabStrip, type TabStripItem } from "./tab-strip";
 export { Toolbar } from "./toolbar";
 export { useTableSort, type SortDir } from "./use-table-sort";
+export { TextArea } from "./text-area";
 export { TextField } from "./text-field";
 export { ToastProvider } from "./toast";
 export { useToast } from "./toast-context";

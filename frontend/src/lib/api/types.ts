@@ -46,6 +46,10 @@ export const PERMISSION_KEYS = [
   "vulnerabilities:manage",
   "vulnerabilities:import",
   "vulnerabilities:accept",
+  "vendors:read",
+  "vendors:manage",
+  "vendors:assess",
+  "vendors:approve",
 ] as const;
 
 export type PermissionKey = (typeof PERMISSION_KEYS)[number];

@@ -1,5 +1,6 @@
 import {
   createContext,
+  forwardRef,
   useContext,
   type ButtonHTMLAttributes,
   type HTMLAttributes,
@@ -226,12 +227,16 @@ export function TD({ className, numeric, ...props }: TDProps) {
 }
 
 /** DS §5.3 icon-only 28 for in-row actions — callers must pass aria-label. */
-export function TableIconButton({
-  className,
-  ...props
-}: ButtonHTMLAttributes<HTMLButtonElement>) {
-  return (
+/**
+ * forwardRef because a row's action button is nearly always a Radix
+ * `DropdownMenuTrigger asChild`, which needs the ref to position the menu.
+ * Without it React warns and the ref silently fails — which is why every
+ * register hand-rolled this same button instead of using it.
+ */
+export const TableIconButton = forwardRef<HTMLButtonElement, ButtonHTMLAttributes<HTMLButtonElement>>(
+  ({ className, ...props }, ref) => (
     <button
+      ref={ref}
       type="button"
       className={cn(
         "inline-flex size-7 items-center justify-center rounded-sm text-text-subtle transition-colors duration-80 hover:bg-surface-hover hover:text-text-primary",
@@ -239,8 +244,10 @@ export function TableIconButton({
       )}
       {...props}
     />
-  );
-}
+  ),
+);
+
+TableIconButton.displayName = "TableIconButton";
 
 export function TableEmpty({ children }: { children: ReactNode }) {
   return (

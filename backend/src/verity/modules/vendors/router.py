@@ -1,14 +1,15 @@
 """Vendor register routes.
 
 Four permission keys, deny-by-default (rule 7): ``vendors:read``,
-``vendors:manage``, ``vendors:assess`` and ``vendors:approve``. The last two are
-``vendors:assess`` guards tiering; ``vendors:approve`` is seeded by this module's
-migration and is not yet used by any route — the approval gate is section 4 — so
-it is deliberately absent rather than attached to a route that does not enforce
-it.
+``vendors:manage``, ``vendors:assess`` and ``vendors:approve``. Reading is
+separated from writing, tiering and scoring sit behind ``vendors:assess``, and
+``vendors:approve`` guards only the two decisions a reviewer owns — the gate
+decision and accepting a finding as residual risk.
 
 Static collection paths are declared before ``/{vendor_id}`` so they are not
-captured by it.
+captured by it. ``tests/unit/test_route_shadowing.py`` proves that for every
+router, because the failure is silent: the parameterised route matches first and
+answers 422 from the UUID coercion.
 """
 
 from __future__ import annotations
@@ -215,6 +216,47 @@ async def create_vendor(
         engagement=_to_engagement(body.engagement) if body.engagement else None,
     )
     return VendorDetailOut.model_validate(view)
+
+
+# -- cross-vendor collections (before /{vendor_id}, or it captures them) ------
+
+
+@vendors_router.get("/findings", response_model=FindingPageOut, summary="Findings across vendors")
+async def list_findings(
+    _p: Annotated[Principal, Depends(require_read)],
+    context: _Ctx,
+    session: _Db,
+    vendor_id: uuid.UUID | None = None,
+    statuses: Annotated[list[str] | None, Query()] = None,
+) -> FindingPageOut:
+    items = await vendor_service.list_findings(
+        session,
+        tenant_id=context.tenant_id,
+        vendor_id=vendor_id,
+        statuses=tuple(statuses or ()),
+    )
+    return FindingPageOut(items=[FindingOut.model_validate(f) for f in items], total=len(items))
+
+
+@vendors_router.get("/intake", response_model=IntakePageOut, summary="Intake queue")
+async def list_intake(
+    _p: Annotated[Principal, Depends(require_read)],
+    context: _Ctx,
+    session: _Db,
+    decision: str | None = None,
+) -> IntakePageOut:
+    items = await vendor_service.list_intake(
+        session, tenant_id=context.tenant_id, decision=decision
+    )
+    return IntakePageOut(items=[IntakeOut.model_validate(i) for i in items], total=len(items))
+
+
+@vendors_router.get("/roster", response_model=RosterOut, summary="Who plays which role")
+async def get_roster(
+    _p: Annotated[Principal, Depends(require_read)], context: _Ctx, session: _Db
+) -> RosterOut:
+    roster = await vendor_service.roster(session, tenant_id=context.tenant_id)
+    return RosterOut(roles={role: list(ids) for role, ids in roster.items()})
 
 
 # -- item paths ---------------------------------------------------------------
@@ -430,23 +472,6 @@ async def skip_stage(
 # -- the questionnaire and its findings ---------------------------------------
 
 
-@vendors_router.get("/findings", response_model=FindingPageOut, summary="Findings across vendors")
-async def list_findings(
-    _p: Annotated[Principal, Depends(require_read)],
-    context: _Ctx,
-    session: _Db,
-    vendor_id: uuid.UUID | None = None,
-    statuses: Annotated[list[str] | None, Query()] = None,
-) -> FindingPageOut:
-    items = await vendor_service.list_findings(
-        session,
-        tenant_id=context.tenant_id,
-        vendor_id=vendor_id,
-        statuses=tuple(statuses or ()),
-    )
-    return FindingPageOut(items=[FindingOut.model_validate(f) for f in items], total=len(items))
-
-
 @vendors_router.post(
     "/{vendor_id}/engagements/{engagement_id}/questionnaire",
     response_model=IssuedQuestionnaireOut,
@@ -605,19 +630,6 @@ async def close_finding(
 # -- intake, the roster and the gate ------------------------------------------
 
 
-@vendors_router.get("/intake", response_model=IntakePageOut, summary="Intake queue")
-async def list_intake(
-    _p: Annotated[Principal, Depends(require_read)],
-    context: _Ctx,
-    session: _Db,
-    decision: str | None = None,
-) -> IntakePageOut:
-    items = await vendor_service.list_intake(
-        session, tenant_id=context.tenant_id, decision=decision
-    )
-    return IntakePageOut(items=[IntakeOut.model_validate(i) for i in items], total=len(items))
-
-
 @vendors_router.post(
     "/intake",
     response_model=IntakeOut,
@@ -660,14 +672,6 @@ async def decide_intake(
         reason=body.reason,
     )
     return IntakeOut.model_validate(view)
-
-
-@vendors_router.get("/roster", response_model=RosterOut, summary="Who plays which role")
-async def get_roster(
-    _p: Annotated[Principal, Depends(require_read)], context: _Ctx, session: _Db
-) -> RosterOut:
-    roster = await vendor_service.roster(session, tenant_id=context.tenant_id)
-    return RosterOut(roles={role: list(ids) for role, ids in roster.items()})
 
 
 @vendors_router.post("/roster", response_model=RosterOut, summary="Assign a role")

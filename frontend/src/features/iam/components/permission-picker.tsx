@@ -106,6 +106,24 @@ const PERMISSION_GROUPS = [
       },
     ],
   },
+  {
+    group: "Vendors",
+    summary: "Third-party risk: the register, the assessment, and the approval gate.",
+    items: [
+      { key: "vendors:read", label: "View vendors" },
+      { key: "vendors:manage", label: "Create & edit vendors, work the lifecycle" },
+      {
+        key: "vendors:assess",
+        label: "Tier & assess vendors",
+        hint: "Set the tier, send questionnaires and score what comes back.",
+      },
+      {
+        key: "vendors:approve",
+        label: "Decide the approval gate",
+        hint: "Also the only permission that can accept a vendor finding as residual risk. Whoever assessed the vendor should not hold this.",
+      },
+    ],
+  },
 ] as const satisfies readonly {
   group: string;
   summary: string;

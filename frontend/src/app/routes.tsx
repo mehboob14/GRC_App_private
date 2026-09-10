@@ -52,6 +52,13 @@ import { CoveragePage } from "@/features/compliance/components/coverage-page";
 import { ComplianceDashboardPage } from "@/features/compliance/components/compliance-dashboard-page";
 import { FrameworksLayout } from "@/features/compliance/components/frameworks-layout";
 import { CompanyProfilePage } from "@/features/tenancy/company-profile-page";
+import { VendorsLayout } from "@/features/vendors/components/vendors-layout";
+import { VendorsRegisterPage } from "@/features/vendors/components/vendors-register-page";
+import { VendorIntakePage } from "@/features/vendors/components/vendor-intake-page";
+import { VendorFindingsPage } from "@/features/vendors/components/vendor-findings-page";
+import { VendorRosterPage } from "@/features/vendors/components/vendor-roster-page";
+import { VendorDetailPage } from "@/features/vendors/components/vendor-detail-page";
+import { VendorPortalPage } from "@/features/vendors/components/vendor-portal-page";
 import { ConnectionsLayout } from "@/features/connectors/components/connections-layout";
 import { ConnectionsPage } from "@/features/connectors/components/connections-page";
 
@@ -74,6 +81,13 @@ export function AppRoutes() {
           whether or not signed in, and it drops any stale session before
           resuming MFA / workspace selection (see verify-email-page). */}
       <Route path="/verify-email" element={<VerifyEmailPage />} />
+
+      {/* The vendor questionnaire. A third party with no account opens this from
+          an emailed link, so it sits outside RequireAuth entirely — and outside
+          PublicOnly too, since one of our own people may open it while signed
+          in. The page never calls apiFetch: that client would attach their
+          bearer token and sign them out on the portal's 401. */}
+      <Route path="/vendor-portal/:token" element={<VendorPortalPage />} />
 
       {/* Reset link is reachable whether or not signed in — a signed-in user's
           reset revokes their current session by construction. */}
@@ -130,6 +144,15 @@ export function AppRoutes() {
           </Route>
           <Route path="assets/import" element={<AssetsImportPage />} />
           <Route path="assets/:assetId" element={<AssetDetailPage />} />
+          <Route path="vendors" element={<VendorsLayout />}>
+            <Route index element={<VendorsRegisterPage />} />
+            {/* Literal segments only — the :vendorId route is a sibling below,
+                so nothing here can be captured by it. */}
+            <Route path="intake" element={<VendorIntakePage />} />
+            <Route path="findings" element={<VendorFindingsPage />} />
+            <Route path="roster" element={<VendorRosterPage />} />
+          </Route>
+          <Route path="vendors/:vendorId" element={<VendorDetailPage />} />
           <Route path="vulnerabilities" element={<VulnerabilitiesRegisterPage />} />
           <Route path="vulnerabilities/overview" element={<VulnerabilitiesOverviewPage />} />
           <Route path="vulnerabilities/import" element={<VulnerabilitiesImportPage />} />

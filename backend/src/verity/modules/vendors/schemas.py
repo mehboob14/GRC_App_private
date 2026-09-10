@@ -237,6 +237,24 @@ class TieringOut(_Response):
     assessed_at: UtcDateTime | None
 
 
+class AssessmentSummaryOut(_Response):
+    """A questionnaire as a list row — no responses, no findings."""
+
+    id: uuid.UUID
+    engagement_id: uuid.UUID
+    cycle: int
+    kind: str
+    review_format: str
+    status: str
+    due_date: date | None
+    residual_score: float | None
+    grade: str | None
+    question_count: int
+    answered_count: int
+    submitted_at: UtcDateTime | None
+    created_at: UtcDateTime
+
+
 class VendorDetailOut(VendorOut):
     engagements: list[EngagementOut]
     contacts: list[ContactOut]
@@ -248,6 +266,7 @@ class VendorDetailOut(VendorOut):
     contracts: list[ContractOut] = Field(default_factory=list)
     soc_reviews: list[SocReviewOut] = Field(default_factory=list)
     subprocessors: list[SubprocessorOut] = Field(default_factory=list)
+    assessments: list[AssessmentSummaryOut] = Field(default_factory=list)
 
 
 class VendorPageOut(_Response):
@@ -266,6 +285,7 @@ class VendorFacetsOut(_Response):
     stages: list[dict[str, object]]
     skip_matrix_by_tier: dict[str, list[str]]
     tiering_factors: list[dict[str, object]]
+    reviewer_roles_by_tier: dict[str, list[str]]
     tier_thresholds: dict[str, float]
     policy_is_customised: bool
 
@@ -322,6 +342,9 @@ class ResponseOut(_Response):
 class FindingOut(_Response):
     id: uuid.UUID
     vendor_id: uuid.UUID
+    vendor_name: str | None
+    """Only the cross-vendor queue fills this in — see FindingView."""
+
     assessment_id: uuid.UUID | None
     question_id: uuid.UUID | None
     title: str

@@ -215,6 +215,31 @@ class VendorView:
     contact_count: int
 
 
+@dataclass(frozen=True, slots=True)
+class AssessmentSummaryView:
+    """Enough to list a questionnaire without loading its answers.
+
+    The full ``AssessmentView`` carries every response and every finding, which
+    is the right payload for one assessment and the wrong one for a list of
+    them. This is what the assessments panel needs to draw a row; opening the
+    row fetches the rest.
+    """
+
+    id: uuid.UUID
+    engagement_id: uuid.UUID
+    cycle: int
+    kind: str
+    review_format: str
+    status: str
+    due_date: date | None
+    residual_score: float | None
+    grade: str | None
+    question_count: int
+    answered_count: int
+    submitted_at: datetime | None
+    created_at: datetime
+
+
 @dataclass(frozen=True)
 class VendorDetailView(VendorView):
     engagements: list[EngagementView] = field(default_factory=list)
@@ -230,6 +255,7 @@ class VendorDetailView(VendorView):
     contracts: list[ContractView] = field(default_factory=list)
     soc_reviews: list[SocReviewView] = field(default_factory=list)
     subprocessors: list[SubprocessorView] = field(default_factory=list)
+    assessments: list[AssessmentSummaryView] = field(default_factory=list)
 
 
 @dataclass(frozen=True, slots=True)
@@ -485,6 +511,11 @@ class ResponseView:
 class FindingView:
     id: uuid.UUID
     vendor_id: uuid.UUID
+    vendor_name: str | None
+    """Populated only by the cross-vendor queue, which is the one screen that
+    cannot name the vendor from its own context. Everywhere else a finding is
+    already shown under its vendor, so paying for the join would buy nothing."""
+
     assessment_id: uuid.UUID | None
     question_id: uuid.UUID | None
     title: str
@@ -793,6 +824,36 @@ class OffboardingCompletion:
 
 
 # -- service ------------------------------------------------------------------
+
+
+_SOC_KIND_WORDS: Final[dict[str, str]] = {"soc1": "SOC 1", "soc2": "SOC 2", "soc3": "SOC 3"}
+_SOC_TYPE_WORDS: Final[dict[str, str]] = {"type_i": "Type I", "type_ii": "Type II"}
+_SOC_OPINION_WORDS: Final[dict[str, str]] = {
+    "unqualified": "an unqualified (clean) opinion",
+    "qualified": "a qualified opinion, meaning clean except for stated exceptions",
+    "adverse": "an adverse opinion, meaning the controls were not operating effectively",
+    "disclaimer": "a disclaimer, meaning the auditor could not form an opinion at all",
+}
+
+
+def _soc_finding_detail(data: SocReviewInput) -> str:
+    """The finding's body, in words rather than codes.
+
+    A finding is read by whoever has to act on it, which is often not the person
+    who recorded the review. ``SOC2 type_ii ... opinion qualified`` is the shape
+    of the row, not a sentence, and it reaches the cross-vendor queue where the
+    reader has no other context.
+    """
+    kind = _SOC_KIND_WORDS.get(data.report_kind, data.report_kind.upper())
+    report_type = _SOC_TYPE_WORDS.get(data.report_type, data.report_type)
+    opinion = _SOC_OPINION_WORDS.get(data.opinion, f"an opinion recorded as {data.opinion}")
+    period = (
+        f" covering {data.audit_period_start} to {data.audit_period_end}"
+        if data.audit_period_start and data.audit_period_end
+        else ""
+    )
+    material = " The exceptions were judged material." if data.findings_material else ""
+    return f"The {kind} {report_type}{period} carries {opinion}.{material}"
 
 
 class VendorService:
@@ -1193,7 +1254,57 @@ class VendorService:
             subprocessors=await self.subprocessors(
                 session, tenant_id=tenant_id, vendor_id=vendor.id
             ),
+            assessments=await self._assessment_summaries(session, tenant_id, vendor.id),
         )
+
+    async def _assessment_summaries(
+        self, session: AsyncSession, tenant_id: uuid.UUID, vendor_id: uuid.UUID
+    ) -> list[AssessmentSummaryView]:
+        rows = list(
+            (
+                await session.execute(
+                    select(VendorAssessment)
+                    .where(VendorAssessment.tenant_id == tenant_id)
+                    .where(VendorAssessment.vendor_id == vendor_id)
+                    .order_by(VendorAssessment.cycle.desc(), VendorAssessment.created_at.desc())
+                )
+            ).scalars()
+        )
+        if not rows:
+            return []
+        # One grouped count for the whole list rather than one query per row.
+        counted = (
+            await session.execute(
+                select(
+                    VendorAssessmentResponse.assessment_id,
+                    func.count().filter(VendorAssessmentResponse.answer.isnot(None)),
+                )
+                .where(VendorAssessmentResponse.tenant_id == tenant_id)
+                .where(VendorAssessmentResponse.assessment_id.in_([r.id for r in rows]))
+                .group_by(VendorAssessmentResponse.assessment_id)
+            )
+        ).all()
+        answered: dict[uuid.UUID, int] = {row[0]: row[1] for row in counted}
+        return [
+            AssessmentSummaryView(
+                id=row.id,
+                engagement_id=row.engagement_id,
+                cycle=row.cycle,
+                kind=row.kind,
+                review_format=row.review_format,
+                status=row.status,
+                due_date=row.due_date,
+                residual_score=row.residual_score,
+                grade=row.grade,
+                # The scope snapshot already records how many questions were in
+                # scope when it was issued, so the count needs no second query.
+                question_count=int((row.scope or {}).get("question_count", 0)),
+                answered_count=int(answered.get(row.id, 0)),
+                submitted_at=row.submitted_at,
+                created_at=row.created_at,
+            )
+            for row in rows
+        ]
 
     @staticmethod
     def _tiering_view(row: VendorTieringAssessment, names: dict[uuid.UUID, str]) -> TieringView:
@@ -1299,6 +1410,13 @@ class VendorService:
                 }
                 for key in scoring.FACTOR_KEYS
             ],
+            # Who a stage waits on, by tier. Roles, not people — the roster
+            # resolves a role to a person. Served here for the same reason as
+            # the stage list: so the interface names the right next actor
+            # instead of a second copy of the policy drifting in TypeScript.
+            "reviewer_roles_by_tier": {
+                tier: list(roles) for tier, roles in lifecycle.DEFAULT_REVIEWER_ROLES.items()
+            },
             "tier_thresholds": policy.thresholds,
             "policy_is_customised": policy.is_customised,
         }
@@ -2719,11 +2837,16 @@ class VendorService:
         )
 
     @staticmethod
-    def _finding_view(finding: VendorFinding, names: dict[uuid.UUID, str]) -> FindingView:
+    def _finding_view(
+        finding: VendorFinding,
+        names: dict[uuid.UUID, str],
+        vendor_name: str | None = None,
+    ) -> FindingView:
         owner = finding.owner_membership_id
         return FindingView(
             id=finding.id,
             vendor_id=finding.vendor_id,
+            vendor_name=vendor_name,
             assessment_id=finding.assessment_id,
             question_id=finding.question_id,
             title=finding.title,
@@ -2797,9 +2920,24 @@ class VendorService:
             stmt = stmt.where(VendorFinding.status.in_(list(statuses)))
         rows = list((await session.execute(stmt)).scalars())
         names = await self._member_names(session, tenant_id)
-        views = [self._finding_view(f, names) for f in rows]
+        # One lookup for the whole page rather than one per row. Without it the
+        # cross-vendor queue can only print an id, which is not a work queue.
+        vendors = await self._vendor_names(session, tenant_id, {f.vendor_id for f in rows})
+        views = [self._finding_view(f, names, vendors.get(f.vendor_id)) for f in rows]
         views.sort(key=lambda f: (FINDING_SEVERITIES.index(f.severity), f.sla_due or date.max))
         return views
+
+    async def _vendor_names(
+        self, session: AsyncSession, tenant_id: uuid.UUID, vendor_ids: set[uuid.UUID]
+    ) -> dict[uuid.UUID, str]:
+        if not vendor_ids:
+            return {}
+        rows = await session.execute(
+            select(Vendor.id, Vendor.name)
+            .where(Vendor.tenant_id == tenant_id)
+            .where(Vendor.id.in_(list(vendor_ids)))
+        )
+        return {row.id: row.name for row in rows}
 
     async def open_critical_count(
         self, session: AsyncSession, *, tenant_id: uuid.UUID, vendor_id: uuid.UUID
@@ -2827,6 +2965,11 @@ class VendorService:
         tenancy service rather than the table (rule 4), and degraded to a neutral
         word rather than raising: a missing display name must not take the
         questionnaire down.
+
+        The trading name is what a third party would recognise; the legal name is
+        the fallback because every tenant has one. There is no ``name`` column —
+        asking for one is how every portal page came out addressed from "our
+        organisation".
         """
         from verity.modules.tenancy.service import tenancy_service  # noqa: PLC0415
 
@@ -2834,7 +2977,7 @@ class VendorService:
             profile = await tenancy_service.get_tenant(session, tenant_id)
         except Exception:
             return "our organisation"
-        return getattr(profile, "name", None) or "our organisation"
+        return profile.trading_name or profile.legal_name or "our organisation"
 
     # -- acting on a finding ---------------------------------------------------
 
@@ -3567,11 +3710,7 @@ class VendorService:
                     title=f"SOC report: {data.opinion} opinion"
                     if data.opinion != "unqualified"
                     else "SOC report: material findings",
-                    detail=(
-                        f"{data.report_kind.upper()} {data.report_type} covering "
-                        f"{data.audit_period_start} to {data.audit_period_end}, "
-                        f"opinion {data.opinion}."
-                    ),
+                    detail=_soc_finding_detail(data),
                     finding_source="document_review",
                     severity="high" if data.opinion == "unqualified" else "critical",
                     sla_due=datetime.now(UTC).date() + timedelta(days=30),
@@ -3962,7 +4101,18 @@ class VendorService:
             stmt = stmt.where(VendorIntakeRequest.decision == decision)
         rows = list((await session.execute(stmt)).scalars())
         names = await self._member_names(session, tenant_id)
-        views = [self._intake_view(r, names, []) for r in rows]
+        # Resolve the matches for flagged rows only. The flag without the names
+        # behind it is the queue telling a reviewer "something is wrong here"
+        # and refusing to say what, which is the one thing they need to decide.
+        # One lookup per flagged row, and only the flagged ones — a screened-clean
+        # request has nothing to show and should not pay for the query.
+        matches: dict[uuid.UUID, list[DuplicateMatch]] = {}
+        for row in rows:
+            if row.screening_status == "flagged":
+                matches[row.id] = await self.find_duplicates(
+                    session, tenant_id=tenant_id, name=row.vendor_name
+                )
+        views = [self._intake_view(r, names, matches.get(r.id, [])) for r in rows]
         views.sort(key=lambda v: (v.decision != "pending", v.created_at), reverse=False)
         return views
 

@@ -211,34 +211,74 @@ adds its policy in the same migration; the isolation tests ship in this change.
 
 ## 5. Interface
 
-- [ ] 5.1 New `components/ui` primitives: stage rail, checklist row, threshold ruler, `date`
+- [x] 5.1 New `components/ui` primitives: stage rail, checklist row, threshold ruler, `date`
       variant on `TextField`, sparkline. **Reuse the documents module's diff renderer** rather
       than building a second. Check every `status-*` family and icon name exists first.
-- [ ] 5.2 `features/vendors/` — `types.ts`, `tokens.ts`, `api.ts`, layout with the four
+- [x] 5.2 `features/vendors/` — `types.ts`, `tokens.ts`, `api.ts`, layout with the four
       module-root tabs.
-- [ ] 5.3 Register: columns, facets, `ColumnPicker`, `useTableSort`, the **Blocker / next
+- [x] 5.3 Register: columns, facets, `ColumnPicker`, `useTableSort`, the **Blocker / next
       action** column, and the healthy-state line.
-- [ ] 5.4 Detail page: `DetailHeader` + inline `TabStrip` + `lg:grid-cols-[1fr_20rem]` with
+- [x] 5.4 Detail page: `DetailHeader` + inline `TabStrip` + `lg:grid-cols-[1fr_20rem]` with
       `min-w-0` on the left column.
-- [ ] 5.5 The lifecycle workspace: vertical stage rail, gates fenced and diamond-marked, blockers
+- [x] 5.5 The lifecycle workspace: vertical stage rail, gates fenced and diamond-marked, blockers
       as actions with their own buttons, skipped rows carrying the policy that skipped them.
-- [ ] 5.6 The gate-unblock handoff: blockers collapse to one success line, the advance control
+- [x] 5.6 The gate-unblock handoff: blockers collapse to one success line, the advance control
       enables, and the next actor is named with a notify action.
-- [ ] 5.7 Tiering panel in the shape of the vulnerability risk panel: gauge, factor × weight ×
+- [x] 5.7 Tiering panel in the shape of the vulnerability risk panel: gauge, factor × weight ×
       points table, threshold ruler, live recompute.
-- [ ] 5.8 Approval form with disqualified approvers greyed and annotated (V4).
-- [ ] 5.9 Reassessment-as-diff: prior answers pre-filled, changed chips, "what changed since"
+- [x] 5.8 Approval form with disqualified approvers greyed and annotated (V4).
+- [x] 5.9 Reassessment-as-diff: prior answers pre-filled, changed chips, "what changed since"
       panel with the score delta and its cause.
-- [ ] 5.10 Document rows with coverage window and countdown; renewal request action.
-- [ ] 5.11 SOC report review screen: the structured fields as a readable summary an auditor can
+- [x] 5.10 Document rows with coverage window and countdown; renewal request action.
+- [x] 5.11 SOC report review screen: the structured fields as a readable summary an auditor can
       accept, not a form dump. Opinion and material-findings lead.
-- [ ] 5.12 Subprocessor register and SLA tab.
-- [ ] 5.13 Intake request queue with approve/decline.
-- [ ] 5.14 Monitoring tab: signals and scorecards, each with an explicit **"no data source
+- [x] 5.12 Subprocessor register and SLA tab.
+- [x] 5.13 Intake request queue with approve/decline.
+- [x] 5.14 Monitoring tab: signals and scorecards, each with an explicit **"no data source
       connected"** state rather than an empty table.
-- [ ] 5.15 Routes in `routes.tsx`; remove `comingSoon` from the nav entry; add the four permission
+- [x] 5.15 Routes in `routes.tsx`; remove `comingSoon` from the nav entry; add the four permission
       keys to `PERMISSION_KEYS` **and** to `PERMISSION_GROUPS` — the compile guard will catch the
       second if it is forgotten.
+
+
+**Deviations, recorded rather than silently taken:**
+
+- **No sparkline.** 5.1 asked for one; the monitoring tab has no series to draw
+  because signals, scorecards and app discovery all need a data source nobody
+  has connected. A sparkline over no data is a decoration. Each of the three
+  says so in its own words instead.
+- **The documents diff renderer is not reused.** It renders server-tagged text
+  blocks from `GET /documents/{id}/versions/{v}/diff`. A reassessment diff is
+  answer-level, there is no equivalent endpoint, and features do not import each
+  other. The "what changed since cycle N" panel compares the two cycles'
+  responses client-side instead, with the score delta and the answers that moved.
+- **No `date` variant on `TextField`.** It already spreads `type` onto the
+  input, so `type="date"` works today and is used in six places.
+- **The stage rail, checklist row and threshold ruler are feature-local**, not
+  `components/ui`. They carry vendor domain knowledge, and the frontend contract
+  says a domain component in the primitive directory is a mistake.
+- **Two real `components/ui` additions**, both earned: `TextArea` (the same
+  seven-line block was hand-rolled in eight files, none with an error slot), and
+  `TableIconButton` made `forwardRef` (it could not be a Radix trigger, which is
+  why every register hand-rolled the same button rather than using it).
+
+**Backend fixes this section forced, each with the interface that exposed it:**
+
+- `GET /vendors/findings`, `/intake` and `/roster` were declared after
+  `GET /{vendor_id}` and answered 422 rather than data. Moved above it, with
+  `tests/unit/test_route_shadowing.py` proving it for every router in the app.
+- `FindingOut` gained `vendor_name`. The cross-vendor queue could otherwise only
+  print an id, which is not a work queue.
+- `VendorDetailOut` gained `assessments` (a summary, not the full payload).
+  There is no list-assessments route, so the panel had nothing to list.
+- `VendorFacetsOut` gained `reviewer_roles_by_tier`, so the gate handoff names
+  the next actor from the policy instead of a second copy in TypeScript.
+- `list_intake` returned an empty duplicates list, so a request could be flagged
+  with no way to see what it matched.
+- `tenant_display_name` read a `name` column that does not exist, so every
+  portal page was addressed from "our organisation". Now trading, then legal.
+- The SOC-review finding's body read `SOC2 type_ii ... opinion qualified`. It is
+  the one finding that reaches the cross-vendor queue with no other context.
 
 ## 6. Close
 
