@@ -114,11 +114,41 @@ class AccessLogMiddleware:
             logger.info(
                 "request.completed",
                 method=scope.get("method"),
-                # Path only. A query string can carry a token on a portal route.
-                path=scope.get("path"),
+                path=safe_path(scope.get("path")),
                 status=status_code,
                 duration_ms=round((time.perf_counter() - started) * 1000, 2),
             )
+
+
+# Paths whose next segment is a bearer credential rather than an identifier.
+# The vendor portal puts its token in the path — a deliberate choice, because a
+# query string leaks further — which makes the access log the one place it would
+# otherwise be written in the clear, on every request, for the life of the link.
+_CREDENTIAL_IN_PATH: Final[tuple[str, ...]] = ("/vendor-portal/",)
+
+_REDACTED_SEGMENT: Final = "[redacted]"
+
+
+def safe_path(path: str | None) -> str:
+    """A request path with any credential segment removed.
+
+    Returns the path unchanged unless it carries a known credential, in which
+    case the segment after the marker is replaced. Everything else about the line
+    — method, status, duration, the route shape — survives, so the log is still
+    worth reading.
+
+    Query strings are never logged at all; this closes the other half.
+    """
+    if not path:
+        return ""
+    for marker in _CREDENTIAL_IN_PATH:
+        head, sep, tail = path.partition(marker)
+        if not sep:
+            continue
+        rest = tail.split("/", 1)
+        remainder = f"/{rest[1]}" if len(rest) > 1 else ""
+        return f"{head}{marker}{_REDACTED_SEGMENT}{remainder}"
+    return path
 
 
 class SecurityHeadersMiddleware:

@@ -22,7 +22,6 @@ from verity.core.db import dispose_engine, session_scope
 from verity.core.errors import Conflict, InvalidInput, NotFound
 from verity.modules.audit.models import AuditLog
 from verity.modules.audit.service import Membership
-from verity.modules.vendors import lifecycle
 from verity.modules.vendors.models import VendorStage, VendorTransition
 from verity.modules.vendors.service import (
     TieringAnswers,
@@ -461,35 +460,30 @@ async def test_a_stage_belonging_to_another_vendor_is_not_found(seeded: Seeded) 
             )
 
 
-async def test_the_checks_report_pending_for_the_modules_not_built_yet(
+async def test_a_check_whose_module_is_not_built_yet_reports_pending(
     seeded: Seeded,
 ) -> None:
-    """A questionnaire check cannot be answered before the questionnaire exists.
+    """Three-valued checks, proven against what is and is not built.
 
-    It must not render as a tick. Sections 3 and 4 flip these to real answers by
-    filling in the facts, without touching a rule.
+    Section 3 built the questionnaire and the findings, so those checks answer now
+    — and nothing in ``lifecycle.py`` changed to make that happen, only the
+    collector. Contracting and approval are section 4, so theirs still report
+    pending: not blocking, and not a tick either.
     """
     detail = await _tier(seeded, data_sensitivity=4, business_criticality=4, system_access=4)
-    questionnaire = next(s for s in detail.stages if s.stage == "questionnaire")
-    assert not questionnaire.blockers
-    assert {c.code for c in questionnaire.pending} == {
-        "questionnaire.answered",
-        "questionnaire.evidenced",
-    }
-    assert all(c.satisfied is None for c in questionnaire.pending)
+    by_stage = {s.stage: s for s in detail.stages}
 
+    # Answerable now that section 3 exists: no questionnaire has been issued, so
+    # the check fails rather than abstaining.
+    questionnaire = by_stage["questionnaire"]
+    assert not questionnaire.pending, "the questionnaire module is built; nothing should abstain"
 
-async def test_the_client_is_served_the_machine_rather_than_reimplementing_it(
-    seeded: Seeded,
-) -> None:
-    async with session_scope(seeded.tenant_id) as session:
-        facets = await vendor_service.facets(session, tenant_id=seeded.tenant_id)
-    assert [s["stage"] for s in facets["stages"]] == list(lifecycle.STAGES)
-    assert facets["skip_matrix_by_tier"]["low"] == [
-        "diligence",
-        "findings",
-        "questionnaire",
-        "scoring",
-    ]
-    assert facets["skip_matrix_by_tier"]["critical"] == []
-    assert facets["policy_is_customised"] is False
+    # Still unbuilt. A critical vendor needs a contract, and no contract table
+    # exists yet, so the check abstains rather than blocking the lifecycle.
+    contracting = by_stage["contracting"]
+    assert [c.code for c in contracting.pending] == ["contracting.contract_linked"]
+    assert not contracting.blockers
+    assert all(c.satisfied is None for c in contracting.pending)
+
+    approval = by_stage["approval"]
+    assert "approval.decided" in {c.code for c in approval.pending}

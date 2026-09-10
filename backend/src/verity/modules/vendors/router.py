@@ -26,12 +26,21 @@ from verity.core.deps import (
     get_tenant_session,
     require,
 )
+from verity.core.errors import NotFound
 from verity.modules.audit.service import Membership
 from verity.modules.vendors.schemas import (
+    AcceptFindingWrite,
     AdvanceWrite,
+    AssessmentOut,
+    CloseFindingWrite,
     ContactWrite,
     DuplicateCheckOut,
     EngagementWrite,
+    FindingOut,
+    FindingPageOut,
+    IssuedQuestionnaireOut,
+    IssueQuestionnaireWrite,
+    RemediateWrite,
     SendBackWrite,
     SkipWrite,
     TieringWrite,
@@ -56,6 +65,7 @@ vendors_router = APIRouter(prefix="/vendors", tags=["vendors"])
 require_read = require("vendors:read")
 require_manage = require("vendors:manage")
 require_assess = require("vendors:assess")
+require_approve = require("vendors:approve")
 
 _Ctx = Annotated[TenantContext, Depends(get_tenant_context)]
 _Db = Annotated[AsyncSession, Depends(get_tenant_session)]
@@ -386,3 +396,178 @@ async def skip_stage(
         reason=body.reason,
     )
     return VendorDetailOut.model_validate(view)
+
+
+# -- the questionnaire and its findings ---------------------------------------
+
+
+@vendors_router.get("/findings", response_model=FindingPageOut, summary="Findings across vendors")
+async def list_findings(
+    _p: Annotated[Principal, Depends(require_read)],
+    context: _Ctx,
+    session: _Db,
+    vendor_id: uuid.UUID | None = None,
+    statuses: Annotated[list[str] | None, Query()] = None,
+) -> FindingPageOut:
+    items = await vendor_service.list_findings(
+        session,
+        tenant_id=context.tenant_id,
+        vendor_id=vendor_id,
+        statuses=tuple(statuses or ()),
+    )
+    return FindingPageOut(items=[FindingOut.model_validate(f) for f in items], total=len(items))
+
+
+@vendors_router.post(
+    "/{vendor_id}/engagements/{engagement_id}/questionnaire",
+    response_model=IssuedQuestionnaireOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="Send a questionnaire to the vendor",
+)
+async def issue_questionnaire(
+    _p: Annotated[Principal, Depends(require_assess)],
+    context: _Ctx,
+    session: _Db,
+    vendor_id: uuid.UUID,
+    engagement_id: uuid.UUID,
+    body: IssueQuestionnaireWrite,
+) -> IssuedQuestionnaireOut:
+    """Returns the portal link **once**.
+
+    Only the hash is stored, so this response is the only place the token ever
+    exists. Re-issuing mints a new link and revokes the old one.
+    """
+    issued = await vendor_service.issue_questionnaire(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(context),
+        vendor_id=vendor_id,
+        engagement_id=engagement_id,
+        contact_id=body.contact_id,
+        due_date=body.due_date,
+        bank_code=body.bank_code,
+    )
+    return IssuedQuestionnaireOut.model_validate(issued)
+
+
+@vendors_router.get(
+    "/{vendor_id}/assessments/{assessment_id}",
+    response_model=AssessmentOut,
+    summary="A questionnaire and its answers",
+)
+async def get_assessment(
+    _p: Annotated[Principal, Depends(require_read)],
+    context: _Ctx,
+    session: _Db,
+    vendor_id: uuid.UUID,
+    assessment_id: uuid.UUID,
+) -> AssessmentOut:
+    view = await vendor_service.get_assessment(
+        session, tenant_id=context.tenant_id, assessment_id=assessment_id
+    )
+    if view.vendor_id != vendor_id:
+        raise NotFound(
+            "This questionnaire no longer exists. It may have been deleted.",
+            detail=f"assessment {assessment_id} is not on vendor {vendor_id}",
+        )
+    return AssessmentOut.model_validate(view)
+
+
+@vendors_router.post(
+    "/{vendor_id}/assessments/{assessment_id}/score",
+    response_model=AssessmentOut,
+    summary="Score a submitted questionnaire",
+)
+async def score_assessment(
+    _p: Annotated[Principal, Depends(require_assess)],
+    context: _Ctx,
+    session: _Db,
+    vendor_id: uuid.UUID,
+    assessment_id: uuid.UUID,
+) -> AssessmentOut:
+    """Re-score on demand. The portal scores on submit, so this is for the case
+    where an answer was corrected after the fact."""
+    view = await vendor_service.score_assessment(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(context),
+        assessment_id=assessment_id,
+        vendor_id=vendor_id,
+    )
+    return AssessmentOut.model_validate(view)
+
+
+@vendors_router.post(
+    "/{vendor_id}/findings/{finding_id}/remediate",
+    response_model=FindingOut,
+    summary="Open a remediation task",
+)
+async def remediate_finding(
+    _p: Annotated[Principal, Depends(require_manage)],
+    context: _Ctx,
+    session: _Db,
+    vendor_id: uuid.UUID,
+    finding_id: uuid.UUID,
+    body: RemediateWrite,
+) -> FindingOut:
+    view = await vendor_service.remediate_finding(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(context),
+        vendor_id=vendor_id,
+        finding_id=finding_id,
+        owner_membership_id=body.owner_membership_id,
+    )
+    return FindingOut.model_validate(view)
+
+
+@vendors_router.post(
+    "/{vendor_id}/findings/{finding_id}/accept",
+    response_model=FindingOut,
+    summary="Accept the risk, for a stated time",
+)
+async def accept_finding(
+    _p: Annotated[Principal, Depends(require_approve)],
+    context: _Ctx,
+    session: _Db,
+    vendor_id: uuid.UUID,
+    finding_id: uuid.UUID,
+    body: AcceptFindingWrite,
+) -> FindingOut:
+    """Requires ``vendors:approve``, not ``:manage``. Accepting a risk is a
+    decision somebody signs for, and the person who found it is often not the
+    person entitled to live with it."""
+    view = await vendor_service.accept_finding(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(context),
+        vendor_id=vendor_id,
+        finding_id=finding_id,
+        until=body.until,
+        rationale=body.rationale,
+    )
+    return FindingOut.model_validate(view)
+
+
+@vendors_router.post(
+    "/{vendor_id}/findings/{finding_id}/close",
+    response_model=FindingOut,
+    summary="Close a finding",
+)
+async def close_finding(
+    _p: Annotated[Principal, Depends(require_manage)],
+    context: _Ctx,
+    session: _Db,
+    vendor_id: uuid.UUID,
+    finding_id: uuid.UUID,
+    body: CloseFindingWrite,
+) -> FindingOut:
+    view = await vendor_service.close_finding(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(context),
+        vendor_id=vendor_id,
+        finding_id=finding_id,
+        note=body.note,
+    )
+    return FindingOut.model_validate(view)

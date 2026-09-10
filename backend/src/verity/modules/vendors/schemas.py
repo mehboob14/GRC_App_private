@@ -267,3 +267,120 @@ class VendorFacetsOut(_Response):
 
 class DuplicateCheckOut(_Response):
     matches: list[DuplicateMatchOut]
+
+
+# -- the questionnaire and its findings (section 3) ---------------------------
+
+
+class IssueQuestionnaireWrite(_Request):
+    contact_id: uuid.UUID | None = None
+    """Which contact to send to. Omitted, the vendor's ``portal`` contact is used."""
+    due_date: date | None = None
+    bank_code: str | None = None
+
+
+class IssuedQuestionnaireOut(_Response):
+    """The response that carries the portal link.
+
+    ``portal_url`` contains the only copy of the token that will ever exist: the
+    database holds a hash, so this response cannot be reproduced afterwards.
+    """
+
+    assessment_id: uuid.UUID
+    contact_email: str
+    question_count: int
+    due_date: date | None
+    portal_url: str
+
+
+class ResponseOut(_Response):
+    id: uuid.UUID
+    question_id: uuid.UUID
+    question_code: str
+    body: str
+    domain: str
+    domain_label: str
+    scope_level: str
+    answer_type: str
+    weight: float
+    critical_control: bool
+    non_negotiable: bool
+    evidence_required: bool
+    framework_refs: list[str]
+    answer: str | None
+    implementation_notes: str | None
+    na_justification: str | None
+    evidence_id: uuid.UUID | None
+    answered_at: UtcDateTime | None
+
+
+class FindingOut(_Response):
+    id: uuid.UUID
+    vendor_id: uuid.UUID
+    assessment_id: uuid.UUID | None
+    question_id: uuid.UUID | None
+    title: str
+    detail: str
+    finding_source: str
+    severity: str
+    status: str
+    treatment: str
+    is_blocking: bool
+    sla_due: date | None
+    owner_membership_id: uuid.UUID | None
+    owner_name: str | None
+    task_id: uuid.UUID | None
+    accepted_until: date | None
+    accepted_rationale: str | None
+    closed_at: UtcDateTime | None
+    promoted_risk_id: uuid.UUID | None
+    """The seam to the risk register. Always null: `modules/risk` has no tables,
+    so the column ships and the promotion action does not."""
+    created_at: UtcDateTime
+
+
+class FindingPageOut(_Response):
+    items: list[FindingOut]
+    total: int
+
+
+class AssessmentOut(_Response):
+    id: uuid.UUID
+    vendor_id: uuid.UUID
+    engagement_id: uuid.UUID
+    cycle: int
+    kind: str
+    review_format: str
+    assessment_domain: str
+    status: str
+    decision: str
+    due_date: date | None
+    residual_score: float | None
+    grade: str | None
+    domain_scores: dict[str, object]
+    score_steps: list[object]
+    scope: dict[str, object]
+    question_count: int
+    answered_count: int
+    unanswered_count: int
+    missing_evidence_count: int
+    submitted_at: UtcDateTime | None
+    responses: list[ResponseOut]
+    findings: list[FindingOut]
+    portal_link_live: bool
+    portal_link_expires_at: UtcDateTime | None
+    created_at: UtcDateTime
+    updated_at: UtcDateTime
+
+
+class RemediateWrite(_Request):
+    owner_membership_id: uuid.UUID | None = None
+
+
+class AcceptFindingWrite(_Request):
+    until: date
+    rationale: str = Field(min_length=1, max_length=4000)
+
+
+class CloseFindingWrite(_Request):
+    note: str | None = Field(default=None, max_length=4000)

@@ -121,5 +121,21 @@ def test_index_names_match_the_migration_and_lead_with_tenant_id() -> None:
 
 
 def test_the_action_and_actor_vocabularies_match_the_er_design() -> None:
+    """The ER's vocabularies, plus one approved addition.
+
+    ``vendor_contact`` is **not** in the ER. It was added for the vendor
+    questionnaire portal, which is the platform's first path where a state change
+    is made by somebody who is neither a member of the tenant nor the system: they
+    hold a link, not a session, and giving them a ``tenant_memberships`` row would
+    break rule 3. Recording their answers as ``system`` would have made "who
+    answered this question" unanswerable, which is the first thing an auditor asks
+    about a vendor questionnaire.
+
+    The table was built for exactly this — ``actor_type``/``actor_id`` is a
+    polymorphic pair with no FK precisely because one key cannot point at several
+    kinds of actor — so the addition costs one CHECK and no structural change. The
+    ER document correction is pending, the same way the identity diagrams are;
+    see the Audit note in docs/architecture/data-model.md.
+    """
     assert AUDIT_ACTIONS == ("create", "update", "delete", "transition", "approve")
-    assert ACTOR_TYPES == ("membership", "platform_admin", "system")
+    assert ACTOR_TYPES == ("membership", "platform_admin", "system", "vendor_contact")

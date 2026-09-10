@@ -50,17 +50,21 @@ document's identity diagrams still show the pre-ADR-0011 shape (`USERS.tenant_id
 `tenant_memberships`); regenerating them is **pending** — the .docx is the signed original and is
 corrected under its own change control.
 
-**Audit.** `audit_log` is append-only and serves both planes. `tenant_id` is **the stream the
-event belongs to, not the actor's tenant** — a platform admin provisioning tenant X writes into
-X's stream so the event appears in X's history; NULL means provider plane. The actor is the
-polymorphic pair `actor_type` (`membership | platform_admin | system`) + `actor_id` (NULL exactly
-when `system`), because one foreign key cannot point at `tenant_memberships`, `platform_admins`,
-and nothing at once. Neither `tenant_id` nor `actor_id` carries an FK, deliberately: every FK
-action (`CASCADE`, `SET NULL`, `RESTRICT`) is an `UPDATE` or `DELETE` the append-only trigger
-refuses, and the record of a tenant teardown is precisely the record that must outlive the
-tenant. The table carries `occurred_at` alone — the append-only exception to
-`created_at`/`updated_at`. All four ER deviations approved in
-`openspec/changes/week1-review-decisions.md`, item 1.
+**Audit.** `audit_log` is append-only and serves both planes. `tenant_id` is **the stream the event
+belongs to, not the actor's tenant** — a platform admin provisioning tenant X writes into X's stream
+so the event appears in X's history; NULL means provider plane. The actor is the polymorphic pair
+`actor_type` (`membership | platform_admin | system`) + `actor_id` (NULL exactly when `system`),
+because one foreign key cannot point at `tenant_memberships`, `platform_admins`, and nothing at
+once. Neither `tenant_id` nor `actor_id` carries an FK, deliberately: every FK action (`CASCADE`,
+`SET NULL`, `RESTRICT`) is an `UPDATE` or `DELETE` the append-only trigger refuses, and the record
+of a tenant teardown is precisely the record that must outlive the tenant. The table carries
+`occurred_at` alone — the append-only exception to `created_at`/`updated_at`. All four ER deviations
+approved in `openspec/changes/week1-review-decisions.md`, item 1. A **fifth** landed with the vendor
+portal: `actor_type` gains `vendor_contact`, because that is the platform's first path on which a
+state change is made by somebody who is neither a member nor the system — they hold a link, not a
+session, and a `tenant_memberships` row for an outsider would break rule 3. The polymorphic pair was
+built for exactly this, so it cost one CHECK; recording their answers as `system` would have made
+"who answered this question" unanswerable. The ER correction is pending.
 
 **Compliance.** `readiness_snapshots` is append-only and written on a schedule. Live readiness is
 computed from the maps; history comes from snapshots, because mappings and evidence mutate in place

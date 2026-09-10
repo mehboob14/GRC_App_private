@@ -41,6 +41,7 @@ from verity.modules.compliance.models import (
     TemplateRequirementMap,
 )
 from verity.modules.documents.models import DocumentTemplate
+from verity.modules.vendors.models import QuestionnaireQuestion, QuestionnaireTemplate
 from verity.shared.ids import uuid7
 
 logger = get_logger(__name__)
@@ -299,9 +300,7 @@ async def _load_document_templates(
     document has been instantiated from one — the tenant's copy is independent
     by design — so removing a retired template cannot orphan anyone's policy.
     """
-    existing = {
-        row.key: row for row in (await session.execute(select(DocumentTemplate))).scalars()
-    }
+    existing = {row.key: row for row in (await session.execute(select(DocumentTemplate))).scalars()}
     for doc in docs:
         values = {
             "title": doc["title"],
@@ -331,15 +330,76 @@ async def _load_document_templates(
     await session.flush()
 
 
+async def _load_questionnaire_bank(
+    session: AsyncSession, payload: dict[str, Any], result: LoadResult
+) -> None:
+    """Upsert the vendor questionnaire bank, keyed on the stable ``code`` pair.
+
+    A question is keyed on ``(template, code)`` and never on its prose, because a
+    ``vendor_assessment_responses`` row points at the question it answered. Rewording
+    a question in a later pack must move the same row, or every historical answer
+    stops meaning anything.
+
+    Retired questions are **not** pruned. That is the one place this differs from
+    the other packs, and the FK enforces it: responses reference questions
+    ``ON DELETE RESTRICT``, so a question somebody has answered cannot be deleted.
+    A question dropped upstream stops being *asked* — the pack no longer lists it,
+    so a new assessment never includes it — while the answers already given to it
+    stay readable. Unasked and deleted are different things to an auditor.
+    """
+    template_row = (
+        await session.execute(
+            select(QuestionnaireTemplate).where(
+                QuestionnaireTemplate.code == payload["template"]["code"]
+            )
+        )
+    ).scalar_one_or_none()
+    fields = {k: v for k, v in payload["template"].items() if k != "code"}
+    if template_row is None:
+        template_row = QuestionnaireTemplate(id=uuid7(), code=payload["template"]["code"], **fields)
+        session.add(template_row)
+        result.table("questionnaire_templates").inserted += 1
+    elif _apply(template_row, fields):
+        result.table("questionnaire_templates").updated += 1
+    await session.flush()
+
+    existing = {
+        row.code: row
+        for row in (
+            await session.execute(
+                select(QuestionnaireQuestion).where(
+                    QuestionnaireQuestion.template_id == template_row.id
+                )
+            )
+        ).scalars()
+    }
+    for question in payload["questions"]:
+        values = {k: v for k, v in question.items() if k != "code"}
+        row = existing.get(question["code"])
+        if row is None:
+            session.add(
+                QuestionnaireQuestion(
+                    id=uuid7(),
+                    template_id=template_row.id,
+                    code=question["code"],
+                    **values,
+                )
+            )
+            result.table("questionnaire_questions").inserted += 1
+        elif _apply(row, values):
+            result.table("questionnaire_questions").updated += 1
+    await session.flush()
+
+
 async def load_pack(session: AsyncSession, pack: Path) -> LoadResult:
     """Load one content pack directory. Idempotent: a second run changes nothing."""
     result = LoadResult()
     # Packs are not all the same shape: the policy library ships templates and
     # no framework, so each section loads only if its file is present.
+    if (pack / "questionnaire_bank.json").exists():
+        await _load_questionnaire_bank(session, _read(pack, "questionnaire_bank.json"), result)
     if (pack / "document_templates.json").exists():
-        await _load_document_templates(
-            session, _read(pack, "document_templates.json"), result
-        )
+        await _load_document_templates(session, _read(pack, "document_templates.json"), result)
     if not (pack / "framework.json").exists():
         return result
     framework, version = await _load_framework(session, _read(pack, "framework.json"), result)

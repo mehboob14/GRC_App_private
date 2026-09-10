@@ -1,4 +1,4 @@
-"""Inherent tiering — a pure function and its arithmetic (V6).
+"""Vendor scoring — inherent tiering (V6) and residual risk (V7).
 
 No session, no I/O, no imports from anything that touches a database. Mirrors
 ``vulnerabilities/scoring.py``, and for the same reason: that module proved that a
@@ -23,6 +23,7 @@ values it used so a later retune cannot rewrite the past.
 
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Final
 
@@ -167,4 +168,228 @@ def compute_tier(
         thresholds=bands,
         points_to_higher_tier=to_higher,
         points_to_lower_tier=to_lower,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Residual scoring (V7) — what the completed review leaves behind
+# ---------------------------------------------------------------------------
+
+ANSWER_VALUES: Final[dict[str, float]] = {"yes": 1.0, "partial": 0.5, "no": 0.0}
+"""``na`` is deliberately absent: it leaves both sides of the average, rather than
+scoring zero. A question that does not apply must not look like a control that is
+missing."""
+
+CONTROL_CEILING: Final = 0.70
+"""The most that perfect answers may reduce inherent risk.
+
+A vendor answering everything ``yes`` still carries 30% of its inherent risk,
+because a questionnaire is a claim and not a proof. This number is the single
+most consequential judgement in the module, which is why it is named, reported as
+its own step, and stored on every assessment that used it.
+"""
+
+DEFAULT_DOMAIN_WEIGHTS: Final[dict[str, float]] = {
+    "information_security": 1.2,
+    "access_control": 1.5,
+    "data_protection_privacy": 1.5,
+    "business_continuity": 1.0,
+    "incident_response": 1.2,
+    "secure_development": 1.0,
+    "infrastructure_cloud": 1.0,
+    "personnel_security": 0.8,
+    "compliance_legal": 1.0,
+    "fourth_party_management": 0.8,
+}
+"""How much each domain counts in the roll-up. Access control and data protection
+carry most because that is where a third-party breach actually happens; personnel
+security and fourth-party management carry least because they are attested rather
+than evidenced."""
+
+GRADE_BOUNDS: Final[tuple[tuple[str, float], ...]] = (
+    ("A", 20.0),
+    ("B", 40.0),
+    ("C", 60.0),
+    ("D", 80.0),
+)
+"""Upper bounds, best first. At or above the last one is ``F`` (V7)."""
+
+GRADES: Final[tuple[str, ...]] = ("A", "B", "C", "D", "F")
+
+CRITICAL_FAIL_FLOOR_TIER: Final = "high"
+"""A ``no`` on any critical-control question floors the residual at the bottom of
+this band, however good the rest of the answers are.
+
+V7 applies this **after** the clamp, so the floor can lift the residual above the
+inherent score. That is deliberate rather than an ordering accident: inherent
+tiering measures exposure, while a missing critical control is a specific known
+weakness the exposure factors never saw. The step list reports both, so the reader
+can see the floor was what did it."""
+
+
+@dataclass(frozen=True, slots=True)
+class Answer:
+    """One scored response. The pure input; nothing here knows about a database."""
+
+    question_key: str
+    domain: str
+    answer: str
+    weight: float = 1.0
+    critical_control: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class DomainPosture:
+    """One domain's contribution, with the arithmetic kept."""
+
+    domain: str
+    answered: int
+    not_applicable: int
+    unanswered: int
+    posture: float | None
+    """0..1, weight-averaged over answered questions. ``None`` when every question
+    in the domain was ``na`` or unanswered — which is not the same as zero, and the
+    roll-up drops the domain rather than scoring it badly."""
+    residual: float | None
+    weight: float
+
+
+@dataclass(frozen=True, slots=True)
+class ScoreStep:
+    """One line of the explanation, in the order it applied."""
+
+    label: str
+    value: float
+    detail: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class ResidualBreakdown:
+    inherent: float
+    domains: tuple[DomainPosture, ...]
+    steps: tuple[ScoreStep, ...]
+    """Every adjustment as its own line, including the ones that did not fire. A
+    bar chart whose bars do not sum to the total is worse than no bar chart."""
+    score: float
+    grade: str
+    clamped: bool
+    critical_control_failed: bool
+    failed_critical_keys: tuple[str, ...]
+
+
+def grade_for(score: float) -> str:
+    for grade, upper in GRADE_BOUNDS:
+        if score < upper:
+            return grade
+    return "F"
+
+
+def compute_residual(
+    answers: Sequence[Answer],
+    *,
+    inherent: float,
+    domain_weights: Mapping[str, float] | None = None,
+    control_ceiling: float = CONTROL_CEILING,
+    thresholds: Mapping[str, float] | None = None,
+) -> ResidualBreakdown:
+    """Roll the answers up into the risk the review leaves behind (V7).
+
+    ``posture(domain) = sum(value * weight) / sum(weight)`` over answered questions;
+    ``residual(domain) = inherent * (1 - ceiling * posture)``; then the weighted
+    average across domains, clamped to at most ``inherent``, then floored if any
+    critical control failed.
+
+    The clamp and the floor are reported as their own steps rather than folded
+    into the number, for the same reason the vulnerability module reports its KEV
+    floor separately: an adjustment nobody can see is an adjustment nobody trusts.
+    """
+    weights = dict(DEFAULT_DOMAIN_WEIGHTS) | dict(domain_weights or {})
+    bands = {**DEFAULT_THRESHOLDS, **dict(thresholds or {})}
+
+    grouped: dict[str, list[Answer]] = {}
+    for answer in answers:
+        grouped.setdefault(answer.domain, []).append(answer)
+
+    domains: list[DomainPosture] = []
+    for domain in sorted(grouped):
+        rows = grouped[domain]
+        scored = [r for r in rows if r.answer in ANSWER_VALUES]
+        total_weight = sum(r.weight for r in scored)
+        posture = (
+            sum(ANSWER_VALUES[r.answer] * r.weight for r in scored) / total_weight
+            if total_weight
+            else None
+        )
+        domains.append(
+            DomainPosture(
+                domain=domain,
+                answered=len(scored),
+                not_applicable=sum(1 for r in rows if r.answer == "na"),
+                unanswered=sum(
+                    1 for r in rows if r.answer not in ANSWER_VALUES and r.answer != "na"
+                ),
+                posture=round(posture, 4) if posture is not None else None,
+                residual=round(inherent * (1 - control_ceiling * posture), 2)
+                if posture is not None
+                else None,
+                weight=float(weights.get(domain, 1.0)),
+            )
+        )
+
+    contributing = [d for d in domains if d.residual is not None]
+    weight_sum = sum(d.weight for d in contributing)
+    raw = (
+        sum(d.residual * d.weight for d in contributing if d.residual is not None) / weight_sum
+        if weight_sum
+        else inherent
+    )
+    raw = round(raw, 2)
+
+    steps: list[ScoreStep] = [
+        ScoreStep("Inherent risk", round(inherent, 2), "Before any control answers."),
+        ScoreStep(
+            "Weighted domain residual",
+            raw,
+            f"Across {len(contributing)} scored domain(s); controls may remove at most "
+            f"{int(control_ceiling * 100)}%.",
+        ),
+    ]
+
+    score = raw
+    clamped = score > inherent
+    if clamped:
+        score = round(inherent, 2)
+    steps.append(
+        ScoreStep(
+            "Clamp to inherent",
+            score,
+            "Controls reduce risk, never add to it."
+            if clamped
+            else "Not applied — the roll-up was already at or below inherent.",
+        )
+    )
+
+    failed = tuple(a.question_key for a in answers if a.critical_control and a.answer == "no")
+    floor = bands.get(CRITICAL_FAIL_FLOOR_TIER, DEFAULT_THRESHOLDS[CRITICAL_FAIL_FLOOR_TIER])
+    if failed and score < floor:
+        score = round(floor, 2)
+    steps.append(
+        ScoreStep(
+            "Critical-control floor",
+            score,
+            f"{len(failed)} critical control answered no, so the score cannot fall below {floor:g}."
+            if failed
+            else "Not applied — no critical control was answered no.",
+        )
+    )
+
+    return ResidualBreakdown(
+        inherent=round(inherent, 2),
+        domains=tuple(domains),
+        steps=tuple(steps),
+        score=score,
+        grade=grade_for(score),
+        clamped=clamped,
+        critical_control_failed=bool(failed),
+        failed_critical_keys=failed,
     )

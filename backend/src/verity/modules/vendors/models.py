@@ -30,7 +30,7 @@ import uuid
 from datetime import date, datetime
 from typing import Any, Final
 
-from sqlalchemy import CheckConstraint, Float, ForeignKey, UniqueConstraint, text
+from sqlalchemy import CheckConstraint, Float, ForeignKey, Index, UniqueConstraint, text
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql.elements import conv
@@ -78,6 +78,94 @@ DATA_CLASSIFICATIONS: Final[tuple[str, ...]] = (
 )
 
 CONTACT_TYPES: Final[tuple[str, ...]] = ("security", "privacy", "commercial", "portal")
+
+# -- the questionnaire bank (V5, V8, V13) -------------------------------------
+
+# V8's ten risk domains. Named in neither signed document; the ER annotates
+# ``questions.domain`` as "of ten risk domains" and lists none of them.
+RISK_DOMAINS: Final[tuple[str, ...]] = (
+    "information_security",
+    "access_control",
+    "data_protection_privacy",
+    "business_continuity",
+    "incident_response",
+    "secure_development",
+    "infrastructure_cloud",
+    "personnel_security",
+    "compliance_legal",
+    "fourth_party_management",
+)
+
+RISK_DOMAIN_LABELS: Final[dict[str, str]] = {
+    "information_security": "Information security programme",
+    "access_control": "Access control",
+    "data_protection_privacy": "Data protection and privacy",
+    "business_continuity": "Business continuity and resilience",
+    "incident_response": "Incident response",
+    "secure_development": "Secure development",
+    "infrastructure_cloud": "Infrastructure and cloud",
+    "personnel_security": "Personnel security",
+    "compliance_legal": "Compliance and legal",
+    "fourth_party_management": "Fourth-party management",
+}
+
+# How deep a questionnaire goes. This is what spec 82's "right-sizes assessment
+# depth" actually means: a low-tier vendor answers the lite set and stops.
+SCOPE_LEVELS: Final[tuple[str, ...]] = ("lite", "core", "detail")
+ANSWER_TYPES: Final[tuple[str, ...]] = (
+    "yes_no_na",
+    "select",
+    "multi_select",
+    "text",
+    "numeric",
+)
+
+# Which scope levels each tier is asked. This is spec 82's "right-sizes assessment
+# depth" as data: a low-tier vendor answers 15 questions and a critical one 59.
+BUNDLE_BY_TIER: Final[dict[str, tuple[str, ...]]] = {
+    "critical": ("lite", "core", "detail"),
+    "high": ("lite", "core", "detail"),
+    "medium": ("lite", "core"),
+    "low": ("lite",),
+}
+
+# -- the review ---------------------------------------------------------------
+
+ASSESSMENT_KINDS: Final[tuple[str, ...]] = ("initial", "reassessment")
+REVIEW_FORMATS: Final[tuple[str, ...]] = (
+    "questionnaire",
+    "soc_report_review",
+    "external_report",
+)
+ASSESSMENT_DOMAINS: Final[tuple[str, ...]] = ("security", "privacy", "legal", "esg")
+ASSESSMENT_STATUSES: Final[tuple[str, ...]] = (
+    "pending",
+    "in_progress",
+    "submitted",
+    "expired",
+    "scored",
+)
+ASSESSMENT_DECISIONS: Final[tuple[str, ...]] = (
+    "pending",
+    "approved",
+    "approved_with_conditions",
+    "rejected",
+)
+# yes/partial/no/na, and the CHECK admits NULL so an unanswered row is legal.
+ANSWER_VALUES: Final[tuple[str, ...]] = ("yes", "partial", "no", "na")
+GRADES: Final[tuple[str, ...]] = ("A", "B", "C", "D", "F")
+
+FINDING_SOURCES: Final[tuple[str, ...]] = (
+    "assessment",
+    "sla_breach",
+    "signal",
+    "document_review",
+    "offboarding",
+)
+FINDING_SEVERITIES: Final[tuple[str, ...]] = ("critical", "high", "medium", "low")
+FINDING_STATUSES: Final[tuple[str, ...]] = ("open", "in_remediation", "accepted", "closed")
+FINDING_TREATMENTS: Final[tuple[str, ...]] = ("remediate", "mitigate", "transfer", "accept")
+OPEN_FINDING_STATUSES: Final[frozenset[str]] = frozenset(("open", "in_remediation"))
 
 DEFAULT_ENGAGEMENT_NAME: Final = "General use"
 
@@ -400,3 +488,329 @@ class VendorTransition(UUIDPrimaryKey, TenantScoped, Base):
         tenant_index("vendor_transitions", "vendor_id"),
         tenant_index("vendor_transitions", "engagement_id", "cycle"),
     )
+
+
+# ---------------------------------------------------------------------------
+# Global content plane — no tenant_id, no RLS, exactly like the control library
+# ---------------------------------------------------------------------------
+
+
+class QuestionnaireTemplate(UUIDPrimaryKey, Timestamped, Base):
+    """A published, versioned bank of questions (V5).
+
+    Global content: no ``tenant_id`` and no RLS, the same plane the SOC 2 control
+    library sits on. ``built_in`` is forward-looking — a Phase-2 tenant-authored
+    bank gets its own tenant-owned table with a policy, rather than a nullable
+    ``tenant_id`` retrofitted onto global content after rows exist.
+
+    **V13.** No SIG, CAIQ or HECVAT question text is shipped. That content belongs
+    to Shared Assessments, CSA and EDUCAUSE. ``framework_mappings`` names the
+    standards this bank covers by identifier so an auditor recognises the coverage
+    without any licensed wording being reproduced.
+    """
+
+    __tablename__ = "questionnaire_templates"
+
+    # The stable identity across versions and re-seeds, matching how frameworks
+    # and control_templates identify themselves.
+    code: Mapped[str] = mapped_column(unique=True)
+    name: Mapped[str]
+    version: Mapped[str]
+    description: Mapped[str | None] = mapped_column(default=None)
+    suggested_tiers: Mapped[list[str]] = mapped_column(
+        postgresql.JSONB, default=list, server_default=text("'[]'::jsonb")
+    )
+    framework_mappings: Mapped[list[str]] = mapped_column(
+        postgresql.JSONB, default=list, server_default=text("'[]'::jsonb")
+    )
+    built_in: Mapped[bool] = mapped_column(default=True, server_default=text("true"))
+    is_current: Mapped[bool] = mapped_column(default=True, server_default=text("true"))
+    """Which version an issue picks by default. An assessment already in flight
+    keeps the ``template_id`` it was dispatched with, so publishing a new version
+    never moves a questionnaire under a vendor mid-answer."""
+
+    def __repr__(self) -> str:
+        return f"QuestionnaireTemplate(code={self.code!r}, version={self.version!r})"
+
+
+class QuestionnaireQuestion(UUIDPrimaryKey, Timestamped, Base):
+    """One question in a bank. Global content, like its template."""
+
+    __tablename__ = "questionnaire_questions"
+
+    template_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("questionnaire_templates.id", ondelete="CASCADE")
+    )
+    # Stable across bank versions, so a response written against 2026.1 is still
+    # recognisable when 2026.2 rewords the prose. Unique per template, not global:
+    # two banks may legitimately both ask about MFA.
+    code: Mapped[str]
+    # The question itself. The ER's diagram omits it, relying on its own
+    # shared-column note; a question table without the question cannot work.
+    body: Mapped[str]
+    position: Mapped[int] = mapped_column(default=0, server_default=text("0"))
+    domain: Mapped[str]
+    scope_level: Mapped[str] = mapped_column(default="core", server_default="core")
+    answer_type: Mapped[str] = mapped_column(default="yes_no_na", server_default="yes_no_na")
+    weight: Mapped[float] = mapped_column(Float, default=1.0, server_default=text("1.0"))
+    # A "no" here floors the residual score at high, however good the rest is (V7).
+    critical_control: Mapped[bool] = mapped_column(default=False, server_default=text("false"))
+    # A "no" here raises a blocking finding, which the approval gate will not pass.
+    non_negotiable: Mapped[bool] = mapped_column(default=False, server_default=text("false"))
+    evidence_required: Mapped[bool] = mapped_column(default=False, server_default=text("false"))
+    framework_refs: Mapped[list[str]] = mapped_column(
+        postgresql.JSONB, default=list, server_default=text("'[]'::jsonb")
+    )
+    # Conditional branching: this question activates only when the parent carries
+    # one of the answers in trigger_condition.
+    parent_question_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("questionnaire_questions.id", ondelete="SET NULL"), default=None
+    )
+    trigger_condition: Mapped[list[str]] = mapped_column(
+        postgresql.JSONB, default=list, server_default=text("'[]'::jsonb")
+    )
+
+    __table_args__ = (
+        status_check("questionnaire_questions", "domain", RISK_DOMAINS),
+        status_check("questionnaire_questions", "scope_level", SCOPE_LEVELS),
+        status_check("questionnaire_questions", "answer_type", ANSWER_TYPES),
+        UniqueConstraint("template_id", "code", name="uq_questionnaire_questions__template_code"),
+        Index("ix_questionnaire_questions__template_id_domain", "template_id", "domain"),
+    )
+
+    def __repr__(self) -> str:
+        return f"QuestionnaireQuestion(code={self.code!r}, domain={self.domain!r})"
+
+
+# ---------------------------------------------------------------------------
+# The review
+# ---------------------------------------------------------------------------
+
+
+class VendorAssessment(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
+    """One review cycle against a vendor engagement.
+
+    The portal credential does not live here. It cannot: a portal request presents
+    a token and nothing else, and this table is tenant-owned with FORCE RLS, so it
+    cannot be read until a tenant has been bound. See ``VendorPortalToken``.
+    """
+
+    __tablename__ = "vendor_assessments"
+
+    vendor_id: Mapped[uuid.UUID] = mapped_column(ForeignKey(_VENDOR_FK, ondelete="CASCADE"))
+    engagement_id: Mapped[uuid.UUID] = mapped_column(ForeignKey(_ENGAGEMENT_FK, ondelete="CASCADE"))
+    template_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("questionnaire_templates.id", ondelete="SET NULL"), default=None
+    )
+    cycle: Mapped[int] = mapped_column(default=1, server_default=text("1"))
+    kind: Mapped[str] = mapped_column(default="initial", server_default="initial")
+    review_format: Mapped[str] = mapped_column(
+        default="questionnaire", server_default="questionnaire"
+    )
+    assessment_domain: Mapped[str] = mapped_column(default="security", server_default="security")
+    # Snapshotted at dispatch: the template is versioned global content that could
+    # change under a vendor mid-questionnaire, and a residual score computed
+    # against a question set nobody can reconstruct is not defensible.
+    scope: Mapped[dict[str, Any]] = mapped_column(
+        postgresql.JSONB, default=dict, server_default=text("'{}'::jsonb")
+    )
+    status: Mapped[str] = mapped_column(default="pending", server_default="pending")
+    due_date: Mapped[date | None] = mapped_column(default=None)
+
+    residual_score: Mapped[float | None] = mapped_column(Float, default=None)
+    grade: Mapped[str | None] = mapped_column(default=None)
+    domain_scores: Mapped[dict[str, Any]] = mapped_column(
+        postgresql.JSONB, default=dict, server_default=text("'{}'::jsonb")
+    )
+    # The scoring inputs this run used, frozen the way the tiering snapshot is, so
+    # a later retune of the ceiling or the domain weights cannot rewrite a past
+    # score's explanation.
+    score_snapshot: Mapped[dict[str, Any]] = mapped_column(
+        postgresql.JSONB, default=dict, server_default=text("'{}'::jsonb")
+    )
+    decision: Mapped[str] = mapped_column(default="pending", server_default="pending")
+
+    # The credential itself lives in VendorPortalToken, on the global plane —
+    # see that class for why it cannot live on this tenant-owned row.
+    portal_contact_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("vendor_contacts.id", ondelete="SET NULL"), default=None
+    )
+    submitted_at: Mapped[datetime | None] = mapped_column(default=None)
+
+    __table_args__ = (
+        status_check("vendor_assessments", "kind", ASSESSMENT_KINDS),
+        status_check("vendor_assessments", "review_format", REVIEW_FORMATS),
+        status_check("vendor_assessments", "assessment_domain", ASSESSMENT_DOMAINS),
+        status_check("vendor_assessments", "status", ASSESSMENT_STATUSES),
+        status_check("vendor_assessments", "grade", GRADES),
+        status_check("vendor_assessments", "decision", ASSESSMENT_DECISIONS),
+        tenant_index("vendor_assessments", "vendor_id"),
+        tenant_index("vendor_assessments", "engagement_id", "cycle"),
+        tenant_index("vendor_assessments", "status"),
+    )
+
+    def __repr__(self) -> str:
+        return f"VendorAssessment(id={self.id!r}, status={self.status!r})"
+
+
+class VendorPortalToken(UUIDPrimaryKey, Timestamped, Base):
+    """The vendor portal credential — global plane, deliberately unpolicied (V11).
+
+    A portal request arrives with a token and no session, so the tenant has to be
+    resolved *before* it can be bound; ``vendor_assessments`` is tenant-owned with
+    FORCE row-level security, so it cannot be the thing that answers that. This
+    table is the way out, and it is not a new idea: ``users`` and
+    ``user_identities`` already sit on this plane doing exactly this job, turning
+    an externally held credential into an internal identity before any tenant is
+    known.
+
+    What it deliberately does **not** hold: the token, any personal data, or
+    anything about the vendor. Only a sha256 of the issued token, and the pair it
+    resolves to. A reader of the whole table learns that some hash belongs to some
+    tenant, and to use that they would already need the token it was made from.
+
+    Rotation writes a new row and revokes the old one, so the history of who was
+    sent a link and when survives — an overwritten column would lose it. Every
+    read of this table in the service filters ``tenant_id`` explicitly, which
+    matters more here than anywhere else in the module: on this table that filter
+    is the only wall, not the first of two.
+    """
+
+    __tablename__ = "vendor_portal_tokens"
+
+    token_hash: Mapped[str] = mapped_column(unique=True)
+    tenant_id: Mapped[uuid.UUID]
+    """Not TenantScoped: no policy, and no FK to tenants either, because a torn-down
+    tenant's rows are removed by the teardown path rather than cascaded here."""
+    assessment_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("vendor_assessments.id", ondelete="CASCADE")
+    )
+    expires_at: Mapped[datetime]
+    revoked_at: Mapped[datetime | None] = mapped_column(default=None)
+    last_used_at: Mapped[datetime | None] = mapped_column(default=None)
+
+    __table_args__ = (Index("ix_vendor_portal_tokens__assessment_id", "assessment_id"),)
+
+    def __repr__(self) -> str:
+        return f"VendorPortalToken(assessment_id={self.assessment_id!r})"
+
+
+class VendorAssessmentResponse(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
+    """One answer. The table the reference product had and never wrote to.
+
+    Its portal wrote a JSON blob and scoring silently parsed that instead, so the
+    normalised table sat empty and every per-question query returned nothing. Here
+    the portal writes rows and scoring reads rows. There is no JSON path.
+    """
+
+    __tablename__ = "vendor_assessment_responses"
+
+    assessment_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("vendor_assessments.id", ondelete="CASCADE")
+    )
+    question_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("questionnaire_questions.id", ondelete="RESTRICT")
+    )
+    answer: Mapped[str | None] = mapped_column(default=None)
+    answer_value: Mapped[dict[str, Any]] = mapped_column(
+        postgresql.JSONB, default=dict, server_default=text("'{}'::jsonb")
+    )
+    implementation_notes: Mapped[str | None] = mapped_column(default=None)
+    na_justification: Mapped[str | None] = mapped_column(default=None)
+    delegated_to_contact_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("vendor_contacts.id", ondelete="SET NULL"), default=None
+    )
+    # A bare uuid in the ORM, and a real FK in the database. Declaring the
+    # relationship here would make the vendors mapper resolve evidence's table at
+    # configuration time, which means importing another module's models — the one
+    # thing the boundary contract forbids. The migration owns the constraint;
+    # audit_log.actor_id already carries a column this way for the same reason.
+    evidence_id: Mapped[uuid.UUID | None] = mapped_column(default=None)
+    answered_at: Mapped[datetime | None] = mapped_column(default=None)
+
+    __table_args__ = (
+        status_check("vendor_assessment_responses", "answer", ANSWER_VALUES),
+        # "Does not apply" is a claim, and an unexplained one is how a
+        # questionnaire is emptied without anybody noticing.
+        CheckConstraint(
+            "(answer IS DISTINCT FROM 'na') OR (na_justification IS NOT NULL)",
+            name=conv("ck_vendor_assessment_responses__na_has_reason"),
+        ),
+        UniqueConstraint(
+            "tenant_id",
+            "assessment_id",
+            "question_id",
+            name="uq_vendor_assessment_responses__assessment_question",
+        ),
+        tenant_index("vendor_assessment_responses", "assessment_id"),
+    )
+
+
+class VendorFinding(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
+    """What the review found.
+
+    ``promoted_risk_id`` ships nullable with **no foreign key and no promotion
+    action**: ``modules/risk/`` has no tables in any migration. The seam is designed
+    on both sides, so the column is here and the button is absent rather than
+    faked. Spec ¶85 and the ¶109 exit criterion are not satisfiable until a risk
+    slice lands — a sequencing gap, stated rather than hidden.
+    """
+
+    __tablename__ = "vendor_findings"
+
+    vendor_id: Mapped[uuid.UUID] = mapped_column(ForeignKey(_VENDOR_FK, ondelete="CASCADE"))
+    engagement_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey(_ENGAGEMENT_FK, ondelete="CASCADE"), default=None
+    )
+    assessment_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("vendor_assessments.id", ondelete="SET NULL"), default=None
+    )
+    question_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("questionnaire_questions.id", ondelete="SET NULL"), default=None
+    )
+    title: Mapped[str]
+    detail: Mapped[str] = mapped_column(default="", server_default=text("''"))
+    finding_source: Mapped[str] = mapped_column(default="assessment", server_default="assessment")
+    severity: Mapped[str] = mapped_column(default="medium", server_default="medium")
+    status: Mapped[str] = mapped_column(default="open", server_default="open")
+    treatment: Mapped[str] = mapped_column(default="remediate", server_default="remediate")
+    # A critical-control failure that the approval gate will not pass.
+    is_blocking: Mapped[bool] = mapped_column(default=False, server_default=text("false"))
+    sla_due: Mapped[date | None] = mapped_column(default=None)
+    owner_membership_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey(_MEMBERSHIP_FK, ondelete="SET NULL"), default=None
+    )
+    # Remediation is a real task in the tasks module, never a vendor-local to-do
+    # list that no dashboard counts. A bare uuid here and a real FK in the
+    # migration, so the mapper never has to resolve another module's table.
+    task_id: Mapped[uuid.UUID | None] = mapped_column(default=None)
+    accepted_until: Mapped[date | None] = mapped_column(default=None)
+    accepted_rationale: Mapped[str | None] = mapped_column(default=None)
+    accepted_by_membership_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey(_MEMBERSHIP_FK, ondelete="SET NULL"), default=None
+    )
+    closed_at: Mapped[datetime | None] = mapped_column(default=None)
+    # No FK: modules/risk has no tables yet. See the class docstring.
+    promoted_risk_id: Mapped[uuid.UUID | None] = mapped_column(default=None)
+
+    __table_args__ = (
+        status_check("vendor_findings", "finding_source", FINDING_SOURCES),
+        status_check("vendor_findings", "severity", FINDING_SEVERITIES),
+        status_check("vendor_findings", "status", FINDING_STATUSES),
+        status_check("vendor_findings", "treatment", FINDING_TREATMENTS),
+        # Acceptance is time-boxed or it is not acceptance: an open-ended accepted
+        # risk is a risk nobody will ever look at again.
+        CheckConstraint(
+            "(status <> 'accepted') OR "
+            "(accepted_until IS NOT NULL AND accepted_rationale IS NOT NULL)",
+            name=conv("ck_vendor_findings__acceptance_is_time_boxed"),
+        ),
+        tenant_index("vendor_findings", "vendor_id"),
+        tenant_index("vendor_findings", "assessment_id"),
+        tenant_index("vendor_findings", "status", "severity"),
+        tenant_index("vendor_findings", "owner_membership_id"),
+        tenant_index("vendor_findings", "sla_due"),
+    )
+
+    def __repr__(self) -> str:
+        return f"VendorFinding(id={self.id!r}, severity={self.severity!r}, status={self.status!r})"

@@ -19,6 +19,7 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from verity.core.logging import get_logger
+from verity.core.middleware import safe_path
 
 logger = get_logger(__name__)
 
@@ -175,7 +176,7 @@ async def _handle_verity_error(request: Request, exc: Exception) -> JSONResponse
         correlation_id=correlation_id_of(request),
         error_code=error.code,
         http_status=error.http_status,
-        path=request.url.path,
+        path=safe_path(request.url.path),
         method=request.method,
         detail=error.detail,
     )
@@ -209,7 +210,7 @@ async def _handle_validation_error(request: Request, exc: Exception) -> JSONResp
     logger.info(
         "request.invalid",
         correlation_id=correlation_id_of(request),
-        path=request.url.path,
+        path=safe_path(request.url.path),
         method=request.method,
         validation_errors=errors,
     )
@@ -231,7 +232,7 @@ async def _handle_http_exception(request: Request, exc: Exception) -> JSONRespon
         "request.rejected",
         correlation_id=correlation_id_of(request),
         http_status=http_status,
-        path=request.url.path,
+        path=safe_path(request.url.path),
         method=request.method,
         detail=str(raw_detail) if raw_detail is not None else None,
     )
@@ -242,7 +243,7 @@ async def _handle_unexpected_error(request: Request, exc: Exception) -> JSONResp
     logger.error(
         "request.unhandled",
         correlation_id=correlation_id_of(request),
-        path=request.url.path,
+        path=safe_path(request.url.path),
         method=request.method,
         exc_info=exc,
     )

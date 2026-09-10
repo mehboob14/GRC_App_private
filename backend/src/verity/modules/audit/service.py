@@ -28,6 +28,7 @@ from verity.modules.audit.models import (
     ACTOR_TYPE_MEMBERSHIP,
     ACTOR_TYPE_PLATFORM_ADMIN,
     ACTOR_TYPE_SYSTEM,
+    ACTOR_TYPE_VENDOR_CONTACT,
     AUDIT_ACTIONS,
     AuditAction,
     AuditLog,
@@ -71,6 +72,28 @@ class PlatformAdmin:
 
 
 @dataclass(frozen=True, slots=True)
+class VendorContact:
+    """A person at a third party, answering through the vendor portal.
+
+    They hold a token, not a session, and have no ``tenant_memberships`` row —
+    inventing one would break rule 3, because a membership means somebody who may
+    sign in. The id is the ``vendor_contacts`` row. This is the fourth case of the
+    polymorphic pair, and the reason that pair exists: one foreign key cannot point
+    at memberships, platform admins, vendor contacts and nothing at once.
+    """
+
+    id: uuid.UUID
+    actor_type: ClassVar[str] = ACTOR_TYPE_VENDOR_CONTACT
+
+    def __post_init__(self) -> None:
+        _require_uuid(self.id, owner=type(self).__name__)
+
+    @property
+    def actor_id(self) -> uuid.UUID:
+        return self.id
+
+
+@dataclass(frozen=True, slots=True)
 class System:
     """A scheduled job or internal process. Deliberately has no identifier — a
     ``System`` actor carrying one is refused by construction, mirroring the paired
@@ -83,7 +106,7 @@ class System:
         return None
 
 
-Actor = Membership | PlatformAdmin | System
+Actor = Membership | PlatformAdmin | System | VendorContact
 
 _CURSOR_ERROR: Final = "The pagination cursor is not valid."
 
@@ -197,8 +220,10 @@ class AuditService:
         """
         if action not in AUDIT_ACTIONS:
             raise ValueError(f"unknown audit action {action!r}; expected one of {AUDIT_ACTIONS}")
-        if not isinstance(actor, Membership | PlatformAdmin | System):
-            raise TypeError(f"actor must be Membership, PlatformAdmin, or System, got {actor!r}")
+        if not isinstance(actor, Membership | PlatformAdmin | System | VendorContact):
+            raise TypeError(
+                f"actor must be Membership, PlatformAdmin, System or VendorContact, got {actor!r}"
+            )
         if not object_type:
             raise ValueError("object_type must be a non-empty string")
         entry = AuditLog(

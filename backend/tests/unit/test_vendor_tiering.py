@@ -361,3 +361,159 @@ def test_the_first_stage_cannot_be_sent_back() -> None:
 def test_the_terminal_stage_offers_no_advance() -> None:
     checks = lifecycle.evaluate_exit("offboarding", _facts())
     assert "advance" not in lifecycle.allowed_transitions(_state("offboarding"), checks)
+
+
+# -- residual scoring (V7) ----------------------------------------------------
+
+
+def _answer(domain: str, answer: str, **kw: object) -> scoring.Answer:
+    return scoring.Answer(
+        question_key=kw.pop("key", f"{domain}.{answer}"),  # type: ignore[arg-type]
+        domain=domain,
+        answer=answer,
+        **kw,  # type: ignore[arg-type]
+    )
+
+
+def test_a_perfect_questionnaire_still_leaves_thirty_percent_of_inherent() -> None:
+    """The control ceiling, and the reason for it: a questionnaire is a claim, not
+    a proof. A vendor that answers everything yes has not been audited."""
+    result = scoring.compute_residual(
+        [_answer("access_control", "yes"), _answer("incident_response", "yes")],
+        inherent=100.0,
+    )
+    assert result.score == 30.0
+    assert result.grade == "B"
+    assert result.critical_control_failed is False
+
+
+def test_answering_nothing_well_leaves_the_inherent_score_untouched() -> None:
+    result = scoring.compute_residual([_answer("access_control", "no")], inherent=60.0)
+    assert result.score == 60.0
+    assert result.grade == "D"
+
+
+def test_partial_scores_half() -> None:
+    result = scoring.compute_residual([_answer("access_control", "partial")], inherent=100.0)
+    assert result.score == 65.0  # 100 * (1 - 0.7 * 0.5)
+
+
+def test_na_leaves_both_sides_of_the_average_rather_than_scoring_zero() -> None:
+    """A question that does not apply must not look like a control that is missing."""
+    mixed = scoring.compute_residual(
+        [_answer("access_control", "yes"), _answer("access_control", "na")], inherent=100.0
+    )
+    only_yes = scoring.compute_residual([_answer("access_control", "yes")], inherent=100.0)
+    assert mixed.score == only_yes.score
+
+    domain = mixed.domains[0]
+    assert (domain.answered, domain.not_applicable) == (1, 1)
+
+
+def test_a_domain_answered_entirely_na_drops_out_of_the_roll_up() -> None:
+    result = scoring.compute_residual(
+        [_answer("access_control", "yes"), _answer("personnel_security", "na")], inherent=80.0
+    )
+    dropped = next(d for d in result.domains if d.domain == "personnel_security")
+    assert dropped.posture is None
+    assert dropped.residual is None
+    # Scored as if only access_control existed.
+    assert (
+        result.score
+        == scoring.compute_residual([_answer("access_control", "yes")], inherent=80.0).score
+    )
+
+
+def test_an_unanswered_questionnaire_scores_the_inherent_risk() -> None:
+    """Nothing answered is nothing proven, so the review has removed no risk."""
+    result = scoring.compute_residual([], inherent=72.0)
+    assert result.score == 72.0
+    assert result.domains == ()
+
+
+def test_domain_weights_shift_the_roll_up() -> None:
+    """Access control counts more than personnel security, by design."""
+    result = scoring.compute_residual(
+        [_answer("access_control", "no"), _answer("personnel_security", "yes")],
+        inherent=100.0,
+    )
+    even = scoring.compute_residual(
+        [_answer("access_control", "no"), _answer("personnel_security", "yes")],
+        inherent=100.0,
+        domain_weights={"access_control": 1.0, "personnel_security": 1.0},
+    )
+    assert result.score > even.score, (
+        "the weighted answer is worse, because the bad one counts more"
+    )
+
+
+def test_a_failed_critical_control_floors_the_score_even_from_a_low_inherent() -> None:
+    """However good the rest of the answers are, and however small the exposure."""
+    result = scoring.compute_residual(
+        [
+            _answer("access_control", "yes"),
+            _answer("access_control", "no", key="ac.mfa.admin", critical_control=True),
+        ],
+        inherent=20.0,
+    )
+    assert result.critical_control_failed is True
+    assert result.failed_critical_keys == ("ac.mfa.admin",)
+    assert result.score == 50.0
+
+
+def test_the_floor_may_exceed_inherent_and_the_steps_say_which_adjustment_did_it() -> None:
+    """V7 applies the floor after the clamp, deliberately: a missing named control
+    is evidence the exposure factors never saw."""
+    result = scoring.compute_residual(
+        [_answer("access_control", "no", key="ac.mfa.admin", critical_control=True)],
+        inherent=10.0,
+    )
+    assert result.score == 50.0 > result.inherent
+    labels = [s.label for s in result.steps]
+    assert labels == [
+        "Inherent risk",
+        "Weighted domain residual",
+        "Clamp to inherent",
+        "Critical-control floor",
+    ]
+    assert result.steps[-1].value == 50.0
+    assert "no critical control" not in (result.steps[-1].detail or "")
+
+
+def test_every_step_is_reported_even_when_it_did_not_fire() -> None:
+    """An adjustment nobody can see is an adjustment nobody trusts, so the steps
+    that did not apply say so rather than vanishing."""
+    result = scoring.compute_residual([_answer("access_control", "yes")], inherent=100.0)
+    clamp = next(s for s in result.steps if s.label == "Clamp to inherent")
+    floor = next(s for s in result.steps if s.label == "Critical-control floor")
+    assert "Not applied" in (clamp.detail or "")
+    assert "Not applied" in (floor.detail or "")
+    assert result.clamped is False
+
+
+@pytest.mark.parametrize(
+    ("score", "grade"),
+    [
+        (0.0, "A"),
+        (19.99, "A"),
+        (20.0, "B"),
+        (39.99, "B"),
+        (40.0, "C"),
+        (60.0, "D"),
+        (80.0, "F"),
+        (100.0, "F"),
+    ],
+)
+def test_the_grade_boundaries_land_where_v7_says(score: float, grade: str) -> None:
+    assert scoring.grade_for(score) == grade
+
+
+def test_residual_never_silently_exceeds_inherent_without_the_clamp_firing() -> None:
+    """The clamp is what makes "controls reduce risk, never add" true, so it is
+    asserted rather than assumed."""
+    for inherent in (0.0, 25.0, 50.0, 100.0):
+        result = scoring.compute_residual(
+            [_answer("access_control", "yes"), _answer("incident_response", "partial")],
+            inherent=inherent,
+        )
+        assert result.score <= inherent + 0.01, inherent

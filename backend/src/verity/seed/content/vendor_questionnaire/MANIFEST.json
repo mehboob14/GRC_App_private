@@ -1,0 +1,17 @@
+{
+  "pack": "vendor_questionnaire",
+  "source": "Authored for Verity. No SIG, CAIQ or HECVAT text is reproduced (V13).",
+  "bank": "verity-core",
+  "version": "2026.1",
+  "questions": 59,
+  "by_scope_level": {
+    "lite": 15,
+    "core": 26,
+    "detail": 18
+  },
+  "critical_controls": 9,
+  "non_negotiable": 4,
+  "sha256": {
+    "questionnaire_bank.json": "767c56c0d10defd73e54aaa5d281cf00169ad5799d14208e8d2890f2c858ad20"
+  }
+}

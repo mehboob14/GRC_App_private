@@ -38,13 +38,17 @@ on the same (week1-review-decisions.md, decision 2)."""
 
 AUDIT_ACTIONS: Final[tuple[str, ...]] = get_args(AuditAction)
 
-ActorType = Literal["membership", "platform_admin", "system"]
+ActorType = Literal["membership", "platform_admin", "system", "vendor_contact"]
 
 ACTOR_TYPES: Final[tuple[str, ...]] = get_args(ActorType)
 
 ACTOR_TYPE_MEMBERSHIP: Final = "membership"
 ACTOR_TYPE_PLATFORM_ADMIN: Final = "platform_admin"
 ACTOR_TYPE_SYSTEM: Final = "system"
+# A person at a third party, acting through the vendor questionnaire portal.
+# They hold a token rather than a session and have no membership, which is the
+# whole reason the actor is a polymorphic pair rather than one foreign key.
+ACTOR_TYPE_VENDOR_CONTACT: Final = "vendor_contact"
 
 
 class AuditLogAppendOnlyError(RuntimeError):

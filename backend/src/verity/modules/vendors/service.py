@@ -21,32 +21,48 @@ from __future__ import annotations
 
 import re
 import uuid
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime, timedelta
 from typing import Any, Final
 
+import structlog
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from verity.core import ratelimit
+from verity.core.config import get_settings
 from verity.core.errors import Conflict, InvalidInput, NotFound
 from verity.modules.audit.service import Actor, AuditService, Membership, audit_service
 from verity.modules.vendors import lifecycle, scoring
 from verity.modules.vendors.models import (
+    BUNDLE_BY_TIER,
     CONTACT_TYPES,
     DATA_CLASSIFICATIONS,
     DEFAULT_ENGAGEMENT_NAME,
+    FINDING_SEVERITIES,
     LIFECYCLE_STATUSES,
+    OPEN_FINDING_STATUSES,
+    RISK_DOMAIN_LABELS,
     TIERS,
     VENDOR_TYPES,
+    QuestionnaireQuestion,
+    QuestionnaireTemplate,
     Vendor,
+    VendorAssessment,
+    VendorAssessmentResponse,
     VendorContact,
     VendorEngagement,
+    VendorFinding,
+    VendorPortalToken,
     VendorStage,
     VendorTieringAssessment,
     VendorTieringPolicy,
     VendorTransition,
 )
 from verity.shared.ids import uuid7
+
+logger: Final = structlog.get_logger(__name__)
 
 # -- shared rules (the client is served these; it never hardcodes them) -------
 
@@ -327,6 +343,166 @@ class StageView:
     tick either — the distinction rule 7 draws between error and fail."""
     allowed_transitions: list[str]
     """Served so the client never reimplements the machine in TypeScript."""
+
+
+# -- the review (section 3) ---------------------------------------------------
+
+_QUESTIONNAIRE_DUE_DAYS: Final = 21
+_PORTAL_TOKEN_DAYS: Final = 30
+"""The link outlives the due date by a little, so a vendor who is late can still
+answer rather than having to ask for a new link — which is friction that produces
+an unanswered questionnaire, not a more secure one."""
+
+_FINDING_SLA_DAYS: Final[dict[str, int]] = {
+    "critical": 7,
+    "high": 30,
+    "medium": 90,
+    "low": 180,
+}
+
+_TASK_PRIORITY: Final[dict[str, str]] = {
+    "critical": "critical",
+    "high": "high",
+    "medium": "medium",
+    "low": "low",
+}
+
+_FINDING_SNAPSHOT: Final[tuple[str, ...]] = (
+    "title",
+    "severity",
+    "status",
+    "treatment",
+    "is_blocking",
+    "owner_membership_id",
+    "task_id",
+    "accepted_until",
+)
+
+_ASSESSMENT_GONE: Final = "This questionnaire no longer exists. It may have been deleted."
+_FINDING_GONE: Final = "This finding no longer exists. It may have been closed and removed."
+
+
+def _finding_severity(question: QuestionnaireQuestion) -> str:
+    """How bad a ``no`` to this question is.
+
+    Driven by what the question *is*, not by who answered it: a missing critical
+    control is critical whoever the vendor is, and a nice-to-have is low however
+    important the vendor.
+    """
+    if question.critical_control:
+        return "critical"
+    if question.weight >= _HIGH_WEIGHT:
+        return "high"
+    if question.weight >= _MEDIUM_WEIGHT:
+        return "medium"
+    return "low"
+
+
+_HIGH_WEIGHT: Final = 2.0
+_MEDIUM_WEIGHT: Final = 1.5
+
+
+def _finding_title(question: QuestionnaireQuestion) -> str:
+    """A title that names the gap, not the question.
+
+    "Access control: MFA on privileged access" is something a reader can act on;
+    the question text repeated back is something they have to translate first.
+    """
+    return f"{RISK_DOMAIN_LABELS[question.domain]}: {question.code}"
+
+
+def _portal_url(token: str) -> str:
+    base = get_settings().frontend_base_url.rstrip("/")
+    return f"{base}/vendor-portal/{token}"
+
+
+@dataclass(frozen=True, slots=True)
+class IssuedQuestionnaire:
+    """What issuing returns. ``portal_url`` contains the only copy of the token."""
+
+    assessment_id: uuid.UUID
+    contact_email: str
+    question_count: int
+    due_date: date | None
+    portal_url: str
+
+
+@dataclass(frozen=True, slots=True)
+class ResponseView:
+    id: uuid.UUID
+    question_id: uuid.UUID
+    question_code: str
+    body: str
+    domain: str
+    domain_label: str
+    scope_level: str
+    answer_type: str
+    weight: float
+    critical_control: bool
+    non_negotiable: bool
+    evidence_required: bool
+    framework_refs: list[str]
+    answer: str | None
+    implementation_notes: str | None
+    na_justification: str | None
+    evidence_id: uuid.UUID | None
+    answered_at: datetime | None
+
+
+@dataclass(frozen=True, slots=True)
+class FindingView:
+    id: uuid.UUID
+    vendor_id: uuid.UUID
+    assessment_id: uuid.UUID | None
+    question_id: uuid.UUID | None
+    title: str
+    detail: str
+    finding_source: str
+    severity: str
+    status: str
+    treatment: str
+    is_blocking: bool
+    sla_due: date | None
+    owner_membership_id: uuid.UUID | None
+    owner_name: str | None
+    task_id: uuid.UUID | None
+    accepted_until: date | None
+    accepted_rationale: str | None
+    closed_at: datetime | None
+    promoted_risk_id: uuid.UUID | None
+    created_at: datetime
+
+
+@dataclass(frozen=True, slots=True)
+class AssessmentView:
+    id: uuid.UUID
+    vendor_id: uuid.UUID
+    engagement_id: uuid.UUID
+    cycle: int
+    kind: str
+    review_format: str
+    assessment_domain: str
+    status: str
+    decision: str
+    due_date: date | None
+    residual_score: float | None
+    grade: str | None
+    domain_scores: dict[str, Any]
+    score_steps: list[Any]
+    """The adjustments in the order they applied, including the ones that did not
+    fire — the same shape the tiering panel reads."""
+    scope: dict[str, Any]
+    question_count: int
+    answered_count: int
+    unanswered_count: int
+    missing_evidence_count: int
+    submitted_at: datetime | None
+    responses: list[ResponseView]
+    findings: list[FindingView]
+    portal_link_live: bool
+    portal_link_expires_at: datetime | None
+    created_at: datetime
+    updated_at: datetime
 
 
 # -- service ------------------------------------------------------------------
@@ -1078,6 +1254,20 @@ class VendorService:
         )
         return (await session.execute(stmt)).scalar_one_or_none()
 
+    async def _latest_assessment(
+        self, session: AsyncSession, tenant_id: uuid.UUID, engagement_id: uuid.UUID, cycle: int
+    ) -> VendorAssessment | None:
+        return (
+            await session.execute(
+                select(VendorAssessment)
+                .where(VendorAssessment.tenant_id == tenant_id)
+                .where(VendorAssessment.engagement_id == engagement_id)
+                .where(VendorAssessment.cycle == cycle)
+                .order_by(VendorAssessment.created_at.desc())
+                .limit(1)
+            )
+        ).scalar_one_or_none()
+
     async def _facts(  # noqa: PLR0913, PLR0917
         self,
         session: AsyncSession,
@@ -1089,6 +1279,17 @@ class VendorService:
     ) -> lifecycle.StageFacts:
         tiering = await self._latest_tiering(session, tenant_id, engagement.id, stage.cycle)
         tier = engagement.tier
+        # Section 3 built the assessment and finding tables, so the checks that
+        # reported pending are answerable now. Nothing in lifecycle.py changed:
+        # the rules were always written, and this is the collector catching up.
+        assessment = await self._latest_assessment(session, tenant_id, engagement.id, stage.cycle)
+        answers = (
+            await self.answers_with_questions(
+                session, tenant_id=tenant_id, assessment_id=assessment.id
+            )
+            if assessment
+            else []
+        )
         return lifecycle.StageFacts(
             vendor_id=vendor.id,
             vendor_name=vendor.name,
@@ -1100,6 +1301,19 @@ class VendorService:
             next_cycle_opened=stage.cycle
             < await self._current_cycle(session, tenant_id, engagement.id),
             required_reviewer_roles=policy.reviewer_roles.get(tier or "", ()),
+            assessments_available=True,
+            selected_bank_count=1 if assessment else 0,
+            unanswered_question_count=sum(1 for r, _ in answers if not r.answer),
+            missing_evidence_count=sum(
+                1
+                for r, q in answers
+                if q.evidence_required and r.answer == "yes" and not r.evidence_id
+            ),
+            residual_score=assessment.residual_score if assessment else None,
+            findings_available=True,
+            open_critical_findings=await self.open_critical_count(
+                session, tenant_id=tenant_id, vendor_id=vendor.id
+            ),
             # vendor_team_roster is a section-4 table. Until it exists nobody is
             # rostered, so every required role reports as missing — which is true
             # and visible, rather than quietly passing.
@@ -1509,6 +1723,883 @@ class VendorService:
         )
         await session.flush()
         return await self.get_vendor(session, tenant_id=tenant_id, vendor_id=vendor.id)
+
+    # -- the questionnaire (section 3) -----------------------------------------
+
+    async def _current_bank(
+        self, session: AsyncSession, code: str | None = None
+    ) -> QuestionnaireTemplate:
+        stmt = select(QuestionnaireTemplate)
+        stmt = (
+            stmt.where(QuestionnaireTemplate.code == code)
+            if code
+            else stmt.where(QuestionnaireTemplate.is_current.is_(True))
+        )
+        bank = (await session.execute(stmt.limit(1))).scalar_one_or_none()
+        if bank is None:
+            raise InvalidInput(
+                "No questionnaire bank is available. Ask an administrator to load the "
+                "shipped content.",
+                detail=f"no questionnaire_template for code={code!r}",
+            )
+        return bank
+
+    async def _bank_questions(
+        self, session: AsyncSession, template_id: uuid.UUID, scope_levels: Sequence[str]
+    ) -> list[QuestionnaireQuestion]:
+        stmt = (
+            select(QuestionnaireQuestion)
+            .where(QuestionnaireQuestion.template_id == template_id)
+            .where(QuestionnaireQuestion.scope_level.in_(list(scope_levels)))
+            .order_by(QuestionnaireQuestion.position)
+        )
+        return list((await session.execute(stmt)).scalars())
+
+    async def issue_questionnaire(  # noqa: PLR0913
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        vendor_id: uuid.UUID,
+        engagement_id: uuid.UUID,
+        contact_id: uuid.UUID | None = None,
+        due_date: date | None = None,
+        bank_code: str | None = None,
+    ) -> IssuedQuestionnaire:
+        """Create the assessment, mint the portal link, and tell the contact.
+
+        The question set is chosen by the engagement's tier and **snapshotted onto
+        the assessment**. The bank is versioned global content that can change
+        under a vendor mid-answer, and a residual score computed against a
+        question set nobody can reconstruct is not defensible.
+
+        The token is returned exactly once, here, in the link. It is stored only as
+        a hash, so nothing downstream — not this service, not the database, not a
+        backup — can produce it again.
+        """
+        engagement = await self._load_engagement(session, tenant_id, engagement_id)
+        if engagement.vendor_id != vendor_id:
+            raise NotFound(
+                _ENGAGEMENT_GONE, detail=f"engagement {engagement_id} is not on {vendor_id}"
+            )
+        vendor = await self._load(session, tenant_id, vendor_id)
+        if engagement.tier is None:
+            raise Conflict(
+                "Tier this engagement before sending a questionnaire. The tier is what "
+                "decides which questions are asked.",
+                detail=f"engagement {engagement_id} has no tier",
+            )
+
+        contact = await self._portal_contact(session, tenant_id, vendor.id, contact_id)
+        bank = await self._current_bank(session, bank_code)
+        levels = BUNDLE_BY_TIER.get(engagement.tier, ("lite",))
+        questions = await self._bank_questions(session, bank.id, levels)
+        if not questions:
+            raise InvalidInput(
+                "That questionnaire bank has no questions for this tier.",
+                detail=f"bank {bank.code} has no questions at levels {levels}",
+            )
+
+        cycle = await self._current_cycle(session, tenant_id, engagement.id)
+        now = datetime.now(UTC)
+
+        # Re-issuing is a *resend*, not a second review. An open assessment for
+        # this cycle is refreshed in place and gets a new link; creating another
+        # would duplicate every response row, leave two live tokens, and make the
+        # register count one questionnaire as two.
+        open_already = await self._open_assessment(session, tenant_id, engagement.id, cycle)
+        if open_already is not None:
+            open_already.portal_contact_id = contact.id
+            open_already.due_date = due_date or open_already.due_date
+            token = await self._mint_portal_token(session, tenant_id, open_already)
+            await self._audit.record(
+                session,
+                action="update",
+                object_type="vendor_assessment",
+                object_id=open_already.id,
+                actor=actor,
+                tenant_id=tenant_id,
+                before={"portal_link": "issued"},
+                after={"portal_link": "reissued", "contact_id": str(contact.id)},
+            )
+            await self._send_portal_invitation(vendor, contact, open_already, token)
+            await session.flush()
+            return IssuedQuestionnaire(
+                assessment_id=open_already.id,
+                contact_email=contact.email or "",
+                question_count=int(open_already.scope.get("question_count", 0)),
+                due_date=open_already.due_date,
+                portal_url=_portal_url(token),
+            )
+
+        assessment = VendorAssessment(
+            id=uuid7(),
+            tenant_id=tenant_id,
+            vendor_id=vendor.id,
+            engagement_id=engagement.id,
+            template_id=bank.id,
+            cycle=cycle,
+            kind="reassessment" if cycle > 1 else "initial",
+            status="pending",
+            due_date=due_date or (now.date() + timedelta(days=_QUESTIONNAIRE_DUE_DAYS)),
+            portal_contact_id=contact.id,
+            scope={
+                "bank_code": bank.code,
+                "bank_version": bank.version,
+                "tier": engagement.tier,
+                "scope_levels": list(levels),
+                "question_codes": [q.code for q in questions],
+                "question_count": len(questions),
+                "snapshotted_at": now.isoformat(),
+            },
+        )
+        session.add(assessment)
+        await session.flush([assessment])
+
+        # One row per question, unanswered. The portal then updates rows rather
+        # than inventing them, so a question that was asked and ignored is
+        # distinguishable from one that was never asked.
+        for question in questions:
+            session.add(
+                VendorAssessmentResponse(
+                    id=uuid7(),
+                    tenant_id=tenant_id,
+                    assessment_id=assessment.id,
+                    question_id=question.id,
+                )
+            )
+        await session.flush()
+
+        token = await self._mint_portal_token(session, tenant_id, assessment)
+        await self._audit.record(
+            session,
+            action="create",
+            object_type="vendor_assessment",
+            object_id=assessment.id,
+            actor=actor,
+            tenant_id=tenant_id,
+            before=None,
+            after={
+                "vendor_id": str(vendor.id),
+                "bank": bank.code,
+                "tier": engagement.tier,
+                "question_count": len(questions),
+                "contact_id": str(contact.id),
+            },
+        )
+        await self._send_portal_invitation(vendor, contact, assessment, token)
+        await session.flush()
+        return IssuedQuestionnaire(
+            assessment_id=assessment.id,
+            contact_email=contact.email or "",
+            question_count=len(questions),
+            due_date=assessment.due_date,
+            portal_url=_portal_url(token),
+        )
+
+    async def _open_assessment(
+        self, session: AsyncSession, tenant_id: uuid.UUID, engagement_id: uuid.UUID, cycle: int
+    ) -> VendorAssessment | None:
+        """An assessment for this cycle that has not been handed back yet."""
+        return (
+            await session.execute(
+                select(VendorAssessment)
+                .where(VendorAssessment.tenant_id == tenant_id)
+                .where(VendorAssessment.engagement_id == engagement_id)
+                .where(VendorAssessment.cycle == cycle)
+                .where(VendorAssessment.status.in_(["pending", "in_progress"]))
+                .order_by(VendorAssessment.created_at.desc())
+                .limit(1)
+            )
+        ).scalar_one_or_none()
+
+    async def _portal_contact(
+        self,
+        session: AsyncSession,
+        tenant_id: uuid.UUID,
+        vendor_id: uuid.UUID,
+        contact_id: uuid.UUID | None,
+    ) -> VendorContact:
+        stmt = (
+            select(VendorContact)
+            .where(VendorContact.tenant_id == tenant_id)
+            .where(VendorContact.vendor_id == vendor_id)
+        )
+        if contact_id is not None:
+            stmt = stmt.where(VendorContact.id == contact_id)
+        else:
+            stmt = stmt.where(VendorContact.contact_type == "portal")
+        contact = (await session.execute(stmt.limit(1))).scalar_one_or_none()
+        if contact is None:
+            raise InvalidInput(
+                "This vendor has no portal contact to send the questionnaire to. "
+                "Add one with an email address first.",
+                detail=f"no portal contact on vendor {vendor_id}",
+            )
+        if not contact.email:
+            raise InvalidInput(
+                f"{contact.name} has no email address, so the questionnaire link has "
+                "nowhere to go.",
+                detail=f"contact {contact.id} has no email",
+            )
+        return contact
+
+    async def _mint_portal_token(
+        self, session: AsyncSession, tenant_id: uuid.UUID, assessment: VendorAssessment
+    ) -> str:
+        """Issue a token, store only its hash, and revoke any that came before.
+
+        Revocation is a write rather than a delete, so "a link was sent on Tuesday
+        and replaced on Friday" stays answerable. Re-issuing therefore invalidates
+        the old link, which is the behaviour somebody expects from a resend.
+        """
+        now = datetime.now(UTC)
+        stale = (
+            await session.execute(
+                select(VendorPortalToken)
+                .where(VendorPortalToken.tenant_id == tenant_id)
+                .where(VendorPortalToken.assessment_id == assessment.id)
+                .where(VendorPortalToken.revoked_at.is_(None))
+            )
+        ).scalars()
+        for row in stale:
+            row.revoked_at = now
+
+        token = ratelimit.new_opaque_token()
+        session.add(
+            VendorPortalToken(
+                id=uuid7(),
+                token_hash=ratelimit.hash_token(token),
+                tenant_id=tenant_id,
+                assessment_id=assessment.id,
+                expires_at=now + timedelta(days=_PORTAL_TOKEN_DAYS),
+            )
+        )
+        await session.flush()
+        return token
+
+    async def _send_portal_invitation(
+        self,
+        vendor: Vendor,
+        contact: VendorContact,
+        assessment: VendorAssessment,
+        token: str,
+    ) -> None:
+        """Email the link. A vendor contact is not a member, so this goes through
+        the mailer directly — ``notification_service`` targets memberships only, and
+        inventing a membership for an outsider would break rule 3."""
+        from verity.core.email import OutboundEmail, get_mailer  # noqa: PLC0415
+
+        due = assessment.due_date.isoformat() if assessment.due_date else "shortly"
+        count = int(assessment.scope.get("question_count", 0))
+        text = (
+            f"Security review for {vendor.name}\n\n"
+            f"{contact.name}, we are reviewing the security of the services "
+            f"{vendor.name} provides to us, and would like you to complete a short "
+            f"questionnaire — {count} questions.\n\n"
+            f"{_portal_url(token)}\n\n"
+            f"The link is personal to this review, expires in {_PORTAL_TOKEN_DAYS} days, "
+            f"and does not need an account. Please complete it by {due}.\n"
+        )
+        await get_mailer().send(
+            OutboundEmail(
+                to=contact.email or "",
+                subject=f"Security review questionnaire for {vendor.name}",
+                text=text,
+            )
+        )
+
+    # -- scoring the review (V7) ----------------------------------------------
+
+    async def score_assessment(
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        assessment_id: uuid.UUID,
+        vendor_id: uuid.UUID | None = None,
+    ) -> AssessmentView:
+        """Roll the answers into a residual score, and raise findings from the noes.
+
+        Scoring and finding-raising are one transaction on purpose: a score with no
+        findings behind it is a number nobody can act on, and findings with no score
+        are a list nobody can prioritise.
+        """
+        assessment = await self._load_assessment(session, tenant_id, assessment_id)
+        if vendor_id is not None and assessment.vendor_id != vendor_id:
+            raise NotFound(
+                _ASSESSMENT_GONE, detail=f"assessment {assessment_id} is not on vendor {vendor_id}"
+            )
+        engagement = await self._load_engagement(session, tenant_id, assessment.engagement_id)
+        rows = await self.answers_with_questions(
+            session, tenant_id=tenant_id, assessment_id=assessment.id
+        )
+        if not rows:
+            raise Conflict(
+                "There is nothing to score yet — this questionnaire has no questions.",
+                detail=f"assessment {assessment_id} has no responses",
+            )
+
+        tiering = await self._latest_tiering(session, tenant_id, engagement.id, assessment.cycle)
+        inherent = tiering.inherent_score if tiering else 0.0
+        breakdown = scoring.compute_residual(
+            [
+                scoring.Answer(
+                    question_key=question.code,
+                    domain=question.domain,
+                    answer=response.answer or "",
+                    weight=question.weight,
+                    critical_control=question.critical_control,
+                )
+                for response, question in rows
+            ],
+            inherent=inherent,
+        )
+
+        # Read before the write, rather than asserting what it must have been.
+        was = {
+            "status": assessment.status,
+            "residual_score": assessment.residual_score,
+            "grade": assessment.grade,
+        }
+        assessment.residual_score = breakdown.score
+        assessment.grade = breakdown.grade
+        assessment.domain_scores = {
+            d.domain: {"posture": d.posture, "residual": d.residual, "answered": d.answered}
+            for d in breakdown.domains
+        }
+        assessment.score_snapshot = {
+            "inherent": breakdown.inherent,
+            "control_ceiling": scoring.CONTROL_CEILING,
+            "domain_weights": scoring.DEFAULT_DOMAIN_WEIGHTS,
+            "steps": [
+                {"label": s.label, "value": s.value, "detail": s.detail} for s in breakdown.steps
+            ],
+        }
+        assessment.status = "scored"
+
+        raised = await self._raise_findings(session, tenant_id, actor, assessment, rows)
+        await self._recache_residual(session, tenant_id, assessment)
+
+        await self._audit.record(
+            session,
+            action="update",
+            object_type="vendor_assessment",
+            object_id=assessment.id,
+            actor=actor,
+            tenant_id=tenant_id,
+            before=was,
+            after={
+                "status": "scored",
+                "residual_score": breakdown.score,
+                "grade": breakdown.grade,
+                "findings_raised": raised,
+            },
+        )
+        await session.flush()
+        return await self.get_assessment(session, tenant_id=tenant_id, assessment_id=assessment.id)
+
+    async def _raise_findings(
+        self,
+        session: AsyncSession,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        assessment: VendorAssessment,
+        rows: Sequence[tuple[VendorAssessmentResponse, QuestionnaireQuestion]],
+    ) -> int:
+        """One finding per ``no``, severity from what the question is.
+
+        Idempotent per (assessment, question): re-scoring after a corrected answer
+        updates the finding rather than raising a second one, and a question whose
+        answer has changed away from ``no`` closes the finding it caused.
+        """
+        existing = {
+            row.question_id: row
+            for row in (
+                await session.execute(
+                    select(VendorFinding)
+                    .where(VendorFinding.tenant_id == tenant_id)
+                    .where(VendorFinding.assessment_id == assessment.id)
+                )
+            ).scalars()
+        }
+        raised = 0
+        now = datetime.now(UTC)
+        for response, question in rows:
+            failed = response.answer == "no"
+            found = existing.get(question.id)
+            if not failed:
+                if found is not None and found.status in OPEN_FINDING_STATUSES:
+                    before = AuditService.snapshot(found, fields=_FINDING_SNAPSHOT)
+                    found.status = "closed"
+                    found.closed_at = now
+                    # Its own row, naming the finding. A corrected answer closing a
+                    # finding is a state change on that finding, and rolling it up
+                    # into a count on the assessment loses which one moved.
+                    await self._audit.record(
+                        session,
+                        action="update",
+                        object_type="vendor_finding",
+                        object_id=found.id,
+                        actor=actor,
+                        tenant_id=tenant_id,
+                        before=before,
+                        after={
+                            **AuditService.snapshot(found, fields=_FINDING_SNAPSHOT),
+                            "reason": "the answer that raised it changed",
+                        },
+                    )
+                continue
+            severity = _finding_severity(question)
+            if found is not None:
+                before = AuditService.snapshot(found, fields=_FINDING_SNAPSHOT)
+                found.severity = severity
+                found.is_blocking = question.non_negotiable
+                after = AuditService.snapshot(found, fields=_FINDING_SNAPSHOT)
+                if before != after:
+                    await self._audit.record(
+                        session,
+                        action="update",
+                        object_type="vendor_finding",
+                        object_id=found.id,
+                        actor=actor,
+                        tenant_id=tenant_id,
+                        before=before,
+                        after=after,
+                    )
+                continue
+            new_finding = VendorFinding(
+                id=uuid7(),
+                tenant_id=tenant_id,
+                vendor_id=assessment.vendor_id,
+                engagement_id=assessment.engagement_id,
+                assessment_id=assessment.id,
+                question_id=question.id,
+                title=_finding_title(question),
+                detail=question.body,
+                finding_source="assessment",
+                severity=severity,
+                is_blocking=question.non_negotiable,
+                sla_due=now.date() + timedelta(days=_FINDING_SLA_DAYS[severity]),
+            )
+            session.add(new_finding)
+            await session.flush([new_finding])
+            await self._audit.record(
+                session,
+                action="create",
+                object_type="vendor_finding",
+                object_id=new_finding.id,
+                actor=actor,
+                tenant_id=tenant_id,
+                before=None,
+                after=AuditService.snapshot(new_finding, fields=_FINDING_SNAPSHOT),
+            )
+            raised += 1
+        await session.flush()
+        return raised
+
+    async def _recache_residual(
+        self, session: AsyncSession, tenant_id: uuid.UUID, assessment: VendorAssessment
+    ) -> None:
+        """Refresh the vendor's cached worst residual and grade (V10).
+
+        Worst means highest score, and the grade is taken from the same assessment
+        rather than computed separately — a vendor showing a score from one
+        engagement and a grade from another would be quietly incoherent.
+        """
+        rows = list(
+            (
+                await session.execute(
+                    select(VendorAssessment)
+                    .where(VendorAssessment.tenant_id == tenant_id)
+                    .where(VendorAssessment.vendor_id == assessment.vendor_id)
+                    .where(VendorAssessment.residual_score.is_not(None))
+                )
+            ).scalars()
+        )
+        if not rows:
+            return
+        worst = max(rows, key=lambda a: a.residual_score or 0.0)
+        vendor = await self._load(session, tenant_id, assessment.vendor_id)
+        vendor.current_residual_score = worst.residual_score
+        vendor.current_grade = worst.grade
+
+    # -- reading the review ----------------------------------------------------
+
+    async def _load_assessment(
+        self, session: AsyncSession, tenant_id: uuid.UUID, assessment_id: uuid.UUID
+    ) -> VendorAssessment:
+        row = await session.get(VendorAssessment, assessment_id, populate_existing=True)
+        if row is None or row.tenant_id != tenant_id:
+            raise NotFound(_ASSESSMENT_GONE, detail=f"vendor assessment {assessment_id}")
+        return row
+
+    async def answers_with_questions(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, assessment_id: uuid.UUID
+    ) -> list[tuple[VendorAssessmentResponse, QuestionnaireQuestion]]:
+        """The assessment's rows joined to their questions, in asked order."""
+        stmt = (
+            select(VendorAssessmentResponse, QuestionnaireQuestion)
+            .join(
+                QuestionnaireQuestion,
+                QuestionnaireQuestion.id == VendorAssessmentResponse.question_id,
+            )
+            .where(VendorAssessmentResponse.tenant_id == tenant_id)
+            .where(VendorAssessmentResponse.assessment_id == assessment_id)
+            .order_by(QuestionnaireQuestion.position)
+        )
+        return [(r, q) for r, q in (await session.execute(stmt)).all()]
+
+    @staticmethod
+    def _response_view(
+        response: VendorAssessmentResponse, question: QuestionnaireQuestion
+    ) -> ResponseView:
+        return ResponseView(
+            id=response.id,
+            question_id=question.id,
+            question_code=question.code,
+            body=question.body,
+            domain=question.domain,
+            domain_label=RISK_DOMAIN_LABELS[question.domain],
+            scope_level=question.scope_level,
+            answer_type=question.answer_type,
+            weight=question.weight,
+            critical_control=question.critical_control,
+            non_negotiable=question.non_negotiable,
+            evidence_required=question.evidence_required,
+            framework_refs=list(question.framework_refs or []),
+            answer=response.answer,
+            implementation_notes=response.implementation_notes,
+            na_justification=response.na_justification,
+            evidence_id=response.evidence_id,
+            answered_at=response.answered_at,
+        )
+
+    def _assessment_view(
+        self,
+        assessment: VendorAssessment,
+        responses: Sequence[tuple[VendorAssessmentResponse, QuestionnaireQuestion]],
+        findings: Sequence[VendorFinding],
+        names: dict[uuid.UUID, str],
+        token: VendorPortalToken | None,
+    ) -> AssessmentView:
+        answered = sum(1 for r, _ in responses if r.answer)
+        missing_evidence = sum(
+            1
+            for r, q in responses
+            if q.evidence_required and r.answer == "yes" and not r.evidence_id
+        )
+        return AssessmentView(
+            id=assessment.id,
+            vendor_id=assessment.vendor_id,
+            engagement_id=assessment.engagement_id,
+            cycle=assessment.cycle,
+            kind=assessment.kind,
+            review_format=assessment.review_format,
+            assessment_domain=assessment.assessment_domain,
+            status=assessment.status,
+            decision=assessment.decision,
+            due_date=assessment.due_date,
+            residual_score=assessment.residual_score,
+            grade=assessment.grade,
+            domain_scores=dict(assessment.domain_scores or {}),
+            score_steps=list((assessment.score_snapshot or {}).get("steps", [])),
+            scope=dict(assessment.scope or {}),
+            question_count=len(responses),
+            answered_count=answered,
+            unanswered_count=len(responses) - answered,
+            missing_evidence_count=missing_evidence,
+            submitted_at=assessment.submitted_at,
+            responses=[self._response_view(r, q) for r, q in responses],
+            findings=[self._finding_view(f, names) for f in findings],
+            portal_link_live=bool(
+                token and token.revoked_at is None and token.expires_at > datetime.now(UTC)
+            ),
+            portal_link_expires_at=token.expires_at if token else None,
+            created_at=assessment.created_at,
+            updated_at=assessment.updated_at,
+        )
+
+    @staticmethod
+    def _finding_view(finding: VendorFinding, names: dict[uuid.UUID, str]) -> FindingView:
+        owner = finding.owner_membership_id
+        return FindingView(
+            id=finding.id,
+            vendor_id=finding.vendor_id,
+            assessment_id=finding.assessment_id,
+            question_id=finding.question_id,
+            title=finding.title,
+            detail=finding.detail,
+            finding_source=finding.finding_source,
+            severity=finding.severity,
+            status=finding.status,
+            treatment=finding.treatment,
+            is_blocking=finding.is_blocking,
+            sla_due=finding.sla_due,
+            owner_membership_id=owner,
+            owner_name=names.get(owner) if owner else None,
+            task_id=finding.task_id,
+            accepted_until=finding.accepted_until,
+            accepted_rationale=finding.accepted_rationale,
+            closed_at=finding.closed_at,
+            # The seam to modules/risk, which has no tables. Always None today.
+            promoted_risk_id=finding.promoted_risk_id,
+            created_at=finding.created_at,
+        )
+
+    async def _live_token(
+        self, session: AsyncSession, tenant_id: uuid.UUID, assessment_id: uuid.UUID
+    ) -> VendorPortalToken | None:
+        return (
+            await session.execute(
+                select(VendorPortalToken)
+                # Explicit, and load-bearing: this table has no policy, so the
+                # filter is the only wall rather than the first of two.
+                .where(VendorPortalToken.tenant_id == tenant_id)
+                .where(VendorPortalToken.assessment_id == assessment_id)
+                .where(VendorPortalToken.revoked_at.is_(None))
+                .order_by(VendorPortalToken.created_at.desc())
+                .limit(1)
+            )
+        ).scalar_one_or_none()
+
+    async def get_assessment(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, assessment_id: uuid.UUID
+    ) -> AssessmentView:
+        assessment = await self._load_assessment(session, tenant_id, assessment_id)
+        responses = await self.answers_with_questions(
+            session, tenant_id=tenant_id, assessment_id=assessment.id
+        )
+        findings = list(
+            (
+                await session.execute(
+                    select(VendorFinding)
+                    .where(VendorFinding.tenant_id == tenant_id)
+                    .where(VendorFinding.assessment_id == assessment.id)
+                    .order_by(VendorFinding.created_at)
+                )
+            ).scalars()
+        )
+        names = await self._member_names(session, tenant_id)
+        token = await self._live_token(session, tenant_id, assessment.id)
+        return self._assessment_view(assessment, responses, findings, names, token)
+
+    async def list_findings(
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        vendor_id: uuid.UUID | None = None,
+        statuses: tuple[str, ...] = (),
+    ) -> list[FindingView]:
+        stmt = select(VendorFinding).where(VendorFinding.tenant_id == tenant_id)
+        if vendor_id is not None:
+            stmt = stmt.where(VendorFinding.vendor_id == vendor_id)
+        if statuses:
+            stmt = stmt.where(VendorFinding.status.in_(list(statuses)))
+        rows = list((await session.execute(stmt)).scalars())
+        names = await self._member_names(session, tenant_id)
+        views = [self._finding_view(f, names) for f in rows]
+        views.sort(key=lambda f: (FINDING_SEVERITIES.index(f.severity), f.sla_due or date.max))
+        return views
+
+    async def open_critical_count(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, vendor_id: uuid.UUID
+    ) -> int:
+        """What the findings stage and the approval gate ask for.
+
+        An accepted risk does not count as open: acceptance is a decision somebody
+        made and time-boxed, not an outstanding item.
+        """
+        return (
+            await session.execute(
+                select(func.count())
+                .select_from(VendorFinding)
+                .where(VendorFinding.tenant_id == tenant_id)
+                .where(VendorFinding.vendor_id == vendor_id)
+                .where(VendorFinding.severity == "critical")
+                .where(VendorFinding.status.in_(list(OPEN_FINDING_STATUSES)))
+            )
+        ).scalar_one()
+
+    async def tenant_display_name(self, session: AsyncSession, *, tenant_id: uuid.UUID) -> str:
+        """The organisation's own name, for the portal page.
+
+        A vendor contact opening a link should see who is asking. Read through the
+        tenancy service rather than the table (rule 4), and degraded to a neutral
+        word rather than raising: a missing display name must not take the
+        questionnaire down.
+        """
+        from verity.modules.tenancy.service import tenancy_service  # noqa: PLC0415
+
+        try:
+            profile = await tenancy_service.get_tenant(session, tenant_id)
+        except Exception:
+            return "our organisation"
+        return getattr(profile, "name", None) or "our organisation"
+
+    # -- acting on a finding ---------------------------------------------------
+
+    async def _load_finding(
+        self,
+        session: AsyncSession,
+        tenant_id: uuid.UUID,
+        vendor_id: uuid.UUID,
+        finding_id: uuid.UUID,
+    ) -> VendorFinding:
+        row = await session.get(VendorFinding, finding_id, populate_existing=True)
+        if row is None or row.tenant_id != tenant_id or row.vendor_id != vendor_id:
+            raise NotFound(_FINDING_GONE, detail=f"vendor finding {finding_id} on {vendor_id}")
+        return row
+
+    async def remediate_finding(  # noqa: PLR0913
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        vendor_id: uuid.UUID,
+        finding_id: uuid.UUID,
+        owner_membership_id: uuid.UUID | None = None,
+        due_at: datetime | None = None,
+    ) -> FindingView:
+        """Open a real task for the fix, in the tasks module.
+
+        Not a vendor-local to-do table. The tasks module already carries
+        assignment, SLA, transitions and CAPA, and a second worse one here would be
+        invisible to every dashboard that counts work.
+        """
+        finding = await self._load_finding(session, tenant_id, vendor_id, finding_id)
+        if finding.task_id is not None:
+            raise Conflict(
+                "This finding already has a remediation task open.",
+                detail=f"finding {finding_id} already linked to task {finding.task_id}",
+            )
+        if finding.status not in OPEN_FINDING_STATUSES:
+            raise Conflict(
+                "This finding is closed. Reopen it before planning remediation.",
+                detail=f"finding {finding_id} is {finding.status}",
+            )
+        vendor = await self._load(session, tenant_id, finding.vendor_id)
+
+        from verity.modules.tasks.service import task_service  # noqa: PLC0415
+
+        task = await task_service.create_task(
+            session,
+            tenant_id=tenant_id,
+            actor=actor,
+            task_kind="issue",
+            title=f"{vendor.name}: {finding.title}",
+            description=finding.detail,
+            priority=_TASK_PRIORITY[finding.severity],
+            category="vendor",
+            owner_membership_id=owner_membership_id or finding.owner_membership_id,
+            due_at=due_at
+            or (
+                datetime.combine(finding.sla_due, datetime.min.time(), tzinfo=UTC)
+                if finding.sla_due
+                else None
+            ),
+            raised_from_type="vendor_finding",
+        )
+        before = AuditService.snapshot(finding, fields=_FINDING_SNAPSHOT)
+        finding.task_id = task.id
+        finding.status = "in_remediation"
+        finding.treatment = "remediate"
+        if owner_membership_id is not None:
+            finding.owner_membership_id = owner_membership_id
+        await self._audit.record(
+            session,
+            action="update",
+            object_type="vendor_finding",
+            object_id=finding.id,
+            actor=actor,
+            tenant_id=tenant_id,
+            before=before,
+            after=AuditService.snapshot(finding, fields=_FINDING_SNAPSHOT),
+        )
+        await session.flush()
+        names = await self._member_names(session, tenant_id)
+        return self._finding_view(finding, names)
+
+    async def accept_finding(  # noqa: PLR0913
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        vendor_id: uuid.UUID,
+        finding_id: uuid.UUID,
+        until: date,
+        rationale: str,
+    ) -> FindingView:
+        """Accept the risk, for a stated time and a stated reason.
+
+        Both are required, and the expiry must be in the future: an open-ended
+        acceptance is a risk nobody will look at again, which is the failure this
+        whole record exists to prevent.
+        """
+        finding = await self._load_finding(session, tenant_id, vendor_id, finding_id)
+        if not rationale.strip():
+            raise InvalidInput(
+                "Say why this risk is acceptable. The rationale is what a reviewer "
+                "reads when the acceptance comes up for renewal.",
+                detail="acceptance without a rationale",
+            )
+        if until <= datetime.now(UTC).date():
+            raise InvalidInput(
+                "The acceptance has to expire in the future. Pick a review date.",
+                detail=f"accepted_until {until} is not in the future",
+            )
+        before = AuditService.snapshot(finding, fields=_FINDING_SNAPSHOT)
+        finding.status = "accepted"
+        finding.treatment = "accept"
+        finding.accepted_until = until
+        finding.accepted_rationale = rationale.strip()
+        finding.accepted_by_membership_id = actor.id if isinstance(actor, Membership) else None
+        await self._audit.record(
+            session,
+            action="approve",
+            object_type="vendor_finding",
+            object_id=finding.id,
+            actor=actor,
+            tenant_id=tenant_id,
+            before=before,
+            after=AuditService.snapshot(finding, fields=_FINDING_SNAPSHOT),
+        )
+        await session.flush()
+        names = await self._member_names(session, tenant_id)
+        return self._finding_view(finding, names)
+
+    async def close_finding(  # noqa: PLR0913
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        vendor_id: uuid.UUID,
+        finding_id: uuid.UUID,
+        note: str | None = None,
+    ) -> FindingView:
+        finding = await self._load_finding(session, tenant_id, vendor_id, finding_id)
+        before = AuditService.snapshot(finding, fields=_FINDING_SNAPSHOT)
+        finding.status = "closed"
+        finding.closed_at = datetime.now(UTC)
+        await self._audit.record(
+            session,
+            action="update",
+            object_type="vendor_finding",
+            object_id=finding.id,
+            actor=actor,
+            tenant_id=tenant_id,
+            before=before,
+            after={**AuditService.snapshot(finding, fields=_FINDING_SNAPSHOT), "note": note},
+        )
+        await session.flush()
+        names = await self._member_names(session, tenant_id)
+        return self._finding_view(finding, names)
 
 
 vendor_service = VendorService()

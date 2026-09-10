@@ -97,6 +97,13 @@ as the UI word for a published set of questions; the table is `questionnaire_tem
 vendors                                       -- ER VENDORS
   name                        string
   vendor_type                 string   ∈ vendor | supplier | contractor | partner
+| `+ vendor_portal_tokens` — a table the ER does not draw, on the **global plane** | A portal request presents a token and nothing else, so the tenant must be resolved before it can be bound — and `vendor_assessments` is tenant-owned with FORCE RLS, so it cannot answer that. This is the same job `users` and `user_identities` already do on that plane. It holds a hash and the pair it resolves to: no secret, no personal data. The three token columns V11 put on `vendor_assessments` move here, so revocation and rotation are rows rather than an overwritten column. |
+| `+ questionnaire_templates.code` / `questionnaire_questions.code` | The stable identity a re-seed and a version bump key on, matching `frameworks.code` and `control_templates.canonical_key`. A response points at the question it answered, so rewording in a later pack must move the same row. |
+| `+ questionnaire_templates.is_current`, `.description` | Which version an issue picks by default. An assessment in flight keeps the `template_id` it was dispatched with. |
+| `+ vendor_assessments.score_snapshot`, `.cycle`, `.submitted_at`, `.portal_contact_id` | `score_snapshot` freezes the ceiling and domain weights a score used, for the same reason `policy_snapshot` freezes the tiering weights. |
+| `+ vendor_findings.title`, `.detail`, `.engagement_id`, `.accepted_rationale`, `.accepted_by_membership_id`, `.closed_at` | The ER draws a finding with no words in it. A finding a reader cannot understand without opening the question it came from is not a finding. |
+| `~ vendor_findings.promoted_risk_id` and `.task_id` and `vendor_assessment_responses.evidence_id` carry **no ORM relationship** | Declaring one makes the vendors mapper resolve another module's table at configuration time, which means importing another module's models — exactly what the boundary contract forbids. The migration owns the constraint; `audit_log.actor_id` already carries a column this way. |
+| `+ audit_log.actor_type` gains `vendor_contact` | The portal is the first path where a state change is made by somebody who is neither a member nor the system. The polymorphic pair was built for precisely this; a fourth case costs one CHECK. Recording answers as `system` would make *"who answered this question"* unanswerable. |
   industry                    string
   website                     string
   business_unit               string
