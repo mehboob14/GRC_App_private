@@ -165,6 +165,8 @@ export type Vendor = {
   updated_at: string;
   engagement_count: number;
   contact_count: number;
+  /** What this vendor is waiting on, decided server-side. Null means nothing is. */
+  attention_code: string | null;
 };
 
 export type Engagement = {
@@ -228,6 +230,30 @@ export type VendorDetail = Vendor & {
 };
 
 export type VendorPage = { items: Vendor[]; total: number };
+
+/** One thing the portfolio is waiting on, and how many vendors are on it. */
+export type AttentionCount = { code: string; label: string; count: number };
+
+/**
+ * The portfolio in one object, from `GET /vendors/summary`. Whole-tenant and
+ * unfiltered on purpose: the overview tells a reader where to go, so a number
+ * that moved when they changed a facet would answer a different question.
+ */
+export type VendorSummary = {
+  total: number;
+  mine: number;
+  by_tier: Record<string, number>;
+  by_status: Record<string, number>;
+  attention: AttentionCount[];
+  /** Vendors a reassessment cadence applies to at all. */
+  coverage_in_scope: number;
+  /** Of those, the ones inside their window. */
+  coverage_current: number;
+  findings_by_severity: Record<string, number>;
+  findings_open: number;
+  findings_overdue: number;
+  intake_pending: number;
+};
 
 export type StageFacet = { stage: string; label: string; is_gate: boolean; is_required: boolean };
 
@@ -724,6 +750,15 @@ export type OffboardingCompletionInput = {
 
 // -- register filters ---------------------------------------------------------
 
+export type VendorSort =
+  | "name"
+  | "tier"
+  | "grade"
+  | "owner"
+  | "reassessment"
+  | "value"
+  | "status";
+
 export type VendorFilters = {
   search: string;
   vendor_type: string | null;
@@ -735,4 +770,7 @@ export type VendorFilters = {
   owner: string | null;
   /** Only meaningful when true — there is no "does not store PII" filter. */
   stores_pii: boolean;
+  /** Attention codes, from `ATTENTION_CODES` server-side. This is what the
+   *  overview's tiles link into, so the count and the filtered list agree. */
+  attention: string[];
 };

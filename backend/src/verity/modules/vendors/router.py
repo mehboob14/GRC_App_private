@@ -66,6 +66,7 @@ from verity.modules.vendors.schemas import (
     SubprocessorOut,
     SubprocessorPageOut,
     SubprocessorWrite,
+    SummaryOut,
     TieringWrite,
     VendorCreate,
     VendorDetailOut,
@@ -145,9 +146,15 @@ async def list_vendors(  # noqa: PLR0913, PLR0917 — one query parameter per fi
     business_units: Annotated[list[str] | None, Query()] = None,
     owner: str | None = None,
     stores_pii: bool = False,
+    attention: Annotated[list[str] | None, Query()] = None,
     page: int = 1,
     page_size: int = 25,
+    sort: str | None = None,
+    direction: str = "asc",
 ) -> VendorPageOut:
+    """Omit ``sort`` to keep the risk ranking: worst tier first, untiered
+    immediately after critical, then unowned, then alphabetical. That order is a
+    judgement about what a register is for, so it has to stay reachable."""
     filters = VendorFilters(
         search=search,
         vendor_type=vendor_type,
@@ -157,6 +164,7 @@ async def list_vendors(  # noqa: PLR0913, PLR0917 — one query parameter per fi
         business_units=tuple(business_units or ()),
         owner=owner,
         stores_pii=stores_pii,
+        attention=tuple(attention or ()),
     )
     items, total = await vendor_service.list_vendors(
         session,
@@ -164,6 +172,8 @@ async def list_vendors(  # noqa: PLR0913, PLR0917 — one query parameter per fi
         filters=filters,
         page=page,
         page_size=page_size,
+        sort=sort,
+        direction=direction,
         caller_membership_id=context.membership_id,
     )
     return VendorPageOut(items=[VendorOut.model_validate(v) for v in items], total=total)
@@ -219,6 +229,24 @@ async def create_vendor(
 
 
 # -- cross-vendor collections (before /{vendor_id}, or it captures them) ------
+
+
+@vendors_router.get("/summary", response_model=SummaryOut, summary="The portfolio in one call")
+async def summary(
+    _p: Annotated[Principal, Depends(require_read)],
+    context: _Ctx,
+    session: _Db,
+) -> SummaryOut:
+    """What needs somebody today, rather than what exists.
+
+    The counts are whole-tenant and unfiltered: the overview's job is to tell a
+    reader where to go, and a number that moved when they changed a facet would
+    be answering a different question from the one they asked.
+    """
+    view = await vendor_service.summary(
+        session, tenant_id=context.tenant_id, caller_membership_id=context.membership_id
+    )
+    return SummaryOut.model_validate(view)
 
 
 @vendors_router.get("/findings", response_model=FindingPageOut, summary="Findings across vendors")

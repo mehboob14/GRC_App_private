@@ -30,6 +30,8 @@ import type {
   VendorFilters,
   VendorInput,
   VendorPage,
+  VendorSort,
+  VendorSummary,
   Subprocessor,
 } from "./types";
 
@@ -55,6 +57,7 @@ function query(filters: Partial<VendorFilters>, page: number, pageSize: number):
   // Only `true` is a filter: the backend reads false as "no filter", so there is
   // deliberately no way to ask for vendors that do NOT store personal data.
   if (filters.stores_pii) p.set("stores_pii", "true");
+  for (const a of filters.attention ?? []) p.append("attention", a);
   p.set("page", String(page));
   p.set("page_size", String(pageSize));
   return `?${p.toString()}`;
@@ -64,8 +67,18 @@ export async function listVendors(
   filters: Partial<VendorFilters> = {},
   page = 1,
   pageSize = 25,
+  sort: VendorSort | null = null,
+  direction: "asc" | "desc" = "asc",
 ): Promise<VendorPage> {
-  return apiFetch<VendorPage>(`/vendors${query(filters, page, pageSize)}`);
+  // Omitting `sort` keeps the server's risk ranking: worst tier first, untiered
+  // immediately after critical, then unowned, then alphabetical.
+  const suffix = sort ? `&sort=${sort}&direction=${direction}` : "";
+  return apiFetch<VendorPage>(`/vendors${query(filters, page, pageSize)}${suffix}`);
+}
+
+/** The portfolio picture the overview reads. One round trip, whole tenant. */
+export async function getSummary(): Promise<VendorSummary> {
+  return apiFetch<VendorSummary>("/vendors/summary");
 }
 
 export async function getFacets(): Promise<VendorFacets> {

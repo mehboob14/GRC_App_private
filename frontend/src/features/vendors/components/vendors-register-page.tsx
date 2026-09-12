@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useMemo, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   Avatar,
@@ -41,6 +41,7 @@ import {
   CLASSIFICATION_META,
   fmtDate,
   fmtMoney,
+  ATTENTION_LABEL,
   HEALTHY_LINE,
   LIFECYCLE_META,
   nextAction,
@@ -70,7 +71,7 @@ const COLUMNS = [
 ] as const satisfies readonly ColumnDef<string>[];
 
 type ColumnKey = (typeof COLUMNS)[number]["key"];
-type SortKey = "name" | "tier" | "grade" | "owner" | "reassessment" | "value";
+type SortKey = "name" | "tier" | "grade" | "owner" | "reassessment" | "value" | "status";
 
 /** Worst first, so sorting by tier ranks risk rather than the alphabet. */
 const TIER_ORDER: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
@@ -84,7 +85,45 @@ const EMPTY: VendorFilters = {
   business_units: [],
   owner: null,
   stores_pii: false,
+  attention: [],
 };
+
+/**
+ * Filters live in the query string, not in component state.
+ *
+ * Three things follow from that and none of them are cosmetic: opening a vendor
+ * and pressing Back returns the register you left rather than an unfiltered page
+ * one; a filtered view can be sent to a colleague; and every tile on the
+ * overview is a real link instead of a decoration.
+ */
+function readFilters(params: URLSearchParams): VendorFilters {
+  return {
+    search: params.get("search") ?? "",
+    vendor_type: params.get("vendor_type"),
+    statuses: params.getAll("statuses"),
+    tiers: params.getAll("tiers"),
+    classifications: params.getAll("classifications"),
+    business_units: params.getAll("business_units"),
+    owner: params.get("owner"),
+    stores_pii: params.get("stores_pii") === "true",
+    attention: params.getAll("attention"),
+  };
+}
+
+function writeFilters(filters: VendorFilters, page: number): URLSearchParams {
+  const p = new URLSearchParams();
+  if (filters.search) p.set("search", filters.search);
+  if (filters.vendor_type) p.set("vendor_type", filters.vendor_type);
+  for (const v of filters.statuses) p.append("statuses", v);
+  for (const v of filters.tiers) p.append("tiers", v);
+  for (const v of filters.classifications) p.append("classifications", v);
+  for (const v of filters.business_units) p.append("business_units", v);
+  if (filters.owner) p.set("owner", filters.owner);
+  if (filters.stores_pii) p.set("stores_pii", "true");
+  for (const v of filters.attention) p.append("attention", v);
+  if (page > 1) p.set("page", String(page));
+  return p;
+}
 
 function withCount(label: string, n: number | undefined): string {
   return n === undefined ? label : `${label} (${n})`;
@@ -96,17 +135,24 @@ export function VendorsRegisterPage() {
   const canManage = hasPermission(principal, "vendors:manage");
   const canRead = hasPermission(principal, "vendors:read");
 
-  const [filters, setFilters] = useState<VendorFilters>(EMPTY);
-  const [page, setPage] = useState(1);
+  const [params, setParams] = useSearchParams();
+  const filters = useMemo(() => readFilters(params), [params]);
+  const page = Number(params.get("page") ?? 1) || 1;
   const [formOpen, setFormOpen] = useState(false);
   const [requestOpen, setRequestOpen] = useState(false);
+
+  // replace, not push: a reader adjusting four facets should not have to press
+  // Back four times to leave the register.
+  const apply = (next: VendorFilters, nextPage = 1) =>
+    setParams(writeFilters(next, nextPage), { replace: true });
 
   // Any filter change resets to page 1: staying on page 4 of a narrower result
   // set shows an empty table and reads as "no matches".
   const set = <K extends keyof VendorFilters>(key: K, value: VendorFilters[K]) => {
-    setFilters((f) => ({ ...f, [key]: value }));
-    setPage(1);
+    apply({ ...filters, [key]: value });
   };
+  const setPage = (next: number) => apply(filters, next);
+  const clearFilters = () => apply(EMPTY);
 
   const cols = useColumnPrefs<ColumnKey>("verity.vendors.columns", COLUMNS, [
     "unit",
@@ -114,29 +160,32 @@ export function VendorsRegisterPage() {
     "value",
   ]);
 
-  const query = useQuery({
-    queryKey: ["vendors", filters, page],
-    queryFn: () => listVendors(filters, page, PAGE_SIZE),
-  });
-  const facetsQuery = useQuery({ queryKey: ["vendor-facets"], queryFn: getFacets });
-  const membersQuery = useQuery({ queryKey: ["vendor-members"], queryFn: listMembers });
-
-  const facets = facetsQuery.data;
-
   /**
-   * Sorting is client-side over the page the server returned. The register's
-   * server order is deliberate — worst tier first, then unowned, then
-   * alphabetical — so the initial key is null and that ranking survives until
-   * someone asks for something else. There is no `sort` query parameter.
+   * Sorting is the server's, so it orders the whole register rather than the
+   * twenty-five rows this page happened to return — a client sort over one page
+   * of four hundred silently answers a different question from the one asked.
+   * The hook still owns the header state and the tri-state toggle; its third
+   * click clears the key and the server's risk ranking comes back.
    */
-  const { thProps, sortRows } = useTableSort<Vendor, SortKey>(null, {
+  const { key: sortKey, dir, thProps } = useTableSort<Vendor, SortKey>(null, {
     name: (v) => v.name,
     tier: (v) => (v.tier ? TIER_ORDER[v.tier] : 99),
     grade: (v) => v.current_grade,
     owner: (v) => v.ownership.business_owner_name,
     reassessment: (v) => (v.next_reassessment_on ? new Date(v.next_reassessment_on) : null),
     value: (v) => v.annual_contract_value,
+    status: (v) => v.lifecycle_status,
   });
+
+  const query = useQuery({
+    queryKey: ["vendors", filters, page, sortKey, dir],
+    queryFn: () => listVendors(filters, page, PAGE_SIZE, sortKey, dir),
+  });
+  const facetsQuery = useQuery({ queryKey: ["vendor-facets"], queryFn: getFacets });
+  const membersQuery = useQuery({ queryKey: ["vendor-members"], queryFn: listMembers });
+
+  const facets = facetsQuery.data;
+
 
   const listError = query.isError ? describeError(query.error, "vendor register") : null;
   const total = query.data?.total ?? 0;
@@ -149,7 +198,8 @@ export function VendorsRegisterPage() {
     filters.statuses.length > 0 ||
     filters.tiers.length > 0 ||
     filters.classifications.length > 0 ||
-    filters.business_units.length > 0;
+    filters.business_units.length > 0 ||
+    filters.attention.length > 0;
 
   const ownerOptions = [
     { value: "me", label: "Mine" },
@@ -186,6 +236,12 @@ export function VendorsRegisterPage() {
           </>
         }
       >
+        <FilterFacet
+          label="Needs attention"
+          options={Object.entries(ATTENTION_LABEL).map(([value, label]) => ({ value, label }))}
+          values={filters.attention}
+          onChange={(v) => set("attention", v)}
+        />
         <FilterFacet
           label="Tier"
           options={(facets?.tiers ?? Object.keys(TIER_META)).map((t) => ({
@@ -239,10 +295,7 @@ export function VendorsRegisterPage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => {
-              setFilters(EMPTY);
-              setPage(1);
-            }}
+            onClick={clearFilters}
           >
             Clear filters
           </Button>
@@ -269,14 +322,7 @@ export function VendorsRegisterPage() {
                 ? "Adjust or clear the filters to see more."
                 : "Add the third parties you share data or systems with. Tier each one, then work its lifecycle from intake to approval."
             }
-            onClearFilters={
-              filtered
-                ? () => {
-                    setFilters(EMPTY);
-                    setPage(1);
-                  }
-                : undefined
-            }
+            onClearFilters={filtered ? clearFilters : undefined}
             action={
               !filtered && canManage ? (
                 <Button onClick={() => setFormOpen(true)}>Add vendor</Button>
@@ -289,7 +335,7 @@ export function VendorsRegisterPage() {
               <TR>
                 <TH {...thProps("name")}>Vendor</TH>
                 <TH {...thProps("tier")}>Tier</TH>
-                {cols.isVisible("status") ? <TH>Status</TH> : null}
+                {cols.isVisible("status") ? <TH {...thProps("status")}>Status</TH> : null}
                 <TH>Blocker / next action</TH>
                 {cols.isVisible("grade") ? <TH {...thProps("grade")}>Grade</TH> : null}
                 {cols.isVisible("owner") ? <TH {...thProps("owner")}>Business owner</TH> : null}
@@ -309,7 +355,7 @@ export function VendorsRegisterPage() {
               </TR>
             </THead>
             <TBody>
-              {sortRows(query.data!.items).map((v) => (
+              {query.data!.items.map((v) => (
                 <VendorRow
                   key={v.id}
                   vendor={v}
@@ -361,7 +407,17 @@ function VendorRow({
         <div className="flex min-w-0 items-center gap-2.5">
           <Avatar name={v.name} seed={v.id} size="sm" />
           <div className="min-w-0">
-            <p className="truncate text-body-md font-semibold text-text-primary">{v.name}</p>
+            {/* A real link, not just a row click: without it there is no
+                keyboard access, no ctrl or middle click into a new tab, and no
+                URL on hover. stopPropagation so a new-tab click does not also
+                navigate the current one. */}
+            <Link
+              to={`/vendors/${v.id}`}
+              onClick={(e) => e.stopPropagation()}
+              className="block truncate text-body-md font-semibold text-text-primary hover:underline"
+            >
+              {v.name}
+            </Link>
             <p className="truncate text-caption text-text-subtle">
               {[VENDOR_TYPE_LABEL[v.vendor_type] ?? v.vendor_type, v.industry]
                 .filter(Boolean)
@@ -478,8 +534,14 @@ function VendorRow({
             </TableIconButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onSelect={() => navigate(`/vendors/${v.id}`)}>
-              Open vendor
+            <DropdownMenuItem
+              onSelect={() => {
+                void navigator.clipboard.writeText(
+                  `${window.location.origin}/vendors/${v.id}`,
+                );
+              }}
+            >
+              Copy link
             </DropdownMenuItem>
             <DropdownMenuItem
               onSelect={() => navigate(`/vendors/${v.id}?tab=${action?.tab ?? "lifecycle"}`)}

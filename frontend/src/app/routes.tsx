@@ -53,6 +53,7 @@ import { ComplianceDashboardPage } from "@/features/compliance/components/compli
 import { FrameworksLayout } from "@/features/compliance/components/frameworks-layout";
 import { CompanyProfilePage } from "@/features/tenancy/company-profile-page";
 import { VendorsLayout } from "@/features/vendors/components/vendors-layout";
+import { VendorsOverviewPage } from "@/features/vendors/components/vendors-overview-page";
 import { VendorsRegisterPage } from "@/features/vendors/components/vendors-register-page";
 import { VendorIntakePage } from "@/features/vendors/components/vendor-intake-page";
 import { VendorFindingsPage } from "@/features/vendors/components/vendor-findings-page";
@@ -148,6 +149,7 @@ export function AppRoutes() {
             <Route index element={<VendorsRegisterPage />} />
             {/* Literal segments only — the :vendorId route is a sibling below,
                 so nothing here can be captured by it. */}
+            <Route path="overview" element={<VendorsOverviewPage />} />
             <Route path="intake" element={<VendorIntakePage />} />
             <Route path="findings" element={<VendorFindingsPage />} />
             <Route path="roster" element={<VendorRosterPage />} />

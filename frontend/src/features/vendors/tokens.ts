@@ -374,6 +374,55 @@ export function daysUntil(isoDate: string | null | undefined): number | null {
 
 // -- the register's next-action column ----------------------------------------
 
+/**
+ * How each server-decided attention code renders.
+ *
+ * The codes and their ordering live in `backend/.../vendors/service.py`, because
+ * the overview counts them and the register labels them and two implementations
+ * of one rule set drift. This is only the presentation half: a family, where
+ * clicking it goes, and — for the three that need live arithmetic — a label
+ * built at the call site so no rendered copy is ever sent from Python.
+ */
+export const ATTENTION_META: Record<
+  string,
+  { family: StatusFamily; tab: string; label?: (v: Vendor) => string }
+> = {
+  flagged: { family: "danger", tab: "lifecycle" },
+  reassessment_overdue: {
+    family: "danger",
+    tab: "assessments",
+    label: (v) => `Reassessment overdue ${fmtCountdown(daysUntil(v.next_reassessment_on))}`,
+  },
+  not_tiered: { family: "warning", tab: "lifecycle" },
+  awaiting_gate: { family: "warning", tab: "lifecycle" },
+  on_hold: { family: "warning", tab: "lifecycle" },
+  weak_grade: {
+    family: "warning",
+    tab: "findings",
+    label: (v) => `Grade ${v.current_grade} — work the findings`,
+  },
+  unowned: { family: "warning", tab: "overview" },
+  reassessment_due: {
+    family: "progress",
+    tab: "assessments",
+    label: (v) => `Reassessment due ${fmtCountdown(daysUntil(v.next_reassessment_on))}`,
+  },
+  offboarding: { family: "progress", tab: "lifecycle" },
+};
+
+/** The words the server uses for each code, for surfaces that have only the code. */
+export const ATTENTION_LABEL: Record<string, string> = {
+  flagged: "Flagged for review",
+  reassessment_overdue: "Reassessment overdue",
+  not_tiered: "Not tiered",
+  awaiting_gate: "Awaiting the approval gate",
+  on_hold: "On hold",
+  weak_grade: "Weak residual grade",
+  unowned: "No business owner",
+  reassessment_due: "Reassessment due soon",
+  offboarding: "Offboarding in progress",
+};
+
 export type NextAction = {
   label: string;
   family: StatusFamily;
@@ -382,42 +431,23 @@ export type NextAction = {
 };
 
 /**
- * What this vendor needs from someone, worst first.
+ * What this vendor needs from someone.
  *
- * The register list carries no stage rows — only the vendor summary — so this
- * reads what the summary can actually prove rather than guessing at the
- * lifecycle. It returns null when nothing is outstanding, and the register
- * renders the healthy line instead of an empty cell.
+ * The rules and their priority order are the server's — see `ATTENTION_CODES`
+ * in the vendors service — so the count on the overview and the label in the
+ * register can never disagree. This turns the code into the words and the
+ * destination. Null means nothing is outstanding, and the register renders its
+ * healthy line rather than an empty cell.
  */
 export function nextAction(v: Vendor): NextAction | null {
-  if (v.lifecycle_status === "flagged")
-    return { label: "Flagged — review", family: "danger", tab: "lifecycle" };
-
-  const due = daysUntil(v.next_reassessment_on);
-  if (due !== null && due < 0)
-    return { label: `Reassessment overdue ${fmtCountdown(due)}`, family: "danger", tab: "assessments" };
-
-  if (!v.tier) return { label: "Not tiered — tier it", family: "warning", tab: "lifecycle" };
-
-  if (v.lifecycle_status === "requested" || v.lifecycle_status === "under_review")
-    return { label: "Awaiting the approval gate", family: "warning", tab: "lifecycle" };
-
-  if (v.lifecycle_status === "on_hold")
-    return { label: "On hold — needs a decision", family: "warning", tab: "lifecycle" };
-
-  if (v.current_grade === "D" || v.current_grade === "F")
-    return { label: `Grade ${v.current_grade} — work the findings`, family: "warning", tab: "findings" };
-
-  if (!v.ownership.business_owner_membership_id)
-    return { label: "No business owner", family: "warning", tab: "overview" };
-
-  if (due !== null && due <= 30)
-    return { label: `Reassessment due ${fmtCountdown(due)}`, family: "progress", tab: "assessments" };
-
-  if (v.lifecycle_status === "offboarding")
-    return { label: "Offboarding in progress", family: "progress", tab: "lifecycle" };
-
-  return null;
+  if (v.attention_code === null) return null;
+  const meta = ATTENTION_META[v.attention_code];
+  if (!meta) return null;
+  return {
+    label: meta.label ? meta.label(v) : (ATTENTION_LABEL[v.attention_code] ?? v.attention_code),
+    family: meta.family,
+    tab: meta.tab,
+  };
 }
 
 /** The one-line reassurance a register shows in place of an empty cell. */

@@ -146,6 +146,8 @@ class VendorOut(_Response):
     updated_at: UtcDateTime
     engagement_count: int
     contact_count: int
+    attention_code: str | None
+    """What this vendor is waiting on. None means nothing is."""
 
 
 # -- lifecycle and tiering (section 2) ----------------------------------------
@@ -235,6 +237,28 @@ class TieringOut(_Response):
     points_to_lower_tier: float | None
     assessed_by_name: str | None
     assessed_at: UtcDateTime | None
+
+
+class AttentionCountOut(_Response):
+    code: str
+    label: str
+    count: int
+
+
+class SummaryOut(_Response):
+    """The portfolio picture the overview reads, in one round trip."""
+
+    total: int
+    mine: int
+    by_tier: dict[str, int]
+    by_status: dict[str, int]
+    attention: list[AttentionCountOut]
+    coverage_in_scope: int
+    coverage_current: int
+    findings_by_severity: dict[str, int]
+    findings_open: int
+    findings_overdue: int
+    intake_pending: int
 
 
 class TransitionOut(_Response):

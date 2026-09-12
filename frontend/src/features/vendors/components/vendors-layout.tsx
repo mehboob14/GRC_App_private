@@ -4,16 +4,19 @@ import { PageHeader, TabStrip, type TabStripItem } from "@/components/ui";
 import { listFindings, listIntake } from "../api";
 
 /**
- * The four module-root surfaces.
+ * The module-root surfaces.
  *
- * Register is the day-to-day list. Intake is the queue of requests that have
- * not become vendors yet. Findings is the cross-vendor work list. Roster is who
- * plays which role in the programme — settings, but named for what it holds.
+ * Overview is the portfolio picture and stays the first thing offered, but the
+ * register remains the index route so every existing /vendors link still lands
+ * on the table. Intake is the queue of requests that have not become vendors
+ * yet. Findings is the cross-vendor work list. Roster is who plays which role in
+ * the programme — settings, but named for what it holds.
  *
  * A vendor's own pages (detail, questionnaire) are drill-downs and sit outside
  * this strip.
  */
 const TABS: TabStripItem[] = [
+  { id: "/vendors/overview", label: "Overview" },
   { id: "/vendors", label: "Register", end: true },
   { id: "/vendors/intake", label: "Intake" },
   { id: "/vendors/findings", label: "Findings" },
@@ -29,15 +32,15 @@ export function VendorsLayout() {
     queryFn: () => listIntake("pending"),
   });
   const findingsQuery = useQuery({
-    queryKey: ["vendor-findings", { statuses: ["open"] }],
-    queryFn: () => listFindings({ statuses: ["open"] }),
+    queryKey: ["vendor-findings", { statuses: ["open", "in_remediation"] }],
+    queryFn: () => listFindings({ statuses: ["open", "in_remediation"] }),
   });
 
   // Pass undefined while a count is in flight — TabStrip renders a badge only
   // for a real number, so a loading tab shows nothing rather than a false zero.
   const tabs = TABS.map((t) => {
-    if (t.id === "/vendors/intake") return { ...t, count: intakeQuery.data?.total };
-    if (t.id === "/vendors/findings") return { ...t, count: findingsQuery.data?.total };
+    if (t.id === "/vendors/intake") return { ...t, count: intakeQuery.data?.total || undefined };
+    if (t.id === "/vendors/findings") return { ...t, count: findingsQuery.data?.total || undefined };
     return t;
   });
 

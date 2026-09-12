@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import re
 import uuid
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime, timedelta
 from typing import Any, Final
@@ -214,6 +214,39 @@ class VendorView:
     updated_at: datetime
     engagement_count: int
     contact_count: int
+    attention_code: str | None = None
+    """What this vendor is waiting on -- see ``ATTENTION_CODES``. None means
+    nothing is outstanding, which the register renders as its healthy line."""
+
+
+@dataclass(frozen=True, slots=True)
+class AttentionCount:
+    """One thing the portfolio is waiting on, and how many vendors are on it."""
+
+    code: str
+    label: str
+    count: int
+
+
+@dataclass(frozen=True, slots=True)
+class SummaryView:
+    """The portfolio in one object. Every field is a count somebody acts on."""
+
+    total: int
+    mine: int
+    by_tier: dict[str, int]
+    by_status: dict[str, int]
+    attention: list[AttentionCount]
+    coverage_in_scope: int
+    """Vendors a reassessment cadence applies to at all."""
+
+    coverage_current: int
+    """Of those, the ones inside their window."""
+
+    findings_by_severity: dict[str, int]
+    findings_open: int
+    findings_overdue: int
+    intake_pending: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -307,6 +340,11 @@ class VendorFilters:
     business_units: tuple[str, ...] = ()
     owner: str | None = None  # membership_id, "me", or "unassigned"
     stores_pii: bool = False
+    attention: tuple[str, ...] = ()
+    """Attention codes -- see ``ATTENTION_CODES``. Applied after the scan rather
+    than in SQL, because the codes are priority-ordered rules over several
+    columns and reproducing that ordering as a WHERE clause would be a second
+    implementation of it."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -906,6 +944,86 @@ what needs attention rather than by lifecycle position: ``requested`` sits above
 the two trouble states because an unreviewed vendor is a gap, not an incident."""
 
 
+_COVERED_TIERS: Final[frozenset[str]] = frozenset({"critical", "high"})
+"""The tiers assessment coverage is measured over. Medium and low have cadences
+too, but "are our most exposed vendors current" is the question an auditor asks
+and the one a single number can honestly answer."""
+
+_CLOSED_STATUSES: Final[frozenset[str]] = frozenset({"terminated", "archived"})
+
+
+_UNTIERED_RANK: Final = 0.5
+"""Between critical (0) and high (1). A vendor with no tier is not the least
+urgent thing in the register, it is an unanswered question."""
+
+_SORT_KEYS: Final[dict[str, Callable[[VendorView], Any]]] = {
+    "name": lambda v: v.name.lower(),
+    "tier": lambda v: TIER_RANK.get(v.tier or "", _UNTIERED_RANK),
+    "grade": lambda v: v.current_grade or "ZZ",
+    "owner": lambda v: (v.ownership.business_owner_name or "").lower(),
+    "reassessment": lambda v: v.next_reassessment_on or date.max,
+    "value": lambda v: v.annual_contract_value if v.annual_contract_value is not None else -1.0,
+    "status": lambda v: _STATUS_RANK.get(v.lifecycle_status, 9),
+}
+"""What the register can be ordered by. Absent values sort last in the ascending
+direction on purpose -- flipping a column should never fill the first screen
+with blanks."""
+
+
+ATTENTION_CODES: Final[tuple[tuple[str, str], ...]] = (
+    ("flagged", "Flagged for review"),
+    ("reassessment_overdue", "Reassessment overdue"),
+    ("not_tiered", "Not tiered"),
+    ("awaiting_gate", "Awaiting the approval gate"),
+    ("on_hold", "On hold"),
+    ("weak_grade", "Weak residual grade"),
+    ("unowned", "No business owner"),
+    ("reassessment_due", "Reassessment due soon"),
+    ("offboarding", "Offboarding in progress"),
+)
+"""What a vendor can be waiting on, worst first, with the words the interface
+uses. One vendor gets at most one code -- the first that matches -- because a
+work queue that lists a vendor three times is not a queue.
+
+Served rather than reimplemented in TypeScript, for the same reason ``stages``
+and ``skip_matrix_by_tier`` are: the moment an overview counts these and the
+register labels them, two implementations of one rule set drift."""
+
+_REASSESSMENT_SOON_DAYS: Final = 30
+"""Chosen, not derived. There is no "due soon" in the model; this is the window
+the interface treats as close enough to plan around."""
+
+
+def _attention_code(vendor: Vendor, today: date) -> str | None:  # noqa: PLR0911
+    """The one thing this vendor is waiting on, or None if nothing is.
+
+    Reads only columns on the vendor row, so it is answerable for a whole
+    portfolio in the scan the register already performs. One return per rule,
+    in priority order: collapsing them into a lookup would hide the ordering,
+    which is the only thing about this function that is a judgement.
+    """
+    if vendor.lifecycle_status == "flagged":
+        return "flagged"
+    due = vendor.next_reassessment_on
+    if due is not None and due < today:
+        return "reassessment_overdue"
+    if vendor.tier is None:
+        return "not_tiered"
+    if vendor.lifecycle_status in {"requested", "under_review"}:
+        return "awaiting_gate"
+    if vendor.lifecycle_status == "on_hold":
+        return "on_hold"
+    if vendor.current_grade in {"D", "F"}:
+        return "weak_grade"
+    if vendor.business_owner_membership_id is None:
+        return "unowned"
+    if due is not None and (due - today).days <= _REASSESSMENT_SOON_DAYS:
+        return "reassessment_due"
+    if vendor.lifecycle_status == "offboarding":
+        return "offboarding"
+    return None
+
+
 class VendorService:
     def __init__(self, audit: AuditService | None = None) -> None:
         self._audit = audit or audit_service
@@ -1128,6 +1246,7 @@ class VendorService:
             updated_at=vendor.updated_at,
             engagement_count=engagement_count,
             contact_count=contact_count,
+            attention_code=_attention_code(vendor, datetime.now(UTC).date()),
         )
 
     @staticmethod
@@ -1197,7 +1316,7 @@ class VendorService:
 
     # -- reads -----------------------------------------------------------------
 
-    async def list_vendors(  # noqa: PLR0913
+    async def list_vendors(  # noqa: PLR0912, PLR0913 — one branch per filter
         self,
         session: AsyncSession,
         *,
@@ -1206,6 +1325,8 @@ class VendorService:
         page: int = 1,
         page_size: int = 25,
         caller_membership_id: uuid.UUID | None = None,
+        sort: str | None = None,
+        direction: str = "asc",
     ) -> tuple[list[VendorView], int]:
         stmt = select(Vendor).where(Vendor.tenant_id == tenant_id)
         if filters.vendor_type and filters.vendor_type != "all":
@@ -1253,21 +1374,129 @@ class VendorService:
             self._to_view(v, names, engagement_counts.get(v.id, 0), contact_counts.get(v.id, 0))
             for v in vendors
         ]
-        views.sort(key=self._register_sort_key)
+        if filters.attention:
+            wanted = set(filters.attention)
+            views = [v for v in views if v.attention_code in wanted]
+        self._sort_register(views, sort, direction)
         total = len(views)
         start = (page - 1) * page_size
         return views[start : start + page_size], total
 
     @staticmethod
-    def _register_sort_key(v: VendorView) -> tuple[int, int, str]:
+    def _sort_register(views: list[VendorView], sort: str | None, direction: str) -> None:
+        """Order the page in place. ``sort=None`` keeps the risk ranking."""
+        if sort is None or sort not in _SORT_KEYS:
+            views.sort(key=VendorService._register_sort_key)
+            return
+        key = _SORT_KEYS[sort]
+        # Stable two-pass: name ascending underneath, so rows that tie on the
+        # chosen column stay in a predictable order rather than the scan's.
+        views.sort(key=lambda v: v.name.lower())
+        views.sort(key=key, reverse=direction == "desc")
+
+    @staticmethod
+    def _register_sort_key(v: VendorView) -> tuple[float, int, str]:
         """Worst tier first, then unowned, then alphabetical.
 
-        Unowned sorts up because a vendor nobody owns is the one nobody will
-        notice, which is exactly the row a register exists to surface.
+        Untiered ranks immediately after critical, not last. A vendor with no
+        risk decision at all is the one the register most needs to surface, and
+        ranking it below every low-tier vendor buried exactly the rows the
+        attention column exists to flag.
+
+        Unowned sorts up for the same reason: a vendor nobody owns is the one
+        nobody will notice.
         """
-        tier_rank = TIER_RANK.get(v.tier or "", 9)
+        tier_rank = TIER_RANK.get(v.tier or "", _UNTIERED_RANK)
         unowned = 0 if v.ownership.business_owner_membership_id is None else 1
         return tier_rank, unowned, v.name.lower()
+
+    async def summary(
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        caller_membership_id: uuid.UUID | None = None,
+    ) -> SummaryView:
+        """The portfolio picture, in one round trip.
+
+        The register answers "what vendors exist"; this answers "what needs
+        somebody today", which is the question the module is opened with. Every
+        count comes from the same scan the register already performs plus two
+        grouped aggregates over findings, so it is cheaper than one register
+        page, not more expensive.
+        """
+        today = datetime.now(UTC).date()
+        vendors = list(
+            (await session.execute(select(Vendor).where(Vendor.tenant_id == tenant_id))).scalars()
+        )
+
+        by_tier: dict[str, int] = dict.fromkeys(TIERS, 0)
+        by_tier["untiered"] = 0
+        by_status: dict[str, int] = {}
+        attention: dict[str, int] = {}
+        mine = 0
+        in_cadence = 0
+        needs_cadence = 0
+        for vendor in vendors:
+            by_tier[vendor.tier or "untiered"] = by_tier.get(vendor.tier or "untiered", 0) + 1
+            by_status[vendor.lifecycle_status] = by_status.get(vendor.lifecycle_status, 0) + 1
+            code = _attention_code(vendor, today)
+            if code is not None:
+                attention[code] = attention.get(code, 0) + 1
+            if (
+                caller_membership_id is not None
+                and vendor.business_owner_membership_id == caller_membership_id
+            ):
+                mine += 1
+            # Coverage is asked of the vendors a cadence actually applies to.
+            # A low-tier vendor with no schedule is not a gap in coverage, and
+            # folding it into "current" would flatter the number.
+            if vendor.tier in _COVERED_TIERS and vendor.lifecycle_status not in _CLOSED_STATUSES:
+                needs_cadence += 1
+                if vendor.next_reassessment_on is not None and vendor.next_reassessment_on >= today:
+                    in_cadence += 1
+
+        findings = list(
+            (
+                await session.execute(
+                    select(VendorFinding).where(VendorFinding.tenant_id == tenant_id)
+                )
+            ).scalars()
+        )
+        open_findings = [f for f in findings if f.status in OPEN_FINDING_STATUSES]
+        by_severity: dict[str, int] = dict.fromkeys(FINDING_SEVERITIES, 0)
+        overdue = 0
+        for finding in open_findings:
+            by_severity[finding.severity] = by_severity.get(finding.severity, 0) + 1
+            if finding.sla_due is not None and finding.sla_due < today:
+                overdue += 1
+
+        intake_pending = (
+            await session.execute(
+                select(func.count())
+                .select_from(VendorIntakeRequest)
+                .where(VendorIntakeRequest.tenant_id == tenant_id)
+                .where(VendorIntakeRequest.decision == "pending")
+            )
+        ).scalar_one()
+
+        return SummaryView(
+            total=len(vendors),
+            mine=mine,
+            by_tier=by_tier,
+            by_status=by_status,
+            attention=[
+                AttentionCount(code=code, label=label, count=attention.get(code, 0))
+                for code, label in ATTENTION_CODES
+                if attention.get(code, 0) > 0
+            ],
+            coverage_in_scope=needs_cadence,
+            coverage_current=in_cadence,
+            findings_by_severity=by_severity,
+            findings_open=len(open_findings),
+            findings_overdue=overdue,
+            intake_pending=int(intake_pending),
+        )
 
     async def get_vendor(
         self, session: AsyncSession, *, tenant_id: uuid.UUID, vendor_id: uuid.UUID
