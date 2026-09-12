@@ -152,6 +152,12 @@ export function VendorFormDrawer({
         business_owner_membership_id: form.business_owner_membership_id,
         security_owner_membership_id: form.security_owner_membership_id,
         relationship_owner_membership_id: form.relationship_owner_membership_id,
+        // PATCH /vendors/{id} is a full replacement of VendorWrite, not a merge:
+        // every field left out is reset to its default. These two have no
+        // control on this form, so omitting them silently emptied the vendor's
+        // tags and in-scope data types on every save.
+        tags: vendor?.tags ?? [],
+        data_types_in_scope: vendor?.data_types_in_scope ?? [],
       };
       if (editing) return updateVendor(vendor.id, body);
       if (form.engagement_name.trim()) body.engagement = { name: form.engagement_name.trim() };

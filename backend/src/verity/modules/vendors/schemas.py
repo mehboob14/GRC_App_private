@@ -237,6 +237,20 @@ class TieringOut(_Response):
     assessed_at: UtcDateTime | None
 
 
+class TransitionOut(_Response):
+    """One movement of the review: advance, send-back or skip, with its reason."""
+
+    id: uuid.UUID
+    engagement_id: uuid.UUID
+    cycle: int
+    action: str
+    from_stage: str | None
+    to_stage: str | None
+    reason: str | None
+    actor: str | None
+    occurred_at: UtcDateTime
+
+
 class AssessmentSummaryOut(_Response):
     """A questionnaire as a list row — no responses, no findings."""
 
@@ -267,6 +281,7 @@ class VendorDetailOut(VendorOut):
     soc_reviews: list[SocReviewOut] = Field(default_factory=list)
     subprocessors: list[SubprocessorOut] = Field(default_factory=list)
     assessments: list[AssessmentSummaryOut] = Field(default_factory=list)
+    transitions: list[TransitionOut] = Field(default_factory=list)
 
 
 class VendorPageOut(_Response):
@@ -343,6 +358,7 @@ class FindingOut(_Response):
     id: uuid.UUID
     vendor_id: uuid.UUID
     vendor_name: str | None
+    vendor_tier: str | None
     """Only the cross-vendor queue fills this in — see FindingView."""
 
     assessment_id: uuid.UUID | None

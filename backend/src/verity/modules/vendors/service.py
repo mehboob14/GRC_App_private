@@ -27,6 +27,7 @@ from datetime import UTC, date, datetime, timedelta
 from typing import Any, Final
 
 import structlog
+from sqlalchemy import false as sa_false
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -216,6 +217,29 @@ class VendorView:
 
 
 @dataclass(frozen=True, slots=True)
+class TransitionView:
+    """One movement of the review, in the shape the trail renders.
+
+    ``vendor_transitions`` has been written on every advance, send-back and skip
+    since section 2 and read by exactly one thing: the gate's freshness check.
+    The send-back dialog promises "whoever picks it up sees your reason" -- this
+    is what makes that true.
+    """
+
+    id: uuid.UUID
+    engagement_id: uuid.UUID
+    cycle: int
+    action: str
+    from_stage: str | None
+    to_stage: str | None
+    reason: str | None
+    actor: str | None
+    """Resolved name, or None for a System write -- the interface says so."""
+
+    occurred_at: datetime
+
+
+@dataclass(frozen=True, slots=True)
 class AssessmentSummaryView:
     """Enough to list a questionnaire without loading its answers.
 
@@ -256,6 +280,7 @@ class VendorDetailView(VendorView):
     soc_reviews: list[SocReviewView] = field(default_factory=list)
     subprocessors: list[SubprocessorView] = field(default_factory=list)
     assessments: list[AssessmentSummaryView] = field(default_factory=list)
+    transitions: list[TransitionView] = field(default_factory=list)
 
 
 @dataclass(frozen=True, slots=True)
@@ -512,6 +537,11 @@ class FindingView:
     id: uuid.UUID
     vendor_id: uuid.UUID
     vendor_name: str | None
+    vendor_tier: str | None
+    """Same nullability contract as ``vendor_name``: filled only by the
+    cross-vendor queue. A medium finding at a critical vendor outranks a high one
+    at a low-tier vendor, and the queue could not say which was which."""
+
     """Populated only by the cross-vendor queue, which is the one screen that
     cannot name the vendor from its own context. Everywhere else a finding is
     already shown under its vendor, so paying for the join would buy nothing."""
@@ -856,6 +886,26 @@ def _soc_finding_detail(data: SocReviewInput) -> str:
     return f"The {kind} {report_type}{period} carries {opinion}.{material}"
 
 
+_VENDOR_OWNED_STATUSES: Final[frozenset[str]] = frozenset({"offboarding", "archived"})
+"""The two the vendor row owns outright. Ending the relationship ends every use
+of it, so neither is overridden by an engagement that still reads ``active``."""
+
+_STATUS_RANK: Final[dict[str, int]] = {
+    "flagged": 0,
+    "on_hold": 1,
+    "offboarding": 2,
+    "terminated": 3,
+    "requested": 4,
+    "under_review": 5,
+    "approved": 6,
+    "active": 7,
+    "archived": 8,
+}
+"""Worst first, so a vendor with one flagged engagement reads flagged. Ordered by
+what needs attention rather than by lifecycle position: ``requested`` sits above
+the two trouble states because an unreviewed vendor is a gap, not an incident."""
+
+
 class VendorService:
     def __init__(self, audit: AuditService | None = None) -> None:
         self._audit = audit or audit_service
@@ -1000,13 +1050,36 @@ class VendorService:
     async def _recache(self, session: AsyncSession, tenant_id: uuid.UUID, vendor: Vendor) -> None:
         """Refresh the vendor's cached worst-engagement columns.
 
-        The only writer of ``vendor.tier``. Residual score, grade and contract
-        value stay untouched here: the engines that produce them are sections 3
-        and 4, and writing a placeholder now would make an unscored vendor look
-        scored.
+        The only writer of ``vendor.tier`` and ``vendor.lifecycle_status``.
+        Residual score, grade and contract value stay untouched here: the engines
+        that produce them are sections 3 and 4, and writing a placeholder now
+        would make an unscored vendor look scored.
         """
         engagements = (await self._engagements_of(session, tenant_id, vendor.id)).get(vendor.id, [])
         vendor.tier = self._worst_tier(engagements)
+        vendor.lifecycle_status = self._rolled_up_status(vendor, engagements)
+
+    @staticmethod
+    def _rolled_up_status(vendor: Vendor, engagements: list[VendorEngagement]) -> str:
+        """Where the relationship as a whole stands, from its engagements.
+
+        The gate writes ``engagement.status``; nothing wrote the vendor's, so a
+        tiered, assessed, approved vendor read "Requested" forever and the
+        register's Status filter was filtering on a column that only ever held
+        three values. This makes it the same kind of derived cache ``tier``
+        already is -- never authoritative, never the value an action is taken on,
+        and recomputed from the engagements on every write.
+
+        Worst-first, with one exception: the two states the vendor itself owns
+        are terminal and outrank anything an engagement says, because ending the
+        relationship ends every use of it.
+        """
+        if vendor.lifecycle_status in _VENDOR_OWNED_STATUSES:
+            return str(vendor.lifecycle_status)
+        statuses = [str(e.status) for e in engagements if e.status in _STATUS_RANK]
+        if not statuses:
+            return "requested"
+        return min(statuses, key=lambda status: _STATUS_RANK[status])
 
     # -- views -----------------------------------------------------------------
 
@@ -1152,7 +1225,15 @@ class VendorService:
         elif filters.owner == "me" and caller_membership_id is not None:
             stmt = stmt.where(Vendor.business_owner_membership_id == caller_membership_id)
         elif filters.owner:
-            stmt = stmt.where(Vendor.business_owner_membership_id == uuid.UUID(filters.owner))
+            # Reachable by hand-editing a link, so a bare uuid.UUID() here is a
+            # 500 on a malformed query string. An owner nobody matches is an
+            # empty register, which is the honest answer to an unknown id.
+            try:
+                owner_id = uuid.UUID(filters.owner)
+            except ValueError:
+                stmt = stmt.where(sa_false())
+            else:
+                stmt = stmt.where(Vendor.business_owner_membership_id == owner_id)
         if filters.search:
             like = f"%{filters.search.lower()}%"
             stmt = stmt.where(
@@ -1255,7 +1336,41 @@ class VendorService:
                 session, tenant_id=tenant_id, vendor_id=vendor.id
             ),
             assessments=await self._assessment_summaries(session, tenant_id, vendor.id),
+            transitions=await self._transitions(session, tenant_id, vendor.id, names),
         )
+
+    async def _transitions(
+        self,
+        session: AsyncSession,
+        tenant_id: uuid.UUID,
+        vendor_id: uuid.UUID,
+        names: dict[uuid.UUID, str],
+    ) -> list[TransitionView]:
+        """Newest first. Shipped inline rather than behind a route because the
+        volume is tens of rows and every write already returns the whole detail
+        view, so the trail stays correct with no refetch."""
+        rows = (
+            await session.execute(
+                select(VendorTransition)
+                .where(VendorTransition.tenant_id == tenant_id)
+                .where(VendorTransition.vendor_id == vendor_id)
+                .order_by(VendorTransition.occurred_at.desc())
+            )
+        ).scalars()
+        return [
+            TransitionView(
+                id=row.id,
+                engagement_id=row.engagement_id,
+                cycle=row.cycle,
+                action=row.action,
+                from_stage=row.from_stage,
+                to_stage=row.to_stage,
+                reason=row.reason,
+                actor=names.get(row.actor_membership_id) if row.actor_membership_id else None,
+                occurred_at=row.occurred_at,
+            )
+            for row in rows
+        ]
 
     async def _assessment_summaries(
         self, session: AsyncSession, tenant_id: uuid.UUID, vendor_id: uuid.UUID
@@ -1414,8 +1529,12 @@ class VendorService:
             # resolves a role to a person. Served here for the same reason as
             # the stage list: so the interface names the right next actor
             # instead of a second copy of the policy drifting in TypeScript.
+            # The tenant's resolved policy, not the shipped defaults -- mirroring
+            # tier_thresholds below. A tenant that customised its reviewer roles
+            # was being told the defaults, so the roster captions and the gate
+            # handoff both named the wrong people.
             "reviewer_roles_by_tier": {
-                tier: list(roles) for tier, roles in lifecycle.DEFAULT_REVIEWER_ROLES.items()
+                tier: list(roles) for tier, roles in policy.reviewer_roles.items()
             },
             "tier_thresholds": policy.thresholds,
             "policy_is_customised": policy.is_customised,
@@ -2118,6 +2237,8 @@ class VendorService:
         now = datetime.now(UTC)
         stage.status = "complete"
         stage.exited_at = now
+        if stage.stage == "onboarding" and engagement.status == "approved":
+            engagement.status = "active"
         rows = await self._stages_for(session, tenant_id, engagement.id, stage.cycle)
         # Walk over the skipped rows, so a low-tier vendor goes from tiering to
         # contracting in one move and the proportionality is visible.
@@ -2126,6 +2247,7 @@ class VendorService:
             nxt = next(r for r in rows if r.stage == target)
             nxt.status = "in_progress"
             nxt.entered_at = now
+        await self._recache(session, tenant_id, vendor)
         await self._write_transition(
             session, tenant_id, stage, actor, "advance", to_stage=target, reason=note
         )
@@ -2841,12 +2963,14 @@ class VendorService:
         finding: VendorFinding,
         names: dict[uuid.UUID, str],
         vendor_name: str | None = None,
+        vendor_tier: str | None = None,
     ) -> FindingView:
         owner = finding.owner_membership_id
         return FindingView(
             id=finding.id,
             vendor_id=finding.vendor_id,
             vendor_name=vendor_name,
+            vendor_tier=vendor_tier,
             assessment_id=finding.assessment_id,
             question_id=finding.question_id,
             title=finding.title,
@@ -2922,22 +3046,31 @@ class VendorService:
         names = await self._member_names(session, tenant_id)
         # One lookup for the whole page rather than one per row. Without it the
         # cross-vendor queue can only print an id, which is not a work queue.
-        vendors = await self._vendor_names(session, tenant_id, {f.vendor_id for f in rows})
-        views = [self._finding_view(f, names, vendors.get(f.vendor_id)) for f in rows]
+        vendors = await self._vendor_facts(session, tenant_id, {f.vendor_id for f in rows})
+        views = [
+            self._finding_view(
+                f,
+                names,
+                vendors.get(f.vendor_id, (None, None))[0],
+                vendors.get(f.vendor_id, (None, None))[1],
+            )
+            for f in rows
+        ]
         views.sort(key=lambda f: (FINDING_SEVERITIES.index(f.severity), f.sla_due or date.max))
         return views
 
-    async def _vendor_names(
+    async def _vendor_facts(
         self, session: AsyncSession, tenant_id: uuid.UUID, vendor_ids: set[uuid.UUID]
-    ) -> dict[uuid.UUID, str]:
+    ) -> dict[uuid.UUID, tuple[str, str | None]]:
+        """Name and tier for a page of findings, in one select."""
         if not vendor_ids:
             return {}
         rows = await session.execute(
-            select(Vendor.id, Vendor.name)
+            select(Vendor.id, Vendor.name, Vendor.tier)
             .where(Vendor.tenant_id == tenant_id)
             .where(Vendor.id.in_(list(vendor_ids)))
         )
-        return {row.id: row.name for row in rows}
+        return {row.id: (row.name, row.tier) for row in rows}
 
     async def open_critical_count(
         self, session: AsyncSession, *, tenant_id: uuid.UUID, vendor_id: uuid.UUID
@@ -3375,6 +3508,7 @@ class VendorService:
             engagement.status = "on_hold"
         elif decision in {"approve", "approve_with_conditions"}:
             engagement.status = "approved"
+        await self._recache(session, tenant_id, vendor)
         await self._audit.record(
             session,
             action="approve",

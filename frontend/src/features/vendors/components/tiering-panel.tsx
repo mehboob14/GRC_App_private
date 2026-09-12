@@ -1,10 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Badge,
   Button,
   Gauge,
   Icon,
+  RadioGroup,
+  RadioGroupItem,
   Select,
   SelectContent,
   SelectField,
@@ -29,13 +31,39 @@ import { ThresholdRuler } from "./threshold-ruler";
  * a low-tier vendor is not a good vendor, it is one that can hurt you less. The
  * ramp matches `TIER_META` exactly, so the same word is the same colour on the
  * gauge, the ruler, the pill and the register.
+ *
+ * Full literal class strings — Tailwind scans source text, so a stroke class
+ * built by interpolation is purged and the arc paints nothing.
  */
-const TIER_ZONES = [
-  { to: 25, strokeClass: "stroke-status-neutral-base", textClass: "text-status-neutral-text" },
-  { to: 50, strokeClass: "stroke-status-pending-base", textClass: "text-status-pending-text" },
-  { to: 75, strokeClass: "stroke-status-warning-base", textClass: "text-status-warning-text" },
-  { to: 100, strokeClass: "stroke-status-danger-base", textClass: "text-status-danger-text" },
-];
+const TIER_TONE: Record<string, { strokeClass: string; textClass: string }> = {
+  low: { strokeClass: "stroke-status-neutral-base", textClass: "text-status-neutral-text" },
+  medium: { strokeClass: "stroke-status-pending-base", textClass: "text-status-pending-text" },
+  high: { strokeClass: "stroke-status-warning-base", textClass: "text-status-warning-text" },
+  critical: { strokeClass: "stroke-status-danger-base", textClass: "text-status-danger-text" },
+};
+
+/**
+ * The gauge's bands, built from the thresholds actually in force.
+ *
+ * Hardcoding 25/50/75 meant a tenant that retuned Critical to 60 got a gauge and
+ * a ruler ten pixels apart disagreeing about the same number, and an override to
+ * Critical painted a neutral arc because the tone was computed from the score
+ * rather than from the tier.
+ */
+function zonesFor(thresholds: Record<string, number>) {
+  const bounds: [string, number][] = [
+    ["low", 0],
+    ["medium", thresholds.medium ?? 25],
+    ["high", thresholds.high ?? 50],
+    ["critical", thresholds.critical ?? 75],
+  ];
+  return bounds.map(([tier, from], index) => ({
+    to: index + 1 < bounds.length ? bounds[index + 1][1] : 100,
+    strokeClass: TIER_TONE[tier].strokeClass,
+    textClass: TIER_TONE[tier].textClass,
+    from,
+  }));
+}
 
 /** What each answer on the 0-4 scale actually means, so the form is answerable. */
 const SCALE: Record<string, string[]> = {
@@ -76,7 +104,16 @@ const SCALE: Record<string, string[]> = {
   ],
 };
 
-const BLANK: Record<string, number> = Object.fromEntries(TIERING_FACTORS.map((k) => [k, 0]));
+/**
+ * Unanswered, not zero. Seeding every factor to 0 made the form arrive at a
+ * confident score of 0 with a Low badge and a live submit button — and one
+ * click set the tier to low, skipped four stages "by policy", collapsed the
+ * reviewer set and booked the next review three years out, all attributable to
+ * policy rather than to a mistake.
+ */
+const BLANK: Record<string, number | null> = Object.fromEntries(
+  TIERING_FACTORS.map((k) => [k, null]),
+);
 
 /**
  * The tiering panel, in the shape the vulnerabilities risk panel proved out:
@@ -111,12 +148,15 @@ export function TieringPanel({
   }, [vendor.tierings, engagementId]);
 
   const [editing, setEditing] = useState(false);
-  const [answers, setAnswers] = useState<Record<string, number>>(BLANK);
+  const [answers, setAnswers] = useState<Record<string, number | null>>(BLANK);
   const [overrideTier, setOverrideTier] = useState<string>("");
   const [justification, setJustification] = useState("");
 
-  useEffect(() => {
-    if (!editing) return;
+  // Seeding in an effect keyed on `latest` meant every write anywhere on this
+  // tab — an advance in the panel above, a gate decision below — produced a new
+  // VendorDetail, a new `tierings` array, a new memo identity, and snapped a
+  // half-filled form back to the saved answers. Seed once, on the way in.
+  const startEditing = () => {
     setAnswers(
       latest
         ? Object.fromEntries(latest.factors.map((f) => [f.key, f.answer]))
@@ -124,7 +164,8 @@ export function TieringPanel({
     );
     setOverrideTier(latest?.override_tier ?? "");
     setJustification(latest?.override_justification ?? "");
-  }, [editing, latest]);
+    setEditing(true);
+  };
 
   const weights = useMemo(() => {
     const specs = facetsQuery.data?.tiering_factors ?? [];
@@ -142,6 +183,9 @@ export function TieringPanel({
 
   // The same arithmetic the backend runs, so the preview and the saved result
   // agree: sum(clamp(answer, 0, 4) / 4 * weight) * 100.
+  const answered = TIERING_FACTORS.filter((key) => answers[key] !== null).length;
+  const complete = answered === TIERING_FACTORS.length;
+
   const preview = useMemo(() => {
     const factors = TIERING_FACTORS.map((key) => {
       const clamped = Math.max(0, Math.min(4, answers[key] ?? 0));
@@ -210,23 +254,38 @@ export function TieringPanel({
       >
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
           <div className="shrink-0 lg:w-[19rem]">
-            <Gauge
-              value={preview.score}
-              zones={TIER_ZONES}
-              label="Inherent score"
-              unit=""
-              size={190}
-              badge={{
-                text: TIER_META[preview.tier]?.label ?? preview.tier,
-                toneClass: TIER_ZONES[Math.min(3, Math.floor(preview.score / 25))].textClass,
-              }}
-            />
-            <ThresholdRuler
-              className="mt-3"
-              score={preview.score}
-              thresholds={thresholds}
-              effectiveTier={preview.tier}
-            />
+            {complete ? (
+              <>
+                <Gauge
+                  value={preview.score}
+                  zones={zonesFor(thresholds)}
+                  label="Inherent score"
+                  unit=""
+                  size={190}
+                  badge={{
+                    text: TIER_META[preview.tier]?.label ?? preview.tier,
+                    toneClass: TIER_TONE[preview.tier].textClass,
+                  }}
+                />
+                <ThresholdRuler
+                  className="mt-3"
+                  score={preview.score}
+                  thresholds={thresholds}
+                  effectiveTier={preview.tier}
+                />
+              </>
+            ) : (
+              <div className="flex h-[190px] flex-col items-center justify-center rounded-md border border-dashed border-border-strong bg-surface-sunken px-6 text-center">
+                <Icon name="gauge" className="size-7 text-text-faint" />
+                <p className="mt-2 text-body-md text-text-secondary">
+                  {TIERING_FACTORS.length - answered} of {TIERING_FACTORS.length} still to answer
+                </p>
+                <p className="mt-1 text-caption text-text-subtle">
+                  The score appears once every factor has an answer. There is no default — a zero
+                  here would be a decision nobody made.
+                </p>
+              </div>
+            )}
             {latest && latest.effective_tier !== preview.tier ? (
               <p className="mt-3 flex items-start gap-1.5 rounded-md border border-status-warning-border bg-status-warning-bg p-3 text-body-sm text-status-warning-text">
                 <Icon name="alert" className="mt-px size-4 shrink-0" />
@@ -244,44 +303,41 @@ export function TieringPanel({
               save.mutate();
             }}
           >
-            {TIERING_FACTORS.map((key) => {
+            {/* Radios, not a slider. The five sentences under SCALE *are* the
+                question — a range control shows exactly one of them at a time,
+                only after you have already moved to it, on a 4px target. The
+                reviewer needs to read all five to answer honestly. */}
+            {TIERING_FACTORS.map((key, index) => {
               const spec = facetsQuery.data?.tiering_factors.find((f) => f.key === key);
-              const value = answers[key] ?? 0;
+              const value = answers[key];
+              const weight = spec?.weight ?? 0;
               return (
-                <div key={key}>
-                  <div className="flex items-baseline justify-between gap-3">
-                    <label
-                      htmlFor={`tiering-${key}`}
-                      className="font-sans text-label-sm text-text-secondary"
-                    >
-                      {spec?.label ?? key}
-                    </label>
+                <fieldset key={key} className="rounded-md border border-border p-3.5">
+                  <legend className="flex items-baseline gap-2 px-1.5">
+                    <span className="font-sans text-label-md text-text-primary">
+                      {index + 1}. {spec?.label ?? key}
+                    </span>
                     <span className="tabular text-caption text-text-subtle">
-                      weight {Math.round((spec?.weight ?? 0) * 100)}%
+                      {Math.round(weight * 100)}% of the score
                     </span>
-                  </div>
-                  <div className="mt-1.5 flex items-center gap-3">
-                    <input
-                      id={`tiering-${key}`}
-                      type="range"
-                      min={0}
-                      max={4}
-                      step={1}
-                      value={value}
-                      onChange={(e) =>
-                        setAnswers((a) => ({ ...a, [key]: Number(e.target.value) }))
-                      }
-                      className="h-1.5 flex-1 cursor-pointer appearance-none rounded-full bg-surface-sunken accent-action-accent"
-                      aria-describedby={`tiering-${key}-desc`}
-                    />
-                    <span className="tabular w-8 shrink-0 text-right text-body-md font-semibold text-text-primary">
-                      {value}
-                    </span>
-                  </div>
-                  <p id={`tiering-${key}-desc`} className="mt-1 text-body-sm text-text-subtle">
-                    {SCALE[key]?.[value] ?? ""}
-                  </p>
-                </div>
+                  </legend>
+                  <RadioGroup
+                    className="mt-1 space-y-1.5"
+                    value={value === null || value === undefined ? "" : String(value)}
+                    onValueChange={(next) =>
+                      setAnswers((a) => ({ ...a, [key]: Number(next) }))
+                    }
+                  >
+                    {(SCALE[key] ?? []).map((sentence, score) => (
+                      <RadioGroupItem
+                        key={score}
+                        value={String(score)}
+                        label={sentence}
+                        description={`Adds ${Math.round((score / 4) * weight * 100)} of ${Math.round(weight * 100)} points`}
+                      />
+                    ))}
+                  </RadioGroup>
+                </fieldset>
               );
             })}
 
@@ -319,7 +375,7 @@ export function TieringPanel({
               <Button
                 type="submit"
                 loading={save.isPending}
-                disabled={Boolean(overrideTier) && !justification.trim()}
+                disabled={!complete || (Boolean(overrideTier) && !justification.trim())}
               >
                 {latest ? "Save the new tier" : "Set the tier"}
               </Button>
@@ -327,7 +383,13 @@ export function TieringPanel({
                 Cancel
               </Button>
             </div>
-            {!latest ? (
+            {!complete ? (
+              <p className="text-caption text-text-subtle">
+                {TIERING_FACTORS.length - answered}{" "}
+                {TIERING_FACTORS.length - answered === 1 ? "factor is" : "factors are"} still
+                unanswered.
+              </p>
+            ) : !latest ? (
               <p className="text-caption text-text-subtle">
                 Setting the tier lays out the twelve lifecycle stages for this engagement and skips
                 the ones this tier does not need.
@@ -348,7 +410,7 @@ export function TieringPanel({
           lifecycle can start without it.
         </p>
         {canAssess ? (
-          <Button className="mt-3" onClick={() => setEditing(true)}>
+          <Button className="mt-3" onClick={startEditing}>
             Tier this engagement
           </Button>
         ) : (
@@ -367,7 +429,7 @@ export function TieringPanel({
       title="Tiering"
       action={
         canAssess ? (
-          <Button variant="secondary" size="sm" onClick={() => setEditing(true)}>
+          <Button variant="secondary" size="sm" onClick={startEditing}>
             Re-tier
           </Button>
         ) : null
@@ -377,13 +439,14 @@ export function TieringPanel({
         <div className="shrink-0 sm:w-[19rem]">
           <Gauge
             value={latest.score}
-            zones={TIER_ZONES}
+            zones={zonesFor(latest.thresholds)}
             label="Inherent score"
             unit=""
             size={190}
             badge={{
               text: TIER_META[latest.effective_tier]?.label ?? latest.effective_tier,
-              toneClass: TIER_ZONES[Math.min(3, Math.floor(latest.score / 25))].textClass,
+              toneClass:
+                TIER_TONE[latest.effective_tier]?.textClass ?? TIER_TONE.low.textClass,
             }}
           />
           <ThresholdRuler

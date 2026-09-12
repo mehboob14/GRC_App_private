@@ -16,6 +16,7 @@ import {
   SelectField,
   SelectItem,
   SelectTrigger,
+  Skeleton,
   TextArea,
   Tooltip,
   useToast,
@@ -54,11 +55,14 @@ export function LifecycleWorkspace({
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Only the engagement's own rows. The previous version also filtered on the
+  // max cycle across EVERY engagement, so once one engagement was reassessed the
+  // others rendered as an empty rail with a "Tier this engagement" button on an
+  // engagement that was tiered and possibly at the gate. The service only ever
+  // builds stage rows for an engagement's current cycle, so there is nothing
+  // left to filter.
   const stages = useMemo(
-    () =>
-      vendor.stages
-        .filter((s) => engagementId === null || s.engagement_id === engagementId)
-        .filter((s) => s.cycle === Math.max(...vendor.stages.map((r) => r.cycle), 1)),
+    () => vendor.stages.filter((s) => engagementId === null || s.engagement_id === engagementId),
     [vendor.stages, engagementId],
   );
 
@@ -90,6 +94,12 @@ export function LifecycleWorkspace({
   const facetsQuery = useQuery({ queryKey: ["vendor-facets"], queryFn: getFacets });
   const rosterQuery = useQuery({ queryKey: ["vendor-roster"], queryFn: getRoster });
   const membersQuery = useQuery({ queryKey: ["vendor-members"], queryFn: listMembers });
+
+  // Who signs THIS engagement's gate. Reading the vendor's cached worst tier
+  // named the wrong reviewers for every engagement but the worst one.
+  const engagementTier =
+    vendor.engagements.find((e) => e.id === engagementId)?.tier ?? vendor.tier;
+  const reviewerRoles = facetsQuery.data?.reviewer_roles_by_tier[engagementTier ?? ""] ?? [];
 
   const settle = (next: VendorDetail, title: string) => {
     onApply(next);
@@ -160,14 +170,15 @@ export function LifecycleWorkspace({
                 isCurrent={selected.id === current?.id}
                 canManage={canManage}
                 nextStage={nextActionableAfter(stages, selected)}
-                reviewerRoles={
-                  facetsQuery.data?.reviewer_roles_by_tier[vendor.tier ?? ""] ?? []
-                }
+                reviewerRoles={reviewerRoles}
                 reviewerNames={resolveReviewers(
-                  facetsQuery.data?.reviewer_roles_by_tier[vendor.tier ?? ""] ?? [],
+                  reviewerRoles,
                   rosterQuery.data?.roles ?? {},
                   membersQuery.data ?? [],
                 )}
+                reviewersReady={
+                  facetsQuery.isSuccess && rosterQuery.isSuccess && membersQuery.isSuccess
+                }
                 advancing={advance.isPending}
                 onAdvance={() => advance.mutate(undefined)}
                 onSendBack={() => setSendBackOpen(true)}
@@ -224,6 +235,7 @@ function StageDetail({
   nextStage,
   reviewerRoles,
   reviewerNames,
+  reviewersReady,
   advancing,
   onAdvance,
   onSendBack,
@@ -236,6 +248,9 @@ function StageDetail({
   nextStage: StageRow | null;
   reviewerRoles: string[];
   reviewerNames: { role: string; names: string[] }[];
+  /** All three lookups have resolved. Until they have, the card cannot honestly
+   *  say whether anybody holds the role. */
+  reviewersReady: boolean;
   advancing: boolean;
   onAdvance: () => void;
   onSendBack: () => void;
@@ -271,13 +286,44 @@ function StageDetail({
         </div>
       </div>
 
-      {stage.status === "skipped" ? (
+      {stage.status === "complete" ? (
+        // Exit checks are recomputed against today's facts, not frozen at exit.
+        // Without this branch a stage finished in January renders "1 thing in
+        // the way" with a live action button while the rail draws a tick on the
+        // same row.
+        <div className="mt-4 rounded-md border border-status-success-border bg-status-success-bg p-3.5">
+          <p className="flex items-center gap-2 text-body-md text-status-success-text">
+            <Icon name="check" className="size-4 shrink-0" />
+            Completed {fmtDate(stage.exited_at)}
+          </p>
+          {blockers.length > 0 ? (
+            <p className="mt-1 text-body-sm text-text-secondary">
+              {blockers.length === 1
+                ? "One condition that held when this stage was completed no longer does."
+                : `${blockers.length} conditions that held when this stage was completed no longer do.`}{" "}
+              That does not reopen it — send the review back if it needs doing again.
+            </p>
+          ) : null}
+        </div>
+      ) : stage.status === "skipped" ? (
         <div className="mt-4 rounded-md border border-border bg-surface-sunken p-4">
           <p className="text-body-md text-text-primary">This stage was skipped.</p>
           <p className="mt-1 text-body-sm text-text-subtle">
             {stage.skipped_by_policy
               ? `The tiering policy skips it for this tier: ${stage.skipped_by_policy}. Nobody chose this per vendor — change the policy to change it everywhere.`
               : (stage.skipped_reason ?? "No reason was recorded.")}
+          </p>
+        </div>
+      ) : !isCurrent ? (
+        <div className="mt-4">
+          <p className="type-overline">What this stage will need</p>
+          <ul className="mt-1 divide-y divide-border">
+            {stage.checks.map((check) => (
+              <ExitCheckRow key={check.code} check={check} />
+            ))}
+          </ul>
+          <p className="mt-2 text-caption text-text-subtle">
+            The review has not reached this stage yet. These are checked when it does.
           </p>
         </div>
       ) : blockers.length > 0 ? (
@@ -340,7 +386,12 @@ function StageDetail({
       {isCurrent && canManage ? (
         <div className="mt-4 border-t border-border pt-4">
           {nextStage && blockers.length === 0 && canAdvance ? (
-            <NextActor stage={nextStage} reviewerRoles={reviewerRoles} reviewers={reviewerNames} />
+            <NextActor
+              stage={nextStage}
+              reviewerRoles={reviewerRoles}
+              reviewers={reviewerNames}
+              ready={reviewersReady}
+            />
           ) : null}
 
           <div className="mt-3 flex flex-wrap gap-2">
@@ -387,11 +438,21 @@ function NextActor({
   stage,
   reviewerRoles,
   reviewers,
+  ready,
 }: {
   stage: StageRow;
   reviewerRoles: string[];
   reviewers: { role: string; names: string[] }[];
+  ready: boolean;
 }) {
+  if (!ready) {
+    return (
+      <div className="rounded-md border border-border bg-surface-sunken p-3.5">
+        <p className="type-overline">Next</p>
+        <Skeleton className="mt-2 h-4 w-64" />
+      </div>
+    );
+  }
   const relevant = stage.is_gate
     ? reviewers.filter((r) => r.role === "exec_approver" || reviewerRoles.includes(r.role))
     : reviewers;

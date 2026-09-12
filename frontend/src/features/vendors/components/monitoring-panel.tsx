@@ -1,6 +1,6 @@
 import { Badge, Icon, StatusPill } from "@/components/ui";
 import type { VendorDetail } from "../types";
-import { daysUntil, fmtCountdown, fmtDate } from "../tokens";
+import { daysUntil, fmtCountdown, fmtDate, TIER_META } from "../tokens";
 import { NotConnected, Panel } from "./panel";
 
 /**
@@ -42,7 +42,11 @@ export function MonitoringPanel({ vendor }: { vendor: VendorDetail }) {
             <span className="tabular text-body-sm text-text-secondary">
               {fmtDate(vendor.next_reassessment_on)}
             </span>
-            {vendor.tier ? <Badge variant="neutral">{vendor.tier} cadence</Badge> : null}
+            {vendor.tier ? (
+              <Badge variant="neutral">
+                {TIER_META[vendor.tier]?.label ?? vendor.tier} cadence
+              </Badge>
+            ) : null}
           </div>
         ) : (
           <p className="text-body-sm text-text-subtle">

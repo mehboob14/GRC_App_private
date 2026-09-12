@@ -68,6 +68,13 @@ class Api:
             sys.exit(f"GET {path} -> {response.status_code}\n{response.text}")
         return dict(response.json())
 
+    def get_list(self, path: str) -> list[Any]:
+        """For the routes that answer a bare array rather than a page object."""
+        response = self.client.get(path, headers=self._headers())
+        if response.status_code != 200:
+            sys.exit(f"GET {path} -> {response.status_code}\n{response.text}")
+        return list(response.json())
+
 
 def _verify_email(email: str) -> None:
     """Confirm the address the way the mailed link would.
@@ -452,6 +459,12 @@ def main() -> int:
                 break
             api.post(f"/vendors/{vendor_id}/stages/{current['id']}/advance", {"note": None})
 
+    # A second person, because the gate refuses whoever owns the vendor. The
+    # module's centrepiece cannot be demonstrated by one account: segregation of
+    # duties is the whole point of the approval stage.
+    approver = _invite_approver(api, email)
+    _walk_one_to_approval(api, approver)
+
     # An intake queue with something to decide, including one that duplicates a
     # vendor already in the register so the screening flag has a reason.
     for request in (
@@ -494,6 +507,81 @@ def main() -> int:
         print("vendor questionnaire (no account needed, partly answered already):")
         print(f"  {portal_url}")
     return 0
+
+
+def _invite_approver(api: Api, inviter_email: str) -> Api:
+    """Invite a second admin and accept, so somebody can decide a gate."""
+    roles = api.get_list("/roles")
+    role_id = next(r["id"] for r in roles if r["name"] == "Admin")
+    email = inviter_email.replace("dana+", "sam+")
+    invite = api.post(
+        "/members/invite",
+        {"email": email, "full_name": "Sam Achebe", "role_id": role_id},
+        expect=201,
+    )
+    guest = Api()
+    guest.post(
+        "/auth/invitations/accept",
+        {"token": invite["invite_token"], "full_name": "Sam Achebe", "password": PASSWORD},
+    )
+    session = guest.post("/auth/login", {"email": email, "password": PASSWORD})
+    if session.get("status") != "authenticated":
+        sys.exit(f"approver login returned {session.get('status')!r}")
+    guest.token = session["access_token"]
+    print(f"  second approver: {email}")
+    return guest
+
+
+def _walk_one_to_approval(api: Api, approver: Api) -> None:
+    """Advance the lowest-tier vendor to the gate and decide it.
+
+    Proves the whole spine in one pass: a low tier walks over four skipped
+    stages, the gate refuses the business owner, and the vendor's rolled-up
+    lifecycle status finally moves off "requested".
+    """
+    register = api.get("/vendors")
+    target = next(
+        (v for v in register["items"] if v["name"] == "Lantern Design Studio"),
+        None,
+    )
+    if target is None:
+        return
+    vendor_id = target["id"]
+    for _ in range(12):
+        detail = api.get(f"/vendors/{vendor_id}")
+        current = next(
+            (s for s in detail["stages"] if s["status"] not in {"complete", "skipped"}),
+            None,
+        )
+        if current is None:
+            break
+        if current["is_gate"]:
+            engagement_id = detail["engagements"][0]["id"]
+            approver.post(
+                f"/vendors/{vendor_id}/engagements/{engagement_id}/decision",
+                {
+                    "decision": "approve_with_conditions",
+                    "rationale": (
+                        "Low tier, no customer data and no access to our systems. "
+                        "The contract carries the standard exit clause and a right "
+                        "to audit. Approved on condition the statement of work names "
+                        "a data-handling contact before the first deliverable."
+                    ),
+                    "conditions": [
+                        {
+                            "description": "Name a data-handling contact in the SOW",
+                            "due_date": _iso(30),
+                        }
+                    ],
+                },
+                expect=201,
+            )
+            continue
+        if current["blockers"]:
+            break
+        api.post(f"/vendors/{vendor_id}/stages/{current['id']}/advance", {"note": None})
+    final = api.get(f"/vendors/{vendor_id}")
+    print(f"  Lantern Design Studio walked to: {final['lifecycle_status']}")
 
 
 def _answer_some(token: str) -> None:

@@ -63,8 +63,8 @@ export function ExitCheckRow({
         ) : null}
         {unanswerable ? (
           <span className="mt-0.5 block text-caption text-text-subtle">
-            Not checked — the part of Verity that answers this has not shipped yet. It is not
-            holding anything up.
+            Not evaluated. This condition is not being checked automatically and is not holding the
+            stage.
           </span>
         ) : null}
       </span>

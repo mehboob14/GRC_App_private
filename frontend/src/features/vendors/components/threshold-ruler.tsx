@@ -62,14 +62,12 @@ export function ThresholdRuler({
           role="img"
           aria-label={`Inherent score ${score} of 100, which is ${TIER_META[effectiveTier]?.label ?? effectiveTier} tier`}
         >
-          {bands.map((band, index) => (
+          {bands.map((band) => (
             <div
               key={band.tier}
               className={cn(
                 BAND_FILL[band.tier],
                 band.tier === effectiveTier ? "opacity-100" : "opacity-35",
-                // A 2px surface gap so two bands never read as one.
-                index > 0 && "ml-0.5",
               )}
               style={{ width: `${band.width}%` }}
             />

@@ -42,13 +42,22 @@ export function useTableSort<T, K extends string>(
   const onSort = useCallback(
     (next: K) => {
       if (next === key) {
+        // The third click clears the column, so the order the server sent —
+        // which for most registers here encodes real ranking — is reachable
+        // again. Only for a register that started unsorted: one that named an
+        // initial column meant it, and must not be toggleable into no order.
+        if (dir === "desc" && initialKey === null) {
+          setKey(null);
+          setDir(initialDir);
+          return;
+        }
         setDir((d) => (d === "asc" ? "desc" : "asc"));
         return;
       }
       setKey(next);
       setDir("asc");
     },
-    [key],
+    [key, dir, initialKey, initialDir],
   );
 
   /** Spread onto a TH to make that column sortable. */

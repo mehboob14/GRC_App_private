@@ -104,7 +104,12 @@ export function VendorDetailPage() {
   const query = useQuery({ queryKey: key, queryFn: () => getVendor(vendorId) });
   const vendor = query.data ?? null;
 
-  const [tab, setTab] = useState<TabId>((params.get("tab") as TabId) ?? "overview");
+  // Derived, not seeded. A useState initialiser reads the query string once, so
+  // Back walked the URL through four tabs while the page stayed frozen and then
+  // ejected the reader off the vendor entirely. An unknown value falls to
+  // Overview rather than through the render chain onto Monitoring.
+  const rawTab = params.get("tab");
+  const tab: TabId = TABS.some((t) => t.id === rawTab) ? (rawTab as TabId) : "overview";
   const [engagementId, setEngagementId] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [addingEngagement, setAddingEngagement] = useState(false);
@@ -122,12 +127,16 @@ export function VendorDetailPage() {
   }, [vendor]);
 
   const goToTab = (next: TabId) => {
-    setTab(next);
-    setParams((p) => {
-      const copy = new URLSearchParams(p);
-      copy.set("tab", next);
-      return copy;
-    });
+    // replace, not push: switching tabs inside one record is not a navigation
+    // the reader wants to unwind one Back press at a time.
+    setParams(
+      (p) => {
+        const copy = new URLSearchParams(p);
+        copy.set("tab", next);
+        return copy;
+      },
+      { replace: true },
+    );
   };
 
   /** Every write returns the refreshed vendor; seed the cache rather than refetch. */
@@ -352,9 +361,9 @@ export function VendorDetailPage() {
               <ContractsPanel vendor={vendor} canManage={canManage} onApply={apply} />
               <SubprocessorsPanel vendor={vendor} canManage={canManage} onApply={apply} />
             </>
-          ) : (
+          ) : tab === "monitoring" ? (
             <MonitoringPanel vendor={vendor} />
-          )}
+          ) : null}
         </div>
 
         <div className="space-y-4">

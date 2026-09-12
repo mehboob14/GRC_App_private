@@ -138,9 +138,14 @@ function FindingItem({
 
   const remediate = useMutation({
     mutationFn: (membershipId: string | null) => remediateFinding(vendorId, f.id, membershipId),
-    onSuccess: () => {
+    onSuccess: (next) => {
       onSettled();
-      toast({ title: "Remediation started", tone: "success" });
+      toast({
+        title: next.owner_name
+          ? `Remediation task opened for ${next.owner_name}`
+          : "Remediation task opened",
+        tone: "success",
+      });
     },
     onError: fail,
   });
@@ -223,15 +228,16 @@ function FindingItem({
             <PersonSelect
               people={people}
               value={owner}
-              onChange={(next) => {
-                setOwner(next);
-                if (next) remediate.mutate(next);
-              }}
+              // Local only. Choosing a name used to POST straight away, which
+              // opens a real task in the tasks module, flips the finding to
+              // in_remediation and sets its treatment -- none of which the
+              // picker said. The second choice on the same finding then 409s.
+              onChange={setOwner}
               placeholder="Assign an owner"
               aria-label={`Owner for ${f.title}`}
             />
           </div>
-          {f.status === "open" ? (
+          {f.task_id === null ? (
             <Button
               variant="secondary"
               size="sm"
@@ -240,7 +246,12 @@ function FindingItem({
             >
               Start remediation
             </Button>
-          ) : null}
+          ) : (
+            <span className="inline-flex items-center gap-1.5 text-body-sm text-text-secondary">
+              <Icon name="check" className="size-3.5 shrink-0 text-status-success-base" />
+              Tracked as a task
+            </span>
+          )}
           <Button variant="secondary" size="sm" onClick={() => setClosing(true)}>
             Close
           </Button>
