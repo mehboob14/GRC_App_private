@@ -282,9 +282,9 @@ adds its policy in the same migration; the isolation tests ship in this change.
 
 ## 6. Close
 
-- [ ] 6.1 `make check` clean: ruff, mypy, import-linter, eslint, tsc.
-- [ ] 6.2 `tests/isolation/` passes, including RLS coverage for every new tenant-owned table.
-- [ ] 6.3 Walk the Week-5 review script end to end: add a vendor, tier it, issue a questionnaire,
+- [x] 6.1 `make check` clean: ruff, mypy, import-linter, eslint, tsc.
+- [x] 6.2 `tests/isolation/` passes, including RLS coverage for every new tenant-owned table.
+- [x] 6.3 Walk the Week-5 review script end to end: add a vendor, tier it, issue a questionnaire,
       log a finding — plus the approval gate, which the week list omits but ¶85 requires.
-- [ ] 6.4 Update `docs/architecture/data-model.md` with anything learned that is "easy to get
+- [x] 6.4 Update `docs/architecture/data-model.md` with anything learned that is "easy to get
       wrong", and record the finding→risk shortfall in the change's completion note.

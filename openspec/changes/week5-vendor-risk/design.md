@@ -53,7 +53,8 @@ Every addition and change is in the deviation register below — nothing is alte
 ### Deviation register
 
 The ER wins on any disagreement (`docs/architecture/data-model.md`), so every departure is listed
-rather than absorbed. Seven are renames, six are structural.
+rather than absorbed. Seven are renames; the structural list grew to twenty-three as sections 2
+through 4 landed and each appended what it had to change.
 
 **Renames.** The rule applied: keep the ER's table name; prefix only where the bare name is too
 generic to sit in a shared schema, and pluralise where the ER is inconsistent with itself.

@@ -120,9 +120,32 @@ field by field, so a new tenant needs no provisioning step. What keeps a later r
 history is `vendor_tiering_assessments.policy_snapshot`, which freezes the weights and thresholds
 each run used. A stage's exit checks are **three-valued** — satisfied, blocking, or pending because
 the module that answers them is not built yet; a pending check never blocks and never renders as a
-tick, the same distinction rule 7 draws between `error` and `fail`. Twenty-seven tables: twenty-five
-tenant-owned, plus `questionnaire_templates` and `questionnaire_questions` on the global content
-plane with no `tenant_id` and no RLS. **Verbatim column lists for all of them, with every deviation
+tick, the same distinction rule 7 draws between `error` and `fail`.
+
+Four things about the lifecycle rows read wrong from the schema alone. **Tiering writes all twelve
+rows at once, every one of them `not_started`** — nothing enters `in_progress` until a stage is
+advanced, so a freshly tiered engagement has no current stage by that column and "where the work
+is" means *the first row that is neither complete nor skipped*. Keying off `in_progress` alone
+hides the controls at the one moment somebody needs them. **A transition is addressed by
+`stage_id`, never by engagement**: a reassessment increments `cycle` and writes a fresh twelve, so
+an engagement holds several sets and only the row identifies which. **The gate's own exit check is
+self-clearing** — `approval.decided` blocks the approval stage and is satisfied only by recording
+the decision, so anything that treats the raw blocker list as a reason to withhold the decision
+control deadlocks the gate permanently. And **exit checks are computed per stage on read**, which
+means the same check code can be blocking on one engagement and pending on another in the same
+response.
+
+Twenty-eight tables: twenty-five tenant-owned, plus `questionnaire_templates`,
+`questionnaire_questions` and **`vendor_portal_tokens`** on the global content plane with no
+`tenant_id` and no RLS. The portal-token table is the surprising one, and it is deliberate: a
+vendor contact arrives holding nothing but an opaque token, so the tenant has to be resolved
+*before* any RLS binding can exist. Making the table global is the same shape `users` already uses
+and keeps the resolution to one row lookup; the alternatives were rejected because widening the
+provider plane would expose `audit_log` across tenants, and putting the tenant in the token
+contradicts a stated design comment in `core/security.py`. It stores only a hash — the URL handed
+out at issue time is the only copy of the token that will ever exist.
+
+**Verbatim column lists for all of them, with every deviation
 from the ER named, live in §1 of
 [the vendor-risk change's design](../../openspec/changes/week5-vendor-risk/design.md)** — the
 single build reference, from which migrations are written rather than from the ER diagram images.
