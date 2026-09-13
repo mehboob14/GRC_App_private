@@ -10,20 +10,23 @@ import {
   submitPortal,
   uploadPortalEvidence,
 } from "../api";
-import type { Portal, PortalQuestion } from "../types";
+import { isChoice, pickedKeys, visibleIds } from "../questionnaire-logic";
+import type { AnswerValue, Portal, PortalQuestion } from "../types";
 import { fmtDate } from "../tokens";
+import { QuestionField } from "./question-field";
 
-const ANSWERS = [
-  { value: "yes", label: "Yes" },
-  { value: "partial", label: "Partially" },
-  { value: "no", label: "No" },
-  { value: "na", label: "Not applicable" },
-];
+/** What the question holds right now, in its own shape. A bank row's value is its answer. */
+const currentValue = (q: PortalQuestion): AnswerValue =>
+  q.answered ? (q.value ?? q.answer) : null;
 
-/** The server's rule: a yes or a partial claims the control, so it owes its document. */
-const CLAIMS_A_CONTROL = new Set(["yes", "partial"]);
-const owesDocument = (q: PortalQuestion) =>
-  q.evidence_required && q.answer !== null && CLAIMS_A_CONTROL.has(q.answer) && !q.has_evidence;
+/** The server's rule: a document is owed once an answer that needs one is given. */
+const owesDocument = (q: PortalQuestion) => {
+  if (q.evidence !== "required" || q.answer_type === "file" || !q.answered || q.has_evidence) {
+    return false;
+  }
+  if (q.evidence_on.length === 0) return true;
+  return pickedKeys(currentValue(q)).some((k) => q.evidence_on.includes(k));
+};
 
 /** What the file store accepts. The server sniffs the bytes; this only filters the picker. */
 const ACCEPT = ".pdf,.png,.jpg,.jpeg,.gif,.webp,.docx,.xlsx,.pptx,.txt,.csv,.json";
@@ -33,7 +36,7 @@ const ACCEPT = ".pdf,.png,.jpg,.jpeg,.gif,.webp,.docx,.xlsx,.pptx,.txt,.csv,.jso
  *
  * It is the only unauthenticated screen in the product, and it is written for
  * somebody who has never heard of Verity: no jargon, no navigation, no account.
- * Every failure — a bad link, an expired one, a revoked one, too many attempts —
+ * Every failure (a bad link, an expired one, a revoked one, too many attempts)
  * comes back from the API as one indistinguishable error on purpose, so this
  * page never tries to explain which.
  *
@@ -121,20 +124,37 @@ function PortalBody({
   const [submitError, setSubmitError] = useState<string | null>(null);
   const submitted = portal.submitted_at !== null;
 
-  const byDomain = useMemo(() => {
-    return portal.questions.reduce<Record<string, PortalQuestion[]>>((acc, q) => {
-      (acc[q.domain_label] ??= []).push(q);
-      return acc;
-    }, {});
+  // Follow-ups open as the answers that lead to them are saved.
+  const asked = useMemo(() => {
+    const shown = visibleIds(
+      portal.questions.map((q) => ({
+        id: q.id,
+        answer_type: q.answer_type,
+        options: q.options,
+        condition_question_id: q.condition_question_id,
+        condition_option_keys: q.condition_option_keys,
+      })),
+      Object.fromEntries(portal.questions.map((q) => [q.id, currentValue(q)])),
+    );
+    return portal.questions.filter((q) => shown.has(q.id));
   }, [portal.questions]);
 
-  const unanswered = portal.question_count - portal.answered_count;
-  const missingDocs = portal.questions.filter(owesDocument).length;
+  const sections = useMemo(() => {
+    const out: { name: string; questions: PortalQuestion[] }[] = [];
+    for (const q of asked) {
+      const last = out[out.length - 1];
+      if (last && last.name === q.section) last.questions.push(q);
+      else out.push({ name: q.section, questions: [q] });
+    }
+    return out;
+  }, [asked]);
+
+  const answered = asked.filter((q) => q.answered).length;
+  const unanswered = asked.filter((q) => q.required && !q.answered).length;
+  const missingDocs = asked.filter(owesDocument).length;
   const ready = unanswered === 0 && missingDocs === 0;
   // In page order, so "Next" walks down the page rather than jumping around it.
-  const next = Object.values(byDomain)
-    .flat()
-    .find((q) => q.answer === null || owesDocument(q));
+  const next = asked.find((q) => (q.required && !q.answered) || owesDocument(q));
 
   const goTo = (id: string) =>
     document.getElementById(`q-${id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -166,6 +186,7 @@ function PortalBody({
     );
   }
 
+  const percent = Math.round((answered / Math.max(1, asked.length)) * 100);
   return (
     <div>
       <div className="rounded-lg border border-border bg-surface-primary p-5">
@@ -173,41 +194,40 @@ function PortalBody({
           {portal.organisation} has some questions about {portal.vendor_name}
         </h1>
         <p className="mt-2 text-body-md text-text-secondary">
-          {portal.question_count} questions. Answers save as you go.
+          {asked.length} questions. Answers save as you go.
           {portal.due_date ? ` Due by ${fmtDate(portal.due_date)}.` : ""}
         </p>
 
         <div className="mt-4">
           <div className="flex items-baseline justify-between">
             <span className="text-label-sm text-text-secondary">
-              {portal.answered_count} of {portal.question_count} answered
+              {answered} of {asked.length} answered
             </span>
-            <span className="tabular text-caption text-text-subtle">
-              {Math.round((portal.answered_count / Math.max(1, portal.question_count)) * 100)}%
-            </span>
+            <span className="tabular text-caption text-text-subtle">{percent}%</span>
           </div>
           <span className="mt-1.5 block h-2 rounded-full bg-surface-sunken">
             <span
               className="block h-2 rounded-full bg-action-accent transition-all duration-250 ease-state"
-              style={{
-                width: `${(portal.answered_count / Math.max(1, portal.question_count)) * 100}%`,
-              }}
+              style={{ width: `${percent}%` }}
             />
           </span>
         </div>
       </div>
 
       <div className="mt-5 space-y-5">
-        {Object.entries(byDomain).map(([domain, questions]) => (
-          <section key={domain} className="rounded-lg border border-border bg-surface-primary p-5">
+        {sections.map((section, index) => (
+          <section
+            key={`${section.name}-${index}`}
+            className="rounded-lg border border-border bg-surface-primary p-5"
+          >
             <div className="flex items-baseline justify-between gap-3">
-              <h2 className="font-display text-title-md text-text-primary">{domain}</h2>
+              <h2 className="font-display text-title-md text-text-primary">{section.name}</h2>
               <span className="tabular text-caption text-text-subtle">
-                {questions.filter((q) => q.answer !== null).length}/{questions.length}
+                {section.questions.filter((q) => q.answered).length}/{section.questions.length}
               </span>
             </div>
             <ul className="mt-3 divide-y divide-border">
-              {questions.map((q) => (
+              {section.questions.map((q) => (
                 <QuestionRow key={q.id} token={token} question={q} onApply={onApply} />
               ))}
             </ul>
@@ -273,25 +293,34 @@ function QuestionRow({
 }) {
   const [notes, setNotes] = useState(q.implementation_notes ?? "");
   const [naReason, setNaReason] = useState(q.na_justification ?? "");
-  // "Not applicable" is refused without its reason, so picking it opens the
-  // reason box first and the answer saves once there is a reason to save.
-  const [naOpen, setNaOpen] = useState(false);
+  // A pick that the server would refuse without its reason or note waits here,
+  // with the box open, and saves once there is something to save with it.
+  const [pending, setPending] = useState<AnswerValue | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const fail = (e: unknown) =>
     setError(e instanceof PortalError ? e.message : "That did not save. Try again.");
 
+  const shown = pending ?? currentValue(q);
+  const picked = q.options.filter((o) => pickedKeys(shown).includes(o.key));
+  const excluded = picked.some((o) => o.not_applicable);
+  const needsNote = picked.some((o) => o.comment_required && !o.not_applicable);
+  const choice = isChoice(q.answer_type);
+
   const answer = useMutation({
-    mutationFn: (value: string) =>
+    mutationFn: (value: AnswerValue) =>
       answerPortalQuestion(token, {
         question_id: q.id,
-        answer: value,
+        answer: q.answer_type === "single_choice" && typeof value === "string" ? value : null,
+        value,
         implementation_notes: notes.trim() || null,
-        na_justification: value === "na" ? naReason.trim() || null : null,
+        na_justification: q.options.some((o) => o.not_applicable && pickedKeys(value).includes(o.key))
+          ? naReason.trim() || null
+          : null,
       }),
     onSuccess: (next) => {
       setError(null);
-      setNaOpen(false);
+      setPending(null);
       onApply(next);
     },
     onError: fail,
@@ -306,88 +335,108 @@ function QuestionRow({
     onError: fail,
   });
 
-  const choice = naOpen ? "na" : q.answer;
-  const saveNa = () => {
-    const reason = naReason.trim();
-    if (reason && (q.answer !== "na" || reason !== (q.na_justification ?? ""))) answer.mutate("na");
+  const pick = (value: AnswerValue) => {
+    setError(null);
+    const opts = q.options.filter((o) => pickedKeys(value).includes(o.key));
+    if (opts.some((o) => o.not_applicable) && !naReason.trim()) return setPending(value);
+    if (opts.some((o) => o.comment_required && !o.not_applicable) && !notes.trim()) {
+      return setPending(value);
+    }
+    setPending(null);
+    answer.mutate(value);
+  };
+
+  // Blur on a reason or note: save the waiting pick, or update the saved one.
+  const saveWithText = () => {
+    const value = pending ?? currentValue(q);
+    if (value === null) return;
+    if (excluded && !naReason.trim()) return;
+    if (needsNote && !notes.trim()) return;
+    const changed =
+      pending !== null ||
+      notes.trim() !== (q.implementation_notes ?? "") ||
+      naReason.trim() !== (q.na_justification ?? "");
+    if (changed) answer.mutate(value);
   };
 
   return (
     <li id={`q-${q.id}`} className="scroll-mt-6 py-4">
-      <p className="text-body-lg text-text-primary">{q.body}</p>
+      <p className="text-body-lg text-text-primary">
+        {q.body}
+        {q.required ? null : <span className="ml-1.5 text-caption text-text-faint">Optional</span>}
+      </p>
+      {q.help_text ? <p className="mt-0.5 text-body-sm text-text-subtle">{q.help_text}</p> : null}
 
-      <div
-        className="mt-2.5 flex flex-wrap gap-2"
-        role="radiogroup"
-        aria-label={`Answer for ${q.code}`}
-      >
-        {ANSWERS.map((option) => {
-          const selected = choice === option.value;
-          return (
-            <button
-              key={option.value}
-              type="button"
-              role="radio"
-              aria-checked={selected}
-              disabled={answer.isPending}
-              onClick={() => {
-                if (option.value !== "na") {
-                  setNaOpen(false);
-                  answer.mutate(option.value);
-                } else if (naReason.trim()) {
-                  answer.mutate("na");
-                } else {
-                  setError(null);
-                  setNaOpen(true);
-                }
-              }}
-              className={cn(
-                "rounded-sm border px-3 py-1.5 text-label-md transition-colors duration-80 ease-state",
-                "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-accent",
-                selected
-                  ? "border-action-accent bg-action-accent-tint text-action-accent"
-                  : "border-border bg-surface-primary text-text-secondary hover:bg-surface-hover",
-              )}
-            >
-              {option.label}
-            </button>
-          );
-        })}
-      </div>
+      {q.answer_type === "file" ? (
+        <DocumentDrop
+          question={q}
+          owed={q.required && !q.has_evidence}
+          optional={!q.required}
+          asAnswer
+          busy={upload.isPending}
+          onFile={(file) => upload.mutate(file)}
+        />
+      ) : (
+        <div className="mt-2.5">
+          <QuestionField
+            label={q.body}
+            type={q.answer_type}
+            options={q.options}
+            value={shown}
+            disabled={answer.isPending}
+            onCommit={(value) => (choice ? pick(value) : answer.mutate(value))}
+          />
+        </div>
+      )}
 
-      {choice === "na" ? (
+      {excluded ? (
         <div className="mt-3">
           <TextArea
             label="Why this does not apply to you"
             value={naReason}
             onChange={(e) => setNaReason(e.target.value)}
-            onBlur={saveNa}
-            autoFocus={naOpen}
+            onBlur={saveWithText}
+            autoFocus={pending !== null}
             rows={2}
             maxLength={4000}
           />
         </div>
-      ) : q.answer !== null ? (
+      ) : needsNote ? (
+        <div className="mt-3">
+          <TextArea
+            label="Explain your answer"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            onBlur={saveWithText}
+            autoFocus={pending !== null}
+            rows={2}
+            maxLength={8000}
+          />
+        </div>
+      ) : choice && q.answered ? (
         <div className="mt-3">
           <TextArea
             label="How you do this"
             optional
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            onBlur={() => {
-              if (q.answer && notes !== (q.implementation_notes ?? "")) answer.mutate(q.answer);
-            }}
+            onBlur={saveWithText}
             rows={2}
             maxLength={8000}
           />
         </div>
       ) : null}
 
-      {q.evidence_required ? (
+      {q.evidence !== "none" && q.answer_type !== "file" ? (
         <DocumentDrop
           question={q}
           owed={owesDocument(q)}
-          optional={choice === "no" || choice === "na"}
+          optional={
+            q.evidence === "optional" ||
+            (q.answered &&
+              q.evidence_on.length > 0 &&
+              !pickedKeys(currentValue(q)).some((k) => q.evidence_on.includes(k)))
+          }
           busy={upload.isPending}
           onFile={(file) => upload.mutate(file)}
         />
@@ -403,22 +452,25 @@ function QuestionRow({
 }
 
 /**
- * Where a vendor attaches proof. Always shown on a question that asks for it,
- * before any answer is picked, so the ask and the way to meet it sit together.
- * Drop a file on it or browse; either way the server checks the file.
+ * Where a vendor attaches proof, or uploads the document a question asks for.
+ * Shown before any answer is picked, so the ask and the way to meet it sit
+ * together. Drop a file on it or browse; either way the server checks the file.
  */
 function DocumentDrop({
   question: q,
   owed,
   optional,
+  asAnswer = false,
   busy,
   onFile,
 }: {
   question: PortalQuestion;
-  /** The answer claims the control and nothing is attached yet. */
+  /** Still needed before the questionnaire can be sent. */
   owed: boolean;
-  /** A "no" or "not applicable" claims nothing, so a document is welcome but not owed. */
+  /** Welcome but not needed for the answer given. */
   optional: boolean;
+  /** The upload is the answer, not evidence for one. */
+  asAnswer?: boolean;
   busy: boolean;
   onFile: (file: File) => void;
 }) {
@@ -446,8 +498,8 @@ function DocumentDrop({
           : attached
             ? "border-status-success-border bg-status-success-bg"
             : owed
-              ? "border-dashed border-status-warning-border bg-status-warning-bg"
-              : "border-dashed border-border-strong bg-surface-sunken",
+              ? "border-status-warning-border bg-status-warning-bg"
+              : "border-border bg-surface-sunken",
       )}
     >
       <Icon
@@ -463,7 +515,7 @@ function DocumentDrop({
       />
       <div className="min-w-0 flex-1">
         <p className="flex flex-wrap items-center gap-2 text-label-md text-text-primary">
-          {attached ? "Document attached" : "Supporting document"}
+          {attached ? "Document attached" : asAnswer ? "Your document" : "Supporting document"}
           {attached ? null : owed ? (
             <Badge variant="countWarn">Required</Badge>
           ) : (
@@ -482,7 +534,7 @@ function DocumentDrop({
         accept={ACCEPT}
         className="sr-only"
         tabIndex={-1}
-        aria-label={`Upload a document for ${q.code}`}
+        aria-label={`Upload a document for ${q.body}`}
         onChange={(e) => {
           const file = e.target.files?.[0];
           if (file) onFile(file);

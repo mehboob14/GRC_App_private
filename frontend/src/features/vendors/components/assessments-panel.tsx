@@ -22,10 +22,18 @@ import {
   TextField,
   Tooltip,
   useToast,
+  type BadgeVariant,
 } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { describeError, errorToast } from "@/lib/api/describe-error";
-import { getAssessment, issueQuestionnaire, openReassessment, scoreAssessment } from "../api";
+import {
+  getAssessment,
+  issueQuestionnaire,
+  listQuestionnaires,
+  openReassessment,
+  scoreAssessment,
+} from "../api";
+import { isChoice, pickedKeys } from "../questionnaire-logic";
 import type {
   Assessment,
   AssessmentResponse,
@@ -34,7 +42,7 @@ import type {
   VendorDetail,
 } from "../types";
 import {
-  ANSWER_META,
+  TIER_META,
   ASSESSMENT_KIND_LABEL,
   ASSESSMENT_STATUS_META,
   fmtDate,
@@ -170,6 +178,8 @@ export function AssessmentsPanel({
         engagementId={engagement.id}
         contacts={vendor.contacts}
         defaultContactId={portalContact?.id ?? null}
+        tier={engagement.tier}
+        sent={assessments.find((a) => a.status === "pending" || a.status === "in_progress") ?? null}
         onIssued={(result) => {
           setIssued({
             url: result.portal_url,
@@ -265,6 +275,8 @@ function IssueDialog({
   engagementId,
   contacts,
   defaultContactId,
+  tier,
+  sent: openAssessment,
   onIssued,
 }: {
   open: boolean;
@@ -273,17 +285,33 @@ function IssueDialog({
   engagementId: string;
   contacts: Contact[];
   defaultContactId: string | null;
+  tier: string | null;
+  /** A review already out for this engagement. Resending keeps its questions. */
+  sent: AssessmentSummary | null;
   onIssued: (result: { portal_url: string; contact_email: string; question_count: number }) => void;
 }) {
   const { toast } = useToast();
   const [contactId, setContactId] = useState(defaultContactId ?? "");
   const [dueDate, setDueDate] = useState("");
+  const [picked, setPicked] = useState<string | null>(null);
+
+  const questionnaires = useQuery({
+    queryKey: ["vendor-questionnaires", "due_diligence"],
+    queryFn: () => listQuestionnaires("due_diligence"),
+    enabled: open,
+  });
+  const forTier = questionnaires.data?.find((q) => tier !== null && q.default_tiers.includes(tier));
+  const questionnaireId =
+    picked ?? openAssessment?.questionnaire_id ?? forTier?.id ?? questionnaires.data?.[0]?.id ?? "";
+  const swapping = Boolean(openAssessment && openAssessment.questionnaire_id !== questionnaireId);
+  const chosen = questionnaires.data?.find((q) => q.id === questionnaireId);
 
   const issue = useMutation({
     mutationFn: () =>
       issueQuestionnaire(vendorId, engagementId, {
         contact_id: contactId || null,
         due_date: dueDate || null,
+        questionnaire_id: questionnaireId || null,
       }),
     onSuccess: onIssued,
     onError: (e: unknown) => toast({ title: errorToast(e, "questionnaire"), tone: "danger" }),
@@ -303,6 +331,35 @@ function IssueDialog({
           }}
         >
           <DialogBody className="space-y-3.5">
+            <SelectField label="Questionnaire">
+              <Select value={questionnaireId} onValueChange={setPicked}>
+                <SelectTrigger aria-label="Questionnaire" className="text-left [&>span]:truncate" />
+                <SelectContent>
+                  {(questionnaires.data ?? []).map((q) => (
+                    <SelectItem key={q.id} value={q.id}>
+                      {q.name} · {q.question_count} questions
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </SelectField>
+            {openAssessment && !swapping ? (
+              <p className="-mt-2 text-caption text-text-subtle">Already sent. Resending keeps these questions.</p>
+            ) : openAssessment && openAssessment.answered_count > 0 ? (
+              <p className="-mt-2 text-caption text-status-warning-text">
+                The vendor has started answering. Keep the questionnaire already sent.
+              </p>
+            ) : openAssessment ? (
+              <p className="-mt-2 text-caption text-status-warning-text">
+                Replaces the questionnaire already sent. Its link stops working.
+              </p>
+            ) : chosen && tier ? (
+              <p className="-mt-2 text-caption text-text-subtle">
+                {chosen.default_tiers.includes(tier)
+                  ? `The default for ${TIER_META[tier]?.label ?? tier} tier vendors.`
+                  : `Not the default for ${TIER_META[tier]?.label ?? tier} tier vendors.`}
+              </p>
+            ) : null}
             <SelectField label="Send to">
               <Select value={contactId} onValueChange={setContactId}>
                 <SelectTrigger aria-label="Contact" />
@@ -329,7 +386,7 @@ function IssueDialog({
             <Button variant="secondary" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" loading={issue.isPending} disabled={!contactId}>
+            <Button type="submit" loading={issue.isPending} disabled={!contactId || !questionnaireId}>
               Create link
             </Button>
           </DialogFooter>
@@ -509,26 +566,53 @@ type Change = {
   worse: boolean;
 };
 
-const ANSWER_RANK: Record<string, number> = { yes: 3, partial: 2, no: 1, na: 0 };
+/** What an answer is worth, 0 to 100, or null when it earns nothing either way. */
+function credit(r: AssessmentResponse): number | null {
+  if (!isChoice(r.answer_type as never)) return null;
+  const keys = pickedKeys(r.value ?? r.answer);
+  const scored = r.options.filter((o) => keys.includes(o.key) && !o.not_applicable);
+  return scored.length ? Math.max(...scored.map((o) => o.score)) : null;
+}
+
+const answerText = (r: AssessmentResponse) => (r.answer_labels.length ? r.answer_labels.join(", ") : null);
+
+/** Keyed by question, so a reassessment compares like with like whatever the source. */
+const questionKey = (r: AssessmentResponse) => r.question_id;
 
 function diff(current: Assessment, prior: Assessment | null): Change[] {
   if (!prior) return [];
-  const before = new Map(prior.responses.map((r) => [r.question_code, r]));
+  const before = new Map(prior.responses.map((r) => [questionKey(r), r]));
   return current.responses
     .filter((r) => {
-      const was = before.get(r.question_code);
-      return was !== undefined && was.answer !== r.answer;
+      const was = before.get(questionKey(r));
+      return was !== undefined && answerText(was) !== answerText(r);
     })
     .map((r) => {
-      const was = before.get(r.question_code)!;
+      const was = before.get(questionKey(r))!;
       return {
         code: r.question_code,
         body: r.body,
-        from: was.answer,
-        to: r.answer,
-        worse: (ANSWER_RANK[r.answer ?? "na"] ?? 0) < (ANSWER_RANK[was.answer ?? "na"] ?? 0),
+        from: answerText(was),
+        to: answerText(r),
+        worse: (credit(r) ?? -1) < (credit(was) ?? -1) || (r.flagged && !was.flagged),
       };
     });
+}
+
+/** The badge for a choice answer: full credit, part credit, a gap, or neither. */
+function answerBadge(r: AssessmentResponse): { label: string; variant: BadgeVariant } | null {
+  const label = answerText(r);
+  if (!label || !isChoice(r.answer_type as never)) return null;
+  const score = credit(r);
+  const scorable = r.options.some((o) => o.score > 0 || o.flag);
+  const variant: BadgeVariant = r.flagged
+    ? "count"
+    : !scorable || score === null
+      ? "neutral"
+      : score >= 100
+        ? "statusPass"
+        : "countWarn";
+  return { label, variant };
 }
 
 function AssessmentBody({
@@ -539,15 +623,19 @@ function AssessmentBody({
   prior: Assessment | null;
 }) {
   const changes = useMemo(() => diff(a, prior), [a, prior]);
-  const priorByCode = useMemo(
-    () => new Map((prior?.responses ?? []).map((r) => [r.question_code, r])),
+  const priorByQuestion = useMemo(
+    () => new Map((prior?.responses ?? []).map((r) => [questionKey(r), r])),
     [prior],
   );
 
-  const byDomain = a.responses.reduce<Record<string, AssessmentResponse[]>>((acc, r) => {
-    (acc[r.domain_label] ??= []).push(r);
-    return acc;
-  }, {});
+  // Grouped by section, as the questionnaire was written. A follow-up whose
+  // opening answer was never picked was never asked, so it is left out.
+  const byDomain = a.responses
+    .filter((r) => r.visible)
+    .reduce<Record<string, AssessmentResponse[]>>((acc, r) => {
+      (acc[r.section] ??= []).push(r);
+      return acc;
+    }, {});
 
   return (
     <div className="space-y-5">
@@ -575,7 +663,8 @@ function AssessmentBody({
       ) : null}
 
       {Object.entries(byDomain).map(([domain, rows]) => {
-        const scores = a.domain_scores[rows[0].domain];
+        const oneDomain = rows.every((r) => r.domain === rows[0].domain);
+        const scores = oneDomain ? a.domain_scores[rows[0].domain] : undefined;
         return (
           <div key={domain}>
             <div className="flex items-baseline justify-between gap-3">
@@ -591,7 +680,7 @@ function AssessmentBody({
                 <ResponseRow
                   key={r.id}
                   response={r}
-                  previous={prior ? (priorByCode.get(r.question_code) ?? null) : undefined}
+                  previous={prior ? (priorByQuestion.get(questionKey(r)) ?? null) : undefined}
                 />
               ))}
             </ul>
@@ -686,10 +775,8 @@ function WhatChanged({
                   <span className="font-mono text-caption text-text-subtle">{c.code}</span>{" "}
                   {c.body}
                   <span className="ml-1.5 whitespace-nowrap">
-                    <span className="text-text-subtle line-through">
-                      {c.from ? (ANSWER_META[c.from]?.label ?? c.from) : "unanswered"}
-                    </span>{" "}
-                    → <span className="font-semibold">{c.to ? (ANSWER_META[c.to]?.label ?? c.to) : "unanswered"}</span>
+                    <span className="text-text-subtle">{c.from ?? "unanswered"}</span>{" "}
+                    → <span className="font-semibold">{c.to ?? "unanswered"}</span>
                   </span>
                 </span>
               </li>
@@ -714,8 +801,10 @@ function ResponseRow({
   /** The same question last cycle. `undefined` means this is not a reassessment. */
   previous?: AssessmentResponse | null;
 }) {
-  const answer = r.answer ? ANSWER_META[r.answer] : null;
-  const changed = previous !== undefined && previous !== null && previous.answer !== r.answer;
+  const answer = answerBadge(r);
+  const typed = !isChoice(r.answer_type as never) && r.answer_type !== "file" ? answerText(r) : null;
+  const changed =
+    previous !== undefined && previous !== null && answerText(previous) !== answerText(r);
 
   return (
     <li className="py-2.5">
@@ -723,7 +812,8 @@ function ResponseRow({
         <div className="min-w-0 flex-1">
           <p className="text-body-md text-text-primary">{r.body}</p>
           <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-caption text-text-subtle">
-            <span className="font-mono">{r.question_code}</span>
+            {r.question_code.includes(".") ? <span className="font-mono">{r.question_code}</span> : null}
+            {r.required ? null : <span>Optional</span>}
             {r.non_negotiable ? (
               <Tooltip content="A weak answer here caps the whole grade">
                 <span>
@@ -754,18 +844,25 @@ function ResponseRow({
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {changed && previous ? (
-            <span className="text-caption text-text-subtle line-through">
-              {previous.answer ? (ANSWER_META[previous.answer]?.label ?? previous.answer) : "Unanswered"}
+            <span className="text-caption text-text-subtle">
+              Was {answerText(previous) ?? "unanswered"}
             </span>
           ) : null}
           {answer ? (
             <Badge variant={answer.variant}>{answer.label}</Badge>
+          ) : typed || (r.answer_type === "file" && r.evidence_id) ? (
+            <Badge variant="neutral">Answered</Badge>
           ) : (
             <span className="text-caption text-text-subtle">Unanswered</span>
           )}
           {changed ? <Badge variant="role">Changed</Badge> : null}
         </div>
       </div>
+      {typed ? (
+        <p className="mt-1.5 whitespace-pre-line rounded-sm bg-surface-sunken px-2.5 py-1.5 text-body-sm text-text-primary">
+          {typed}
+        </p>
+      ) : null}
       {r.implementation_notes ? (
         <p className="mt-1.5 whitespace-pre-line text-body-sm text-text-secondary">
           {r.implementation_notes}

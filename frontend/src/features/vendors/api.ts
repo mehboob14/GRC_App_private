@@ -16,8 +16,14 @@ import type {
   IntakePage,
   IntakeRequest,
   IssuedQuestionnaire,
+  LibraryTemplate,
   OffboardingCompletionInput,
   Portal,
+  AnswerValue,
+  QuestionInput,
+  Questionnaire,
+  QuestionnairePurpose,
+  QuestionnaireSummary,
   Roster,
   SocReview,
   SocReviewInput,
@@ -217,12 +223,125 @@ export async function skipStage(
 export async function issueQuestionnaire(
   vendorId: string,
   engagementId: string,
-  body: { contact_id?: string | null; due_date?: string | null; bank_code?: string },
+  body: {
+    contact_id?: string | null;
+    due_date?: string | null;
+    bank_code?: string;
+    questionnaire_id?: string | null;
+  },
 ): Promise<IssuedQuestionnaire> {
   return apiFetch<IssuedQuestionnaire>(
     `/vendors/${vendorId}/engagements/${engagementId}/questionnaire`,
     { method: "POST", body: JSON.stringify(body) },
   );
+}
+
+// -- questionnaires a tenant builds ----------------------------------------------
+
+const QUESTIONNAIRES = "/vendors/questionnaires";
+
+export async function listQuestionnaires(
+  purpose?: QuestionnairePurpose,
+  includeArchived = false,
+): Promise<QuestionnaireSummary[]> {
+  const p = new URLSearchParams();
+  if (purpose) p.set("purpose", purpose);
+  if (includeArchived) p.set("include_archived", "true");
+  const q = p.toString();
+  return apiFetch<QuestionnaireSummary[]>(q ? `${QUESTIONNAIRES}?${q}` : QUESTIONNAIRES);
+}
+
+export async function getQuestionnaireLibrary(
+  purpose?: QuestionnairePurpose,
+): Promise<LibraryTemplate[]> {
+  return apiFetch<LibraryTemplate[]>(
+    purpose ? `${QUESTIONNAIRES}/library?purpose=${purpose}` : `${QUESTIONNAIRES}/library`,
+  );
+}
+
+export async function getQuestionnaire(id: string): Promise<Questionnaire> {
+  return apiFetch<Questionnaire>(`${QUESTIONNAIRES}/${id}`);
+}
+
+export async function createQuestionnaire(body: {
+  purpose: QuestionnairePurpose;
+  name: string;
+  description?: string | null;
+  library_code?: string | null;
+  preset?: string | null;
+}): Promise<Questionnaire> {
+  return apiFetch<Questionnaire>(QUESTIONNAIRES, { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function updateQuestionnaire(
+  id: string,
+  body: {
+    name: string;
+    description: string | null;
+    default_tiers: string[];
+    tier_thresholds: Record<string, number>;
+    is_default: boolean;
+  },
+): Promise<Questionnaire> {
+  return apiFetch<Questionnaire>(`${QUESTIONNAIRES}/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function duplicateQuestionnaire(id: string): Promise<Questionnaire> {
+  return apiFetch<Questionnaire>(`${QUESTIONNAIRES}/${id}/duplicate`, { method: "POST" });
+}
+
+export async function setQuestionnaireStatus(
+  id: string,
+  status: "active" | "archived",
+): Promise<Questionnaire> {
+  return apiFetch<Questionnaire>(`${QUESTIONNAIRES}/${id}/status`, {
+    method: "POST",
+    body: JSON.stringify({ status }),
+  });
+}
+
+export async function addQuestion(
+  id: string,
+  body: QuestionInput & { after_question_id?: string | null },
+): Promise<Questionnaire> {
+  return apiFetch<Questionnaire>(`${QUESTIONNAIRES}/${id}/questions`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function updateQuestion(
+  id: string,
+  questionId: string,
+  body: QuestionInput,
+): Promise<Questionnaire> {
+  return apiFetch<Questionnaire>(`${QUESTIONNAIRES}/${id}/questions/${questionId}`, {
+    method: "PATCH",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function deleteQuestion(id: string, questionId: string): Promise<Questionnaire> {
+  return apiFetch<Questionnaire>(`${QUESTIONNAIRES}/${id}/questions/${questionId}`, {
+    method: "DELETE",
+  });
+}
+
+export async function importQuestions(id: string, libraryQuestionIds: string[]): Promise<Questionnaire> {
+  return apiFetch<Questionnaire>(`${QUESTIONNAIRES}/${id}/questions/import`, {
+    method: "POST",
+    body: JSON.stringify({ library_question_ids: libraryQuestionIds }),
+  });
+}
+
+export async function reorderQuestions(id: string, questionIds: string[]): Promise<Questionnaire> {
+  return apiFetch<Questionnaire>(`${QUESTIONNAIRES}/${id}/questions/order`, {
+    method: "POST",
+    body: JSON.stringify({ question_ids: questionIds }),
+  });
 }
 
 export async function getAssessment(vendorId: string, assessmentId: string): Promise<Assessment> {
@@ -477,7 +596,8 @@ export async function answerPortalQuestion(
   token: string,
   body: {
     question_id: string;
-    answer: string;
+    answer?: string | null;
+    value?: AnswerValue;
     implementation_notes?: string | null;
     na_justification?: string | null;
   },

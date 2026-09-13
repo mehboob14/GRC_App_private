@@ -27,6 +27,7 @@ const TABS: TabStripItem[] = [
   { id: "/vendors", label: "Register", end: true },
   { id: "/vendors/intake", label: "Intake" },
   { id: "/vendors/findings", label: "Findings" },
+  { id: "/vendors/questionnaires", label: "Questionnaires" },
   { id: "/vendors/roster", label: "Roster" },
 ];
 

@@ -60,6 +60,8 @@ import { VendorFindingsPage } from "@/features/vendors/components/vendor-finding
 import { VendorRosterPage } from "@/features/vendors/components/vendor-roster-page";
 import { VendorDetailPage } from "@/features/vendors/components/vendor-detail-page";
 import { VendorPortalPage } from "@/features/vendors/components/vendor-portal-page";
+import { VendorQuestionnairesPage } from "@/features/vendors/components/vendor-questionnaires-page";
+import { QuestionnaireBuilderPage } from "@/features/vendors/components/questionnaire-builder-page";
 import { ConnectionsLayout } from "@/features/connectors/components/connections-layout";
 import { ConnectionsPage } from "@/features/connectors/components/connections-page";
 
@@ -152,8 +154,13 @@ export function AppRoutes() {
             <Route path="overview" element={<VendorsOverviewPage />} />
             <Route path="intake" element={<VendorIntakePage />} />
             <Route path="findings" element={<VendorFindingsPage />} />
+            <Route path="questionnaires" element={<VendorQuestionnairesPage />} />
             <Route path="roster" element={<VendorRosterPage />} />
           </Route>
+          <Route
+            path="vendors/questionnaires/:questionnaireId"
+            element={<QuestionnaireBuilderPage />}
+          />
           <Route path="vendors/:vendorId" element={<VendorDetailPage />} />
           <Route path="vulnerabilities" element={<VulnerabilitiesRegisterPage />} />
           <Route path="vulnerabilities/overview" element={<VulnerabilitiesOverviewPage />} />

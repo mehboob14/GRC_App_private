@@ -212,6 +212,8 @@ export type AssessmentSummary = {
   answered_count: number;
   submitted_at: string | null;
   created_at: string;
+  questionnaire_id: string | null;
+  questionnaire_name: string | null;
 };
 
 export type VendorDetail = Vendor & {
@@ -274,6 +276,7 @@ export type VendorFacets = {
   stages: StageFacet[];
   skip_matrix_by_tier: Record<string, string[]>;
   tiering_factors: TieringFactorSpec[];
+  risk_domains: { key: string; label: string }[];
   /** Tier to the roles a review waits on. Roles, not people — the roster
    *  resolves a role to whoever holds it. */
   reviewer_roles_by_tier: Record<string, string[]>;
@@ -341,6 +344,148 @@ export type Tiering = {
   points_to_lower_tier: number | null;
   assessed_by_name: string | null;
   assessed_at: string | null;
+  /** Set on a run answered from a tiering questionnaire; `factors` is then empty. */
+  questionnaire_id: string | null;
+  questionnaire_name: string | null;
+  questions: TieringQuestionLine[];
+  answers: Record<string, TieringAnswer>;
+  /** The tier an option's minimum lifted this run to, when the score alone would not. */
+  floor_tier: string | null;
+};
+
+export type TieringQuestionLine = {
+  id: string;
+  prompt: string;
+  section: string;
+  answer_labels: string[];
+  comment: string | null;
+  points: number;
+  max_points: number;
+  floor_tier: string | null;
+  counted: boolean;
+};
+
+export type AnswerValue = string | number | string[] | null;
+export type TieringAnswer = { value: AnswerValue; comment?: string | null };
+
+// -- questionnaires a tenant builds --------------------------------------------
+
+/**
+ * Two questionnaires with two audiences. `tiering` is answered by our own team
+ * about how we use a vendor and sets the tier. `due_diligence` goes to the
+ * vendor through the portal and sets the residual score and findings.
+ */
+export type QuestionnairePurpose = "tiering" | "due_diligence";
+
+export const QUESTION_TYPES = [
+  "single_choice",
+  "multi_choice",
+  "text",
+  "paragraph",
+  "number",
+  "date",
+  "file",
+] as const;
+export type QuestionType = (typeof QUESTION_TYPES)[number];
+export type EvidenceRule = "none" | "optional" | "required";
+
+export type QuestionOption = {
+  key: string;
+  label: string;
+  score: number;
+  flag: boolean;
+  not_applicable: boolean;
+  comment_required: boolean;
+  min_tier: string | null;
+};
+
+export type QuestionCondition = { question_id: string; option_keys: string[] };
+
+export type BuilderQuestion = {
+  id: string;
+  position: number;
+  section: string;
+  prompt: string;
+  help_text: string | null;
+  answer_type: QuestionType;
+  options: QuestionOption[];
+  required: boolean;
+  evidence: EvidenceRule;
+  evidence_on: string[];
+  weight: number;
+  domain: string | null;
+  domain_label: string | null;
+  critical: boolean;
+  blocking: boolean;
+  condition: Partial<QuestionCondition>;
+  framework_refs: string[];
+  library_code: string | null;
+};
+
+export type QuestionnaireSummary = {
+  id: string;
+  purpose: QuestionnairePurpose;
+  name: string;
+  description: string | null;
+  status: "active" | "archived";
+  is_default: boolean;
+  default_tiers: string[];
+  question_count: number;
+  section_count: number;
+  library_code: string | null;
+  updated_at: string;
+  updated_by_name: string | null;
+};
+
+export type Questionnaire = QuestionnaireSummary & {
+  tier_thresholds: Record<string, number>;
+  questions: BuilderQuestion[];
+};
+
+export type LibraryQuestion = {
+  id: string;
+  code: string;
+  section: string;
+  prompt: string;
+  help_text: string | null;
+  answer_type: QuestionType;
+  options: QuestionOption[];
+  required: boolean;
+  evidence: EvidenceRule;
+  weight: number;
+  domain: string | null;
+  domain_label: string | null;
+  critical: boolean;
+  blocking: boolean;
+  scope_level: string;
+  framework_refs: string[];
+  condition_code: string | null;
+};
+
+export type LibraryTemplate = {
+  code: string;
+  name: string;
+  description: string | null;
+  purpose: QuestionnairePurpose;
+  version: string;
+  presets: { key: string; label: string; question_count: number }[];
+  questions: LibraryQuestion[];
+};
+
+export type QuestionInput = {
+  prompt: string;
+  answer_type: QuestionType;
+  section: string;
+  help_text: string | null;
+  options: Partial<QuestionOption>[];
+  required: boolean;
+  evidence: EvidenceRule;
+  evidence_on: string[];
+  weight: number;
+  domain: string | null;
+  critical: boolean;
+  blocking: boolean;
+  condition: QuestionCondition | null;
 };
 
 // -- questionnaire, assessment, findings --------------------------------------
@@ -360,14 +505,16 @@ export type IssuedQuestionnaire = {
 export type DomainScore = { posture: number; residual: number; answered: number };
 export type ScoreStep = { label: string; value: number; detail: string | null };
 
+/** A review sent from a tenant questionnaire names it; one sent from the bank names the bank. */
 export type AssessmentScope = {
-  bank_code: string;
-  bank_version: number;
   tier: string | null;
-  scope_levels: string[];
-  question_codes: string[];
   question_count: number;
   snapshotted_at: string;
+  questionnaire_id?: string;
+  questionnaire_name?: string;
+  bank_code?: string;
+  bank_version?: string;
+  scope_levels?: string[];
 };
 
 export type AssessmentResponse = {
@@ -389,6 +536,18 @@ export type AssessmentResponse = {
   na_justification: string | null;
   evidence_id: string | null;
   answered_at: string | null;
+  section: string;
+  help_text: string | null;
+  options: { key: string; label: string; score: number; flag: boolean; not_applicable: boolean }[];
+  value: AnswerValue;
+  answer_labels: string[];
+  /** The answer picked an option marked as a gap. */
+  flagged: boolean;
+  required: boolean;
+  evidence: EvidenceRule;
+  /** False when its condition was not met: the question was never asked. */
+  visible: boolean;
+  owes_evidence: boolean;
 };
 
 export type Assessment = {
@@ -587,15 +746,33 @@ export type Roster = { roles: Record<string, string[]> };
 
 // -- the portal (unauthenticated; defined inline in portal_router.py) ----------
 
+/** An option as the vendor sees it: never its score, never whether it counts as a gap. */
+export type PortalOption = {
+  key: string;
+  label: string;
+  not_applicable: boolean;
+  comment_required: boolean;
+};
+
 export type PortalQuestion = {
   id: string;
   code: string;
   body: string;
   domain: string;
   domain_label: string;
-  answer_type: string;
+  section: string;
+  help_text: string | null;
+  answer_type: QuestionType;
+  options: PortalOption[];
+  required: boolean;
+  evidence: EvidenceRule;
+  evidence_on: string[];
   evidence_required: boolean;
+  condition_question_id: string | null;
+  condition_option_keys: string[];
   answer: string | null;
+  value: AnswerValue;
+  answered: boolean;
   implementation_notes: string | null;
   na_justification: string | null;
   has_evidence: boolean;
@@ -653,16 +830,12 @@ export type ContactInput = {
 };
 
 /**
- * Only the five 0-4 answers travel. The score, the tier and the whole stage list
- * are computed server-side in the same transaction. Answers outside 0-4 are
- * clamped rather than rejected.
+ * Answers to a tiering questionnaire, keyed by question id. The score, the tier
+ * and the whole stage list are computed server-side in the same transaction.
  */
 export type TieringInput = {
-  data_sensitivity: number;
-  business_criticality: number;
-  system_access: number;
-  regulatory_scope: number;
-  fourth_party_reliance: number;
+  questionnaire_id: string;
+  answers: Record<string, TieringAnswer>;
   override_tier?: string | null;
   override_justification?: string | null;
 };

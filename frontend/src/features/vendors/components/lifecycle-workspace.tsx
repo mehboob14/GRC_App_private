@@ -28,7 +28,16 @@ import {
 } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { errorToast } from "@/lib/api/describe-error";
-import { advanceStage, getFacets, getRoster, listMembers, sendBackStage, skipStage } from "../api";
+import {
+  advanceStage,
+  getFacets,
+  getQuestionnaire,
+  getRoster,
+  listMembers,
+  listQuestionnaires,
+  sendBackStage,
+  skipStage,
+} from "../api";
 import type { StageRow, Tiering, VendorDetail } from "../types";
 import { fmtDate, ROSTER_ROLE_META, STAGE_LABEL, STAGE_STATUS_META, TIER_META } from "../tokens";
 import { ApprovalSection } from "./approval-panel";
@@ -296,11 +305,7 @@ export function LifecycleWorkspace({
                 ) : null}
               </StageDetail>
             ) : (
-              <TieringStart
-                factors={(facetsQuery.data?.tiering_factors ?? []).map((f) => f.label)}
-                canAssess={canAssess}
-                onStart={onTier}
-              />
+              <TieringStart canAssess={canAssess} onStart={onTier} />
             )}
           </div>
         </div>
@@ -479,15 +484,20 @@ function LifecycleChart({
   );
 }
 
-function TieringStart({
-  factors,
-  canAssess,
-  onStart,
-}: {
-  factors: string[];
-  canAssess: boolean;
-  onStart: () => void;
-}) {
+function TieringStart({ canAssess, onStart }: { canAssess: boolean; onStart: () => void }) {
+  // Names what the tiering will ask, from the questionnaire it will open with.
+  const list = useQuery({
+    queryKey: ["vendor-questionnaires", "tiering"],
+    queryFn: () => listQuestionnaires("tiering"),
+  });
+  const chosen = list.data?.find((q) => q.is_default) ?? list.data?.[0];
+  const detail = useQuery({
+    queryKey: ["vendor-questionnaire", chosen?.id],
+    queryFn: () => getQuestionnaire(chosen!.id),
+    enabled: Boolean(chosen),
+  });
+  const factors = [...new Set((detail.data?.questions ?? []).map((q) => q.section))];
+  const count = detail.data?.question_count ?? chosen?.question_count;
   return (
     <div className="flex max-w-lg flex-col items-start py-2">
       <span className="grid size-10 place-items-center rounded-md bg-action-accent-tint text-action-accent">
@@ -495,7 +505,8 @@ function TieringStart({
       </span>
       <h3 className="mt-3 font-display text-title-md text-text-primary">Tier this engagement</h3>
       <p className="mt-1 text-body-sm text-text-subtle">
-        Five questions. The tier unlocks every other stage.
+        {count ? `${count} ${count === 1 ? "question" : "questions"}. ` : ""}The tier unlocks every
+        other stage.
       </p>
       {factors.length > 0 ? (
         <ul className="mt-4 flex flex-wrap gap-1.5">

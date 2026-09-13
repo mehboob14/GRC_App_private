@@ -1,7 +1,9 @@
 import type { IconWeight, Icon as PhosphorIcon } from "@phosphor-icons/react";
 import { AppWindow } from "@phosphor-icons/react/AppWindow";
+import { Archive } from "@phosphor-icons/react/Archive";
 import { ArrowClockwise } from "@phosphor-icons/react/ArrowClockwise";
 import { ArrowCounterClockwise } from "@phosphor-icons/react/ArrowCounterClockwise";
+import { ArrowDown } from "@phosphor-icons/react/ArrowDown";
 import { ArrowLeft } from "@phosphor-icons/react/ArrowLeft";
 import { ArrowUp } from "@phosphor-icons/react/ArrowUp";
 import { Bell } from "@phosphor-icons/react/Bell";
@@ -9,37 +11,46 @@ import { BookOpen } from "@phosphor-icons/react/BookOpen";
 import { Briefcase } from "@phosphor-icons/react/Briefcase";
 import { Bug } from "@phosphor-icons/react/Bug";
 import { Buildings } from "@phosphor-icons/react/Buildings";
+import { CalendarBlank } from "@phosphor-icons/react/CalendarBlank";
 import { CaretDown } from "@phosphor-icons/react/CaretDown";
 import { CaretLeft } from "@phosphor-icons/react/CaretLeft";
 import { CaretRight } from "@phosphor-icons/react/CaretRight";
 import { Check } from "@phosphor-icons/react/Check";
+import { CheckSquare } from "@phosphor-icons/react/CheckSquare";
 import { CircleNotch } from "@phosphor-icons/react/CircleNotch";
 import { ClipboardText } from "@phosphor-icons/react/ClipboardText";
 import { Clock } from "@phosphor-icons/react/Clock";
 import { Cloud } from "@phosphor-icons/react/Cloud";
+import { Copy } from "@phosphor-icons/react/Copy";
 import { Cube } from "@phosphor-icons/react/Cube";
 import { CurrencyDollar } from "@phosphor-icons/react/CurrencyDollar";
 import { Database } from "@phosphor-icons/react/Database";
 import { DotsThree } from "@phosphor-icons/react/DotsThree";
 import { DownloadSimple } from "@phosphor-icons/react/DownloadSimple";
 import { Export } from "@phosphor-icons/react/Export";
+import { Eye } from "@phosphor-icons/react/Eye";
 import { FileCsv } from "@phosphor-icons/react/FileCsv";
 import { FileText } from "@phosphor-icons/react/FileText";
+import { Flag } from "@phosphor-icons/react/Flag";
 import { Funnel } from "@phosphor-icons/react/Funnel";
 import { Gauge } from "@phosphor-icons/react/Gauge";
 import { Gear } from "@phosphor-icons/react/Gear";
+import { GitBranch } from "@phosphor-icons/react/GitBranch";
 import { Globe } from "@phosphor-icons/react/Globe";
 import { HardDrives } from "@phosphor-icons/react/HardDrives";
+import { Hash } from "@phosphor-icons/react/Hash";
 import { Image } from "@phosphor-icons/react/Image";
 import { Info } from "@phosphor-icons/react/Info";
 import { Link } from "@phosphor-icons/react/Link";
 import { ListBullets } from "@phosphor-icons/react/ListBullets";
+import { ListChecks } from "@phosphor-icons/react/ListChecks";
 import { ListNumbers } from "@phosphor-icons/react/ListNumbers";
 import { Lock } from "@phosphor-icons/react/Lock";
 import { MagnifyingGlass } from "@phosphor-icons/react/MagnifyingGlass";
 import { Monitor } from "@phosphor-icons/react/Monitor";
 import { Moon } from "@phosphor-icons/react/Moon";
 import { Palette } from "@phosphor-icons/react/Palette";
+import { Paperclip } from "@phosphor-icons/react/Paperclip";
 import { PencilSimple } from "@phosphor-icons/react/PencilSimple";
 import { Plug } from "@phosphor-icons/react/Plug";
 import { Plus } from "@phosphor-icons/react/Plus";
@@ -47,13 +58,17 @@ import { Pulse } from "@phosphor-icons/react/Pulse";
 import { PuzzlePiece } from "@phosphor-icons/react/PuzzlePiece";
 import { Question } from "@phosphor-icons/react/Question";
 import { Quotes } from "@phosphor-icons/react/Quotes";
+import { RadioButton } from "@phosphor-icons/react/RadioButton";
 import { Shield } from "@phosphor-icons/react/Shield";
 import { ShieldCheck } from "@phosphor-icons/react/ShieldCheck";
 import { SignOut } from "@phosphor-icons/react/SignOut";
+import { SlidersHorizontal } from "@phosphor-icons/react/SlidersHorizontal";
 import { SquaresFour } from "@phosphor-icons/react/SquaresFour";
 import { Stack } from "@phosphor-icons/react/Stack";
+import { Star } from "@phosphor-icons/react/Star";
 import { Sun } from "@phosphor-icons/react/Sun";
 import { Target } from "@phosphor-icons/react/Target";
+import { TextAlignLeft } from "@phosphor-icons/react/TextAlignLeft";
 import { TextB } from "@phosphor-icons/react/TextB";
 import { TextItalic } from "@phosphor-icons/react/TextItalic";
 import { TextStrikethrough } from "@phosphor-icons/react/TextStrikethrough";
@@ -146,6 +161,23 @@ const ICONS = {
   redo: [ArrowClockwise, "bold"],
   palette: [Palette, "fill"],
   type: [TextT, "bold"],
+  // The questionnaire builder: question types, then its actions.
+  choiceSingle: [RadioButton, "fill"],
+  choiceMulti: [CheckSquare, "fill"],
+  textShort: [TextT, "bold"],
+  textLong: [TextAlignLeft, "bold"],
+  number: [Hash, "bold"],
+  calendar: [CalendarBlank, "fill"],
+  paperclip: [Paperclip, "bold"],
+  checklist: [ListChecks, "bold"],
+  arrowdown: [ArrowDown, "bold"],
+  copy: [Copy, "fill"],
+  eye: [Eye, "fill"],
+  archive: [Archive, "fill"],
+  branch: [GitBranch, "fill"],
+  star: [Star, "fill"],
+  flag: [Flag, "fill"],
+  sliders: [SlidersHorizontal, "fill"],
 } as const satisfies Record<string, readonly [PhosphorIcon, IconWeight]>;
 
 export type IconName = keyof typeof ICONS;

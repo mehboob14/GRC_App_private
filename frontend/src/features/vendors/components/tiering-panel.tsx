@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import * as RadioGroupPrimitive from "@radix-ui/react-radio-group";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Badge,
@@ -17,86 +16,32 @@ import {
   SelectField,
   SelectItem,
   SelectTrigger,
+  Skeleton,
   TextArea,
   Tooltip,
   useToast,
 } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { errorToast } from "@/lib/api/describe-error";
-import { getFacets, tierEngagement } from "../api";
-import type { Tiering, TieringInput, VendorDetail } from "../types";
-import { TIERS, TIERING_FACTORS } from "../types";
+import { getFacets, getQuestionnaire, listQuestionnaires, tierEngagement } from "../api";
+import { isEmpty, pickedKeys, previewTier, toLogic, visibleIds } from "../questionnaire-logic";
+import type { AnswerValue, Tiering, TieringAnswer, VendorDetail } from "../types";
+import { TIERS } from "../types";
 import { fmtDate, TIER_META } from "../tokens";
+import { QuestionField } from "./question-field";
 import { ThresholdRuler } from "./threshold-ruler";
 import { TierBadge } from "./tier-badge";
 
-/** What each answer on the 0 to 4 scale means, so the question is answerable. */
-const SCALE: Record<string, string[]> = {
-  data_sensitivity: [
-    "No data is shared",
-    "Public or non-identifying data",
-    "Internal business data",
-    "Personal data",
-    "Special category, health or payment data",
-  ],
-  business_criticality: [
-    "Nothing depends on them",
-    "A convenience, work continues without them",
-    "A team is degraded within days",
-    "A revenue or delivery process stops",
-    "The business stops",
-  ],
-  system_access: [
-    "No access to our systems",
-    "Read-only access to one system",
-    "Write access to one system",
-    "Access across several systems",
-    "Privileged or administrative access",
-  ],
-  regulatory_scope: [
-    "Out of scope for everything",
-    "Internal policy only",
-    "In scope for one framework",
-    "In scope for several frameworks",
-    "Named in a regulatory filing or audit",
-  ],
-  fourth_party_reliance: [
-    "No subprocessors",
-    "One known subprocessor",
-    "Several, all declared",
-    "Several, some undeclared",
-    "Unknown or unmanaged chain",
-  ],
-};
-
 const DEFAULT_THRESHOLDS = { critical: 75, high: 50, medium: 25 };
+const OVERRIDE = "__override__";
 
 /**
- * Unanswered, not zero. Seeding every factor to 0 made the form arrive at a
- * confident Low with a live submit button, and one click skipped four stages
- * "by policy".
- */
-type Answers = Record<string, number | null>;
-const BLANK: Answers = Object.fromEntries(TIERING_FACTORS.map((k) => [k, null]));
-
-/** The five factors come first, then the optional override. */
-const OVERRIDE_STEP = TIERING_FACTORS.length;
-
-function tierFor(score: number, thresholds: Record<string, number>): string {
-  if (score >= (thresholds.critical ?? 75)) return "critical";
-  if (score >= (thresholds.high ?? 50)) return "high";
-  if (score >= (thresholds.medium ?? 25)) return "medium";
-  return "low";
-}
-
-/**
- * Tiering as a focused popup: one factor at a time on the right, every answer
- * and the live score on the left.
+ * Tiering as a focused popup, driven by the tenant's own tiering questionnaire:
+ * one question at a time on the right, every question and the live score on
+ * the left. Follow-up questions appear as the answers that open them are picked.
  *
- * Inline, the form stacked twenty-five radios under the lifecycle and pushed
- * everything else off screen. Here each question fits without scrolling, the
- * list on the left is how a reviewer jumps back to change an answer, and closing
- * the dialog keeps the answers so it can be finished later.
+ * Closing keeps the answers so the tiering can be finished later. The score here
+ * is a preview; the server scores the same answers again and stores its number.
  */
 export function TieringDialog({
   open,
@@ -115,264 +60,344 @@ export function TieringDialog({
 }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const facetsQuery = useQuery({ queryKey: ["vendor-facets"], queryFn: getFacets });
+  const facetsQuery = useQuery({ queryKey: ["vendor-facets"], queryFn: getFacets, enabled: open });
+  const list = useQuery({
+    queryKey: ["vendor-questionnaires", "tiering"],
+    queryFn: () => listQuestionnaires("tiering"),
+    enabled: open,
+  });
+  const fallback = list.data?.find((q) => q.is_default) ?? list.data?.[0];
+
+  const [chosenId, setChosenId] = useState<string | null>(null);
+  const questionnaireId =
+    chosenId ??
+    (latest?.questionnaire_id && list.data?.some((q) => q.id === latest.questionnaire_id)
+      ? latest.questionnaire_id
+      : (fallback?.id ?? null));
+  const detail = useQuery({
+    queryKey: ["vendor-questionnaire", questionnaireId],
+    queryFn: () => getQuestionnaire(questionnaireId!),
+    enabled: open && Boolean(questionnaireId),
+  });
+  const questionnaire = detail.data;
 
   const [draftFor, setDraftFor] = useState<string | null>(null);
-  const [answers, setAnswers] = useState<Answers>(BLANK);
+  const [values, setValues] = useState<Record<string, AnswerValue>>({});
+  const [comments, setComments] = useState<Record<string, string>>({});
   const [overrideTier, setOverrideTier] = useState("");
   const [justification, setJustification] = useState("");
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState<string | null>(null);
 
-  // Seed on the way in, and only when there is no unsaved draft for this
-  // engagement. Closing the dialog means "finish later", not "throw it away".
+  // Seed once per engagement and questionnaire. Closing means "finish later",
+  // so an unsaved draft for the same pair is kept rather than overwritten.
+  const draftKey = questionnaire ? `${engagementId}:${questionnaire.id}` : null;
   useEffect(() => {
-    if (!open || draftFor === engagementId) return;
-    const seeded: Answers = latest
-      ? Object.fromEntries(latest.factors.map((f) => [f.key, f.answer]))
-      : { ...BLANK };
-    setAnswers(seeded);
+    if (!open || !questionnaire || draftFor === draftKey) return;
+    const stored = latest?.questionnaire_id === questionnaire.id ? latest.answers : {};
+    setValues(Object.fromEntries(Object.entries(stored).map(([k, v]) => [k, v.value])));
+    setComments(Object.fromEntries(Object.entries(stored).map(([k, v]) => [k, v.comment ?? ""])));
     setOverrideTier(latest?.override_tier ?? "");
     setJustification(latest?.override_justification ?? "");
-    setStep(0);
-    setDraftFor(engagementId);
+    setStep(null);
+    setDraftFor(draftKey);
     // Reseeding on every `latest` identity change would wipe a half-filled form
     // whenever anything else on the page wrote.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, engagementId]);
+  }, [open, draftKey]);
 
-  const specs = useMemo(() => facetsQuery.data?.tiering_factors ?? [], [facetsQuery.data]);
-  const weights = useMemo(() => Object.fromEntries(specs.map((s) => [s.key, s.weight])), [specs]);
-  const thresholds = facetsQuery.data?.tier_thresholds ?? latest?.thresholds ?? DEFAULT_THRESHOLDS;
+  const questions = useMemo(() => questionnaire?.questions ?? [], [questionnaire]);
+  const logic = useMemo(() => questions.map(toLogic), [questions]);
+  const shown = visibleIds(logic, values);
+  const asked = questions.filter((q) => shown.has(q.id));
+  const thresholds =
+    questionnaire && Object.keys(questionnaire.tier_thresholds).length
+      ? questionnaire.tier_thresholds
+      : (facetsQuery.data?.tier_thresholds ?? latest?.thresholds ?? DEFAULT_THRESHOLDS);
+  const preview = previewTier(logic, values, thresholds);
 
-  const answered = TIERING_FACTORS.filter((k) => answers[k] !== null).length;
-  const complete = answered === TIERING_FACTORS.length;
+  const needsNote = (id: string) => {
+    const q = questions.find((x) => x.id === id);
+    return Boolean(q?.options.some((o) => o.comment_required && pickedKeys(values[id]).includes(o.key)));
+  };
+  const answered = (id: string) => !isEmpty(values[id]);
+  const done = (id: string) => answered(id) && (!needsNote(id) || Boolean(comments[id]?.trim()));
+  const missing = asked.filter((q) => (q.required && !answered(q.id)) || (answered(q.id) && !done(q.id)));
+  const complete = asked.length > 0 && missing.length === 0;
+  const anyAnswer = asked.some((q) => answered(q.id));
 
-  // The same arithmetic the backend runs: sum(clamp(answer, 0, 4) / 4 * weight) * 100.
-  const score =
-    Math.round(
-      TIERING_FACTORS.reduce(
-        (sum, k) => sum + (Math.max(0, Math.min(4, answers[k] ?? 0)) / 4) * (weights[k] ?? 0) * 100,
-        0,
-      ) * 100,
-    ) / 100;
-  const computed = tierFor(score, thresholds);
+  const computed = preview.tier;
   const effective = overrideTier || computed;
   const needsReason = Boolean(overrideTier) && !justification.trim();
 
+  const current = step === OVERRIDE ? null : (asked.find((q) => q.id === step) ?? asked[0] ?? null);
+  const currentIndex = current ? asked.indexOf(current) : asked.length;
+  const goTo = (index: number) =>
+    setStep(index >= asked.length ? OVERRIDE : (asked[Math.max(0, index)]?.id ?? null));
+
   const save = useMutation({
     mutationFn: () => {
-      const body = {
-        ...(Object.fromEntries(
-          TIERING_FACTORS.map((k) => [k, answers[k] ?? 0]),
-        ) as unknown as TieringInput),
+      const answers: Record<string, TieringAnswer> = {};
+      for (const q of asked) {
+        if (!answered(q.id)) continue;
+        const note = comments[q.id]?.trim();
+        answers[q.id] = note ? { value: values[q.id], comment: note } : { value: values[q.id] };
+      }
+      return tierEngagement(vendor.id, engagementId, {
+        questionnaire_id: questionnaire!.id,
+        answers,
         override_tier: overrideTier || null,
         override_justification: overrideTier ? justification.trim() || null : null,
-      };
-      return tierEngagement(vendor.id, engagementId, body);
+      });
     },
     onSuccess: (next) => {
       onApply(next);
       void queryClient.invalidateQueries({ queryKey: ["vendor-summary"] });
       setDraftFor(null);
       onOpenChange(false);
-      toast({ title: `Tier set to ${TIER_META[effective]?.label ?? effective}`, tone: "success" });
+      const saved = next.tierings.find((t) => t.engagement_id === engagementId);
+      const tier = saved?.effective_tier ?? effective;
+      toast({ title: `Tier set to ${TIER_META[tier]?.label ?? tier}`, tone: "success" });
     },
     onError: (e: unknown) => toast({ title: errorToast(e, "tiering"), tone: "danger" }),
   });
 
-  const pick = (factor: string, value: number, wasUnanswered: boolean) => {
-    setAnswers((a) => ({ ...a, [factor]: value }));
-    // The first pass moves on by itself. Changing an earlier answer stays put,
-    // so the reviewer sees what they changed.
-    if (wasUnanswered) {
-      window.setTimeout(() => setStep((s) => Math.min(s + 1, OVERRIDE_STEP)), 160);
-    }
+  const commit = (id: string, value: AnswerValue, firstPick: boolean) => {
+    setValues((v) => ({ ...v, [id]: value }));
+    // A first single choice moves on by itself; changing an answer stays put.
+    if (firstPick) window.setTimeout(() => goTo(currentIndex + 1), 160);
   };
 
-  const factor = TIERING_FACTORS[step];
-  const spec = specs.find((s) => s.key === factor);
-  const weight = factor ? (weights[factor] ?? 0) : 0;
   const engagement = vendor.engagements.find((e) => e.id === engagementId);
+  const sectionCount = new Set(asked.map((q) => q.section)).size;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent size="lg" scrollBody className="max-h-[min(40rem,90vh)]">
+      <DialogContent size="lg" scrollBody className="max-h-[min(44rem,92vh)]">
         <DialogHeader>
           <DialogTitle>
             {latest ? "Re-tier" : "Tier"} {engagement?.name ?? vendor.name}
           </DialogTitle>
-          <DialogDescription>Five questions. The tier sets stages and reviewers.</DialogDescription>
+          <DialogDescription>
+            {questionnaire
+              ? `${asked.length} ${asked.length === 1 ? "question" : "questions"} from ${questionnaire.name}. The tier sets stages and reviewers.`
+              : "The tier sets stages and reviewers."}
+          </DialogDescription>
         </DialogHeader>
 
         <DialogBody>
-          {/* The scale leads: every answer moves the pin, so the reviewer sees
-              the consequence of each click, not only at the end. */}
-          <div className="rounded-md border border-border p-4">
-            <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
-              {complete ? (
-                <div className="flex flex-wrap items-center gap-3">
-                  <span className="tabular font-display text-numeral-md text-text-primary">{score}</span>
-                  <TierBadge tier={effective} label={`${TIER_META[effective]?.label ?? effective} tier`} />
-                  {overrideTier ? <Badge variant="countWarn">Overridden</Badge> : null}
-                  {latest && latest.effective_tier !== effective ? (
-                    <span className="flex items-center gap-1 text-caption font-semibold text-status-warning-text">
-                      <Icon name="alert" className="size-3.5 shrink-0" />
-                      Changes from {TIER_META[latest.effective_tier]?.label}
+          {list.isSuccess && !fallback ? (
+            <p className="rounded-md bg-status-warning-bg px-3 py-2.5 text-body-sm text-status-warning-text">
+              There is no tiering questionnaire yet. Build one under Vendors, Questionnaires.
+            </p>
+          ) : !questionnaire ? (
+            <Skeleton className="h-72" />
+          ) : (
+            <>
+              <div className="rounded-md border border-border p-4">
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
+                  {anyAnswer ? (
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span className="tabular font-display text-numeral-md text-text-primary">
+                        {preview.score}
+                      </span>
+                      <TierBadge tier={effective} label={`${TIER_META[effective]?.label ?? effective} tier`} />
+                      {overrideTier ? <Badge variant="countWarn">Overridden</Badge> : null}
+                      {preview.floorTier && !overrideTier ? (
+                        <Tooltip content="An answer sets a minimum tier, whatever the score.">
+                          <span>
+                            <Badge variant="countWarn">Minimum {TIER_META[preview.floorTier]?.label}</Badge>
+                          </span>
+                        </Tooltip>
+                      ) : null}
+                      {latest && latest.effective_tier !== effective ? (
+                        <span className="flex items-center gap-1 text-caption font-semibold text-status-warning-text">
+                          <Icon name="alert" className="size-3.5 shrink-0" />
+                          Changes from {TIER_META[latest.effective_tier]?.label}
+                        </span>
+                      ) : null}
+                    </div>
+                  ) : (
+                    <p className="text-label-md text-text-secondary">Answer to see the tier</p>
+                  )}
+                  <div className="flex items-center gap-3">
+                    <span className="tabular text-caption text-text-subtle">
+                      {asked.filter((q) => done(q.id)).length}/{asked.length}
                     </span>
-                  ) : null}
-                </div>
-              ) : (
-                <p className="text-label-md text-text-secondary">
-                  {answered} of {TIERING_FACTORS.length} answered
-                </p>
-              )}
-              <span className="flex w-36 gap-1" aria-hidden>
-                {TIERING_FACTORS.map((k) => (
-                  <span
-                    key={k}
-                    className={cn(
-                      "h-1.5 flex-1 rounded-full",
-                      answers[k] !== null ? "bg-action-accent" : "bg-border",
-                    )}
-                  />
-                ))}
-              </span>
-            </div>
-            <ThresholdRuler
-              score={complete ? score : null}
-              thresholds={thresholds}
-              effectiveTier={complete ? computed : null}
-            />
-          </div>
-
-          <div className="mt-4 grid gap-5 sm:grid-cols-[12.5rem_1fr]">
-            <ol className="space-y-0.5 self-start" aria-label="Factors">
-              {TIERING_FACTORS.map((k, index) => {
-                const value = answers[k];
-                return (
-                  <li key={k}>
-                    <StepButton
-                      active={step === index}
-                      done={value !== null}
-                      onClick={() => setStep(index)}
-                      label={specs.find((s) => s.key === k)?.label ?? k}
-                      meta={value !== null ? `${value}/4` : undefined}
-                    />
-                  </li>
-                );
-              })}
-              <li>
-                <StepButton
-                  active={step === OVERRIDE_STEP}
-                  done={Boolean(overrideTier)}
-                  onClick={() => setStep(OVERRIDE_STEP)}
-                  label="Override"
-                  meta={overrideTier ? TIER_META[overrideTier]?.label : "Optional"}
-                />
-              </li>
-            </ol>
-
-            <div className="min-w-0">
-              {factor ? (
-                <>
-                  <div className="flex items-baseline justify-between gap-3">
-                    <h3 className="font-display text-title-md text-text-primary">
-                      {spec?.label ?? factor}
-                    </h3>
-                    <span className="tabular shrink-0 text-caption text-text-subtle">
-                      {Math.round(weight * 100)}% of score
-                    </span>
-                  </div>
-                  <RadioGroupPrimitive.Root
-                    className="mt-3 space-y-1.5"
-                    value={answers[factor] === null ? "" : String(answers[factor])}
-                    onValueChange={(v) => setAnswers((a) => ({ ...a, [factor]: Number(v) }))}
-                    aria-label={spec?.label ?? factor}
-                  >
-                    {(SCALE[factor] ?? []).map((sentence, value) => (
-                      <RadioGroupPrimitive.Item
-                        key={value}
-                        value={String(value)}
-                        onClick={() => pick(factor, value, answers[factor] === null)}
-                        className={cn(
-                          "group flex w-full items-center gap-3 rounded-md border border-border px-3 py-2.5 text-left",
-                          "transition-colors duration-80 ease-state hover:bg-surface-hover",
-                          "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-accent",
-                          "data-[state=checked]:border-action-accent data-[state=checked]:bg-action-accent-tint",
-                        )}
-                      >
-                        <span className="tabular grid size-6 shrink-0 place-items-center rounded-full bg-surface-sunken text-caption font-bold text-text-secondary group-data-[state=checked]:bg-action-accent group-data-[state=checked]:text-white">
-                          {value}
-                        </span>
-                        <span className="min-w-0 flex-1 text-body-md text-text-primary">
-                          {sentence}
-                        </span>
-                        <span className="tabular shrink-0 text-caption text-text-subtle">
-                          +{Math.round((value / 4) * weight * 100)}
-                        </span>
-                      </RadioGroupPrimitive.Item>
-                    ))}
-                  </RadioGroupPrimitive.Root>
-                </>
-              ) : (
-                <>
-                  <h3 className="font-display text-title-md text-text-primary">Override</h3>
-                  <p className="mt-1 text-body-sm text-text-subtle">
-                    Computed tier is {TIER_META[computed]?.label}.
-                  </p>
-                  <div className="mt-4 space-y-3">
-                    <SelectField label="Tier">
-                      <Select
-                        value={overrideTier || "__none__"}
-                        onValueChange={(v) => setOverrideTier(v === "__none__" ? "" : v)}
-                      >
-                        <SelectTrigger aria-label="Override tier" />
+                    {(list.data?.length ?? 0) > 1 ? (
+                      <Select value={questionnaire.id} onValueChange={(id) => setChosenId(id)}>
+                        <SelectTrigger
+                          aria-label="Questionnaire"
+                          className="h-8 w-48 text-left text-body-sm [&>span]:truncate"
+                        />
                         <SelectContent>
-                          <SelectItem value="__none__">Use computed tier</SelectItem>
-                          {TIERS.map((t) => (
-                            <SelectItem key={t} value={t}>
-                              {TIER_META[t].label}
+                          {list.data?.map((q) => (
+                            <SelectItem key={q.id} value={q.id}>
+                              {q.name}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
-                    </SelectField>
-                    {overrideTier ? (
-                      <TextArea
-                        label="Reason"
-                        hint="Required. Say what the five factors miss."
-                        value={justification}
-                        onChange={(e) => setJustification(e.target.value)}
-                        rows={3}
-                        maxLength={4000}
-                      />
                     ) : null}
                   </div>
-                </>
-              )}
-            </div>
-          </div>
+                </div>
+                <ThresholdRuler
+                  score={anyAnswer ? preview.score : null}
+                  thresholds={thresholds}
+                  effectiveTier={anyAnswer ? preview.bandTier : null}
+                />
+              </div>
+
+              <div className="mt-4 grid gap-5 sm:grid-cols-[13.5rem_minmax(0,1fr)]">
+                <ol className="max-h-[22rem] space-y-0.5 self-start overflow-y-auto pr-1" aria-label="Questions">
+                  {asked.map((q, index) => {
+                    const previous = asked[index - 1];
+                    const labels = q.options
+                      .filter((o) => pickedKeys(values[q.id]).includes(o.key))
+                      .map((o) => o.label);
+                    return (
+                      <li key={q.id}>
+                        {sectionCount > 1 && previous?.section !== q.section ? (
+                          <p className="type-overline mt-2 px-2 pb-0.5">{q.section}</p>
+                        ) : null}
+                        <StepButton
+                          active={current?.id === q.id}
+                          done={done(q.id)}
+                          onClick={() => setStep(q.id)}
+                          label={q.prompt}
+                          meta={labels.length ? labels.join(", ") : q.required ? undefined : "Optional"}
+                        />
+                      </li>
+                    );
+                  })}
+                  <li className="mt-1 border-t border-border pt-1">
+                    <StepButton
+                      active={step === OVERRIDE}
+                      done={Boolean(overrideTier)}
+                      onClick={() => setStep(OVERRIDE)}
+                      label="Override"
+                      meta={overrideTier ? TIER_META[overrideTier]?.label : "Optional"}
+                    />
+                  </li>
+                </ol>
+
+                <div className="min-w-0">
+                  {current ? (
+                    <>
+                      <p className="type-overline">
+                        {current.section} · {currentIndex + 1} of {asked.length}
+                      </p>
+                      <h3 className="mt-1 font-display text-title-md text-text-primary">{current.prompt}</h3>
+                      {current.help_text ? (
+                        <p className="mt-1 text-body-sm text-text-subtle">{current.help_text}</p>
+                      ) : null}
+                      <div className="mt-3">
+                        <QuestionField
+                          key={current.id}
+                          label={current.prompt}
+                          type={current.answer_type}
+                          options={current.options}
+                          layout="cards"
+                          value={values[current.id]}
+                          onCommit={(value) =>
+                            commit(
+                              current.id,
+                              value,
+                              current.answer_type === "single_choice" && !answered(current.id),
+                            )
+                          }
+                          optionMeta={
+                            preview.ceiling
+                              ? (o) => {
+                                  const score = current.options.find((x) => x.key === o.key)?.score ?? 0;
+                                  return `+${Math.round(((score * current.weight) / preview.ceiling) * 100)}`;
+                                }
+                              : undefined
+                          }
+                        />
+                      </div>
+                      {needsNote(current.id) ? (
+                        <div className="mt-3">
+                          <TextArea
+                            label="Note"
+                            hint="Required for this answer."
+                            value={comments[current.id] ?? ""}
+                            onChange={(e) => setComments((c) => ({ ...c, [current.id]: e.target.value }))}
+                            rows={2}
+                            maxLength={4000}
+                          />
+                        </div>
+                      ) : null}
+                      {current.options.some((o) => o.min_tier) ? (
+                        <p className="mt-3 flex items-center gap-1.5 text-caption text-text-subtle">
+                          <Icon name="gauge" className="size-3.5" />
+                          Some answers set a minimum tier.
+                        </p>
+                      ) : null}
+                    </>
+                  ) : (
+                    <>
+                      <h3 className="font-display text-title-md text-text-primary">Override</h3>
+                      <p className="mt-1 text-body-sm text-text-subtle">
+                        Computed tier is {TIER_META[computed]?.label}.
+                      </p>
+                      <div className="mt-4 space-y-3">
+                        <SelectField label="Tier">
+                          <Select
+                            value={overrideTier || "__none__"}
+                            onValueChange={(v) => setOverrideTier(v === "__none__" ? "" : v)}
+                          >
+                            <SelectTrigger aria-label="Override tier" />
+                            <SelectContent>
+                              <SelectItem value="__none__">Use computed tier</SelectItem>
+                              {TIERS.map((t) => (
+                                <SelectItem key={t} value={t}>
+                                  {TIER_META[t].label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </SelectField>
+                        {overrideTier ? (
+                          <TextArea
+                            label="Reason"
+                            hint="Required. Say what the answers miss."
+                            value={justification}
+                            onChange={(e) => setJustification(e.target.value)}
+                            rows={3}
+                            maxLength={4000}
+                          />
+                        ) : null}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
         </DialogBody>
 
         <DialogFooter className="justify-between">
           <Button
             variant="ghost"
-            disabled={step === 0}
-            onClick={() => setStep((s) => Math.max(0, s - 1))}
+            disabled={currentIndex === 0 || !questionnaire}
+            onClick={() => goTo(currentIndex - 1)}
           >
             <Icon name="arrowl" className="size-4" />
             Back
           </Button>
-          <div className="flex gap-2">
-            {step < OVERRIDE_STEP ? (
-              <Button variant="secondary" onClick={() => setStep((s) => s + 1)}>
+          <div className="flex items-center gap-2">
+            {questionnaire && missing.length ? (
+              <span className="hidden text-caption text-text-subtle sm:inline">{missing.length} to answer</span>
+            ) : null}
+            {step !== OVERRIDE && questionnaire ? (
+              <Button variant="secondary" onClick={() => goTo(currentIndex + 1)}>
                 Next
                 <Icon name="arrowr" className="size-4" />
               </Button>
             ) : null}
             <Button
               loading={save.isPending}
-              disabled={!complete || needsReason}
+              disabled={!questionnaire || !complete || needsReason}
               onClick={() => save.mutate()}
             >
               {latest ? "Save tier" : "Set tier"}
@@ -402,37 +427,37 @@ function StepButton({
       type="button"
       onClick={onClick}
       aria-current={active ? "step" : undefined}
+      title={label}
       className={cn(
-        "flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left transition-colors duration-80 ease-state",
+        "flex w-full items-start gap-2 rounded-sm px-2 py-1.5 text-left transition-colors duration-80 ease-state",
         "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-accent",
         active ? "bg-action-accent-tint" : "hover:bg-surface-hover",
       )}
     >
       <span
         className={cn(
-          "grid size-4 shrink-0 place-items-center rounded-full",
+          "mt-0.5 grid size-4 shrink-0 place-items-center rounded-full",
           done ? "bg-status-success-base text-white" : "border-1.5 border-border-strong",
         )}
         aria-hidden
       >
         {done ? <Icon name="check" className="size-2.5" /> : null}
       </span>
-      <span
-        className={cn(
-          "min-w-0 flex-1 truncate text-body-sm",
-          active ? "font-semibold text-text-primary" : "text-text-secondary",
-        )}
-      >
-        {label}
+      <span className="min-w-0 flex-1">
+        <span
+          className={cn("block truncate text-body-sm", active ? "font-semibold text-text-primary" : "text-text-secondary")}
+        >
+          {label}
+        </span>
+        {meta ? <span className="block truncate text-caption text-text-subtle">{meta}</span> : null}
       </span>
-      {meta ? <span className="tabular shrink-0 text-caption text-text-subtle">{meta}</span> : null}
     </button>
   );
 }
 
 /**
- * The saved tier, compact: score and tier on one line, the bands, then each
- * factor's contribution. Everything on it is reproducible by eye.
+ * The saved tier, compact: score and tier on one line, the bands, then what
+ * each answer put in. Everything on it is reproducible by eye.
  */
 export function TierSummary({
   latest,
@@ -444,13 +469,12 @@ export function TierSummary({
   onRetier: () => void;
 }) {
   const overridden = latest.override_tier !== null;
+  const lines = latest.questions.filter((q) => q.answer_labels.length > 0);
   return (
     <div className="rounded-md border border-border p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <span className="tabular font-display text-numeral-md text-text-primary">
-            {latest.score}
-          </span>
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="tabular font-display text-numeral-md text-text-primary">{latest.score}</span>
           <TierBadge tier={latest.effective_tier} />
           {overridden ? (
             <Tooltip
@@ -461,10 +485,15 @@ export function TierSummary({
               </span>
             </Tooltip>
           ) : null}
+          {latest.floor_tier ? (
+            <Badge variant="countWarn">Minimum {TIER_META[latest.floor_tier]?.label} from an answer</Badge>
+          ) : null}
         </div>
         <div className="flex items-center gap-3">
           <span className="text-caption text-text-subtle">
-            {[latest.assessed_by_name, fmtDate(latest.assessed_at)].filter(Boolean).join(" · ")}
+            {[latest.questionnaire_name, latest.assessed_by_name, fmtDate(latest.assessed_at)]
+              .filter(Boolean)
+              .join(" · ")}
           </span>
           {canAssess ? (
             <Button variant="secondary" size="sm" onClick={onRetier}>
@@ -481,31 +510,67 @@ export function TierSummary({
         effectiveTier={latest.computed_tier}
         pointsToHigher={latest.points_to_higher_tier}
       />
-      <ul className="mt-4 grid gap-x-8 gap-y-2.5 border-t border-border pt-4 sm:grid-cols-2">
-        {latest.factors.map((f) => (
-          <li
-            key={f.key}
-            className="grid grid-cols-[minmax(6rem,9rem)_1fr_2.75rem] items-center gap-3"
-          >
-            <span className="truncate text-body-sm text-text-secondary">{f.label}</span>
-            <span
-              className="h-2 rounded-full bg-surface-sunken"
-              role="img"
-              aria-label={`${f.points} of ${f.max_points} points`}
-            >
+
+      {lines.length ? (
+        <ul className="mt-4 grid gap-x-8 gap-y-3 border-t border-border pt-4 sm:grid-cols-2">
+          {lines.map((line) => (
+            <li key={line.id} className="grid grid-cols-[minmax(0,1fr)_4.5rem_2.75rem] items-center gap-3">
+              <span className="min-w-0">
+                <span className="block truncate text-body-sm text-text-secondary" title={line.prompt}>
+                  {line.prompt}
+                </span>
+                <span className="block truncate text-caption text-text-subtle">
+                  {line.answer_labels.join(", ")}
+                </span>
+              </span>
+              {line.counted ? (
+                <>
+                  <span
+                    className="h-2 rounded-full bg-surface-sunken"
+                    role="img"
+                    aria-label={`${line.points} of ${line.max_points} points`}
+                  >
+                    <span
+                      className="block h-2 rounded-full bg-action-accent"
+                      style={{
+                        width: `${line.points === 0 ? 0 : Math.max(3, (line.points / (line.max_points || 1)) * 100)}%`,
+                      }}
+                    />
+                  </span>
+                  <span className="tabular text-right text-caption text-text-subtle">
+                    {line.points}/{line.max_points}
+                  </span>
+                </>
+              ) : (
+                <span className="col-span-2 text-right text-caption text-text-faint">Not scored</span>
+              )}
+            </li>
+          ))}
+        </ul>
+      ) : latest.factors.length ? (
+        <ul className="mt-4 grid gap-x-8 gap-y-2.5 border-t border-border pt-4 sm:grid-cols-2">
+          {latest.factors.map((f) => (
+            <li key={f.key} className="grid grid-cols-[minmax(6rem,9rem)_1fr_2.75rem] items-center gap-3">
+              <span className="truncate text-body-sm text-text-secondary">{f.label}</span>
               <span
-                className="block h-2 rounded-full bg-action-accent"
-                style={{
-                  width: `${f.points === 0 ? 0 : Math.max(3, (f.points / (f.max_points || 1)) * 100)}%`,
-                }}
-              />
-            </span>
-            <span className="tabular text-right text-caption text-text-subtle">
-              {f.points}/{f.max_points}
-            </span>
-          </li>
-        ))}
-      </ul>
+                className="h-2 rounded-full bg-surface-sunken"
+                role="img"
+                aria-label={`${f.points} of ${f.max_points} points`}
+              >
+                <span
+                  className="block h-2 rounded-full bg-action-accent"
+                  style={{
+                    width: `${f.points === 0 ? 0 : Math.max(3, (f.points / (f.max_points || 1)) * 100)}%`,
+                  }}
+                />
+              </span>
+              <span className="tabular text-right text-caption text-text-subtle">
+                {f.points}/{f.max_points}
+              </span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
     </div>
   );
 }
