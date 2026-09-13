@@ -57,9 +57,20 @@ class _Response(BaseModel):
 
 class AnswerWrite(_Request):
     question_id: uuid.UUID
-    answer: str
+    answer: str | None = None
+    """A bank question's yes, partial, no or na; or a single choice's option key."""
+    value: str | float | list[str] | None = None
+    """A typed answer: an option key, several, text, a number, or a date as ISO text.
+    Empty clears the answer."""
     implementation_notes: str | None = Field(default=None, max_length=8000)
     na_justification: str | None = Field(default=None, max_length=4000)
+
+
+class PortalOptionOut(_Response):
+    key: str
+    label: str
+    not_applicable: bool
+    comment_required: bool
 
 
 class PortalQuestionOut(_Response):
@@ -68,9 +79,19 @@ class PortalQuestionOut(_Response):
     body: str
     domain: str
     domain_label: str
+    section: str
+    help_text: str | None
     answer_type: str
+    options: list[PortalOptionOut]
+    required: bool
+    evidence: str
+    evidence_on: list[str]
     evidence_required: bool
+    condition_question_id: str | None
+    condition_option_keys: list[str]
     answer: str | None
+    value: str | float | list[str] | None
+    answered: bool
     implementation_notes: str | None
     na_justification: str | None
     has_evidence: bool
@@ -112,6 +133,7 @@ async def save_answer(request: Request, token: _Token, body: AnswerWrite) -> Por
             client_host=_client_host(request),
             question_id=body.question_id,
             answer=body.answer,
+            value=body.value,
             implementation_notes=body.implementation_notes,
             na_justification=body.na_justification,
         )

@@ -152,16 +152,16 @@ async def test_the_tier_decides_how_many_questions_are_asked(issued: Issued) -> 
 
 
 async def test_issuing_snapshots_the_question_set(issued: Issued) -> None:
-    """The bank is versioned global content that can change under a vendor
-    mid-answer, so what was asked is frozen onto the assessment."""
+    """The tenant's questionnaire can be edited under a vendor mid-answer, so what
+    was asked is frozen onto the assessment. With nothing named, the questionnaire
+    holding the engagement's tier is the one sent."""
     async with session_scope(issued.tenant_id) as session:
         view = await vendor_service.get_assessment(
             session, tenant_id=issued.tenant_id, assessment_id=issued.assessment_id
         )
-    assert view.scope["bank_code"] == "verity-core"
+    assert view.scope["questionnaire_name"] == "Security review, lite"
     assert view.scope["tier"] == "low"
-    assert view.scope["scope_levels"] == ["lite"]
-    assert len(view.scope["question_codes"]) == 15
+    assert len(view.scope["question_keys"]) == 15
     assert view.question_count == 15
     assert view.answered_count == 0
     assert view.portal_link_live is True
@@ -238,19 +238,23 @@ async def test_a_token_cannot_reach_another_tenants_questionnaire(issued: Issued
     assert theirs.assessment_id == other.assessment_id
     assert mine.assessment_id != theirs.assessment_id
 
-    # The bank is global content, so both tenants are asked the *same* question
-    # ids. That is exactly why the isolation property is about the assessment and
-    # not about the question: answering through one token must not touch the other
-    # review, even though the question id is legitimately shared.
-    shared = next(q for q in mine.questions if q.id in {t.id for t in theirs.questions})
+    # Each tenant answers its own copy of the questions, so a question id from the
+    # other review is simply not part of this one: it cannot be answered through
+    # this token, and answering this token's own questions never touches theirs.
+    theirs_question = theirs.questions[0]
+    assert theirs_question.id not in {q.id for q in mine.questions}
+    with pytest.raises(NotFound, match="not part of this questionnaire"):
+        await vendor_portal_service.save_answer(
+            issued.token, client_host=HOST, question_id=theirs_question.id, answer="yes"
+        )
     await vendor_portal_service.save_answer(
-        issued.token, client_host=HOST, question_id=shared.id, answer="yes"
+        issued.token, client_host=HOST, question_id=mine.questions[0].id, answer="yes"
     )
 
     after_mine = await vendor_portal_service.open_portal(issued.token, client_host=HOST)
     after_theirs = await vendor_portal_service.open_portal(other.token, client_host=HOST)
-    assert next(q for q in after_mine.questions if q.id == shared.id).answer == "yes"
-    assert next(q for q in after_theirs.questions if q.id == shared.id).answer is None
+    assert after_mine.questions[0].answer == "yes"
+    assert all(q.answer is None for q in after_theirs.questions)
     assert after_theirs.answered_count == 0
 
 
@@ -463,7 +467,12 @@ async def test_every_no_raises_a_finding_with_a_severity_from_the_question(
         view = await vendor_service.get_assessment(
             session, tenant_id=issued.tenant_id, assessment_id=issued.assessment_id
         )
-    assert len(view.findings) == 15
+    # One per question that can have a gap. A free-text question ("which countries
+    # hold our data?") is read by a reviewer, not failed by a "no".
+    gaps = [r for r in view.responses if any(o["flag"] for o in r.options)]
+    free_text = [r for r in view.responses if r.answer_type == "paragraph"]
+    assert free_text, "the lite set asks at least one question in the vendor's own words"
+    assert len(view.findings) == len(gaps) == view.question_count - len(free_text)
     severities = {f.severity for f in view.findings}
     assert "critical" in severities, "the lite set contains critical controls"
     # A critical-control failure floors the residual, however few questions there were.
@@ -486,8 +495,9 @@ async def test_correcting_an_answer_closes_the_finding_it_caused(issued: Issued)
         response_rows = await vendor_service.answers_with_questions(
             session, tenant_id=issued.tenant_id, assessment_id=issued.assessment_id
         )
-        row = next(r for r, _ in response_rows if r.question_id == target.question_id)
+        row = next(r for r, q in response_rows if q.id == target.question_id)
         row.answer = "yes"
+        row.answer_value = {"value": "yes"}
         await session.flush()
         second = await vendor_service.score_assessment(
             session,
@@ -496,7 +506,7 @@ async def test_correcting_an_answer_closes_the_finding_it_caused(issued: Issued)
             assessment_id=issued.assessment_id,
         )
 
-    assert len(second.findings) == 15, "no duplicate was raised"
+    assert len(second.findings) == len(first.findings), "no duplicate was raised"
     corrected = next(f for f in second.findings if f.question_id == target.question_id)
     assert corrected.status == "closed"
     assert corrected.closed_at is not None

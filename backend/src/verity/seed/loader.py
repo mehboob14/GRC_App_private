@@ -374,19 +374,31 @@ async def _load_questionnaire_bank(
         ).scalars()
     }
     for question in payload["questions"]:
-        values = {k: v for k, v in question.items() if k != "code"}
+        values = {k: v for k, v in question.items() if k not in ("code", "parent_code")}
         row = existing.get(question["code"])
         if row is None:
-            session.add(
-                QuestionnaireQuestion(
-                    id=uuid7(),
-                    template_id=template_row.id,
-                    code=question["code"],
-                    **values,
-                )
+            row = QuestionnaireQuestion(
+                id=uuid7(),
+                template_id=template_row.id,
+                code=question["code"],
+                **values,
             )
+            session.add(row)
+            existing[question["code"]] = row
             result.table("questionnaire_questions").inserted += 1
         elif _apply(row, values):
+            result.table("questionnaire_questions").updated += 1
+    await session.flush()
+
+    # Branching names its parent by code, because the pack cannot know an id.
+    # Only a pack that states parents is touched, so the core bank's rows keep
+    # whatever they hold.
+    for question in payload["questions"]:
+        if "parent_code" not in question:
+            continue
+        parent = existing.get(question["parent_code"]) if question["parent_code"] else None
+        row = existing[question["code"]]
+        if _apply(row, {"parent_question_id": parent.id if parent else None}):
             result.table("questionnaire_questions").updated += 1
     await session.flush()
 

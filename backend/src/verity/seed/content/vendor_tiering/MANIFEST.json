@@ -1,0 +1,11 @@
+{
+  "pack": "vendor_tiering",
+  "source": "Authored for Verity. No SIG, CAIQ or HECVAT text is reproduced (V13).",
+  "bank": "verity-inherent-risk",
+  "version": "2026.1",
+  "purpose": "tiering",
+  "questions": 14,
+  "sha256": {
+    "questionnaire_bank.json": "48abf52d820d6c17bfbdc79ee5505a30e72c410ff148909d2d0d6cecca1af9bd"
+  }
+}

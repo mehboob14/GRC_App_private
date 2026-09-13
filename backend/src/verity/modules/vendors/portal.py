@@ -52,9 +52,21 @@ from verity.modules.audit.service import AuditService, System, VendorContact, au
 from verity.modules.vendors.models import (
     ANSWER_VALUES,
     RISK_DOMAIN_LABELS,
+    QuestionnaireQuestion,
     VendorAssessment,
     VendorAssessmentResponse,
     VendorPortalToken,
+)
+from verity.modules.vendors.questionnaires import (
+    AskedQuestion,
+    asked_from_bank,
+    asked_from_snapshot,
+    is_answered,
+    normalize_answer,
+    owes_evidence,
+    picked_options,
+    response_value,
+    visible_keys,
 )
 
 logger: Final = structlog.get_logger(__name__)
@@ -68,10 +80,6 @@ _LINK_UNUSABLE: Final = (
     "This questionnaire link is not valid. It may have expired, been replaced by a "
     "newer link, or the review may already be complete. Contact whoever sent it to you."
 )
-
-# Answers that assert the control exists, and therefore owe evidence when the
-# question demands it. "no" and "na" claim nothing, so they owe nothing.
-_CLAIMS_A_CONTROL: Final[frozenset[str]] = frozenset(("yes", "partial"))
 
 # Statuses in which the portal will accept a write.
 _OPEN_STATUSES: Final[frozenset[str]] = frozenset(("pending", "in_progress"))
@@ -87,12 +95,25 @@ class _Resolved:
 
 
 @dataclass(frozen=True, slots=True)
+class PortalOption:
+    """An option as the vendor sees it: a label, never its score or whether it is a gap."""
+
+    key: str
+    label: str
+    not_applicable: bool
+    comment_required: bool
+
+
+@dataclass(frozen=True, slots=True)
 class PortalQuestion:
     """One question as the vendor sees it.
 
-    Note what is absent: ``weight``, ``critical_control`` and ``non_negotiable``.
-    Those are how *we* score the answer, and showing them would tell a vendor
-    exactly which questions to answer generously.
+    Note what is absent: ``weight``, ``critical_control``, ``non_negotiable``, and
+    each option's score and gap flag. Those are how *we* score the answer, and
+    showing them would tell a vendor exactly which questions to answer generously.
+
+    The branching rule is present, because the portal has to show a follow-up the
+    moment the answer that opens it is picked.
     """
 
     id: uuid.UUID
@@ -100,9 +121,19 @@ class PortalQuestion:
     body: str
     domain: str
     domain_label: str
+    section: str
+    help_text: str | None
     answer_type: str
+    options: list[PortalOption]
+    required: bool
+    evidence: str
+    evidence_on: list[str]
     evidence_required: bool
+    condition_question_id: str | None
+    condition_option_keys: list[str]
     answer: str | None
+    value: object
+    answered: bool
     implementation_notes: str | None
     na_justification: str | None
     has_evidence: bool
@@ -251,6 +282,8 @@ class VendorPortalService:
         vendor = await vendor_service.get_ref(
             session, tenant_id=resolved.tenant_id, vendor_id=assessment.vendor_id
         )
+        shown = visible_keys(rows)
+        asked = [(r, q) for r, q in rows if q.key in shown]
         return PortalView(
             assessment_id=assessment.id,
             organisation=await vendor_service.tenant_display_name(
@@ -259,25 +292,47 @@ class VendorPortalService:
             vendor_name=vendor.name,
             status=assessment.status,
             due_date=assessment.due_date,
-            question_count=len(rows),
-            answered_count=sum(1 for r, _ in rows if r.answer),
+            # Counted over what is asked right now: a follow-up the answers have
+            # not opened is not a question the vendor has left undone.
+            question_count=len(asked),
+            answered_count=sum(1 for r, q in asked if is_answered(r, q)),
             submitted_at=assessment.submitted_at,
-            questions=[
-                PortalQuestion(
-                    id=question.id,
-                    code=question.code,
-                    body=question.body,
-                    domain=question.domain,
-                    domain_label=RISK_DOMAIN_LABELS[question.domain],
-                    answer_type=question.answer_type,
-                    evidence_required=question.evidence_required,
-                    answer=response.answer,
-                    implementation_notes=response.implementation_notes,
-                    na_justification=response.na_justification,
-                    has_evidence=response.evidence_id is not None,
+            questions=[self._question(response, question) for response, question in rows],
+        )
+
+    @staticmethod
+    def _question(response: VendorAssessmentResponse, question: AskedQuestion) -> PortalQuestion:
+        answered = is_answered(response, question)
+        return PortalQuestion(
+            id=question.id,
+            code=question.code,
+            body=question.prompt,
+            domain=question.domain,
+            domain_label=RISK_DOMAIN_LABELS[question.domain],
+            section=question.section,
+            help_text=question.help_text,
+            answer_type=question.answer_type,
+            options=[
+                PortalOption(
+                    key=o.key,
+                    label=o.label,
+                    not_applicable=o.not_applicable,
+                    comment_required=o.comment_required,
                 )
-                for response, question in rows
+                for o in question.options
             ],
+            required=question.required,
+            evidence=question.evidence,
+            evidence_on=list(question.evidence_on),
+            evidence_required=question.evidence == "required",
+            condition_question_id=question.condition_question,
+            condition_option_keys=list(question.condition_options),
+            answer=response.answer,
+            value=response_value(response, question) if answered else None,
+            answered=answered,
+            implementation_notes=response.implementation_notes,
+            na_justification=response.na_justification,
+            has_evidence=response.evidence_id is not None,
         )
 
     # -- writes ----------------------------------------------------------------
@@ -288,34 +343,36 @@ class VendorPortalService:
         *,
         client_host: str | None,
         question_id: uuid.UUID,
-        answer: str,
+        answer: str | None = None,
+        value: object = None,
         implementation_notes: str | None = None,
         na_justification: str | None = None,
     ) -> PortalView:
+        """Save one answer, in the shape its question asks for.
+
+        A bank question takes yes, partial, no or na, as it always has. A question
+        from a tenant questionnaire takes its own shape (one option, several, text,
+        a number, a date), and an empty value clears it.
+        """
         resolved = await self._resolve(token, client_host=client_host)
         await ratelimit.check(
             "portal_write", ratelimit.token_identity(resolved.token_hash), ratelimit.PORTAL_WRITES
         )
-        if answer not in ANSWER_VALUES:
-            raise InvalidInput(
-                "That is not one of the available answers.",
-                detail=f"answer={answer!r} not in {ANSWER_VALUES}",
-            )
-        if answer == "na" and not (na_justification or "").strip():
-            raise InvalidInput(
-                "Tell us why this does not apply. An unexplained 'not applicable' "
-                "cannot be reviewed.",
-                detail="na without a justification",
-            )
 
         async with session_scope(resolved.tenant_id) as session:
             assessment = await self._assessment(session, resolved, for_write=True)
-            response = await self._response(session, resolved, assessment, question_id)
-            before = AuditService.snapshot(response, fields=("answer", "na_justification"))
-            response.answer = answer
-            response.implementation_notes = (implementation_notes or "").strip() or None
-            response.na_justification = (na_justification or "").strip() or None
-            response.answered_at = datetime.now(UTC)
+            response, question = await self._response(session, resolved, assessment, question_id)
+            before = AuditService.snapshot(
+                response, fields=("answer", "answer_value", "na_justification")
+            )
+            notes = (implementation_notes or "").strip() or None
+            reason = (na_justification or "").strip() or None
+            if question.from_bank:
+                self._write_bank_answer(response, answer, notes, reason)
+            else:
+                self._write_typed_answer(
+                    response, question, value if value is not None else answer, notes, reason
+                )
             await self._audit.record(
                 session,
                 action="update",
@@ -324,10 +381,67 @@ class VendorPortalService:
                 actor=self._actor(assessment),
                 tenant_id=resolved.tenant_id,
                 before=before,
-                after={"answer": answer, "na_justification": response.na_justification},
+                after={
+                    "answer": response.answer,
+                    "answer_value": response.answer_value,
+                    "na_justification": response.na_justification,
+                },
             )
             await session.flush()
             return await self._view(session, resolved, assessment)
+
+    @staticmethod
+    def _write_bank_answer(
+        response: VendorAssessmentResponse,
+        answer: str | None,
+        notes: str | None,
+        reason: str | None,
+    ) -> None:
+        if answer not in ANSWER_VALUES:
+            raise InvalidInput(
+                "That is not one of the available answers.",
+                detail=f"answer={answer!r} not in {ANSWER_VALUES}",
+            )
+        if answer == "na" and not reason:
+            raise InvalidInput(
+                "Tell us why this does not apply. An unexplained 'not applicable' "
+                "cannot be reviewed.",
+                detail="na without a justification",
+            )
+        response.answer = answer
+        response.implementation_notes = notes
+        response.na_justification = reason
+        response.answered_at = datetime.now(UTC)
+
+    @staticmethod
+    def _write_typed_answer(
+        response: VendorAssessmentResponse,
+        question: AskedQuestion,
+        raw: object,
+        notes: str | None,
+        reason: str | None,
+    ) -> None:
+        value = normalize_answer(question, raw)
+        picked = picked_options(question, value)
+        excluded = any(o.not_applicable for o in picked)
+        if excluded and not reason:
+            raise InvalidInput(
+                "Tell us why this does not apply. An unexplained 'not applicable' "
+                "cannot be reviewed.",
+                detail=f"{question.key}: not applicable without a reason",
+            )
+        if any(o.comment_required and not o.not_applicable for o in picked) and not notes:
+            raise InvalidInput(
+                "Add a short explanation for that answer.",
+                detail=f"{question.key}: comment required",
+            )
+        response.answer = (
+            value if isinstance(value, str) and question.answer_type == "single_choice" else None
+        )
+        response.answer_value = {"value": value} if value is not None else {}
+        response.implementation_notes = notes
+        response.na_justification = reason if excluded else None
+        response.answered_at = datetime.now(UTC) if value is not None else None
 
     async def _response(
         self,
@@ -335,28 +449,42 @@ class VendorPortalService:
         resolved: _Resolved,
         assessment: VendorAssessment,
         question_id: uuid.UUID,
-    ) -> VendorAssessmentResponse:
+    ) -> tuple[VendorAssessmentResponse, AskedQuestion]:
         """The row for this question **on this assessment**, or nothing.
 
         Scoped to the assessment the token resolved to, so a token cannot be used
         to write an answer onto a different review by supplying its question id.
         Rows are created at dispatch, so a question that was never asked has no
-        row and cannot be answered into existence.
+        row and cannot be answered into existence. The id is a bank question's,
+        or the id a tenant question carried in its snapshot.
         """
-        response = (
+        found = (
             await session.execute(
-                select(VendorAssessmentResponse)
+                select(VendorAssessmentResponse, QuestionnaireQuestion)
+                .outerjoin(
+                    QuestionnaireQuestion,
+                    QuestionnaireQuestion.id == VendorAssessmentResponse.question_id,
+                )
                 .where(VendorAssessmentResponse.tenant_id == resolved.tenant_id)
                 .where(VendorAssessmentResponse.assessment_id == assessment.id)
-                .where(VendorAssessmentResponse.question_id == question_id)
+                .where(
+                    (VendorAssessmentResponse.question_id == question_id)
+                    | (VendorAssessmentResponse.question_key == str(question_id))
+                )
             )
-        ).scalar_one_or_none()
-        if response is None:
+        ).one_or_none()
+        if found is None:
             raise NotFound(
                 "That question is not part of this questionnaire.",
                 detail=f"question {question_id} not on assessment {assessment.id}",
             )
-        return response
+        response, bank = found
+        question = (
+            asked_from_bank(bank)
+            if bank is not None
+            else asked_from_snapshot(response.question_snapshot)
+        )
+        return response, question
 
     async def attach_evidence(
         self,
@@ -381,7 +509,16 @@ class VendorPortalService:
         )
         async with session_scope(resolved.tenant_id) as session:
             assessment = await self._assessment(session, resolved, for_write=True)
-            response = await self._response(session, resolved, assessment, question_id)
+            response, question = await self._response(session, resolved, assessment, question_id)
+            if (
+                not question.from_bank
+                and question.answer_type != "file"
+                and question.evidence == "none"
+            ):
+                raise InvalidInput(
+                    "This question does not take a document.",
+                    detail=f"{question.key}: evidence is none",
+                )
             actor = self._actor(assessment)
 
             from verity.modules.evidence.service import evidence_service  # noqa: PLC0415
@@ -399,6 +536,9 @@ class VendorPortalService:
             )
             replaced = response.evidence_id
             response.evidence_id = evidence.id
+            # A file question is answered by its file.
+            if not question.from_bank and question.answer_type == "file":
+                response.answered_at = datetime.now(UTC)
             await self._audit.record(
                 session,
                 action="update",
@@ -434,7 +574,10 @@ class VendorPortalService:
             rows = await vendor_service.answers_with_questions(
                 session, tenant_id=resolved.tenant_id, assessment_id=assessment.id
             )
-            unanswered = [q.code for r, q in rows if not r.answer]
+            shown = visible_keys(rows)
+            unanswered = [
+                q.code for r, q in rows if q.key in shown and q.required and not is_answered(r, q)
+            ]
             if unanswered:
                 raise InvalidInput(
                     f"{len(unanswered)} question(s) still need an answer before you can submit.",
@@ -444,11 +587,7 @@ class VendorPortalService:
             # "partial" is still an assertion that the control exists in some form,
             # and enforcing this against "yes" alone would let a vendor buy a
             # scored review by downgrading every answer one notch.
-            missing = [
-                q.code
-                for r, q in rows
-                if q.evidence_required and r.answer in _CLAIMS_A_CONTROL and not r.evidence_id
-            ]
+            missing = [q.code for r, q in rows if owes_evidence(r, q, visible=q.key in shown)]
             if missing:
                 raise InvalidInput(
                     f"{len(missing)} answer(s) need a supporting document attached before "

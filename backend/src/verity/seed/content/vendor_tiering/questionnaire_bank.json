@@ -1,0 +1,614 @@
+{
+  "template": {
+    "code": "verity-inherent-risk",
+    "name": "Inherent risk",
+    "version": "2026.1",
+    "description": "Answered by your own team about how you use a vendor. The answers set the tier, which decides the review depth, reviewers and cadence.",
+    "suggested_tiers": [],
+    "framework_mappings": [],
+    "built_in": true,
+    "is_current": false,
+    "purpose": "tiering"
+  },
+  "questions": [
+    {
+      "code": "tier.data.sensitivity",
+      "position": 0,
+      "body": "What is the most sensitive data this vendor will store, process or access?",
+      "section": "Data",
+      "help_text": "Pick the most sensitive kind, even if it is a small share of what they hold.",
+      "domain": null,
+      "scope_level": "lite",
+      "answer_type": "single_choice",
+      "options": [
+        {
+          "key": "level_0",
+          "label": "No data is shared",
+          "score": 0
+        },
+        {
+          "key": "level_1",
+          "label": "Public or non identifying data",
+          "score": 1
+        },
+        {
+          "key": "level_2",
+          "label": "Internal business data",
+          "score": 2
+        },
+        {
+          "key": "level_3",
+          "label": "Personal data",
+          "score": 3
+        },
+        {
+          "key": "level_4",
+          "label": "Special category, health or payment data",
+          "score": 4
+        }
+      ],
+      "required": true,
+      "weight": 30.0,
+      "critical_control": false,
+      "non_negotiable": false,
+      "evidence_required": false,
+      "framework_refs": [],
+      "parent_code": null,
+      "trigger_condition": []
+    },
+    {
+      "code": "tier.business.criticality",
+      "position": 1,
+      "body": "How much of the business depends on this service?",
+      "section": "Operations",
+      "help_text": null,
+      "domain": null,
+      "scope_level": "lite",
+      "answer_type": "single_choice",
+      "options": [
+        {
+          "key": "level_0",
+          "label": "Nothing depends on them",
+          "score": 0
+        },
+        {
+          "key": "level_1",
+          "label": "A convenience, work continues without them",
+          "score": 1
+        },
+        {
+          "key": "level_2",
+          "label": "A team is degraded within days",
+          "score": 2
+        },
+        {
+          "key": "level_3",
+          "label": "A revenue or delivery process stops",
+          "score": 3
+        },
+        {
+          "key": "level_4",
+          "label": "The business stops",
+          "score": 4
+        }
+      ],
+      "required": true,
+      "weight": 25.0,
+      "critical_control": false,
+      "non_negotiable": false,
+      "evidence_required": false,
+      "framework_refs": [],
+      "parent_code": null,
+      "trigger_condition": []
+    },
+    {
+      "code": "tier.system.access",
+      "position": 2,
+      "body": "What access will the vendor have to our systems?",
+      "section": "Access",
+      "help_text": null,
+      "domain": null,
+      "scope_level": "lite",
+      "answer_type": "single_choice",
+      "options": [
+        {
+          "key": "level_0",
+          "label": "No access to our systems",
+          "score": 0
+        },
+        {
+          "key": "level_1",
+          "label": "Read only access to one system",
+          "score": 1
+        },
+        {
+          "key": "level_2",
+          "label": "Write access to one system",
+          "score": 2
+        },
+        {
+          "key": "level_3",
+          "label": "Access across several systems",
+          "score": 3
+        },
+        {
+          "key": "level_4",
+          "label": "Privileged or administrative access",
+          "score": 4
+        }
+      ],
+      "required": true,
+      "weight": 20.0,
+      "critical_control": false,
+      "non_negotiable": false,
+      "evidence_required": false,
+      "framework_refs": [],
+      "parent_code": null,
+      "trigger_condition": []
+    },
+    {
+      "code": "tier.regulatory.scope",
+      "position": 3,
+      "body": "How far does this engagement reach into regulated or audited scope?",
+      "section": "Compliance",
+      "help_text": null,
+      "domain": null,
+      "scope_level": "lite",
+      "answer_type": "single_choice",
+      "options": [
+        {
+          "key": "level_0",
+          "label": "Out of scope for everything",
+          "score": 0
+        },
+        {
+          "key": "level_1",
+          "label": "Internal policy only",
+          "score": 1
+        },
+        {
+          "key": "level_2",
+          "label": "In scope for one framework",
+          "score": 2
+        },
+        {
+          "key": "level_3",
+          "label": "In scope for several frameworks",
+          "score": 3
+        },
+        {
+          "key": "level_4",
+          "label": "Named in a regulatory filing or audit",
+          "score": 4
+        }
+      ],
+      "required": true,
+      "weight": 15.0,
+      "critical_control": false,
+      "non_negotiable": false,
+      "evidence_required": false,
+      "framework_refs": [],
+      "parent_code": null,
+      "trigger_condition": []
+    },
+    {
+      "code": "tier.fourth.party",
+      "position": 4,
+      "body": "How well do we know who they rely on to deliver this service?",
+      "section": "Fourth parties",
+      "help_text": null,
+      "domain": null,
+      "scope_level": "lite",
+      "answer_type": "single_choice",
+      "options": [
+        {
+          "key": "level_0",
+          "label": "No subprocessors",
+          "score": 0
+        },
+        {
+          "key": "level_1",
+          "label": "One known subprocessor",
+          "score": 1
+        },
+        {
+          "key": "level_2",
+          "label": "Several, all declared",
+          "score": 2
+        },
+        {
+          "key": "level_3",
+          "label": "Several, some undeclared",
+          "score": 3
+        },
+        {
+          "key": "level_4",
+          "label": "Unknown or unmanaged chain",
+          "score": 4
+        }
+      ],
+      "required": true,
+      "weight": 10.0,
+      "critical_control": false,
+      "non_negotiable": false,
+      "evidence_required": false,
+      "framework_refs": [],
+      "parent_code": null,
+      "trigger_condition": []
+    },
+    {
+      "code": "tier.data.types",
+      "position": 5,
+      "body": "Which kinds of data are involved?",
+      "section": "Data",
+      "help_text": "Select all that apply. The riskiest pick is what counts.",
+      "domain": null,
+      "scope_level": "core",
+      "answer_type": "multi_choice",
+      "options": [
+        {
+          "key": "none",
+          "label": "None",
+          "score": 0
+        },
+        {
+          "key": "customer_personal",
+          "label": "Customer personal data",
+          "score": 3
+        },
+        {
+          "key": "employee",
+          "label": "Employee or HR data",
+          "score": 3
+        },
+        {
+          "key": "source_code",
+          "label": "Source code or intellectual property",
+          "score": 3
+        },
+        {
+          "key": "payment",
+          "label": "Payment card or bank data",
+          "score": 4,
+          "min_tier": "high"
+        },
+        {
+          "key": "health",
+          "label": "Health data",
+          "score": 4,
+          "min_tier": "high"
+        },
+        {
+          "key": "secrets",
+          "label": "Credentials, keys or secrets",
+          "score": 4,
+          "min_tier": "high"
+        }
+      ],
+      "required": true,
+      "weight": 10.0,
+      "critical_control": false,
+      "non_negotiable": false,
+      "evidence_required": false,
+      "framework_refs": [],
+      "parent_code": null,
+      "trigger_condition": []
+    },
+    {
+      "code": "tier.data.volume",
+      "position": 6,
+      "body": "Roughly how many people's records will they hold?",
+      "section": "Data",
+      "help_text": null,
+      "domain": null,
+      "scope_level": "core",
+      "answer_type": "single_choice",
+      "options": [
+        {
+          "key": "none",
+          "label": "None",
+          "score": 0
+        },
+        {
+          "key": "thousand",
+          "label": "Fewer than 1,000",
+          "score": 1
+        },
+        {
+          "key": "hundred_thousand",
+          "label": "1,000 to 100,000",
+          "score": 2
+        },
+        {
+          "key": "million",
+          "label": "100,000 to 1 million",
+          "score": 3
+        },
+        {
+          "key": "more",
+          "label": "More than 1 million",
+          "score": 4
+        }
+      ],
+      "required": true,
+      "weight": 10.0,
+      "critical_control": false,
+      "non_negotiable": false,
+      "evidence_required": false,
+      "framework_refs": [],
+      "parent_code": null,
+      "trigger_condition": []
+    },
+    {
+      "code": "tier.data.location",
+      "position": 7,
+      "body": "Where will our data be stored or processed?",
+      "section": "Data",
+      "help_text": null,
+      "domain": null,
+      "scope_level": "core",
+      "answer_type": "single_choice",
+      "options": [
+        {
+          "key": "not_stored",
+          "label": "It is not stored",
+          "score": 0
+        },
+        {
+          "key": "approved",
+          "label": "Only in regions we have approved",
+          "score": 1
+        },
+        {
+          "key": "unapproved",
+          "label": "Outside the regions we have approved",
+          "score": 3
+        },
+        {
+          "key": "unknown",
+          "label": "Unknown",
+          "score": 4
+        }
+      ],
+      "required": true,
+      "weight": 5.0,
+      "critical_control": false,
+      "non_negotiable": false,
+      "evidence_required": false,
+      "framework_refs": [],
+      "parent_code": null,
+      "trigger_condition": []
+    },
+    {
+      "code": "tier.access.method",
+      "position": 8,
+      "body": "How will they connect to us?",
+      "section": "Access",
+      "help_text": "Select all that apply.",
+      "domain": null,
+      "scope_level": "core",
+      "answer_type": "multi_choice",
+      "options": [
+        {
+          "key": "none",
+          "label": "No connection",
+          "score": 0
+        },
+        {
+          "key": "sso",
+          "label": "Our staff sign in to their app",
+          "score": 1
+        },
+        {
+          "key": "api",
+          "label": "API or data integration",
+          "score": 2
+        },
+        {
+          "key": "network",
+          "label": "Network or VPN access",
+          "score": 3
+        },
+        {
+          "key": "production",
+          "label": "Access to production infrastructure",
+          "score": 4,
+          "min_tier": "high"
+        }
+      ],
+      "required": true,
+      "weight": 10.0,
+      "critical_control": false,
+      "non_negotiable": false,
+      "evidence_required": false,
+      "framework_refs": [],
+      "parent_code": null,
+      "trigger_condition": []
+    },
+    {
+      "code": "tier.ops.outage",
+      "position": 9,
+      "body": "If the service stopped, how soon would we feel it?",
+      "section": "Operations",
+      "help_text": null,
+      "domain": null,
+      "scope_level": "core",
+      "answer_type": "single_choice",
+      "options": [
+        {
+          "key": "never",
+          "label": "No noticeable impact",
+          "score": 0
+        },
+        {
+          "key": "week",
+          "label": "After more than a week",
+          "score": 1
+        },
+        {
+          "key": "days",
+          "label": "Within a few days",
+          "score": 2
+        },
+        {
+          "key": "day",
+          "label": "Within a day",
+          "score": 3
+        },
+        {
+          "key": "now",
+          "label": "Immediately",
+          "score": 4
+        }
+      ],
+      "required": true,
+      "weight": 10.0,
+      "critical_control": false,
+      "non_negotiable": false,
+      "evidence_required": false,
+      "framework_refs": [],
+      "parent_code": null,
+      "trigger_condition": []
+    },
+    {
+      "code": "tier.ops.substitute",
+      "position": 10,
+      "body": "How hard would they be to replace?",
+      "section": "Operations",
+      "help_text": null,
+      "domain": null,
+      "scope_level": "core",
+      "answer_type": "single_choice",
+      "options": [
+        {
+          "key": "easy",
+          "label": "Easy, there are several alternatives",
+          "score": 0
+        },
+        {
+          "key": "month",
+          "label": "Possible within a month",
+          "score": 2
+        },
+        {
+          "key": "hard",
+          "label": "Hard, a long migration",
+          "score": 3
+        },
+        {
+          "key": "sole",
+          "label": "Not possible, they are the only source",
+          "score": 4
+        }
+      ],
+      "required": true,
+      "weight": 5.0,
+      "critical_control": false,
+      "non_negotiable": false,
+      "evidence_required": false,
+      "framework_refs": [],
+      "parent_code": null,
+      "trigger_condition": []
+    },
+    {
+      "code": "tier.ops.spend",
+      "position": 11,
+      "body": "What is the expected annual spend?",
+      "section": "Operations",
+      "help_text": null,
+      "domain": null,
+      "scope_level": "core",
+      "answer_type": "single_choice",
+      "options": [
+        {
+          "key": "small",
+          "label": "Under 10,000",
+          "score": 0
+        },
+        {
+          "key": "modest",
+          "label": "10,000 to 50,000",
+          "score": 1
+        },
+        {
+          "key": "medium",
+          "label": "50,000 to 250,000",
+          "score": 2
+        },
+        {
+          "key": "large",
+          "label": "250,000 to 1 million",
+          "score": 3
+        },
+        {
+          "key": "major",
+          "label": "Over 1 million",
+          "score": 4
+        }
+      ],
+      "required": true,
+      "weight": 5.0,
+      "critical_control": false,
+      "non_negotiable": false,
+      "evidence_required": false,
+      "framework_refs": [],
+      "parent_code": null,
+      "trigger_condition": []
+    },
+    {
+      "code": "tier.tech.ai",
+      "position": 12,
+      "body": "Will the vendor use AI on our data?",
+      "section": "Technology",
+      "help_text": null,
+      "domain": null,
+      "scope_level": "core",
+      "answer_type": "single_choice",
+      "options": [
+        {
+          "key": "no",
+          "label": "No",
+          "score": 0
+        },
+        {
+          "key": "inference",
+          "label": "Yes, without training on our data",
+          "score": 2
+        },
+        {
+          "key": "training",
+          "label": "Yes, and they train models on our data",
+          "score": 4,
+          "min_tier": "medium"
+        }
+      ],
+      "required": true,
+      "weight": 5.0,
+      "critical_control": false,
+      "non_negotiable": false,
+      "evidence_required": false,
+      "framework_refs": [],
+      "parent_code": null,
+      "trigger_condition": []
+    },
+    {
+      "code": "tier.context.notes",
+      "position": 13,
+      "body": "Anything else a reviewer should know about this engagement?",
+      "section": "Context",
+      "help_text": null,
+      "domain": null,
+      "scope_level": "core",
+      "answer_type": "paragraph",
+      "options": [],
+      "required": false,
+      "weight": 1.0,
+      "critical_control": false,
+      "non_negotiable": false,
+      "evidence_required": false,
+      "framework_refs": [],
+      "parent_code": null,
+      "trigger_condition": []
+    }
+  ]
+}

@@ -88,6 +88,19 @@ from verity.modules.vendors.models import (
     VendorTieringPolicy,
     VendorTransition,
 )
+from verity.modules.vendors.questionnaires import (
+    AskedQuestion,
+    answer_labels,
+    asked_from_bank,
+    asked_from_snapshot,
+    is_answered,
+    normalize_answer,
+    owes_evidence,
+    picked_options,
+    questionnaire_service,
+    response_value,
+    visible_keys,
+)
 from verity.shared.ids import uuid7
 
 logger: Final = structlog.get_logger(__name__)
@@ -417,6 +430,35 @@ class TieringAnswers:
 
 
 @dataclass(frozen=True, slots=True)
+class QuestionnaireTieringInput:
+    """Answers to a tiering questionnaire, plus an optional human override.
+
+    ``answers`` maps a question id to ``{"value": ..., "comment": ...}``. Omitting
+    ``questionnaire_id`` uses the tenant's default tiering questionnaire.
+    """
+
+    answers: dict[str, Any]
+    questionnaire_id: uuid.UUID | None = None
+    override_tier: str | None = None
+    override_justification: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class TieringQuestionView:
+    """One question's line in a questionnaire tiering, as the panel draws it."""
+
+    id: str
+    prompt: str
+    section: str
+    answer_labels: list[str]
+    comment: str | None
+    points: float
+    max_points: float
+    floor_tier: str | None
+    counted: bool
+
+
+@dataclass(frozen=True, slots=True)
 class TieringView:
     """One scored run with its arithmetic recomputed from the stored answers.
 
@@ -439,6 +481,14 @@ class TieringView:
     points_to_lower_tier: float | None
     assessed_by_name: str | None
     assessed_at: datetime | None
+    questionnaire_id: uuid.UUID | None
+    """Set on a questionnaire run. Its lines are in ``questions``; ``factors`` is empty."""
+    questionnaire_name: str | None
+    questions: list[TieringQuestionView]
+    answers: dict[str, Any]
+    """The stored answers, so a re-tier opens with them filled in."""
+    floor_tier: str | None
+    """The tier an option's minimum lifted this run to, when the score alone would not."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -503,14 +553,14 @@ _ASSESSMENT_GONE: Final = "This questionnaire no longer exists. It may have been
 _FINDING_GONE: Final = "This finding no longer exists. It may have been closed and removed."
 
 
-def _finding_severity(question: QuestionnaireQuestion) -> str:
+def _finding_severity(question: AskedQuestion) -> str:
     """How bad a ``no`` to this question is.
 
     Driven by what the question *is*, not by who answered it: a missing critical
     control is critical whoever the vendor is, and a nice-to-have is low however
     important the vendor.
     """
-    if question.critical_control:
+    if question.critical:
         return "critical"
     if question.weight >= _HIGH_WEIGHT:
         return "high"
@@ -523,13 +573,15 @@ _HIGH_WEIGHT: Final = 2.0
 _MEDIUM_WEIGHT: Final = 1.5
 
 
-def _finding_title(question: QuestionnaireQuestion) -> str:
+def _finding_title(question: AskedQuestion) -> str:
     """A title that names the gap, not the question.
 
     "Access control: MFA on privileged access" is something a reader can act on;
     the question text repeated back is something they have to translate first.
+    A question a tenant wrote has no such code, so its own wording stands in.
     """
-    return f"{RISK_DOMAIN_LABELS[question.domain]}: {question.code}"
+    name = question.code if question.from_bank else question.prompt
+    return f"{RISK_DOMAIN_LABELS[question.domain]}: {name}"[:300]
 
 
 def _portal_url(token: str) -> str:
@@ -568,6 +620,18 @@ class ResponseView:
     na_justification: str | None
     evidence_id: uuid.UUID | None
     answered_at: datetime | None
+    section: str
+    help_text: str | None
+    options: list[dict[str, Any]]
+    value: Any
+    answer_labels: list[str]
+    flagged: bool
+    """The answer picked an option marked as a gap."""
+    required: bool
+    evidence: str
+    visible: bool
+    """False for a question whose condition the answers did not meet: never asked."""
+    owes_evidence: bool
 
 
 @dataclass(frozen=True, slots=True)
@@ -1621,7 +1685,12 @@ class VendorService:
             await session.execute(
                 select(
                     VendorAssessmentResponse.assessment_id,
-                    func.count().filter(VendorAssessmentResponse.answer.isnot(None)),
+                    func.count().filter(
+                        or_(
+                            VendorAssessmentResponse.answer.isnot(None),
+                            VendorAssessmentResponse.answered_at.isnot(None),
+                        )
+                    ),
                 )
                 .where(VendorAssessmentResponse.tenant_id == tenant_id)
                 .where(VendorAssessmentResponse.assessment_id.in_([r.id for r in rows]))
@@ -1654,32 +1723,81 @@ class VendorService:
     def _tiering_view(row: VendorTieringAssessment, names: dict[uuid.UUID, str]) -> TieringView:
         """Recompute the arithmetic from the answers and the run's own snapshot.
 
-        Deliberately not from today's policy: an assessment has to keep meaning
-        what it meant when it was made, or "why is this vendor critical" becomes
-        unanswerable the moment somebody retunes the weights.
+        Deliberately not from today's policy or today's questionnaire: an
+        assessment has to keep meaning what it meant when it was made, or "why is
+        this vendor critical" becomes unanswerable the moment somebody retunes it.
         """
-        snapshot = row.policy_snapshot or {}
-        breakdown = scoring.compute_tier(
-            {key: getattr(row, key) for key in scoring.FACTOR_KEYS},
-            weights=snapshot.get("weights"),
-            thresholds=snapshot.get("thresholds"),
-        )
         owner = row.assessed_by_membership_id
+        common: dict[str, Any] = {
+            "id": row.id,
+            "engagement_id": row.engagement_id,
+            "cycle": row.cycle,
+            "score": row.inherent_score,
+            "computed_tier": row.computed_tier,
+            "override_tier": row.override_tier,
+            "override_justification": row.override_justification,
+            "effective_tier": row.override_tier or row.computed_tier,
+            "assessed_by_name": names.get(owner) if owner else None,
+            "assessed_at": row.assessed_at,
+        }
+        snapshot = row.questionnaire_snapshot or {}
+        if snapshot.get("questions"):
+            asked = [asked_from_snapshot(q) for q in snapshot["questions"]]
+            stored = row.answers or {}
+            values = {key: (entry or {}).get("value") for key, entry in stored.items()}
+            breakdown = scoring.compute_questionnaire_tier(
+                [q.rule() for q in asked],
+                values,
+                thresholds=(row.policy_snapshot or {}).get("thresholds"),
+            )
+            return TieringView(
+                **common,
+                factors=[],
+                thresholds=breakdown.thresholds,
+                points_to_higher_tier=breakdown.points_to_higher_tier,
+                points_to_lower_tier=breakdown.points_to_lower_tier,
+                questionnaire_id=row.questionnaire_id,
+                questionnaire_name=str(snapshot.get("name") or "") or None,
+                questions=[
+                    TieringQuestionView(
+                        id=line.id,
+                        prompt=line.prompt,
+                        section=line.section,
+                        answer_labels=list(line.answer_labels)
+                        or (
+                            [str(values[line.id])]
+                            if values.get(line.id) not in (None, "", [])
+                            else []
+                        ),
+                        comment=(stored.get(line.id) or {}).get("comment"),
+                        points=line.points,
+                        max_points=line.max_points,
+                        floor_tier=line.floor_tier,
+                        counted=line.counted,
+                    )
+                    for line in breakdown.questions
+                ],
+                answers=dict(stored),
+                floor_tier=breakdown.floor_tier,
+            )
+
+        policy = row.policy_snapshot or {}
+        legacy = scoring.compute_tier(
+            {key: getattr(row, key) or 0 for key in scoring.FACTOR_KEYS},
+            weights=policy.get("weights"),
+            thresholds=policy.get("thresholds"),
+        )
         return TieringView(
-            id=row.id,
-            engagement_id=row.engagement_id,
-            cycle=row.cycle,
-            factors=list(breakdown.factors),
-            score=row.inherent_score,
-            computed_tier=row.computed_tier,
-            override_tier=row.override_tier,
-            override_justification=row.override_justification,
-            effective_tier=row.override_tier or row.computed_tier,
-            thresholds=breakdown.thresholds,
-            points_to_higher_tier=breakdown.points_to_higher_tier,
-            points_to_lower_tier=breakdown.points_to_lower_tier,
-            assessed_by_name=names.get(owner) if owner else None,
-            assessed_at=row.assessed_at,
+            **common,
+            factors=list(legacy.factors),
+            thresholds=legacy.thresholds,
+            points_to_higher_tier=legacy.points_to_higher_tier,
+            points_to_lower_tier=legacy.points_to_lower_tier,
+            questionnaire_id=None,
+            questionnaire_name=None,
+            questions=[],
+            answers={},
+            floor_tier=None,
         )
 
     async def get_ref(
@@ -2146,6 +2264,7 @@ class VendorService:
             if assessment
             else []
         )
+        shown = visible_keys(answers)
         return lifecycle.StageFacts(
             vendor_id=vendor.id,
             vendor_name=vendor.name,
@@ -2159,11 +2278,11 @@ class VendorService:
             required_reviewer_roles=policy.reviewer_roles.get(tier or "", ()),
             assessments_available=True,
             selected_bank_count=1 if assessment else 0,
-            unanswered_question_count=sum(1 for r, _ in answers if not r.answer),
+            unanswered_question_count=sum(
+                1 for r, q in answers if q.key in shown and q.required and not is_answered(r, q)
+            ),
             missing_evidence_count=sum(
-                1
-                for r, q in answers
-                if q.evidence_required and r.answer == "yes" and not r.evidence_id
+                1 for r, q in answers if owes_evidence(r, q, visible=q.key in shown)
             ),
             residual_score=assessment.residual_score if assessment else None,
             findings_available=True,
@@ -2330,9 +2449,13 @@ class VendorService:
         actor: Actor,
         vendor_id: uuid.UUID,
         engagement_id: uuid.UUID,
-        answers: TieringAnswers,
+        answers: TieringAnswers | QuestionnaireTieringInput,
     ) -> VendorDetailView:
-        """Score the five factors, set the tier, and lay out the cycle it implies.
+        """Score the answers, set the tier, and lay out the cycle it implies.
+
+        Two kinds of answers arrive here. A questionnaire run is what the interface
+        sends: the tenant's own tiering questions, scored by their options. The
+        five fixed factors (V6) are still accepted from API clients that post them.
 
         This is the method spec paragraph 82 is about: the tier is computed here
         and the *work* changes in the same transaction, because a tier that does
@@ -2354,9 +2477,6 @@ class VendorService:
         self._check_vocabulary(answers.override_tier, TIERS, field_name="override_tier")
 
         policy = await self._resolved_policy(session, tenant_id)
-        breakdown = scoring.compute_tier(
-            answers.as_dict(), weights=policy.weights, thresholds=policy.thresholds
-        )
         cycle = await self._current_cycle(session, tenant_id, engagement.id)
         assessment = VendorTieringAssessment(
             id=uuid7(),
@@ -2364,25 +2484,34 @@ class VendorService:
             vendor_id=vendor.id,
             engagement_id=engagement.id,
             cycle=cycle,
-            data_sensitivity=answers.data_sensitivity,
-            business_criticality=answers.business_criticality,
-            system_access=answers.system_access,
-            regulatory_scope=answers.regulatory_scope,
-            fourth_party_reliance=answers.fourth_party_reliance,
-            inherent_score=breakdown.score,
-            computed_tier=breakdown.tier,
             override_tier=answers.override_tier,
             override_justification=(answers.override_justification or "").strip() or None,
-            # Frozen with the row, so a later retune of the policy cannot rewrite
-            # what this assessment meant when it was made.
-            policy_snapshot={"weights": policy.weights, "thresholds": policy.thresholds},
             assessed_by_membership_id=actor.id if isinstance(actor, Membership) else None,
             assessed_at=datetime.now(UTC),
         )
+        if isinstance(answers, QuestionnaireTieringInput):
+            score, tier = await self._score_tiering_questionnaire(
+                session, tenant_id, answers, policy, assessment
+            )
+        else:
+            breakdown = scoring.compute_tier(
+                answers.as_dict(), weights=policy.weights, thresholds=policy.thresholds
+            )
+            score, tier = breakdown.score, breakdown.tier
+            for key, value in answers.as_dict().items():
+                setattr(assessment, key, value)
+            # Frozen with the row, so a later retune of the policy cannot rewrite
+            # what this assessment meant when it was made.
+            assessment.policy_snapshot = {
+                "weights": policy.weights,
+                "thresholds": policy.thresholds,
+            }
+        assessment.inherent_score = score
+        assessment.computed_tier = tier
         session.add(assessment)
         await session.flush([assessment])
 
-        engagement.tier = answers.override_tier or breakdown.tier
+        engagement.tier = answers.override_tier or tier
         await self.materialise_cycle(session, tenant_id, engagement, cycle, policy)
         await self._recache(session, tenant_id, vendor)
         self._schedule_reassessment(vendor, engagement.tier, policy)
@@ -2397,13 +2526,99 @@ class VendorService:
             before=None,
             after={
                 "engagement_id": str(engagement.id),
-                "inherent_score": breakdown.score,
-                "computed_tier": breakdown.tier,
+                "inherent_score": score,
+                "computed_tier": tier,
                 "override_tier": answers.override_tier,
+                "questionnaire_id": str(assessment.questionnaire_id)
+                if assessment.questionnaire_id
+                else None,
             },
         )
         await session.flush()
         return await self.get_vendor(session, tenant_id=tenant_id, vendor_id=vendor.id)
+
+    async def _score_tiering_questionnaire(
+        self,
+        session: AsyncSession,
+        tenant_id: uuid.UUID,
+        answers: QuestionnaireTieringInput,
+        policy: ResolvedPolicy,
+        assessment: VendorTieringAssessment,
+    ) -> tuple[float, str]:
+        """Validate and score a tiering questionnaire run, writing its snapshot onto the row."""
+        questionnaire = await questionnaire_service.load_for_use(
+            session,
+            tenant_id=tenant_id,
+            questionnaire_id=answers.questionnaire_id,
+            purpose="tiering",
+        )
+        if questionnaire is None:
+            raise InvalidInput(
+                "There is no tiering questionnaire to answer. Set one up under "
+                "Vendors, Questionnaires.",
+                detail="no tiering questionnaire for tenant",
+            )
+        snapshot = await questionnaire_service.snapshot(
+            session, tenant_id=tenant_id, questionnaire=questionnaire
+        )
+        asked = [asked_from_snapshot(q) for q in snapshot["questions"]]
+        if not asked:
+            raise InvalidInput(
+                "This tiering questionnaire has no questions yet. Add some first.",
+                detail=f"questionnaire {questionnaire.id} is empty",
+            )
+        by_key = {q.key: q for q in asked}
+        unknown = set(answers.answers) - set(by_key)
+        if unknown:
+            raise InvalidInput(
+                "Some answers are for questions this questionnaire no longer has. "
+                "Reopen the questionnaire and answer again.",
+                detail=f"unknown tiering questions {sorted(unknown)[:5]}",
+            )
+
+        stored: dict[str, dict[str, Any]] = {}
+        for key, entry in answers.answers.items():
+            raw = entry.get("value") if isinstance(entry, dict) else entry
+            value = normalize_answer(by_key[key], raw)
+            comment = (
+                str(entry.get("comment") or "").strip()[:4000] if isinstance(entry, dict) else ""
+            )
+            if value is not None:
+                stored[key] = {"value": value, **({"comment": comment} if comment else {})}
+
+        values = {key: entry["value"] for key, entry in stored.items()}
+        shown = scoring.visible_ids([q.rule() for q in asked], values)
+        missing = [q for q in asked if q.key in shown and q.required and q.key not in stored]
+        if missing:
+            raise InvalidInput(
+                f"Answer the {len(missing)} required "
+                f"{'question' if len(missing) == 1 else 'questions'} before setting the tier.",
+                detail=f"unanswered tiering questions {[q.key for q in missing][:5]}",
+            )
+        for question in asked:
+            if question.key not in shown or question.key not in stored:
+                continue
+            needs_note = any(
+                o.comment_required for o in picked_options(question, values[question.key])
+            )
+            if needs_note and not stored[question.key].get("comment"):
+                raise InvalidInput(
+                    f"Add a note to explain your answer to: {question.prompt}",
+                    detail=f"comment required on {question.key}",
+                )
+        # Answers to questions the branching hid are not kept: they were never asked.
+        stored = {key: entry for key, entry in stored.items() if key in shown}
+        values = {key: entry["value"] for key, entry in stored.items()}
+
+        thresholds = dict(questionnaire.tier_thresholds or {}) or policy.thresholds
+        breakdown = scoring.compute_questionnaire_tier(
+            [q.rule() for q in asked], values, thresholds=thresholds
+        )
+        assessment.questionnaire_id = questionnaire.id
+        assessment.answers = stored
+        assessment.questionnaire_snapshot = snapshot
+        assessment.policy_snapshot = {"weights": {}, "thresholds": breakdown.thresholds}
+        return breakdown.score, breakdown.tier
 
     @staticmethod
     def _schedule_reassessment(vendor: Vendor, tier: str | None, policy: ResolvedPolicy) -> None:
@@ -2595,11 +2810,13 @@ class VendorService:
     async def _current_bank(
         self, session: AsyncSession, code: str | None = None
     ) -> QuestionnaireTemplate:
-        stmt = select(QuestionnaireTemplate)
+        stmt = select(QuestionnaireTemplate).where(QuestionnaireTemplate.purpose == "due_diligence")
         stmt = (
             stmt.where(QuestionnaireTemplate.code == code)
             if code
-            else stmt.where(QuestionnaireTemplate.is_current.is_(True))
+            else stmt.where(QuestionnaireTemplate.is_current.is_(True)).order_by(
+                QuestionnaireTemplate.code
+            )
         )
         bank = (await session.execute(stmt.limit(1))).scalar_one_or_none()
         if bank is None:
@@ -2621,7 +2838,7 @@ class VendorService:
         )
         return list((await session.execute(stmt)).scalars())
 
-    async def issue_questionnaire(  # noqa: PLR0913
+    async def issue_questionnaire(  # noqa: PLR0913, PLR0915 -- two sources, one dispatch
         self,
         session: AsyncSession,
         *,
@@ -2632,6 +2849,7 @@ class VendorService:
         contact_id: uuid.UUID | None = None,
         due_date: date | None = None,
         bank_code: str | None = None,
+        questionnaire_id: uuid.UUID | None = None,
     ) -> IssuedQuestionnaire:
         """Create the assessment, mint the portal link, and tell the contact.
 
@@ -2658,14 +2876,44 @@ class VendorService:
             )
 
         contact = await self._portal_contact(session, tenant_id, vendor.id, contact_id)
-        bank = await self._current_bank(session, bank_code)
-        levels = BUNDLE_BY_TIER.get(engagement.tier, ("lite",))
-        questions = await self._bank_questions(session, bank.id, levels)
-        if not questions:
-            raise InvalidInput(
-                "That questionnaire bank has no questions for this tier.",
-                detail=f"bank {bank.code} has no questions at levels {levels}",
+        # Two sources. A tenant questionnaire is the normal one: named, or the one
+        # holding this tier. The shipped bank is used only when a caller names it,
+        # which is how API clients written before questionnaires keep working.
+        bank: QuestionnaireTemplate | None = None
+        questions: list[QuestionnaireQuestion] = []
+        levels: tuple[str, ...] = ()
+        snapshot: dict[str, Any] = {}
+        if bank_code:
+            bank = await self._current_bank(session, bank_code)
+            levels = BUNDLE_BY_TIER.get(engagement.tier, ("lite",))
+            questions = await self._bank_questions(session, bank.id, levels)
+            if not questions:
+                raise InvalidInput(
+                    "That questionnaire bank has no questions for this tier.",
+                    detail=f"bank {bank.code} has no questions at levels {levels}",
+                )
+        else:
+            chosen = await questionnaire_service.load_for_use(
+                session,
+                tenant_id=tenant_id,
+                questionnaire_id=questionnaire_id,
+                purpose="due_diligence",
+                tier=engagement.tier,
             )
+            if chosen is None:
+                raise InvalidInput(
+                    "Pick a questionnaire to send. None is set as the default for "
+                    f"{engagement.tier} tier vendors.",
+                    detail=f"no due diligence questionnaire for tier {engagement.tier}",
+                )
+            snapshot = await questionnaire_service.snapshot(
+                session, tenant_id=tenant_id, questionnaire=chosen
+            )
+            if not snapshot["questions"]:
+                raise InvalidInput(
+                    "That questionnaire has no questions yet. Add some before sending it.",
+                    detail=f"questionnaire {chosen.id} is empty",
+                )
 
         cycle = await self._current_cycle(session, tenant_id, engagement.id)
         now = datetime.now(UTC)
@@ -2699,33 +2947,46 @@ class VendorService:
                 portal_url=_portal_url(token),
             )
 
+        question_count = len(questions) if bank else len(snapshot["questions"])
+        scope: dict[str, Any] = {
+            "tier": engagement.tier,
+            "question_count": question_count,
+            "snapshotted_at": now.isoformat(),
+        }
+        if bank:
+            scope |= {
+                "bank_code": bank.code,
+                "bank_version": bank.version,
+                "scope_levels": list(levels),
+                "question_codes": [q.code for q in questions],
+            }
+        else:
+            scope |= {
+                "questionnaire_id": snapshot["id"],
+                "questionnaire_name": snapshot["name"],
+                "question_keys": [q["id"] for q in snapshot["questions"]],
+            }
         assessment = VendorAssessment(
             id=uuid7(),
             tenant_id=tenant_id,
             vendor_id=vendor.id,
             engagement_id=engagement.id,
-            template_id=bank.id,
+            template_id=bank.id if bank else None,
+            questionnaire_id=uuid.UUID(snapshot["id"]) if snapshot else None,
             cycle=cycle,
             kind="reassessment" if cycle > 1 else "initial",
             status="pending",
             due_date=due_date or (now.date() + timedelta(days=_QUESTIONNAIRE_DUE_DAYS)),
             portal_contact_id=contact.id,
-            scope={
-                "bank_code": bank.code,
-                "bank_version": bank.version,
-                "tier": engagement.tier,
-                "scope_levels": list(levels),
-                "question_codes": [q.code for q in questions],
-                "question_count": len(questions),
-                "snapshotted_at": now.isoformat(),
-            },
+            scope=scope,
         )
         session.add(assessment)
         await session.flush([assessment])
 
         # One row per question, unanswered. The portal then updates rows rather
         # than inventing them, so a question that was asked and ignored is
-        # distinguishable from one that was never asked.
+        # distinguishable from one that was never asked. A tenant question travels
+        # on its row, because the questionnaire it came from can be edited later.
         for question in questions:
             session.add(
                 VendorAssessmentResponse(
@@ -2733,6 +2994,16 @@ class VendorService:
                     tenant_id=tenant_id,
                     assessment_id=assessment.id,
                     question_id=question.id,
+                )
+            )
+        for copied in snapshot.get("questions", []):
+            session.add(
+                VendorAssessmentResponse(
+                    id=uuid7(),
+                    tenant_id=tenant_id,
+                    assessment_id=assessment.id,
+                    question_key=copied["id"],
+                    question_snapshot=copied,
                 )
             )
         await session.flush()
@@ -2748,9 +3019,10 @@ class VendorService:
             before=None,
             after={
                 "vendor_id": str(vendor.id),
-                "bank": bank.code,
+                "bank": bank.code if bank else None,
+                "questionnaire": snapshot.get("name"),
                 "tier": engagement.tier,
-                "question_count": len(questions),
+                "question_count": question_count,
                 "contact_id": str(contact.id),
             },
         )
@@ -2759,7 +3031,7 @@ class VendorService:
         return IssuedQuestionnaire(
             assessment_id=assessment.id,
             contact_email=contact.email or "",
-            question_count=len(questions),
+            question_count=question_count,
             due_date=assessment.due_date,
             portal_url=_portal_url(token),
         )
@@ -2910,19 +3182,7 @@ class VendorService:
 
         tiering = await self._latest_tiering(session, tenant_id, engagement.id, assessment.cycle)
         inherent = tiering.inherent_score if tiering else 0.0
-        breakdown = scoring.compute_residual(
-            [
-                scoring.Answer(
-                    question_key=question.code,
-                    domain=question.domain,
-                    answer=response.answer or "",
-                    weight=question.weight,
-                    critical_control=question.critical_control,
-                )
-                for response, question in rows
-            ],
-            inherent=inherent,
-        )
+        breakdown = scoring.compute_residual(self._scored_answers(rows), inherent=inherent)
 
         # Read before the write, rather than asserting what it must have been.
         was = {
@@ -2967,22 +3227,83 @@ class VendorService:
         await session.flush()
         return await self.get_assessment(session, tenant_id=tenant_id, assessment_id=assessment.id)
 
+    @staticmethod
+    def _scored_answers(
+        rows: Sequence[tuple[VendorAssessmentResponse, AskedQuestion]],
+    ) -> list[scoring.Answer]:
+        """The answers that move a residual score, in scoring's own shape.
+
+        A bank row scores by its yes/partial/no/na vocabulary, as it always has. A
+        tenant question scores only if it was asked (its condition was met) and is a
+        choice with credit to give; its picked option carries the credit and says
+        whether it is a gap. Text, numbers, dates and files inform the reviewer and
+        never become points.
+        """
+        shown = visible_keys(rows)
+        answers: list[scoring.Answer] = []
+        for response, question in rows:
+            if question.from_bank:
+                answers.append(
+                    scoring.Answer(
+                        question_key=question.code,
+                        domain=question.domain,
+                        answer=response.answer or "",
+                        weight=question.weight,
+                        critical_control=question.critical,
+                    )
+                )
+                continue
+            if question.key not in shown or not question.scored:
+                continue
+            picked = (
+                picked_options(question, response_value(response, question))
+                if is_answered(response, question)
+                else []
+            )
+            creditable = [o for o in picked if not o.not_applicable]
+            answers.append(
+                scoring.Answer(
+                    question_key=question.code,
+                    domain=question.domain,
+                    answer=",".join(o.key for o in picked),
+                    weight=question.weight,
+                    critical_control=question.critical,
+                    credit=max(o.score for o in creditable) / 100 if creditable else None,
+                    not_applicable=bool(picked) and not creditable,
+                    flagged=any(o.flag for o in picked),
+                )
+            )
+        return answers
+
+    @staticmethod
+    def _failed(
+        response: VendorAssessmentResponse, question: AskedQuestion, shown: set[str]
+    ) -> bool:
+        """Whether this answer is a gap that owes a finding."""
+        if question.from_bank:
+            return response.answer == "no"
+        return (
+            question.key in shown
+            and is_answered(response, question)
+            and any(o.flag for o in picked_options(question, response_value(response, question)))
+        )
+
     async def _raise_findings(
         self,
         session: AsyncSession,
         tenant_id: uuid.UUID,
         actor: Actor,
         assessment: VendorAssessment,
-        rows: Sequence[tuple[VendorAssessmentResponse, QuestionnaireQuestion]],
+        rows: Sequence[tuple[VendorAssessmentResponse, AskedQuestion]],
     ) -> int:
-        """One finding per ``no``, severity from what the question is.
+        """One finding per gap: a ``no`` on a bank question, or an option marked as one.
 
         Idempotent per (assessment, question): re-scoring after a corrected answer
         updates the finding rather than raising a second one, and a question whose
-        answer has changed away from ``no`` closes the finding it caused.
+        answer has changed away from the gap closes the finding it caused.
         """
         existing = {
-            row.question_id: row
+            (row.question_id or row.question_key): row
             for row in (
                 await session.execute(
                     select(VendorFinding)
@@ -2993,9 +3314,10 @@ class VendorService:
         }
         raised = 0
         now = datetime.now(UTC)
+        shown = visible_keys(rows)
         for response, question in rows:
-            failed = response.answer == "no"
-            found = existing.get(question.id)
+            failed = self._failed(response, question, shown)
+            found = existing.get(question.id if question.from_bank else question.key)
             if not failed:
                 if found is not None and found.status in OPEN_FINDING_STATUSES:
                     before = AuditService.snapshot(found, fields=_FINDING_SNAPSHOT)
@@ -3022,7 +3344,7 @@ class VendorService:
             if found is not None:
                 before = AuditService.snapshot(found, fields=_FINDING_SNAPSHOT)
                 found.severity = severity
-                found.is_blocking = question.non_negotiable
+                found.is_blocking = question.blocking
                 after = AuditService.snapshot(found, fields=_FINDING_SNAPSHOT)
                 if before != after:
                     await self._audit.record(
@@ -3042,12 +3364,13 @@ class VendorService:
                 vendor_id=assessment.vendor_id,
                 engagement_id=assessment.engagement_id,
                 assessment_id=assessment.id,
-                question_id=question.id,
+                question_id=question.id if question.from_bank else None,
+                question_key=None if question.from_bank else question.key,
                 title=_finding_title(question),
-                detail=question.body,
+                detail=question.prompt,
                 finding_source="assessment",
                 severity=severity,
-                is_blocking=question.non_negotiable,
+                is_blocking=question.blocking,
                 sla_due=now.date() + timedelta(days=_FINDING_SLA_DAYS[severity]),
             )
             session.add(new_finding)
@@ -3104,59 +3427,86 @@ class VendorService:
 
     async def answers_with_questions(
         self, session: AsyncSession, *, tenant_id: uuid.UUID, assessment_id: uuid.UUID
-    ) -> list[tuple[VendorAssessmentResponse, QuestionnaireQuestion]]:
-        """The assessment's rows joined to their questions, in asked order."""
+    ) -> list[tuple[VendorAssessmentResponse, AskedQuestion]]:
+        """The assessment's rows with the question each one asked, in asked order.
+
+        A row answers a bank question (joined) or carries its own snapshot. Both
+        come back as ``AskedQuestion``, so nothing downstream tells them apart.
+        """
         stmt = (
             select(VendorAssessmentResponse, QuestionnaireQuestion)
-            .join(
+            .outerjoin(
                 QuestionnaireQuestion,
                 QuestionnaireQuestion.id == VendorAssessmentResponse.question_id,
             )
             .where(VendorAssessmentResponse.tenant_id == tenant_id)
             .where(VendorAssessmentResponse.assessment_id == assessment_id)
-            .order_by(QuestionnaireQuestion.position)
         )
-        return [(r, q) for r, q in (await session.execute(stmt)).all()]
+        pairs = [
+            (r, asked_from_bank(q) if q is not None else asked_from_snapshot(r.question_snapshot))
+            for r, q in (await session.execute(stmt)).all()
+        ]
+        return sorted(pairs, key=lambda pair: pair[1].position)
 
     @staticmethod
     def _response_view(
-        response: VendorAssessmentResponse, question: QuestionnaireQuestion
+        response: VendorAssessmentResponse, question: AskedQuestion, shown: set[str]
     ) -> ResponseView:
+        visible = question.key in shown
+        value = response_value(response, question) if is_answered(response, question) else None
         return ResponseView(
             id=response.id,
             question_id=question.id,
             question_code=question.code,
-            body=question.body,
+            body=question.prompt,
             domain=question.domain,
             domain_label=RISK_DOMAIN_LABELS[question.domain],
             scope_level=question.scope_level,
             answer_type=question.answer_type,
             weight=question.weight,
-            critical_control=question.critical_control,
-            non_negotiable=question.non_negotiable,
-            evidence_required=question.evidence_required,
-            framework_refs=list(question.framework_refs or []),
+            critical_control=question.critical,
+            non_negotiable=question.blocking,
+            evidence_required=question.evidence == "required",
+            framework_refs=list(question.framework_refs),
             answer=response.answer,
             implementation_notes=response.implementation_notes,
             na_justification=response.na_justification,
             evidence_id=response.evidence_id,
             answered_at=response.answered_at,
+            section=question.section,
+            help_text=question.help_text,
+            options=[
+                {
+                    "key": o.key,
+                    "label": o.label,
+                    "score": o.score,
+                    "flag": o.flag,
+                    "not_applicable": o.not_applicable,
+                }
+                for o in question.options
+            ],
+            value=value,
+            answer_labels=answer_labels(response, question),
+            flagged=VendorService._failed(response, question, shown),
+            required=question.required,
+            evidence=question.evidence,
+            visible=visible,
+            owes_evidence=owes_evidence(response, question, visible=visible),
         )
 
     def _assessment_view(
         self,
         assessment: VendorAssessment,
-        responses: Sequence[tuple[VendorAssessmentResponse, QuestionnaireQuestion]],
+        responses: Sequence[tuple[VendorAssessmentResponse, AskedQuestion]],
         findings: Sequence[VendorFinding],
         names: dict[uuid.UUID, str],
         token: VendorPortalToken | None,
     ) -> AssessmentView:
-        answered = sum(1 for r, _ in responses if r.answer)
-        missing_evidence = sum(
-            1
-            for r, q in responses
-            if q.evidence_required and r.answer == "yes" and not r.evidence_id
-        )
+        shown = visible_keys(responses)
+        asked = [(r, q) for r, q in responses if q.key in shown]
+        answered = sum(1 for r, q in asked if is_answered(r, q))
+        unanswered = sum(1 for r, q in asked if q.required and not is_answered(r, q))
+        missing_evidence = sum(1 for r, q in asked if owes_evidence(r, q))
         return AssessmentView(
             id=assessment.id,
             vendor_id=assessment.vendor_id,
@@ -3172,12 +3522,12 @@ class VendorService:
             domain_scores=dict(assessment.domain_scores or {}),
             score_steps=list((assessment.score_snapshot or {}).get("steps", [])),
             scope=dict(assessment.scope or {}),
-            question_count=len(responses),
+            question_count=len(asked),
             answered_count=answered,
-            unanswered_count=len(responses) - answered,
+            unanswered_count=unanswered,
             missing_evidence_count=missing_evidence,
             submitted_at=assessment.submitted_at,
-            responses=[self._response_view(r, q) for r, q in responses],
+            responses=[self._response_view(r, q, shown) for r, q in responses],
             findings=[self._finding_view(f, names) for f in findings],
             portal_link_live=bool(
                 token and token.revoked_at is None and token.expires_at > datetime.now(UTC)
@@ -3201,7 +3551,10 @@ class VendorService:
             vendor_name=vendor_name,
             vendor_tier=vendor_tier,
             assessment_id=finding.assessment_id,
-            question_id=finding.question_id,
+            # A bank question's id, or the id a tenant question carried in its
+            # snapshot: either way, the question that raised it.
+            question_id=finding.question_id
+            or (uuid.UUID(finding.question_key) if finding.question_key else None),
             title=finding.title,
             detail=finding.detail,
             finding_source=finding.finding_source,

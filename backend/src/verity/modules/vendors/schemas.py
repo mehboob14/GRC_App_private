@@ -153,13 +153,24 @@ class VendorOut(_Response):
 # -- lifecycle and tiering (section 2) ----------------------------------------
 
 
+class TieringAnswerIn(_Request):
+    value: str | float | list[str] | None = None
+    comment: str | None = Field(default=None, max_length=4000)
+
+
 class TieringWrite(_Request):
-    """The five factor answers, plus an optional human override of the result.
+    """Answers to a tiering questionnaire, plus an optional human override.
+
+    ``answers`` (question id to answer) is what the interface sends, against
+    ``questionnaire_id`` or the tenant's default. Without it, the five fixed factor
+    fields are read instead, for API clients that still post them.
 
     The score and the tier are absent by design: they are computed. A client that
     could post a tier could set one the arithmetic never produced.
     """
 
+    questionnaire_id: uuid.UUID | None = None
+    answers: dict[str, TieringAnswerIn] | None = None
     data_sensitivity: int = Field(default=0, ge=0, le=4)
     business_criticality: int = Field(default=0, ge=0, le=4)
     system_access: int = Field(default=0, ge=0, le=4)
@@ -222,11 +233,28 @@ class TieringFactorOut(_Response):
     max_points: float
 
 
+class TieringQuestionOut(_Response):
+    id: str
+    prompt: str
+    section: str
+    answer_labels: list[str]
+    comment: str | None
+    points: float
+    max_points: float
+    floor_tier: str | None
+    counted: bool
+
+
 class TieringOut(_Response):
     id: uuid.UUID
     engagement_id: uuid.UUID
     cycle: int
     factors: list[TieringFactorOut]
+    questionnaire_id: uuid.UUID | None
+    questionnaire_name: str | None
+    questions: list[TieringQuestionOut]
+    answers: dict[str, object]
+    floor_tier: str | None
     score: float
     computed_tier: str
     override_tier: str | None
@@ -341,6 +369,8 @@ class IssueQuestionnaireWrite(_Request):
     """Which contact to send to. Omitted, the vendor's ``portal`` contact is used."""
     due_date: date | None = None
     bank_code: str | None = None
+    questionnaire_id: uuid.UUID | None = None
+    """The questionnaire to send. Omitted, the one set as default for the tier."""
 
 
 class IssuedQuestionnaireOut(_Response):
@@ -376,6 +406,16 @@ class ResponseOut(_Response):
     na_justification: str | None
     evidence_id: uuid.UUID | None
     answered_at: UtcDateTime | None
+    section: str
+    help_text: str | None
+    options: list[dict[str, object]]
+    value: str | float | list[str] | None
+    answer_labels: list[str]
+    flagged: bool
+    required: bool
+    evidence: str
+    visible: bool
+    owes_evidence: bool
 
 
 class FindingOut(_Response):
@@ -702,3 +742,148 @@ class OffboardingCompletionWrite(_Request):
     certificate_evidence_id: uuid.UUID | None = None
     notes: str | None = Field(default=None, max_length=8000)
     complete: bool = False
+
+
+# -- questionnaires a tenant builds -------------------------------------------
+
+
+class QuestionOptionIn(_Request):
+    key: str = Field(default="", max_length=40)
+    """Stable within the question. Blank on a new option; the service assigns one."""
+    label: str = Field(min_length=1, max_length=200)
+    score: float = Field(default=0, ge=0, le=100)
+    flag: bool = False
+    not_applicable: bool = False
+    comment_required: bool = False
+    min_tier: str | None = None
+
+
+class QuestionConditionIn(_Request):
+    question_id: uuid.UUID
+    option_keys: list[str] = Field(min_length=1, max_length=50)
+
+
+class QuestionWrite(_Request):
+    prompt: str = Field(min_length=1, max_length=1000)
+    answer_type: str
+    section: str = Field(default="General", max_length=80)
+    help_text: str | None = Field(default=None, max_length=2000)
+    options: list[QuestionOptionIn] = Field(default_factory=list, max_length=50)
+    required: bool = True
+    evidence: str = "none"
+    evidence_on: list[str] = Field(default_factory=list, max_length=50)
+    weight: float = Field(default=1.0, ge=0, le=100)
+    domain: str | None = None
+    critical: bool = False
+    blocking: bool = False
+    condition: QuestionConditionIn | None = None
+
+
+class QuestionCreateWrite(QuestionWrite):
+    after_question_id: uuid.UUID | None = None
+    """Insert after this question. Omitted, the question goes on the end."""
+
+
+class QuestionnaireCreateWrite(_Request):
+    purpose: str
+    name: str = Field(min_length=1, max_length=200)
+    description: str | None = Field(default=None, max_length=2000)
+    library_code: str | None = Field(default=None, max_length=100)
+    preset: str | None = Field(default=None, max_length=40)
+
+
+class QuestionnaireWrite(_Request):
+    name: str = Field(min_length=1, max_length=200)
+    description: str | None = Field(default=None, max_length=2000)
+    default_tiers: list[str] = Field(default_factory=list, max_length=4)
+    tier_thresholds: dict[str, float] = Field(default_factory=dict)
+    is_default: bool = False
+
+
+class QuestionnaireStatusWrite(_Request):
+    status: str
+
+
+class QuestionImportWrite(_Request):
+    library_question_ids: list[uuid.UUID] = Field(min_length=1, max_length=300)
+
+
+class QuestionOrderWrite(_Request):
+    question_ids: list[uuid.UUID] = Field(min_length=1, max_length=300)
+
+
+class QuestionOut(_Response):
+    id: uuid.UUID
+    position: int
+    section: str
+    prompt: str
+    help_text: str | None
+    answer_type: str
+    options: list[dict[str, object]]
+    required: bool
+    evidence: str
+    evidence_on: list[str]
+    weight: float
+    domain: str | None
+    domain_label: str | None
+    critical: bool
+    blocking: bool
+    condition: dict[str, object]
+    framework_refs: list[str]
+    library_code: str | None
+
+
+class QuestionnaireSummaryOut(_Response):
+    id: uuid.UUID
+    purpose: str
+    name: str
+    description: str | None
+    status: str
+    is_default: bool
+    default_tiers: list[str]
+    question_count: int
+    section_count: int
+    library_code: str | None
+    updated_at: UtcDateTime
+    updated_by_name: str | None
+
+
+class QuestionnaireOut(QuestionnaireSummaryOut):
+    tier_thresholds: dict[str, float]
+    questions: list[QuestionOut]
+
+
+class LibraryQuestionOut(_Response):
+    id: uuid.UUID
+    code: str
+    section: str
+    prompt: str
+    help_text: str | None
+    answer_type: str
+    options: list[dict[str, object]]
+    required: bool
+    evidence: str
+    weight: float
+    domain: str | None
+    domain_label: str | None
+    critical: bool
+    blocking: bool
+    scope_level: str
+    framework_refs: list[str]
+    condition_code: str | None
+
+
+class LibraryPresetOut(_Response):
+    key: str
+    label: str
+    question_count: int
+
+
+class LibraryTemplateOut(_Response):
+    code: str
+    name: str
+    description: str | None
+    purpose: str
+    version: str
+    presets: list[LibraryPresetOut]
+    questions: list[LibraryQuestionOut]

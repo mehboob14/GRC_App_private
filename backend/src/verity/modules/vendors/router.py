@@ -29,6 +29,7 @@ from verity.core.deps import (
 )
 from verity.core.errors import NotFound
 from verity.modules.audit.service import Membership
+from verity.modules.vendors.questionnaire_router import questionnaire_router
 from verity.modules.vendors.schemas import (
     AcceptFindingWrite,
     AdvanceWrite,
@@ -83,6 +84,7 @@ from verity.modules.vendors.service import (
     EngagementInput,
     IntakeInput,
     OffboardingCompletion,
+    QuestionnaireTieringInput,
     SocReviewInput,
     SubprocessorInput,
     TieringAnswers,
@@ -287,6 +289,11 @@ async def get_roster(
     return RosterOut(roles={role: list(ids) for role, ids in roster.items()})
 
 
+# The questionnaire builder is a static prefix too, so it is mounted here, before
+# the first parameterised route could capture its first segment.
+vendors_router.include_router(questionnaire_router)
+
+
 # -- item paths ---------------------------------------------------------------
 
 
@@ -419,7 +426,18 @@ async def tier_engagement(
         actor=_actor(context),
         vendor_id=vendor_id,
         engagement_id=engagement_id,
-        answers=TieringAnswers(**body.model_dump()),
+        answers=(
+            QuestionnaireTieringInput(
+                answers={key: answer.model_dump() for key, answer in body.answers.items()},
+                questionnaire_id=body.questionnaire_id,
+                override_tier=body.override_tier,
+                override_justification=body.override_justification,
+            )
+            if body.answers is not None
+            else TieringAnswers(
+                **body.model_dump(exclude={"answers", "questionnaire_id"}),
+            )
+        ),
     )
     return VendorDetailOut.model_validate(view)
 
@@ -528,6 +546,7 @@ async def issue_questionnaire(
         contact_id=body.contact_id,
         due_date=body.due_date,
         bank_code=body.bank_code,
+        questionnaire_id=body.questionnaire_id,
     )
     return IssuedQuestionnaireOut.model_validate(issued)
 

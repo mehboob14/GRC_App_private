@@ -112,12 +112,49 @@ RISK_DOMAIN_LABELS: Final[dict[str, str]] = {
 # How deep a questionnaire goes. This is what spec 82's "right-sizes assessment
 # depth" actually means: a low-tier vendor answers the lite set and stops.
 SCOPE_LEVELS: Final[tuple[str, ...]] = ("lite", "core", "detail")
+
+# -- questionnaires a tenant builds -------------------------------------------
+
+QUESTIONNAIRE_PURPOSES: Final[tuple[str, ...]] = ("tiering", "due_diligence")
+"""Two questionnaires with two audiences, and they are easy to confuse.
+
+``tiering`` is internal. Our own business owner answers it about how we use the
+vendor (what data, what access, how critical), and the answers set the tier.
+``due_diligence`` goes to the vendor through the portal. They answer it about their
+own controls, with evidence, and the answers set the residual score and findings."""
+
+QUESTIONNAIRE_STATUSES: Final[tuple[str, ...]] = ("active", "archived")
+
+QUESTION_TYPES: Final[tuple[str, ...]] = (
+    "single_choice",
+    "multi_choice",
+    "text",
+    "paragraph",
+    "number",
+    "date",
+    "file",
+)
+"""What a tenant-built question can ask for. Only the two choice types score;
+the rest are recorded and shown to the reviewer, never turned into points."""
+
+CHOICE_TYPES: Final[frozenset[str]] = frozenset(("single_choice", "multi_choice"))
+
+EVIDENCE_RULES: Final[tuple[str, ...]] = ("none", "optional", "required")
+
+# The shipped bank's own types, kept for the rows already written against them,
+# plus the builder's so a library can ship questions in either shape.
 ANSWER_TYPES: Final[tuple[str, ...]] = (
     "yes_no_na",
     "select",
     "multi_select",
     "text",
     "numeric",
+    "single_choice",
+    "multi_choice",
+    "paragraph",
+    "number",
+    "date",
+    "file",
 )
 
 # Which scope levels each tier is asked. This is spec 82's "right-sizes assessment
@@ -461,11 +498,28 @@ class VendorTieringAssessment(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
     engagement_id: Mapped[uuid.UUID] = mapped_column(ForeignKey(_ENGAGEMENT_FK, ondelete="CASCADE"))
     cycle: Mapped[int] = mapped_column(default=1, server_default=text("1"))
 
-    data_sensitivity: Mapped[int] = mapped_column(default=0, server_default=text("0"))
-    business_criticality: Mapped[int] = mapped_column(default=0, server_default=text("0"))
-    system_access: Mapped[int] = mapped_column(default=0, server_default=text("0"))
-    regulatory_scope: Mapped[int] = mapped_column(default=0, server_default=text("0"))
-    fourth_party_reliance: Mapped[int] = mapped_column(default=0, server_default=text("0"))
+    # The five fixed factors (V6). Filled on runs made before tiering became a
+    # questionnaire, and on API calls that still post the five numbers; empty on
+    # a questionnaire run, whose answers live in ``answers`` instead.
+    data_sensitivity: Mapped[int | None] = mapped_column(default=None)
+    business_criticality: Mapped[int | None] = mapped_column(default=None)
+    system_access: Mapped[int | None] = mapped_column(default=None)
+    regulatory_scope: Mapped[int | None] = mapped_column(default=None)
+    fourth_party_reliance: Mapped[int | None] = mapped_column(default=None)
+
+    questionnaire_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("vendor_questionnaires.id", ondelete="SET NULL"), default=None
+    )
+    # ``{question_id: {"value": ..., "comment": ...}}`` for a questionnaire run.
+    answers: Mapped[dict[str, Any]] = mapped_column(
+        postgresql.JSONB, default=dict, server_default=text("'{}'::jsonb")
+    )
+    # The questions, options and thresholds exactly as answered. The questionnaire
+    # is tenant-editable, and a tier nobody can re-derive is a tier nobody can
+    # defend, so the run keeps its own copy the way ``policy_snapshot`` does.
+    questionnaire_snapshot: Mapped[dict[str, Any]] = mapped_column(
+        postgresql.JSONB, default=dict, server_default=text("'{}'::jsonb")
+    )
 
     inherent_score: Mapped[float] = mapped_column(Float)
     computed_tier: Mapped[str]
@@ -632,6 +686,10 @@ class QuestionnaireTemplate(UUIDPrimaryKey, Timestamped, Base):
     """Which version an issue picks by default. An assessment already in flight
     keeps the ``template_id`` it was dispatched with, so publishing a new version
     never moves a questionnaire under a vendor mid-answer."""
+    purpose: Mapped[str] = mapped_column(default="due_diligence", server_default="due_diligence")
+    """Which builder this library feeds. A tenant copies from it, never answers it."""
+
+    __table_args__ = (status_check("questionnaire_templates", "purpose", QUESTIONNAIRE_PURPOSES),)
 
     def __repr__(self) -> str:
         return f"QuestionnaireTemplate(code={self.code!r}, version={self.version!r})"
@@ -653,7 +711,16 @@ class QuestionnaireQuestion(UUIDPrimaryKey, Timestamped, Base):
     # shared-column note; a question table without the question cannot work.
     body: Mapped[str]
     position: Mapped[int] = mapped_column(default=0, server_default=text("0"))
-    domain: Mapped[str]
+    # Null on a tiering library question: exposure has no control domain.
+    domain: Mapped[str | None] = mapped_column(default=None)
+    section: Mapped[str | None] = mapped_column(default=None)
+    help_text: Mapped[str | None] = mapped_column(default=None)
+    # ``[{"key", "label", "score", ...}]`` for a choice question. Empty on the
+    # original yes/partial/no/na rows, whose four answers are implied.
+    options: Mapped[list[dict[str, Any]]] = mapped_column(
+        postgresql.JSONB, default=list, server_default=text("'[]'::jsonb")
+    )
+    required: Mapped[bool] = mapped_column(default=True, server_default=text("true"))
     scope_level: Mapped[str] = mapped_column(default="core", server_default="core")
     answer_type: Mapped[str] = mapped_column(default="yes_no_na", server_default="yes_no_na")
     weight: Mapped[float] = mapped_column(Float, default=1.0, server_default=text("1.0"))
@@ -687,6 +754,133 @@ class QuestionnaireQuestion(UUIDPrimaryKey, Timestamped, Base):
 
 
 # ---------------------------------------------------------------------------
+# Questionnaires a tenant builds — tenant-owned, RLS, the V5 "Phase 2" table
+# ---------------------------------------------------------------------------
+
+
+class VendorQuestionnaire(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
+    """A questionnaire a tenant has built, usually by copying from the library.
+
+    One table for both purposes because the builder is the same: sections of typed
+    questions with options, rules and scores. What differs is who answers and what
+    the answers set, which ``purpose`` names.
+
+    Editing never reaches back. A tiering run and a dispatched review each keep a
+    snapshot of the questions they were answered against, so a questionnaire can be
+    reworded, reordered or pruned the day after it was used.
+
+    Never deleted (rule 6): retired by archiving, which keeps every run and review
+    that points at it readable.
+    """
+
+    __tablename__ = "vendor_questionnaires"
+
+    purpose: Mapped[str]
+    name: Mapped[str]
+    description: Mapped[str | None] = mapped_column(default=None)
+    status: Mapped[str] = mapped_column(default="active", server_default="active")
+    # Tiering only: the questionnaire the tiering dialog opens with.
+    is_default: Mapped[bool] = mapped_column(default=False, server_default=text("false"))
+    # Due diligence only: the tiers this one is preselected for when sending. A
+    # tier belongs to at most one questionnaire; the service moves it, not copies.
+    default_tiers: Mapped[list[str]] = mapped_column(
+        postgresql.JSONB, default=list, server_default=text("'[]'::jsonb")
+    )
+    # Tiering only: lower bounds on the 0 to 100 score. Empty means the policy's.
+    tier_thresholds: Mapped[dict[str, Any]] = mapped_column(
+        postgresql.JSONB, default=dict, server_default=text("'{}'::jsonb")
+    )
+    library_code: Mapped[str | None] = mapped_column(default=None)
+    """The library template it was started from, for provenance. Nothing joins on it."""
+    created_by_membership_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey(_MEMBERSHIP_FK, ondelete="SET NULL"), default=None
+    )
+    updated_by_membership_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey(_MEMBERSHIP_FK, ondelete="SET NULL"), default=None
+    )
+
+    __table_args__ = (
+        status_check("vendor_questionnaires", "purpose", QUESTIONNAIRE_PURPOSES),
+        status_check("vendor_questionnaires", "status", QUESTIONNAIRE_STATUSES),
+        tenant_index("vendor_questionnaires", "purpose", "status"),
+        # One tiering default per tenant, or the dialog would have to guess.
+        Index(
+            "uq_vendor_questionnaires__tenant_id_default_tiering",
+            "tenant_id",
+            unique=True,
+            postgresql_where=text("purpose = 'tiering' AND is_default"),
+        ),
+    )
+
+    def __repr__(self) -> str:
+        return f"VendorQuestionnaire(id={self.id!r}, purpose={self.purpose!r})"
+
+
+class VendorQuestionnaireQuestion(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
+    """One question in a tenant questionnaire.
+
+    ``options`` is a list of ``{"key", "label", "score", "flag", "not_applicable",
+    "comment_required", "min_tier"}``. JSON rather than a child table because an
+    option has no life outside its question: it is written, read and snapshotted
+    as part of it, and nothing ever queries one option on its own.
+    """
+
+    __tablename__ = "vendor_questionnaire_questions"
+
+    questionnaire_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("vendor_questionnaires.id", ondelete="CASCADE")
+    )
+    position: Mapped[int] = mapped_column(default=0, server_default=text("0"))
+    section: Mapped[str] = mapped_column(default="General", server_default="General")
+    prompt: Mapped[str]
+    help_text: Mapped[str | None] = mapped_column(default=None)
+    answer_type: Mapped[str] = mapped_column(
+        default="single_choice", server_default="single_choice"
+    )
+    options: Mapped[list[dict[str, Any]]] = mapped_column(
+        postgresql.JSONB, default=list, server_default=text("'[]'::jsonb")
+    )
+    required: Mapped[bool] = mapped_column(default=True, server_default=text("true"))
+    evidence: Mapped[str] = mapped_column(default="none", server_default="none")
+    # Option keys that make a document owed. Empty means any answer owes it.
+    evidence_on: Mapped[list[str]] = mapped_column(
+        postgresql.JSONB, default=list, server_default=text("'[]'::jsonb")
+    )
+    weight: Mapped[float] = mapped_column(Float, default=1.0, server_default=text("1.0"))
+    # Due diligence only. Which domain the answer counts toward in the residual.
+    domain: Mapped[str | None] = mapped_column(default=None)
+    # Due diligence only. A flagged answer here floors the residual at high (V7).
+    critical: Mapped[bool] = mapped_column(default=False, server_default=text("false"))
+    # Due diligence only. A flagged answer here raises a finding the gate will not pass.
+    blocking: Mapped[bool] = mapped_column(default=False, server_default=text("false"))
+    # ``{"question_id": ..., "option_keys": [...]}``: ask this only when an
+    # earlier question was answered with one of those options. Empty means always.
+    condition: Mapped[dict[str, Any]] = mapped_column(
+        postgresql.JSONB, default=dict, server_default=text("'{}'::jsonb")
+    )
+    framework_refs: Mapped[list[str]] = mapped_column(
+        postgresql.JSONB, default=list, server_default=text("'[]'::jsonb")
+    )
+    library_code: Mapped[str | None] = mapped_column(default=None)
+
+    __table_args__ = (
+        status_check("vendor_questionnaire_questions", "answer_type", QUESTION_TYPES),
+        status_check("vendor_questionnaire_questions", "evidence", EVIDENCE_RULES),
+        status_check("vendor_questionnaire_questions", "domain", RISK_DOMAINS),
+        # Named by hand: the generated name runs past Postgres's 63 characters.
+        Index(
+            "ix_vendor_questionnaire_questions__tenant_id_questionnaire_id",
+            "tenant_id",
+            "questionnaire_id",
+            "position",
+        ),
+    )
+
+    def __repr__(self) -> str:
+        return f"VendorQuestionnaireQuestion(id={self.id!r}, type={self.answer_type!r})"
+
+
+# ---------------------------------------------------------------------------
 # The review
 # ---------------------------------------------------------------------------
 
@@ -705,6 +899,11 @@ class VendorAssessment(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
     engagement_id: Mapped[uuid.UUID] = mapped_column(ForeignKey(_ENGAGEMENT_FK, ondelete="CASCADE"))
     template_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("questionnaire_templates.id", ondelete="SET NULL"), default=None
+    )
+    # Set when the review was sent from a tenant questionnaire rather than the
+    # shipped bank. Provenance only: the questions travel on the response rows.
+    questionnaire_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("vendor_questionnaires.id", ondelete="SET NULL"), default=None
     )
     cycle: Mapped[int] = mapped_column(default=1, server_default=text("1"))
     kind: Mapped[str] = mapped_column(default="initial", server_default="initial")
@@ -814,9 +1013,19 @@ class VendorAssessmentResponse(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
     assessment_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("vendor_assessments.id", ondelete="CASCADE")
     )
-    question_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("questionnaire_questions.id", ondelete="RESTRICT")
+    # Exactly one of the next two. ``question_id`` points into the shipped bank,
+    # which is immutable and versioned. ``question_key`` names a question from a
+    # tenant questionnaire, and ``question_snapshot`` carries that question as it
+    # was sent, because the questionnaire itself can be edited afterwards.
+    question_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("questionnaire_questions.id", ondelete="RESTRICT"), default=None
     )
+    question_key: Mapped[str | None] = mapped_column(default=None)
+    question_snapshot: Mapped[dict[str, Any]] = mapped_column(
+        postgresql.JSONB, default=dict, server_default=text("'{}'::jsonb")
+    )
+    # The bank's yes/partial/no/na, or a snapshot question's option key. Every
+    # typed value (several options, text, a number, a date) is in answer_value.
     answer: Mapped[str | None] = mapped_column(default=None)
     answer_value: Mapped[dict[str, Any]] = mapped_column(
         postgresql.JSONB, default=dict, server_default=text("'{}'::jsonb")
@@ -835,7 +1044,26 @@ class VendorAssessmentResponse(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
     answered_at: Mapped[datetime | None] = mapped_column(default=None)
 
     __table_args__ = (
-        status_check("vendor_assessment_responses", "answer", ANSWER_VALUES),
+        # The four-value vocabulary binds bank rows only. A snapshot row's answer
+        # is one of that question's own option keys, checked by the service
+        # against the snapshot it carries.
+        CheckConstraint(
+            "(question_id IS NULL) OR (answer IS NULL) OR "
+            "(answer IN ('yes', 'partial', 'no', 'na'))",
+            name=conv("ck_vendor_assessment_responses__answer_valid"),
+        ),
+        CheckConstraint(
+            "(question_id IS NULL) <> (question_key IS NULL)",
+            name=conv("ck_vendor_assessment_responses__one_question_source"),
+        ),
+        Index(
+            "uq_vendor_assessment_responses__assessment_question_key",
+            "tenant_id",
+            "assessment_id",
+            "question_key",
+            unique=True,
+            postgresql_where=text("question_key IS NOT NULL"),
+        ),
         # "Does not apply" is a claim, and an unexplained one is how a
         # questionnaire is emptied without anybody noticing.
         CheckConstraint(
@@ -874,6 +1102,9 @@ class VendorFinding(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
     question_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("questionnaire_questions.id", ondelete="SET NULL"), default=None
     )
+    # The snapshot question that raised it, for a review sent from a tenant
+    # questionnaire. What keeps re-scoring idempotent where question_id is empty.
+    question_key: Mapped[str | None] = mapped_column(default=None)
     title: Mapped[str]
     detail: Mapped[str] = mapped_column(default="", server_default=text("''"))
     finding_source: Mapped[str] = mapped_column(default="assessment", server_default="assessment")

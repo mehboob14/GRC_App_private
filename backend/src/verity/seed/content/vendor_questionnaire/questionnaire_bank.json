@@ -15,7 +15,8 @@
       "ISO27001"
     ],
     "built_in": true,
-    "is_current": true
+    "is_current": true,
+    "purpose": "due_diligence"
   },
   "questions": [
     {
@@ -33,7 +34,8 @@
         "SOC2:CC1.1",
         "SOC2:CC5.3",
         "ISO27001:A.5.1"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "is.owner.named",
@@ -49,7 +51,8 @@
       "framework_refs": [
         "SOC2:CC1.3",
         "ISO27001:A.5.2"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "is.risk.assessment",
@@ -65,7 +68,8 @@
       "framework_refs": [
         "SOC2:CC3.2",
         "ISO27001:A.5.7"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "is.independent.audit",
@@ -80,7 +84,8 @@
       "evidence_required": true,
       "framework_refs": [
         "SOC2:CC9.2"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "is.asset.inventory",
@@ -96,7 +101,8 @@
       "framework_refs": [
         "SOC2:CC6.1",
         "ISO27001:A.5.9"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "is.metrics.reported",
@@ -111,7 +117,8 @@
       "evidence_required": false,
       "framework_refs": [
         "SOC2:CC4.2"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "is.exception.process",
@@ -126,7 +133,8 @@
       "evidence_required": false,
       "framework_refs": [
         "SOC2:CC5.3"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "ac.mfa.admin",
@@ -143,7 +151,8 @@
         "SOC2:CC6.1",
         "SOC2:CC6.6",
         "ISO27001:A.5.17"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "ac.revocation.termination",
@@ -160,7 +169,8 @@
         "SOC2:CC6.2",
         "SOC2:CC6.3",
         "ISO27001:A.5.18"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "ac.least.privilege",
@@ -176,7 +186,8 @@
       "framework_refs": [
         "SOC2:CC6.1",
         "SOC2:CC6.3"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "ac.access.review",
@@ -192,7 +203,8 @@
       "framework_refs": [
         "SOC2:CC6.2",
         "ISO27001:A.5.18"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "ac.shared.accounts",
@@ -207,7 +219,8 @@
       "evidence_required": false,
       "framework_refs": [
         "SOC2:CC6.1"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "ac.sso.supported",
@@ -222,7 +235,8 @@
       "evidence_required": false,
       "framework_refs": [
         "SOC2:CC6.1"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "ac.privileged.session",
@@ -238,7 +252,8 @@
       "framework_refs": [
         "SOC2:CC6.1",
         "SOC2:CC7.2"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "dp.encryption.transit",
@@ -254,7 +269,8 @@
       "framework_refs": [
         "SOC2:CC6.7",
         "ISO27001:A.8.24"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "dp.encryption.rest",
@@ -270,7 +286,8 @@
       "framework_refs": [
         "SOC2:CC6.7",
         "ISO27001:A.8.24"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "dp.data.location",
@@ -286,7 +303,8 @@
       "framework_refs": [
         "SOC2:CC6.1",
         "ISO27001:A.5.34"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "dp.deletion.on.exit",
@@ -302,7 +320,8 @@
       "framework_refs": [
         "SOC2:CC6.5",
         "ISO27001:A.5.10"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "dp.retention.defined",
@@ -318,7 +337,8 @@
       "framework_refs": [
         "SOC2:CC6.5",
         "ISO27001:A.5.33"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "dp.dsr.support",
@@ -334,7 +354,8 @@
       "framework_refs": [
         "SOC2:P5.1",
         "SOC2:P6.1"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "dp.key.management",
@@ -350,7 +371,8 @@
       "framework_refs": [
         "SOC2:CC6.7",
         "ISO27001:A.8.24"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "dp.segregation",
@@ -365,7 +387,8 @@
       "evidence_required": false,
       "framework_refs": [
         "SOC2:CC6.1"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "bc.plan.documented",
@@ -381,7 +404,8 @@
       "framework_refs": [
         "SOC2:A1.2",
         "ISO27001:A.5.29"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "bc.backup.tested",
@@ -397,7 +421,8 @@
       "framework_refs": [
         "SOC2:A1.2",
         "ISO27001:A.8.13"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "bc.rto.rpo",
@@ -412,7 +437,8 @@
       "evidence_required": false,
       "framework_refs": [
         "SOC2:A1.2"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "bc.dr.exercise",
@@ -428,7 +454,8 @@
       "framework_refs": [
         "SOC2:A1.3",
         "ISO27001:A.5.30"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "bc.redundancy",
@@ -443,7 +470,8 @@
       "evidence_required": false,
       "framework_refs": [
         "SOC2:A1.2"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "ir.plan.documented",
@@ -459,7 +487,8 @@
       "framework_refs": [
         "SOC2:CC7.3",
         "ISO27001:A.5.24"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "ir.breach.notification",
@@ -476,7 +505,8 @@
         "SOC2:CC7.4",
         "SOC2:CC7.5",
         "ISO27001:A.5.26"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "ir.logging.monitoring",
@@ -492,7 +522,8 @@
       "framework_refs": [
         "SOC2:CC7.2",
         "ISO27001:A.8.15"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "ir.tabletop",
@@ -507,7 +538,8 @@
       "evidence_required": false,
       "framework_refs": [
         "SOC2:CC7.3"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "ir.breaches.disclosed",
@@ -522,6 +554,20 @@
       "evidence_required": false,
       "framework_refs": [
         "SOC2:CC7.4"
+      ],
+      "options": [
+        {
+          "key": "no",
+          "label": "No",
+          "score": 100
+        },
+        {
+          "key": "yes",
+          "label": "Yes",
+          "score": 0,
+          "flag": true,
+          "comment_required": true
+        }
       ]
     },
     {
@@ -538,7 +584,8 @@
       "framework_refs": [
         "SOC2:CC7.4",
         "ISO27001:A.5.28"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "sd.sdlc.documented",
@@ -554,7 +601,8 @@
       "framework_refs": [
         "SOC2:CC8.1",
         "ISO27001:A.8.25"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "sd.code.review",
@@ -570,7 +618,8 @@
       "framework_refs": [
         "SOC2:CC8.1",
         "ISO27001:A.8.32"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "sd.env.separation",
@@ -586,7 +635,8 @@
       "framework_refs": [
         "SOC2:CC8.1",
         "ISO27001:A.8.31"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "sd.dependency.scanning",
@@ -602,7 +652,8 @@
       "framework_refs": [
         "SOC2:CC7.1",
         "ISO27001:A.8.8"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "sd.pentest.annual",
@@ -618,7 +669,8 @@
       "framework_refs": [
         "SOC2:CC4.1",
         "ISO27001:A.8.29"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "sd.secrets.management",
@@ -634,7 +686,8 @@
       "framework_refs": [
         "SOC2:CC6.1",
         "ISO27001:A.8.24"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "ic.patching.sla",
@@ -650,7 +703,8 @@
       "framework_refs": [
         "SOC2:CC7.1",
         "ISO27001:A.8.8"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "ic.vuln.scanning",
@@ -666,7 +720,8 @@
       "framework_refs": [
         "SOC2:CC7.1",
         "ISO27001:A.8.8"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "ic.endpoint.protection",
@@ -682,7 +737,8 @@
       "framework_refs": [
         "SOC2:CC6.8",
         "ISO27001:A.8.7"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "ic.network.segmentation",
@@ -698,7 +754,8 @@
       "framework_refs": [
         "SOC2:CC6.6",
         "ISO27001:A.8.22"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "ic.iac.reviewed",
@@ -713,7 +770,8 @@
       "evidence_required": false,
       "framework_refs": [
         "SOC2:CC8.1"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "ic.cloud.provider",
@@ -728,7 +786,8 @@
       "evidence_required": false,
       "framework_refs": [
         "SOC2:CC9.2"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "ps.background.checks",
@@ -744,7 +803,8 @@
       "framework_refs": [
         "SOC2:CC1.4",
         "ISO27001:A.6.1"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "ps.security.training",
@@ -760,7 +820,8 @@
       "framework_refs": [
         "SOC2:CC1.4",
         "ISO27001:A.6.3"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "ps.confidentiality.agreements",
@@ -776,7 +837,8 @@
       "framework_refs": [
         "SOC2:CC1.1",
         "ISO27001:A.6.6"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "ps.phishing.simulation",
@@ -791,7 +853,8 @@
       "evidence_required": false,
       "framework_refs": [
         "SOC2:CC1.4"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "cl.dpa.willing",
@@ -807,7 +870,8 @@
       "framework_refs": [
         "SOC2:P4.2",
         "ISO27001:A.5.34"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "cl.right.to.audit",
@@ -822,7 +886,8 @@
       "evidence_required": false,
       "framework_refs": [
         "SOC2:CC9.2"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "cl.regulatory.scope",
@@ -837,6 +902,44 @@
       "evidence_required": false,
       "framework_refs": [
         "SOC2:CC2.3"
+      ],
+      "options": [
+        {
+          "key": "gdpr",
+          "label": "GDPR",
+          "score": 0
+        },
+        {
+          "key": "hipaa",
+          "label": "HIPAA",
+          "score": 0
+        },
+        {
+          "key": "pci_dss",
+          "label": "PCI DSS",
+          "score": 0
+        },
+        {
+          "key": "sox",
+          "label": "SOX",
+          "score": 0
+        },
+        {
+          "key": "ccpa",
+          "label": "CCPA or CPRA",
+          "score": 0
+        },
+        {
+          "key": "none",
+          "label": "None of these",
+          "score": 0
+        },
+        {
+          "key": "other",
+          "label": "Other",
+          "score": 0,
+          "comment_required": true
+        }
       ]
     },
     {
@@ -852,7 +955,8 @@
       "evidence_required": true,
       "framework_refs": [
         "SOC2:CC9.1"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "cl.sanctions.screening",
@@ -867,7 +971,8 @@
       "evidence_required": false,
       "framework_refs": [
         "SOC2:CC2.3"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "fp.subprocessors.disclosed",
@@ -883,7 +988,8 @@
       "framework_refs": [
         "SOC2:CC9.2",
         "ISO27001:A.5.21"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "fp.change.notification",
@@ -899,7 +1005,8 @@
       "framework_refs": [
         "SOC2:CC9.2",
         "ISO27001:A.5.22"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "fp.due.diligence",
@@ -915,7 +1022,8 @@
       "framework_refs": [
         "SOC2:CC9.2",
         "ISO27001:A.5.19"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "fp.flow.down",
@@ -931,7 +1039,8 @@
       "framework_refs": [
         "SOC2:CC9.2",
         "ISO27001:A.5.20"
-      ]
+      ],
+      "options": []
     },
     {
       "code": "fp.concentration",
@@ -946,7 +1055,8 @@
       "evidence_required": false,
       "framework_refs": [
         "SOC2:CC9.2"
-      ]
+      ],
+      "options": []
     }
   ]
 }

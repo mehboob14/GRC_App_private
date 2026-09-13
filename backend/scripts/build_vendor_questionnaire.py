@@ -52,6 +52,9 @@ class Question(NamedTuple):
     non_negotiable: bool = False
     evidence_required: bool = False
     framework_refs: tuple[str, ...] = ()
+    # Choices for a question that is not yes/partial/no/na. Only the builder reads
+    # these, when a tenant copies the question; the portal's older rows ignore them.
+    options: tuple[dict[str, object], ...] = ()
 
 
 Q: Final[tuple[Question, ...]] = (
@@ -343,6 +346,16 @@ Q: Final[tuple[Question, ...]] = (
         weight=2.0,
         answer_type="text",
         framework_refs=("SOC2:CC7.4",),
+        options=(
+            {"key": "no", "label": "No", "score": 100},
+            {
+                "key": "yes",
+                "label": "Yes",
+                "score": 0,
+                "flag": True,
+                "comment_required": True,
+            },
+        ),
     ),
     Question(
         key="ir.forensics.retained",
@@ -514,6 +527,15 @@ Q: Final[tuple[Question, ...]] = (
         "HIPAA, PCI DSS, other)?",
         answer_type="multi_select",
         framework_refs=("SOC2:CC2.3",),
+        options=(
+            {"key": "gdpr", "label": "GDPR", "score": 0},
+            {"key": "hipaa", "label": "HIPAA", "score": 0},
+            {"key": "pci_dss", "label": "PCI DSS", "score": 0},
+            {"key": "sox", "label": "SOX", "score": 0},
+            {"key": "ccpa", "label": "CCPA or CPRA", "score": 0},
+            {"key": "none", "label": "None of these", "score": 0},
+            {"key": "other", "label": "Other", "score": 0, "comment_required": True},
+        ),
     ),
     Question(
         key="cl.insurance.cyber",
@@ -604,6 +626,7 @@ def build() -> None:
         "framework_mappings": list(FRAMEWORK_MAPPINGS),
         "built_in": True,
         "is_current": True,
+        "purpose": "due_diligence",
     }
     questions = [
         {
@@ -618,6 +641,7 @@ def build() -> None:
             "non_negotiable": q.non_negotiable,
             "evidence_required": q.evidence_required,
             "framework_refs": list(q.framework_refs),
+            "options": [dict(option) for option in q.options],
         }
         for index, q in enumerate(Q)
     ]

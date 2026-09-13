@@ -172,6 +172,198 @@ def compute_tier(
 
 
 # ---------------------------------------------------------------------------
+# Questionnaire tiering — the tenant's own questions instead of five fixed ones
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True, slots=True)
+class ChoiceOption:
+    """One option of a choice question, as scoring reads it."""
+
+    key: str
+    label: str
+    score: float = 0.0
+    """Tiering: exposure points. Due diligence: control credit out of 100."""
+    flag: bool = False
+    """Due diligence: picking this is a gap, so it raises a finding."""
+    not_applicable: bool = False
+    """Leaves the question out of both sides of the score, like ``na`` (V7)."""
+    comment_required: bool = False
+    min_tier: str | None = None
+    """Tiering: picking this makes the tier at least this, whatever the score."""
+
+
+@dataclass(frozen=True, slots=True)
+class QuestionRule:
+    """One question as scoring sees it: enough to decide whether it shows and what it adds."""
+
+    id: str
+    prompt: str
+    section: str
+    answer_type: str
+    options: tuple[ChoiceOption, ...] = ()
+    weight: float = 1.0
+    required: bool = True
+    condition_question: str | None = None
+    condition_options: tuple[str, ...] = ()
+
+
+def picked_keys(value: object) -> tuple[str, ...]:
+    """The option keys an answer value names, whether one choice or several."""
+    if isinstance(value, str):
+        return (value,) if value else ()
+    if isinstance(value, list | tuple):
+        return tuple(str(v) for v in value if isinstance(v, str) and v)
+    return ()
+
+
+def visible_ids(questions: Sequence[QuestionRule], answers: Mapping[str, object]) -> set[str]:
+    """Which questions are asked, given the answers so far.
+
+    Walked in order, so a condition can only look back. A question whose parent is
+    itself hidden is hidden too: an answer left behind on a branch the answerer
+    has since turned away from must not keep its children alive.
+    """
+    shown: set[str] = set()
+    for question in questions:
+        parent = question.condition_question
+        if parent and (
+            parent not in shown
+            or not set(picked_keys(answers.get(parent))) & set(question.condition_options)
+        ):
+            continue
+        shown.add(question.id)
+    return shown
+
+
+@dataclass(frozen=True, slots=True)
+class QuestionPoints:
+    """One question's line in a tiering explanation."""
+
+    id: str
+    prompt: str
+    section: str
+    answer_labels: tuple[str, ...]
+    points: float
+    max_points: float
+    floor_tier: str | None
+    counted: bool
+    """False when hidden, unanswered, not applicable, or a question that does not score."""
+
+
+@dataclass(frozen=True, slots=True)
+class QuestionnaireTierBreakdown:
+    questions: tuple[QuestionPoints, ...]
+    score: float
+    band_tier: str
+    """The tier the score alone lands in."""
+    tier: str
+    """The band tier, raised by any option's ``min_tier``."""
+    floor_tier: str | None
+    floored_by: tuple[str, ...]
+    """Question ids whose pick set the floor, so the panel can say why."""
+    thresholds: dict[str, float]
+    points_to_higher_tier: float | None
+    points_to_lower_tier: float | None
+
+
+def _worse(a: str | None, b: str | None) -> str | None:
+    """The more severe of two tiers. ``None`` is no opinion."""
+    if a is None or b is None:
+        return a or b
+    return a if TIER_ORDER.index(a) <= TIER_ORDER.index(b) else b
+
+
+def compute_questionnaire_tier(
+    questions: Sequence[QuestionRule],
+    answers: Mapping[str, object],
+    *,
+    thresholds: Mapping[str, float] | None = None,
+) -> QuestionnaireTierBreakdown:
+    """Score a tiering questionnaire and band it.
+
+    ``score = sum(points) / sum(max points) * 100`` over the questions that count,
+    where a question's points are its picked option's score times its weight, its
+    max is its best option's score times its weight, and a multiple choice counts
+    its highest scoring pick (exposure is set by the worst thing involved).
+
+    A question counts only when it is shown, answered, and not answered "not
+    applicable". Unanswered questions leave both sides rather than scoring zero,
+    because required ones are enforced before this runs, and an optional question
+    left blank is not evidence of low exposure.
+
+    With V6's five factors as five questions weighted 30, 25, 20, 15 and 10 on a
+    0 to 4 scale, this is ``compute_tier`` exactly: the library's "Standard" set
+    tiers the way the platform always has.
+    """
+    bands = {**DEFAULT_THRESHOLDS, **dict(thresholds or {})}
+    shown = visible_ids(questions, answers)
+
+    lines: list[QuestionPoints] = []
+    total = 0.0
+    ceiling = 0.0
+    floor: str | None = None
+    floored_by: list[str] = []
+    for question in questions:
+        keys = set(picked_keys(answers.get(question.id)))
+        picked = [o for o in question.options if o.key in keys]
+        visible = question.id in shown
+        labels = tuple(o.label for o in picked)
+
+        question_floor: str | None = None
+        if visible:
+            for option in picked:
+                question_floor = _worse(question_floor, option.min_tier)
+        if question_floor is not None:
+            floor = _worse(floor, question_floor)
+            floored_by.append(question.id)
+
+        scale = [o.score for o in question.options if not o.not_applicable]
+        best = max(scale, default=0.0)
+        scored_picks = [o.score for o in picked if not o.not_applicable]
+        counted = visible and best > 0 and bool(scored_picks)
+        points = max(scored_picks, default=0.0) * question.weight if counted else 0.0
+        max_points = best * question.weight if counted else 0.0
+        total += points
+        ceiling += max_points
+        lines.append(
+            QuestionPoints(
+                id=question.id,
+                prompt=question.prompt,
+                section=question.section,
+                answer_labels=labels,
+                points=round(points, 2),
+                max_points=round(max_points, 2),
+                floor_tier=question_floor,
+                counted=counted,
+            )
+        )
+
+    score = round(total / ceiling * 100, 2) if ceiling else 0.0
+    band = _tier_for(score, bands)
+    tier = _worse(band, floor) or band
+    # Only the questions whose floor is the one that won explain the tier.
+    winners = tuple(
+        line.id for line in lines if line.floor_tier is not None and line.floor_tier == floor
+    )
+    index = TIER_ORDER.index(tier)
+    to_higher = round(bands[TIER_ORDER[index - 1]] - score, 2) if index > 0 else None
+    # A floored tier has no band beneath it to fall to: its score is below it already.
+    to_lower = round(score - bands[tier], 2) if tier == band and tier in bands else None
+    return QuestionnaireTierBreakdown(
+        questions=tuple(lines),
+        score=score,
+        band_tier=band,
+        tier=tier,
+        floor_tier=floor if tier != band else None,
+        floored_by=winners if tier != band else (),
+        thresholds=bands,
+        points_to_higher_tier=to_higher,
+        points_to_lower_tier=to_lower,
+    )
+
+
+# ---------------------------------------------------------------------------
 # Residual scoring (V7) — what the completed review leaves behind
 # ---------------------------------------------------------------------------
 
@@ -236,6 +428,29 @@ class Answer:
     answer: str
     weight: float = 1.0
     critical_control: bool = False
+    credit: float | None = None
+    """0 to 1 from the picked option of a tenant question. ``None`` means the
+    answer is in the bank's yes/partial/no/na vocabulary and is read from that."""
+    not_applicable: bool = False
+    flagged: bool | None = None
+    """Whether the pick is a gap. ``None`` means the bank's rule: a ``no``."""
+
+    @property
+    def value(self) -> float | None:
+        """What the answer is worth, or ``None`` when it leaves the average."""
+        if self.not_applicable:
+            return None
+        if self.credit is not None:
+            return self.credit
+        return ANSWER_VALUES.get(self.answer)
+
+    @property
+    def is_not_applicable(self) -> bool:
+        return self.not_applicable or self.answer == "na"
+
+    @property
+    def failed(self) -> bool:
+        return self.flagged if self.flagged is not None else self.answer == "no"
 
 
 @dataclass(frozen=True, slots=True)
@@ -313,10 +528,10 @@ def compute_residual(
     domains: list[DomainPosture] = []
     for domain in sorted(grouped):
         rows = grouped[domain]
-        scored = [r for r in rows if r.answer in ANSWER_VALUES]
+        scored = [r for r in rows if r.value is not None]
         total_weight = sum(r.weight for r in scored)
         posture = (
-            sum(ANSWER_VALUES[r.answer] * r.weight for r in scored) / total_weight
+            sum((r.value or 0.0) * r.weight for r in scored) / total_weight
             if total_weight
             else None
         )
@@ -324,10 +539,8 @@ def compute_residual(
             DomainPosture(
                 domain=domain,
                 answered=len(scored),
-                not_applicable=sum(1 for r in rows if r.answer == "na"),
-                unanswered=sum(
-                    1 for r in rows if r.answer not in ANSWER_VALUES and r.answer != "na"
-                ),
+                not_applicable=sum(1 for r in rows if r.is_not_applicable),
+                unanswered=sum(1 for r in rows if r.value is None and not r.is_not_applicable),
                 posture=round(posture, 4) if posture is not None else None,
                 residual=round(inherent * (1 - control_ceiling * posture), 2)
                 if posture is not None
@@ -369,7 +582,7 @@ def compute_residual(
         )
     )
 
-    failed = tuple(a.question_key for a in answers if a.critical_control and a.answer == "no")
+    failed = tuple(a.question_key for a in answers if a.critical_control and a.failed)
     floor = bands.get(CRITICAL_FAIL_FLOOR_TIER, DEFAULT_THRESHOLDS[CRITICAL_FAIL_FLOOR_TIER])
     if failed and score < floor:
         score = round(floor, 2)
@@ -377,9 +590,9 @@ def compute_residual(
         ScoreStep(
             "Critical-control floor",
             score,
-            f"{len(failed)} critical control answered no, so the score cannot fall below {floor:g}."
+            f"{len(failed)} critical control failed, so the score cannot fall below {floor:g}."
             if failed
-            else "Not applied. No critical control was answered no.",
+            else "Not applied. No critical control failed.",
         )
     )
 

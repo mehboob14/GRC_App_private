@@ -1,0 +1,11 @@
+{
+  "pack": "vendor_profile",
+  "source": "Authored for Verity. No SIG, CAIQ or HECVAT text is reproduced (V13).",
+  "bank": "verity-vendor-profile",
+  "version": "2026.1",
+  "purpose": "due_diligence",
+  "questions": 11,
+  "sha256": {
+    "questionnaire_bank.json": "dbd45e388895aee6cb28a7feb21cde8ff0a3d7540935e72a9bebc9bd502216e1"
+  }
+}
