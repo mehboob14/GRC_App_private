@@ -25,9 +25,10 @@ import json
 import re
 import subprocess
 import sys
-from collections import Counter
 from pathlib import Path
 from typing import Any
+
+from verity.modules.documents import placeholders as placeholder_lib
 
 SOURCE_REPO = "https://github.com/theopenlane/policy-hub"
 LICENSE = "Apache-2.0"
@@ -37,7 +38,6 @@ LICENSE = "Apache-2.0"
 #: they are left in place and surfaced for editing.
 AUTO_FILLED = {"company_name"}
 
-_PLACEHOLDER = re.compile(r"\{\{\s*([a-z0-9_]+)\s*\}\}", re.IGNORECASE)
 #: Editorial markers in the upstream text — "[Optional]" and friends. Not fields
 #: to fill, but a decision to keep or cut, so they are counted separately.
 _OPTIONAL = re.compile(r"\[Optional[^\]]*\]")
@@ -183,10 +183,17 @@ def build(source: Path, out: Path) -> int:
             output_format="html",
         )
 
-        counts = Counter(m.group(1).lower() for m in _PLACEHOLDER.finditer(body))
+        # The same detection the documents use, so the picker's count and the
+        # editor's checklist agree about what is left to fill in.
         placeholders = [
-            {"key": key, "count": n, "auto_filled": key in AUTO_FILLED}
-            for key, n in sorted(counts.items())
+            {
+                "key": p.key,
+                "label": p.label,
+                "kind": p.kind,
+                "count": p.count,
+                "auto_filled": p.key in AUTO_FILLED,
+            }
+            for p in placeholder_lib.find(html)
         ]
 
         satisfies = meta.get("satisfies") or {}
@@ -227,8 +234,9 @@ def build(source: Path, out: Path) -> int:
             "retrieved_for": "policy template library",
             "modifications": (
                 "Markdown converted to HTML; YAML frontmatter lifted into columns; "
-                "{{placeholder}} tokens catalogued; each template's summary written for the "
-                "platform as a short description. The policy text itself is unaltered."
+                "{{placeholder}} tokens and written <prompts> catalogued; each template's "
+                "summary written for the platform as a short description. The policy text "
+                "itself is unaltered."
             ),
         },
         "generated": [{"path": "document_templates.json", "sha256": digest}],

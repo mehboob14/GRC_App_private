@@ -85,16 +85,43 @@
   pointer-events: none;
 }
 
-/* A {{field}} in a policy that still needs a decision. Deliberately loud: it is
-   easy to skim past a placeholder in 3,000 words of prose, and publishing one
-   puts it in front of an auditor. Not applied to the read-only viewer, where
-   there is nothing the reader can do about it. */
-.policy-placeholder {
+/* What a policy still needs filling in, highlighted in the viewer and the
+   editor with one colour per kind (see placeholder-marks.ts):
+   field    {{frequency}}                  amber   a decision to make
+   prompt   <approver, e.g., CFO>          violet  text to replace
+   optional [Optional]                     grey    keep or remove
+   company  the company name we filled in  blue    check it is right
+   Loud on purpose: a placeholder is easy to skim past in 3,000 words, and
+   publishing one puts it in front of an auditor. A tinted box rather than an
+   underline, so no highlight reads as a link. */
+.ph {
   border-radius: 3px;
   padding: 0 2px;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  cursor: help;
+}
+.ph-field {
   background: rgb(var(--color-status-warning-bg));
   color: rgb(var(--color-status-warning-text));
-  box-shadow: inset 0 -2px 0 rgb(var(--color-status-warning-base) / 0.55);
+  box-shadow: inset 0 0 0 1px rgb(var(--color-status-warning-border));
   font-weight: 600;
-  cursor: help;
+}
+.ph-prompt {
+  background: rgb(var(--color-status-pending-bg));
+  color: rgb(var(--color-status-pending-text));
+  box-shadow: inset 0 0 0 1px rgb(var(--color-status-pending-border));
+  font-weight: 600;
+}
+.ph-optional {
+  background: rgb(var(--color-status-neutral-bg));
+  color: rgb(var(--color-status-neutral-text));
+  box-shadow: inset 0 0 0 1px rgb(var(--color-status-neutral-border));
+  font-style: italic;
+}
+.ph-company {
+  background: rgb(var(--color-action-accent-tint));
+  color: rgb(var(--color-text-primary));
+  box-shadow: inset 0 0 0 1px rgb(var(--color-action-accent-border));
+  font-weight: 600;
 }

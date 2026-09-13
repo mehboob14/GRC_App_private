@@ -82,11 +82,12 @@ class VersionDiffOut(_Response):
 
 
 class PlaceholderOut(_Response):
-    """A field the reader still has to decide, and how much text it affects."""
+    """Something the reader still has to fill in, and how much text it affects."""
 
     key: str
     label: str
     count: int
+    kind: str = "field"
 
 
 class TemplateOut(_Response):
@@ -163,6 +164,7 @@ class DocumentDetailOut(DocumentOut):
     assigned_count: int
     acknowledged_by_me: bool
     placeholders: list[PlaceholderOut] = []
+    company_name: str | None = None
 
 
 class DocumentKpisOut(_Response):

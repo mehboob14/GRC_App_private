@@ -9,6 +9,7 @@ import { useRef, type ReactNode } from "react";
 import { Icon } from "@/components/ui";
 import type { IconName } from "@/components/ui/icon";
 import { cn } from "@/lib/cn";
+import { findPlaceholderMarks, MARK_META, type MarkKind } from "../placeholder-marks";
 import "@/styles/document-prose.css";
 
 const FONTS = [
@@ -26,9 +27,6 @@ const COLORS = [
   { label: "Blue", value: "#2563EB" },
   { label: "Ink", value: "#111827" },
 ];
-
-/** Must match the backend's `placeholders.PLACEHOLDER`. */
-const PLACEHOLDER = /\{\{\s*([a-z0-9_]+)\s*\}\}/gi;
 
 function ToolbarButton({
   icon,
@@ -179,42 +177,44 @@ function Toolbar({ editor }: { editor: Editor }) {
 }
 
 type OutlineItem = { pos: number; level: number; text: string };
-type PlaceholderGroup = { key: string; ranges: { from: number; to: number }[] };
-
-function humanize(key: string): string {
-  const words = key.replace(/_/g, " ");
-  return words.charAt(0).toUpperCase() + words.slice(1);
-}
+type MarkGroup = { key: string; kind: MarkKind; label: string; ranges: { from: number; to: number }[] };
 
 /**
- * The editor's left panel: what is still to be decided, then the outline.
+ * The editor's left panel: what is still to fill in, optional text, the
+ * company name, then the outline.
  *
- * Clicking a placeholder selects its next occurrence, so the reader types
- * straight over `{{frequency}}`; clicking a heading scrolls to it. Both are read
- * from the document on every change, so they never disagree with the page.
+ * Clicking an item selects its next occurrence, so the reader types straight
+ * over `{{frequency}}` or `<approver, e.g., CFO>`; clicking a heading scrolls to
+ * it. Everything is read from the document on each change, so the panel never
+ * disagrees with the page, and each dot is the colour of its highlight.
  */
-function EditorSidebar({ editor, labels }: { editor: Editor; labels: Record<string, string> }) {
-  const { outline, placeholders, cursor } = useEditorState({
+function EditorSidebar({
+  editor,
+  labels,
+  companyNames,
+}: {
+  editor: Editor;
+  labels: Record<string, string>;
+  companyNames: readonly string[];
+}) {
+  const { outline, groups, cursor } = useEditorState({
     editor,
     selector: ({ editor: ed }) => {
       const headings: OutlineItem[] = [];
-      const found = new Map<string, { from: number; to: number }[]>();
+      const byKey = new Map<string, MarkGroup>();
       ed.state.doc.descendants((node, pos) => {
         if (node.type.name === "heading") {
           headings.push({ pos, level: Number(node.attrs.level) || 1, text: node.textContent });
         }
         if (node.isText && node.text) {
-          PLACEHOLDER.lastIndex = 0;
-          let match: RegExpExecArray | null;
-          while ((match = PLACEHOLDER.exec(node.text)) !== null) {
-            const key = match[1].toLowerCase();
-            const from = pos + match.index;
-            found.set(key, [...(found.get(key) ?? []), { from, to: from + match[0].length }]);
+          for (const mark of findPlaceholderMarks(node.text, companyNames)) {
+            const group = byKey.get(mark.key) ?? { key: mark.key, kind: mark.kind, label: mark.label, ranges: [] };
+            group.ranges.push({ from: pos + mark.from, to: pos + mark.to });
+            byKey.set(mark.key, group);
           }
         }
       });
-      const groups: PlaceholderGroup[] = [...found.entries()].map(([key, ranges]) => ({ key, ranges }));
-      return { outline: headings, placeholders: groups, cursor: ed.state.selection.from };
+      return { outline: headings, groups: [...byKey.values()], cursor: ed.state.selection.from };
     },
   });
 
@@ -236,48 +236,75 @@ function EditorSidebar({ editor, labels }: { editor: Editor; labels: Record<stri
     });
   };
 
-  const total = placeholders.reduce((n, p) => n + p.ranges.length, 0);
+  const next = (group: MarkGroup) => {
+    const target = group.ranges.find((r) => r.from > cursor) ?? group.ranges[0];
+    reveal(target.from, target.to);
+  };
+
+  const byCount = (a: MarkGroup, b: MarkGroup) => b.ranges.length - a.ranges.length;
+  const toFill = [
+    ...groups.filter((g) => g.kind === "field").sort(byCount),
+    ...groups.filter((g) => g.kind === "prompt").sort(byCount),
+  ];
+  const optional = groups.filter((g) => g.kind === "optional").sort(byCount);
+  const company = groups.find((g) => g.kind === "company");
+  const toFillCount = toFill.reduce((n, g) => n + g.ranges.length, 0);
   const activeHeading = [...outline].reverse().find((h) => h.pos <= cursor)?.pos;
+
+  const row = (group: MarkGroup, label: string) => (
+    <li key={group.key}>
+      <button
+        type="button"
+        onClick={() => next(group)}
+        title={group.label}
+        className="flex w-full items-center gap-2.5 rounded-sm px-2 py-1.5 text-left transition-colors duration-80 ease-state hover:bg-surface-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-action-accent"
+      >
+        <span className={cn("size-2 shrink-0 rounded-full", MARK_META[group.kind].dot)} aria-hidden />
+        <span className="min-w-0 flex-1 truncate text-body-sm text-text-primary">{label}</span>
+        <span className="tabular text-caption text-text-subtle">{group.ranges.length}</span>
+      </button>
+    </li>
+  );
 
   return (
     <aside className="hidden min-h-0 flex-col overflow-y-auto border-r border-border bg-surface-primary lg:flex">
       <section className="border-b border-border p-4">
         <p className="flex items-center justify-between">
-          <span className="type-overline">To decide</span>
-          {total > 0 ? (
+          <span className="type-overline">To fill in</span>
+          {toFillCount > 0 ? (
             <span className="tabular rounded-full bg-status-warning-bg px-2 py-0.5 text-caption font-bold text-status-warning-text">
-              {total}
+              {toFillCount}
             </span>
           ) : null}
         </p>
-        {placeholders.length === 0 ? (
+        {toFill.length === 0 ? (
           <p className="mt-2 flex items-center gap-2 text-body-sm text-status-success-text">
             <Icon name="check" className="size-4" />
-            Nothing left to decide
+            Nothing left to fill in
           </p>
         ) : (
           <ul className="-mx-2 mt-2 space-y-px">
-            {placeholders.map((group) => (
-              <li key={group.key}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const next = group.ranges.find((r) => r.from > cursor) ?? group.ranges[0];
-                    reveal(next.from, next.to);
-                  }}
-                  className="flex w-full items-center gap-2.5 rounded-sm px-2 py-1.5 text-left transition-colors duration-80 ease-state hover:bg-surface-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-action-accent"
-                >
-                  <span className="size-2 shrink-0 rounded-full bg-status-warning-base" aria-hidden />
-                  <span className="min-w-0 flex-1 truncate text-body-sm text-text-primary">
-                    {labels[group.key] ?? humanize(group.key)}
-                  </span>
-                  <span className="tabular text-caption text-text-subtle">{group.ranges.length}</span>
-                </button>
-              </li>
-            ))}
+            {toFill.map((group) => row(group, labels[group.key] ?? group.label))}
           </ul>
         )}
       </section>
+
+      {optional.length > 0 || company ? (
+        <section className="border-b border-border p-4">
+          {optional.length > 0 ? (
+            <>
+              <p className="type-overline">Optional text</p>
+              <ul className="-mx-2 mb-3 mt-2 space-y-px">{optional.map((group) => row(group, group.label))}</ul>
+            </>
+          ) : null}
+          {company ? (
+            <>
+              <p className="type-overline">Filled in for you</p>
+              <ul className="-mx-2 mt-2 space-y-px">{row(company, "Company name")}</ul>
+            </>
+          ) : null}
+        </section>
+      ) : null}
 
       <section className="p-4">
         <p className="type-overline">Outline</p>
@@ -318,18 +345,21 @@ export function RichTextEditor({
   content,
   onChange,
   placeholderLabels = {},
+  companyNames = [],
 }: {
   content: string;
   onChange: (html: string) => void;
-  /** Friendly names for `{{placeholder}}` keys, from the document. */
+  /** Friendly names for placeholder keys, from the document. */
   placeholderLabels?: Record<string, string>;
+  /** The names the platform wrote in for `{{company_name}}`, highlighted too. */
+  companyNames?: string[];
 }) {
   const editor = useEditor({
     extensions: [
       StarterKit,
       // Marks the {{fields}} still to be decided. Decorations only: the saved
       // HTML is untouched.
-      PlaceholderHighlight,
+      PlaceholderHighlight.configure({ companyNames }),
       TextStyle,
       Color,
       FontFamily,
@@ -352,7 +382,7 @@ export function RichTextEditor({
     <div className="flex h-full flex-col">
       <Toolbar editor={editor} />
       <div className="grid min-h-0 flex-1 lg:grid-cols-[17rem_minmax(0,1fr)]">
-        <EditorSidebar editor={editor} labels={placeholderLabels} />
+        <EditorSidebar editor={editor} labels={placeholderLabels} companyNames={companyNames} />
         <div data-editor-scroll className="min-h-0 overflow-y-auto bg-surface-sunken">
           <div className="mx-auto my-8 max-w-[860px] rounded-lg border border-border bg-surface-primary shadow-1">
             <EditorContent editor={editor} />

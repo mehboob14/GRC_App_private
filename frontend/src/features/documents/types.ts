@@ -76,6 +76,8 @@ export type Placeholder = {
   key: string;
   label: string;
   count: number;
+  /** `field` for {{snake_case}}, `prompt` for a written instruction. */
+  kind: "field" | "prompt";
 };
 
 /** A shipped policy a document can be started from. */
@@ -187,8 +189,10 @@ export type PendingApproval = {
 
 /** The extra detail a single document carries beyond the register row. */
 export type DocumentDetail = Document & {
-  /** Fields still carrying a {{placeholder}} in the current content. */
+  /** Fields and written prompts still in the current content. */
   placeholders: Placeholder[];
+  /** The name a template's {{company_name}} was filled with. */
+  company_name: string | null;
   content_html: string | null;
   versions: DocumentVersion[];
   approvals: ApprovalTier[];

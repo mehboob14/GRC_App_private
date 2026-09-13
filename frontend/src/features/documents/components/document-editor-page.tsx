@@ -27,6 +27,8 @@ import {
 } from "@/features/documents/api";
 import type { ChangeType } from "@/features/documents/types";
 import { LIFECYCLE_META } from "../labels";
+import { companyNameList } from "../placeholder-marks";
+import { useAuth } from "@/lib/auth/auth-context";
 import { RichTextEditor } from "./rich-text-editor";
 
 /**
@@ -36,6 +38,7 @@ import { RichTextEditor } from "./rich-text-editor";
 export function DocumentEditorPage() {
   const { documentId } = useParams();
   const { toast } = useToast();
+  const { principal } = useAuth();
   const [html, setHtml] = useState<string | null>(null);
   const [dirty, setDirty] = useState(false);
   // A failed Word conversion must not open an empty editor over a real policy:
@@ -160,6 +163,7 @@ export function DocumentEditorPage() {
 
   const life = LIFECYCLE_META[doc.lifecycle];
   const placeholderLabels = Object.fromEntries(doc.placeholders.map((p) => [p.key, p.label]));
+  const companyNames = companyNameList(doc.company_name, principal?.tenant_name);
 
   return (
     <div className="flex h-screen flex-col bg-surface-page">
@@ -194,6 +198,7 @@ export function DocumentEditorPage() {
         <RichTextEditor
           content={html}
           placeholderLabels={placeholderLabels}
+          companyNames={companyNames}
           onChange={(next) => {
             setHtml(next);
             setDirty(true);

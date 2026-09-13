@@ -1,10 +1,18 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import DOMPurify from "dompurify";
 import mammoth from "mammoth";
 import { Button, Icon, useToast } from "@/components/ui";
 import { describeError, errorToast } from "@/lib/api/describe-error";
 import { downloadDocumentBlob } from "@/features/documents/api";
 import type { DocumentDetail } from "@/features/documents/types";
+import { useAuth } from "@/lib/auth/auth-context";
+import { cn } from "@/lib/cn";
+import {
+  companyNameList,
+  highlightHtml,
+  MARK_META,
+  MARK_ORDER,
+} from "@/features/documents/placeholder-marks";
 import "@/styles/document-prose.css";
 
 const MIN = 60;
@@ -36,6 +44,16 @@ export function DocumentContentViewer({
 
   const isPdf = doc.content_format === "pdf";
   const isDocx = doc.content_format === "docx";
+  const { principal } = useAuth();
+  const tenantName = principal?.tenant_name;
+
+  // Placeholders, written prompts, optional text and the company name are
+  // marked on the page, so a reader sees what still needs attention without
+  // opening the editor. Sanitised first; only text nodes are wrapped.
+  const marked = useMemo(() => {
+    const source = isPdf ? "" : isDocx ? (docxHtml ?? "") : DOMPurify.sanitize(doc.content_html ?? "");
+    return highlightHtml(source, companyNameList(doc.company_name, tenantName));
+  }, [isPdf, isDocx, docxHtml, doc.content_html, doc.company_name, tenantName]);
 
   // PDF → object URL for the browser's native viewer (no parsing).
   useEffect(() => {
@@ -121,7 +139,6 @@ export function DocumentContentViewer({
   }
 
   // -- Authored HTML or converted Word: zoomable paper ---------------------
-  const html = isDocx ? docxHtml : DOMPurify.sanitize(doc.content_html ?? "");
   const converting = isDocx && docxHtml === null && loadError === null;
   const failed = isDocx && loadError !== null;
 
@@ -149,6 +166,15 @@ export function DocumentContentViewer({
             <span className="ml-1 text-caption text-text-subtle">Converted preview</span>
           ) : null}
         </div>
+        <ul className="hidden flex-1 flex-wrap items-center justify-center gap-x-4 gap-y-1 md:flex" aria-label="Highlighted on this page">
+          {MARK_ORDER.filter((kind) => marked.counts[kind] > 0).map((kind) => (
+            <li key={kind} className="flex items-center gap-1.5 text-caption text-text-secondary">
+              <span className={cn("size-2 rounded-full", MARK_META[kind].dot)} aria-hidden />
+              {MARK_META[kind].legend}
+              <span className="tabular font-semibold text-text-primary">{marked.counts[kind]}</span>
+            </li>
+          ))}
+        </ul>
         <div className="flex items-center gap-2">
           {isDocx ? (
             <Button variant="secondary" size="sm" onClick={download}>
@@ -180,7 +206,7 @@ export function DocumentContentViewer({
           >
             <div
               className="prose-doc px-12 py-10"
-              dangerouslySetInnerHTML={{ __html: html ?? "" }}
+              dangerouslySetInnerHTML={{ __html: marked.html }}
             />
           </div>
         )}

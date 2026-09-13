@@ -21,16 +21,134 @@
     "placeholders": [
       {
         "key": "company_name",
+        "label": "Company name",
+        "kind": "field",
         "count": 26,
         "auto_filled": true
       },
       {
         "key": "frequency",
+        "label": "How often (e.g. quarterly)",
+        "kind": "field",
         "count": 1,
         "auto_filled": false
       },
       {
         "key": "time",
+        "label": "How many business hours",
+        "kind": "field",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:check existing user passwords for compromise regularly",
+        "label": "Check existing user passwords for compromise regularly",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:do not limit the length of the password to anything below 64 characters",
+        "label": "Do not limit the length of the password to anything below 64 characters",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:do not limit the permitted characters that can be used",
+        "label": "Do not limit the permitted characters that can be used",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:do not use secret questions (place of birth, etc) as a sole password reset requirement",
+        "label": "Do not use secret questions (place of birth, etc) as a sole password reset requirement",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:enforce appropriate account lockout and brute-force protection on account access",
+        "label": "Enforce appropriate account lockout and brute-force protection on account access",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:for manual password resets, a user’s identity must be verified prior to changing passwords",
+        "label": "For manual password resets, a user’s identity must be verified prior to changing passwords",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:initial passwords must be set to a unique value and changed after first log in",
+        "label": "Initial passwords must be set to a unique value and changed after first log in",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:ir team",
+        "label": "IR Team",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:minimum password requirements",
+        "label": "minimum password requirements",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:passwords shall be set to lock out after <6> failed attempts",
+        "label": "Passwords shall be set to lock out after <6> failed attempts",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:passwords shall expire after <90 days>",
+        "label": "Passwords shall expire after <90 days>",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:require email verification of a password change request",
+        "label": "Require email verification of a password change request",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:require the current password in addition to the new password during password change",
+        "label": "Require the current password in addition to the new password during password change",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:store passwords in a hashed and salted format using a memory-hard or cpu-hard one-way hash function",
+        "label": "Store passwords in a hashed and salted format using a memory-hard or CPU-hard one-way hash function",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:systems shall be configured to remember and prohibit reuse of passwords for last <16> passwords used",
+        "label": "Systems shall be configured to remember and prohibit reuse of passwords for last <16> passwords used",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:verify newly created passwords against common passwords lists or leaked passwords databases",
+        "label": "Verify newly created passwords against common passwords lists or leaked passwords databases",
+        "kind": "prompt",
         "count": 1,
         "auto_filled": false
       }
@@ -62,8 +180,24 @@
     "placeholders": [
       {
         "key": "company_name",
+        "label": "Company name",
+        "kind": "field",
         "count": 7,
         "auto_filled": true
+      },
+      {
+        "key": "prompt:approver of requests for an exception to this policy, e.g., it manager",
+        "label": "approver of requests for an exception to this policy, e.g., IT Manager",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:recipient of reports of violations of this policy, e.g., it manager",
+        "label": "recipient of reports of violations of this policy, e.g., IT Manager",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
       }
     ],
     "optional_markers": 0,
@@ -93,8 +227,108 @@
     "placeholders": [
       {
         "key": "company_name",
+        "label": "Company name",
+        "kind": "field",
         "count": 11,
         "auto_filled": true
+      },
+      {
+        "key": "prompt:assistants for the response, e.g., it manager and executive staff",
+        "label": "assistants for the response, e.g., IT Manager and executive staff",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:chief hr officer",
+        "label": "Chief HR Officer",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:departmental heads",
+        "label": "Departmental Heads",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:describe the location of your company’s headquarters, e.g., san francisco, ca",
+        "label": "describe the location of your company’s headquarters, e.g., San Francisco, CA",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:driver of the response, e.g., vp of global support",
+        "label": "driver of the response, e.g., VP of Global Support",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:it manager",
+        "label": "IT Manager",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:link to wiki page that lists out key contacts",
+        "label": "link to wiki page that lists out key contacts",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:list your company’s regular communication channels, e.g., slack, email, phone and online meeting tools",
+        "label": "list your company’s regular communication channels, e.g., Slack, email, phone and online meeting tools",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:location 1",
+        "label": "Location 1",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:location 2",
+        "label": "Location 2",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:managers",
+        "label": "Managers",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:production hosting service provider, e.g., aws",
+        "label": "production hosting service provider, e.g., AWS",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:vp of engineering",
+        "label": "VP of Engineering",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:vp of global support",
+        "label": "VP of Global Support",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
       }
     ],
     "optional_markers": 0,
@@ -125,8 +359,17 @@
     "placeholders": [
       {
         "key": "company_name",
+        "label": "Company name",
+        "kind": "field",
         "count": 27,
         "auto_filled": true
+      },
+      {
+        "key": "prompt:party responsible for the code of conduct",
+        "label": "party responsible for the code of conduct",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
       }
     ],
     "optional_markers": 0,
@@ -156,8 +399,24 @@
     "placeholders": [
       {
         "key": "company_name",
+        "label": "Company name",
+        "kind": "field",
         "count": 2,
         "auto_filled": true
+      },
+      {
+        "key": "prompt:approver of requests for an exception to this policy, e.g., it manager",
+        "label": "approver of requests for an exception to this policy, e.g., IT Manager",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:recipient of reports of violations of this policy, e.g., it manager",
+        "label": "recipient of reports of violations of this policy, e.g., IT Manager",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
       }
     ],
     "optional_markers": 0,
@@ -191,8 +450,52 @@
     "placeholders": [
       {
         "key": "company_name",
+        "label": "Company name",
+        "kind": "field",
         "count": 27,
         "auto_filled": true
+      },
+      {
+        "key": "prompt:approver of requests for an exception to this policy, e.g., cfo",
+        "label": "approver of requests for an exception to this policy, e.g., CFO",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:frequency of procedure review, e.g., annually",
+        "label": "frequency of procedure review, e.g., annually",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:link",
+        "label": "link",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:responsible party, e.g., engineering team",
+        "label": "responsible party, e.g., Engineering Team",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:sixty (60)",
+        "label": "sixty (60)",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:who should receive reports of violations to this policy, e.g., cfo",
+        "label": "who should receive reports of violations to this policy, e.g., CFO",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
       }
     ],
     "optional_markers": 0,
@@ -220,8 +523,24 @@
     "placeholders": [
       {
         "key": "company_name",
+        "label": "Company name",
+        "kind": "field",
         "count": 11,
         "auto_filled": true
+      },
+      {
+        "key": "prompt:role responsible for approving exceptions to this policy, e.g., chief human resource officer (chro)",
+        "label": "role responsible for approving exceptions to this policy, e.g., Chief Human Resource Officer (CHRO)",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:role responsible for receiving notifications of violations to this policy, e.g., chro",
+        "label": "role responsible for receiving notifications of violations to this policy, e.g., CHRO",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
       }
     ],
     "optional_markers": 0,
@@ -254,8 +573,178 @@
     "placeholders": [
       {
         "key": "company_name",
+        "label": "Company name",
+        "kind": "field",
         "count": 11,
         "auto_filled": true
+      },
+      {
+        "key": "prompt:customer name",
+        "label": "customer name",
+        "kind": "prompt",
+        "count": 16,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:###-mmyyyy or ticket #",
+        "label": "###-MMYYYY or Ticket #",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:approver of exceptions to this policy, e.g., it manager",
+        "label": "approver of exceptions to this policy, e.g., IT Manager",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:ceo, legal department",
+        "label": "CEO, Legal Department",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:channel for notifying the appropriate contact, e.g., email or slack",
+        "label": "channel for notifying the appropriate contact, e.g., email or Slack",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:communication method, e.g., slack messaging",
+        "label": "communication method, e.g., Slack messaging",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:describe the role/team that should be immediately notified about p0 issues, e.g., it and/or engineering",
+        "label": "describe the role/team that should be immediately notified about P0 issues, e.g., IT and/or Engineering",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:describe where this will be documented, e.g., the servicedesk or salesforce ticket system",
+        "label": "describe where this will be documented, e.g., the ServiceDesk or Salesforce ticket system",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:direct contact for sensitive information, e.g., hr or the ceo",
+        "label": "direct contact for sensitive information, e.g., HR or the CEO",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:engineers (support and development)",
+        "label": "Engineers (Support and Development)",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:how changes to communication will be communicated if needed, e.g., cell phone",
+        "label": "how changes to communication will be communicated if needed, e.g., cell phone",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:how often the incident response plan will be reviewed, e.g., annually",
+        "label": "how often the Incident Response Plan will be reviewed, e.g., annually",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:incident manager",
+        "label": "Incident Manager",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:incident response team (irt)",
+        "label": "Incident Response Team (IRT)",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:p0",
+        "label": "P0",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:person that receives incident details and decides on breach reporting requirement, e.g., chief information officer",
+        "label": "person that receives incident details and decides on breach reporting requirement, e.g., Chief Information Officer",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:receivers of policy violation reports, e.g., it manager or the ceo",
+        "label": "receivers of policy violation reports, e.g., IT Manager or the CEO",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:reviewer of root cause analysis decider of requirement for a post-mortem, e.g., vp of support, vp of engineering, and/or the it manager",
+        "label": "reviewer of root cause analysis decider of requirement for a post-mortem, e.g., VP of Support, VP of Engineering, and/or the IT Manager",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:team or role responsible for monitoring reports of security incidents or events, e.g., {{company_name}} support team",
+        "label": "Team or role responsible for monitoring reports of security incidents or events, e.g., {{company_name}} Support Team",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:type of ticket that should be created in the event of a p1 event or incident, e.g., support",
+        "label": "type of ticket that should be created in the event of a P1 event or incident, e.g., support",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:type of ticket that should be created in the event of a p2/p3 event or incident, e.g., support",
+        "label": "type of ticket that should be created in the event of a P2/P3 event or incident, e.g., support",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:where contacts for irt members can be found, e.g., at the bottom of the on-call list here: <link>",
+        "label": "where contacts for IRT members can be found, e.g., at the bottom of the On-Call list here: <link>",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:who determines if a breach occurred, e.g., ceo and legal counsel in coordination with executive management",
+        "label": "who determines if a breach occurred, e.g., CEO and legal counsel in coordination with executive management",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:your application and infrastructure will drive this list.",
+        "label": "Your application and infrastructure will drive this list.",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
       }
     ],
     "optional_markers": 0,
@@ -288,8 +777,66 @@
     "placeholders": [
       {
         "key": "company_name",
+        "label": "Company name",
+        "kind": "field",
         "count": 47,
         "auto_filled": true
+      },
+      {
+        "key": "prompt:anonymous report mechanism (e.g. whistleblower service",
+        "label": "anonymous report mechanism (e.g. whistleblower service",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:approver of exceptions to this policy, e.g., it manager",
+        "label": "approver of exceptions to this policy, e.g., IT Manager",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:company file sharing system, e.g., google drive",
+        "label": "company file sharing system, e.g., Google Drive",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:how to and where to send incident reports, e.g., sending an email to: help@<company domain>.com",
+        "label": "how to and where to send incident reports, e.g., sending an email to: help@<Company Domain>.com",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:incident report communication method, e.g., email",
+        "label": "incident report communication method, e.g., email",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:person who should receive reports of violations of this policy, e.g., it manager",
+        "label": "person who should receive reports of violations of this policy, e.g., IT Manager",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:role/team responsible for receiving mobile device theft reports, e.g., {{company_name}}’s it department",
+        "label": "role/team responsible for receiving mobile device theft reports, e.g., {{company_name}}’s IT Department",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:screensaver lock requirement, e.g., 5 minutes of non-use",
+        "label": "screensaver lock requirement, e.g., 5 minutes of non-use",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
       }
     ],
     "optional_markers": 3,
@@ -321,8 +868,24 @@
     "placeholders": [
       {
         "key": "company_name",
+        "label": "Company name",
+        "kind": "field",
         "count": 15,
         "auto_filled": true
+      },
+      {
+        "key": "prompt:approver of exceptions to this policy, e.g., it manager",
+        "label": "approver of exceptions to this policy, e.g., IT Manager",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:role responsible for measuring compliance, e.g., it manager",
+        "label": "role responsible for measuring compliance, e.g., IT Manager",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
       }
     ],
     "optional_markers": 0,
@@ -354,11 +917,239 @@
     "placeholders": [
       {
         "key": "company_name",
+        "label": "Company name",
+        "kind": "field",
         "count": 14,
         "auto_filled": true
       },
       {
         "key": "frequency",
+        "label": "How often (e.g. quarterly)",
+        "kind": "field",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:address baseline config management and deployment per control 3.4, 7.1",
+        "label": "Address baseline config management and deployment per control 3.4, 7.1",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:all network control systems must be configured with default antispoofing rules to block or deny inbound internal addresses originating from the internet",
+        "label": "All network control systems must be configured with default antispoofing rules to block or deny inbound internal addresses originating from the Internet",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:all security patches identified as <critical, high, or medium> must be applied to systems within slas established in this policy.",
+        "label": "All security patches identified as <critical, high, or medium> must be applied to systems within SLAs established in this policy.",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:all vendor default passwords (including default passwords on operating systems, software providing security services, application and system accounts, simple network management protocol (snmp) community strings, etc.) must be changed before a system is installed on the network.",
+        "label": "All vendor default passwords (including default passwords on operating systems, software providing security services, application and system accounts, Simple Network Management Protocol (SNMP) community strings, etc.) must be changed before a system is installed on the network.",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:approver of exceptions to this policy, e.g., it manager",
+        "label": "approver of exceptions to this policy, e.g., IT Manager",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:approver of the use of customer data, e.g., vp of customer support",
+        "label": "approver of the use of customer data, e.g., VP of Customer Support",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:configuration and hardening standards shall be maintained on the internal documentation portal.",
+        "label": "Configuration and hardening standards shall be maintained on the internal documentation portal.",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:describe specific requirements for separate region or availability zone",
+        "label": "describe specific requirements for separate region or availability zone",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:external configurations must limit inbound traffic to only system components that provide authorized publicly accessible services, protocols, and ports.",
+        "label": "External configurations must limit inbound traffic to only system components that provide authorized publicly accessible services, protocols, and ports.",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:frequency of backups, e.g., daily",
+        "label": "frequency of backups, e.g., daily",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:in addition to the requirements to secure systems to the baseline outlined above, all physical and virtual systems must adhere to the following technical requirements:",
+        "label": "In addition to the requirements to secure systems to the baseline outlined above, all physical and virtual systems must adhere to the following technical requirements:",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:in the <production environment> , defined rules and configurations must be enforced to control traffic from untrusted networks (e.g. publicly available services) to internal production networks",
+        "label": "In the <PRODUCTION ENVIRONMENT> , defined rules and configurations must be enforced to control traffic from untrusted networks (e.g. publicly available services) to internal production networks",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:include links to external sources, or internally created samples:",
+        "label": "Include links to external sources, or internally created samples:",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:insert os/system baseline",
+        "label": "INSERT OS/SYSTEM BASELINE",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:it and engineering",
+        "label": "IT and Engineering",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:link",
+        "label": "link",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:management of network rules and settings may only be performed by authorized members of <engineering team etc.> and all changes must comply with change management procedures defined in the operations security policy.",
+        "label": "Management of network rules and settings may only be performed by authorized members of <ENGINEERING TEAM etc.> and all changes must comply with change Management procedures defined in the Operations Security Policy.",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:mobile devices connecting to production networks must meet the requirements of the mobile device policy found in the information security policy.",
+        "label": "Mobile devices connecting to production networks must meet the requirements of the Mobile Device Policy found in the Information Security Policy.",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:network control systems must be configured to use default network address translation to prevent the disclosure of internal ip addresses to the internet.",
+        "label": "Network control systems must be configured to use default Network Address Translation to prevent the disclosure of internal IP addresses to the Internet.",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:network standards",
+        "label": "Network Standards",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:note to customer: templates are provided as informational reference. standards like soc2 and iso 27001 do not prescribe any particular configuration or hardening. further guidance can be found in iso 27002 for control a.8.9 configuration management - remove this language from the policy upon edit",
+        "label": "NOTE TO CUSTOMER: Templates are provided as informational reference. Standards like SOC2 and ISO 27001 do not prescribe any particular configuration or hardening. Further guidance can be found in ISO 27002 for Control A.8.9 Configuration Management - Remove this language from the policy upon edit",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:only necessary services, protocols, daemons, etc., may be enabled, and only as required for the function of the system. all unnecessary functionality (such as scripts, drivers, features, subsystems, file systems, and unnecessary web servers) must be disabled.",
+        "label": "Only necessary services, protocols, daemons, etc., may be enabled, and only as required for the function of the system. All unnecessary functionality (such as scripts, drivers, features, subsystems, file systems, and unnecessary web servers) must be disabled.",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:only one primary function may be implemented per server or virtual machine to prevent functions that require different security levels from coexisting on the same system.",
+        "label": "Only one primary function may be implemented per server or virtual machine to prevent functions that require different security levels from coexisting on the same system.",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:other company specific requirements",
+        "label": "OTHER COMPANY SPECIFIC REQUIREMENTS",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:person who should receive reports of violations of this policy, e.g., it manager",
+        "label": "person who should receive reports of violations of this policy, e.g., IT Manager",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:remote access sessions must be configured to enforce timeout after a specified period of <x hours> .",
+        "label": "Remote access sessions must be configured to enforce timeout after a specified period of <X hours> .",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:remote-access technologies for vendors and business partners used to access production systems must be enabled only when needed for business purposes and immediately deactivated after use.",
+        "label": "Remote-access technologies for vendors and business partners used to access production systems must be enabled only when needed for business purposes and immediately deactivated after use.",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:servers and virtual machines",
+        "label": "Servers and Virtual Machines",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:supported network controls for production networks are <type e.g. aws nacls> . management of production network systems is accomplished through the use of <management system, ssh, etc>",
+        "label": "Supported network controls for production networks are <TYPE e.g. AWS NACLs> . Management of production network systems is accomplished through the use of <MANAGEMENT SYSTEM, SSH, ETC>",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:unnecessary default accounts (including accounts used by operating systems, security software, applications, systems, snmp, etc.) must be removed or disabled before a system is installed on the network.",
+        "label": "Unnecessary default accounts (including accounts used by operating systems, security software, applications, systems, SNMP, etc.) must be removed or disabled before a system is installed on the network.",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:use of insecure services and protocols without justification and documentation of additional security features implemented to mitigate risk is prohibited.",
+        "label": "Use of insecure services and protocols without justification and documentation of additional security features implemented to mitigate risk is prohibited.",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:vulnerability scanning, penetration tests, review of external vendor alerts, and the bug bounty program",
+        "label": "vulnerability scanning, penetration tests, review of external vendor alerts, and the bug bounty program",
+        "kind": "prompt",
         "count": 1,
         "auto_filled": false
       }
@@ -388,8 +1179,24 @@
     "placeholders": [
       {
         "key": "company_name",
+        "label": "Company name",
+        "kind": "field",
         "count": 13,
         "auto_filled": true
+      },
+      {
+        "key": "prompt:approver of requests for exceptions to this policy, e.g., chro",
+        "label": "approver of requests for exceptions to this policy, e.g., CHRO",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:receiver of reports of violations to this policy, e.g., chro",
+        "label": "receiver of reports of violations to this policy, e.g., CHRO",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
       }
     ],
     "optional_markers": 0,
@@ -421,8 +1228,24 @@
     "placeholders": [
       {
         "key": "company_name",
+        "label": "Company name",
+        "kind": "field",
         "count": 43,
         "auto_filled": true
+      },
+      {
+        "key": "prompt:date",
+        "label": "Date",
+        "kind": "prompt",
+        "count": 4,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:policy owners name and job title",
+        "label": "Policy Owners Name and Job Title",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
       }
     ],
     "optional_markers": 0,
@@ -455,8 +1278,66 @@
     "placeholders": [
       {
         "key": "company_name",
+        "label": "Company name",
+        "kind": "field",
         "count": 11,
         "auto_filled": true
+      },
+      {
+        "key": "prompt:approver of exceptions to this policy, e.g., vp of engineering",
+        "label": "approver of exceptions to this policy, e.g., VP of Engineering",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:approver of use of customer data as test data, e.g., vp of engineering",
+        "label": "approver of use of customer data as test data, e.g., VP of Engineering",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:link",
+        "label": "link",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:link to process outline in company wiki",
+        "label": "link to process outline in company wiki",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:name of page with documents, e.g., development process confluence page",
+        "label": "name of page with documents, e.g., Development Process Confluence Page",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:name of process, e.g., check in process",
+        "label": "name of process, e.g., Check In Process",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:receiver of reported violations to this policy, e.g., vp of engineering",
+        "label": "receiver of reported violations to this policy, e.g., VP of Engineering",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:who can approve code changes, e.g., a developer or manager within the review board",
+        "label": "who can approve code changes, e.g., a developer or manager within the Review Board",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
       }
     ],
     "optional_markers": 0,
@@ -491,8 +1372,24 @@
     "placeholders": [
       {
         "key": "company_name",
+        "label": "Company name",
+        "kind": "field",
         "count": 27,
         "auto_filled": true
+      },
+      {
+        "key": "prompt:approver of requests for exceptions to this policy, e.g., cfo",
+        "label": "approver of requests for exceptions to this policy, e.g., CFO",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
+      },
+      {
+        "key": "prompt:person responsible for receiving policy violation reports, e.g., cfo",
+        "label": "person responsible for receiving policy violation reports, e.g., CFO",
+        "kind": "prompt",
+        "count": 1,
+        "auto_filled": false
       }
     ],
     "optional_markers": 0,

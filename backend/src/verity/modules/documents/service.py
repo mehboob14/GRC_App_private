@@ -83,11 +83,13 @@ _RECIPIENT_SNAPSHOT: Final = (
 
 @dataclass(frozen=True, slots=True)
 class PlaceholderView:
-    """A field the reader still has to decide, and how much text it affects."""
+    """Something the reader still has to fill in, and how much text it affects."""
 
     key: str
     label: str
     count: int
+    #: ``field`` for ``{{snake_case}}``, ``prompt`` for a written instruction.
+    kind: str = "field"
 
 
 @dataclass(frozen=True, slots=True)
@@ -210,9 +212,12 @@ class DocumentDetailView(DocumentView):
     acknowledged: int = 0
     assigned_count: int = 0
     acknowledged_by_me: bool = False
-    #: Fields still carrying a {{placeholder}} in the current content. A
-    #: template that has not been filled in is not yet a policy.
+    #: Fields and written prompts still in the current content. A template
+    #: that has not been filled in is not yet a policy.
     placeholders: list[PlaceholderView] = field(default_factory=list)
+    #: The name a template's ``{{company_name}}`` is filled with, so the viewer
+    #: and editor can show where the platform wrote it.
+    company_name: str | None = None
 
 
 # -- acknowledgement-campaign views -----------------------------------------
@@ -590,9 +595,10 @@ class DocumentService:
             **{**base.__dict__, "version": current.version_no if current else None},
             content_html=current.content_html if current else None,
             placeholders=[
-                PlaceholderView(key=ph.key, label=ph.label, count=ph.count)
+                PlaceholderView(key=ph.key, label=ph.label, count=ph.count, kind=ph.kind)
                 for ph in placeholder_lib.find(current.content_html if current else None)
             ],
+            company_name=await self._tenant_name(session, tenant_id),
             versions=[
                 VersionView(
                     id=v.id,
@@ -2318,10 +2324,15 @@ class DocumentService:
                 placeholders=[
                     PlaceholderView(
                         key=str(p.get("key")),
-                        label=placeholder_lib.LABELS.get(
-                            str(p.get("key")), str(p.get("key", "")).replace("_", " ").capitalize()
+                        label=str(
+                            p.get("label")
+                            or placeholder_lib.LABELS.get(
+                                str(p.get("key")),
+                                str(p.get("key", "")).replace("_", " ").capitalize(),
+                            )
                         ),
                         count=int(str(p.get("count", 0) or 0)),
+                        kind=str(p.get("kind") or "field"),
                     )
                     for p in (row.placeholders or [])
                 ],

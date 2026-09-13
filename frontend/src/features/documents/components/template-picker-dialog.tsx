@@ -96,8 +96,6 @@ export function TemplatePickerDialog({
       return next;
     });
 
-  const attribution = templates.find((t) => t.source_url && t.license);
-
   return (
     <Dialog
       open={open}
@@ -154,25 +152,7 @@ export function TemplatePickerDialog({
           )}
         </DialogBody>
 
-        <DialogFooter className="flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-between">
-          {/* Apache 2.0 requires attribution. Saying where the wording came from
-              is also just honest: the customer is adopting someone else's text. */}
-          {attribution ? (
-            <p className="text-caption text-text-subtle">
-              Templates from{" "}
-              <a
-                href={attribution.source_url ?? "#"}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-text-link hover:underline"
-              >
-                Openlane Policy Hub
-              </a>
-              , {attribution.license}.
-            </p>
-          ) : (
-            <span />
-          )}
+        <DialogFooter>
           <div className="flex shrink-0 gap-2">
             <Button variant="secondary" onClick={() => onOpenChange(false)}>
               Cancel

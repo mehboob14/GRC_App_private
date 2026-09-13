@@ -96,6 +96,7 @@ type RawDetail = RawDocument & {
   assigned_count: number;
   acknowledged_by_me: boolean;
   placeholders: Placeholder[];
+  company_name?: string | null;
 };
 
 const day = (iso: string | null): string | null => (iso ? iso.slice(0, 10) : null);
@@ -171,6 +172,7 @@ function toDetail(r: RawDetail): DocumentDetail {
     assigned_count: r.assigned_count,
     acknowledged_by_me: r.acknowledged_by_me,
     placeholders: r.placeholders ?? [],
+    company_name: r.company_name ?? null,
   };
 }
 

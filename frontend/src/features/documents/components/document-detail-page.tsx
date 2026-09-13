@@ -165,14 +165,17 @@ export function DocumentDetailPage() {
       {doc.placeholders.length > 0 ? (
         <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md border border-status-warning-border bg-status-warning-bg px-3 py-2 text-body-sm text-status-warning-text">
           <Icon name="alert" className="size-4 shrink-0" aria-hidden />
-          <span>
+          <span className="flex-1">
             <strong>
-              {doc.placeholders.reduce((n, p) => n + p.count, 0)} placeholder
-              {doc.placeholders.reduce((n, p) => n + p.count, 0) === 1 ? "" : "s"}
+              {doc.placeholders.reduce((n, p) => n + p.count, 0)} to fill in
             </strong>{" "}
-            still to fill in before this is ready to approve:{" "}
-            {doc.placeholders.map((p) => p.label).join(", ")}.
+            before this is ready to approve
           </span>
+          {canManage && doc.content_format === "html" ? (
+            <Button variant="secondary" size="sm" onClick={openEditor}>
+              Fill in
+            </Button>
+          ) : null}
         </div>
       ) : null}
 

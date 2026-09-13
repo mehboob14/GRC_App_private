@@ -35,6 +35,39 @@ class TestFind:
         assert find("<p>A finished policy.</p>") == []
 
 
+class TestPrompts:
+    """Written instructions in the templates are placeholders too: "<approver of
+    exceptions, e.g., IT Manager>" is a decision nobody has made yet."""
+
+    def test_finds_an_escaped_angle_bracket_prompt(self) -> None:
+        (prompt,) = find("<p>Send to &lt;approver of exceptions, e.g., IT Manager&gt;.</p>")
+        assert prompt.kind == "prompt"
+        assert prompt.label == "approver of exceptions, e.g., IT Manager"
+
+    def test_counts_repeats_of_the_same_prompt(self) -> None:
+        (prompt,) = find("<p>&lt;IR Team&gt;</p><p>&lt;IR Team&gt;</p>")
+        assert prompt.count == 2
+
+    def test_a_nested_prompt_counts_once(self) -> None:
+        (prompt,) = find("<p>&lt;Lock out after &lt;6&gt; failed attempts&gt;</p>")
+        assert prompt.label == "Lock out after <6> failed attempts"
+
+    def test_finds_a_bracketed_instruction_of_three_or_more_words(self) -> None:
+        (prompt,) = find("<p>Contact [party responsible for the code of conduct].</p>")
+        assert prompt.label == "party responsible for the code of conduct"
+
+    def test_fields_come_before_prompts(self) -> None:
+        found = find("<p>&lt;IR Team&gt; reviews {{frequency}}.</p>")
+        assert [p.kind for p in found] == ["field", "prompt"]
+
+    def test_a_prompt_never_spans_two_paragraphs(self) -> None:
+        assert find("<p>a &lt;b</p><p>c&gt; d</p>") == []
+
+    def test_prompts_are_never_filled(self) -> None:
+        html = "<p>&lt;IR Team&gt; for {{company_name}}</p>"
+        assert "&lt;IR Team&gt;" in fill(html, {"company_name": "Acme"})
+
+
 class TestDoesNotFlagOrdinaryProse:
     """False positives here are worse than misses: every one is a phantom task
     on somebody's checklist."""
@@ -50,6 +83,9 @@ class TestDoesNotFlagOrdinaryProse:
         assert (
             find("<p>Escalate to <strong>the owner</strong> within <sup>2</sup> hours.</p>") == []
         )
+
+    def test_comparisons_and_short_references_are_not_prompts(self) -> None:
+        assert find("<p>a &lt; 5 minutes, b &gt; 2, see [RFC 2119] and [1].</p>") == []
 
     def test_currency_and_maths_are_not_fields(self) -> None:
         assert find("<p>Budget {{}} is not a field; ${{}} neither.</p>") == []
