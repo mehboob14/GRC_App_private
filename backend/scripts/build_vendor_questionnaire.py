@@ -211,7 +211,7 @@ Q: Final[tuple[Question, ...]] = (
         scope_level="lite",
         body="Can you state every country in which our data is stored or processed?",
         weight=2.0,
-        answer_type="text",
+        answer_type="paragraph",
         framework_refs=("SOC2:CC6.1", "ISO27001:A.5.34"),
     ),
     Question(
@@ -283,7 +283,7 @@ Q: Final[tuple[Question, ...]] = (
         scope_level="core",
         body="Can you state a recovery time objective and recovery point objective "
         "for this service?",
-        answer_type="text",
+        answer_type="paragraph",
         framework_refs=("SOC2:A1.2",),
     ),
     Question(
@@ -464,7 +464,7 @@ Q: Final[tuple[Question, ...]] = (
         domain="infrastructure_cloud",
         scope_level="core",
         body="Which cloud providers or data centres host this service?",
-        answer_type="text",
+        answer_type="paragraph",
         framework_refs=("SOC2:CC9.2",),
     ),
     # -- personnel security -----------------------------------------------------
@@ -617,11 +617,9 @@ def build() -> None:
         "code": BANK_KEY,
         "name": BANK_NAME,
         "version": BANK_VERSION,
-        "description": (
-            "Verity's own third-party security review. Covers the same ground as the "
-            "industry questionnaires and reproduces none of their text; framework_refs "
-            "names the criteria each question speaks to by identifier."
-        ),
+        # Shown to tenants in the builder, so it says what the review covers. The
+        # V13 provenance note lives in this script's docstring and the MANIFEST.
+        "description": "Security controls across ten risk domains, sized to the tier.",
         "suggested_tiers": ["critical", "high", "medium", "low"],
         "framework_mappings": list(FRAMEWORK_MAPPINGS),
         "built_in": True,

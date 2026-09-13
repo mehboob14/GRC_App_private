@@ -22,3 +22,5 @@ it for reversible, local choices.
 | [0009](0009-vendor-engagement-two-level-model.md) | Vendor and engagement, two-level TPRM | Accepted |
 | [0010](0010-vulnerability-definition-and-instance.md) | Definition and instance vulnerability model | Accepted |
 | [0011](0011-tenant-membership-model.md) | Users are global; membership is `tenant_memberships` (global-users-ready) | Accepted |
+| [0012](0012-document-editor-and-viewer-stack.md) | Rich-text editor and document viewer stack | Accepted |
+| [0013](0013-tenant-built-vendor-questionnaires.md) | Tenant-built vendor questionnaires, snapshotted where used | Accepted |

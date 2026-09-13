@@ -319,6 +319,8 @@ class AssessmentSummaryOut(_Response):
     answered_count: int
     submitted_at: UtcDateTime | None
     created_at: UtcDateTime
+    questionnaire_id: uuid.UUID | None
+    questionnaire_name: str | None
 
 
 class VendorDetailOut(VendorOut):
@@ -355,6 +357,7 @@ class VendorFacetsOut(_Response):
     reviewer_roles_by_tier: dict[str, list[str]]
     tier_thresholds: dict[str, float]
     policy_is_customised: bool
+    risk_domains: list[dict[str, str]]
 
 
 class DuplicateCheckOut(_Response):

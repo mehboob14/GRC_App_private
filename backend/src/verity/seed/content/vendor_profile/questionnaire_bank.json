@@ -3,7 +3,7 @@
     "code": "verity-vendor-profile",
     "name": "Vendor profile and assurance",
     "version": "2026.1",
-    "description": "Who the vendor is and what independent assurance they hold, with the reports and certificates to back it.",
+    "description": "Company details, attestations and the reports behind them.",
     "suggested_tiers": [
       "critical",
       "high",

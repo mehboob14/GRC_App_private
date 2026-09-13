@@ -47,10 +47,7 @@ TIERING_TEMPLATE: Final[dict[str, Any]] = {
     "code": "verity-inherent-risk",
     "name": "Inherent risk",
     "version": "2026.1",
-    "description": (
-        "Answered by your own team about how you use a vendor. The answers set "
-        "the tier, which decides the review depth, reviewers and cadence."
-    ),
+    "description": "Answered by your team about how you use a vendor. Sets the tier.",
     "suggested_tiers": [],
     "framework_mappings": [],
     "built_in": True,
@@ -276,10 +273,7 @@ PROFILE_TEMPLATE: Final[dict[str, Any]] = {
     "code": "verity-vendor-profile",
     "name": "Vendor profile and assurance",
     "version": "2026.1",
-    "description": (
-        "Who the vendor is and what independent assurance they hold, with the "
-        "reports and certificates to back it."
-    ),
+    "description": "Company details, attestations and the reports behind them.",
     "suggested_tiers": ["critical", "high", "medium", "low"],
     "framework_mappings": ["SOC2", "ISO27001"],
     "built_in": True,

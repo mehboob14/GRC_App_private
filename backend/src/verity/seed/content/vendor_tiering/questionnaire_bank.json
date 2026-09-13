@@ -3,7 +3,7 @@
     "code": "verity-inherent-risk",
     "name": "Inherent risk",
     "version": "2026.1",
-    "description": "Answered by your own team about how you use a vendor. The answers set the tier, which decides the review depth, reviewers and cadence.",
+    "description": "Answered by your team about how you use a vendor. Sets the tier.",
     "suggested_tiers": [],
     "framework_mappings": [],
     "built_in": true,

@@ -22,7 +22,7 @@ from sqlalchemy import select
 
 from tests.support.iam import Workspace, signup_workspace
 from verity.core.db import dispose_engine, session_scope
-from verity.core.errors import InvalidInput, NotFound
+from verity.core.errors import Conflict, InvalidInput, NotFound
 from verity.modules.audit.models import AuditLog
 from verity.modules.audit.service import Membership
 from verity.modules.vendors.models import QuestionnaireTemplate
@@ -590,3 +590,83 @@ async def test_one_tenant_cannot_read_or_use_anothers_questionnaire(tenant: Tena
             )
         theirs = await questionnaire_service.list_questionnaires(session, tenant_id=other.id)
     assert not {q.id for q in mine} & {q.id for q in theirs}
+
+
+async def test_resending_another_questionnaire_replaces_only_an_unanswered_review(
+    tenant: Tenant,
+) -> None:
+    """Picking a different questionnaire on resend swaps it while nothing is
+    answered, and is refused once the vendor has started: their work would go."""
+    vendor_id, engagement_id = await _vendor(tenant)
+    async with session_scope(tenant.id) as session:
+        rows = await questionnaire_service.list_questionnaires(session, tenant_id=tenant.id)
+        standard = await questionnaire_service.get_questionnaire(
+            session,
+            tenant_id=tenant.id,
+            questionnaire_id=next(q.id for q in rows if q.purpose == "tiering"),
+        )
+        await vendor_service.tier_engagement(
+            session,
+            tenant_id=tenant.id,
+            actor=tenant.actor,
+            vendor_id=vendor_id,
+            engagement_id=engagement_id,
+            answers=QuestionnaireTieringInput(
+                answers={str(q.id): {"value": q.options[0]["key"]} for q in standard.questions}
+            ),
+        )
+        lite = next(q for q in rows if q.name == "Security review, lite")
+        profile = next(q for q in rows if q.name == "Vendor profile")
+        first = await vendor_service.issue_questionnaire(
+            session,
+            tenant_id=tenant.id,
+            actor=tenant.actor,
+            vendor_id=vendor_id,
+            engagement_id=engagement_id,
+            questionnaire_id=lite.id,
+        )
+    async with session_scope(tenant.id) as session:
+        swapped = await vendor_service.issue_questionnaire(
+            session,
+            tenant_id=tenant.id,
+            actor=tenant.actor,
+            vendor_id=vendor_id,
+            engagement_id=engagement_id,
+            questionnaire_id=profile.id,
+        )
+    assert swapped.assessment_id != first.assessment_id
+    with pytest.raises(NotFound):
+        await vendor_portal_service.open_portal(
+            first.portal_url.rsplit("/", 1)[-1], client_host=HOST
+        )
+    async with session_scope(tenant.id) as session:
+        retired = await vendor_service.get_assessment(
+            session, tenant_id=tenant.id, assessment_id=first.assessment_id
+        )
+    assert retired.status == "expired"
+
+    token = swapped.portal_url.rsplit("/", 1)[-1]
+    opened = await vendor_portal_service.open_portal(token, client_host=HOST)
+    await vendor_portal_service.save_answer(
+        token, client_host=HOST, question_id=opened.questions[0].id, value="Northwind Ltd"
+    )
+    async with session_scope(tenant.id) as session:
+        with pytest.raises(Conflict, match="started answering"):
+            await vendor_service.issue_questionnaire(
+                session,
+                tenant_id=tenant.id,
+                actor=tenant.actor,
+                vendor_id=vendor_id,
+                engagement_id=engagement_id,
+                questionnaire_id=lite.id,
+            )
+    async with session_scope(tenant.id) as session:
+        resent = await vendor_service.issue_questionnaire(
+            session,
+            tenant_id=tenant.id,
+            actor=tenant.actor,
+            vendor_id=vendor_id,
+            engagement_id=engagement_id,
+            questionnaire_id=profile.id,
+        )
+    assert resent.assessment_id == swapped.assessment_id

@@ -308,6 +308,8 @@ class AssessmentSummaryView:
     answered_count: int
     submitted_at: datetime | None
     created_at: datetime
+    questionnaire_id: uuid.UUID | None
+    questionnaire_name: str | None
 
 
 @dataclass(frozen=True)
@@ -1715,6 +1717,8 @@ class VendorService:
                 answered_count=int(answered.get(row.id, 0)),
                 submitted_at=row.submitted_at,
                 created_at=row.created_at,
+                questionnaire_id=row.questionnaire_id,
+                questionnaire_name=(row.scope or {}).get("questionnaire_name"),
             )
             for row in rows
         ]
@@ -1885,6 +1889,10 @@ class VendorService:
             },
             "tier_thresholds": policy.thresholds,
             "policy_is_customised": policy.is_customised,
+            # The builder's domain picker, served for the same reason as stages.
+            "risk_domains": [
+                {"key": key, "label": label} for key, label in RISK_DOMAIN_LABELS.items()
+            ],
         }
 
     # -- writes ----------------------------------------------------------------
@@ -2838,7 +2846,7 @@ class VendorService:
         )
         return list((await session.execute(stmt)).scalars())
 
-    async def issue_questionnaire(  # noqa: PLR0913, PLR0915 -- two sources, one dispatch
+    async def issue_questionnaire(  # noqa: PLR0912, PLR0913, PLR0915 -- two sources, one dispatch
         self,
         session: AsyncSession,
         *,
@@ -2923,6 +2931,9 @@ class VendorService:
         # would duplicate every response row, leave two live tokens, and make the
         # register count one questionnaire as two.
         open_already = await self._open_assessment(session, tenant_id, engagement.id, cycle)
+        if open_already is not None and self._switches_questions(open_already, bank, snapshot):
+            await self._retire_unanswered(session, tenant_id, actor, open_already)
+            open_already = None
         if open_already is not None:
             open_already.portal_contact_id = contact.id
             open_already.due_date = due_date or open_already.due_date
@@ -3035,6 +3046,73 @@ class VendorService:
             due_date=assessment.due_date,
             portal_url=_portal_url(token),
         )
+
+    @staticmethod
+    def _switches_questions(
+        assessment: VendorAssessment,
+        bank: QuestionnaireTemplate | None,
+        snapshot: dict[str, Any],
+    ) -> bool:
+        """Whether a resend names different questions from the ones already sent."""
+        if bank is not None:
+            return assessment.template_id != bank.id
+        return str(assessment.questionnaire_id) != snapshot.get("id")
+
+    async def _retire_unanswered(
+        self,
+        session: AsyncSession,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        assessment: VendorAssessment,
+    ) -> None:
+        """Swap the questionnaire on a review nobody has started answering.
+
+        The old review is expired, its link revoked, and a new one is sent in its
+        place, so the trail shows what was sent first. Once the vendor has
+        answered anything, the swap is refused: their work would be thrown away.
+        """
+        started = (
+            await session.execute(
+                select(func.count())
+                .select_from(VendorAssessmentResponse)
+                .where(VendorAssessmentResponse.tenant_id == tenant_id)
+                .where(VendorAssessmentResponse.assessment_id == assessment.id)
+                .where(
+                    or_(
+                        VendorAssessmentResponse.answered_at.is_not(None),
+                        VendorAssessmentResponse.evidence_id.is_not(None),
+                    )
+                )
+            )
+        ).scalar_one()
+        if started:
+            raise Conflict(
+                "The vendor has started answering the questionnaire already sent, so it "
+                "cannot be swapped for another. Resend it as it is.",
+                detail=f"assessment {assessment.id} has {started} answered rows",
+            )
+        was = assessment.status
+        assessment.status = "expired"
+        for token in (
+            await session.execute(
+                select(VendorPortalToken)
+                .where(VendorPortalToken.tenant_id == tenant_id)
+                .where(VendorPortalToken.assessment_id == assessment.id)
+                .where(VendorPortalToken.revoked_at.is_(None))
+            )
+        ).scalars():
+            token.revoked_at = datetime.now(UTC)
+        await self._audit.record(
+            session,
+            action="update",
+            object_type="vendor_assessment",
+            object_id=assessment.id,
+            actor=actor,
+            tenant_id=tenant_id,
+            before={"status": was},
+            after={"status": "expired", "reason": "replaced by a different questionnaire"},
+        )
+        await session.flush()
 
     async def _open_assessment(
         self, session: AsyncSession, tenant_id: uuid.UUID, engagement_id: uuid.UUID, cycle: int

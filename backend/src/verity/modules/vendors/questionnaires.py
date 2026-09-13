@@ -103,6 +103,7 @@ _DEFAULTS: Final[dict[str, tuple[dict[str, Any], ...]]] = {
             "library": "verity-inherent-risk",
             "preset": "standard",
             "name": "Inherent risk",
+            "description": "Data, access, criticality, regulation and reliance. Sets the tier.",
             "is_default": True,
         },
     ),
@@ -111,21 +112,29 @@ _DEFAULTS: Final[dict[str, tuple[dict[str, Any], ...]]] = {
             "library": "verity-core",
             "preset": "lite",
             "name": "Security review, lite",
+            "description": "The essential controls, for low risk vendors.",
             "default_tiers": ["low"],
         },
         {
             "library": "verity-core",
             "preset": "core",
             "name": "Security review, core",
+            "description": "Broader controls, for medium risk vendors.",
             "default_tiers": ["medium"],
         },
         {
             "library": "verity-core",
             "preset": "full",
             "name": "Security review, full",
+            "description": "Every control area, for high and critical vendors.",
             "default_tiers": ["high", "critical"],
         },
-        {"library": "verity-vendor-profile", "preset": "lite", "name": "Vendor profile"},
+        {
+            "library": "verity-vendor-profile",
+            "preset": "lite",
+            "name": "Vendor profile",
+            "description": "Company details, attestations and the reports behind them.",
+        },
     ),
 }
 
@@ -609,7 +618,7 @@ class QuestionnaireService:
                     detail=f"preset {preset!r} not on {library_code}",
                 )
             chosen = [q for q in questions if levels is None or q.scope_level in levels]
-            copied = await self._copy_library(session, tenant_id, row, template, chosen, start=0)
+            copied = await self._copy_library(session, tenant_id, row, template, chosen)
 
         if purpose == "tiering":
             existing_default = await self._default_tiering_row(session, tenant_id)
@@ -831,11 +840,13 @@ class QuestionnaireService:
                 f"A questionnaire holds at most {_MAX_QUESTIONS} questions.",
                 detail="question limit reached",
             )
-        index = len(questions)
         if after_question_id is not None:
             index = next(
-                (i + 1 for i, q in enumerate(questions) if q.id == after_question_id), index
+                (i + 1 for i, q in enumerate(questions) if q.id == after_question_id),
+                len(questions),
             )
+        else:
+            index = self._slot(questions, data)
         question_id = uuid7()
         earlier = questions[:index]
         clean = self._validate(row.purpose, data, earlier=earlier, own_id=question_id)
@@ -912,9 +923,7 @@ class QuestionnaireService:
                     chosen_ids.add(q.parent_question_id)
             present = {q.library_code for q in existing if q.library_code}
             chosen = [q for q in questions if q.id in chosen_ids and q.code not in present]
-            copied += await self._copy_library(
-                session, tenant_id, row, template, chosen, start=len(existing) + copied
-            )
+            copied += await self._copy_library(session, tenant_id, row, template, chosen)
 
         self._touch(row, actor)
         await self._audit.record(
@@ -947,10 +956,21 @@ class QuestionnaireService:
             raise NotFound(_QUESTION_GONE, detail=f"question {question_id} not on {row.id}")
         question = questions[index]
         before = self._question_snapshot(question)
+        moved_from = question.section
         clean = self._validate(row.purpose, data, earlier=questions[:index], own_id=question.id)
         for key, value in clean.items():
             setattr(question, key, value)
         self._prune_dependents(questions, question)
+        if question.section != moved_from:
+            others = [q for q in questions if q.id != question.id]
+            if any(q.section == question.section for q in others):
+                slot = self._slot(others, question)
+                candidate = [*others[:slot], question, *others[slot:]]
+                # Kept where it is when moving would put it before a question it
+                # depends on, or after one that depends on it.
+                if self._order_ok(candidate):
+                    questions = candidate
+                    self._renumber(questions)
         self._touch(row, actor)
         after = self._question_snapshot(question)
         if before != after:
@@ -1095,7 +1115,7 @@ class QuestionnaireService:
                     tenant_id=tenant_id,
                     purpose=purpose,
                     name=spec["name"],
-                    description=template.description,
+                    description=spec.get("description", template.description),
                     status="active",
                     is_default=bool(spec.get("is_default", False)),
                     default_tiers=list(spec.get("default_tiers", [])),
@@ -1103,9 +1123,7 @@ class QuestionnaireService:
                 )
                 session.add(row)
                 await session.flush([row])
-                copied = await self._copy_library(
-                    session, tenant_id, row, template, chosen, start=0
-                )
+                copied = await self._copy_library(session, tenant_id, row, template, chosen)
                 await self._audit.record(
                     session,
                     action="create",
@@ -1439,9 +1457,7 @@ class QuestionnaireService:
                 else "single_choice"
             )
         else:
-            answer_type = {"text": "paragraph", "numeric": "number", "select": "paragraph"}.get(
-                answer_type, answer_type
-            )
+            answer_type = {"numeric": "number", "select": "paragraph"}.get(answer_type, answer_type)
         due = template.purpose == "due_diligence"
         domain = (question.domain or "information_security") if due else None
         return QuestionInput(
@@ -1488,26 +1504,24 @@ class QuestionnaireService:
             condition_code=parent.code if parent else None,
         )
 
-    async def _copy_library(  # noqa: PLR0913
+    async def _copy_library(
         self,
         session: AsyncSession,
         tenant_id: uuid.UUID,
         questionnaire: VendorQuestionnaire,
         template: QuestionnaireTemplate,
         chosen: Sequence[QuestionnaireQuestion],
-        *,
-        start: int,
     ) -> int:
         """Write library questions as the tenant's own, resolving branches by code.
 
         A parent is looked up in the whole template, because it may already be in
-        the questionnaire from an earlier import rather than among these.
+        the questionnaire from an earlier import rather than among these. Each
+        question lands at the end of its own section, so sections stay together.
         """
         existing = await self._questions(session, tenant_id, questionnaire.id)
         by_code = {q.library_code: q for q in existing if q.library_code}
         library_by_id = {q.id: q for q in await self._library_questions(session, template.id)}
         written: list[VendorQuestionnaireQuestion] = list(existing)
-        position = start
         for question in chosen:
             data = self._library_input(template, question)
             parent = (
@@ -1525,20 +1539,23 @@ class QuestionnaireService:
                     },
                 )
             new_id = uuid7()
-            clean = self._validate(questionnaire.purpose, data, earlier=written, own_id=new_id)
+            slot = self._slot(written, data)
+            clean = self._validate(
+                questionnaire.purpose, data, earlier=written[:slot], own_id=new_id
+            )
             row = VendorQuestionnaireQuestion(
                 id=new_id,
                 tenant_id=tenant_id,
                 questionnaire_id=questionnaire.id,
-                position=position,
+                position=slot,
                 **clean,
             )
             session.add(row)
-            written.append(row)
+            written.insert(slot, row)
             by_code[question.code] = row
-            position += 1
+        self._renumber(written)
         await session.flush()
-        return position - start
+        return len(chosen)
 
     # -- helpers ---------------------------------------------------------------
 
@@ -1612,6 +1629,37 @@ class QuestionnaireService:
     def _renumber(questions: Sequence[VendorQuestionnaireQuestion]) -> None:
         for index, question in enumerate(questions):
             question.position = index
+
+    @staticmethod
+    def _slot(
+        questions: Sequence[VendorQuestionnaireQuestion],
+        data: QuestionInput | VendorQuestionnaireQuestion,
+    ) -> int:
+        """Where a question goes: after the last one in its section, else at the end.
+
+        At the end regardless when it branches from a question that would
+        otherwise come after it.
+        """
+        section = (data.section or "").strip() or "General"
+        last = max((i for i, q in enumerate(questions) if q.section == section), default=None)
+        if last is None:
+            return len(questions)
+        slot = last + 1
+        parent = (data.condition or {}).get("question_id")
+        if parent and parent not in {str(q.id) for q in questions[:slot]}:
+            return len(questions)
+        return slot
+
+    @staticmethod
+    def _order_ok(questions: Sequence[VendorQuestionnaireQuestion]) -> bool:
+        """Every follow-up still comes after the question it depends on."""
+        seen: set[str] = set()
+        for q in questions:
+            parent = (q.condition or {}).get("question_id")
+            if parent and parent not in seen:
+                return False
+            seen.add(str(q.id))
+        return True
 
     @staticmethod
     def _check_purpose(purpose: str) -> None:

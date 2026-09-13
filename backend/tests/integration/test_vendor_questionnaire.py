@@ -669,3 +669,64 @@ async def test_findings_reach_the_lifecycle_checks_that_were_pending(
         c for c in approval.checks if c.code == "approval.no_unmitigated_critical"
     )
     assert critical_check.satisfied is False, "it is answerable now, and it is failing"
+
+
+async def test_a_review_sent_from_the_shipped_bank_still_answers_and_scores() -> None:
+    """API clients that name the bank keep the older path: rows point at bank
+    questions, answers use yes/partial/no/na, and scoring reads them as before."""
+    if not await _bank_loaded():
+        pytest.skip("questionnaire bank not seeded")
+    workspace = await signup_workspace(company="Kilo Bank", email="founder@kilo.example")
+    actor = Membership(workspace.membership_id)
+    async with session_scope(workspace.tenant_id) as session:
+        vendor = await vendor_service.create_vendor(
+            session,
+            tenant_id=workspace.tenant_id,
+            actor=actor,
+            data=VendorInput(
+                name="Legacy Co", business_owner_membership_id=workspace.membership_id
+            ),
+        )
+        await vendor_service.add_contact(
+            session,
+            tenant_id=workspace.tenant_id,
+            actor=actor,
+            vendor_id=vendor.id,
+            data=ContactInput(name="Lee", email="lee@legacy.test", contact_type="portal"),
+        )
+        engagement_id = vendor.engagements[0].id
+        await vendor_service.tier_engagement(
+            session,
+            tenant_id=workspace.tenant_id,
+            actor=actor,
+            vendor_id=vendor.id,
+            engagement_id=engagement_id,
+            answers=TieringAnswers(fourth_party_reliance=2),
+        )
+        issued = await vendor_service.issue_questionnaire(
+            session,
+            tenant_id=workspace.tenant_id,
+            actor=actor,
+            vendor_id=vendor.id,
+            engagement_id=engagement_id,
+            bank_code="verity-core",
+        )
+    token = issued.portal_url.rsplit("/", 1)[-1]
+    legacy = Issued(
+        workspace=workspace,
+        vendor_id=vendor.id,
+        engagement_id=engagement_id,
+        assessment_id=issued.assessment_id,
+        token=token,
+        question_count=issued.question_count,
+    )
+    assert legacy.question_count == 15
+    async with session_scope(workspace.tenant_id) as session:
+        view = await vendor_service.get_assessment(
+            session, tenant_id=workspace.tenant_id, assessment_id=issued.assessment_id
+        )
+    assert view.scope["bank_code"] == "verity-core"
+
+    await _answer_all(legacy, "yes")
+    submitted = await vendor_portal_service.submit(token, client_host=HOST)
+    assert submitted.status == "scored"
