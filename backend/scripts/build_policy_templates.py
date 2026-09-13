@@ -44,6 +44,65 @@ _OPTIONAL = re.compile(r"\[Optional[^\]]*\]")
 
 _FRONTMATTER = re.compile(r"^---\n(.*?)\n---\n", re.DOTALL)
 
+#: The picker card and the register show a short description of what each policy
+#: covers. The upstream files open with the policy's own first paragraph, which is
+#: long, full of {{placeholders}} and reads as policy text rather than a summary,
+#: so the descriptions are written here and win over the extracted sentence.
+SUMMARIES: dict[str, str] = {
+    "access-control-policy": (
+        "Who can access which systems and data, and how access is granted, reviewed and removed."
+    ),
+    "asset-management-policy": (
+        "Keeps an inventory of company assets and gives each one an owner responsible for "
+        "protecting it."
+    ),
+    "business-continuity-and-disaster-recovery-plan": (
+        "How the business keeps running and restores systems and data after an outage or disaster."
+    ),
+    "code-of-conduct": (
+        "The standards of behaviour expected from everyone who works for or with the company."
+    ),
+    "cryptography-policy": (
+        "When encryption must be used to protect data, and how encryption keys are managed."
+    ),
+    "data-management-policy": (
+        "How data is classified, handled, kept and securely disposed of based on how sensitive "
+        "it is."
+    ),
+    "human-resource-security-policy": (
+        "Security steps before, during and after employment, from background checks and "
+        "training to offboarding."
+    ),
+    "incident-response-plan": (
+        "How security incidents are reported, investigated, contained and closed, and who is "
+        "responsible for each step."
+    ),
+    "information-security-policy": (
+        "The company's overall approach to protecting information and the security rules every "
+        "employee follows."
+    ),
+    "information-security-roles-and-responsibilities": (
+        "Who is responsible for information security and what each role is accountable for."
+    ),
+    "operations-security-policy": (
+        "Keeps production systems running securely through change control, monitoring, backups "
+        "and patching."
+    ),
+    "physical-security-policy": (
+        "Protects offices, equipment and facilities from unauthorised access, damage and theft."
+    ),
+    "risk-management-policy": (
+        "How security risks are identified, assessed, treated and reviewed on a regular schedule."
+    ),
+    "secure-development-policy": (
+        "Builds security into software development, from design and code review to testing and "
+        "release."
+    ),
+    "third-party-management-policy": (
+        "How vendors that handle company data or systems are assessed, contracted and monitored."
+    ),
+}
+
 
 def _frontmatter(text: str) -> tuple[dict[str, Any], str]:
     """Parse the small, regular YAML subset these files use, without pulling in
@@ -142,7 +201,7 @@ def build(source: Path, out: Path) -> int:
                 "classification": "internal",
                 "tags": meta.get("tags") or [],
                 "satisfies": satisfies,
-                "summary": _summary(html),
+                "summary": SUMMARIES.get(_slug(path)) or _summary(html),
                 "content_html": html,
                 "placeholders": placeholders,
                 "optional_markers": len(_OPTIONAL.findall(body)),
@@ -168,7 +227,8 @@ def build(source: Path, out: Path) -> int:
             "retrieved_for": "policy template library",
             "modifications": (
                 "Markdown converted to HTML; YAML frontmatter lifted into columns; "
-                "{{placeholder}} tokens catalogued. The policy text itself is unaltered."
+                "{{placeholder}} tokens catalogued; each template's summary written for the "
+                "platform as a short description. The policy text itself is unaltered."
             ),
         },
         "generated": [{"path": "document_templates.json", "sha256": digest}],

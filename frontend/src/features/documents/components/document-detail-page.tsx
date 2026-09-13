@@ -5,7 +5,6 @@ import {
   Avatar,
   Badge,
   Button,
-  CodeChip,
   DetailHeader,
   Dialog,
   DialogBody,
@@ -18,7 +17,6 @@ import {
   StatusPill,
   TabStrip,
 } from "@/components/ui";
-import type { StatusFamily } from "@/components/ui/status-pill";
 import { cn } from "@/lib/cn";
 import { useToast } from "@/components/ui";
 import { useAuth } from "@/lib/auth/auth-context";
@@ -30,22 +28,14 @@ import {
   mergeIntoDocumentDetail,
 } from "@/features/documents/api";
 import { VersionHistory } from "./version-history";
-import type { ApprovalTier, Document, Lifecycle } from "@/features/documents/types";
+import type { ApprovalTier, Document } from "@/features/documents/types";
 import { DocumentContentViewer } from "./document-content-viewer";
 import { DocumentCampaignsPanel } from "./document-campaigns-panel";
 import { DocumentFormDialog } from "./document-form-dialog";
 import { TierApprovalCard } from "./tier-approval-card";
 import { OwnerSelect } from "@/features/iam/components/owner-select";
-import { CLASS_LABEL, TYPE_LABEL } from "../labels";
+import { CLASS_LABEL, LIFECYCLE_META, TYPE_LABEL } from "../labels";
 
-const LIFECYCLE_META: Record<Lifecycle, { label: string; family: StatusFamily }> = {
-  draft: { label: "Draft", family: "neutral" },
-  needs_approval: { label: "Needs approval", family: "pending" },
-  approved: { label: "Approved", family: "progress" },
-  published: { label: "Published", family: "success" },
-  expired: { label: "Expired", family: "danger" },
-  archived: { label: "Archived", family: "neutral" },
-};
 const APPROVAL_LABEL: Record<ApprovalTier["status"], string> = {
   approved: "Approved", pending: "Pending", rejected: "Rejected", not_started: "Not started",
 };
@@ -155,7 +145,6 @@ export function DocumentDetailPage() {
         title={doc.title}
         chips={
           <>
-            <CodeChip code={doc.code} />
             <Badge variant="neutral">{TYPE_LABEL[doc.doc_type]}</Badge>
           </>
         }

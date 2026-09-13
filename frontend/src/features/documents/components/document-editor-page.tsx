@@ -5,7 +5,6 @@ import DOMPurify from "dompurify";
 import mammoth from "mammoth";
 import {
   Button,
-  CodeChip,
   Dialog,
   DialogBody,
   DialogContent,
@@ -16,6 +15,7 @@ import {
   ErrorState,
   Icon,
   SegmentedControl,
+  StatusPill,
   TextField,
   useToast,
 } from "@/components/ui";
@@ -26,6 +26,7 @@ import {
   saveDocumentContent,
 } from "@/features/documents/api";
 import type { ChangeType } from "@/features/documents/types";
+import { LIFECYCLE_META } from "../labels";
 import { RichTextEditor } from "./rich-text-editor";
 
 /**
@@ -157,33 +158,42 @@ export function DocumentEditorPage() {
     );
   }
 
+  const life = LIFECYCLE_META[doc.lifecycle];
+  const placeholderLabels = Object.fromEntries(doc.placeholders.map((p) => [p.key, p.label]));
+
   return (
     <div className="flex h-screen flex-col bg-surface-page">
-      <header className="flex shrink-0 items-center justify-between gap-4 border-b border-border bg-surface-primary px-4 py-2.5">
-        <div className="flex min-w-0 items-center gap-3">
-          <CodeChip code={doc.code} />
-          <div className="min-w-0">
-            <p className="truncate text-body-md font-medium text-text-primary">{doc.title}</p>
-            <p className="text-caption text-text-subtle">
-              Editing content · v{doc.version}
-              {dirty ? " · unsaved changes" : ""}
-            </p>
-          </div>
+      <header className="flex h-16 shrink-0 items-center gap-3 border-b border-border bg-surface-primary px-5">
+        <span className="grid size-10 shrink-0 place-items-center rounded-md bg-action-accent-tint text-action-accent">
+          <Icon name="book" className="size-5" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <h1 className="truncate font-display text-heading-md text-text-primary">{doc.title}</h1>
+          <p className="flex items-center gap-3 text-caption text-text-subtle">
+            <StatusPill status={life.family} label={life.label} kind="inline" />
+            <span className="tabular">Version {doc.version}</span>
+            {dirty ? (
+              <span className="flex items-center gap-1.5 font-semibold text-status-warning-text">
+                <span className="size-1.5 rounded-full bg-status-warning-base" aria-hidden />
+                Unsaved changes
+              </span>
+            ) : null}
+          </p>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <Button variant="secondary" onClick={() => window.close()}>
-            Close
-          </Button>
-          <Button loading={saveMutation.isPending} disabled={!dirty} onClick={() => setSaving(true)}>
-            <Icon name="check" className="size-4" />
-            Save
-          </Button>
-        </div>
+        <Button variant="secondary" onClick={() => window.close()}>
+          <Icon name="x" className="size-4" />
+          Close
+        </Button>
+        <Button loading={saveMutation.isPending} disabled={!dirty} onClick={() => setSaving(true)}>
+          <Icon name="check" className="size-4" />
+          Save version
+        </Button>
       </header>
 
       <div className="min-h-0 flex-1">
         <RichTextEditor
           content={html}
+          placeholderLabels={placeholderLabels}
           onChange={(next) => {
             setHtml(next);
             setDirty(true);
@@ -203,18 +213,14 @@ export function DocumentEditorPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Save a new version</DialogTitle>
-            <DialogDescription>
-              This creates a new version. The previous one stays in the history and can be
-              restored at any time.
-            </DialogDescription>
+            <DialogDescription>The previous version stays in the history.</DialogDescription>
           </DialogHeader>
           <DialogBody className="space-y-4">
             <TextField
               label="What changed?"
               value={summary}
               onChange={(event) => setSummary(event.target.value)}
-              placeholder="e.g. Tightened the access review cadence to monthly"
-              hint="Shown on the version history row. Leave blank and it records 'Content edited.'"
+              placeholder="Tightened the access review cadence to monthly"
             />
             <div>
               <span className="mb-1 block text-label-md font-semibold text-text-primary">
@@ -231,8 +237,7 @@ export function DocumentEditorPage() {
                 ]}
               />
               <p className="mt-1 text-caption text-text-subtle">
-                Sets the next version number. Major for a rewrite that needs re-approval, patch
-                for a typo.
+                Major for a rewrite, patch for a typo.
               </p>
             </div>
           </DialogBody>

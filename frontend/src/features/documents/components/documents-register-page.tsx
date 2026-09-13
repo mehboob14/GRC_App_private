@@ -49,19 +49,10 @@ import {
 } from "@/features/documents/types";
 import { TemplatePickerDialog } from "./template-picker-dialog";
 import { DocumentFormDialog } from "./document-form-dialog";
-import { CLASS_LABEL, TYPE_LABEL } from "../labels";
+import { CLASS_LABEL, LIFECYCLE_META, TYPE_LABEL } from "../labels";
 
 
 
-/** Lifecycle → pill family + label. */
-const LIFECYCLE_META: Record<Lifecycle, { label: string; family: StatusFamily }> = {
-  draft: { label: "Draft", family: "neutral" },
-  needs_approval: { label: "Needs approval", family: "pending" },
-  approved: { label: "Approved", family: "progress" },
-  published: { label: "Published", family: "success" },
-  expired: { label: "Expired", family: "danger" },
-  archived: { label: "Archived", family: "neutral" },
-};
 
 const LIFECYCLE_FILTERS: { value: Lifecycle; label: string }[] = [
   { value: "draft", label: "Draft" },
@@ -440,9 +431,6 @@ export function DocumentsRegisterPage() {
                         <span className="block truncate text-body-md font-medium text-text-primary">
                           {doc.title}
                         </span>
-                        <span className="font-mono text-caption text-text-subtle">
-                          {doc.code}
-                        </span>
                       </div>
                     </div>
                   </TD>
@@ -553,7 +541,7 @@ export function DocumentsRegisterPage() {
                         <Button
                           variant="ghost"
                           size="icon-sm"
-                          aria-label={`Actions for ${doc.code}`}
+                          aria-label={`Actions for ${doc.title}`}
                         >
                           <Icon name="more" className="size-4" />
                         </Button>

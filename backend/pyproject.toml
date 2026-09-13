@@ -165,6 +165,12 @@ classmethod-decorators = ["sqlalchemy.orm.declared_attr", "declared_attr"]
     "E501",
     "ERA001",
 ]
+"src/verity/db/migrations/versions/20260913_1000_policy_template_summaries.py" = [
+    # Same reason as the control guidance rewrite: the old and new template
+    # summaries are embedded verbatim, including the upstream typographic quotes.
+    "E501",
+    "RUF001",
+]
 
 [tool.ruff.format]
 quote-style = "double"

@@ -7,12 +7,12 @@
     "commit": "22ace724638b897062714bcf447b84be531ba03a",
     "license": "Apache-2.0",
     "retrieved_for": "policy template library",
-    "modifications": "Markdown converted to HTML; YAML frontmatter lifted into columns; {{placeholder}} tokens catalogued. The policy text itself is unaltered."
+    "modifications": "Markdown converted to HTML; YAML frontmatter lifted into columns; {{placeholder}} tokens catalogued; each template's summary written for the platform as a short description. The policy text itself is unaltered."
   },
   "generated": [
     {
       "path": "document_templates.json",
-      "sha256": "7e3f531e589a97dc0e411fc79a01d7e4c658c054c2b60210f9c079edbdf6f6b3"
+      "sha256": "3a54e5765b62eec9bd8145a38eb88807e45a0d1a666f93ab9a2ebc752aa37f99"
     }
   ]
 }

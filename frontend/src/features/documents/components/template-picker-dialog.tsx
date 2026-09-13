@@ -8,7 +8,6 @@ import {
   Dialog,
   DialogBody,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -110,14 +109,12 @@ export function TemplatePickerDialog({
         onOpenChange(next);
       }}
     >
-      <DialogContent className="flex max-h-[90vh] w-[min(96vw,60rem)] max-w-none flex-col">
+      <DialogContent
+        className="flex max-h-[90vh] w-[min(96vw,60rem)] max-w-none flex-col"
+        aria-describedby={undefined}
+      >
         <DialogHeader>
-          <DialogTitle>Start from a policy template</DialogTitle>
-          <DialogDescription>
-            Each one becomes a draft in your register that only your workspace can see and edit.
-            Your company name is filled in automatically; anything still in braces is a decision
-            for you to make.
-          </DialogDescription>
+          <DialogTitle>Start a draft from a template</DialogTitle>
         </DialogHeader>
 
         <DialogBody className="min-h-0 flex-1 overflow-y-auto">
@@ -134,7 +131,7 @@ export function TemplatePickerDialog({
               <SearchInput
                 value={search}
                 onChange={setSearch}
-                placeholder="Search by name, topic or SOC 2 criterion…"
+                placeholder="Search templates"
                 className="mb-3"
               />
               {filtered.length === 0 ? (
@@ -162,16 +159,16 @@ export function TemplatePickerDialog({
               is also just honest: the customer is adopting someone else's text. */}
           {attribution ? (
             <p className="text-caption text-text-subtle">
-              Policy text from{" "}
+              Templates from{" "}
               <a
                 href={attribution.source_url ?? "#"}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-text-link hover:underline"
               >
-                the Openlane Policy Hub
+                Openlane Policy Hub
               </a>
-              , {attribution.license}. Adapted for this platform.
+              , {attribution.license}.
             </p>
           ) : (
             <span />
@@ -185,9 +182,7 @@ export function TemplatePickerDialog({
               disabled={selected.size === 0}
               onClick={() => create.mutate([...selected])}
             >
-              {selected.size === 0
-                ? "Add to register"
-                : `Add ${selected.size} to register`}
+              {selected.size <= 1 ? "Create draft" : `Create ${selected.size} drafts`}
             </Button>
           </div>
         </DialogFooter>
@@ -230,12 +225,11 @@ function TemplateCard({
             ) : null}
           </span>
           {template.summary ? (
-            <span className="mt-0.5 block line-clamp-2 text-caption text-text-secondary">
+            <span className="mt-1 block line-clamp-2 text-body-sm text-text-secondary">
               {template.summary}
             </span>
           ) : null}
           <span className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-caption text-text-subtle">
-            <span>{template.word_count.toLocaleString()} words</span>
             {criteria.length > 0 ? (
               <span className="flex items-center gap-1">
                 <Icon name="shield" className="size-3.5" aria-hidden />
