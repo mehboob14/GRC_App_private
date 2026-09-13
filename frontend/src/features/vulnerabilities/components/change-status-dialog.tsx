@@ -98,7 +98,7 @@ export function ChangeStatusDialog({
               onChange={(event) => setNote(event.target.value)}
               rows={3}
               maxLength={2000}
-              placeholder="What changed, and why — the next person to open this will read it."
+              placeholder="What changed, and why? The next person to open this will read it."
               className="w-full rounded-sm border border-border bg-surface-primary px-3 py-2 text-body-sm text-text-primary placeholder:text-text-faint focus:border-action-accent focus:outline-none"
             />
           </div>

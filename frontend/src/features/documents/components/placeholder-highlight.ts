@@ -38,7 +38,7 @@ function decorate(doc: ProseMirrorNode): DecorationSet {
           class: "policy-placeholder",
           // Read out by a screen reader, and shown as a tooltip: the highlight
           // alone does not say why it is highlighted.
-          title: `${match[1].replace(/_/g, " ")} — replace this before publishing`,
+          title: `${match[1].replace(/_/g, " ")}: replace this before publishing`,
           "data-placeholder": match[1].toLowerCase(),
         }),
       );

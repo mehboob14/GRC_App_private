@@ -272,7 +272,7 @@ function ControlDetailDialog({
                       ))}
                     </div>
                   ) : (
-                    <span className="text-body-sm text-text-subtle">—</span>
+                    <span className="text-body-sm text-text-subtle">None</span>
                   )}
                 </div>
                 <div>
@@ -284,7 +284,7 @@ function ControlDetailDialog({
                       ))}
                     </div>
                   ) : (
-                    <span className="text-body-sm text-text-subtle">—</span>
+                    <span className="text-body-sm text-text-subtle">None</span>
                   )}
                 </div>
                 {control.origin === "custom" && control.control_type ? (
@@ -609,7 +609,7 @@ export function ControlsPage() {
   // to learn what a single request already carries.
   //
   // Reading evidence is a separate permission from reading controls, so this is
-  // gated: without it the column reports "—" rather than a confident 0, which
+  // gated: without it the column reports "Unknown" rather than a confident 0, which
   // would otherwise read as "this control has no evidence" — a fabricated
   // compliance finding.
   const canReadEvidence = Boolean(
@@ -1157,7 +1157,7 @@ export function ControlsPage() {
                           ))}
                         </div>
                       ) : (
-                        <span className="text-text-subtle">—</span>
+                        <span className="text-text-subtle">None</span>
                       )}
                     </TD>
                   ) : null}
@@ -1190,7 +1190,7 @@ export function ControlsPage() {
                           ))}
                         </div>
                       ) : (
-                        <span className="text-text-subtle">—</span>
+                        <span className="text-text-subtle">None</span>
                       )}
                     </TD>
                   ) : null}
@@ -1225,7 +1225,7 @@ export function ControlsPage() {
                           {evidenceCount}
                         </span>
                       ) : (
-                        <span className="text-text-subtle">—</span>
+                        <span className="text-text-subtle">Unknown</span>
                       )}
                     </TD>
                   ) : null}
@@ -1352,7 +1352,7 @@ export function ControlsPage() {
               />
             ) : null}
             <span className="tabular text-body-sm text-text-subtle">
-              {pageStart + 1}–{Math.min(pageStart + pageSize, visible.length)}{" "}
+              {pageStart + 1} to {Math.min(pageStart + pageSize, visible.length)}{" "}
               of {visible.length}
             </span>
           </div>

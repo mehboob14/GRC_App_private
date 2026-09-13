@@ -346,7 +346,7 @@ function LinkPickerDialog({
               <p className="p-4 text-body-sm text-text-subtle">
                 {results.isLoading
                   ? "Loading…"
-                  : "No matches — everything found may already be linked."}
+                  : "No matches. Everything found may already be linked."}
               </p>
             ) : (
               <ul className="divide-y divide-border">

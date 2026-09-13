@@ -64,7 +64,7 @@ def red_flags(ctx: RemediationContext) -> list[str]:
     if ctx.public_exploit_count:
         flags.append(f"{ctx.public_exploit_count} public exploit(s) available")
     if ctx.epss_score is not None and ctx.epss_score >= _EPSS_FLAG:
-        flags.append(f"EPSS {ctx.epss_score:.0%} — likely to be exploited")
+        flags.append(f"EPSS {ctx.epss_score:.0%}, likely to be exploited")
     if ctx.overdue:
         flags.append("Past its remediation SLA")
     if ctx.internet_facing:
@@ -92,7 +92,7 @@ def heuristic_plan(ctx: RemediationContext) -> PlanDraft:
         target = ctx.fixed_versions or "the latest patched release"
         artifact = (
             f"1. Schedule a maintenance window for {ctx.asset_name}.\n"
-            f"2. Apply the vendor fix — update to {target}.\n"
+            f"2. Apply the vendor fix by updating to {target}.\n"
             "3. Restart the affected service.\n"
             f"4. Re-scan {ctx.asset_name} and confirm the finding no longer reports "
             "(mark verified only after the retest passes)."

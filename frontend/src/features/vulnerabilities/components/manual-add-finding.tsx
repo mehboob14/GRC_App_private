@@ -130,7 +130,7 @@ export function ManualAddFinding({ onAdded }: { onAdded: (id: string) => void })
             ))}
           </select>
         </div>
-        <TextField label="CVSS (optional)" value={cvss} onChange={(e) => setCvss(e.target.value)} placeholder="0–10" />
+        <TextField label="CVSS (optional)" value={cvss} onChange={(e) => setCvss(e.target.value)} placeholder="0 to 10" />
       </div>
       <TextField label="CVE (optional)" value={cve} onChange={(e) => setCve(e.target.value)} placeholder="CVE-2024-…" />
       <div>

@@ -133,7 +133,7 @@ class ReportService:
         framework_labels = sorted({fw for row in rows for fw in row.frameworks})
         return ControlGapReport(
             generated_at=datetime.now(UTC),
-            framework_label=", ".join(framework_labels) if framework_labels else "—",
+            framework_label=", ".join(framework_labels) if framework_labels else "No frameworks",
             kpis=ReportKpis(
                 controls_total=len(live),
                 controls_disabled=len(controls) - len(live),

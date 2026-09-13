@@ -32,7 +32,7 @@ const FIX_LABEL: Record<string, string> = {
 };
 
 const fmt = (iso: string | null) =>
-  iso ? new Date(iso).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }) : "—";
+  iso ? new Date(iso).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }) : "No date";
 
 export function RemediationPlanCard({ instanceId }: { instanceId: string }) {
   const { toast } = useToast();

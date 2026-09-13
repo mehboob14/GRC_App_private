@@ -240,7 +240,7 @@ export function AssetDetailPage() {
           {a.data_classification ? (
             <StatusPill kind="inline" status={CLASSIFICATION_META[a.data_classification].family} label={CLASSIFICATION_META[a.data_classification].label} />
           ) : (
-            <Plain>—</Plain>
+            <Plain>Not set</Plain>
           )}
         </Field>
         <Field label="Value">
@@ -337,22 +337,22 @@ function OverviewTab({ a, onChange }: { a: AssetDetail; onChange: () => void }) 
         </Panel>
         <Panel title="Identity">
           <dl className="grid grid-cols-2 gap-x-6 gap-y-2.5 text-body-sm">
-            <Meta label="Hostname" value={a.hostname ?? "—"} />
-            <Meta label="IP address" value={a.ip_address ?? "—"} />
-            <Meta label="FQDN" value={a.fqdn ?? "—"} />
-            <Meta label="OS" value={a.os_normalized ?? "—"} />
-            <Meta label="Location" value={a.location ?? "—"} />
-            <Meta label="Network segment" value={a.network_segment ?? "—"} />
-            <Meta label="Vendor" value={a.vendor_ref ?? "—"} />
-            <Meta label="Environment" value={a.environment ? ENVIRONMENT_LABEL[a.environment] : "—"} />
+            <Meta label="Hostname" value={a.hostname ?? "Not set"} />
+            <Meta label="IP address" value={a.ip_address ?? "Not set"} />
+            <Meta label="FQDN" value={a.fqdn ?? "Not set"} />
+            <Meta label="OS" value={a.os_normalized ?? "Not set"} />
+            <Meta label="Location" value={a.location ?? "Not set"} />
+            <Meta label="Network segment" value={a.network_segment ?? "Not set"} />
+            <Meta label="Vendor" value={a.vendor_ref ?? "Not set"} />
+            <Meta label="Environment" value={a.environment ? ENVIRONMENT_LABEL[a.environment] : "Not set"} />
           </dl>
         </Panel>
         <Panel title="Classification & exposure">
           <dl className="grid grid-cols-2 gap-x-6 gap-y-2.5 text-body-sm">
-            <Meta label="Data classification" value={a.data_classification ? CLASSIFICATION_META[a.data_classification].label : "—"} />
-            <Meta label="Regulated data" value={a.regulated_data_type ? humanize(a.regulated_data_type) : "—"} />
-            <Meta label="Compliance scope" value={a.compliance_scope.length ? a.compliance_scope.join(", ") : "—"} />
-            <Meta label="Business function" value={a.business_function ?? "—"} />
+            <Meta label="Data classification" value={a.data_classification ? CLASSIFICATION_META[a.data_classification].label : "Not set"} />
+            <Meta label="Regulated data" value={a.regulated_data_type ? humanize(a.regulated_data_type) : "Not set"} />
+            <Meta label="Compliance scope" value={a.compliance_scope.length ? a.compliance_scope.join(", ") : "None"} />
+            <Meta label="Business function" value={a.business_function ?? "Not set"} />
             <Meta label="Internet-facing" value={a.internet_facing ? "Yes" : "No"} />
             <Meta label="Customer-facing" value={a.customer_facing ? "Yes" : "No"} />
           </dl>
@@ -361,7 +361,7 @@ function OverviewTab({ a, onChange }: { a: AssetDetail; onChange: () => void }) 
           <Panel title="Business context">
             <dl className="space-y-2.5 text-body-sm">
               <Meta label="Valuation" value={fmtMoney(a.valuation)} />
-              <Meta label="Operational dependency" value={a.operational_dependency_rating ? humanize(a.operational_dependency_rating) : "—"} />
+              <Meta label="Operational dependency" value={a.operational_dependency_rating ? humanize(a.operational_dependency_rating) : "Not rated"} />
               {a.business_impact_notes ? (
                 <div>
                   <dt className="text-text-subtle">Business impact</dt>
@@ -462,9 +462,9 @@ function CriticalityTab({ a }: { a: AssetDetail }) {
       </Panel>
       <Panel title="Derived criticality">
         <dl className="space-y-2.5 text-body-sm">
-          <Meta label="Computed score" value={c.score != null ? `${c.score.toFixed(1)} / 10` : "—"} />
-          <Meta label="Computed tier" value={c.tier ? TIER_META[c.tier].label : "—"} />
-          <Meta label="Published tier" value={displayTier(c) ? TIER_META[displayTier(c)!].label : "—"} />
+          <Meta label="Computed score" value={c.score != null ? `${c.score.toFixed(1)} / 10` : "Not scored"} />
+          <Meta label="Computed tier" value={c.tier ? TIER_META[c.tier].label : "Not rated"} />
+          <Meta label="Published tier" value={displayTier(c) ? TIER_META[displayTier(c)!].label : "Not rated"} />
         </dl>
         {c.tier_override ? (
           <div className="mt-3 rounded-sm border border-border bg-surface-sunken px-3 py-2">
@@ -489,7 +489,7 @@ function CiaRow({ label, value }: { label: string; value: number | null }) {
     <div>
       <div className="flex items-baseline justify-between">
         <span className="text-body-sm text-text-secondary">{label}</span>
-        <span className="tabular text-body-sm text-text-primary">{value != null ? `${value} / 5` : "—"}</span>
+        <span className="tabular text-body-sm text-text-primary">{value != null ? `${value} / 5` : "Not rated"}</span>
       </div>
       <div className="mt-1 flex gap-1">
         {[1, 2, 3, 4, 5].map((n) => (
@@ -515,7 +515,7 @@ function OwnershipTab({ a }: { a: AssetDetail }) {
   return (
     <Panel title="Ownership chain">
       <p className="mb-4 text-body-sm text-text-subtle">
-        Everything inherits its owner from here — vulnerabilities, policy violations and alerts resolve to the primary owner.
+        Everything inherits its owner from here. Vulnerabilities, policy violations and alerts resolve to the primary owner.
       </p>
       <dl className="grid gap-x-8 gap-y-3 sm:grid-cols-2">
         {roles.map((r) => (
@@ -528,14 +528,14 @@ function OwnershipTab({ a }: { a: AssetDetail }) {
                   <span className="text-body-sm text-text-primary">{r.member.name}</span>
                 </span>
               ) : (
-                <span className="text-body-sm text-text-subtle">—</span>
+                <span className="text-body-sm text-text-subtle">Unassigned</span>
               )}
             </dd>
           </div>
         ))}
         <div className="flex items-center justify-between gap-3">
           <dt className="text-body-sm text-text-subtle">Owning team</dt>
-          <dd className="text-body-sm text-text-primary">{o.owning_team ?? "—"}</dd>
+          <dd className="text-body-sm text-text-primary">{o.owning_team ?? "Not set"}</dd>
         </div>
       </dl>
     </Panel>
@@ -563,7 +563,7 @@ function LifecycleTab({ a }: { a: AssetDetail }) {
           <dl className="space-y-2.5 text-body-sm">
             <Meta label="Disposal method" value={humanize(a.decommission.disposal_method)} />
             <Meta label="Media sanitised" value={a.decommission.media_sanitised ? "Yes" : "No"} />
-            <Meta label="Disposal evidence" value={a.decommission.evidence_ref ?? "—"} />
+            <Meta label="Disposal evidence" value={a.decommission.evidence_ref ?? "None"} />
             <Meta label="Decommissioned by" value={a.decommission.decommissioned_by} />
             <Meta label="Date" value={fmtDate(a.decommission.decommissioned_at)} />
             <div>
@@ -748,7 +748,7 @@ function VulnerabilitiesTab({ assetId, onOpen }: { assetId: string; onOpen: (id:
                   <span className="text-body-sm text-text-primary">{v.title}</span>
                 </span>
                 <span className="tabular text-caption font-semibold text-text-secondary">
-                  {v.risk_score ?? "—"} {v.priority_band}
+                  {v.risk_score ?? "No score"} · {v.priority_band}
                 </span>
                 <Badge variant="neutral">{v.state.replace(/_/g, " ")}</Badge>
               </button>
@@ -872,7 +872,7 @@ function TransitionDialog({
             {to === "decommissioned"
               ? "Record why this asset is being retired. Full disposal details are captured next."
               : to === "retired"
-                ? "Retiring is terminal — the record stays with its reason."
+                ? "Retiring is terminal. The record stays with its reason."
                 : "Add an optional note describing the change."}
           </p>
         </DialogHeader>

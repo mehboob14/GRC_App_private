@@ -643,7 +643,7 @@ export function ComplianceDashboardPage() {
                 to="/controls?status=disabled"
                 className="text-body-sm text-text-secondary hover:text-text-primary"
               >
-                {data.controls_disabled} controls out of scope — shown separately
+                {data.controls_disabled} controls out of scope, shown separately
                 below
               </Link>
             </div>

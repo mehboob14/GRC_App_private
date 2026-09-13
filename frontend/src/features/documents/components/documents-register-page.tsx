@@ -110,7 +110,7 @@ function displayStatus(doc: Document): { family: StatusFamily; label: string } {
 }
 
 function fmtDate(value: string | null): string {
-  if (!value) return "—";
+  if (!value) return "No date";
   return new Date(value).toLocaleDateString(undefined, {
     year: "numeric", month: "short", day: "2-digit",
   });
@@ -528,7 +528,7 @@ export function DocumentsRegisterPage() {
                           ))}
                         </div>
                       ) : (
-                        <span className="text-text-subtle">—</span>
+                        <span className="text-text-subtle">None</span>
                       )}
                     </TD>
                   ) : null}

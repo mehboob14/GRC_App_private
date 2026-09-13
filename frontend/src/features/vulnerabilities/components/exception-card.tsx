@@ -40,7 +40,7 @@ const STATUS_META: Record<
 };
 
 const fmt = (iso: string | null) =>
-  iso ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(iso)) : "—";
+  iso ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(iso)) : "No date";
 
 export function ExceptionCard({
   vuln,
@@ -188,7 +188,7 @@ export function ExceptionCard({
           <DialogHeader>
             <DialogTitle>Reject this exception</DialogTitle>
             <DialogDescription>
-              Say what would change the answer — the requester sees this, and it is recorded on
+              Say what would change the answer. The requester sees this, and it is recorded on
               the audit trail.
             </DialogDescription>
           </DialogHeader>
@@ -296,7 +296,7 @@ function RequestDialog({
             optional
             value={controls}
             onChange={setControls}
-            placeholder="What reduces the risk meanwhile — WAF rule, network restriction, monitoring?"
+            placeholder="What reduces the risk meanwhile: WAF rule, network restriction, monitoring?"
           />
         </DialogBody>
         <DialogFooter>

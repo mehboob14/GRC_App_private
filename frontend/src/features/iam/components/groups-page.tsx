@@ -232,7 +232,7 @@ export function GroupsPage() {
                         {group.description}
                       </span>
                     ) : (
-                      <span className="text-text-faint">—</span>
+                      <span className="text-text-faint">No description</span>
                     )}
                   </TD>
                 ) : null}

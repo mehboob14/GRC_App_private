@@ -69,8 +69,8 @@ const VENDOR_SUGGESTIONS = [
   "Slack",
 ];
 
-const LOCATION_SUGGESTIONS = ["HQ data center", "Colo — East", "Colo — West", "Remote / cloud-only"];
-const NETWORK_SEGMENT_SUGGESTIONS = ["DMZ", "Internal — corp", "Internal — prod", "Guest / isolated"];
+const LOCATION_SUGGESTIONS = ["HQ data center", "Colo East", "Colo West", "Remote / cloud-only"];
+const NETWORK_SEGMENT_SUGGESTIONS = ["DMZ", "Internal corp", "Internal prod", "Guest / isolated"];
 
 /** Which kind of asset carries which fields — the same shape shows only what
  *  it can actually have, so the form fits in fewer rows instead of a long
@@ -298,7 +298,7 @@ export function AssetFormDrawer({
                 <Select value={form.environment ?? NONE} onValueChange={(v) => set("environment", v === NONE ? null : (v as Environment))}>
                   <SelectTrigger aria-label="Environment" />
                   <SelectContent>
-                    <SelectItem value={NONE}>—</SelectItem>
+                    <SelectItem value={NONE}>None</SelectItem>
                     {ENVIRONMENTS.map((e) => (
                       <SelectItem key={e} value={e}>
                         {ENVIRONMENT_LABEL[e]}
@@ -374,7 +374,7 @@ export function AssetFormDrawer({
                       {preview ? <span className="tabular text-caption text-text-subtle">{preview.score.toFixed(1)}</span> : null}
                     </>
                   ) : (
-                    <span className="text-caption text-text-subtle">Not rated — leave CIA blank to keep this asset unassessed</span>
+                    <span className="text-caption text-text-subtle">Not rated. Leave CIA blank to keep this asset unassessed.</span>
                   )}
                 </div>
               </div>
@@ -384,7 +384,7 @@ export function AssetFormDrawer({
                   <Select value={form.data_classification ?? NONE} onValueChange={(v) => set("data_classification", v === NONE ? null : (v as DataClassification))}>
                     <SelectTrigger aria-label="Data classification" />
                     <SelectContent>
-                      <SelectItem value={NONE}>None — search to pick…</SelectItem>
+                      <SelectItem value={NONE}>None</SelectItem>
                       {DATA_CLASSIFICATIONS.map((c) => (
                         <SelectItem key={c} value={c}>
                           {CLASSIFICATION_META[c].label}

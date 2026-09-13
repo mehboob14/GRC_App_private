@@ -1744,7 +1744,7 @@ class VulnerabilityService:
         plan.status = "applied"
         plan.applied_at = now
         plan.execution_log = (
-            "Applied in simulation — the executor walked the fix artifact; no host was "
+            "Applied in simulation. The executor walked the fix artifact; no host was "
             "modified. Confirm the fix out-of-band, then attest to close."
         )
         # Route closure through the state machine: move the finding to pending_retest.
@@ -2641,7 +2641,7 @@ class VulnerabilityService:
                     to_state="accepted",
                     actor_membership_id=decider,
                     note=f"Exception approved for {row.duration_days} days"
-                    + (f" — {cleaned}" if cleaned else ""),
+                    + (f": {cleaned}" if cleaned else ""),
                 )
             )
             await self._audit.record(

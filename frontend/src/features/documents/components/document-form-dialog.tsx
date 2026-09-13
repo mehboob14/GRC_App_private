@@ -332,7 +332,7 @@ export function DocumentFormDialog({
           ) : null}
 
           {mode === "create" && source === "upload" ? (
-            <label className="flex cursor-pointer items-center justify-between gap-3 rounded-sm border border-dashed border-border px-3 py-3 hover:border-border-strong">
+            <label className="flex cursor-pointer items-center justify-between gap-3 rounded-sm border border-border px-3 py-3 hover:border-border-strong">
               <span className="flex items-center gap-2 text-body-sm text-text-secondary">
                 <Icon name="download" className="size-4 text-text-subtle" />
                 {file?.name ?? "Choose a PDF or Word file…"}

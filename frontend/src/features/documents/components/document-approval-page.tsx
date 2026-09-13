@@ -124,7 +124,7 @@ export function DocumentApprovalPage() {
         title:
           decision === "approved"
             ? next.lifecycle === "published"
-              ? "Approved — the document is now published"
+              ? "Approved. The document is now published"
               : "Approved"
             : "Sent back to draft",
         tone: decision === "approved" ? "success" : "neutral",

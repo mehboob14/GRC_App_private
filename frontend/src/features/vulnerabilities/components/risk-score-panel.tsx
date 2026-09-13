@@ -153,7 +153,7 @@ function CiaRow({ asset }: { asset: AssetCriticality }) {
   return (
     <div className="mt-3 border-t border-border pt-3">
       <p className="mb-2 type-overline text-text-subtle">
-        Asset C/I/A <span className="normal-case">— context, not a score input</span>
+        Asset C/I/A: <span className="normal-case">context, not a score input</span>
       </p>
       <div className="flex flex-wrap gap-4">
         {values.map(([label, value]) => (

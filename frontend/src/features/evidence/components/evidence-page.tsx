@@ -364,7 +364,7 @@ function EvidenceOverview({
 }
 
 function formatDate(iso: string | null): string {
-  if (!iso) return "—";
+  if (!iso) return "No date";
   try {
     return new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(
       new Date(`${iso}T00:00:00`),

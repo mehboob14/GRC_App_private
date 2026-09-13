@@ -119,7 +119,7 @@ def _cvss_factor(cvss: float, published: float | None, severity: str) -> RiskFac
     detail = (
         f"CVSS {cvss:.1f} as published"
         if published is not None
-        else f"no CVSS published — {severity} severity scores as {cvss:.1f}"
+        else f"no CVSS published, so {severity} severity scores as {cvss:.1f}"
     )
     return RiskFactor(
         key="cvss",
@@ -134,7 +134,7 @@ def _epss_factor(epss: float, published: float | None) -> RiskFactor:
     detail = (
         f"{epss:.1%} chance of exploitation in the next 30 days"
         if published is not None
-        else "no EPSS published — scores as 0"
+        else "no EPSS published, so it scores as 0"
     )
     return RiskFactor(
         key="epss",
@@ -172,7 +172,7 @@ def _asset_weight(asset: AssetRisk) -> tuple[float, str]:
         weight += 0.05
         bits.append("customer-facing (+0.05)")
     if asset.tier is None and not asset.internet_facing and not asset.customer_facing:
-        return weight, "no asset linked — unrated criticality assumed"
+        return weight, "no asset linked, so unrated criticality is assumed"
     return weight, ", ".join(bits)
 
 

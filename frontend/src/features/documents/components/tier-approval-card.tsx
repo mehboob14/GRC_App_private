@@ -59,7 +59,7 @@ export function TierApprovalCard({
   onAssigned: (doc: Document) => void;
 }) {
   const [assigning, setAssigning] = useState(false);
-  const label = `Tier ${tier.tier} — ${TIER_ROLE[tier.tier] ?? "Sign-off"}`;
+  const label = `Tier ${tier.tier}: ${TIER_ROLE[tier.tier] ?? "Sign-off"}`;
   const locked = tier.status === "approved" || tier.status === "rejected";
 
   return (

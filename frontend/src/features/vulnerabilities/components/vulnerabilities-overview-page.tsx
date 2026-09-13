@@ -228,7 +228,7 @@ export function VulnerabilitiesOverviewPage() {
             </div>
           </div>
           <p className="mt-3 text-caption text-text-subtle">
-            Priority weighs exploitability (KEV, EPSS, public exploits) on top of raw CVSS — a critical CVSS score does not automatically mean P1.
+            Priority weighs exploitability (KEV, EPSS, public exploits) on top of raw CVSS. A critical CVSS score does not automatically mean P1.
           </p>
         </Panel>
 
@@ -282,7 +282,7 @@ export function VulnerabilitiesOverviewPage() {
               <Metric label="Opened" value={tp?.opened_30d ?? 0} />
               <Metric
                 label="Median MTTR"
-                value={tp?.median_mttr_days != null ? `${tp.median_mttr_days}d` : "—"}
+                value={tp?.median_mttr_days != null ? `${tp.median_mttr_days}d` : "No data"}
               />
               <Metric
                 label="Net change"

@@ -24,7 +24,7 @@ export const REVIEW_META: Record<
 
 /** A date-only ISO string (YYYY-MM-DD) in the reader's locale. */
 export function formatDate(iso: string | null): string {
-  if (!iso) return "—";
+  if (!iso) return "No date";
   try {
     return new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(
       new Date(`${iso.slice(0, 10)}T00:00:00`),
@@ -37,7 +37,7 @@ export function formatDate(iso: string | null): string {
 /** A full timestamp, for the audit trail and review decisions where the time
  *  of day is part of the record. */
 export function formatDateTime(iso: string | null): string {
-  if (!iso) return "—";
+  if (!iso) return "No date";
   try {
     return new Intl.DateTimeFormat(undefined, {
       dateStyle: "medium",
@@ -49,7 +49,7 @@ export function formatDateTime(iso: string | null): string {
 }
 
 export function formatBytes(bytes: number | null): string {
-  if (bytes === null) return "—";
+  if (bytes === null) return "Size unknown";
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;

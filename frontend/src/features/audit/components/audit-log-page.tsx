@@ -121,8 +121,8 @@ const NOISE_FIELDS = new Set([
 ]);
 
 function formatValue(value: unknown): string {
-  if (value === null || value === undefined || value === "") return "—";
-  if (Array.isArray(value)) return value.length ? value.join(", ") : "—";
+  if (value === null || value === undefined || value === "") return "None";
+  if (Array.isArray(value)) return value.length ? value.join(", ") : "None";
   if (typeof value === "object") return JSON.stringify(value);
   return String(value);
 }

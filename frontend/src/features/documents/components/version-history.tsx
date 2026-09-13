@@ -291,7 +291,7 @@ function RestoreDialog({
       consequence={
         <>
           <p className="text-body-sm text-text-secondary">
-            This writes the text of v{version.version} as a new version. Nothing is deleted — the
+            This writes the text of v{version.version} as a new version. Nothing is deleted. The
             current version stays in the history, and you can restore it back at any time.
           </p>
           {willDemote ? (

@@ -416,7 +416,7 @@ function Row({
       {isVisible("vector") ? <TD><VectorCell vector={v.cvss_vector} /></TD> : null}
       {isVisible("exploit") ? <TD><ExploitCell count={v.public_exploit_count} /></TD> : null}
       {isVisible("patch") ? <TD><PatchCell available={v.patch_available} /></TD> : null}
-      {isVisible("kev") ? <TD>{v.kev_flag ? <KevBadge /> : <span className="text-caption text-text-subtle">—</span>}</TD> : null}
+      {isVisible("kev") ? <TD>{v.kev_flag ? <KevBadge /> : <span className="text-caption text-text-subtle">No</span>}</TD> : null}
       {isVisible("asset") ? (
         <TD>
           <Link

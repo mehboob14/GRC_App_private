@@ -250,19 +250,19 @@ export function PasswordPolicyCard() {
           </legend>
           <div className="space-y-2">
             <CheckRow
-              label="Uppercase letter (A–Z)"
+              label="Uppercase letter (A to Z)"
               checked={draft.password_require_upper}
               onChange={(value) => set("password_require_upper", value)}
               disabled={locked}
             />
             <CheckRow
-              label="Lowercase letter (a–z)"
+              label="Lowercase letter (a to z)"
               checked={draft.password_require_lower}
               onChange={(value) => set("password_require_lower", value)}
               disabled={locked}
             />
             <CheckRow
-              label="Digit (0–9)"
+              label="Digit (0 to 9)"
               checked={draft.password_require_digit}
               onChange={(value) => set("password_require_digit", value)}
               disabled={locked}

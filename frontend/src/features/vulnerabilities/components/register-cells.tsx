@@ -123,7 +123,7 @@ function cvssTone(s: number | null): string {
 }
 
 export function CvssCell({ score }: { score: number | null }) {
-  if (score == null) return <Dash />;
+  if (score == null) return <Dash label="Not scored" />;
   return (
     <span className={cn("font-mono text-caption font-semibold tabular", cvssTone(score))} title="CVSS base score">
       {score.toFixed(1)}
@@ -133,7 +133,7 @@ export function CvssCell({ score }: { score: number | null }) {
 
 /** EPSS probability (not the percentile) — bold once past the 10% signal line. */
 export function EpssCell({ score, percentile }: { score: number | null; percentile: number | null }) {
-  if (score == null && percentile == null) return <Dash />;
+  if (score == null && percentile == null) return <Dash label="Not scored" />;
   const high = typeof score === "number" && score >= 0.1;
   const title = `EPSS probability of exploitation in the next 30 days${
     percentile != null ? ` · ${Math.round(percentile * 100)}th percentile` : ""
@@ -154,7 +154,7 @@ export function parseAttackVector(vector: string | null): string | null {
 
 export function VectorCell({ vector }: { vector: string | null }) {
   const av = parseAttackVector(vector);
-  if (!av) return <Dash />;
+  if (!av) return <Dash label="Unknown" />;
   const remote = av === "N" || av === "A";
   return (
     <span
@@ -231,6 +231,6 @@ export function OwnerCell({ name }: { name: string | null }) {
   );
 }
 
-function Dash() {
-  return <span className="text-caption text-text-subtle">—</span>;
+function Dash({ label = "None" }: { label?: string }) {
+  return <span className="text-caption text-text-subtle">{label}</span>;
 }

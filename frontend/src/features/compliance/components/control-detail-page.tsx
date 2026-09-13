@@ -804,7 +804,7 @@ export function ControlDetailPage() {
             {control.control_type ? (
               <Fact label="Type" value={control.control_type} />
             ) : null}
-            <Fact label="Sub-type" value={control.control_sub_type ?? "—"} />
+            <Fact label="Sub-type" value={control.control_sub_type ?? "Not set"} />
             <Fact
               label="Source"
               value={control.origin === "custom" ? "Custom" : "Template"}

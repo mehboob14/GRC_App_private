@@ -172,7 +172,7 @@ async def _reset_password(email: str) -> int:
     else:
         print(f"password taken from ${RESET_PASSWORD_ENV}.")
     print("Every existing session for this user has been revoked.")
-    print("MFA is untouched — if it was enrolled, it is still required at sign-in.")
+    print("MFA is untouched. If it was enrolled, it is still required at sign-in.")
     return 0
 
 
@@ -204,7 +204,7 @@ def _build_parser() -> argparse.ArgumentParser:
 async def _seed_content() -> int:
     result = await load_all()
     print(result.summary())
-    print("no changes — content already current." if not result.changed else "content updated.")
+    print("no changes: content already current." if not result.changed else "content updated.")
     return 0
 
 

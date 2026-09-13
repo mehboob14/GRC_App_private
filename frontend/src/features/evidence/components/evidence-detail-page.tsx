@@ -210,7 +210,7 @@ export function EvidenceDetailPage() {
         <Field label="Controls">{item.control_links.length || "None"}</Field>
         {item.kind === "file" ? (
           <Field label="File">
-            {item.filename ?? "—"}
+            {item.filename ?? "Unnamed file"}
             <span className="ml-1.5 font-normal text-text-subtle">
               {formatBytes(item.size_bytes)}
             </span>
@@ -281,7 +281,7 @@ export function EvidenceDetailPage() {
             {!item.review_required ? (
               <p className="text-body-sm text-text-subtle">
                 Review starts once this evidence is linked to a control. The control's owner
-                approves it, rejects it, or asks for a change — a verdict on evidence that
+                approves it, rejects it, or asks for a change. A verdict on evidence that
                 supports no control would be a verdict on nothing.
               </p>
             ) : item.reviewed_by_name ? (
@@ -326,7 +326,7 @@ export function EvidenceDetailPage() {
             <dl>
               <Meta label="Type">{item.evidence_type.replace(/_/g, " ")}</Meta>
               <Meta label="Owner">{item.owner_name ?? "Unassigned"}</Meta>
-              <Meta label="Source label">{item.source_label ?? "—"}</Meta>
+              <Meta label="Source label">{item.source_label ?? "Not set"}</Meta>
               <Meta label="Origin">
                 {item.source ? (
                   item.source
@@ -338,7 +338,7 @@ export function EvidenceDetailPage() {
               <Meta label="Valid until">{formatDate(item.renewal_date)}</Meta>
               {item.kind === "file" ? (
                 <>
-                  <Meta label="File">{item.filename ?? "—"}</Meta>
+                  <Meta label="File">{item.filename ?? "Unnamed file"}</Meta>
                   <Meta label="Format">
                     {item.content_type ?? "file"} · {formatBytes(item.size_bytes)}
                   </Meta>
@@ -348,7 +348,7 @@ export function EvidenceDetailPage() {
                     {item.sha256 ? (
                       <span className="break-all font-mono text-caption">{item.sha256}</span>
                     ) : (
-                      "—"
+                      "Not recorded"
                     )}
                   </Meta>
                 </>
@@ -364,7 +364,7 @@ export function EvidenceDetailPage() {
                       {item.link_url}
                     </a>
                   ) : (
-                    "—"
+                    "No link"
                   )}
                 </Meta>
               )}

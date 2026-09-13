@@ -70,7 +70,7 @@ function cia(raw: string, field: string, errors: string[]): CiaRating | null {
   if (!v) return null;
   const n = Number(v);
   if (!Number.isInteger(n) || n < 1 || n > 5) {
-    errors.push(`${field} must be 1–5`);
+    errors.push(`${field} must be 1 to 5`);
     return null;
   }
   return n as CiaRating;
@@ -231,7 +231,7 @@ export function AssetsImportPage() {
         </div>
 
         {/* Scanners — automated discovery, coming soon. */}
-        <div className="rounded-lg border border-dashed border-border bg-surface-sunken/30 p-5">
+        <div className="rounded-lg border border-border bg-surface-sunken/30 p-5">
           <div className="flex items-center justify-between gap-2">
             <h2 className="font-display text-title-sm text-text-primary">Connect a scanner</h2>
             <Badge variant="neutral">Soon</Badge>
@@ -287,18 +287,18 @@ export function AssetsImportPage() {
                       <span className="tabular text-caption text-text-subtle">{r.line}</span>
                     </TD>
                     <TD>
-                      <span className="text-body-sm text-text-primary">{r.input.name || <span className="text-text-subtle">—</span>}</span>
+                      <span className="text-body-sm text-text-primary">{r.input.name || <span className="text-text-subtle">Missing</span>}</span>
                     </TD>
                     <TD>
                       <span className="text-body-sm text-text-secondary">{ASSET_TYPE_META[r.input.asset_type]?.label ?? r.input.asset_type}</span>
                     </TD>
                     <TD>
                       <span className="font-mono text-caption text-text-subtle">
-                        {c == null && i == null && a == null ? "—" : `${c ?? "–"}·${i ?? "–"}·${a ?? "–"}`}
+                        {c == null && i == null && a == null ? "Not rated" : [c != null ? `C${c}` : null, i != null ? `I${i}` : null, a != null ? `A${a}` : null].filter(Boolean).join("·")}
                       </span>
                     </TD>
                     <TD>
-                      <span className="text-body-sm text-text-secondary">{r.input.primary_owner_id ? "Assigned" : "—"}</span>
+                      <span className="text-body-sm text-text-secondary">{r.input.primary_owner_id ? "Assigned" : "Unassigned"}</span>
                     </TD>
                     <TD>
                       {ok ? (

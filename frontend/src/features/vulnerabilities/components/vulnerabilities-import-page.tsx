@@ -94,7 +94,7 @@ export function VulnerabilitiesImportPage() {
               <button
                 type="button"
                 onClick={() => fileRef.current?.click()}
-                className="flex w-full items-center justify-center gap-2 rounded-md border border-dashed border-border py-4 text-body-sm text-text-subtle transition-colors hover:border-border-strong hover:text-text-primary"
+                className="flex w-full items-center justify-center gap-2 rounded-md border border-border py-4 text-body-sm text-text-subtle transition-colors hover:border-border-strong hover:text-text-primary"
               >
                 <Icon name="download" className="size-4" />
                 {file ? file.name : "Choose a file (CSV, Excel, or XML)"}

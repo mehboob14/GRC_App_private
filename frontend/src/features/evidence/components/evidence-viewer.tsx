@@ -28,7 +28,7 @@ export function fetchEvidenceBlob(id: string): () => Promise<Blob> {
 export function EvidenceViewer({ item, heightClass }: { item: Evidence; heightClass?: string }) {
   if (item.kind === "link") {
     return (
-      <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border bg-surface-sunken px-4 py-10 text-center">
+      <div className="flex flex-col items-center gap-3 rounded-lg border border-border bg-surface-sunken px-4 py-10 text-center">
         <span className="flex size-10 items-center justify-center rounded-md bg-surface-hover text-text-subtle">
           <Icon name="globe" className="size-5" aria-hidden />
         </span>

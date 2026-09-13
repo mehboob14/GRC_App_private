@@ -51,7 +51,7 @@ const APPROVAL_LABEL: Record<ApprovalTier["status"], string> = {
 };
 
 function fmtDate(value: string | null): string {
-  if (!value) return "—";
+  if (!value) return "No date";
   return new Date(value).toLocaleDateString(undefined, {
     year: "numeric", month: "long", day: "numeric",
   });
@@ -229,15 +229,15 @@ export function DocumentDetailPage() {
                 <Meta label="Type" value={TYPE_LABEL[doc.doc_type]} />
                 <Meta label="Classification" value={CLASS_LABEL[doc.classification]} />
                 <Meta label="Renewal date" value={fmtDate(doc.renewal_date)} />
-                <Meta label="Assigned to" value={doc.assigned_to ?? "—"} />
+                <Meta label="Assigned to" value={doc.assigned_to ?? "Unassigned"} />
                 <Meta
                   label="Frameworks"
-                  value={doc.frameworks.length ? doc.frameworks.join(", ") : "—"}
+                  value={doc.frameworks.length ? doc.frameworks.join(", ") : "None"}
                 />
                 <div className="col-span-2">
                   <dt className="text-caption text-text-subtle">Description</dt>
                   <dd className="mt-0.5 text-body-md text-text-secondary">
-                    {doc.description || "—"}
+                    {doc.description || "No description"}
                   </dd>
                 </div>
               </dl>

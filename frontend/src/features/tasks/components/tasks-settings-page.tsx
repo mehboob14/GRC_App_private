@@ -269,14 +269,14 @@ function SeverityMatrixCard({ canEdit }: { canEdit: boolean }) {
                           className={cn(
                             "w-full rounded-md border p-2.5 text-left transition-colors",
                             canEdit ? "hover:border-border-strong" : "cursor-default",
-                            cell.is_default ? "border-dashed border-border bg-surface-sunken/40" : "border-border bg-surface-primary",
+                            cell.is_default ? "border-border bg-surface-sunken/40" : "border-border bg-surface-primary",
                           )}
                         >
                           <span className="block font-display text-body-md font-semibold text-text-primary">
                             {SEVERITY_LABEL[cell.severity]}
                           </span>
                           <span className="block text-caption text-text-subtle">
-                            respond {cell.respond_hours}h · resolve {cell.resolve_hours}h
+                            respond {cell.respond_hours}h · resolve {cell.resolve_hours}h{cell.is_default ? " · default" : ""}
                           </span>
                         </button>
                       </td>

@@ -458,7 +458,7 @@ function TaskRow({
       {isVisible("sla") ? (
         <TD>
           {task.sla_state === "none" ? (
-            <span className="text-body-sm text-text-subtle">—</span>
+            <span className="text-body-sm text-text-subtle">No SLA</span>
           ) : (
             <StatusPill kind="inline" status={sla.family} label={sla.label} />
           )}

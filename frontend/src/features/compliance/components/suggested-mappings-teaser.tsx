@@ -59,7 +59,7 @@ export function SuggestedMappings({
           <h2 className="font-display text-title-md text-text-primary">Suggested control mappings</h2>
           <p className="mt-1 text-body-sm text-text-secondary">
             Controls this evidence may also satisfy, across every framework you carry. Review each,
-            then link the ones that fit — never linked without you saying so.
+            then link the ones that fit. Nothing is linked without you saying so.
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
@@ -77,7 +77,7 @@ export function SuggestedMappings({
       ) : visible.length === 0 ? (
         <p className="mt-4 text-body-sm text-text-subtle">
           {rows.length === 0
-            ? "No further controls look like a match — the relevant ones may already be linked."
+            ? "No further controls look like a match. The relevant ones may already be linked."
             : "All suggestions handled."}
         </p>
       ) : (

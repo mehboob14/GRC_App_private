@@ -71,7 +71,7 @@ function formatDate(iso: string) {
 function timeAgo(iso: string | null): string {
   if (!iso) return "Never";
   const then = new Date(iso).getTime();
-  if (Number.isNaN(then)) return "—";
+  if (Number.isNaN(then)) return "Unknown";
   const diffMs = then - Date.now();
   const rtf = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
   const units: [Intl.RelativeTimeFormatUnit, number][] = [
@@ -707,7 +707,7 @@ export function TeamPage() {
                       <span className="text-body-md text-text-secondary">
                         {member.group_names.length
                           ? member.group_names.join(" · ")
-                          : "—"}
+                          : "No groups"}
                       </span>
                     </TD>
                   ) : null}

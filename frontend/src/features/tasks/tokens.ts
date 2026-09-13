@@ -34,7 +34,7 @@ export const SLA_META: Record<SlaState, { label: string; family: StatusFamily }>
   due_soon: { label: "Due soon", family: "warning" },
   paused: { label: "Paused", family: "neutral" },
   on_track: { label: "On track", family: "success" },
-  none: { label: "—", family: "neutral" },
+  none: { label: "No SLA", family: "neutral" },
 };
 
 /** SeverityChip in the UI kit knows critical/high/medium/low; `informational`
@@ -68,13 +68,13 @@ export const CAPA_TYPE_LABEL: Record<CapaType, string> = {
 // -- formatters --------------------------------------------------------------
 
 export function fmtDate(value: string | null): string {
-  if (!value) return "—";
+  if (!value) return "No date";
   return new Date(value).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "2-digit" });
 }
 
-/** "in 6h", "3d ago", "—". Signed, for SLA/due proximity. */
+/** "in 6h", "3d ago", "No date". Signed, for SLA/due proximity. */
 export function relativeTime(value: string | null): string {
-  if (!value) return "—";
+  if (!value) return "No date";
   const delta = new Date(value).getTime() - Date.now();
   const ahead = delta >= 0;
   const abs = Math.abs(delta);

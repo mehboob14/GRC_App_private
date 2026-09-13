@@ -243,7 +243,7 @@ export function TaskDetail({
         ) : null}
         <Field label="SLA">
           {doc.sla_state === "none" ? (
-            <Plain>—</Plain>
+            <Plain>No SLA</Plain>
           ) : (
             <span className="inline-flex items-center gap-2">
               <StatusPill kind="inline" status={sla.family} label={sla.label} />
@@ -383,11 +383,11 @@ function OverviewTab({ doc, onEditAssignees }: { doc: TaskDetail; onEditAssignee
 
         <Panel title="Details">
           <dl className="space-y-2.5 text-body-sm">
-            <Meta label="Reporter" value={doc.reporter?.name ?? "—"} />
+            <Meta label="Reporter" value={doc.reporter?.name ?? "Not set"} />
             <Meta label="Source" value={sourceLabel(doc.source)} />
             <Meta label="Detected" value={fmtDate(doc.detected_at)} />
             <Meta label="Created" value={fmtDate(doc.created_at)} />
-            <Meta label="SLA level" value={doc.sla_level ?? "—"} />
+            <Meta label="SLA level" value={doc.sla_level ?? "Not set"} />
             {doc.recurrence_rule ? <Meta label="Recurs" value={doc.recurrence_summary ?? doc.recurrence_rule} /> : null}
           </dl>
         </Panel>

@@ -73,7 +73,7 @@ export const ENVIRONMENT_LABEL: Record<Environment, string> = {
 // -- formatters --------------------------------------------------------------
 
 export function fmtDate(value: string | null): string {
-  if (!value) return "—";
+  if (!value) return "No date";
   return new Date(value).toLocaleDateString(undefined, {
     year: "numeric",
     month: "short",
@@ -81,9 +81,9 @@ export function fmtDate(value: string | null): string {
   });
 }
 
-/** "in 6h", "3d ago", "—". Signed, for freshness/last-seen proximity. */
+/** "in 6h", "3d ago", "Never". Signed, for freshness/last-seen proximity. */
 export function relativeTime(value: string | null): string {
-  if (!value) return "—";
+  if (!value) return "Never";
   const delta = new Date(value).getTime() - Date.now();
   const ahead = delta >= 0;
   const hours = Math.round(Math.abs(delta) / 3_600_000);
@@ -92,10 +92,10 @@ export function relativeTime(value: string | null): string {
   return ahead ? `in ${label}` : `${label} ago`;
 }
 
-/** Valuation, compact — "$1.2M", "$40k", or "—" when there is no real figure
+/** Valuation, compact — "$1.2M", "$40k", or "Not set" when there is no real figure
  *  (no phantom zero). */
 export function fmtMoney(value: number | null): string {
-  if (value == null) return "—";
+  if (value == null) return "Not set";
   if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`;
   if (value >= 1_000) return `$${Math.round(value / 1_000)}k`;
   return `$${value}`;

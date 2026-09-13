@@ -109,7 +109,7 @@ function toDocument(r: RawDocument): Document {
     doc_type: r.doc_type,
     classification: r.classification,
     lifecycle: r.lifecycle,
-    version: r.version ?? "—",
+    version: r.version ?? "Not set",
     content_format: r.content_format,
     filename: r.filename,
     owner: r.owner_membership_id
