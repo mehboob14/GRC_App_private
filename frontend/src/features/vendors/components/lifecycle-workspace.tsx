@@ -35,7 +35,7 @@ import { ApprovalSection } from "./approval-panel";
 import { ExitCheckRow } from "./exit-check-row";
 import { StageRail, type RailItem } from "./stage-rail";
 import { TierBadge } from "./tier-badge";
-import { TieringDialog, TierSummary } from "./tiering-panel";
+import { TierSummary } from "./tiering-panel";
 
 /** The rail's id for the tiering step before any stage rows exist. */
 const TIERING_STEP = "tiering";
@@ -60,6 +60,7 @@ export function LifecycleWorkspace({
   canApprove,
   onApply,
   onGo,
+  onTier,
 }: {
   vendor: VendorDetail;
   engagementId: string | null;
@@ -68,6 +69,9 @@ export function LifecycleWorkspace({
   canApprove: boolean;
   onApply: (next: VendorDetail) => void;
   onGo: (target: string) => void;
+  /** Open the tiering popup for this engagement. The page owns it, so the
+   *  header and the Overview tab can open it too. */
+  onTier: () => void;
 }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -91,7 +95,6 @@ export function LifecycleWorkspace({
     null;
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [tieringOpen, setTieringOpen] = useState(false);
   const [sendBackOpen, setSendBackOpen] = useState(false);
   const [skipOpen, setSkipOpen] = useState(false);
 
@@ -146,7 +149,7 @@ export function LifecycleWorkspace({
   /** A blocker's action. Tiering and the decision are handled here, not by a tab. */
   const go = (target: string) => {
     if (target === "tiering") {
-      setTieringOpen(true);
+      onTier();
       return;
     }
     if (target === "approval") {
@@ -240,9 +243,15 @@ export function LifecycleWorkspace({
                   <span className="text-body-md text-text-secondary">All stages settled</span>
                 )}
               </StripItem>
-              <span className="ml-auto text-caption text-text-subtle">
-                Cycle {selected?.cycle ?? 1}
-              </span>
+              <div className="ml-auto flex items-center gap-3">
+                <span className="text-caption text-text-subtle">Cycle {selected?.cycle ?? 1}</span>
+                {canAssess ? (
+                  <Button variant="secondary" size="sm" onClick={onTier}>
+                    <Icon name="gauge" className="size-4" />
+                    Re-tier
+                  </Button>
+                ) : null}
+              </div>
             </>
           ) : (
             <>
@@ -250,6 +259,12 @@ export function LifecycleWorkspace({
                 <TierBadge tier={null} />
               </StripItem>
               <p className="text-body-sm text-text-subtle">Stages unlock after tiering.</p>
+              {canAssess ? (
+                <Button size="sm" className="ml-auto" onClick={onTier}>
+                  <Icon name="gauge" className="size-4" />
+                  Tier engagement
+                </Button>
+              ) : null}
             </>
           )}
         </header>
@@ -259,7 +274,7 @@ export function LifecycleWorkspace({
             <StageRail
               items={items}
               selectedId={tiered ? (selected?.id ?? null) : TIERING_STEP}
-              onSelect={(id) => (tiered ? setSelectedId(id) : setTieringOpen(true))}
+              onSelect={(id) => (tiered ? setSelectedId(id) : onTier())}
             />
           </div>
 
@@ -289,7 +304,7 @@ export function LifecycleWorkspace({
                   <TierSummary
                     latest={latest}
                     canAssess={canAssess}
-                    onRetier={() => setTieringOpen(true)}
+                    onRetier={onTier}
                   />
                 ) : null}
                 {selected.is_gate ? (
@@ -306,24 +321,13 @@ export function LifecycleWorkspace({
               <TieringStart
                 factors={(facetsQuery.data?.tiering_factors ?? []).map((f) => f.label)}
                 canAssess={canAssess}
-                onStart={() => setTieringOpen(true)}
+                onStart={onTier}
               />
             )}
           </div>
         </div>
       </section>
 
-      <TieringDialog
-        open={tieringOpen}
-        onOpenChange={setTieringOpen}
-        vendor={vendor}
-        engagementId={engagementId}
-        latest={latest}
-        onApply={(next) => {
-          onApply(next);
-          void queryClient.invalidateQueries({ queryKey: ["vendors"] });
-        }}
-      />
       <SendBackDialog
         open={sendBackOpen}
         onOpenChange={setSendBackOpen}

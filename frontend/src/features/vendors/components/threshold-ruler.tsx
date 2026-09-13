@@ -1,4 +1,3 @@
-import { cn } from "@/lib/cn";
 import { TIER_META } from "../tokens";
 import { TIER_TONE } from "./tier-tone";
 
@@ -6,30 +5,27 @@ import { TIER_TONE } from "./tier-tone";
 const ORDER = ["low", "medium", "high", "critical"] as const;
 
 /**
- * The tier bands drawn to scale, with the score standing on them.
+ * The tier scale: four solid bands drawn to the tenant's thresholds, each named
+ * inside its own colour, with the score pinned above.
  *
- * A tier shown as a word is a verdict. Shown against the bands it is an
- * argument: the reader sees how close the score sits to the line, which is the
- * first question a vendor owner asks when they disagree with the tier.
+ * A tier shown as a word is a verdict. Shown on the scale it is an argument:
+ * the reader sees how close the score sits to the next line, which is the first
+ * question a vendor owner asks when they disagree with the tier.
  *
- * Every band is solid. Fading the bands the score is not in made the ramp read
- * as washed out rather than as four distinct levels.
+ * Pass `score={null}` to show the scale on its own, before there is a score.
  */
 export function ThresholdRuler({
   score,
   thresholds,
   effectiveTier,
   pointsToHigher,
-  hideScore = false,
   className,
 }: {
-  score: number;
+  score: number | null;
   /** Lower bound per tier, from the tenant's policy. `low` has none. */
   thresholds: Record<string, number>;
-  effectiveTier: string;
+  effectiveTier: string | null;
   pointsToHigher?: number | null;
-  /** Drop the score chip where the number is already shown large beside it. */
-  hideScore?: boolean;
   className?: string;
 }) {
   const bands = ORDER.map((tier, index) => {
@@ -38,57 +34,64 @@ export function ThresholdRuler({
     const to = next ? (thresholds[next] ?? 100) : 100;
     return { tier, from, width: Math.max(0, to - from) };
   });
-  const marker = Math.min(100, Math.max(0, score));
-  const higher = ORDER[ORDER.indexOf(effectiveTier as (typeof ORDER)[number]) + 1];
+  const marker = score === null ? null : Math.min(100, Math.max(0, score));
+  const higher = effectiveTier
+    ? ORDER[ORDER.indexOf(effectiveTier as (typeof ORDER)[number]) + 1]
+    : undefined;
 
   return (
     <div className={className}>
-      <div className={cn("relative", hideScore ? "pt-2" : "pt-7")}>
-        <span
-          hidden={hideScore}
-          className="tabular absolute top-0 -translate-x-1/2 rounded-xs bg-surface-inverse px-1.5 py-0.5 text-caption font-bold text-text-inverse"
-          style={{ left: `${marker}%` }}
-        >
-          {score}
-        </span>
-        <div
-          className="flex h-2.5 gap-0.5"
-          role="img"
-          aria-label={`Score ${score} of 100, ${TIER_META[effectiveTier]?.label ?? effectiveTier} tier`}
-        >
-          {bands.map((band) => (
-            <span
-              key={band.tier}
-              className={cn("h-full first:rounded-l-full last:rounded-r-full", TIER_TONE[band.tier].fill)}
-              style={{ width: `${band.width}%` }}
-            />
-          ))}
+      {marker !== null ? (
+        <div className="relative mb-1 h-6" aria-hidden>
+          <span
+            className="absolute bottom-0 flex -translate-x-1/2 flex-col items-center"
+            style={{ left: `${marker}%` }}
+          >
+            <span className="tabular rounded-xs bg-surface-inverse px-1.5 py-1 text-caption font-bold leading-none text-text-inverse">
+              {score}
+            </span>
+            <span className="size-0 border-x-[5px] border-t-[5px] border-x-transparent border-t-surface-inverse" />
+          </span>
         </div>
-        <span
-          className="absolute bottom-[-3px] h-4 w-1 -translate-x-1/2 rounded-full bg-text-primary ring-2 ring-surface-primary"
-          style={{ left: `${marker}%` }}
-          aria-hidden
-        />
-      </div>
+      ) : null}
 
-      <div className="mt-2 flex gap-0.5">
+      <div
+        className="flex h-8 gap-0.5 overflow-hidden rounded-md"
+        role="img"
+        aria-label={
+          score === null
+            ? `Tier scale: ${bands.map((b) => `${TIER_META[b.tier]?.label} from ${b.from}`).join(", ")}`
+            : `Score ${score} of 100, ${TIER_META[effectiveTier ?? ""]?.label ?? "no"} tier`
+        }
+      >
         {bands.map((band) => (
-          <span key={band.tier} className="min-w-0" style={{ width: `${band.width}%` }}>
-            <span
-              className={cn(
-                "block truncate text-caption",
-                band.tier === effectiveTier ? "font-bold text-text-primary" : "text-text-subtle",
-              )}
-            >
+          <span
+            key={band.tier}
+            className={`flex min-w-0 items-center justify-center px-1 ${TIER_TONE[band.tier].fill}`}
+            style={{ width: `${band.width}%` }}
+          >
+            <span className="truncate text-caption font-bold text-white">
               {TIER_META[band.tier]?.label ?? band.tier}
             </span>
-            <span className="tabular block text-caption text-text-faint">{band.from}</span>
           </span>
         ))}
       </div>
 
+      <div className="relative mt-1 h-4" aria-hidden>
+        {bands.map((band, index) => (
+          <span
+            key={band.tier}
+            className={`tabular absolute text-caption text-text-subtle ${index === 0 ? "" : "-translate-x-1/2"}`}
+            style={{ left: `${band.from}%` }}
+          >
+            {band.from}
+          </span>
+        ))}
+        <span className="tabular absolute right-0 text-caption text-text-subtle">100</span>
+      </div>
+
       {pointsToHigher !== null && pointsToHigher !== undefined && higher ? (
-        <p className="mt-2 text-caption text-text-subtle">
+        <p className="mt-1 text-caption text-text-subtle">
           <span className="tabular font-semibold text-text-primary">{pointsToHigher}</span> points
           below {TIER_META[higher]?.label}
         </p>

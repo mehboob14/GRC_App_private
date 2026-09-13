@@ -1,11 +1,9 @@
 /**
- * One solid ramp for tier, hottest first, shared by the badge, the ruler, the
- * donut and anything else that paints a tier.
+ * One solid ramp for tier, shared by the badge, the scale, the donut and
+ * anything else that paints a tier: green, amber, orange, red.
  *
- * Tier is how much a vendor could hurt us, so it borrows the severity axis
- * rather than the six workflow families: the workflow families gave Medium a
- * violet that belonged to nothing. Low is slate, not green. A low tier vendor is
- * less exposed, not a good one.
+ * It is the severity ramp the assets module already uses for criticality, so a
+ * "High" reads the same colour whether it labels an asset or a vendor.
  *
  * Full literal class strings, because Tailwind purges interpolated ones.
  */
@@ -13,7 +11,7 @@ export const TIER_TONE: Record<string, { fill: string; stroke: string }> = {
   critical: { fill: "bg-severity-critical", stroke: "stroke-severity-critical" },
   high: { fill: "bg-severity-high", stroke: "stroke-severity-high" },
   medium: { fill: "bg-severity-medium", stroke: "stroke-severity-medium" },
-  low: { fill: "bg-status-neutral-base", stroke: "stroke-status-neutral-base" },
+  low: { fill: "bg-severity-low", stroke: "stroke-severity-low" },
 };
 
 /** Untiered is an absence, so it is the quietest grey on the page. */

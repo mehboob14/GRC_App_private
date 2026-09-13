@@ -38,7 +38,7 @@ import { describeError, errorToast } from "@/lib/api/describe-error";
 import { useAuth } from "@/lib/auth/auth-context";
 import { hasPermission } from "@/lib/auth/session";
 import { addContact, addEngagement, getVendor, offboard } from "../api";
-import type { VendorDetail } from "../types";
+import type { Tiering, VendorDetail } from "../types";
 import { CONTACT_TYPES } from "../types";
 import {
   CLASSIFICATION_META,
@@ -56,6 +56,7 @@ import {
 import { Field, Panel } from "./panel";
 import { LifecycleWorkspace } from "./lifecycle-workspace";
 import { TierBadge } from "./tier-badge";
+import { TieringDialog } from "./tiering-panel";
 import { AssessmentsPanel } from "./assessments-panel";
 import { FindingsPanel } from "./findings-panel";
 import { DocumentsPanel } from "./documents-panel";
@@ -113,6 +114,15 @@ export function VendorDetailPage() {
   const [addingEngagement, setAddingEngagement] = useState(false);
   const [addingContact, setAddingContact] = useState(false);
   const [offboarding, setOffboarding] = useState(false);
+  // The tiering popup lives on the page, not inside one tab, so the header,
+  // the Overview tab, the Lifecycle tab and a link from the register can all
+  // open it. It stays mounted once opened, so closing it keeps the draft.
+  const [tieringFor, setTieringFor] = useState<string | null>(null);
+  const [tieringOpen, setTieringOpen] = useState(false);
+  const openTiering = (id: string) => {
+    setTieringFor(id);
+    setTieringOpen(true);
+  };
 
   // Default to the vendor's only engagement, or the first, once it arrives.
   useEffect(() => {
@@ -123,6 +133,32 @@ export function VendorDetailPage() {
         : (vendor.engagements[0]?.id ?? null),
     );
   }, [vendor]);
+
+  // `?tier=1` (from the register) opens the popup on the first engagement that
+  // still needs a tier, then drops the parameter so a refresh does not reopen it.
+  const tierParam = params.get("tier");
+  useEffect(() => {
+    if (!vendor || !tierParam) return;
+    const target =
+      vendor.engagements.find((e) => e.id === tierParam) ??
+      vendor.engagements.find((e) => !e.tier) ??
+      vendor.engagements[0];
+    if (target && canAssess) {
+      setEngagementId(target.id);
+      setTieringFor(target.id);
+      setTieringOpen(true);
+    }
+    setParams(
+      (p) => {
+        const copy = new URLSearchParams(p);
+        copy.delete("tier");
+        return copy;
+      },
+      { replace: true },
+    );
+    // Runs once per arrival of the parameter; the setters are stable.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vendor, tierParam]);
 
   const goToTab = (next: TabId) => {
     // replace, not push: switching tabs inside one record is not a navigation
@@ -184,6 +220,7 @@ export function VendorDetailPage() {
     family: "neutral" as const,
   };
   const engagement = vendor.engagements.find((e) => e.id === engagementId) ?? null;
+  const untiered = engagement !== null && !engagement.tier;
 
   return (
     <div>
@@ -244,12 +281,20 @@ export function VendorDetailPage() {
           </span>
         }
         actions={
-          canManage ? (
+          canManage || canAssess ? (
             <>
-              <Button variant="secondary" onClick={() => setEditing(true)}>
-                <Icon name="edit" className="size-4" />
-                Edit
-              </Button>
+              {canAssess && untiered && engagement ? (
+                <Button onClick={() => openTiering(engagement.id)}>
+                  <Icon name="gauge" className="size-4" />
+                  Tier engagement
+                </Button>
+              ) : null}
+              {canManage ? (
+                <Button variant="secondary" onClick={() => setEditing(true)}>
+                  <Icon name="edit" className="size-4" />
+                  Edit
+                </Button>
+              ) : null}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="secondary" aria-label={`Actions for ${vendor.name}`}>
@@ -257,20 +302,30 @@ export function VendorDetailPage() {
                     <Icon name="chev" className="size-3.5" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-52">
-                  <DropdownMenuItem onSelect={() => setAddingEngagement(true)}>
-                    <Icon name="briefcase" className="size-4 text-text-subtle" />
-                    Add engagement
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => setAddingContact(true)}>
-                    <Icon name="user" className="size-4 text-text-subtle" />
-                    Add contact
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem variant="danger" onSelect={() => setOffboarding(true)}>
-                    <Icon name="signout" className="size-4" />
-                    Start offboarding
-                  </DropdownMenuItem>
+                <DropdownMenuContent align="end" className="w-56">
+                  {canAssess && engagement ? (
+                    <DropdownMenuItem onSelect={() => openTiering(engagement.id)}>
+                      <Icon name="gauge" className="size-4 text-text-subtle" />
+                      {untiered ? "Tier engagement" : "Re-tier engagement"}
+                    </DropdownMenuItem>
+                  ) : null}
+                  {canManage ? (
+                    <>
+                      <DropdownMenuItem onSelect={() => setAddingEngagement(true)}>
+                        <Icon name="briefcase" className="size-4 text-text-subtle" />
+                        Add engagement
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onSelect={() => setAddingContact(true)}>
+                        <Icon name="user" className="size-4 text-text-subtle" />
+                        Add contact
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem variant="danger" onSelect={() => setOffboarding(true)}>
+                        <Icon name="signout" className="size-4" />
+                        Start offboarding
+                      </DropdownMenuItem>
+                    </>
+                  ) : null}
                 </DropdownMenuContent>
               </DropdownMenu>
             </>
@@ -317,6 +372,9 @@ export function VendorDetailPage() {
             canAssess={canAssess}
             canApprove={canApprove}
             onApply={apply}
+            onTier={() => {
+              if (engagementId) openTiering(engagementId);
+            }}
             onGo={(target) => {
               // The roster is a module-root page, not a tab on this record.
               if (target === "roster") {
@@ -339,7 +397,14 @@ export function VendorDetailPage() {
               pushed off screen. */}
           <div className="min-w-0 space-y-4">
             {tab === "overview" ? (
-              <OverviewTab vendor={vendor} />
+              <OverviewTab
+                vendor={vendor}
+                canAssess={canAssess}
+                onTier={(id) => {
+                  setEngagementId(id);
+                  openTiering(id);
+                }}
+              />
             ) : tab === "assessments" ? (
               <AssessmentsPanel
                 vendor={vendor}
@@ -379,6 +444,16 @@ export function VendorDetailPage() {
         </div>
       )}
 
+      {tieringFor ? (
+        <TieringDialog
+          open={tieringOpen}
+          onOpenChange={setTieringOpen}
+          vendor={vendor}
+          engagementId={tieringFor}
+          latest={latestTiering(vendor, tieringFor)}
+          onApply={apply}
+        />
+      ) : null}
       <VendorFormDrawer open={editing} onOpenChange={setEditing} vendor={vendor} />
       <AddEngagementDialog
         open={addingEngagement}
@@ -402,7 +477,21 @@ export function VendorDetailPage() {
   );
 }
 
-function OverviewTab({ vendor }: { vendor: VendorDetail }) {
+/** The engagement's current tiering: the one from its latest cycle. */
+function latestTiering(vendor: VendorDetail, engagementId: string): Tiering | null {
+  const rows = vendor.tierings.filter((t) => t.engagement_id === engagementId);
+  return rows.length > 0 ? rows.reduce((a, b) => (b.cycle >= a.cycle ? b : a)) : null;
+}
+
+function OverviewTab({
+  vendor,
+  canAssess,
+  onTier,
+}: {
+  vendor: VendorDetail;
+  canAssess: boolean;
+  onTier: (engagementId: string) => void;
+}) {
   return (
     <>
       <Panel title="What they do for us">
@@ -479,9 +568,21 @@ function OverviewTab({ vendor }: { vendor: VendorDetail }) {
                       {e.start_date ? ` · from ${fmtDate(e.start_date)}` : ""}
                     </p>
                   </div>
-                  <div className="flex shrink-0 items-center gap-2">
+                  <div className="flex shrink-0 items-center gap-3">
                     <TierBadge tier={e.tier} variant="dot" />
                     <StatusPill status={status.family} label={status.label} kind="inline" />
+                    {canAssess ? (
+                      e.tier ? (
+                        <Button variant="secondary" size="sm" onClick={() => onTier(e.id)}>
+                          Re-tier
+                        </Button>
+                      ) : (
+                        <Button size="sm" onClick={() => onTier(e.id)}>
+                          <Icon name="gauge" className="size-4" />
+                          Tier engagement
+                        </Button>
+                      )
+                    ) : null}
                   </div>
                 </li>
               );

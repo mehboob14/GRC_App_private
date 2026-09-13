@@ -528,6 +528,11 @@ function VendorRow({
             >
               Copy link
             </DropdownMenuItem>
+            {v.attention_code === "not_tiered" ? (
+              <DropdownMenuItem onSelect={() => navigate(`/vendors/${v.id}?tab=lifecycle&tier=1`)}>
+                Tier engagement
+              </DropdownMenuItem>
+            ) : null}
             <DropdownMenuItem
               onSelect={() => navigate(`/vendors/${v.id}?tab=${action?.tab ?? "lifecycle"}`)}
             >

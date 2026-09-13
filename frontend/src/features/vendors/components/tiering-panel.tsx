@@ -205,77 +205,72 @@ export function TieringDialog({
         </DialogHeader>
 
         <DialogBody>
-          <div className="grid gap-5 sm:grid-cols-[13rem_1fr]">
-            <div className="space-y-3">
-              <ol className="space-y-0.5" aria-label="Factors">
-                {TIERING_FACTORS.map((k, index) => {
-                  const value = answers[k];
-                  return (
-                    <li key={k}>
-                      <StepButton
-                        active={step === index}
-                        done={value !== null}
-                        onClick={() => setStep(index)}
-                        label={specs.find((s) => s.key === k)?.label ?? k}
-                        meta={value !== null ? `${value}/4` : undefined}
-                      />
-                    </li>
-                  );
-                })}
-                <li>
-                  <StepButton
-                    active={step === OVERRIDE_STEP}
-                    done={Boolean(overrideTier)}
-                    onClick={() => setStep(OVERRIDE_STEP)}
-                    label="Override"
-                    meta={overrideTier ? TIER_META[overrideTier]?.label : "Optional"}
-                  />
-                </li>
-              </ol>
-
-              <div className="rounded-md bg-surface-sunken p-3">
-                {complete ? (
-                  <>
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="tabular font-display text-numeral-md text-text-primary">
-                        {score}
-                      </span>
-                      <TierBadge tier={effective} />
-                    </div>
-                    <ThresholdRuler
-                      className="mt-1"
-                      hideScore
-                      score={score}
-                      thresholds={thresholds}
-                      effectiveTier={computed}
-                    />
-                    {latest && latest.effective_tier !== effective ? (
-                      <p className="mt-2 flex items-center gap-1.5 text-caption font-semibold text-status-warning-text">
-                        <Icon name="alert" className="size-3.5 shrink-0" />
-                        Changes from {TIER_META[latest.effective_tier]?.label}
-                      </p>
-                    ) : null}
-                  </>
-                ) : (
-                  <>
-                    <p className="text-label-sm text-text-secondary">
-                      {answered} of {TIERING_FACTORS.length} answered
-                    </p>
-                    <span className="mt-2 flex gap-1" aria-hidden>
-                      {TIERING_FACTORS.map((k) => (
-                        <span
-                          key={k}
-                          className={cn(
-                            "h-1.5 flex-1 rounded-full",
-                            answers[k] !== null ? "bg-action-accent" : "bg-border",
-                          )}
-                        />
-                      ))}
+          {/* The scale leads: every answer moves the pin, so the reviewer sees
+              the consequence of each click, not only at the end. */}
+          <div className="rounded-md border border-border p-4">
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
+              {complete ? (
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="tabular font-display text-numeral-md text-text-primary">{score}</span>
+                  <TierBadge tier={effective} label={`${TIER_META[effective]?.label ?? effective} tier`} />
+                  {overrideTier ? <Badge variant="countWarn">Overridden</Badge> : null}
+                  {latest && latest.effective_tier !== effective ? (
+                    <span className="flex items-center gap-1 text-caption font-semibold text-status-warning-text">
+                      <Icon name="alert" className="size-3.5 shrink-0" />
+                      Changes from {TIER_META[latest.effective_tier]?.label}
                     </span>
-                  </>
-                )}
-              </div>
+                  ) : null}
+                </div>
+              ) : (
+                <p className="text-label-md text-text-secondary">
+                  {answered} of {TIERING_FACTORS.length} answered
+                </p>
+              )}
+              <span className="flex w-36 gap-1" aria-hidden>
+                {TIERING_FACTORS.map((k) => (
+                  <span
+                    key={k}
+                    className={cn(
+                      "h-1.5 flex-1 rounded-full",
+                      answers[k] !== null ? "bg-action-accent" : "bg-border",
+                    )}
+                  />
+                ))}
+              </span>
             </div>
+            <ThresholdRuler
+              score={complete ? score : null}
+              thresholds={thresholds}
+              effectiveTier={complete ? computed : null}
+            />
+          </div>
+
+          <div className="mt-4 grid gap-5 sm:grid-cols-[12.5rem_1fr]">
+            <ol className="space-y-0.5 self-start" aria-label="Factors">
+              {TIERING_FACTORS.map((k, index) => {
+                const value = answers[k];
+                return (
+                  <li key={k}>
+                    <StepButton
+                      active={step === index}
+                      done={value !== null}
+                      onClick={() => setStep(index)}
+                      label={specs.find((s) => s.key === k)?.label ?? k}
+                      meta={value !== null ? `${value}/4` : undefined}
+                    />
+                  </li>
+                );
+              })}
+              <li>
+                <StepButton
+                  active={step === OVERRIDE_STEP}
+                  done={Boolean(overrideTier)}
+                  onClick={() => setStep(OVERRIDE_STEP)}
+                  label="Override"
+                  meta={overrideTier ? TIER_META[overrideTier]?.label : "Optional"}
+                />
+              </li>
+            </ol>
 
             <div className="min-w-0">
               {factor ? (
@@ -479,39 +474,38 @@ export function TierSummary({
         </div>
       </div>
 
-      <div className="mt-3 grid gap-5 md:grid-cols-[minmax(0,17rem)_1fr]">
-        <ThresholdRuler
-          score={latest.score}
-          thresholds={latest.thresholds}
-          effectiveTier={latest.computed_tier}
-          pointsToHigher={latest.points_to_higher_tier}
-        />
-        <ul className="space-y-2 self-center">
-          {latest.factors.map((f) => (
-            <li
-              key={f.key}
-              className="grid grid-cols-[minmax(6rem,9rem)_1fr_2.75rem] items-center gap-3"
+      <ThresholdRuler
+        className="mt-3"
+        score={latest.score}
+        thresholds={latest.thresholds}
+        effectiveTier={latest.computed_tier}
+        pointsToHigher={latest.points_to_higher_tier}
+      />
+      <ul className="mt-4 grid gap-x-8 gap-y-2.5 border-t border-border pt-4 sm:grid-cols-2">
+        {latest.factors.map((f) => (
+          <li
+            key={f.key}
+            className="grid grid-cols-[minmax(6rem,9rem)_1fr_2.75rem] items-center gap-3"
+          >
+            <span className="truncate text-body-sm text-text-secondary">{f.label}</span>
+            <span
+              className="h-2 rounded-full bg-surface-sunken"
+              role="img"
+              aria-label={`${f.points} of ${f.max_points} points`}
             >
-              <span className="truncate text-body-sm text-text-secondary">{f.label}</span>
               <span
-                className="h-1.5 rounded-full bg-surface-sunken"
-                role="img"
-                aria-label={`${f.points} of ${f.max_points} points`}
-              >
-                <span
-                  className="block h-1.5 rounded-full bg-action-accent"
-                  style={{
-                    width: `${f.points === 0 ? 0 : Math.max(3, (f.points / (f.max_points || 1)) * 100)}%`,
-                  }}
-                />
-              </span>
-              <span className="tabular text-right text-caption text-text-subtle">
-                {f.points}/{f.max_points}
-              </span>
-            </li>
-          ))}
-        </ul>
-      </div>
+                className="block h-2 rounded-full bg-action-accent"
+                style={{
+                  width: `${f.points === 0 ? 0 : Math.max(3, (f.points / (f.max_points || 1)) * 100)}%`,
+                }}
+              />
+            </span>
+            <span className="tabular text-right text-caption text-text-subtle">
+              {f.points}/{f.max_points}
+            </span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
