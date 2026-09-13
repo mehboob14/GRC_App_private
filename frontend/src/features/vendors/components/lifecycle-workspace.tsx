@@ -34,6 +34,7 @@ import { fmtDate, ROSTER_ROLE_META, STAGE_LABEL, STAGE_STATUS_META, TIER_META } 
 import { ApprovalSection } from "./approval-panel";
 import { ExitCheckRow } from "./exit-check-row";
 import { StageRail, type RailItem } from "./stage-rail";
+import { ThresholdRuler } from "./threshold-ruler";
 import { TierBadge } from "./tier-badge";
 import { TierSummary } from "./tiering-panel";
 
@@ -177,7 +178,6 @@ export function LifecycleWorkspace({
   }
 
   const tiered = stages.length > 0;
-  const settled = stages.filter((s) => s.status === "complete" || s.status === "skipped").length;
   const tieringRow = stages.find((s) => s.stage === "tiering");
 
   const items: RailItem[] = tiered
@@ -197,76 +197,54 @@ export function LifecycleWorkspace({
   return (
     <>
       <section className="overflow-hidden rounded-lg border border-border bg-surface-primary">
-        <header className="flex flex-wrap items-center gap-x-8 gap-y-3 border-b border-border px-5 py-3">
-          {tiered ? (
-            <>
-              <StripItem label="Tier">
+        {/* Both charts at a glance, side by side: where the review is, and how
+            risky the engagement is. Neither needs a click to read. */}
+        <header className="grid border-b border-border lg:grid-cols-2">
+          <LifecycleChart
+            stages={stages}
+            current={current}
+            cycle={selected?.cycle ?? 1}
+            onSelect={(id) => (tiered ? setSelectedId(id) : onTier())}
+          />
+          <div className="border-t border-border p-5 lg:border-l lg:border-t-0">
+            <div className="mb-2 flex min-h-8 flex-wrap items-center gap-3">
+              <span className="type-overline">Tier</span>
+              {latest ? (
                 <button
                   type="button"
                   onClick={() => tieringRow && setSelectedId(tieringRow.id)}
-                  className="flex items-center gap-2 rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-accent"
+                  className="flex items-center gap-2.5 rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-accent"
                 >
-                  <TierBadge tier={engagementTier} />
-                  {latest ? (
-                    <span className="tabular text-body-md font-semibold text-text-primary">
-                      {latest.score}
-                    </span>
-                  ) : null}
+                  <span className="tabular font-display text-title-md text-text-primary">{latest.score}</span>
+                  <TierBadge
+                    tier={engagementTier}
+                    label={`${TIER_META[engagementTier ?? ""]?.label ?? "Not"} tier`}
+                  />
                 </button>
-              </StripItem>
-              <StripItem label="Progress">
-                <span className="flex items-center gap-2.5">
-                  <span className="flex h-1.5 w-28 overflow-hidden rounded-full bg-border">
-                    <span
-                      className="h-full rounded-full bg-status-success-base"
-                      style={{ width: `${(settled / stages.length) * 100}%` }}
-                    />
-                  </span>
-                  <span className="tabular text-body-sm text-text-secondary">
-                    {settled}/{stages.length}
-                  </span>
-                </span>
-              </StripItem>
-              <StripItem label="Now">
-                {current ? (
-                  <button
-                    type="button"
-                    onClick={() => setSelectedId(current.id)}
-                    className="flex items-center gap-2 rounded-sm text-body-md font-semibold text-text-primary hover:text-text-link focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-accent"
-                  >
-                    {current.label}
-                    {current.blockers.length > 0 ? (
-                      <Badge variant="countWarn">{current.blockers.length} to clear</Badge>
-                    ) : null}
-                  </button>
-                ) : (
-                  <span className="text-body-md text-text-secondary">All stages settled</span>
-                )}
-              </StripItem>
-              <div className="ml-auto flex items-center gap-3">
-                <span className="text-caption text-text-subtle">Cycle {selected?.cycle ?? 1}</span>
-                {canAssess ? (
-                  <Button variant="secondary" size="sm" onClick={onTier}>
-                    <Icon name="gauge" className="size-4" />
-                    Re-tier
-                  </Button>
-                ) : null}
-              </div>
-            </>
-          ) : (
-            <>
-              <StripItem label="Tier">
+              ) : (
                 <TierBadge tier={null} />
-              </StripItem>
-              <p className="text-body-sm text-text-subtle">Stages unlock after tiering.</p>
+              )}
               {canAssess ? (
-                <Button size="sm" className="ml-auto" onClick={onTier}>
+                <Button
+                  variant={latest ? "secondary" : "primary"}
+                  size="sm"
+                  className="ml-auto"
+                  onClick={onTier}
+                >
                   <Icon name="gauge" className="size-4" />
-                  Tier engagement
+                  {latest ? "Re-tier" : "Tier engagement"}
                 </Button>
               ) : null}
-            </>
-          )}
+            </div>
+            <ThresholdRuler
+              score={latest ? latest.score : null}
+              thresholds={
+                latest?.thresholds ??
+                facetsQuery.data?.tier_thresholds ?? { critical: 75, high: 50, medium: 25 }
+              }
+              effectiveTier={latest ? latest.computed_tier : null}
+            />
+          </div>
         </header>
 
         <div className="grid lg:grid-cols-[15rem_minmax(0,1fr)]">
@@ -382,11 +360,121 @@ function railItem(stage: StageRow, current: StageRow | null, latest: Tiering | n
   };
 }
 
-function StripItem({ label, children }: { label: string; children: ReactNode }) {
+/** Segment fills per stage state, as literal classes. */
+const SEGMENT_FILL: Record<string, string> = {
+  done: "bg-status-success-base",
+  current: "bg-action-accent",
+  blocked: "bg-status-warning-base",
+  skipped: "bg-status-neutral-base/40",
+  upcoming: "bg-border",
+};
+
+/**
+ * The lifecycle as one bar: a segment per stage, coloured by where it stands,
+ * with the current stage pinned above it. It sits beside the tier scale and
+ * mirrors its rows (pin, bar, key), so the two read as a pair.
+ */
+function LifecycleChart({
+  stages,
+  current,
+  cycle,
+  onSelect,
+}: {
+  stages: StageRow[];
+  current: StageRow | null;
+  cycle: number;
+  onSelect: (id: string) => void;
+}) {
+  // Before tiering there are no stage rows: show the plan, all still to come,
+  // with tiering as the place to start.
+  const segments =
+    stages.length > 0
+      ? stages.map((s) => ({
+          id: s.id,
+          label: s.label,
+          state:
+            s.status === "complete"
+              ? "done"
+              : s.status === "skipped"
+                ? "skipped"
+                : s.id === current?.id
+                  ? s.blockers.length > 0
+                    ? "blocked"
+                    : "current"
+                  : "upcoming",
+        }))
+      : Object.entries(STAGE_LABEL).map(([key, label]) => ({
+          id: key,
+          label,
+          state: key === "tiering" ? "current" : "upcoming",
+        }));
+  const pinIndex = segments.findIndex((s) => s.state === "current" || s.state === "blocked");
+  const pinned = pinIndex >= 0 ? segments[pinIndex] : null;
+  const count = (state: string) => segments.filter((s) => s.state === state).length;
+  const done = count("done");
+  const skipped = count("skipped");
+  const toGo = segments.length - done - skipped;
+  const blockers = current?.blockers.length ?? 0;
+
   return (
-    <div className="flex items-center gap-2.5">
-      <span className="type-overline">{label}</span>
-      {children}
+    <div className="p-5">
+      <div className="mb-2 flex min-h-8 flex-wrap items-center gap-3">
+        <span className="type-overline">Lifecycle</span>
+        <span className="font-display text-title-md text-text-primary">
+          {stages.length === 0 ? "Not started" : pinned ? pinned.label : "All stages settled"}
+        </span>
+        {blockers > 0 ? <Badge variant="countWarn">{blockers} to clear</Badge> : null}
+        <span className="tabular ml-auto text-caption text-text-subtle">
+          {done + skipped}/{segments.length} · Cycle {cycle}
+        </span>
+      </div>
+
+      <div className="relative mb-1 h-6" aria-hidden>
+        {pinned ? (
+          <span
+            className="absolute bottom-0 flex -translate-x-1/2 flex-col items-center"
+            style={{ left: `${((pinIndex + 0.5) / segments.length) * 100}%` }}
+          >
+            <span className="whitespace-nowrap rounded-xs bg-surface-inverse px-1.5 py-1 text-caption font-bold leading-none text-text-inverse">
+              {stages.length === 0 ? "Start here" : "Now"}
+            </span>
+            <span className="size-0 border-x-[5px] border-t-[5px] border-x-transparent border-t-surface-inverse" />
+          </span>
+        ) : null}
+      </div>
+
+      <div className="flex h-8 gap-0.5 overflow-hidden rounded-md">
+        {segments.map((segment) => (
+          <button
+            key={segment.id}
+            type="button"
+            onClick={() => onSelect(segment.id)}
+            title={segment.label}
+            aria-label={`${segment.label}: ${segment.state}`}
+            className={cn(
+              "h-full flex-1 transition-opacity duration-80 ease-state hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-text-primary",
+              SEGMENT_FILL[segment.state],
+            )}
+          />
+        ))}
+      </div>
+
+      <ul className="mt-1 flex h-4 items-center gap-4 text-caption text-text-subtle">
+        <li className="flex items-center gap-1.5">
+          <span className="size-2 rounded-full bg-status-success-base" aria-hidden />
+          Done <span className="tabular font-semibold text-text-primary">{done}</span>
+        </li>
+        {skipped > 0 ? (
+          <li className="flex items-center gap-1.5">
+            <span className="size-2 rounded-full bg-status-neutral-base/40" aria-hidden />
+            Skipped <span className="tabular font-semibold text-text-primary">{skipped}</span>
+          </li>
+        ) : null}
+        <li className="flex items-center gap-1.5">
+          <span className="size-2 rounded-full bg-border" aria-hidden />
+          To go <span className="tabular font-semibold text-text-primary">{toGo}</span>
+        </li>
+      </ul>
     </div>
   );
 }

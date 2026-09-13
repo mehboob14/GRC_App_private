@@ -283,7 +283,7 @@ export function VendorDetailPage() {
         actions={
           canManage || canAssess ? (
             <>
-              {canAssess && untiered && engagement ? (
+              {canAssess && untiered && engagement && tab !== "lifecycle" ? (
                 <Button onClick={() => openTiering(engagement.id)}>
                   <Icon name="gauge" className="size-4" />
                   Tier engagement

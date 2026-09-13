@@ -41,8 +41,10 @@ export function ThresholdRuler({
 
   return (
     <div className={className}>
-      {marker !== null ? (
-        <div className="relative mb-1 h-6" aria-hidden>
+      {/* The pin row is kept even without a score, so the bar does not jump
+          when the first score arrives and lines up with charts beside it. */}
+      <div className="relative mb-1 h-6" aria-hidden>
+        {marker !== null ? (
           <span
             className="absolute bottom-0 flex -translate-x-1/2 flex-col items-center"
             style={{ left: `${marker}%` }}
@@ -52,8 +54,8 @@ export function ThresholdRuler({
             </span>
             <span className="size-0 border-x-[5px] border-t-[5px] border-x-transparent border-t-surface-inverse" />
           </span>
-        </div>
-      ) : null}
+        ) : null}
+      </div>
 
       <div
         className="flex h-8 gap-0.5 overflow-hidden rounded-md"
