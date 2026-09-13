@@ -1,30 +1,26 @@
 import { cn } from "@/lib/cn";
 import { TIER_META } from "../tokens";
+import { TIER_TONE } from "./tier-tone";
 
-/** Worst first, matching the backend's `TIER_ORDER`. */
-const ORDER = ["critical", "high", "medium", "low"] as const;
-
-/** Full literal class strings — a class built by interpolation is purged. */
-const BAND_FILL: Record<string, string> = {
-  critical: "bg-status-danger-base",
-  high: "bg-status-warning-base",
-  medium: "bg-status-pending-base",
-  low: "bg-status-neutral-base",
-};
+/** Left to right, matching the score axis. */
+const ORDER = ["low", "medium", "high", "critical"] as const;
 
 /**
  * The tier bands drawn to scale, with the score standing on them.
  *
  * A tier shown as a word is a verdict. Shown against the bands it is an
  * argument: the reader sees how close the score sits to the line, which is the
- * question a vendor owner asks first when they disagree with the tier.
+ * first question a vendor owner asks when they disagree with the tier.
+ *
+ * Every band is solid. Fading the bands the score is not in made the ramp read
+ * as washed out rather than as four distinct levels.
  */
 export function ThresholdRuler({
   score,
   thresholds,
   effectiveTier,
   pointsToHigher,
-  pointsToLower,
+  hideScore = false,
   className,
 }: {
   score: number;
@@ -32,82 +28,69 @@ export function ThresholdRuler({
   thresholds: Record<string, number>;
   effectiveTier: string;
   pointsToHigher?: number | null;
-  pointsToLower?: number | null;
+  /** Drop the score chip where the number is already shown large beside it. */
+  hideScore?: boolean;
   className?: string;
 }) {
-  // Bands run low → critical left to right, each sized by the gap between its
-  // own lower bound and the next one up.
-  const bounds = ORDER.map((tier) => ({ tier, from: thresholds[tier] ?? 0 }));
-  const bands = [...bounds].reverse().map((band, index, all) => {
-    const next = all[index + 1];
-    const to = next ? next.from : 100;
-    return { tier: band.tier, from: band.from, to, width: Math.max(0, to - band.from) };
+  const bands = ORDER.map((tier, index) => {
+    const from = tier === "low" ? 0 : (thresholds[tier] ?? 0);
+    const next = ORDER[index + 1];
+    const to = next ? (thresholds[next] ?? 100) : 100;
+    return { tier, from, width: Math.max(0, to - from) };
   });
-
   const marker = Math.min(100, Math.max(0, score));
+  const higher = ORDER[ORDER.indexOf(effectiveTier as (typeof ORDER)[number]) + 1];
 
   return (
     <div className={className}>
-      <div className="relative pt-6">
-        <div
-          className="absolute top-0 -translate-x-1/2 whitespace-nowrap"
+      <div className={cn("relative", hideScore ? "pt-2" : "pt-7")}>
+        <span
+          hidden={hideScore}
+          className="tabular absolute top-0 -translate-x-1/2 rounded-xs bg-surface-inverse px-1.5 py-0.5 text-caption font-bold text-text-inverse"
           style={{ left: `${marker}%` }}
         >
-          <span className="tabular rounded-2xs bg-surface-inverse px-1.5 py-0.5 text-caption font-semibold text-text-inverse">
-            {score}
-          </span>
-        </div>
+          {score}
+        </span>
         <div
-          className="flex h-2 w-full overflow-hidden rounded-full"
+          className="flex h-2.5 gap-0.5"
           role="img"
-          aria-label={`Inherent score ${score} of 100, which is ${TIER_META[effectiveTier]?.label ?? effectiveTier} tier`}
+          aria-label={`Score ${score} of 100, ${TIER_META[effectiveTier]?.label ?? effectiveTier} tier`}
         >
           {bands.map((band) => (
-            <div
+            <span
               key={band.tier}
-              className={cn(
-                BAND_FILL[band.tier],
-                band.tier === effectiveTier ? "opacity-100" : "opacity-35",
-              )}
+              className={cn("h-full first:rounded-l-full last:rounded-r-full", TIER_TONE[band.tier].fill)}
               style={{ width: `${band.width}%` }}
             />
           ))}
         </div>
-        <div
-          className="absolute bottom-0 h-4 w-0.5 -translate-x-1/2 rounded-full bg-text-primary"
+        <span
+          className="absolute bottom-[-3px] h-4 w-1 -translate-x-1/2 rounded-full bg-text-primary ring-2 ring-surface-primary"
           style={{ left: `${marker}%` }}
           aria-hidden
         />
       </div>
 
-      <div className="mt-2 flex justify-between">
+      <div className="mt-2 flex gap-0.5">
         {bands.map((band) => (
-          <span
-            key={band.tier}
-            className={cn(
-              "text-caption",
-              band.tier === effectiveTier
-                ? "font-semibold text-text-primary"
-                : "text-text-subtle",
-            )}
-          >
-            {TIER_META[band.tier]?.label ?? band.tier}
-            <span className="tabular ml-1 text-text-subtle">{band.from}+</span>
+          <span key={band.tier} className="min-w-0" style={{ width: `${band.width}%` }}>
+            <span
+              className={cn(
+                "block truncate text-caption",
+                band.tier === effectiveTier ? "font-bold text-text-primary" : "text-text-subtle",
+              )}
+            >
+              {TIER_META[band.tier]?.label ?? band.tier}
+            </span>
+            <span className="tabular block text-caption text-text-faint">{band.from}</span>
           </span>
         ))}
       </div>
 
-      {pointsToHigher !== null && pointsToHigher !== undefined ? (
-        <p className="mt-2 text-body-sm text-text-subtle">
-          <span className="tabular font-semibold text-text-primary">{pointsToHigher}</span> more
-          points would move this up a tier.
-          {pointsToLower !== null && pointsToLower !== undefined ? (
-            <>
-              {" "}
-              It is <span className="tabular font-semibold text-text-primary">{pointsToLower}</span>{" "}
-              above the band below.
-            </>
-          ) : null}
+      {pointsToHigher !== null && pointsToHigher !== undefined && higher ? (
+        <p className="mt-2 text-caption text-text-subtle">
+          <span className="tabular font-semibold text-text-primary">{pointsToHigher}</span> points
+          below {TIER_META[higher]?.label}
         </p>
       ) : null}
     </div>

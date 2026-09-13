@@ -66,15 +66,14 @@ export function SocReviewPanel({
           canAssess ? (
             <Button variant="secondary" size="sm" onClick={() => setRecording(true)}>
               <Icon name="plus" className="size-4" />
-              Record a review
+              Record review
             </Button>
           ) : null
         }
       >
         {reviews.length === 0 ? (
           <p className="text-body-sm text-text-subtle">
-            No report has been read. A SOC 2 Type II on the shelf is not assurance — somebody has to
-            read the opinion, the period and the exceptions, and record what they found.
+            No assurance reports reviewed yet.
           </p>
         ) : (
           <ul className="space-y-4">
@@ -131,9 +130,9 @@ function SocReviewCard({ review: r }: { review: SocReview }) {
               ? `${fmtDate(r.audit_period_start)} to ${fmtDate(r.audit_period_end)}`
               : "Not recorded"}
             {r.period_is_stale ? (
-              <span className="ml-1.5 text-status-warning-text">
-                — the period ended too long ago to stand on its own
-              </span>
+              <>
+                , <span className="text-status-warning-text">too old to rely on alone</span>
+              </>
             ) : null}
           </dd>
         </div>
@@ -141,7 +140,7 @@ function SocReviewCard({ review: r }: { review: SocReview }) {
           <dt className="text-caption text-text-subtle">Bridge letter</dt>
           <dd className="mt-0.5 text-body-sm text-text-primary">
             {r.bridge_letter_received
-              ? "Received — covers the gap since the period ended"
+              ? "Received"
               : r.needs_bridge_letter
                 ? "Needed and not received"
                 : "Not needed"}
@@ -159,7 +158,7 @@ function SocReviewCard({ review: r }: { review: SocReview }) {
                 variant={r.tsc_included.includes(c.key) ? "statusPass" : "neutral"}
               >
                 {c.label}
-                {r.tsc_included.includes(c.key) ? "" : " — not covered"}
+                {r.tsc_included.includes(c.key) ? "" : ": not covered"}
               </Badge>
             ))}
           </div>
@@ -182,9 +181,8 @@ function SocReviewCard({ review: r }: { review: SocReview }) {
           />
           <span>
             {r.cuec_reviewed
-              ? (r.cuec_notes ??
-                "Reviewed. No notes were recorded on what we have to do on our side.")
-              : "Not reviewed. These are the controls the report assumes we operate — if we do not, the opinion does not cover us."}
+              ? (r.cuec_notes ?? "Reviewed. No notes recorded.")
+              : "Not reviewed. The opinion only covers us if we operate these."}
           </span>
         </p>
       </div>
@@ -258,11 +256,8 @@ function RecordDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="lg" scrollBody>
         <DialogHeader>
-          <DialogTitle>Record an assurance report review</DialogTitle>
-          <DialogDescription>
-            What you found reading the report, not the report itself. The opinion and the material
-            findings are what the lifecycle checks read.
-          </DialogDescription>
+          <DialogTitle>Record report review</DialogTitle>
+          <DialogDescription>Opinion and material findings drive lifecycle checks.</DialogDescription>
         </DialogHeader>
         <form
           onSubmit={(e) => {
@@ -286,8 +281,8 @@ function RecordDialog({
                 <Select value={form.report_type} onValueChange={(v) => set("report_type", v)}>
                   <SelectTrigger aria-label="Report type" />
                   <SelectContent>
-                    <SelectItem value="type_i">Type I — design only</SelectItem>
-                    <SelectItem value="type_ii">Type II — design and operation</SelectItem>
+                    <SelectItem value="type_i">Type I: design only</SelectItem>
+                    <SelectItem value="type_ii">Type II: design and operation</SelectItem>
                   </SelectContent>
                 </Select>
               </SelectField>
@@ -305,7 +300,7 @@ function RecordDialog({
                 <SelectContent>
                   {Object.entries(OPINION_META).map(([value, meta]) => (
                     <SelectItem key={value} value={value}>
-                      {meta.label} — {meta.blurb}
+                      {meta.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -324,14 +319,14 @@ function RecordDialog({
                 label="Period to"
                 optional
                 type="date"
-                hint="A period that ended long ago needs a bridge letter to still mean anything."
+                hint="Old periods need a bridge letter."
                 value={form.audit_period_end}
                 onChange={(e) => set("audit_period_end", e.target.value)}
               />
             </div>
 
             {vendor.documents.length > 0 ? (
-              <SelectField label="The document this review is of" optional>
+              <SelectField label="Report document" optional>
                 <Select
                   value={form.document_id || "__none__"}
                   onValueChange={(v) => set("document_id", v === "__none__" ? "" : v)}
@@ -351,7 +346,7 @@ function RecordDialog({
 
             <div>
               <p className="mb-1.5 font-sans text-label-sm text-text-secondary">
-                Criteria the report covers
+                Criteria covered
               </p>
               <div className="flex flex-wrap gap-x-4 gap-y-2">
                 {TSC.map((c) => (
@@ -376,11 +371,10 @@ function RecordDialog({
                 />
                 <span>
                   <span className="text-body-md text-text-primary">
-                    The exceptions were material
+                    Exceptions were material
                   </span>
                   <span className="mt-0.5 block text-caption text-text-subtle">
-                    Material means they change what we can rely on. This blocks the assurance check
-                    in the lifecycle.
+                    Blocks the lifecycle assurance check.
                   </span>
                 </span>
               </label>
@@ -390,7 +384,7 @@ function RecordDialog({
                   onCheckedChange={(v) => set("bridge_letter_received", v)}
                 />
                 <span className="text-body-md text-text-primary">
-                  A bridge letter covers the gap since the period ended
+                  Bridge letter received
                 </span>
               </label>
               <label className="flex items-start gap-2.5">
@@ -398,33 +392,28 @@ function RecordDialog({
                   checked={form.cuec_reviewed}
                   onCheckedChange={(v) => set("cuec_reviewed", v)}
                 />
-                <span>
-                  <span className="text-body-md text-text-primary">
-                    I read the complementary user entity controls
-                  </span>
-                  <span className="mt-0.5 block text-caption text-text-subtle">
-                    The controls the report assumes we operate on our side.
-                  </span>
+                <span className="text-body-md text-text-primary">
+                  Complementary user entity controls reviewed
                 </span>
               </label>
             </div>
 
             {form.cuec_reviewed ? (
               <TextArea
-                label="What we have to do on our side"
+                label="What we must do on our side"
                 optional
                 value={form.cuec_notes}
                 onChange={(e) => set("cuec_notes", e.target.value)}
                 rows={3}
                 maxLength={8000}
-                placeholder="We must enforce MFA on our own admin accounts and rotate the API key annually."
+                placeholder="Enforce MFA on admin accounts, rotate the API key yearly"
               />
             ) : null}
 
             <TextArea
               label="Subservice organisations"
               optional
-              hint="Who the vendor relies on, and whether the report carves them out or includes them."
+              hint="Note whether each is carved out or included."
               value={form.subservice_orgs}
               onChange={(e) => set("subservice_orgs", e.target.value)}
               rows={2}

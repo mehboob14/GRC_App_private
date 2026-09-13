@@ -181,8 +181,8 @@ export function VendorFormDrawer({
           <DrawerTitle>{editing ? "Edit vendor" : "Add vendor"}</DrawerTitle>
           <DrawerDescription>
             {editing
-              ? "The tier, the residual score and the lifecycle are derived — they are not edited here."
-              : "Name the third party and who owns the relationship. Tiering comes next, on the engagement."}
+              ? "Tier, score and lifecycle are derived, not edited here."
+              : "Tiering follows on the engagement."}
           </DrawerDescription>
         </DrawerHeader>
 
@@ -223,13 +223,12 @@ export function VendorFormDrawer({
                       >
                         {d.name}
                       </button>
-                      <span className="text-text-subtle"> — {duplicateReason(d.reason)}</span>
+                      <span className="text-text-subtle">: {duplicateReason(d.reason)}</span>
                     </li>
                   ))}
                 </ul>
                 <p className="mt-2 text-caption text-text-subtle">
-                  Adding another record is still allowed. Open the existing one first if this is the
-                  same organisation under a different name.
+                  You can still add it. Check it is not the same organisation first.
                 </p>
               </div>
             ) : null}
@@ -277,7 +276,6 @@ export function VendorFormDrawer({
             <TextField
               label="Services provided"
               optional
-              hint="What this vendor actually does for you. It is what a reviewer reads first."
               value={form.services_provided}
               onChange={(e) => set("services_provided", e.target.value)}
               placeholder="Campaign attribution and reporting"
@@ -291,14 +289,7 @@ export function VendorFormDrawer({
                   onCheckedChange={(v) => set("stores_pii", v)}
                   id="vendor-stores-pii"
                 />
-                <span>
-                  <span className="text-body-md text-text-primary">
-                    This vendor holds personal data
-                  </span>
-                  <span className="mt-0.5 block text-caption text-text-subtle">
-                    Raises the data-sensitivity weight when the engagement is tiered.
-                  </span>
-                </span>
+                <span className="text-body-md text-text-primary">This vendor holds personal data</span>
               </label>
               <div className="mt-3 grid gap-3.5 sm:grid-cols-2">
                 <SelectField label="Classification" optional>
@@ -329,10 +320,6 @@ export function VendorFormDrawer({
 
             <div className="rounded-md border border-border bg-surface-sunken p-3.5">
               <p className="type-overline">Ownership</p>
-              <p className="mt-1 text-caption text-text-subtle">
-                Three separate jobs. The business owner answers for the relationship, security
-                reviews the answers, and the relationship owner runs the commercial side.
-              </p>
               <div className="mt-3 space-y-3">
                 <OwnerField
                   label="Business owner"
@@ -359,7 +346,7 @@ export function VendorFormDrawer({
               <TextField
                 label="First engagement"
                 optional
-                hint="The lifecycle runs per engagement, so one is needed before tiering. You can add it later."
+                hint="Needed before tiering. You can add it later."
                 value={form.engagement_name}
                 onChange={(e) => set("engagement_name", e.target.value)}
                 placeholder="Campaign attribution"

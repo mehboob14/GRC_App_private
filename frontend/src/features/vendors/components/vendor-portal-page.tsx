@@ -101,8 +101,8 @@ function PortalShell({ children }: { children: React.ReactNode }) {
       <main className="mx-auto max-w-3xl px-5 py-6">{children}</main>
       <footer className="mx-auto max-w-3xl px-5 pb-8">
         <p className="text-caption text-text-subtle">
-          Your answers are visible only to the organisation that sent you this link. Do not forward
-          it — anyone holding it can answer on your behalf.
+          Only the sender sees your answers. Anyone with this link can answer for you, so do not
+          forward it.
         </p>
       </footer>
     </div>
@@ -150,12 +150,11 @@ function PortalBody({
       <div className="rounded-lg border border-status-success-border bg-status-success-bg p-8 text-center">
         <Icon name="check" className="mx-auto size-8 text-status-success-base" />
         <h1 className="mt-3 font-display text-heading-sm text-status-success-text">
-          Thank you — your answers are in
+          Thank you, your answers are in
         </h1>
         <p className="mx-auto mt-2 max-w-md text-body-md text-text-secondary">
           {portal.organisation} received {portal.answered_count} answers on{" "}
-          {fmtDate(portal.submitted_at)}. They will get in touch if anything needs following up.
-          You can close this page.
+          {fmtDate(portal.submitted_at)}. You can close this page.
         </p>
       </div>
     );
@@ -168,9 +167,8 @@ function PortalBody({
           {portal.organisation} has some questions about {portal.vendor_name}
         </h1>
         <p className="mt-2 text-body-md text-text-secondary">
-          {portal.question_count} questions about how you handle security and data. Answers save as
-          you go, so you can stop and come back to this link at any time.
-          {portal.due_date ? ` They have asked for these by ${fmtDate(portal.due_date)}.` : ""}
+          {portal.question_count} questions. Answers save as you go.
+          {portal.due_date ? ` Due by ${fmtDate(portal.due_date)}.` : ""}
         </p>
 
         <div className="mt-4">
@@ -210,15 +208,15 @@ function PortalBody({
         {unanswered > 0 ? (
           <p className="flex items-start gap-2 text-body-md text-text-secondary">
             <Icon name="info" className="mt-0.5 size-4 shrink-0 text-text-subtle" />
-            {unanswered} {unanswered === 1 ? "question is" : "questions are"} still unanswered. You
-            can submit anyway, but they will come back to you.
+            {unanswered} {unanswered === 1 ? "question is" : "questions are"} unanswered. You can
+            still send.
           </p>
         ) : null}
         {missingEvidence.length > 0 ? (
           <p className="mt-2 flex items-start gap-2 text-body-md text-status-warning-text">
             <Icon name="alert" className="mt-0.5 size-4 shrink-0" />
             {missingEvidence.length}{" "}
-            {missingEvidence.length === 1 ? "answer needs" : "answers need"} a document attached.
+            {missingEvidence.length === 1 ? "answer needs" : "answers need"} a document.
             Without one, {missingEvidence.length === 1 ? "it counts" : "they count"} as unproven.
           </p>
         ) : null}
@@ -234,12 +232,9 @@ function PortalBody({
           onClick={() => submit.mutate()}
           disabled={portal.answered_count === 0}
         >
-          Send these answers
+          Send answers
         </Button>
-        <p className="mt-2 text-caption text-text-subtle">
-          Once you send them the link closes. If you need to change something afterwards, ask your
-          contact for a new one.
-        </p>
+        <p className="mt-2 text-caption text-text-subtle">Sending closes this link.</p>
       </div>
     </div>
   );
@@ -295,7 +290,7 @@ function QuestionRow({
       {q.evidence_required ? (
         <p className="mt-1 flex items-center gap-1.5 text-caption text-text-subtle">
           <Icon name="doc" className="size-3.5 shrink-0" />
-          This one needs a document as well as an answer.
+          Document required
         </p>
       ) : null}
 
@@ -343,7 +338,6 @@ function QuestionRow({
           className="mt-3"
           label="How you do this"
           optional
-          hint="A sentence or two. This is what the reviewer reads."
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           onBlur={() => {
@@ -374,10 +368,10 @@ function QuestionRow({
             onClick={() => fileInput.current?.click()}
           >
             <Icon name="upload" className="size-4" />
-            {q.has_evidence ? "Replace the document" : "Attach a document"}
+            {q.has_evidence ? "Replace document" : "Attach document"}
           </Button>
           {q.has_evidence ? (
-            <Tooltip content="Your file is with the reviewer. You can replace it but not read it back.">
+            <Tooltip content="Sent to the reviewer. You can replace it, not view it.">
               <span>
                 <Badge variant="statusPass">Attached</Badge>
               </span>

@@ -66,7 +66,7 @@ export function RequestVendorDialog({
         // Keep the dialog open: the requester needs to see that this may already
         // be in the register before they walk away thinking it is new.
         setMatches(request.duplicates);
-        toast({ title: "Request submitted — possible duplicates found", tone: "neutral" });
+        toast({ title: "Request submitted. Possible duplicates found.", tone: "neutral" });
         return;
       }
       toast({ title: "Request submitted for review", tone: "success" });
@@ -80,10 +80,7 @@ export function RequestVendorDialog({
       <DialogContent size="md">
         <DialogHeader>
           <DialogTitle>Request a vendor</DialogTitle>
-          <DialogDescription>
-            Someone on the third-party risk team reviews this and either creates the vendor or
-            explains why not.
-          </DialogDescription>
+          <DialogDescription>The third-party risk team reviews every request.</DialogDescription>
         </DialogHeader>
 
         <form
@@ -117,20 +114,20 @@ export function RequestVendorDialog({
                 >
                   <SelectTrigger aria-label="Urgency" disabled={matches !== null} />
                   <SelectContent>
-                    <SelectItem value="low">Low — no fixed date</SelectItem>
+                    <SelectItem value="low">Low: no fixed date</SelectItem>
                     <SelectItem value="normal">Normal</SelectItem>
-                    <SelectItem value="high">High — blocked without it</SelectItem>
+                    <SelectItem value="high">High: blocked without it</SelectItem>
                   </SelectContent>
                 </Select>
               </SelectField>
             </div>
             <TextField
-              label="What you need them for"
+              label="Intended use"
               optional
-              hint="What the vendor would do, and what data they would see."
+              hint="Include any data they would see."
               value={form.proposed_service}
               onChange={(e) => setForm((f) => ({ ...f, proposed_service: e.target.value }))}
-              placeholder="Campaign attribution — they would receive hashed email addresses."
+              placeholder="Campaign attribution using hashed email addresses."
               disabled={matches !== null}
             />
 
@@ -143,14 +140,13 @@ export function RequestVendorDialog({
                 <ul className="mt-2 space-y-1">
                   {matches.map((m) => (
                     <li key={m.id} className="text-body-sm text-text-secondary">
-                      <span className="font-semibold text-text-primary">{m.name}</span> —{" "}
+                      <span className="font-semibold text-text-primary">{m.name}</span>:{" "}
                       {duplicateReason(m.reason)}
                     </li>
                   ))}
                 </ul>
                 <p className="mt-2 text-caption text-text-subtle">
-                  Your request is submitted either way. If one of these is the same organisation,
-                  ask your risk team to point you at it instead.
+                  Your request was still submitted.
                 </p>
               </div>
             ) : null}

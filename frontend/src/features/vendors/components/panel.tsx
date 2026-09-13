@@ -64,7 +64,7 @@ export function Field({ label, value }: { label: string; value: ReactNode }) {
  */
 export function NotConnected({ what, why }: { what: string; why: string }) {
   return (
-    <div className="rounded-md border border-dashed border-border-strong bg-surface-sunken p-4">
+    <div className="rounded-md bg-surface-sunken p-4">
       <p className="text-body-md font-semibold text-text-primary">{what}</p>
       <p className="mt-1 text-body-sm text-text-subtle">{why}</p>
     </div>

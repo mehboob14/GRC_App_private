@@ -337,9 +337,9 @@ export function duplicateReason(code: string): string {
 // -- formatters ---------------------------------------------------------------
 
 export function fmtDate(value: string | null | undefined): string {
-  if (!value) return "—";
+  if (!value) return "No date";
   const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return "—";
+  if (Number.isNaN(d.getTime())) return "No date";
   return d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }
 
@@ -348,14 +348,14 @@ export function fmtDate(value: string | null | undefined): string {
  * "in 0 days" is today.
  */
 export function fmtCountdown(days: number | null | undefined): string {
-  if (days === null || days === undefined) return "—";
+  if (days === null || days === undefined) return "";
   if (days < 0) return `${Math.abs(days)} ${Math.abs(days) === 1 ? "day" : "days"} ago`;
   if (days === 0) return "today";
   return `in ${days} ${days === 1 ? "day" : "days"}`;
 }
 
 export function fmtMoney(value: number | null | undefined): string {
-  if (value === null || value === undefined) return "—";
+  if (value === null || value === undefined) return "Not set";
   return new Intl.NumberFormat(undefined, {
     style: "currency",
     currency: "USD",
@@ -394,12 +394,12 @@ export const ATTENTION_META: Record<
     label: (v) => `Reassessment overdue ${fmtCountdown(daysUntil(v.next_reassessment_on))}`,
   },
   not_tiered: { family: "warning", tab: "lifecycle" },
-  awaiting_gate: { family: "warning", tab: "lifecycle" },
+  awaiting_gate: { family: "progress", tab: "lifecycle" },
   on_hold: { family: "warning", tab: "lifecycle" },
   weak_grade: {
     family: "warning",
     tab: "findings",
-    label: (v) => `Grade ${v.current_grade} — work the findings`,
+    label: (v) => `Grade ${v.current_grade}`,
   },
   unowned: { family: "warning", tab: "overview" },
   reassessment_due: {
@@ -415,7 +415,7 @@ export const ATTENTION_LABEL: Record<string, string> = {
   flagged: "Flagged for review",
   reassessment_overdue: "Reassessment overdue",
   not_tiered: "Not tiered",
-  awaiting_gate: "Awaiting the approval gate",
+  awaiting_gate: "In review",
   on_hold: "On hold",
   weak_grade: "Weak residual grade",
   unowned: "No business owner",

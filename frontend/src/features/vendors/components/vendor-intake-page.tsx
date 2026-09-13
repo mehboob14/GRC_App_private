@@ -38,7 +38,7 @@ import { RequestVendorDialog } from "./request-vendor-dialog";
 type Scope = "pending" | "approved" | "rejected" | "all";
 
 const SCOPES = [
-  { id: "pending" as const, label: "Awaiting decision" },
+  { id: "pending" as const, label: "Pending" },
   { id: "approved" as const, label: "Approved" },
   { id: "rejected" as const, label: "Declined" },
   { id: "all" as const, label: "All" },
@@ -72,7 +72,7 @@ export function VendorIntakePage() {
         actions={
           <Button variant="secondary" onClick={() => setRequestOpen(true)}>
             <Icon name="plus" className="size-4" />
-            Request a vendor
+            Request vendor
           </Button>
         }
       >
@@ -101,15 +101,11 @@ export function VendorIntakePage() {
           <EmptyState
             icon="audit"
             variant={scope === "pending" ? "no-data" : "no-match"}
-            title={
-              scope === "pending"
-                ? "Nothing waiting on a decision"
-                : "No requests in this state"
-            }
+            title={scope === "pending" ? "No pending requests" : "No requests in this state"}
             description={
               scope === "pending"
-                ? "Requests from the business land here. Each one is screened against the register before anyone reads it."
-                : "Switch the filter above to see the rest of the queue."
+                ? "Requests are screened against the register on arrival."
+                : "Try another filter."
             }
           />
         ) : (
@@ -185,9 +181,7 @@ function IntakeCard({ request: r, canDecide }: { request: IntakeRequest; canDeci
           {r.proposed_service}
         </p>
       ) : (
-        <p className="mt-3 text-body-sm text-text-subtle">
-          No description of the intended use was given.
-        </p>
+        <p className="mt-3 text-body-sm text-text-subtle">No intended use given.</p>
       )}
 
       {r.data_types_shared.length > 0 ? (
@@ -216,13 +210,12 @@ function IntakeCard({ request: r, canDecide }: { request: IntakeRequest; canDeci
                 >
                   {d.name}
                 </Link>
-                <span className="text-text-subtle"> — {duplicateReason(d.reason)}</span>
+                <span className="text-text-subtle">: {duplicateReason(d.reason)}</span>
               </li>
             ))}
           </ul>
           <p className="mt-2 text-caption text-text-subtle">
-            Approving creates a second record. Decline and point the requester at the existing
-            vendor unless these really are different organisations.
+            Approving creates a duplicate unless these are different organisations.
           </p>
         </div>
       ) : null}
@@ -242,7 +235,7 @@ function IntakeCard({ request: r, canDecide }: { request: IntakeRequest; canDeci
             to={`/vendors/${r.created_vendor_id}`}
             className="inline-flex items-center gap-1 text-label-sm text-text-link"
           >
-            Open the vendor this created
+            Open vendor
             <Icon name="chevr" className="size-4" />
           </Link>
         </div>
@@ -256,7 +249,7 @@ function IntakeCard({ request: r, canDecide }: { request: IntakeRequest; canDeci
             onClick={() => decide.mutate({ approve: true })}
           >
             <Icon name="check" className="size-4" />
-            Approve and create the vendor
+            Approve and create
           </Button>
           <Button size="sm" variant="destructive-2" onClick={() => setDeclining(true)}>
             Decline
@@ -264,7 +257,7 @@ function IntakeCard({ request: r, canDecide }: { request: IntakeRequest; canDeci
         </div>
       ) : pending ? (
         <p className="mt-4 border-t border-border pt-3 text-caption text-text-subtle">
-          Waiting on someone with permission to manage vendors.
+          Needs someone with permission to manage vendors.
         </p>
       ) : null}
 
@@ -305,10 +298,7 @@ function DeclineDialog({
       <DialogContent size="sm">
         <DialogHeader>
           <DialogTitle>Decline {vendorName}?</DialogTitle>
-          <DialogDescription>
-            The requester sees this reason. It is the only thing they get back, so say what would
-            change the answer.
-          </DialogDescription>
+          <DialogDescription>The requester sees this reason.</DialogDescription>
         </DialogHeader>
         <form
           onSubmit={(e) => {
@@ -318,11 +308,11 @@ function DeclineDialog({
         >
           <DialogBody>
             <TextArea
-              label="Why"
+              label="Reason"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               maxLength={4000}
-              placeholder="We already have this capability under the Contoso agreement — ask Marketing Ops for access."
+              placeholder="Covered by our Contoso agreement. Ask Marketing Ops for access."
               autoFocus
             />
           </DialogBody>

@@ -91,7 +91,7 @@ export function AssessmentsPanel({
     return (
       <Panel title="Assessments">
         <p className="text-body-md text-text-secondary">
-          Questionnaires are issued against an engagement. Add one first.
+          Add an engagement to send questionnaires.
         </p>
       </Panel>
     );
@@ -115,7 +115,7 @@ export function AssessmentsPanel({
                 onClick={() => reassess.mutate()}
                 disabled={!tiered || assessments.length === 0}
               >
-                Open a reassessment
+                Reassess
               </Button>
               <Button
                 size="sm"
@@ -123,7 +123,7 @@ export function AssessmentsPanel({
                 disabled={!tiered || !portalContact}
               >
                 <Icon name="upload" className="size-4" />
-                Send a questionnaire
+                Send questionnaire
               </Button>
             </div>
           ) : null
@@ -131,8 +131,7 @@ export function AssessmentsPanel({
       >
         {!tiered ? (
           <p className="text-body-md text-text-secondary">
-            Tier the engagement first. The tier decides which questions are in scope, so a
-            questionnaire sent before tiering would ask the wrong set.
+            Tier the engagement first. The tier sets which questions apply.
           </p>
         ) : !portalContact ? (
           <div className="rounded-md border border-status-warning-border bg-status-warning-bg p-3.5">
@@ -141,14 +140,12 @@ export function AssessmentsPanel({
               No contact to send to
             </p>
             <p className="mt-1 text-body-sm text-text-secondary">
-              A questionnaire goes to a named person at the vendor. Add a contact with an email
-              address before sending one.
+              Add a vendor contact with an email address first.
             </p>
           </div>
         ) : assessments.length === 0 ? (
           <p className="text-body-sm text-text-subtle">
-            Nothing sent yet. The vendor answers on a page of their own — no account, no sign-in —
-            and the answers come back here to be scored.
+            No questionnaires sent yet.
           </p>
         ) : (
           <ul className="space-y-2">
@@ -295,11 +292,8 @@ function IssueDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="sm">
         <DialogHeader>
-          <DialogTitle>Send a questionnaire</DialogTitle>
-          <DialogDescription>
-            The vendor answers on a page of their own — no Verity account, no sign-in. Sending
-            another later replaces the link and kills the old one.
-          </DialogDescription>
+          <DialogTitle>Send questionnaire</DialogTitle>
+          <DialogDescription>No vendor sign-in needed. Resending revokes the old link.</DialogDescription>
         </DialogHeader>
         <form
           onSubmit={(e) => {
@@ -315,7 +309,7 @@ function IssueDialog({
                   {contacts.map((c) => (
                     <SelectItem key={c.id} value={c.id}>
                       {c.name}
-                      {c.email ? ` — ${c.email}` : " — no email"}
+                      {c.email ? ` · ${c.email}` : " · No email"}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -327,7 +321,7 @@ function IssueDialog({
               type="date"
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
-              hint="Shown to the vendor on their page. It does not close the link."
+              hint="Shown to the vendor. Does not close the link."
             />
           </DialogBody>
           <DialogFooter>
@@ -335,7 +329,7 @@ function IssueDialog({
               Cancel
             </Button>
             <Button type="submit" loading={issue.isPending} disabled={!contactId}>
-              Create the link
+              Create link
             </Button>
           </DialogFooter>
         </form>
@@ -366,8 +360,7 @@ function PortalLinkDialog({
         <DialogHeader>
           <DialogTitle>Send this link to {issued?.email}</DialogTitle>
           <DialogDescription>
-            {issued?.count} questions are in scope for this tier. Anyone holding the link can
-            answer, so send it to the contact and nobody else.
+            {issued?.count} questions in scope. Anyone with the link can answer.
           </DialogDescription>
         </DialogHeader>
         <DialogBody>
@@ -386,7 +379,7 @@ function PortalLinkDialog({
                   })
                   .catch(() =>
                     toast({
-                      title: "Your browser blocked the copy — select the link and copy it by hand.",
+                      title: "Copy blocked. Select the link and copy it manually.",
                       tone: "danger",
                     }),
                   );
@@ -410,13 +403,11 @@ function PortalLinkDialog({
           </div>
           <p className="mt-3 flex items-start gap-1.5 rounded-md border border-status-warning-border bg-status-warning-bg p-3 text-body-sm text-status-warning-text">
             <Icon name="alert" className="mt-px size-4 shrink-0" />
-            This is the only time the link is shown. Verity stores a hash of it, not the link
-            itself. Close this without copying and you will have to issue a new one, which revokes
-            this one.
+            Shown only once. If lost, issue a new link, which revokes this one.
           </p>
         </DialogBody>
         <DialogFooter>
-          <Button onClick={onClose}>I have copied it</Button>
+          <Button onClick={onClose}>I copied it</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -457,7 +448,7 @@ function AssessmentDialog({
       queryClient.setQueryData(key, next);
       void queryClient.invalidateQueries({ queryKey: ["vendor", vendorId] });
       void queryClient.invalidateQueries({ queryKey: ["vendor-findings"] });
-      toast({ title: `Scored — grade ${next.grade ?? "not graded"}`, tone: "success" });
+      toast({ title: `Scored: grade ${next.grade ?? "none"}`, tone: "success" });
     },
     onError: (e: unknown) => toast({ title: errorToast(e, "assessment"), tone: "danger" }),
   });
@@ -474,7 +465,7 @@ function AssessmentDialog({
           <DialogDescription>
             {a
               ? `${a.answered_count} of ${a.question_count} answered · ${a.missing_evidence_count} still missing evidence`
-              : "Loading the answers…"}
+              : "Loading answers…"}
           </DialogDescription>
         </DialogHeader>
         <DialogBody>
@@ -498,7 +489,7 @@ function AssessmentDialog({
               onClick={() => score.mutate()}
               disabled={a.answered_count === 0}
             >
-              Score this assessment
+              Score
             </Button>
           ) : null}
         </DialogFooter>
@@ -563,7 +554,7 @@ function AssessmentBody({
 
       {a.score_steps.length > 0 ? (
         <div className="rounded-md border border-border bg-surface-sunken p-3.5">
-          <p className="type-overline">How the residual score was reached</p>
+          <p className="type-overline">Score breakdown</p>
           <ul className="mt-2 space-y-1.5">
             {a.score_steps.map((step) => (
               <li key={step.label} className="flex items-baseline justify-between gap-3">
@@ -635,13 +626,13 @@ function WhatChanged({
 
   return (
     <div className="rounded-md border border-border bg-surface-sunken p-3.5">
-      <p className="type-overline">What changed since cycle {prior.cycle}</p>
+      <p className="type-overline">Changes since cycle {prior.cycle}</p>
 
       {delta === null ? (
         <p className="mt-2 text-body-sm text-text-subtle">
           {current.status === "scored"
-            ? "The earlier cycle was never scored, so there is no number to compare against."
-            : "Score this cycle to see the movement."}
+            ? "The previous cycle was not scored."
+            : "Score this cycle to compare."}
         </p>
       ) : (
         <p className="mt-2 text-body-md text-text-primary">
@@ -670,14 +661,14 @@ function WhatChanged({
 
       {changes.length === 0 ? (
         <p className="mt-1 text-body-sm text-text-subtle">
-          Every answer is the same as last cycle.
+          No answers changed.
         </p>
       ) : (
         <>
           <p className="mt-1 text-body-sm text-text-subtle">
             {changes.length} of {current.question_count} answers moved
-            {worse.length > 0 ? ` — ${worse.length} weaker` : ""}
-            {better.length > 0 ? `${worse.length > 0 ? "," : " —"} ${better.length} stronger` : ""}.
+            {worse.length > 0 ? `: ${worse.length} weaker` : ""}
+            {better.length > 0 ? `${worse.length > 0 ? "," : ":"} ${better.length} stronger` : ""}.
           </p>
           <ul className="mt-2 space-y-1.5">
             {[...worse, ...better].slice(0, 8).map((c) => (
@@ -705,7 +696,7 @@ function WhatChanged({
           </ul>
           {changes.length > 8 ? (
             <p className="mt-1.5 text-caption text-text-subtle">
-              {changes.length - 8} more are marked Changed in the list below.
+              {changes.length - 8} more marked Changed below.
             </p>
           ) : null}
         </>
@@ -733,7 +724,7 @@ function ResponseRow({
           <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-caption text-text-subtle">
             <span className="font-mono">{r.question_code}</span>
             {r.non_negotiable ? (
-              <Tooltip content="A weak answer here caps the whole grade, whatever else is answered">
+              <Tooltip content="A weak answer here caps the whole grade">
                 <span>
                   <Badge variant="statusFail">Non-negotiable</Badge>
                 </span>
@@ -755,7 +746,7 @@ function ResponseRow({
         <div className="flex shrink-0 items-center gap-2">
           {changed && previous ? (
             <span className="text-caption text-text-subtle line-through">
-              {previous.answer ? (ANSWER_META[previous.answer]?.label ?? previous.answer) : "—"}
+              {previous.answer ? (ANSWER_META[previous.answer]?.label ?? previous.answer) : "Unanswered"}
             </span>
           ) : null}
           {answer ? (

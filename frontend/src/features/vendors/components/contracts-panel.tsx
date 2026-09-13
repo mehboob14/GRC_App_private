@@ -59,22 +59,19 @@ export function ContractsPanel({
   return (
     <>
       <Panel
-        title="Contracts and service levels"
+        title="Contracts"
         count={contracts.length || undefined}
         action={
           canManage ? (
             <Button variant="secondary" size="sm" onClick={() => setAdding(true)}>
               <Icon name="plus" className="size-4" />
-              Record a contract
+              Add contract
             </Button>
           ) : null
         }
       >
         {contracts.length === 0 ? (
-          <p className="text-body-sm text-text-subtle">
-            Nothing recorded. A critical vendor with no recorded right to audit and no breach
-            notification window is a vendor you cannot hold to anything.
-          </p>
+          <p className="text-body-sm text-text-subtle">No contracts recorded yet.</p>
         ) : (
           <ul className="space-y-3">
             {contracts.map((c) => (
@@ -84,12 +81,6 @@ export function ContractsPanel({
             ))}
           </ul>
         )}
-
-        <p className="mt-3 text-caption text-text-subtle">
-          Per-metric service levels — uptime targets, response times and their breaches — are
-          modelled in the database but have no endpoint yet, so only the contractual windows above
-          are shown.
-        </p>
       </Panel>
 
       <AddContractDialog
@@ -106,17 +97,17 @@ const CLAUSES = [
   {
     key: "right_to_audit" as const,
     label: "Right to audit",
-    why: "Without it you cannot ask to see anything you were not already given.",
+    why: "You cannot inspect beyond what they share.",
   },
   {
     key: "subprocessor_terms" as const,
     label: "Subprocessor terms",
-    why: "Without it they can add a fourth party without telling you.",
+    why: "They can add fourth parties without telling you.",
   },
   {
     key: "exit_data_return_clause" as const,
     label: "Exit data return",
-    why: "Without it you have no contractual claim on your data when you leave.",
+    why: "No contractual claim on your data at exit.",
   },
 ];
 
@@ -162,21 +153,21 @@ function ContractCard({ contract: c }: { contract: Contract }) {
           <p className="mt-1 text-body-sm text-text-secondary">
             {c.notice_deadline ? (
               <>
-                To stop it you have to give notice by{" "}
+                Notice due by{" "}
                 <span className="font-semibold text-text-primary">
                   {fmtDate(c.notice_deadline)}
                 </span>{" "}
                 ({fmtCountdown(noticeDays)})
-                {c.notice_period_days !== null ? `, ${c.notice_period_days} days ahead` : ""}.
+                {c.notice_period_days !== null ? `, ${c.notice_period_days}-day notice period` : ""}.
               </>
             ) : (
-              "No notice period is recorded, so nobody knows when the window to stop it closes."
+              "No notice period recorded. Cancel deadline unknown."
             )}
           </p>
         </div>
       ) : c.renewal_date ? (
         <p className="mt-2 text-body-sm text-text-secondary">
-          Up for renewal {fmtDate(c.renewal_date)} ({fmtCountdown(c.renews_in_days)}).
+          Renews {fmtDate(c.renewal_date)} ({fmtCountdown(c.renews_in_days)}).
         </p>
       ) : null}
 
@@ -188,7 +179,7 @@ function ContractCard({ contract: c }: { contract: Contract }) {
               <span>
                 <Badge variant={c[clause.key] ? "statusPass" : "count"}>
                   {clause.label}
-                  {c[clause.key] ? "" : " — missing"}
+                  {c[clause.key] ? "" : " missing"}
                 </Badge>
               </span>
             </Tooltip>
@@ -261,7 +252,7 @@ function AddContractDialog({
       onAdded({ ...vendor, contracts: [...vendor.contracts, created] });
       void queryClient.invalidateQueries({ queryKey: ["vendor", vendor.id] });
       onOpenChange(false);
-      toast({ title: "Contract recorded", tone: "success" });
+      toast({ title: "Contract added", tone: "success" });
     },
     onError: (e: unknown) => toast({ title: errorToast(e, "contract"), tone: "danger" }),
   });
@@ -270,11 +261,8 @@ function AddContractDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="lg" scrollBody>
         <DialogHeader>
-          <DialogTitle>Record a contract</DialogTitle>
-          <DialogDescription>
-            The clauses matter more than the dates. Tick only what the signed document actually
-            says.
-          </DialogDescription>
+          <DialogTitle>Add contract</DialogTitle>
+          <DialogDescription>Tick only clauses in the signed contract.</DialogDescription>
         </DialogHeader>
         <form
           onSubmit={(e) => {
@@ -349,18 +337,12 @@ function AddContractDialog({
             </div>
 
             <div className="rounded-md border border-border bg-surface-sunken p-3.5">
-              <label className="flex items-start gap-2.5">
+              <label className="flex items-center gap-2.5">
                 <Checkbox
                   checked={form.auto_renew}
                   onCheckedChange={(v) => set("auto_renew", v)}
                 />
-                <span>
-                  <span className="text-body-md text-text-primary">This renews automatically</span>
-                  <span className="mt-0.5 block text-caption text-text-subtle">
-                    Verity works back from the renewal date to tell you when the window to stop it
-                    closes.
-                  </span>
-                </span>
+                <span className="text-body-md text-text-primary">Auto-renews</span>
               </label>
               {form.auto_renew ? (
                 <TextField
@@ -377,12 +359,11 @@ function AddContractDialog({
             </div>
 
             <TextField
-              label="Breach notification window (hours)"
+              label="Breach notice window (hours)"
               optional
               type="number"
               min={0}
               max={8760}
-              hint="How long they have to tell you. 72 is the usual number for personal data."
               value={form.breach_notification_hours}
               onChange={(e) => set("breach_notification_hours", e.target.value)}
               placeholder="72"
@@ -391,28 +372,25 @@ function AddContractDialog({
             <div className="space-y-2.5 rounded-md border border-border bg-surface-sunken p-3.5">
               <p className="type-overline">Clauses present</p>
               {CLAUSES.map((clause) => (
-                <label key={clause.key} className="flex items-start gap-2.5">
+                <label key={clause.key} className="flex items-center gap-2.5">
                   <Checkbox
                     checked={form[clause.key]}
                     onCheckedChange={(v) => set(clause.key, v)}
                   />
-                  <span>
-                    <span className="text-body-md text-text-primary">{clause.label}</span>
-                    <span className="mt-0.5 block text-caption text-text-subtle">{clause.why}</span>
-                  </span>
+                  <span className="text-body-md text-text-primary">{clause.label}</span>
                 </label>
               ))}
             </div>
 
             {vendor.engagements.length > 0 ? (
-              <SelectField label="Engagement this covers" optional>
+              <SelectField label="Engagement" optional>
                 <Select
                   value={form.engagement_id || "__none__"}
                   onValueChange={(v) => set("engagement_id", v === "__none__" ? "" : v)}
                 >
                   <SelectTrigger aria-label="Engagement" />
                   <SelectContent>
-                    <SelectItem value="__none__">The whole relationship</SelectItem>
+                    <SelectItem value="__none__">Whole relationship</SelectItem>
                     {vendor.engagements.map((e) => (
                       <SelectItem key={e.id} value={e.id}>
                         {e.name}
@@ -428,7 +406,7 @@ function AddContractDialog({
               Cancel
             </Button>
             <Button type="submit" loading={add.isPending} disabled={!form.title.trim()}>
-              Record contract
+              Add contract
             </Button>
           </DialogFooter>
         </form>

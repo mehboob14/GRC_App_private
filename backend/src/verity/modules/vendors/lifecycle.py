@@ -372,7 +372,7 @@ def _monitoring(_f: StageFacts) -> list[ExitCheck]:
     return [
         ExitCheck(
             code="monitoring.steady_state",
-            label="Under monitoring — this is the resting state",
+            label="Under monitoring, which is the resting state",
             satisfied=True,
         )
     ]

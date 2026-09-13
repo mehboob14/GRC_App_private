@@ -11,14 +11,14 @@ import type { ExitCheck } from "../types";
  * and leaves the reader to hunt is a status display, not a workspace.
  */
 const CLEARS: Record<string, { label: string; target: string }> = {
-  vendor: { label: "Edit the vendor", target: "vendor" },
-  vendor_tiering_assessment: { label: "Tier this engagement", target: "tiering" },
-  vendor_assessment: { label: "Go to the questionnaire", target: "assessments" },
-  vendor_team_roster: { label: "Open the roster", target: "roster" },
-  vendor_finding: { label: "Work the findings", target: "findings" },
-  vendor_contract: { label: "Open the paperwork", target: "paperwork" },
-  vendor_approval: { label: "Record the decision", target: "approval" },
-  vendor_stage: { label: "Review the lifecycle", target: "lifecycle" },
+  vendor: { label: "Edit vendor", target: "vendor" },
+  vendor_tiering_assessment: { label: "Tier engagement", target: "tiering" },
+  vendor_assessment: { label: "Open questionnaire", target: "assessments" },
+  vendor_team_roster: { label: "Open roster", target: "roster" },
+  vendor_finding: { label: "Open findings", target: "findings" },
+  vendor_contract: { label: "Open paperwork", target: "paperwork" },
+  vendor_approval: { label: "Go to decision", target: "approval" },
+  vendor_stage: { label: "Open lifecycle", target: "lifecycle" },
 };
 
 export type CheckTarget = (typeof CLEARS)[string]["target"];
@@ -39,8 +39,8 @@ export function ExitCheckRow({
   const route = check.clears_with ? CLEARS[check.clears_with] : undefined;
 
   return (
-    <li className="flex items-start gap-2.5 py-2">
-      <span className="mt-0.5 shrink-0">
+    <li className="flex items-center gap-2.5 py-2.5">
+      <span className="shrink-0">
         {passed ? (
           <Icon name="check" className="size-4 text-status-success-base" aria-label="Met" />
         ) : unanswerable ? (
@@ -62,10 +62,7 @@ export function ExitCheckRow({
           <span className="mt-0.5 block text-body-sm text-text-subtle">{check.detail}</span>
         ) : null}
         {unanswerable ? (
-          <span className="mt-0.5 block text-caption text-text-subtle">
-            Not evaluated. This condition is not being checked automatically and is not holding the
-            stage.
-          </span>
+          <span className="mt-0.5 block text-caption text-text-subtle">Not checked automatically</span>
         ) : null}
       </span>
       {!passed && !unanswerable && route && onGo ? (

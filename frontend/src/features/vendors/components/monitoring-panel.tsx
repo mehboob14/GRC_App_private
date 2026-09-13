@@ -25,7 +25,7 @@ export function MonitoringPanel({ vendor }: { vendor: VendorDetail }) {
     <div className="space-y-4">
       <Panel
         title="Reassessment clock"
-        description="Derived from the tier. Critical vendors come back every six months, low ones every three years."
+        description="By tier: critical 6 months, low 3 years."
       >
         {vendor.next_reassessment_on ? (
           <div className="flex flex-wrap items-center gap-3">
@@ -50,43 +50,33 @@ export function MonitoringPanel({ vendor }: { vendor: VendorDetail }) {
           </div>
         ) : (
           <p className="text-body-sm text-text-subtle">
-            No date yet. The clock starts when the engagement is tiered.
+            No date until the engagement is tiered.
           </p>
         )}
       </Panel>
 
-      <Panel
-        title="Signals"
-        description="Breach disclosures, outage notices and news that should reopen a review."
-      >
+      <Panel title="Signals" description="Breaches, outages and vendor news.">
         <NotConnected
           what="No data source connected"
-          why="Signals arrive from a breach-intelligence feed. Nothing is connected, so nothing has been checked — this is not a clean bill of health."
+          why="Nothing has been checked, so this is not a clean bill of health."
         />
       </Panel>
 
-      <Panel
-        title="Security scorecard"
-        description="An outside-in rating of the vendor's public security posture."
-      >
+      <Panel title="Security scorecard">
         <NotConnected
           what="No scorecard provider connected"
-          why="A scorecard is bought, not computed. Until one is connected, this vendor's residual grade is based only on what they told us in the questionnaire."
+          why="The residual grade uses questionnaire answers only."
         />
       </Panel>
 
-      <Panel
-        title="Shadow IT"
-        description="Vendors discovered in use that nobody put through intake."
-      >
+      <Panel title="Shadow IT" description="Apps in use that skipped intake.">
         <NotConnected
           what="No discovery source connected"
-          why="Discovered apps come from an identity provider or a CASB. Without one, the register shows only what people remembered to register."
+          why="Connect an identity provider or CASB to discover apps."
         />
         <p className="mt-3 flex items-start gap-1.5 text-caption text-text-subtle">
           <Icon name="info" className="mt-px size-3.5 shrink-0" />
-          Anyone with read access can raise an intake request from the register, which is the manual
-          version of the same thing.
+          Anyone with read access can raise intake requests from the register.
         </p>
       </Panel>
     </div>

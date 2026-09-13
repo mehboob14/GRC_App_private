@@ -45,10 +45,10 @@ import {
   HEALTHY_LINE,
   LIFECYCLE_META,
   nextAction,
-  NOT_TIERED,
   TIER_META,
   VENDOR_TYPE_LABEL,
 } from "../tokens";
+import { TierBadge } from "./tier-badge";
 import { VendorFormDrawer } from "./vendor-form-drawer";
 import { RequestVendorDialog } from "./request-vendor-dialog";
 
@@ -224,7 +224,7 @@ export function VendorsRegisterPage() {
             {canRead && !canManage ? (
               <Button variant="secondary" onClick={() => setRequestOpen(true)}>
                 <Icon name="plus" className="size-4" />
-                Request a vendor
+                Request vendor
               </Button>
             ) : null}
             {canManage ? (
@@ -319,8 +319,8 @@ export function VendorsRegisterPage() {
             title={filtered ? "No vendors match these filters" : "No vendors yet"}
             description={
               filtered
-                ? "Adjust or clear the filters to see more."
-                : "Add the third parties you share data or systems with. Tier each one, then work its lifecycle from intake to approval."
+                ? "Adjust or clear the filters."
+                : "Add the third parties you share data or systems with."
             }
             onClearFilters={filtered ? clearFilters : undefined}
             action={
@@ -393,7 +393,6 @@ function VendorRow({
   onOpen: () => void;
 }) {
   const navigate = useNavigate();
-  const tier = v.tier ? (TIER_META[v.tier] ?? NOT_TIERED) : NOT_TIERED;
   const status = LIFECYCLE_META[v.lifecycle_status] ?? {
     label: v.lifecycle_status,
     family: "neutral" as const,
@@ -434,7 +433,7 @@ function VendorRow({
         </div>
       </TD>
       <TD>
-        <StatusPill status={tier.family} label={tier.label} kind="inline" />
+        <TierBadge tier={v.tier} variant="dot" />
       </TD>
       {isVisible("status") ? (
         <TD>
@@ -496,7 +495,11 @@ function VendorRow({
       ) : null}
       {isVisible("unit") ? (
         <TD>
-          <span className="text-body-sm text-text-secondary">{v.business_unit || "—"}</span>
+          {v.business_unit ? (
+            <span className="text-body-sm text-text-secondary">{v.business_unit}</span>
+          ) : (
+            <span className="text-caption text-text-subtle">Not set</span>
+          )}
         </TD>
       ) : null}
       {isVisible("classification") ? (
@@ -508,7 +511,7 @@ function VendorRow({
               kind="inline"
             />
           ) : (
-            <span className="text-caption text-text-subtle">—</span>
+            <span className="text-caption text-text-subtle">Not set</span>
           )}
         </TD>
       ) : null}
@@ -546,7 +549,7 @@ function VendorRow({
             <DropdownMenuItem
               onSelect={() => navigate(`/vendors/${v.id}?tab=${action?.tab ?? "lifecycle"}`)}
             >
-              {action ? "Go to what is blocking" : "Open the lifecycle"}
+              {action ? "View blocker" : "Open lifecycle"}
             </DropdownMenuItem>
             {v.website ? (
               <DropdownMenuItem onSelect={() => window.open(v.website!, "_blank", "noopener")}>

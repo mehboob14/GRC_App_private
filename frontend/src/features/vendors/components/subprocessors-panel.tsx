@@ -62,29 +62,28 @@ export function SubprocessorsPanel({
         count={rows.length || undefined}
         description={
           shared.length > 0
-            ? `${shared.length} of these also sit behind other vendors you use.`
+            ? `${shared.length} shared with other vendors`
             : undefined
         }
         action={
           canManage ? (
             <Button variant="secondary" size="sm" onClick={() => setAdding(true)}>
               <Icon name="plus" className="size-4" />
-              Add a subprocessor
+              Add subprocessor
             </Button>
           ) : null
         }
       >
         {rows.length === 0 ? (
           <p className="text-body-sm text-text-subtle">
-            None recorded. Ask the vendor for their subprocessor list — an undeclared chain is the
-            fourth-party factor that pushed this vendor's tier up in the first place.
+            None recorded. Ask the vendor for their subprocessor list.
           </p>
         ) : (
           <Table density="compact">
             <THead>
               <TR>
                 <TH>Subprocessor</TH>
-                <TH>What they do</TH>
+                <TH>Service</TH>
                 <TH>Where</TH>
                 <TH>Source</TH>
                 <TH numeric>Also used by</TH>
@@ -115,7 +114,7 @@ export function SubprocessorsPanel({
                       ) : null}
                     </TD>
                     <TD>
-                      <span className="text-body-sm text-text-secondary">{s.service || "—"}</span>
+                      <span className="text-body-sm text-text-secondary">{s.service || "Not set"}</span>
                     </TD>
                     <TD>
                       <span className="text-body-sm text-text-secondary">
@@ -137,7 +136,7 @@ export function SubprocessorsPanel({
                     </TD>
                     <TD numeric>
                       <span className="tabular text-body-sm text-text-secondary">
-                        {s.also_used_by_vendors > 0 ? `${s.also_used_by_vendors} others` : "—"}
+                        {s.also_used_by_vendors > 0 ? `${s.also_used_by_vendors} others` : "None"}
                       </span>
                     </TD>
                   </TR>
@@ -207,7 +206,7 @@ function AddDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="sm">
         <DialogHeader>
-          <DialogTitle>Add a subprocessor</DialogTitle>
+          <DialogTitle>Add subprocessor</DialogTitle>
           <DialogDescription>
             A fourth party this vendor passes work or data to.
           </DialogDescription>
@@ -227,7 +226,7 @@ function AddDialog({
               autoFocus
             />
             <TextField
-              label="What they do for the vendor"
+              label="Service"
               optional
               value={form.service}
               onChange={(e) => set("service", e.target.value)}
@@ -241,14 +240,12 @@ function AddDialog({
                 onChange={(e) => set("data_location", e.target.value)}
                 placeholder="eu-central-1"
               />
-              <SelectField label="Where this came from">
+              <SelectField label="Source">
                 <Select value={form.provenance} onValueChange={(v) => set("provenance", v)}>
                   <SelectTrigger aria-label="Provenance" />
                   <SelectContent>
-                    <SelectItem value="vendor_declared">
-                      The vendor declared it — a claim
-                    </SelectItem>
-                    <SelectItem value="auto_detected">Detected — an observation</SelectItem>
+                    <SelectItem value="vendor_declared">Vendor declared</SelectItem>
+                    <SelectItem value="auto_detected">Auto detected</SelectItem>
                     <SelectItem value="intelligence">External intelligence</SelectItem>
                   </SelectContent>
                 </Select>
@@ -257,7 +254,6 @@ function AddDialog({
             <TextField
               label="Notification obligation"
               optional
-              hint="What the contract says they must tell you before changing this."
               value={form.notification_obligation}
               onChange={(e) => set("notification_obligation", e.target.value)}
               placeholder="30 days written notice before adding a subprocessor"

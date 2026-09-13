@@ -1,197 +1,168 @@
-import { Icon, StatusPill, Tooltip } from "@/components/ui";
+import { Icon, Tooltip } from "@/components/ui";
 import { cn } from "@/lib/cn";
-import type { StageRow } from "../types";
-import { fmtDate, STAGE_STATUS_META } from "../tokens";
+
+/** Where one row of the rail stands. `locked` cannot start until tiering is done. */
+export type RailState = "done" | "current" | "blocked" | "upcoming" | "skipped" | "locked";
+
+export type RailItem = {
+  id: string;
+  label: string;
+  state: RailState;
+  isGate: boolean;
+  /** Short right-hand note: a blocker count, a tier, "Skipped". */
+  meta?: string;
+  /** Why a row is the way it is, on hover. Used for skip reasons. */
+  tooltip?: string;
+};
 
 /**
- * The twelve stages as a vertical rail.
+ * The lifecycle as a left-hand sub-navigation.
  *
- * Three things the rail has to say that a plain list cannot:
+ * Grouped by what the stages are for rather than fenced off with rules:
+ * everything before the approval gate assesses the vendor, the gate decides,
+ * everything after operates the relationship. The grouping comes from where the
+ * gate sits, not from stage names, so a reordered policy still groups honestly.
  *
- *  - **A gate is not a step.** The approval gate is fenced off with its own
- *    rule and marked with a diamond rather than a circle, so the eye reads it
- *    as a boundary the review has to be let through rather than one more box.
- *  - **A skipped stage is a decision, not an absence.** Skipped rows stay in
- *    place and carry the policy or the person that skipped them.
- *  - **Where the work is now, separately from what you are reading.** The
- *    current row carries the marker; the selected row carries the highlight.
- *    They are usually the same, and a reader is allowed to click back to a
- *    finished stage without the rail losing track of where the work sits.
+ * Shape carries the gate as well as position: a diamond, not a circle.
  */
 export function StageRail({
-  stages,
+  items,
   selectedId,
-  currentId,
   onSelect,
 }: {
-  stages: StageRow[];
+  items: RailItem[];
   selectedId: string | null;
-  /** Where the work is. Not always the row marked `in_progress` — see the
-   *  workspace, which explains why a freshly planned cycle has none. */
-  currentId: string | null;
-  onSelect: (stage: StageRow) => void;
+  onSelect: (id: string) => void;
 }) {
+  const gateIndex = items.findIndex((i) => i.isGate);
+  const groups =
+    gateIndex < 0
+      ? [{ label: "Stages", rows: items }]
+      : [
+          { label: "Assess", rows: items.slice(0, gateIndex) },
+          { label: "Decide", rows: items.slice(gateIndex, gateIndex + 1) },
+          { label: "Operate", rows: items.slice(gateIndex + 1) },
+        ].filter((g) => g.rows.length > 0);
+
   return (
-    <ol className="relative">
-      {stages.map((stage, index) => {
-        const previous = stages[index - 1];
-        const gateOpens = stage.is_gate && !previous?.is_gate;
-        const gateCloses = stage.is_gate && !stages[index + 1]?.is_gate;
-        return (
-          <li key={stage.id}>
-            {gateOpens ? <GateFence label="Approval gate" /> : null}
-            <StageRow
-              stage={stage}
-              selected={stage.id === selectedId}
-              current={stage.id === currentId}
-              first={index === 0}
-              last={index === stages.length - 1}
-              onSelect={() => onSelect(stage)}
-            />
-            {gateCloses ? <GateFence /> : null}
-          </li>
-        );
-      })}
-    </ol>
+    <nav aria-label="Lifecycle stages" className="space-y-4">
+      {groups.map((group) => (
+        <div key={group.label}>
+          <p className="type-overline px-2 pb-1">{group.label}</p>
+          <ol className="space-y-px">
+            {group.rows.map((item) => (
+              <li key={item.id}>
+                <RailRow
+                  item={item}
+                  selected={item.id === selectedId}
+                  onSelect={() => onSelect(item.id)}
+                />
+              </li>
+            ))}
+          </ol>
+        </div>
+      ))}
+    </nav>
   );
 }
 
-function GateFence({ label }: { label?: string }) {
-  return (
-    <div className="flex items-center gap-2 py-1.5" aria-hidden>
-      <span className="h-px flex-1 bg-border-strong" />
-      {label ? <span className="type-overline">{label}</span> : null}
-      <span className="h-px flex-1 bg-border-strong" />
-    </div>
-  );
-}
-
-function StageRow({
-  stage,
+function RailRow({
+  item,
   selected,
-  current,
-  first,
-  last,
   onSelect,
 }: {
-  stage: StageRow;
+  item: RailItem;
   selected: boolean;
-  current: boolean;
-  first: boolean;
-  last: boolean;
   onSelect: () => void;
 }) {
-  const meta = STAGE_STATUS_META[stage.status] ?? {
-    label: stage.status,
-    family: "neutral" as const,
-  };
-  const skipped = stage.status === "skipped";
-  const blocked = current && stage.blockers.length > 0;
+  const locked = item.state === "locked";
+  const quiet = locked || item.state === "skipped";
+  const active = item.state === "current" || item.state === "blocked";
 
-  return (
+  const row = (
     <button
       type="button"
       onClick={onSelect}
+      disabled={locked}
       aria-current={selected ? "step" : undefined}
       className={cn(
-        "group relative flex w-full items-start gap-3 rounded-md px-2 py-2 text-left",
-        "transition-colors duration-80 ease-state hover:bg-surface-hover",
+        "flex h-9 w-full items-center gap-2.5 rounded-sm px-2 text-left",
+        "transition-colors duration-80 ease-state",
         "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-accent",
-        selected && "bg-action-accent-tint hover:bg-action-accent-tint",
+        "disabled:cursor-default",
+        selected ? "bg-action-accent-tint" : locked ? null : "hover:bg-surface-hover",
       )}
     >
-      {/* The spine. Drawn per row rather than once behind the list so a fence
-          between two rows breaks it, which is the point of a fence. */}
-      <span className="relative flex w-5 shrink-0 justify-center self-stretch" aria-hidden>
-        {!first ? <span className="absolute -top-2 bottom-1/2 w-px bg-border" /> : null}
-        {!last ? <span className="absolute bottom-0 top-1/2 w-px bg-border" /> : null}
-        <StageMarker stage={stage} current={current} />
+      <Marker state={item.state} gate={item.isGate} />
+      <span
+        className={cn(
+          "min-w-0 flex-1 truncate text-body-sm",
+          quiet
+            ? "text-text-faint"
+            : selected || active
+              ? "font-semibold text-text-primary"
+              : "text-text-secondary",
+        )}
+      >
+        {item.label}
       </span>
-
-      <span className="min-w-0 flex-1">
-        <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <span
-            className={cn(
-              "text-body-md",
-              skipped ? "text-text-subtle line-through" : "font-semibold text-text-primary",
-            )}
-          >
-            {stage.label}
-          </span>
-          {stage.is_gate ? (
-            <Tooltip content="A gate is never skipped, whatever the tier">
-              <span className="type-overline shrink-0 rounded-full border border-border px-1.5">
-                Gate
-              </span>
-            </Tooltip>
-          ) : null}
+      {item.meta ? (
+        <span
+          className={cn(
+            "tabular shrink-0 text-caption",
+            item.state === "blocked"
+              ? "font-semibold text-status-warning-text"
+              : item.state === "current"
+                ? "font-semibold text-action-accent"
+                : "text-text-subtle",
+          )}
+        >
+          {item.meta}
         </span>
-
-        <span className="mt-1 flex flex-wrap items-center gap-2">
-          <StatusPill
-            status={blocked ? "warning" : current ? "progress" : meta.family}
-            label={
-              blocked
-                ? `${stage.blockers.length} blocking`
-                : current && stage.status === "not_started"
-                  ? "Up next"
-                  : meta.label
-            }
-            kind="inline"
-          />
-          {stage.exited_at && !skipped ? (
-            <span className="text-caption text-text-subtle">{fmtDate(stage.exited_at)}</span>
-          ) : null}
-        </span>
-
-        {skipped ? (
-          <span className="mt-1 block text-caption text-text-subtle">
-            {stage.skipped_by_policy
-              ? `Skipped by policy: ${stage.skipped_by_policy}`
-              : (stage.skipped_reason ?? "Skipped")}
-          </span>
-        ) : null}
-      </span>
+      ) : null}
     </button>
+  );
+
+  return item.tooltip ? (
+    <Tooltip content={item.tooltip}>
+      <span className="block">{row}</span>
+    </Tooltip>
+  ) : (
+    row
   );
 }
 
 /**
- * Circle for a stage, diamond for a gate. Shape carries the distinction as well
- * as colour, so the gate is still a gate in greyscale and to a reader who does
- * not separate the two hues.
+ * Circle for a stage, diamond for the gate, so the gate is still a gate in
+ * greyscale and to a reader who does not separate the hues.
  */
-function StageMarker({ stage, current }: { stage: StageRow; current: boolean }) {
-  const complete = stage.status === "complete";
-  const skipped = stage.status === "skipped";
-  const blocked = current && stage.blockers.length > 0;
-
-  const tone = skipped
-    ? "border-border bg-surface-page text-text-faint"
-    : complete
-      ? "border-status-success-base bg-status-success-base text-text-inverse"
-      : blocked
-        ? "border-status-warning-base bg-status-warning-bg text-status-warning-text"
-        : current
+function Marker({ state, gate }: { state: RailState; gate: boolean }) {
+  const tone =
+    state === "done"
+      ? "border-status-success-base bg-status-success-base text-white"
+      : state === "blocked"
+        ? "border-status-warning-base bg-status-warning-base text-white"
+        : state === "current"
           ? "border-action-accent bg-surface-primary text-action-accent"
-          : "border-border bg-surface-primary text-text-faint";
+          : state === "locked" || state === "skipped"
+            ? "border-border bg-surface-sunken text-text-faint"
+            : "border-border-strong bg-surface-primary text-text-faint";
 
   return (
     <span
       className={cn(
-        "relative z-[1] flex size-5 items-center justify-center border",
-        stage.is_gate ? "rotate-45 rounded-2xs" : "rounded-full",
+        "flex size-[18px] shrink-0 items-center justify-center border-1.5",
+        gate ? "rotate-45 scale-90 rounded-2xs" : "rounded-full",
         tone,
       )}
+      aria-hidden
     >
-      <span className={cn("flex items-center justify-center", stage.is_gate && "-rotate-45")}>
-        {complete ? (
-          <Icon name="check" className="size-3" />
-        ) : skipped ? (
-          <span className="h-px w-2 bg-current" />
-        ) : blocked ? (
-          <Icon name="alert" className="size-3" />
-        ) : current ? (
+      <span className={cn("flex items-center justify-center", gate && "-rotate-45")}>
+        {state === "done" ? (
+          <Icon name="check" className="size-2.5" />
+        ) : state === "blocked" ? (
+          <span className="text-[10px] font-extrabold leading-none">!</span>
+        ) : state === "current" ? (
           <span className="size-1.5 rounded-full bg-current" />
         ) : null}
       </span>

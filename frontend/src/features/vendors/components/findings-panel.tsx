@@ -75,7 +75,7 @@ export function FindingsPanel({
       count={items.length || undefined}
       description={
         blocking.length > 0
-          ? `${blocking.length} of these hold the approval gate until they are closed or accepted.`
+          ? `${blocking.length} blocking the approval gate`
           : undefined
       }
     >
@@ -87,8 +87,7 @@ export function FindingsPanel({
         <Skeleton className="h-24 w-full" />
       ) : items.length === 0 ? (
         <p className="text-body-sm text-text-subtle">
-          None raised. Findings come out of a scored questionnaire, a document review, or a breached
-          service level — they are not entered by hand.
+          No findings. They come from questionnaires, reviews and SLA breaches.
         </p>
       ) : (
         <ul className="divide-y divide-border">
@@ -182,7 +181,7 @@ function FindingItem({
             />
             <span className="text-body-md font-semibold text-text-primary">{f.title}</span>
             {f.is_blocking ? (
-              <Tooltip content="The approval gate cannot be passed while this is open">
+              <Tooltip content="Blocks approval while open">
                 <span>
                   <Badge variant="statusFail">Blocking</Badge>
                 </span>
@@ -217,7 +216,7 @@ function FindingItem({
             Accepted until {fmtDate(f.accepted_until)}
           </p>
           <p className="mt-1 text-body-sm text-text-secondary">
-            {f.accepted_rationale || "No rationale was recorded."}
+            {f.accepted_rationale || "No rationale recorded."}
           </p>
         </div>
       ) : null}
@@ -257,13 +256,13 @@ function FindingItem({
           </Button>
           {canApprove ? (
             <Button variant="ghost" size="sm" onClick={() => setAccepting(true)}>
-              Accept the risk
+              Accept risk
             </Button>
           ) : (
             <Tooltip content="Accepting risk needs the Approve vendors permission">
               <span className="text-caption text-text-subtle">
                 <Icon name="info" className="mr-1 inline size-3.5" />
-                Someone else has to accept this
+                Approver must accept
               </span>
             </Tooltip>
           )}
@@ -309,10 +308,7 @@ function AcceptDialog({
       <DialogContent size="sm">
         <DialogHeader>
           <DialogTitle>Accept this risk?</DialogTitle>
-          <DialogDescription>
-            Accepting is time-boxed on purpose. When the date passes the finding comes back open, so
-            pick a date you are willing to be asked about.
-          </DialogDescription>
+          <DialogDescription>The finding reopens when this date passes.</DialogDescription>
         </DialogHeader>
         <form
           onSubmit={(e) => {
@@ -329,8 +325,8 @@ function AcceptDialog({
               onChange={(e) => setUntil(e.target.value)}
             />
             <TextArea
-              label="Why this is acceptable"
-              hint="What compensates for it, and what would make you revisit."
+              label="Rationale"
+              hint="Compensating controls and revisit triggers."
               value={rationale}
               onChange={(e) => setRationale(e.target.value)}
               maxLength={4000}
@@ -370,10 +366,7 @@ function CloseDialog({
       <DialogContent size="sm">
         <DialogHeader>
           <DialogTitle>Close this finding?</DialogTitle>
-          <DialogDescription>
-            Closing says the thing was fixed. If you are instead deciding to live with it, accept
-            the risk rather than closing it.
-          </DialogDescription>
+          <DialogDescription>Close only if fixed. To live with it, accept the risk.</DialogDescription>
         </DialogHeader>
         <form
           onSubmit={(e) => {
@@ -389,7 +382,7 @@ function CloseDialog({
               value={note}
               onChange={(e) => setNote(e.target.value)}
               maxLength={4000}
-              placeholder="They shipped MFA on the admin console on 3 March and sent the screenshot."
+              placeholder="MFA enabled on admin console, screenshot received"
             />
           </DialogBody>
           <DialogFooter>

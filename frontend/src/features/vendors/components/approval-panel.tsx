@@ -25,12 +25,11 @@ import { describeError, errorToast } from "@/lib/api/describe-error";
 import { closeCondition, decideGate, listApprovers } from "../api";
 import type { Approval, Approver, ConditionInput, VendorDetail } from "../types";
 import { CONDITION_STATUS_META, DECISION_META, fmtDate } from "../tokens";
-import { Panel } from "./panel";
 
 const DECISIONS = ["approve", "approve_with_conditions", "defer", "reject"] as const;
 
 /**
- * The approval gate: the decision, its rationale, and the conditions it carries.
+ * The approval decision, shown inside the Approval stage of the lifecycle.
  *
  * Two rules the screen has to make visible rather than merely enforce:
  *
@@ -40,7 +39,7 @@ const DECISIONS = ["approve", "approve_with_conditions", "defer", "reject"] as c
  *  - **A rationale is not optional.** Four decisions, all of them consequential,
  *    and the one thing an auditor will ask six months later is why.
  */
-export function ApprovalPanel({
+export function ApprovalSection({
   vendor,
   engagementId,
   canApprove,
@@ -53,8 +52,8 @@ export function ApprovalPanel({
   canManage: boolean;
   onApply: (next: VendorDetail) => void;
 }) {
-  const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [deciding, setDeciding] = useState(false);
 
   const approvals = vendor.approvals.filter(
@@ -67,74 +66,41 @@ export function ApprovalPanel({
   );
   const gateReached = gate?.status === "in_progress" || gate?.status === "complete";
   // `approval.decided` is the blocker this very button clears, so it must not
-  // disable it — that would be a gate nobody could ever pass. Everything else
-  // genuinely has to be settled before a decision means anything.
-  const blockers = (gate?.blockers ?? []).filter((b) => b.code !== "approval.decided");
-
-  if (!gate) {
-    return (
-      <Panel title="Approval">
-        <p className="text-body-md text-text-secondary">
-          The gate appears once the engagement is tiered.
-        </p>
-      </Panel>
-    );
-  }
+  // disable it, or nobody could ever pass the gate. The rest are listed with the
+  // stage's own checks directly above this section.
+  const blocked = (gate?.blockers ?? []).some((b) => b.code !== "approval.decided");
 
   return (
-    <>
-      <Panel
-        title="Approval"
-        description="A gate is never skipped, whatever the tier."
-        action={
-          canApprove && gateReached && latest === null ? (
-            <Button size="sm" onClick={() => setDeciding(true)} disabled={blockers.length > 0}>
-              Record the decision
-            </Button>
-          ) : null
-        }
-      >
-        {latest ? (
-          <DecisionRecord
-            approval={latest}
-            vendorId={vendor.id}
-            canManage={canManage}
-            onSettled={() => {
-              void queryClient.invalidateQueries({ queryKey: ["vendor", vendor.id] });
-            }}
-          />
-        ) : !gateReached ? (
-          <p className="text-body-md text-text-secondary">
-            The review has not reached the gate yet. A decision recorded early is a decision made
-            without the evidence, so it is not offered until the earlier stages are done.
-          </p>
-        ) : blockers.length > 0 ? (
-          <div className="rounded-md border border-status-warning-border bg-status-warning-bg p-3.5">
-            <p className="flex items-center gap-1.5 text-label-sm text-status-warning-text">
-              <Icon name="alert" className="size-4 shrink-0" />
-              {blockers.length} {blockers.length === 1 ? "thing has" : "things have"} to be
-              settled first
-            </p>
-            <ul className="mt-2 space-y-1">
-              {blockers.map((b) => (
-                <li key={b.code} className="text-body-sm text-text-secondary">
-                  {b.label}
-                  {b.detail ? <span className="text-text-subtle"> — {b.detail}</span> : null}
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : !canApprove ? (
-          <p className="text-body-md text-text-secondary">
-            Nothing is blocking the gate. Deciding it needs the Approve vendors permission — whoever
-            ran the assessment is deliberately not the person who signs it off.
-          </p>
-        ) : (
-          <p className="text-body-md text-text-secondary">
-            Nothing is blocking the gate. Record the decision when you are ready.
-          </p>
-        )}
-      </Panel>
+    <section>
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
+        <h4 className="font-sans text-label-md text-text-primary">Decision</h4>
+        {canApprove && gateReached && latest === null ? (
+          <Button size="sm" onClick={() => setDeciding(true)} disabled={blocked}>
+            Record decision
+          </Button>
+        ) : null}
+      </div>
+
+      {latest ? (
+        <DecisionRecord
+          approval={latest}
+          vendorId={vendor.id}
+          canManage={canManage}
+          onSettled={() => {
+            void queryClient.invalidateQueries({ queryKey: ["vendor", vendor.id] });
+          }}
+        />
+      ) : (
+        <p className="text-body-sm text-text-subtle">
+          {!gateReached
+            ? "Opens when the earlier stages are done."
+            : blocked
+              ? "Clear the checks above first."
+              : canApprove
+                ? "Ready for a decision."
+                : "Needs the Approve vendors permission."}
+        </p>
+      )}
 
       {deciding && engagementId ? (
         <DecisionDialog
@@ -149,7 +115,7 @@ export function ApprovalPanel({
           }}
         />
       ) : null}
-    </>
+    </section>
   );
 }
 
@@ -190,7 +156,6 @@ function DecisionRecord({
           {approval.cycle}
         </span>
       </div>
-      <p className="mt-1 text-body-sm text-text-subtle">{meta.blurb}</p>
       <p className="mt-3 whitespace-pre-line text-body-md text-text-secondary">
         {approval.rationale}
       </p>
@@ -198,8 +163,8 @@ function DecisionRecord({
       {approval.excluded_membership_ids.length > 0 ? (
         <p className="mt-2 text-caption text-text-subtle">
           {approval.excluded_membership_ids.length}{" "}
-          {approval.excluded_membership_ids.length === 1 ? "person was" : "people were"} excluded
-          from deciding this, recorded at the time.
+          {approval.excluded_membership_ids.length === 1 ? "person" : "people"} excluded from
+          deciding
         </p>
       ) : null}
 
@@ -287,11 +252,8 @@ function DecisionDialog({
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent size="lg" scrollBody>
         <DialogHeader>
-          <DialogTitle>Record the approval decision</DialogTitle>
-          <DialogDescription>
-            This is the gate. Whatever you choose, the rationale is what an auditor reads back to
-            you later.
-          </DialogDescription>
+          <DialogTitle>Record decision</DialogTitle>
+          <DialogDescription>The rationale is what an auditor reads later.</DialogDescription>
         </DialogHeader>
         <form
           onSubmit={(e) => {
@@ -326,7 +288,6 @@ function DecisionDialog({
 
             <TextArea
               label="Rationale"
-              hint="What you relied on, and what you decided to live with."
               value={rationale}
               onChange={(e) => setRationale(e.target.value)}
               rows={4}
@@ -346,13 +307,9 @@ function DecisionDialog({
                     }
                   >
                     <Icon name="plus" className="size-4" />
-                    Add a condition
+                    Add condition
                   </Button>
                 </div>
-                <p className="mt-1 text-body-sm text-text-subtle">
-                  Each one becomes a tracked item. An approval with conditions nobody wrote down is
-                  an unconditional approval.
-                </p>
                 <div className="mt-3 space-y-3">
                   {conditions.map((c, index) => (
                     <div key={index} className="grid gap-2 sm:grid-cols-[1fr_10rem_auto]">
@@ -394,7 +351,7 @@ function DecisionDialog({
                   ))}
                   {conditions.length === 0 ? (
                     <p className="text-body-sm text-text-subtle">
-                      Add at least one, or choose a plain approval instead.
+                      Add at least one condition.
                     </p>
                   ) : null}
                 </div>
@@ -444,11 +401,10 @@ function ApproverList({
 
   return (
     <div className="rounded-md border border-border bg-surface-sunken p-3.5">
-      <p className="type-overline">Who can decide this</p>
+      <p className="type-overline">Who can decide</p>
       {eligible.length === 0 ? (
         <p className="mt-2 text-body-sm text-status-warning-text">
-          Nobody on the roster is eligible. Assign an approver who was not involved in the
-          assessment, or this gate cannot be decided.
+          Nobody eligible. Assign an approver who did not run the assessment.
         </p>
       ) : (
         <ul className="mt-2 space-y-1.5">
@@ -469,7 +425,7 @@ function ApproverList({
               <Icon name="x" className="mt-0.5 size-4 shrink-0 text-text-faint" />
               <span className="min-w-0">
                 <Tooltip content={a.disqualified_reason ?? ""}>
-                  <span className="text-text-faint line-through">{a.name}</span>
+                  <span className="text-text-faint">{a.name}</span>
                 </Tooltip>
                 <span className="ml-1.5 text-caption text-text-subtle">
                   {a.disqualified_reason}

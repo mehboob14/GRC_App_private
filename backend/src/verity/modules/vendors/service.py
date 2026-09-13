@@ -974,7 +974,7 @@ ATTENTION_CODES: Final[tuple[tuple[str, str], ...]] = (
     ("flagged", "Flagged for review"),
     ("reassessment_overdue", "Reassessment overdue"),
     ("not_tiered", "Not tiered"),
-    ("awaiting_gate", "Awaiting the approval gate"),
+    ("awaiting_gate", "In review"),
     ("on_hold", "On hold"),
     ("weak_grade", "Weak residual grade"),
     ("unowned", "No business owner"),
@@ -1953,8 +1953,8 @@ class VendorService:
         email = self._clean(data.email)
         if data.contact_type == "portal" and not email:
             raise InvalidInput(
-                "A portal contact needs an email address — it is who the "
-                "questionnaire link is sent to.",
+                "A portal contact needs an email address, because the "
+                "questionnaire link is sent there.",
                 detail="portal contact without an email",
             )
         contact = VendorContact(
@@ -2863,7 +2863,7 @@ class VendorService:
             f"Security review for {vendor.name}\n\n"
             f"{contact.name}, we are reviewing the security of the services "
             f"{vendor.name} provides to us, and would like you to complete a short "
-            f"questionnaire — {count} questions.\n\n"
+            f"questionnaire of {count} questions.\n\n"
             f"{_portal_url(token)}\n\n"
             f"The link is personal to this review, expires in {_PORTAL_TOKEN_DAYS} days, "
             f"and does not need an account. Please complete it by {due}.\n"
@@ -2904,7 +2904,7 @@ class VendorService:
         )
         if not rows:
             raise Conflict(
-                "There is nothing to score yet — this questionnaire has no questions.",
+                "There is nothing to score yet. This questionnaire has no questions.",
                 detail=f"assessment {assessment_id} has no responses",
             )
 
@@ -3683,7 +3683,7 @@ class VendorService:
         if deciding is not None and deciding in blocked:
             names = await self._member_names(session, tenant_id)
             raise Conflict(
-                f"{names.get(deciding, 'You')} cannot approve this vendor — "
+                f"{names.get(deciding, 'You')} cannot approve this vendor: "
                 f"{blocked[deciding]}. Somebody else has to decide.",
                 detail=f"segregation of duties: {deciding} is {blocked[deciding]}",
             )

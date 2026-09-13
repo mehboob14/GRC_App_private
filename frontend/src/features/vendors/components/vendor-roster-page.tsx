@@ -56,14 +56,11 @@ export function VendorRosterPage() {
 
   return (
     <div className="mt-4 max-w-3xl">
-      <p className="text-body-md text-text-secondary">
-        Named people, not job titles. When a stage needs a privacy review or an executive decision,
-        this is who the workflow asks.
-      </p>
+      <p className="text-body-md text-text-secondary">Who the workflow asks at each review stage.</p>
 
       {!canManage ? (
         <p className="mt-3 text-body-sm text-text-subtle">
-          You can view the roster. Changing it needs the Manage vendors permission.
+          View only. Changing the roster needs the Manage vendors permission.
         </p>
       ) : null}
 
@@ -110,7 +107,7 @@ export function VendorRosterPage() {
                         onChange={(id) => {
                           if (id) assign.mutate({ role, membershipId: id });
                         }}
-                        placeholder={ids.length > 0 ? "Add somebody else…" : "Assign somebody…"}
+                        placeholder={ids.length > 0 ? "Add another…" : "Assign…"}
                         aria-label={`Assign to ${meta.label}`}
                         disabled={assign.isPending}
                       />
@@ -122,8 +119,7 @@ export function VendorRosterPage() {
       </div>
 
       <p className="mt-3 text-caption text-text-subtle">
-        Removing someone from a part is not yet supported by the API — assign their replacement and
-        the workflow will ask both until removal ships.
+        Removal is not available yet. Assign a replacement and both get asked.
       </p>
     </div>
   );

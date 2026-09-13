@@ -365,7 +365,7 @@ def compute_residual(
             score,
             "Controls reduce risk, never add to it."
             if clamped
-            else "Not applied — the roll-up was already at or below inherent.",
+            else "Not applied. The roll-up was already at or below inherent.",
         )
     )
 
@@ -379,7 +379,7 @@ def compute_residual(
             score,
             f"{len(failed)} critical control answered no, so the score cannot fall below {floor:g}."
             if failed
-            else "Not applied — no critical control was answered no.",
+            else "Not applied. No critical control was answered no.",
         )
     )
 

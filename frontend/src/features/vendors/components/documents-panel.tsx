@@ -63,15 +63,14 @@ export function DocumentsPanel({
           canManage ? (
             <Button variant="secondary" size="sm" onClick={() => setAdding(true)}>
               <Icon name="plus" className="size-4" />
-              Record a document
+              Add document
             </Button>
           ) : null
         }
       >
         {documents.length === 0 ? (
           <p className="text-body-sm text-text-subtle">
-            Nothing recorded. A SOC report, an ISO certificate, a DPA and a penetration test are the
-            usual four — record what you have asked for, even before it arrives.
+            No documents yet. Add each one as soon as you request it.
           </p>
         ) : (
           <ul className="divide-y divide-border">
@@ -118,7 +117,7 @@ function DocumentRow({
               {fmtDate(d.issue_date)} to {fmtDate(d.valid_until)}
             </>
           ) : (
-            " · no coverage window recorded"
+            " · no coverage dates"
           )}
           {d.reviewed_by_name ? ` · reviewed by ${d.reviewed_by_name}` : ""}
         </p>
@@ -159,7 +158,7 @@ function DocumentRow({
               window.location.href = `mailto:?subject=${subject}&body=${body}`;
             }}
           >
-            Request a renewal
+            Request renewal
           </Button>
         ) : null}
       </div>
@@ -204,7 +203,7 @@ function AddDocumentDialog({
       void queryClient.invalidateQueries({ queryKey: ["vendor", vendorId] });
       onOpenChange(false);
       setTitle("");
-      toast({ title: "Document recorded", tone: "success" });
+      toast({ title: "Document added", tone: "success" });
     },
     onError: (e: unknown) => toast({ title: errorToast(e, "document"), tone: "danger" }),
   });
@@ -213,11 +212,8 @@ function AddDocumentDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="sm">
         <DialogHeader>
-          <DialogTitle>Record a document</DialogTitle>
-          <DialogDescription>
-            Record it as requested before it arrives — an outstanding request is a fact worth
-            tracking, and the lifecycle checks read this list.
-          </DialogDescription>
+          <DialogTitle>Add document</DialogTitle>
+          <DialogDescription>Outstanding requests count toward lifecycle checks.</DialogDescription>
         </DialogHeader>
         <form
           onSubmit={(e) => {
@@ -230,7 +226,7 @@ function AddDocumentDialog({
               label="Title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="SOC 2 Type II — FY2026"
+              placeholder="SOC 2 Type II FY2026"
               autoFocus
             />
             <div className="grid gap-3.5 sm:grid-cols-2">
@@ -269,7 +265,6 @@ function AddDocumentDialog({
                 label="Valid until"
                 optional
                 type="date"
-                hint="Drives the countdown and the renewal prompt."
                 value={validUntil}
                 onChange={(e) => setValidUntil(e.target.value)}
               />
@@ -280,7 +275,7 @@ function AddDocumentDialog({
               Cancel
             </Button>
             <Button type="submit" loading={add.isPending} disabled={!title.trim()}>
-              Record document
+              Add document
             </Button>
           </DialogFooter>
         </form>

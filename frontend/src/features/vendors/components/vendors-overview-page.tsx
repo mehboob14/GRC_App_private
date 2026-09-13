@@ -6,18 +6,17 @@ import {
   ErrorState,
   Gauge,
   Icon,
-  SeverityChip,
   Skeleton,
   StatusPill,
   type BarListItem,
   type ChartSegment,
-  type Severity,
 } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { describeError } from "@/lib/api/describe-error";
 import { getSummary, listIntake } from "../api";
 import { ATTENTION_META, fmtDate, LIFECYCLE_META, TIER_META } from "../tokens";
 import { Panel } from "./panel";
+import { TIER_TONE, UNTIERED_TONE } from "./tier-tone";
 
 /**
  * The portfolio, before the table.
@@ -29,42 +28,6 @@ import { Panel } from "./panel";
  * every one of them is a link into the register with the matching filter
  * applied, so the picture is a way in rather than a poster.
  */
-
-/**
- * Full literal class strings — Tailwind scans source text, so a stroke or bar
- * class built by interpolation is purged and the chart paints nothing.
- *
- * Untiered gets its own grey because `TIER_META` puts both `low` and untiered on
- * neutral, and they would otherwise be one indistinguishable ring segment. The
- * two mean opposite things: low is a decision, untiered is its absence.
- */
-const TIER_CHART: Record<string, { stroke: string; dot: string; bar: string }> = {
-  critical: {
-    stroke: "stroke-status-danger-base",
-    dot: "bg-status-danger-base",
-    bar: "bg-status-danger-base",
-  },
-  high: {
-    stroke: "stroke-status-warning-base",
-    dot: "bg-status-warning-base",
-    bar: "bg-status-warning-base",
-  },
-  medium: {
-    stroke: "stroke-status-pending-base",
-    dot: "bg-status-pending-base",
-    bar: "bg-status-pending-base",
-  },
-  low: {
-    stroke: "stroke-status-neutral-base",
-    dot: "bg-status-neutral-base",
-    bar: "bg-status-neutral-base",
-  },
-  untiered: {
-    stroke: "stroke-border-strong",
-    dot: "bg-border-strong",
-    bar: "bg-border-strong",
-  },
-};
 
 const SEVERITY_BAR: Record<string, string> = {
   critical: "bg-severity-critical",
@@ -139,8 +102,8 @@ export function VendorsOverviewPage() {
       key: tier,
       label: tier === "untiered" ? "Not tiered" : (TIER_META[tier]?.label ?? tier),
       value: s.by_tier[tier] ?? 0,
-      strokeClass: TIER_CHART[tier].stroke,
-      dotClass: TIER_CHART[tier].dot,
+      strokeClass: (TIER_TONE[tier] ?? UNTIERED_TONE).stroke,
+      dotClass: (TIER_TONE[tier] ?? UNTIERED_TONE).fill,
     }));
 
   const statusBars: BarListItem[] = Object.entries(s.by_status)
@@ -168,140 +131,106 @@ export function VendorsOverviewPage() {
         <Stat
           label="Not tiered"
           value={attention.get("not_tiered") ?? 0}
-          caption="No risk decision yet"
           tone="warning"
           to="/vendors?attention=not_tiered"
         />
         <Stat
           label="No business owner"
           value={attention.get("unowned") ?? 0}
-          caption="Nobody answers for them"
           tone="warning"
           to="/vendors?owner=unassigned"
         />
         <Stat
           label="Reassessment overdue"
           value={attention.get("reassessment_overdue") ?? 0}
-          caption="Past their review date"
           tone="danger"
           to="/vendors?attention=reassessment_overdue"
         />
         <Stat
-          label="Open critical findings"
+          label="Critical findings"
           value={s.findings_by_severity.critical ?? 0}
-          caption={
-            s.findings_overdue > 0
-              ? `${s.findings_overdue} past their remediation date`
-              : "None past their remediation date"
-          }
+          caption={s.findings_overdue > 0 ? `${s.findings_overdue} overdue` : undefined}
           tone="danger"
           to="/vendors/findings"
         />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
-        <Panel
-          title="What the register is waiting on"
-          description={
-            s.attention.length === 0
-              ? undefined
-              : "One line per vendor's most pressing item. Click to work that queue."
-          }
-        >
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Panel title="Needs attention">
           {s.attention.length === 0 ? (
             <p className="flex items-center gap-2 text-body-md text-status-success-text">
               <Icon name="check" className="size-4 shrink-0" />
-              Nothing is outstanding across {s.total}{" "}
-              {s.total === 1 ? "vendor" : "vendors"}.
+              All clear
             </p>
           ) : (
-            <ul className="divide-y divide-border">
-              {s.attention.map((a) => {
-                const meta = ATTENTION_META[a.code];
-                return (
-                  <li key={a.code}>
-                    <Link
-                      to={`/vendors?attention=${a.code}`}
-                      className="-mx-2 flex items-center justify-between gap-3 rounded-md px-2 py-2.5 transition-colors duration-80 ease-state hover:bg-surface-hover"
-                    >
-                      <span className="flex min-w-0 items-center gap-2.5">
-                        <StatusPill
-                          status={meta?.family ?? "neutral"}
-                          label={a.label}
-                          kind="inline"
-                        />
+            <ul className="-my-1 divide-y divide-border">
+              {s.attention.map((a) => (
+                <li key={a.code}>
+                  <Link
+                    to={`/vendors?attention=${a.code}`}
+                    className="-mx-2 flex items-center justify-between gap-3 rounded-sm px-2 py-2 transition-colors duration-80 ease-state hover:bg-surface-hover"
+                  >
+                    <StatusPill
+                      status={ATTENTION_META[a.code]?.family ?? "neutral"}
+                      label={a.label}
+                      kind="inline"
+                    />
+                    <span className="flex shrink-0 items-center gap-1.5">
+                      <span className="tabular text-body-md font-semibold text-text-primary">
+                        {a.count}
                       </span>
-                      <span className="flex shrink-0 items-center gap-2">
-                        <span className="tabular text-body-md font-semibold text-text-primary">
-                          {a.count}
-                        </span>
-                        <Icon name="chevr" className="size-4 text-text-subtle" />
-                      </span>
-                    </Link>
-                  </li>
-                );
-              })}
+                      <Icon name="chevr" className="size-4 text-text-subtle" />
+                    </span>
+                  </Link>
+                </li>
+              ))}
             </ul>
           )}
         </Panel>
 
-        <Panel
-          title="Assessment coverage"
-          description="Critical and high vendors inside their reassessment window."
-        >
+        <Panel title="Coverage">
           {s.coverage_in_scope === 0 ? (
-            <p className="text-body-sm text-text-subtle">
-              No critical or high vendors yet. Coverage is measured over the tiers a cadence
-              actually applies to, so this stays empty until one is tiered.
-            </p>
+            <p className="text-body-sm text-text-subtle">No critical or high vendors yet.</p>
           ) : (
-            <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-center">
-              <Gauge
-                value={coveragePct}
-                zones={COVERAGE_ZONES}
-                label="Current"
-                size={170}
-              />
-              <div className="min-w-0 flex-1">
-                <p className="text-body-md text-text-secondary">
-                  <span className="tabular font-semibold text-text-primary">
-                    {s.coverage_current} of {s.coverage_in_scope}
-                  </span>{" "}
-                  are inside their window.
-                </p>
-                {s.coverage_in_scope - s.coverage_current > 0 ? (
-                  <Link
-                    to="/vendors?attention=reassessment_overdue"
-                    className="mt-1.5 inline-flex items-center gap-1 text-label-sm text-text-link"
-                  >
-                    {s.coverage_in_scope - s.coverage_current} outside it
-                    <Icon name="chevr" className="size-4" />
-                  </Link>
-                ) : null}
-                <p className="mt-2 text-caption text-text-subtle">
-                  Medium and low vendors have cadences too. This measures the ones an auditor
-                  samples first.
-                </p>
-              </div>
+            <div className="flex flex-col items-center">
+              <Gauge value={coveragePct} zones={COVERAGE_ZONES} label="In window" size={150} />
+              <p className="mt-1 text-body-sm text-text-secondary">
+                <span className="tabular font-semibold text-text-primary">
+                  {s.coverage_current}/{s.coverage_in_scope}
+                </span>{" "}
+                critical and high
+              </p>
+              {s.coverage_in_scope - s.coverage_current > 0 ? (
+                <Link
+                  to="/vendors?attention=reassessment_overdue"
+                  className="mt-1 inline-flex items-center gap-0.5 text-label-sm text-text-link"
+                >
+                  {s.coverage_in_scope - s.coverage_current} outside
+                  <Icon name="chevr" className="size-4" />
+                </Link>
+              ) : null}
             </div>
           )}
         </Panel>
-      </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Panel title="Portfolio by tier">
+        <Panel title="By tier">
           {tierSegments.length === 0 ? (
             <p className="text-body-sm text-text-subtle">No vendors yet.</p>
           ) : (
             <Donut
               segments={tierSegments}
+              size={112}
+              thickness={12}
               centerValue={s.total}
               centerLabel={s.total === 1 ? "vendor" : "vendors"}
+              showPercent={false}
             />
           )}
         </Panel>
+      </div>
 
-        <Panel title="Where they are">
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Panel title="By status">
           <BarList items={statusBars} total={s.total} />
         </Panel>
 
@@ -311,7 +240,7 @@ export function VendorsOverviewPage() {
           action={
             s.findings_open > 0 ? (
               <Link to="/vendors/findings" className="text-label-sm text-text-link">
-                Work the queue
+                View all
               </Link>
             ) : null
           }
@@ -319,61 +248,47 @@ export function VendorsOverviewPage() {
           {severityBars.length === 0 ? (
             <p className="flex items-center gap-2 text-body-md text-status-success-text">
               <Icon name="check" className="size-4 shrink-0" />
-              No open findings.
+              None open
             </p>
           ) : (
-            <>
-              <div className="mb-3 flex flex-wrap gap-1.5">
-                {severityBars.map((b) => (
-                  <SeverityChip
-                    key={b.key}
-                    severity={b.key as Severity}
-                    label={`${b.label} ${b.value}`}
-                  />
-                ))}
-              </div>
-              <BarList items={severityBars} total={s.findings_open} />
-            </>
+            <BarList items={severityBars} total={s.findings_open} />
+          )}
+        </Panel>
+
+        <Panel
+          title="Intake"
+          count={s.intake_pending || undefined}
+          action={
+            <Link to="/vendors/intake" className="text-label-sm text-text-link">
+              View all
+            </Link>
+          }
+        >
+          {s.intake_pending === 0 ? (
+            <p className="text-body-sm text-text-subtle">Nothing waiting.</p>
+          ) : intakeQuery.isLoading ? (
+            <Skeleton className="h-16 w-full" />
+          ) : (
+            <ul className="-my-1 divide-y divide-border">
+              {(intakeQuery.data?.items ?? []).slice(0, 4).map((r) => (
+                <li key={r.id} className="flex items-center justify-between gap-3 py-2">
+                  <span className="min-w-0">
+                    <span className="block truncate text-body-sm font-semibold text-text-primary">
+                      {r.vendor_name}
+                    </span>
+                    <span className="block truncate text-caption text-text-subtle">
+                      {[r.requested_by_name, fmtDate(r.created_at)].filter(Boolean).join(" · ")}
+                    </span>
+                  </span>
+                  {r.screening_status === "flagged" ? (
+                    <StatusPill status="warning" label="Duplicate?" kind="inline" />
+                  ) : null}
+                </li>
+              ))}
+            </ul>
           )}
         </Panel>
       </div>
-
-      <Panel
-        title="Waiting to come in"
-        count={s.intake_pending || undefined}
-        action={
-          <Link to="/vendors/intake" className="text-label-sm text-text-link">
-            Open the queue
-          </Link>
-        }
-        description="Requests from the business that are not vendors yet."
-      >
-        {s.intake_pending === 0 ? (
-          <p className="text-body-sm text-text-subtle">Nothing waiting on a decision.</p>
-        ) : intakeQuery.isLoading ? (
-          <Skeleton className="h-16 w-full" />
-        ) : (
-          <ul className="divide-y divide-border">
-            {(intakeQuery.data?.items ?? []).slice(0, 3).map((r) => (
-              <li key={r.id} className="flex flex-wrap items-center justify-between gap-3 py-2.5">
-                <span className="min-w-0">
-                  <span className="block truncate text-body-md text-text-primary">
-                    {r.vendor_name}
-                  </span>
-                  <span className="text-caption text-text-subtle">
-                    {[r.requested_by_name, r.department].filter(Boolean).join(" · ") ||
-                      "Unattributed"}{" "}
-                    · {fmtDate(r.created_at)}
-                  </span>
-                </span>
-                {r.screening_status === "flagged" ? (
-                  <StatusPill status="warning" label="Possible duplicate" kind="inline" />
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        )}
-      </Panel>
     </div>
   );
 }
@@ -392,7 +307,7 @@ function Stat({
 }: {
   label: string;
   value: number;
-  caption: string;
+  caption?: string;
   tone: "danger" | "warning";
   to: string;
 }) {
@@ -418,7 +333,7 @@ function Stat({
       >
         {value}
       </p>
-      <p className="mt-0.5 text-caption text-text-subtle">{caption}</p>
+      {caption ? <p className="mt-0.5 text-caption text-text-subtle">{caption}</p> : null}
     </button>
   );
 }

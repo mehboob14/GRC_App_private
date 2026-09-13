@@ -81,7 +81,7 @@ export function VendorFindingsPage() {
         {blocking > 0 ? (
           <span className="inline-flex items-center gap-1.5 text-body-sm text-status-danger-text">
             <Icon name="alert" className="size-4 shrink-0" />
-            {blocking} {blocking === 1 ? "finding is" : "findings are"} holding an approval gate
+            {blocking} {blocking === 1 ? "finding" : "findings"} blocking approval
           </span>
         ) : null}
       </Toolbar>
@@ -103,8 +103,8 @@ export function VendorFindingsPage() {
             title={scope === "open" ? "No open findings" : "Nothing in this state"}
             description={
               scope === "open"
-                ? "Findings are raised when a questionnaire is scored or a document review turns something up. None are outstanding."
-                : "Switch the filter above to see the rest."
+                ? "Raised from questionnaire scoring and document reviews."
+                : "Try another filter."
             }
           />
         ) : (
@@ -150,7 +150,7 @@ function FindingRow({ finding: f }: { finding: Finding }) {
           <p className="flex items-center gap-1.5 text-body-md text-text-primary">
             <span className="truncate font-semibold">{f.title}</span>
             {f.is_blocking ? (
-              <Tooltip content="Holds the approval gate until it is closed or accepted">
+              <Tooltip content="Blocks approval until closed or accepted">
                 <span className="shrink-0">
                   <Badge variant="statusFail">Blocking</Badge>
                 </span>

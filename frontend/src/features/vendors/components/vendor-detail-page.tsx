@@ -50,16 +50,14 @@ import {
   daysUntil,
   GRADE_META,
   LIFECYCLE_META,
-  NOT_TIERED,
   TIER_META,
   VENDOR_TYPE_LABEL,
 } from "../tokens";
 import { Field, Panel } from "./panel";
 import { LifecycleWorkspace } from "./lifecycle-workspace";
-import { TieringPanel } from "./tiering-panel";
+import { TierBadge } from "./tier-badge";
 import { AssessmentsPanel } from "./assessments-panel";
 import { FindingsPanel } from "./findings-panel";
-import { ApprovalPanel } from "./approval-panel";
 import { DocumentsPanel } from "./documents-panel";
 import { SocReviewPanel } from "./soc-review-panel";
 import { ContractsPanel } from "./contracts-panel";
@@ -181,7 +179,6 @@ export function VendorDetailPage() {
     );
   }
 
-  const tier = vendor.tier ? (TIER_META[vendor.tier] ?? NOT_TIERED) : NOT_TIERED;
   const status = LIFECYCLE_META[vendor.lifecycle_status] ?? {
     label: vendor.lifecycle_status,
     family: "neutral" as const,
@@ -196,10 +193,13 @@ export function VendorDetailPage() {
         title={vendor.name}
         chips={
           <>
-            <StatusPill status={tier.family} label={`${tier.label} tier`} />
+            <TierBadge
+              tier={vendor.tier}
+              label={vendor.tier ? `${TIER_META[vendor.tier]?.label ?? vendor.tier} tier` : "Not tiered"}
+            />
             <StatusPill status={status.family} label={status.label} kind="inline" />
             {vendor.current_grade ? (
-              <Tooltip content={`Residual score ${vendor.current_residual_score ?? "—"}`}>
+              <Tooltip content={`Residual score ${vendor.current_residual_score ?? "not set"}`}>
                 <span>
                   <StatusPill
                     status={GRADE_META[vendor.current_grade]?.family ?? "neutral"}
@@ -256,10 +256,10 @@ export function VendorDetailPage() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onSelect={() => setAddingEngagement(true)}>
-                    Add an engagement
+                    Add engagement
                   </DropdownMenuItem>
                   <DropdownMenuItem onSelect={() => setAddingContact(true)}>
-                    Add a contact
+                    Add contact
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem variant="danger" onSelect={() => setOffboarding(true)}>
@@ -296,88 +296,81 @@ export function VendorDetailPage() {
               </SelectContent>
             </Select>
           </div>
-          <span className="text-caption text-text-subtle">
-            Tiering, the lifecycle and questionnaires all run per engagement — one vendor can be
-            critical for one use and low for another.
-          </span>
         </div>
       ) : null}
 
-      <div className="mt-4 grid items-start gap-4 lg:grid-cols-[1fr_20rem]">
-        {/* min-w-0: a `1fr` track is minmax(auto, 1fr), so without it the column
-            cannot shrink below its content's min-content width and the rail gets
-            pushed off screen. */}
-        <div className="min-w-0 space-y-4">
-          {tab === "overview" ? (
-            <OverviewTab vendor={vendor} />
-          ) : tab === "lifecycle" ? (
-            <>
-              <LifecycleWorkspace
-                vendor={vendor}
-                engagementId={engagementId}
-                canManage={canManage}
-                onApply={apply}
-                onGo={(target) => {
-                  // The roster is a module-root page, not a tab on this record.
-                  if (target === "roster") {
-                    navigate("/vendors/roster");
-                    return;
-                  }
-                  if (target === "vendor") setEditing(true);
-                  goToTab(TARGET_TAB[target] ?? "lifecycle");
-                }}
-              />
-              <TieringPanel
+      {tab === "lifecycle" ? (
+        // The lifecycle is a workspace with its own sub-navigation, so it takes
+        // the full width rather than sharing it with the record's side rail.
+        <div className="mt-4">
+          <LifecycleWorkspace
+            vendor={vendor}
+            engagementId={engagementId}
+            canManage={canManage}
+            canAssess={canAssess}
+            canApprove={canApprove}
+            onApply={apply}
+            onGo={(target) => {
+              // The roster is a module-root page, not a tab on this record.
+              if (target === "roster") {
+                navigate("/vendors/roster");
+                return;
+              }
+              if (target === "engagement") {
+                setAddingEngagement(true);
+                return;
+              }
+              if (target === "vendor") setEditing(true);
+              goToTab(TARGET_TAB[target] ?? "lifecycle");
+            }}
+          />
+        </div>
+      ) : (
+        <div className="mt-4 grid items-start gap-4 lg:grid-cols-[1fr_20rem]">
+          {/* min-w-0: a `1fr` track is minmax(auto, 1fr), so without it the column
+              cannot shrink below its content's min-content width and the rail gets
+              pushed off screen. */}
+          <div className="min-w-0 space-y-4">
+            {tab === "overview" ? (
+              <OverviewTab vendor={vendor} />
+            ) : tab === "assessments" ? (
+              <AssessmentsPanel
                 vendor={vendor}
                 engagementId={engagementId}
                 canAssess={canAssess}
                 onApply={apply}
               />
-              <ApprovalPanel
-                vendor={vendor}
-                engagementId={engagementId}
-                canApprove={canApprove}
+            ) : tab === "findings" ? (
+              <FindingsPanel
+                vendorId={vendor.id}
                 canManage={canManage}
-                onApply={apply}
+                canApprove={canApprove}
               />
-            </>
-          ) : tab === "assessments" ? (
-            <AssessmentsPanel
-              vendor={vendor}
-              engagementId={engagementId}
-              canAssess={canAssess}
-              onApply={apply}
-            />
-          ) : tab === "findings" ? (
-            <FindingsPanel
-              vendorId={vendor.id}
-              canManage={canManage}
-              canApprove={canApprove}
-            />
-          ) : tab === "paperwork" ? (
-            <>
-              <DocumentsPanel vendor={vendor} canManage={canManage} onApply={apply} />
-              <SocReviewPanel vendor={vendor} canAssess={canAssess} onApply={apply} />
-              <ContractsPanel vendor={vendor} canManage={canManage} onApply={apply} />
-              <SubprocessorsPanel vendor={vendor} canManage={canManage} onApply={apply} />
-            </>
-          ) : tab === "monitoring" ? (
-            <MonitoringPanel vendor={vendor} />
-          ) : null}
-        </div>
+            ) : tab === "paperwork" ? (
+              <>
+                <DocumentsPanel vendor={vendor} canManage={canManage} onApply={apply} />
+                <SocReviewPanel vendor={vendor} canAssess={canAssess} onApply={apply} />
+                <ContractsPanel vendor={vendor} canManage={canManage} onApply={apply} />
+                <SubprocessorsPanel vendor={vendor} canManage={canManage} onApply={apply} />
+              </>
+            ) : tab === "monitoring" ? (
+              <MonitoringPanel vendor={vendor} />
+            ) : null}
+          </div>
 
-        <div className="space-y-4">
-          <OwnershipPanel vendor={vendor} />
-          <KeyDatesPanel vendor={vendor} />
-          <ContactsPanel
-            vendor={vendor}
-            canManage={canManage}
-            onAdd={() => setAddingContact(true)}
-          />
-          {vendor.duplicates.length > 0 ? <DuplicatesPanel vendor={vendor} /> : null}
-          {engagement ? <EngagementPanel vendor={vendor} engagementId={engagement.id} /> : null}
+          <div className="space-y-4">
+            <OwnershipPanel vendor={vendor} />
+            <KeyDatesPanel vendor={vendor} />
+            <ContactsPanel
+              vendor={vendor}
+              canManage={canManage}
+              onAdd={() => setAddingContact(true)}
+            />
+            {vendor.duplicates.length > 0 ? <DuplicatesPanel vendor={vendor} /> : null}
+            {engagement ? <EngagementPanel vendor={vendor} engagementId={engagement.id} /> : null}
+          </div>
         </div>
-      </div>
+      )}
 
       <VendorFormDrawer open={editing} onOpenChange={setEditing} vendor={vendor} />
       <AddEngagementDialog
@@ -411,10 +404,7 @@ function OverviewTab({ vendor }: { vendor: VendorDetail }) {
             {vendor.services_provided}
           </p>
         ) : (
-          <p className="text-body-sm text-text-subtle">
-            Nobody has written down what this vendor is for. It is the first thing a reviewer reads
-            and the first thing they ask for when it is missing.
-          </p>
+          <p className="text-body-sm text-text-subtle">Not described yet.</p>
         )}
 
         <dl className="mt-4 grid gap-3 border-t border-border pt-3 sm:grid-cols-2">
@@ -459,14 +449,10 @@ function OverviewTab({ vendor }: { vendor: VendorDetail }) {
 
       <Panel title="Engagements" count={vendor.engagements.length || undefined}>
         {vendor.engagements.length === 0 ? (
-          <p className="text-body-sm text-text-subtle">
-            None yet. The lifecycle runs per engagement, so nothing can be tiered or assessed until
-            there is one.
-          </p>
+          <p className="text-body-sm text-text-subtle">No engagements yet.</p>
         ) : (
           <ul className="divide-y divide-border">
             {vendor.engagements.map((e) => {
-              const tier = e.tier ? (TIER_META[e.tier] ?? NOT_TIERED) : NOT_TIERED;
               const status = LIFECYCLE_META[e.status] ?? {
                 label: e.status,
                 family: "neutral" as const,
@@ -487,7 +473,7 @@ function OverviewTab({ vendor }: { vendor: VendorDetail }) {
                     </p>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
-                    <StatusPill status={tier.family} label={tier.label} kind="inline" />
+                    <TierBadge tier={e.tier} variant="dot" />
                     <StatusPill status={status.family} label={status.label} kind="inline" />
                   </div>
                 </li>
@@ -506,19 +492,16 @@ function OwnershipPanel({ vendor }: { vendor: VendorDetail }) {
       label: "Business owner",
       name: vendor.ownership.business_owner_name,
       id: vendor.ownership.business_owner_membership_id,
-      why: "Answers for the relationship.",
     },
     {
       label: "Security owner",
       name: vendor.ownership.security_owner_name,
       id: vendor.ownership.security_owner_membership_id,
-      why: "Reviews the answers and the evidence.",
     },
     {
       label: "Relationship owner",
       name: vendor.ownership.relationship_owner_name,
       id: vendor.ownership.relationship_owner_membership_id,
-      why: "Runs the commercial side.",
     },
   ];
 
@@ -534,9 +517,7 @@ function OwnershipPanel({ vendor }: { vendor: VendorDetail }) {
                 <span className="text-body-sm text-text-primary">{r.name}</span>
               </p>
             ) : (
-              <p className="mt-0.5 text-body-sm text-status-warning-text">
-                Unassigned — {r.why.toLowerCase()}
-              </p>
+              <p className="mt-0.5 text-body-sm text-status-warning-text">Unassigned</p>
             )}
           </li>
         ))}
@@ -558,7 +539,7 @@ function KeyDatesPanel({ vendor }: { vendor: VendorDetail }) {
                 {fmtDate(vendor.next_reassessment_on)} ({fmtCountdown(due)})
               </span>
             ) : (
-              "Set when the engagement is tiered"
+              "After tiering"
             )
           }
         />
@@ -595,9 +576,7 @@ function ContactsPanel({
       }
     >
       {vendor.contacts.length === 0 ? (
-        <p className="text-body-sm text-text-subtle">
-          None. A questionnaire needs a named person to go to, so add one before sending anything.
-        </p>
+        <p className="text-body-sm text-text-subtle">No contacts yet.</p>
       ) : (
         <ul className="space-y-2.5">
           {vendor.contacts.map((c) => (
@@ -706,11 +685,8 @@ function AddEngagementDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="sm">
         <DialogHeader>
-          <DialogTitle>Add an engagement</DialogTitle>
-          <DialogDescription>
-            One use of this vendor. Each engagement is tiered and assessed on its own, because the
-            same vendor can be critical for one thing and harmless for another.
-          </DialogDescription>
+          <DialogTitle>Add engagement</DialogTitle>
+          <DialogDescription>Each engagement is tiered and assessed on its own.</DialogDescription>
         </DialogHeader>
         <form
           onSubmit={(e) => {
@@ -784,10 +760,8 @@ function AddContactDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="sm">
         <DialogHeader>
-          <DialogTitle>Add a contact</DialogTitle>
-          <DialogDescription>
-            Somebody at the vendor. A portal contact is the one questionnaires go to by default.
-          </DialogDescription>
+          <DialogTitle>Add contact</DialogTitle>
+          <DialogDescription>Questionnaires go to the portal contact.</DialogDescription>
         </DialogHeader>
         <form
           onSubmit={(e) => {
@@ -881,9 +855,7 @@ function OffboardDialog({
         <DialogHeader>
           <DialogTitle>Start offboarding</DialogTitle>
           <DialogDescription>
-            Nothing is deleted. Offboarding opens a checklist — access revoked, data returned,
-            contract provisions reviewed, payments settled — and the vendor stays in the register
-            with its history.
+            Nothing is deleted. A checklist opens and the vendor keeps its history.
           </DialogDescription>
         </DialogHeader>
         <form
