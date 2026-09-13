@@ -13,6 +13,7 @@ import {
   StatusPill,
   Tooltip,
   useToast,
+  TabStrip,
 } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import {
@@ -398,6 +399,7 @@ export function ControlDetailPage() {
   return (
     <div className="w-full">
       <DetailHeader
+        icon="controls"
         backTo="/controls"
         backLabel="Back to controls"
         title={control.name}
@@ -469,38 +471,14 @@ export function ControlDetailPage() {
         }
       />
 
-      <nav
-        aria-label="Control sections"
-        className="mb-5 mt-5 flex gap-1 border-b border-border"
-      >
-        {tabs.map((item) => {
-          const active = tab === item.id;
-          return (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => setTab(item.id)}
-              aria-current={active ? "page" : undefined}
-              className={cn(
-                "relative -mb-px flex items-center gap-2 px-3 py-2.5 text-label-md transition-colors duration-150 ease-state",
-                active
-                  ? "text-action-accent"
-                  : "text-text-secondary hover:text-text-primary",
-              )}
-            >
-              {item.label}
-              {item.count !== undefined ? (
-                <span className="tabular text-caption text-text-subtle">
-                  {item.count}
-                </span>
-              ) : null}
-              {active ? (
-                <span className="absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-action-accent" />
-              ) : null}
-            </button>
-          );
-        })}
-      </nav>
+      <TabStrip
+        label="Control sections"
+        items={tabs}
+        value={tab}
+        onSelect={(id) => setTab(id as TabId)}
+        className="mb-5 mt-5"
+        inline
+      />
 
       <div className="grid gap-4 lg:grid-cols-[1fr_20rem]">
         <div className="min-w-0 space-y-4">

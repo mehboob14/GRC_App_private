@@ -1,18 +1,32 @@
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { BarList, Donut, ErrorState, FAMILY_CHART, Gauge, PageHeader, TabStrip, type BarListItem, type ChartSegment } from "@/components/ui";
-import { cn } from "@/lib/cn";
+import {
+  BarList,
+  ChartCard,
+  Donut,
+  ErrorState,
+  FAMILY_CHART,
+  Gauge,
+  PageHeader,
+  StackedBars,
+  StatTile,
+  TabStrip,
+  type BarListItem,
+  type ChartSegment,
+} from "@/components/ui";
 import { describeError } from "@/lib/api/describe-error";
 import { listAssetOptions, listVulnerabilities, vulnerabilityKpis, vulnerabilityThroughput } from "../api";
 import { ALL_STATES, OPEN_STATES, STATE_FAMILY, STATE_META } from "../tokens";
 import { vulnerabilityTabs } from "./vulnerability-tabs";
 
-const PRIORITY_TEXT: Record<string, string> = {
-  P1: "text-status-danger-text",
-  P2: "text-status-warning-text",
-  P3: "text-action-accent",
-  P4: "text-text-subtle",
+const PRIORITY_FILL: Record<string, string> = {
+  P1: "bg-status-danger-base",
+  P2: "bg-status-warning-base",
+  P3: "bg-action-accent",
+  P4: "bg-status-neutral-base",
 };
+
+const PRIORITY_BANDS = ["P1", "P2", "P3", "P4"];
 
 const SEVERITY_ORDER = ["critical", "high", "medium", "low", "info"];
 
@@ -24,7 +38,7 @@ const SEVERITY_TONE: Record<string, { stroke: string; dot: string; text: string 
   info: { stroke: "stroke-severity-info", dot: "bg-severity-info", text: "text-severity-info" },
 };
 
-/** Vulnerabilities don't carry a category of their own — this stands in for
+/** Vulnerabilities don't carry a category of their own: this stands in for
  *  "domain" by joining a finding's asset to that asset's type. Kept local
  *  (not imported from the assets feature) since no feature currently reaches
  *  into another feature's tokens. */
@@ -37,27 +51,8 @@ const ASSET_TYPE_LABEL: Record<string, string> = {
   business_service: "Business service",
 };
 
-function Panel({ title, children, action }: { title: string; children: React.ReactNode; action?: React.ReactNode }) {
-  return (
-    <div className="rounded-lg border border-border bg-surface-primary p-5">
-      <div className="mb-4 flex items-center justify-between gap-2">
-        <h2 className="font-display text-title-sm text-text-primary">{title}</h2>
-        {action}
-      </div>
-      {children}
-    </div>
-  );
-}
-
-function Stat({ label, value, tone }: { label: string; value: number | string; tone?: "success" | "warning" | "danger" }) {
-  const toneClass =
-    tone === "success" ? "text-status-success-text" : tone === "warning" ? "text-status-warning-text" : tone === "danger" ? "text-status-danger-text" : "text-text-primary";
-  return (
-    <div className="rounded-lg border border-border bg-surface-primary px-4 py-3.5">
-      <p className="text-caption text-text-subtle">{label}</p>
-      <p className={cn("mt-1 font-display text-heading-md tabular", toneClass)}>{value}</p>
-    </div>
-  );
+function capitalize(value: string): string {
+  return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
 export function VulnerabilitiesOverviewPage() {
@@ -100,27 +95,27 @@ export function VulnerabilitiesOverviewPage() {
     );
   }
 
-  const severityTotal = SEVERITY_ORDER.reduce((sum, sev) => sum + (k?.open_by_severity[sev] ?? 0), 0);
+  const severityTotal = SEVERITY_ORDER.reduce((sum, sev) => sum + (k.open_by_severity[sev] ?? 0), 0);
   const severitySegments: ChartSegment[] = SEVERITY_ORDER.map((sev) => ({
     key: sev,
-    label: sev.charAt(0).toUpperCase() + sev.slice(1),
-    value: k?.open_by_severity[sev] ?? 0,
+    label: capitalize(sev),
+    value: k.open_by_severity[sev] ?? 0,
     strokeClass: SEVERITY_TONE[sev].stroke,
     dotClass: SEVERITY_TONE[sev].dot,
   }));
 
-  const slaPct = openTotal > 0 ? ((openTotal - (k?.overdue ?? 0)) / openTotal) * 100 : 100;
+  const slaPct = openTotal > 0 ? ((openTotal - k.overdue) / openTotal) * 100 : 100;
 
   const all = allQuery.data ?? [];
   const open = all.filter((v) => OPEN_STATES.includes(v.state));
 
-  // Per-severity SLA rate: real, computed by cross-referencing severity and
-  // overdue on the same open finding — not derivable from the kpis endpoint,
+  // Per-severity SLA split: real, computed by cross-referencing severity and
+  // overdue on the same open finding. Not derivable from the kpis endpoint,
   // whose severity and SLA-posture counts are two separate marginal totals.
-  const slaRows = ["critical", "high", "medium", "low"].map((sev) => {
+  const slaColumns = ["critical", "high", "medium", "low"].map((sev) => {
     const rows = open.filter((v) => v.severity === sev);
-    const pct = rows.length ? Math.round(((rows.length - rows.filter((v) => v.overdue).length) / rows.length) * 100) : 100;
-    return { sev, pct };
+    const overdue = rows.filter((v) => v.overdue).length;
+    return { key: sev, label: capitalize(sev), values: { within: rows.length - overdue, overdue } };
   });
 
   const statusItems: BarListItem[] = allQuery.isSuccess
@@ -145,18 +140,21 @@ export function VulnerabilitiesOverviewPage() {
   return (
     <div className="w-full">
       <PageHeader eyebrow="Risk" title="Vulnerabilities" />
-      <TabStrip label="Vulnerability sections" items={vulnerabilityTabs(k?.open_total)} />
+      <TabStrip label="Vulnerability sections" items={vulnerabilityTabs(k.open_total)} />
 
-      {/* KPI tiles */}
       <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Stat label="Open findings" value={openTotal} />
-        <Stat label="P1, act now" value={k?.open_by_priority.P1 ?? 0} tone="danger" />
-        <Stat label="Overdue" value={k?.overdue ?? 0} tone="warning" />
-        <Stat label="Known exploited" value={k?.kev_open ?? 0} tone={k?.kev_open ? "danger" : undefined} />
+        <StatTile icon="bug" label="Open findings" value={openTotal} tone="progress" />
+        <StatTile icon="alert" label="P1, act now" value={k.open_by_priority.P1 ?? 0} tone="danger" />
+        <StatTile icon="clock" label="Overdue" value={k.overdue} tone="warning" />
+        <StatTile icon="risk" label="Known exploited" value={k.kev_open} tone="danger" to="/vulnerabilities?kev=1" />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Panel title="SLA compliance">
+      <div className="grid gap-4 lg:grid-cols-3">
+        <ChartCard title="Severity distribution">
+          <Donut segments={severitySegments} centerValue={severityTotal} centerLabel="Open" />
+        </ChartCard>
+
+        <ChartCard title="SLA compliance">
           <div className="flex flex-col items-center py-1">
             <Gauge
               value={slaPct}
@@ -164,159 +162,108 @@ export function VulnerabilitiesOverviewPage() {
               badge={k.overdue > 0 ? { text: `${k.overdue} overdue`, toneClass: "bg-status-danger-bg text-status-danger-text" } : undefined}
             />
           </div>
-          <ul className="mt-4 space-y-2 border-t border-border pt-3">
-            {slaRows.map((r) => (
-              <li key={r.sev}>
-                <div className="mb-1 flex items-center gap-2 text-body-sm">
-                  <span className={cn("size-2.5 shrink-0 rounded-full", SEVERITY_TONE[r.sev].dot)} aria-hidden />
-                  <span className="flex-1 capitalize text-text-secondary">{r.sev}</span>
-                  <span className="tabular font-semibold text-text-primary">{r.pct}%</span>
-                </div>
-                <div className="h-1.5 overflow-hidden rounded-full bg-surface-sunken">
-                  <div
-                    className={cn(
-                      "h-full rounded-full",
-                      r.pct >= 80 ? "bg-status-success-base" : r.pct >= 50 ? "bg-status-warning-base" : "bg-status-danger-base",
-                    )}
-                    style={{ width: `${r.pct}%` }}
-                  />
-                </div>
-              </li>
-            ))}
-          </ul>
-        </Panel>
+        </ChartCard>
 
-        <Panel title="Severity distribution">
-          <Donut segments={severitySegments} centerValue={severityTotal} centerLabel="open" />
-        </Panel>
+        <ChartCard title="Priority">
+          <StackedBars
+            height={160}
+            series={PRIORITY_BANDS.map((band) => ({ key: band, label: band, fillClass: PRIORITY_FILL[band] }))}
+            columns={PRIORITY_BANDS.map((band) => ({ key: band, label: band, values: { [band]: k.open_by_priority[band] ?? 0 } }))}
+          />
+        </ChartCard>
 
-        <Panel title="Status breakdown">
+        <ChartCard title="SLA by severity">
           {allQuery.isError ? (
-            <p className="text-body-sm text-status-danger-text">{describeError(allQuery.error, "status breakdown").message}</p>
+            <p className="text-center text-body-sm text-status-danger-text">{describeError(allQuery.error, "SLA breakdown").message}</p>
+          ) : allQuery.isPending ? (
+            <PanelLoading rows={5} />
+          ) : (
+            <StackedBars
+              series={[
+                { key: "within", label: "Within SLA", fillClass: "bg-status-success-base" },
+                { key: "overdue", label: "Overdue", fillClass: "bg-status-danger-base" },
+              ]}
+              columns={slaColumns}
+            />
+          )}
+        </ChartCard>
+
+        <ChartCard title="Status breakdown">
+          {allQuery.isError ? (
+            <p className="text-center text-body-sm text-status-danger-text">{describeError(allQuery.error, "status breakdown").message}</p>
           ) : allQuery.isPending ? (
             <PanelLoading rows={6} />
           ) : statusItems.length > 0 ? (
             <BarList items={statusItems} />
           ) : (
-            <p className="text-body-sm text-text-subtle">No findings recorded yet.</p>
+            <p className="text-center text-body-sm text-text-subtle">No findings recorded yet.</p>
           )}
-        </Panel>
+        </ChartCard>
 
-        <Panel title="Raw severity → priority">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="mb-2 text-caption font-semibold uppercase tracking-wide text-text-faint">Raw CVSS severity</p>
-              <ul className="space-y-1.5">
-                {["critical", "high", "medium", "low"].map((sev) => (
-                  <li key={sev} className="flex items-center justify-between text-body-sm">
-                    <span className={cn("font-semibold capitalize", SEVERITY_TONE[sev].text)}>{sev}</span>
-                    <span className="tabular font-semibold text-text-primary">{k?.open_by_severity[sev] ?? 0}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <p className="mb-2 text-caption font-semibold uppercase tracking-wide text-text-faint">Risk-adjusted priority</p>
-              <ul className="space-y-1.5">
-                {["P1", "P2", "P3", "P4"].map((band) => (
-                  <li key={band} className="flex items-center justify-between text-body-sm">
-                    <span className={cn("font-semibold", PRIORITY_TEXT[band])}>{band}</span>
-                    <span className="tabular font-semibold text-text-primary">{k?.open_by_priority[band] ?? 0}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-          <p className="mt-3 text-caption text-text-subtle">
-            Priority weighs exploitability (KEV, EPSS, public exploits) on top of raw CVSS. A critical CVSS score does not automatically mean P1.
-          </p>
-        </Panel>
-
-        <Panel title="By asset type">
+        <ChartCard title="By asset type">
           {assetOptQuery.isError || allQuery.isError ? (
-            <p className="text-body-sm text-status-danger-text">{describeError(assetOptQuery.error ?? allQuery.error, "asset type breakdown").message}</p>
+            <p className="text-center text-body-sm text-status-danger-text">{describeError(assetOptQuery.error ?? allQuery.error, "asset type breakdown").message}</p>
           ) : assetOptQuery.isPending || allQuery.isPending ? (
             <PanelLoading rows={4} />
           ) : byTypeItems.length > 0 ? (
             <BarList items={byTypeItems} />
           ) : (
-            <p className="text-body-sm text-text-subtle">No open findings yet.</p>
+            <p className="text-center text-body-sm text-text-subtle">No open findings yet.</p>
           )}
-        </Panel>
+        </ChartCard>
 
-        <Panel
-          title="Known exploited (KEV)"
-          action={
-            <Link to="/vulnerabilities?kev=1" className="text-caption font-semibold text-text-link">
-              View →
-            </Link>
-          }
+        <ChartCard
+          title="Remediation, last 30 days"
+          className="lg:col-span-3"
         >
-          <div className="flex items-center gap-4">
-            <span
-              className={cn(
-                "flex size-14 items-center justify-center rounded-lg font-display text-heading-md tabular",
-                k?.kev_open ? "bg-status-danger-bg text-status-danger-text" : "bg-surface-hover text-text-subtle",
-              )}
-            >
-              {k?.kev_open ?? 0}
-            </span>
-            <div>
-              <p className="text-body-sm text-text-primary">open findings on CISA&rsquo;s KEV list</p>
-              <p className="text-caption text-text-subtle">
-                Exploited in the wild, prioritise regardless of CVSS.
-              </p>
-            </div>
-          </div>
-        </Panel>
-
-        <Panel title="Remediation throughput (30 days)">
           {tpQuery.isError ? (
-            <p className="text-body-sm text-status-danger-text">
+            <p className="text-center text-body-sm text-status-danger-text">
               {describeError(tpQuery.error, "throughput summary").message}
             </p>
           ) : (
-            <>
-            <div className="grid grid-cols-2 gap-3">
-              <Metric label="Closed" value={tp?.closed_30d ?? 0} />
-              <Metric label="Opened" value={tp?.opened_30d ?? 0} />
-              <Metric
-                label="Median MTTR"
-                value={tp?.median_mttr_days != null ? `${tp.median_mttr_days}d` : "No data"}
-              />
-              <Metric
-                label="Net change"
-                value={tp ? tp.opened_30d - tp.closed_30d : 0}
-                tone={tp && tp.opened_30d > tp.closed_30d ? "text-status-danger-text" : "text-status-success-text"}
-              />
-            </div>
-            <div className="mt-4 border-t border-border pt-3">
-              <p className="mb-2 text-caption font-semibold text-text-subtle">Mean time-to-remediate</p>
-              <dl className="space-y-1">
-                {SEVERITY_ORDER.filter((s) => tp?.mttr_days_by_severity[s] != null).map((s) => (
-                  <div key={s} className="flex justify-between text-body-sm">
-                    <dt className="capitalize text-text-secondary">{s}</dt>
-                    <dd className="tabular text-text-primary">{tp?.mttr_days_by_severity[s]}d</dd>
-                  </div>
-                ))}
+            <div className="grid gap-5 lg:grid-cols-[1fr_1fr]">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-2">
+                <StatTile icon="check" label="Closed" value={tp?.closed_30d ?? 0} tone="success" />
+                <StatTile icon="plus" label="Opened" value={tp?.opened_30d ?? 0} tone="progress" />
+                <StatTile
+                  icon="clock"
+                  label="Median time to fix"
+                  value={tp?.median_mttr_days != null ? `${tp.median_mttr_days}d` : "No data"}
+                />
+                <StatTile
+                  icon="activity"
+                  label="Net change"
+                  value={tp ? tp.opened_30d - tp.closed_30d : 0}
+                  tone={tp && tp.opened_30d > tp.closed_30d ? "danger" : "success"}
+                />
+              </div>
+              <div>
+                <p className="mb-3 text-center text-body-sm text-text-secondary">Mean time to remediate, by severity</p>
                 {SEVERITY_ORDER.every((s) => tp?.mttr_days_by_severity[s] == null) ? (
-                  <p className="text-caption text-text-subtle">No closures in the window yet.</p>
-                ) : null}
-              </dl>
+                  <p className="text-center text-caption text-text-subtle">No closures in the window yet.</p>
+                ) : (
+                  <StackedBars
+                    height={140}
+                    series={[{ key: "days", label: "Days", fillClass: "bg-action-accent" }]}
+                    columns={SEVERITY_ORDER.filter((s) => tp?.mttr_days_by_severity[s] != null).map((s) => ({
+                      key: s,
+                      label: capitalize(s),
+                      values: { days: tp?.mttr_days_by_severity[s] ?? 0 },
+                    }))}
+                  />
+                )}
+              </div>
             </div>
-            </>
           )}
-        </Panel>
+        </ChartCard>
       </div>
-    </div>
-  );
-}
 
-function Metric({ label, value, tone }: { label: string; value: number | string; tone?: string }) {
-  return (
-    <div className="rounded-md border border-border px-3 py-2">
-      <p className="text-caption text-text-subtle">{label}</p>
-      <p className={cn("mt-0.5 font-display text-title-md tabular", tone ?? "text-text-primary")}>{value}</p>
+      <p className="mt-4 text-center text-caption text-text-subtle">
+        Priority weighs exploitability (KEV, EPSS, public exploits) on top of raw CVSS.{" "}
+        <Link to="/vulnerabilities?kev=1" className="font-semibold text-text-link">
+          View known exploited
+        </Link>
+      </p>
     </div>
   );
 }
@@ -339,16 +286,19 @@ function OverviewSkeleton() {
     <div className="w-full" aria-busy="true">
       <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="rounded-lg border border-border bg-surface-primary px-4 py-3.5">
-            <div className="h-3 w-1/2 animate-pulse rounded-full bg-surface-sunken" />
-            <div className="mt-2 h-6 w-1/3 animate-pulse rounded-md bg-surface-sunken" />
+          <div key={i} className="flex items-center gap-3.5 rounded-lg border border-border bg-surface-primary p-4">
+            <div className="size-10 animate-pulse rounded-md bg-surface-sunken" />
+            <div className="flex-1 space-y-2">
+              <div className="h-5 w-1/3 animate-pulse rounded-md bg-surface-sunken" />
+              <div className="h-3 w-1/2 animate-pulse rounded-full bg-surface-sunken" />
+            </div>
           </div>
         ))}
       </div>
-      <div className="grid gap-4 lg:grid-cols-2">
-        {Array.from({ length: 4 }).map((_, i) => (
+      <div className="grid gap-4 lg:grid-cols-3">
+        {Array.from({ length: 6 }).map((_, i) => (
           <div key={i} className="rounded-lg border border-border bg-surface-primary p-5">
-            <div className="mb-4 h-4 w-1/3 animate-pulse rounded-full bg-surface-sunken" />
+            <div className="mx-auto mb-4 h-4 w-1/3 animate-pulse rounded-full bg-surface-sunken" />
             <PanelLoading rows={5} />
           </div>
         ))}

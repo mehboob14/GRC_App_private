@@ -149,6 +149,7 @@ export function DocumentDetailPage() {
   return (
     <div className="w-full">
       <DetailHeader
+        icon="book"
         backTo="/documents"
         backLabel="Back to documents"
         title={doc.title}

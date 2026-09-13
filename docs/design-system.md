@@ -648,7 +648,12 @@ Run before any design or PR review.
 **COMPONENTS**
 - [ ] One primary button per region; labels are verb + object
 - [ ] Tables: correct density, sticky header, right-aligned numerics
-- [ ] Detail pages use DetailHeader; module roots use PageHeader + TabStrip; registers use one Toolbar
+- [ ] Detail pages use DetailHeader (with a record icon); module roots use PageHeader + TabStrip
+- [ ] Tabs use the TabStrip `bar` style (the default); `compact` only inside narrow embedded panes
+- [ ] Dashboards and overviews: headline numbers are StatTile, every chart sits in a ChartCard
+      (centred title), legends sit above the chart as solid swatches with counts, rings show the
+      total in the centre, and "needs attention" lists use StatRow
+- [ ] Registers use one Toolbar
 - [ ] Overlay follows peek / commit / act / navigate
 - [ ] Forms: labels above, actionable errors, validate on blur
 

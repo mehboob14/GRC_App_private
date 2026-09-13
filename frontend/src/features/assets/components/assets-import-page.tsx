@@ -192,7 +192,7 @@ export function AssetsImportPage() {
 
   return (
     <div className="w-full pb-16">
-      <DetailHeader backTo="/assets" backLabel="Back to assets" title="Import assets" />
+      <DetailHeader icon="upload" backTo="/assets" backLabel="Back to assets" title="Import assets" />
 
       <div className="grid gap-4 lg:grid-cols-2">
         {/* CSV — available now. */}

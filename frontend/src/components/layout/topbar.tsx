@@ -14,31 +14,32 @@ import { AcknowledgementsBell } from "@/features/documents/components/acknowledg
 import { useShellHeader } from "@/components/layout/shell-header";
 import { FOOTER_ITEMS, NAV_SECTIONS } from "@/components/layout/nav-config";
 
-/** Fallback title from the active nav item — used on drill-down pages (which
- *  carry their own DetailHeader) so the bar is never blank. A page that renders
- *  <PageHeader> overrides this with its own title. */
-function navTitleForPath(pathname: string): string {
+/** The active nav item. Its label is the fallback title on drill-down pages
+ *  (which carry their own DetailHeader) so the bar is never blank, and its icon
+ *  is the module icon unless a PageHeader names another. */
+function navItemForPath(pathname: string) {
   const items = [...NAV_SECTIONS.flatMap((s) => s.items), ...FOOTER_ITEMS];
-  const match = items
-    .filter((i) => i.to && pathname.startsWith(i.to))
+  return items
+    .filter((i) => i.to && pathname.startsWith(i.to.replace(/\/[^/]+\/[^/]+$/, "")))
     .sort((a, b) => (b.to?.length ?? 0) - (a.to?.length ?? 0))[0];
-  return match?.label ?? "";
 }
 
 export function Topbar() {
   const location = useLocation();
   const shell = useShellHeader();
   const heading = shell?.heading;
-  const title = heading?.title ?? navTitleForPath(location.pathname);
+  const navItem = navItemForPath(location.pathname);
+  const title = heading?.title ?? navItem?.label ?? "";
+  const icon = heading?.icon ?? navItem?.icon;
 
   return (
     <header className="flex shrink-0 flex-col border-b border-border bg-surface-primary">
       {/* Row 1: the module heading, its own actions, then the global cluster. */}
       <div className="flex h-topbar items-center gap-3 px-5">
         <div className="flex min-w-0 flex-1 items-center gap-3">
-          {heading?.icon ? (
+          {icon ? (
             <span className="grid size-9 shrink-0 place-items-center rounded-md bg-action-accent-tint text-action-accent">
-              <Icon name={heading.icon} className="size-5" />
+              <Icon name={icon} className="size-5" />
             </span>
           ) : null}
           <div className="min-w-0">

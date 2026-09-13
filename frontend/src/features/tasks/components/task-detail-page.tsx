@@ -171,6 +171,7 @@ export function TaskDetail({
       <DetailHeader
         backTo={backTo}
         backLabel={backTo ? "Back to tasks" : undefined}
+        icon={backTo ? "list" : undefined}
         title={doc.title}
         chips={
           <>
@@ -199,13 +200,10 @@ export function TaskDetail({
             ) : null}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  aria-label="More actions"
-                  className="inline-flex size-9 items-center justify-center rounded-sm border border-border text-text-secondary transition-colors hover:bg-surface-hover"
-                >
-                  <Icon name="more" className="size-4" />
-                </button>
+                <Button variant="secondary">
+                  Actions
+                  <Icon name="chev" className="size-3.5" />
+                </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onSelect={() => setEditing(true)}>Edit</DropdownMenuItem>
@@ -285,6 +283,7 @@ export function TaskDetail({
                     ? doc.comment_count
                     : 0) || undefined,
         }))}
+        variant={backTo ? "bar" : "compact"}
         inline
       />
 

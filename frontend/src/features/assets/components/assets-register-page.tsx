@@ -28,6 +28,7 @@ import {
   useColumnPrefs,
   useTableSort,
   type ColumnDef,
+  StatTile,
 } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { describeError } from "@/lib/api/describe-error";
@@ -178,11 +179,11 @@ export function AssetsRegisterPage() {
     <div>
       {/* Headline metrics — one compact strip. */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-        <Kpi label="Total assets" value={s?.total} />
-        <Kpi label="Critical" value={s?.by_tier.critical} tone="danger" />
-        <Kpi label="Need CIA rating" value={s?.needs_cia} tone="warning" />
-        <Kpi label="Regulated" value={s?.regulated} />
-        <Kpi label="Stale > 90d" value={s?.stale} tone="warning" />
+        <StatTile icon="box" label="Total assets" value={s?.total ?? 0} />
+        <StatTile icon="alert" label="Critical" value={s?.by_tier.critical ?? 0} tone="danger" />
+        <StatTile icon="gauge" label="Need CIA rating" value={s?.needs_cia ?? 0} tone="warning" />
+        <StatTile icon="shield" label="Regulated" value={s?.regulated ?? 0} tone="progress" />
+        <StatTile icon="clock" label="Stale over 90 days" value={s?.stale ?? 0} tone="warning" />
       </div>
 
       {/* Toolbar — search, filters and actions on one line. */}
@@ -341,22 +342,6 @@ export function AssetsRegisterPage() {
       ) : null}
 
       <AssetFormDrawer open={formOpen} onOpenChange={setFormOpen} assetId={editingId} onSaved={onSaved} />
-    </div>
-  );
-}
-
-function Kpi({ label, value, tone }: { label: string; value: number | undefined; tone?: "danger" | "warning" }) {
-  return (
-    <div className="rounded-md border border-border bg-surface-primary px-3.5 py-3">
-      <p className="text-caption text-text-subtle">{label}</p>
-      <p
-        className={cn(
-          "mt-1 font-display text-title-lg tabular",
-          tone === "danger" ? "text-status-danger-text" : tone === "warning" ? "text-status-warning-text" : "text-text-primary",
-        )}
-      >
-        {value ?? 0}
-      </p>
     </div>
   );
 }

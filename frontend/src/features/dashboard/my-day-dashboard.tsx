@@ -1,9 +1,8 @@
 import { useState } from "react";
-import { Badge, Button, Card, Icon, SegmentedControl } from "@/components/ui";
+import { Badge, Button, Card, ChartCard, Donut, Icon, SegmentedControl, StatTile, type StatTone } from "@/components/ui";
 import type { IconName } from "@/components/ui/icon";
 import { cn } from "@/lib/cn";
 import { useAuth } from "@/lib/auth/auth-context";
-import { Donut } from "./donut";
 
 // Operations · My Day — the personal work queue for non-admin roles. Mock data
 // mirrors the reference dashboard; a live backend replaces it module by module.
@@ -39,12 +38,11 @@ const TASKS: Task[] = [
   { title: "Approve Data Retention Policy renewal", module: "Policy", detail: "v2.0 → v2.1", due: "in 6d", action: "Review" },
 ];
 
-// Donut segments — colours match the reference legend (violet has no DS token).
 const OPEN_WORK = [
-  { label: "Vulnerabilities", value: 9, color: "rgb(var(--color-status-danger-base))" },
-  { label: "Controls", value: 8, color: "rgb(var(--color-action-accent))" },
-  { label: "Access & reviews", value: 6, color: "#8b5cf6" },
-  { label: "Evidence & docs", value: 4, color: "rgb(var(--color-status-warning-base))" },
+  { key: "vulns", label: "Vulnerabilities", value: 9, strokeClass: "stroke-status-danger-base", dotClass: "bg-status-danger-base" },
+  { key: "controls", label: "Controls", value: 8, strokeClass: "stroke-action-accent", dotClass: "bg-action-accent" },
+  { key: "access", label: "Access & reviews", value: 6, strokeClass: "stroke-status-pending-base", dotClass: "bg-status-pending-base" },
+  { key: "evidence", label: "Evidence & docs", value: 4, strokeClass: "stroke-status-warning-base", dotClass: "bg-status-warning-base" },
 ];
 
 // left = days remaining in the remediation window; negative = overdue. Bar
@@ -73,12 +71,12 @@ const DEADLINES = [
   { d: "15", m: "SEP", title: "SOC 2 observation window closes", detail: "Audit · Brenner & Associates", dot: "bg-action-accent" },
 ];
 
-const STATS = [
-  { value: 3, label: "Overdue", num: "text-status-danger-text", bar: "bg-status-danger-base" },
-  { value: 5, label: "Due today", num: "text-status-warning-text", bar: "bg-status-warning-base" },
-  { value: 27, label: "My open tasks", num: "text-text-primary", bar: "bg-action-accent" },
-  { value: 8, label: "Awaiting review", num: "text-text-primary", bar: "bg-status-progress-base" },
-  { value: 12, label: "Closed this week", num: "text-status-success-text", bar: "bg-status-success-base" },
+const STATS: { value: number; label: string; icon: IconName; tone: StatTone }[] = [
+  { value: 3, label: "Overdue", icon: "alert", tone: "danger" },
+  { value: 5, label: "Due today", icon: "clock", tone: "warning" },
+  { value: 27, label: "My open tasks", icon: "list", tone: "progress" },
+  { value: 8, label: "Awaiting review", icon: "audit", tone: "neutral" },
+  { value: 12, label: "Closed this week", icon: "check", tone: "success" },
 ];
 
 function greeting(): string {
@@ -125,14 +123,7 @@ export function MyDayDashboard() {
       {/* Stat row — colour-accented tiles */}
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         {STATS.map((s) => (
-          <div
-            key={s.label}
-            className="relative overflow-hidden rounded-lg border border-border bg-surface-primary px-4 py-3 pl-5"
-          >
-            <span className={cn("absolute inset-y-0 left-0 w-1", s.bar)} />
-            <span className={cn("font-display text-numeral-lg tabular", s.num)}>{s.value}</span>
-            <span className="mt-0.5 block text-body-sm text-text-subtle">{s.label}</span>
-          </div>
+          <StatTile key={s.label} icon={s.icon} label={s.label} value={s.value} tone={s.tone} />
         ))}
       </div>
 
@@ -199,43 +190,20 @@ export function MyDayDashboard() {
         {/* Right rail */}
         <div className="flex flex-col gap-6">
           {/* My open work — donut + legend */}
-          <Card className="p-5">
-            {/* The count lives in the donut centre, so the heading does not
-                repeat it. */}
-            <h2 className="mb-4 font-display text-title-md text-text-primary">
-              My open work
-            </h2>
-            <div className="flex items-center gap-5">
-              <Donut size={116} stroke={16} segments={OPEN_WORK}>
-                <span className="font-display text-numeral-lg tabular text-text-primary">27</span>
-                <span className="mt-0.5 text-caption text-text-subtle">open</span>
-              </Donut>
-              <ul className="flex-1 space-y-2">
-                {OPEN_WORK.map((w) => (
-                  <li key={w.label} className="flex items-center gap-2 text-body-sm">
-                    <span className="size-2.5 shrink-0 rounded-full" style={{ background: w.color }} />
-                    <span className="flex-1 text-text-secondary">{w.label}</span>
-                    <span className="tabular font-semibold text-text-primary">{w.value}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </Card>
+          <ChartCard title="My open work">
+            <Donut segments={OPEN_WORK} size={160} centerValue={27} centerLabel="Open" />
+          </ChartCard>
 
           {/* Vulnerability SLA countdown */}
-          <Card className="p-5">
-            <div className="mb-3 flex items-start justify-between gap-3">
-              <div>
-                <h2 className="font-display text-title-md text-text-primary">Vulnerability SLA countdown</h2>
-                <p className="mt-0.5 text-body-sm text-text-subtle">
-                  Bar fills as the remediation window burns down
-                </p>
-              </div>
+          <ChartCard
+            title="Vulnerability SLA countdown"
+            action={
               <Button variant="link" size="sm" className="shrink-0">
                 All
                 <Icon name="arrowr" className="size-4" />
               </Button>
-            </div>
+            }
+          >
             <div className="space-y-2.5">
               {SLA.map((row) => {
                 const r = slaRow(row.left);
@@ -257,17 +225,18 @@ export function MyDayDashboard() {
                 );
               })}
             </div>
-          </Card>
+          </ChartCard>
 
           {/* Upcoming deadlines */}
-          <Card className="p-5">
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="font-display text-title-md text-text-primary">Upcoming deadlines</h2>
+          <ChartCard
+            title="Upcoming deadlines"
+            action={
               <Button variant="link" size="sm">
                 Calendar
                 <Icon name="arrowr" className="size-4" />
               </Button>
-            </div>
+            }
+          >
             <ul className="space-y-3">
               {DEADLINES.map((item) => (
                 <li key={item.title} className="flex items-center gap-3">
@@ -283,7 +252,7 @@ export function MyDayDashboard() {
                 </li>
               ))}
             </ul>
-          </Card>
+          </ChartCard>
         </div>
       </div>
     </div>

@@ -13,13 +13,20 @@ export { BrandMark } from "./brand-mark";
 export { DetailHeader } from "./detail-header";
 export {
   BarList,
+  ChartLegend,
   Donut,
   FAMILY_CHART,
   Gauge,
   RankedBars,
+  StackedBars,
   type BarListItem,
   type ChartSegment,
+  type LegendItem,
+  type StackColumn,
+  type StackSeries,
 } from "./donut-chart";
+export { ChartCard } from "./chart-card";
+export { StatRow, StatTile, type StatTone } from "./stat-tile";
 export {
   Dialog,
   DialogBody,
@@ -98,7 +105,7 @@ export {
 } from "./table";
 export { PageHeader } from "./page-header";
 export { SegmentedControl, type SegmentedItem } from "./segmented-control";
-export { TabStrip, type TabStripItem } from "./tab-strip";
+export { TabStrip, type TabStripItem, type TabStripVariant } from "./tab-strip";
 export { Toolbar } from "./toolbar";
 export { useTableSort, type SortDir } from "./use-table-sort";
 export { TextArea } from "./text-area";

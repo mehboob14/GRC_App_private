@@ -147,6 +147,7 @@ export function EvidenceDetailPage() {
   return (
     <div className="w-full">
       <DetailHeader
+        icon="doc"
         backTo="/evidence"
         backLabel="Back to evidence"
         title={item.title}
@@ -179,8 +180,9 @@ export function EvidenceDetailPage() {
             ) : null}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="secondary" aria-label="More actions">
-                  <Icon name="more" className="size-4" />
+                <Button variant="secondary">
+                  Actions
+                  <Icon name="chev" className="size-3.5" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">

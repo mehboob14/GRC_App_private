@@ -1,9 +1,11 @@
-import { useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Badge,
   Button,
+  ChartLegend,
+  Donut as DistributionDonut,
   EmptyState,
   ErrorState,
   Icon,
@@ -54,30 +56,19 @@ const BAND_TEXT: Record<string, string> = {
   danger: "text-status-danger-text",
 };
 
-const STATUS_META: Record<string, { label: string; color: string }> = {
-  implemented: {
-    label: "Implemented",
-    color: "rgb(var(--color-status-success-base))",
-  },
-  in_progress: {
-    label: "In progress",
-    color: "rgb(var(--color-action-accent))",
-  },
-  not_started: {
-    label: "Not started",
-    color: "rgb(var(--color-status-neutral-base))",
-  },
-  not_applicable: {
-    label: "Not applicable",
-    color: "rgb(var(--color-border-strong))",
-  },
+/** Literal classes, because Tailwind purges interpolated ones. */
+const STATUS_META: Record<string, { label: string; stroke: string; fill: string }> = {
+  implemented: { label: "Implemented", stroke: "stroke-status-success-base", fill: "bg-status-success-base" },
+  in_progress: { label: "In progress", stroke: "stroke-action-accent", fill: "bg-action-accent" },
+  not_started: { label: "Not started", stroke: "stroke-status-neutral-base", fill: "bg-status-neutral-base" },
+  not_applicable: { label: "Not applicable", stroke: "stroke-border-strong", fill: "bg-border-strong" },
 };
 
-const FRESHNESS_FILL: Record<EvidenceFreshness, string> = {
-  current: "rgb(var(--color-status-success-base))",
-  aging: "rgb(var(--color-status-warning-base))",
-  stale: "rgb(var(--color-status-danger-base))",
-  no_expiry: "rgb(var(--color-status-neutral-base))",
+const FRESHNESS_TONE: Record<EvidenceFreshness, { stroke: string; fill: string }> = {
+  current: { stroke: "stroke-status-success-base", fill: "bg-status-success-base" },
+  aging: { stroke: "stroke-status-warning-base", fill: "bg-status-warning-base" },
+  stale: { stroke: "stroke-status-danger-base", fill: "bg-status-danger-base" },
+  no_expiry: { stroke: "stroke-status-neutral-base", fill: "bg-status-neutral-base" },
 };
 
 const CATEGORY_ICON: Record<string, IconName> = {
@@ -147,14 +138,14 @@ function Card({
       )}
     >
       {title || action ? (
-        <div className="mb-4 flex items-center justify-between gap-2">
-          <div className="flex items-baseline gap-2">
-            {title ? <p className="type-overline">{title}</p> : null}
-            {meta ? (
-              <span className="text-body-sm text-text-subtle">{meta}</span>
-            ) : null}
-          </div>
-          {action}
+        <div className="relative mb-4 flex min-h-6 flex-col items-center justify-center text-center">
+          {title ? (
+            <h2 className={cn("font-sans text-title-sm text-text-primary", action ? "px-24" : null)}>
+              {title}
+            </h2>
+          ) : null}
+          {meta ? <span className="text-caption text-text-subtle">{meta}</span> : null}
+          {action ? <div className="absolute right-0 top-0">{action}</div> : null}
         </div>
       ) : null}
       {children}
@@ -374,16 +365,13 @@ function TimelineChart({ points }: { points: TimelinePoint[] }) {
           </p>
         </div>
       ) : null}
-      <div className="mt-2 flex items-center gap-4">
-        <span className="flex items-center gap-1.5 text-body-sm text-text-secondary">
-          <span className="inline-block h-[2px] w-4 rounded bg-action-accent" />
-          Evidence collected
-        </span>
-        <span className="flex items-center gap-1.5 text-body-sm text-text-secondary">
-          <span className="inline-block h-[2px] w-4 rounded bg-status-neutral-base" />
-          Controls adopted
-        </span>
-      </div>
+      <ChartLegend
+        className="mt-3"
+        items={[
+          { key: "evidence", label: "Evidence collected", swatchClass: "bg-action-accent" },
+          { key: "controls", label: "Controls adopted", swatchClass: "bg-status-neutral-base" },
+        ]}
+      />
     </div>
   );
 }
@@ -448,16 +436,6 @@ export function ComplianceDashboardPage() {
     onError: (error: unknown) =>
       toast({ title: errorToast(error, "control"), tone: "danger" }),
   });
-
-  const statusSegments = useMemo(
-    () =>
-      (data?.by_status ?? []).map((row) => ({
-        value: row.count,
-        color:
-          STATUS_META[row.status]?.color ?? "rgb(var(--color-border-strong))",
-      })),
-    [data?.by_status],
-  );
 
   if (query.isLoading) {
     return (
@@ -592,50 +570,34 @@ export function ComplianceDashboardPage() {
                   />
                 ))}
             </div>
-            <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5">
-              <LegendDot color={BAND_FILL.success} label="Ready" value={data.controls_ready} />
-              <LegendDot color={BAND_FILL.accent} label="In progress" value={data.controls_in_progress} />
-              <LegendDot color="rgb(var(--color-status-neutral-base))" label="Remaining" value={remaining} />
-            </div>
+            <ChartLegend
+              className="mt-3 justify-start"
+              items={[
+                { key: "ready", label: "Ready", swatchClass: "bg-status-success-base", value: data.controls_ready },
+                { key: "progress", label: "In progress", swatchClass: "bg-action-accent", value: data.controls_in_progress },
+                { key: "remaining", label: "Remaining", swatchClass: "bg-status-neutral-base", value: remaining },
+              ]}
+            />
           </div>
         </div>
       </Card>
 
       <div className="grid gap-4 lg:grid-cols-2">
         {/* Controls by status */}
-        <Card title="Controls by status" meta={`${total} in scope`}>
-          <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-            <Donut size={124} stroke={16} segments={statusSegments}>
-              <span className="font-display text-numeral-md tabular text-text-primary">
-                {total}
-              </span>
-              <span className="text-body-sm text-text-subtle">in scope</span>
-            </Donut>
-            <ul className="min-w-0 flex-1 space-y-1">
-              {data.by_status.map((row) => (
-                <li key={row.status}>
-                  <Link
-                    to={`/controls?status=${row.status}`}
-                    className="flex items-center gap-3 rounded-sm px-1.5 py-1 text-body-sm hover:bg-surface-hover"
-                  >
-                    <span
-                      className="size-2.5 shrink-0 rounded-[3px]"
-                      style={{ backgroundColor: STATUS_META[row.status]?.color }}
-                    />
-                    <span className="flex-1 text-text-secondary">
-                      {STATUS_META[row.status]?.label ?? row.status}
-                    </span>
-                    <span className="w-8 text-right tabular font-semibold text-text-primary">
-                      {row.count}
-                    </span>
-                    <span className="w-10 text-right tabular text-text-subtle">
-                      {pct(row.count, total)}%
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
+        <Card title="Controls by status">
+          <DistributionDonut
+            size={176}
+            centerValue={total}
+            centerLabel="In scope"
+            segments={data.by_status.map((row) => ({
+              key: row.status,
+              label: STATUS_META[row.status]?.label ?? row.status,
+              value: row.count,
+              strokeClass: STATUS_META[row.status]?.stroke ?? "stroke-border-strong",
+              dotClass: STATUS_META[row.status]?.fill ?? "bg-border-strong",
+              to: `/controls?status=${row.status}`,
+            }))}
+          />
           {data.controls_disabled > 0 ? (
             <div className="mt-4 flex items-center gap-2 border-t border-border pt-3">
               <Badge variant="neutral">Disabled</Badge>
@@ -763,38 +725,28 @@ export function ComplianceDashboardPage() {
             </Link>
           }
         >
-          <p className="flex items-baseline gap-2">
-            <span className="font-display text-numeral-md tabular text-text-primary">
-              {data.evidence_total}
-            </span>
-            <span className="text-body-sm text-text-subtle">
-              files · covering {evidencedControls} of {total} controls (
-              {pct(evidencedControls, total)}%)
-            </span>
+          <p className="text-center text-body-sm text-text-subtle">
+            Covering {evidencedControls} of {total} controls ({pct(evidencedControls, total)}%)
           </p>
-          <ul className="mt-4 space-y-2.5">
-            {[
-              ["Fresh", data.evidence_fresh, FRESHNESS_FILL.current],
-              ["Expiring ≤ 30 days", data.evidence_aging, FRESHNESS_FILL.aging],
-              ["Stale · needs refresh", data.evidence_stale, FRESHNESS_FILL.stale],
-            ].map(([label, value, fill]) => (
-              <li key={label as string} className="flex items-center gap-3">
-                <span className="w-36 shrink-0 text-body-sm text-text-secondary">
-                  {label}
-                </span>
-                <span className="flex-1">
-                  <Meter
-                    value={value as number}
-                    total={Math.max(data.evidence_total, 1)}
-                    fill={fill as string}
-                  />
-                </span>
-                <span className="w-8 shrink-0 text-right tabular text-body-sm font-semibold text-text-primary">
-                  {value}
-                </span>
-              </li>
-            ))}
-          </ul>
+          <div className="mt-4">
+            <DistributionDonut
+              size={160}
+              centerValue={data.evidence_total}
+              centerLabel="Files"
+              segments={[
+                { key: "current", label: "Fresh", value: data.evidence_fresh, strokeClass: FRESHNESS_TONE.current.stroke, dotClass: FRESHNESS_TONE.current.fill },
+                { key: "aging", label: "Expiring in 30 days", value: data.evidence_aging, strokeClass: FRESHNESS_TONE.aging.stroke, dotClass: FRESHNESS_TONE.aging.fill },
+                { key: "stale", label: "Stale", value: data.evidence_stale, strokeClass: FRESHNESS_TONE.stale.stroke, dotClass: FRESHNESS_TONE.stale.fill },
+                {
+                  key: "no_expiry",
+                  label: "No expiry",
+                  value: Math.max(data.evidence_total - data.evidence_fresh - data.evidence_aging - data.evidence_stale, 0),
+                  strokeClass: FRESHNESS_TONE.no_expiry.stroke,
+                  dotClass: FRESHNESS_TONE.no_expiry.fill,
+                },
+              ]}
+            />
+          </div>
           {data.evidence_recent.length > 0 ? (
             <>
               <p className="type-overline mt-5 mb-2">Recently added</p>
@@ -950,6 +902,14 @@ export function ComplianceDashboardPage() {
             </p>
           ) : (
             <>
+              <ChartLegend
+                className="mb-4"
+                items={[
+                  { key: "ready", label: "Ready", swatchClass: "bg-status-success-base" },
+                  { key: "progress", label: "In progress", swatchClass: "bg-status-warning-base" },
+                  { key: "gap", label: "No control", swatchClass: "bg-status-danger-base" },
+                ]}
+              />
               <ul className="space-y-3.5">
                 {data.by_category.map((row) => {
                   const ready = row.ready;
@@ -1015,55 +975,46 @@ export function ComplianceDashboardPage() {
                   );
                 })}
               </ul>
-              <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1.5 border-t border-border pt-3">
-                <LegendDot color={BAND_FILL.success} label="Ready" />
-                <LegendDot color={BAND_FILL.warning} label="In progress" />
-                <LegendDot color={BAND_FILL.danger} label="No control" />
-              </div>
             </>
           )}
         </Card>
 
         {/* Progress over time */}
-        <Card
-          title="Progress over time"
-          action={
-            <div className="flex flex-wrap items-center gap-2">
-              <input
-                type="date"
-                aria-label="From date"
-                value={range.from ?? data.timeline_from}
-                min={data.tenant_created_on}
-                max={range.to ?? today}
-                onChange={(e) =>
-                  setRange((r) => ({ ...r, from: e.target.value || undefined }))
-                }
-                className="rounded-sm border border-border bg-surface-primary px-2 py-1 text-body-sm text-text-primary"
-              />
-              <span className="text-body-sm text-text-subtle">to</span>
-              <input
-                type="date"
-                aria-label="To date"
-                value={range.to ?? data.timeline_to}
-                min={range.from ?? data.tenant_created_on}
-                max={today}
-                onChange={(e) =>
-                  setRange((r) => ({ ...r, to: e.target.value || undefined }))
-                }
-                className="rounded-sm border border-border bg-surface-primary px-2 py-1 text-body-sm text-text-primary"
-              />
-              {(range.from || range.to) && (
-                <button
-                  type="button"
-                  onClick={() => setRange({})}
-                  className="text-body-sm font-semibold text-text-link"
-                >
-                  Reset
-                </button>
-              )}
-            </div>
-          }
-        >
+        <Card title="Progress over time">
+          <div className="mb-4 flex flex-wrap items-center justify-center gap-2">
+            <input
+              type="date"
+              aria-label="From date"
+              value={range.from ?? data.timeline_from}
+              min={data.tenant_created_on}
+              max={range.to ?? today}
+              onChange={(e) =>
+                setRange((r) => ({ ...r, from: e.target.value || undefined }))
+              }
+              className="rounded-sm border border-border bg-surface-primary px-2 py-1 text-body-sm text-text-primary"
+            />
+            <span className="text-body-sm text-text-subtle">to</span>
+            <input
+              type="date"
+              aria-label="To date"
+              value={range.to ?? data.timeline_to}
+              min={range.from ?? data.tenant_created_on}
+              max={today}
+              onChange={(e) =>
+                setRange((r) => ({ ...r, to: e.target.value || undefined }))
+              }
+              className="rounded-sm border border-border bg-surface-primary px-2 py-1 text-body-sm text-text-primary"
+            />
+            {(range.from || range.to) && (
+              <button
+                type="button"
+                onClick={() => setRange({})}
+                className="text-body-sm font-semibold text-text-link"
+              >
+                Reset
+              </button>
+            )}
+          </div>
           {data.timeline.length > 0 ? (
             <TimelineChart points={data.timeline} />
           ) : (
@@ -1101,28 +1052,5 @@ export function ComplianceDashboardPage() {
         )}
       </Card>
     </div>
-  );
-}
-
-function LegendDot({
-  color,
-  label,
-  value,
-}: {
-  color: string;
-  label: string;
-  value?: number;
-}) {
-  return (
-    <span className="flex items-center gap-1.5 text-body-sm text-text-secondary">
-      <span
-        className="size-2.5 rounded-[3px]"
-        style={{ backgroundColor: color }}
-      />
-      {label}
-      {value !== undefined ? (
-        <span className="tabular font-semibold text-text-primary">{value}</span>
-      ) : null}
-    </span>
   );
 }

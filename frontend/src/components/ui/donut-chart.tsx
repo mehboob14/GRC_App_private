@@ -1,9 +1,10 @@
+import { Link } from "react-router-dom";
 import { cn } from "@/lib/cn";
 import type { StatusFamily } from "@/components/ui/status-pill";
 
 /**
  * `strokeClass`/`dotClass`/`barClass` must be literal Tailwind classes (e.g.
- * "stroke-severity-critical") written at the call site — Tailwind's JIT scans
+ * "stroke-severity-critical") written at the call site. Tailwind's JIT scans
  * source text, so a class built by string interpolation at runtime would be
  * purged from the build.
  */
@@ -13,11 +14,13 @@ export type ChartSegment = {
   value: number;
   strokeClass: string;
   dotClass: string;
+  /** Optional route: the legend entry becomes a link to that slice. */
+  to?: string;
 };
 
 /**
  * The platform's six status families (see status-pill.tsx), in chart form.
- * Reuse this instead of inventing per-feature chart palettes — it's the same
+ * Reuse this instead of inventing per-feature chart palettes: it's the same
  * six colors a StatusPill would use for the same state.
  */
 export const FAMILY_CHART: Record<StatusFamily, { stroke: string; dot: string; bar: string }> = {
@@ -29,114 +32,313 @@ export const FAMILY_CHART: Record<StatusFamily, { stroke: string; dot: string; b
   neutral: { stroke: "stroke-status-neutral-base", dot: "bg-status-neutral-base", bar: "bg-status-neutral-base" },
 };
 
-const GAP_PX = 3;
+/** Surface gap between neighbouring fills, so adjacent colours never bleed. */
+const GAP_PX = 2;
 
 function pct(value: number, total: number): number {
   return total > 0 ? Math.round((value / total) * 100) : 0;
 }
 
+export type LegendItem = {
+  key: string;
+  label: string;
+  /** Literal background class for the swatch. */
+  swatchClass: string;
+  value?: number | string;
+  /** Optional route: the entry becomes a link to that slice. */
+  to?: string;
+};
+
+/**
+ * The legend every chart shares: a centred row of wide swatches above the
+ * chart, each with its label and count, wrapping on narrow cards.
+ */
+export function ChartLegend({ items, className }: { items: LegendItem[]; className?: string }) {
+  return (
+    <ul className={cn("flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5", className)}>
+      {items.map((item) => {
+        const body = (
+          <>
+            <span className={cn("h-2.5 w-5 shrink-0 rounded-2xs", item.swatchClass)} aria-hidden />
+            <span className="text-text-secondary">{item.label}</span>
+            {item.value !== undefined ? (
+              <span className="tabular font-semibold text-text-primary">{item.value}</span>
+            ) : null}
+          </>
+        );
+        return (
+          <li key={item.key} className="text-caption">
+            {item.to ? (
+              <Link
+                to={item.to}
+                className="flex items-center gap-1.5 rounded-2xs hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-accent"
+              >
+                {body}
+              </Link>
+            ) : (
+              <span className="flex items-center gap-1.5">{body}</span>
+            )}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+/**
+ * A distribution ring with the total in the middle.
+ *
+ * The legend sits above the ring by default, centred, the way every chart card
+ * on the platform reads. `legend="right"` keeps the older side list for the few
+ * places that are short on height, and `"none"` is for a ring whose card
+ * already names its parts.
+ */
 export function Donut({
   segments,
-  size = 132,
+  size = 168,
   thickness = 18,
   centerValue,
-  centerLabel,
-  showPercent = true,
+  centerLabel = "Total",
+  showPercent = false,
+  legend = "top",
 }: {
   segments: ChartSegment[];
   size?: number;
   thickness?: number;
   centerValue?: string | number;
   centerLabel?: string;
-  /** Legend rows show "count (pct%)" — set false for a raw-count-only legend. */
+  /** Side legend only: show "count (pct%)" rather than the bare count. */
   showPercent?: boolean;
+  legend?: "top" | "right" | "none";
 }) {
   const total = segments.reduce((sum, s) => sum + s.value, 0);
   const r = (size - thickness) / 2;
   const c = 2 * Math.PI * r;
   const cx = size / 2;
   const cy = size / 2;
+  const drawn = segments.filter((s) => s.value > 0);
+  const gap = drawn.length > 1 ? GAP_PX : 0;
 
   let offset = 0;
-  const arcs = segments
-    .filter((s) => s.value > 0)
-    .map((s) => {
-      const frac = total ? s.value / total : 0;
-      const len = Math.max(frac * c - GAP_PX, 0);
-      const dashOffset = -offset;
-      offset += frac * c;
-      return { ...s, len, dashOffset };
-    });
+  const arcs = drawn.map((s) => {
+    const frac = total ? s.value / total : 0;
+    const len = Math.max(frac * c - gap, 0);
+    const dashOffset = -offset;
+    offset += frac * c;
+    return { ...s, len, dashOffset };
+  });
+
+  const ring = (
+    <svg
+      width={size}
+      height={size}
+      viewBox={`0 0 ${size} ${size}`}
+      className="shrink-0"
+      role="img"
+      aria-label={segments.map((s) => `${s.label} ${s.value}`).join(", ")}
+    >
+      <circle r={r} cx={cx} cy={cy} fill="none" strokeWidth={thickness} className="stroke-surface-sunken" />
+      {arcs.map((a) => (
+        <circle
+          key={a.key}
+          r={r}
+          cx={cx}
+          cy={cy}
+          fill="none"
+          strokeWidth={thickness}
+          strokeDasharray={`${a.len} ${Math.max(c - a.len, 0)}`}
+          strokeDashoffset={a.dashOffset}
+          transform={`rotate(-90 ${cx} ${cy})`}
+          className={a.strokeClass}
+        >
+          <title>{`${a.label}: ${a.value} (${pct(a.value, total)}%)`}</title>
+        </circle>
+      ))}
+      {centerValue != null ? (
+        <text
+          x={cx}
+          y={centerLabel ? cy - size * 0.04 : cy}
+          textAnchor="middle"
+          dominantBaseline="middle"
+          className="fill-text-primary font-display font-bold tabular-nums"
+          style={{ fontSize: size * 0.22 }}
+        >
+          {centerValue}
+        </text>
+      ) : null}
+      {centerValue != null && centerLabel ? (
+        <text
+          x={cx}
+          y={cy + size * 0.14}
+          textAnchor="middle"
+          dominantBaseline="middle"
+          className="fill-text-subtle"
+          style={{ fontSize: Math.max(11, size * 0.075) }}
+        >
+          {centerLabel}
+        </text>
+      ) : null}
+    </svg>
+  );
+
+  if (legend === "right") {
+    return (
+      <div className="flex items-center gap-6">
+        {ring}
+        <ul className="min-w-0 flex-1 space-y-1.5">
+          {segments.map((s) => (
+            <li key={s.key} className="flex items-center gap-2 text-body-sm">
+              <span className={cn("h-2.5 w-4 shrink-0 rounded-2xs", s.dotClass)} aria-hidden />
+              <span className="flex-1 truncate text-text-secondary">{s.label}</span>
+              <span className="tabular font-semibold text-text-primary">
+                {s.value}
+                {showPercent ? (
+                  <span className="ml-1 font-normal text-text-subtle">({pct(s.value, total)}%)</span>
+                ) : null}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex items-center gap-6">
-      <svg
-        width={size}
-        height={size}
-        viewBox={`0 0 ${size} ${size}`}
-        className="shrink-0"
-        role="img"
-        aria-label={centerLabel ?? "Distribution"}
-      >
-        <circle r={r} cx={cx} cy={cy} fill="none" strokeWidth={thickness} className="stroke-surface-sunken" />
-        {arcs.map((a) => (
-          <circle
-            key={a.key}
-            r={r}
-            cx={cx}
-            cy={cy}
-            fill="none"
-            strokeWidth={thickness}
-            strokeDasharray={`${a.len} ${Math.max(c - a.len, 0)}`}
-            strokeDashoffset={a.dashOffset}
-            transform={`rotate(-90 ${cx} ${cy})`}
-            className={a.strokeClass}
-          />
-        ))}
-        {centerValue != null ? (
-          <text
-            x={cx}
-            y={cy - 2}
-            textAnchor="middle"
-            dominantBaseline="middle"
-            className="fill-text-primary font-display"
-            style={{ fontSize: size * 0.24 }}
-          >
-            {centerValue}
-          </text>
-        ) : null}
-        {centerLabel ? (
-          <text
-            x={cx}
-            y={cy + size * 0.16}
-            textAnchor="middle"
-            dominantBaseline="middle"
-            className="fill-text-subtle"
-            style={{ fontSize: size * 0.08 }}
-          >
-            {centerLabel}
-          </text>
-        ) : null}
-      </svg>
-      <ul className="min-w-0 flex-1 space-y-1.5">
-        {segments.map((s) => (
-          <li key={s.key} className="flex items-center gap-2 text-body-sm">
-            <span className={cn("size-2.5 shrink-0 rounded-full", s.dotClass)} aria-hidden />
-            <span className="flex-1 truncate text-text-secondary">{s.label}</span>
-            <span className="tabular font-semibold text-text-primary">
-              {s.value}
-              {showPercent ? <span className="ml-1 font-normal text-text-subtle">({pct(s.value, total)}%)</span> : null}
+    <div className="flex flex-col items-center gap-4">
+      {legend === "top" ? (
+        <ChartLegend
+          items={segments.map((s) => ({
+            key: s.key,
+            label: s.label,
+            swatchClass: s.dotClass,
+            value: s.value,
+            to: s.to,
+          }))}
+        />
+      ) : null}
+      {ring}
+    </div>
+  );
+}
+
+export type StackSeries = {
+  key: string;
+  label: string;
+  /** Literal background class for this series' segments and swatch. */
+  fillClass: string;
+};
+
+export type StackColumn = {
+  key: string;
+  label: string;
+  values: Record<string, number>;
+};
+
+/** A readable integer axis: the smallest 1/2/5 step that fits in six intervals. */
+function niceScale(top: number): { max: number; step: number } {
+  if (top <= 0) return { max: 4, step: 1 };
+  const pow = 10 ** Math.floor(Math.log10(top));
+  for (const m of [0.1, 0.2, 0.5, 1, 2, 5, 10]) {
+    const step = Math.max(1, Math.round(m * pow));
+    if (Math.ceil(top / step) <= 6) return { max: Math.ceil(top / step) * step, step };
+  }
+  return { max: top, step: top };
+}
+
+/**
+ * Vertical stacked columns on a gridded axis, legend on top: how a total splits
+ * across a few ordered buckets (due windows, age bands, stages).
+ */
+export function StackedBars({
+  series,
+  columns,
+  height = 180,
+}: {
+  series: StackSeries[];
+  columns: StackColumn[];
+  height?: number;
+}) {
+  const totals = columns.map((col) => series.reduce((sum, s) => sum + (col.values[s.key] ?? 0), 0));
+  const { max, step } = niceScale(Math.max(0, ...totals));
+  const ticks = Array.from({ length: Math.round(max / step) + 1 }, (_, i) => i * step);
+
+  return (
+    <div>
+      {series.length > 1 ? (
+        <ChartLegend
+          className="mb-4"
+          items={series.map((s) => ({
+            key: s.key,
+            label: s.label,
+            swatchClass: s.fillClass,
+            value: columns.reduce((sum, col) => sum + (col.values[s.key] ?? 0), 0),
+          }))}
+        />
+      ) : null}
+      <div className="flex gap-2">
+        <div className="relative w-7 shrink-0" style={{ height }} aria-hidden>
+          {ticks.map((t) => (
+            <span
+              key={t}
+              className="tabular absolute right-0 translate-y-1/2 text-caption leading-none text-text-subtle"
+              style={{ bottom: `${(t / max) * 100}%` }}
+            >
+              {t}
             </span>
-          </li>
-        ))}
-      </ul>
+          ))}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="relative" style={{ height }}>
+            {ticks.map((t) => (
+              <span
+                key={t}
+                className="absolute inset-x-0 h-px bg-border"
+                style={{ bottom: `${(t / max) * 100}%` }}
+                aria-hidden
+              />
+            ))}
+            <div className="absolute inset-0 flex items-end justify-around gap-3 px-2">
+              {columns.map((col, i) => (
+                <div
+                  key={col.key}
+                  className="flex h-full w-full max-w-20 flex-col-reverse"
+                  role="img"
+                  aria-label={`${col.label}: ${series
+                    .map((s) => `${s.label} ${col.values[s.key] ?? 0}`)
+                    .join(", ")}, total ${totals[i]}`}
+                >
+                  {series.map((s) => {
+                    const v = col.values[s.key] ?? 0;
+                    if (v <= 0) return null;
+                    return (
+                      <div
+                        key={s.key}
+                        className={cn("w-full border-t-2 border-surface-primary last:rounded-t-xs", s.fillClass)}
+                        style={{ height: `${(v / max) * 100}%` }}
+                        title={`${col.label}, ${s.label}: ${v}`}
+                      />
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="mt-2 flex justify-around gap-3 px-2">
+            {columns.map((col) => (
+              <span key={col.key} className="w-full max-w-20 truncate text-center text-caption text-text-subtle">
+                {col.label}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
 
 export type GaugeZone = { to: number; strokeClass: string; textClass: string };
 
-/** Red / amber / green compliance bands — the default for any 0-100 "how
+/** Red / amber / green compliance bands, the default for any 0-100 "how
  *  healthy is this" gauge (SLA rate, hygiene score, ...). */
 const DEFAULT_GAUGE_ZONES: GaugeZone[] = [
   { to: 50, strokeClass: "stroke-status-danger-base", textClass: "text-status-danger-text" },
@@ -161,7 +363,7 @@ export function Gauge({
   size?: number;
   thickness?: number;
   /** Fixed color bands (cumulative upper bound `to`, out of 100) the needle
-   *  points into — a real speedometer, not a single-hue fill. */
+   *  points into: a real speedometer, not a single-hue fill. */
   zones?: GaugeZone[];
   label?: string;
   badge?: { text: string; toneClass: string };
@@ -235,14 +437,14 @@ export type BarListItem = {
 };
 
 /**
- * A ranked "label — count (pct%)" row with a thin fill bar underneath, used
- * for the reference's "By severity" / "By domain"-style metric breakdowns.
- * Percent is against `total` (defaults to the sum of all item values); pass a
- * separate `total` when the list is a subset of a larger population.
+ * A ranked "label, count (pct%)" row with a fill bar underneath, for metric
+ * breakdowns. Percent is against `total` (defaults to the sum of all item
+ * values); pass a separate `total` when the list is a subset of a larger
+ * population.
  */
 export function BarList({ items, total }: { items: BarListItem[]; total?: number }) {
   if (items.length === 0) {
-    return <p className="text-body-sm text-text-subtle">No data yet.</p>;
+    return <p className="py-4 text-center text-body-sm text-text-subtle">No data yet.</p>;
   }
   const sum = total ?? items.reduce((s, i) => s + i.value, 0);
   const max = Math.max(1, ...items.map((i) => i.value));
@@ -257,7 +459,7 @@ export function BarList({ items, total }: { items: BarListItem[]; total?: number
               <span className="ml-1 font-normal text-text-subtle">({pct(item.value, sum)}%)</span>
             </span>
           </div>
-          <div className="h-1.5 overflow-hidden rounded-full bg-surface-sunken">
+          <div className="h-2 overflow-hidden rounded-full bg-surface-sunken">
             <div className={cn("h-full rounded-full", item.barClass)} style={{ width: `${(item.value / max) * 100}%` }} />
           </div>
         </li>
@@ -267,8 +469,8 @@ export function BarList({ items, total }: { items: BarListItem[]; total?: number
 }
 
 /**
- * A plain ranked count list (no percent, no bar) — for panels like the
- * reference's raw-CVSS donut legend that intentionally shows counts only.
+ * A plain ranked count list (no percent) for panels that intentionally show
+ * counts only.
  */
 export function RankedBars({ items }: { items: BarListItem[] }) {
   const max = Math.max(1, ...items.map((i) => i.value));

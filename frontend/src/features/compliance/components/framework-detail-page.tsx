@@ -98,6 +98,7 @@ export function FrameworkDetailPage() {
   return (
     <div className="w-full">
       <DetailHeader
+        icon="shield"
         backTo="/frameworks/list"
         backLabel="Back to frameworks"
         title={framework?.name ?? "Framework"}

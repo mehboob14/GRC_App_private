@@ -24,6 +24,7 @@ import {
   TR,
   useColumnPrefs,
   useTableSort,
+  StatTile,
 } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { describeError } from "@/lib/api/describe-error";
@@ -122,17 +123,6 @@ function fmtDue(iso: string | null, overdue: boolean): string {
   const d = new Date(iso);
   const label = d.toLocaleDateString(undefined, { day: "numeric", month: "short" });
   return overdue ? `Overdue (${label})` : `Due ${label}`;
-}
-
-function Kpi({ label, value, tone }: { label: string; value: number; tone?: string }) {
-  return (
-    <div className="rounded-lg border border-border bg-surface-primary px-4 py-3">
-      <p className="text-caption text-text-subtle">{label}</p>
-      <p className={cn("mt-1 font-display text-heading-md tabular", tone ?? "text-text-primary")}>
-        {value}
-      </p>
-    </div>
-  );
 }
 
 export function VulnerabilitiesRegisterPage() {
@@ -245,10 +235,10 @@ export function VulnerabilitiesRegisterPage() {
         </p>
       ) : (
         <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <Kpi label="Open" value={k?.open_total ?? 0} />
-          <Kpi label="Overdue" value={k?.overdue ?? 0} tone={k?.overdue ? "text-status-danger-text" : undefined} />
-          <Kpi label="Known exploited (KEV)" value={k?.kev_open ?? 0} tone={k?.kev_open ? "text-status-danger-text" : undefined} />
-          <Kpi label="Accepted" value={k?.accepted ?? 0} />
+          <StatTile icon="bug" label="Open" value={k?.open_total ?? 0} tone="progress" />
+          <StatTile icon="clock" label="Overdue" value={k?.overdue ?? 0} tone="danger" />
+          <StatTile icon="risk" label="Known exploited (KEV)" value={k?.kev_open ?? 0} tone="danger" />
+          <StatTile icon="check" label="Accepted" value={k?.accepted ?? 0} />
         </div>
       )}
 

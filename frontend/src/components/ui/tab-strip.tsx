@@ -29,12 +29,13 @@ export type TabStripItem = {
  * that has no tab and no facet to live on. It costs no vertical space because
  * the strip row is already there.
  */
-export type TabStripVariant = "default" | "bar";
+export type TabStripVariant = "bar" | "compact";
 
 /**
- * `bar` is the wide navigation bar: evenly sized tabs with centred labels, a
- * hover fill, and a heavy underline across the whole active tab, so the
- * current section reads from across the screen.
+ * `bar`, the default, is the wide navigation bar: evenly sized tabs with
+ * centred labels, a hover fill, and a heavy underline across the whole active
+ * tab, so the current section reads from across the screen. `compact` is for
+ * narrow panes, such as a record embedded beside a list.
  */
 const tabClass = (isActive: boolean, variant: TabStripVariant) =>
   variant === "bar"
@@ -98,7 +99,7 @@ export function TabStrip({
   aside,
   className,
   inline,
-  variant = "default",
+  variant = "bar",
 }: {
   items: readonly TabStripItem[];
   /** aria-label for the nav, e.g. "Asset sections". */

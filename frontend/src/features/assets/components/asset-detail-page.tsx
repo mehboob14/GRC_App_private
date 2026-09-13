@@ -27,6 +27,7 @@ import {
   StatusPill,
   TextField,
   useToast,
+  TabStrip,
 } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { describeError, errorToast } from "@/lib/api/describe-error";
@@ -155,6 +156,7 @@ export function AssetDetailPage() {
   return (
     <div className="w-full">
       <DetailHeader
+        icon="box"
         backTo="/assets"
         backLabel="Back to assets"
         title={a.name}
@@ -182,13 +184,10 @@ export function AssetDetailPage() {
             ) : null}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  aria-label="More actions"
-                  className="inline-flex size-9 items-center justify-center rounded-sm border border-border text-text-secondary transition-colors hover:bg-surface-hover"
-                >
-                  <Icon name="more" className="size-4" />
-                </button>
+                <Button variant="secondary">
+                  Actions
+                  <Icon name="chev" className="size-3.5" />
+                </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onSelect={() => setEditing(true)}>Edit</DropdownMenuItem>
@@ -254,31 +253,23 @@ export function AssetDetailPage() {
       </div>
 
       {/* Tabs */}
-      <nav className="mt-6 flex items-center gap-1 overflow-x-auto border-b border-border">
-        {TABS.map((t) => {
-          const count =
-            t.id === "linked"
-              ? linkedCounts.reduce((s, [, n]) => s + n, 0)
+      <TabStrip
+        label="Asset sections"
+        items={TABS.map((t) => ({
+          id: t.id,
+          label: t.label,
+          count:
+            (t.id === "linked"
+              ? linkedCounts.reduce((sum, [, n]) => sum + n, 0)
               : t.id === "relationships"
                 ? a.relationship_count
-                : undefined;
-          return (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => setTab(t.id)}
-              className={cn(
-                "relative flex shrink-0 items-center gap-1.5 px-3 py-2 text-label-sm",
-                tab === t.id ? "text-text-primary" : "text-text-subtle hover:text-text-secondary",
-              )}
-            >
-              {t.label}
-              {count ? <span className="tabular text-caption text-text-subtle">{count}</span> : null}
-              {tab === t.id ? <span className="absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-action-accent" /> : null}
-            </button>
-          );
-        })}
-      </nav>
+                : undefined) || undefined,
+        }))}
+        value={tab}
+        onSelect={(id) => setTab(id as TabId)}
+        className="mb-0 mt-6"
+        inline
+      />
 
       <div className="mt-5">
         {tab === "overview" ? <OverviewTab a={a} onChange={invalidate} /> : null}

@@ -1,39 +1,40 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   BarList,
+  ChartCard,
   Donut,
   ErrorState,
   Gauge,
   Icon,
   Skeleton,
+  StatRow,
+  StatTile,
   StatusPill,
   type BarListItem,
   type ChartSegment,
+  type IconName,
+  type StatTone,
+  type StatusFamily,
 } from "@/components/ui";
-import { cn } from "@/lib/cn";
 import { describeError } from "@/lib/api/describe-error";
 import { getSummary, listIntake } from "../api";
 import { ATTENTION_META, fmtDate, LIFECYCLE_META, TIER_META } from "../tokens";
-import { Panel } from "./panel";
 import { TIER_TONE, UNTIERED_TONE } from "./tier-tone";
 
 /**
  * The portfolio, before the table.
  *
- * The module used to open on page one of a spreadsheet, so "how many are
- * untiered", "how many reassessments are overdue" and "what share of our
- * critical vendors have a current assessment" were answerable only by paging and
- * counting by eye. Every number here comes from one `/vendors/summary` call and
- * every one of them is a link into the register with the matching filter
- * applied, so the picture is a way in rather than a poster.
+ * Every number here comes from one `/vendors/summary` call and almost every
+ * one of them is a link into the register with the matching filter applied, so
+ * the picture is a way in rather than a poster.
  */
 
-const SEVERITY_BAR: Record<string, string> = {
-  critical: "bg-severity-critical",
-  high: "bg-severity-high",
-  medium: "bg-severity-medium",
-  low: "bg-severity-low",
+const SEVERITY_TONE: Record<string, { stroke: string; fill: string }> = {
+  critical: { stroke: "stroke-severity-critical", fill: "bg-severity-critical" },
+  high: { stroke: "stroke-severity-high", fill: "bg-severity-high" },
+  medium: { stroke: "stroke-severity-medium", fill: "bg-severity-medium" },
+  low: { stroke: "stroke-severity-low", fill: "bg-severity-low" },
 };
 
 const STATUS_BAR: Record<string, string> = {
@@ -52,6 +53,27 @@ const COVERAGE_ZONES = [
   { to: 100, strokeClass: "stroke-status-success-base", textClass: "text-status-success-text" },
 ];
 
+const FAMILY_TONE: Record<StatusFamily, StatTone> = {
+  success: "success",
+  danger: "danger",
+  warning: "warning",
+  progress: "progress",
+  pending: "progress",
+  neutral: "neutral",
+};
+
+const ATTENTION_ICON: Record<string, IconName> = {
+  flagged: "alert",
+  reassessment_overdue: "clock",
+  not_tiered: "gauge",
+  awaiting_gate: "controls",
+  on_hold: "clock",
+  weak_grade: "bug",
+  unowned: "users",
+  reassessment_due: "clock",
+  offboarding: "signout",
+};
+
 export function VendorsOverviewPage() {
   const query = useQuery({ queryKey: ["vendor-summary"], queryFn: getSummary });
   const intakeQuery = useQuery({
@@ -62,7 +84,7 @@ export function VendorsOverviewPage() {
   if (query.isError) {
     const error = describeError(query.error, "vendor overview");
     return (
-      <div className="mt-4">
+      <div>
         <ErrorState
           title={error.title}
           description={error.message}
@@ -75,13 +97,14 @@ export function VendorsOverviewPage() {
 
   if (query.isLoading || !query.data) {
     return (
-      <div className="mt-4 space-y-4">
+      <div className="space-y-4">
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {[0, 1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-[5.5rem] w-full" />
+            <Skeleton key={i} className="h-[4.75rem] w-full" />
           ))}
         </div>
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid gap-4 lg:grid-cols-3">
+          <Skeleton className="h-64 w-full" />
           <Skeleton className="h-64 w-full" />
           <Skeleton className="h-64 w-full" />
         </div>
@@ -104,6 +127,7 @@ export function VendorsOverviewPage() {
       value: s.by_tier[tier] ?? 0,
       strokeClass: (TIER_TONE[tier] ?? UNTIERED_TONE).stroke,
       dotClass: (TIER_TONE[tier] ?? UNTIERED_TONE).fill,
+      to: tier === "untiered" ? "/vendors?attention=not_tiered" : `/vendors?tiers=${tier}`,
     }));
 
   const statusBars: BarListItem[] = Object.entries(s.by_status)
@@ -116,37 +140,42 @@ export function VendorsOverviewPage() {
       barClass: STATUS_BAR[LIFECYCLE_META[status]?.family ?? "neutral"],
     }));
 
-  const severityBars: BarListItem[] = ["critical", "high", "medium", "low"]
+  const severitySegments: ChartSegment[] = ["critical", "high", "medium", "low"]
     .filter((sev) => (s.findings_by_severity[sev] ?? 0) > 0)
     .map((sev) => ({
       key: sev,
       label: sev.charAt(0).toUpperCase() + sev.slice(1),
       value: s.findings_by_severity[sev] ?? 0,
-      barClass: SEVERITY_BAR[sev],
+      strokeClass: SEVERITY_TONE[sev].stroke,
+      dotClass: SEVERITY_TONE[sev].fill,
     }));
 
   return (
-    <div className="mt-4 space-y-4">
+    <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Stat
+        <StatTile
+          icon="gauge"
           label="Not tiered"
           value={attention.get("not_tiered") ?? 0}
           tone="warning"
           to="/vendors?attention=not_tiered"
         />
-        <Stat
+        <StatTile
+          icon="users"
           label="No business owner"
           value={attention.get("unowned") ?? 0}
           tone="warning"
           to="/vendors?owner=unassigned"
         />
-        <Stat
+        <StatTile
+          icon="clock"
           label="Reassessment overdue"
           value={attention.get("reassessment_overdue") ?? 0}
           tone="danger"
           to="/vendors?attention=reassessment_overdue"
         />
-        <Stat
+        <StatTile
+          icon="alert"
           label="Critical findings"
           value={s.findings_by_severity.critical ?? 0}
           caption={s.findings_overdue > 0 ? `${s.findings_overdue} overdue` : undefined}
@@ -156,41 +185,39 @@ export function VendorsOverviewPage() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
-        <Panel title="Needs attention">
+        <ChartCard title="Needs attention">
           {s.attention.length === 0 ? (
-            <p className="flex items-center gap-2 text-body-md text-status-success-text">
+            <p className="flex items-center justify-center gap-2 py-6 text-body-md text-status-success-text">
               <Icon name="check" className="size-4 shrink-0" />
               All clear
             </p>
           ) : (
-            <ul className="-my-1 divide-y divide-border">
+            <div className="-mx-2 space-y-1">
               {s.attention.map((a) => (
-                <li key={a.code}>
-                  <Link
-                    to={`/vendors?attention=${a.code}`}
-                    className="-mx-2 flex items-center justify-between gap-3 rounded-sm px-2 py-2 transition-colors duration-80 ease-state hover:bg-surface-hover"
-                  >
-                    <StatusPill
-                      status={ATTENTION_META[a.code]?.family ?? "neutral"}
-                      label={a.label}
-                      kind="inline"
-                    />
-                    <span className="flex shrink-0 items-center gap-1.5">
-                      <span className="tabular text-body-md font-semibold text-text-primary">
-                        {a.count}
-                      </span>
-                      <Icon name="chevr" className="size-4 text-text-subtle" />
-                    </span>
-                  </Link>
-                </li>
+                <StatRow
+                  key={a.code}
+                  icon={ATTENTION_ICON[a.code] ?? "alert"}
+                  label={a.label}
+                  value={a.count}
+                  tone={FAMILY_TONE[ATTENTION_META[a.code]?.family ?? "neutral"]}
+                  to={`/vendors?attention=${a.code}`}
+                />
               ))}
-            </ul>
+            </div>
           )}
-        </Panel>
+        </ChartCard>
 
-        <Panel title="Coverage">
+        <ChartCard title="Portfolio by tier">
+          {tierSegments.length === 0 ? (
+            <p className="py-6 text-center text-body-sm text-text-subtle">No vendors yet.</p>
+          ) : (
+            <Donut segments={tierSegments} size={152} thickness={16} centerValue={s.total} />
+          )}
+        </ChartCard>
+
+        <ChartCard title="Assessment coverage">
           {s.coverage_in_scope === 0 ? (
-            <p className="text-body-sm text-text-subtle">No critical or high vendors yet.</p>
+            <p className="py-6 text-center text-body-sm text-text-subtle">No critical or high vendors yet.</p>
           ) : (
             <div className="flex flex-col items-center">
               <Gauge value={coveragePct} zones={COVERAGE_ZONES} label="In window" size={150} />
@@ -211,32 +238,10 @@ export function VendorsOverviewPage() {
               ) : null}
             </div>
           )}
-        </Panel>
+        </ChartCard>
 
-        <Panel title="By tier">
-          {tierSegments.length === 0 ? (
-            <p className="text-body-sm text-text-subtle">No vendors yet.</p>
-          ) : (
-            <Donut
-              segments={tierSegments}
-              size={112}
-              thickness={12}
-              centerValue={s.total}
-              centerLabel={s.total === 1 ? "vendor" : "vendors"}
-              showPercent={false}
-            />
-          )}
-        </Panel>
-      </div>
-
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Panel title="By status">
-          <BarList items={statusBars} total={s.total} />
-        </Panel>
-
-        <Panel
+        <ChartCard
           title="Open findings"
-          count={s.findings_open || undefined}
           action={
             s.findings_open > 0 ? (
               <Link to="/vendors/findings" className="text-label-sm text-text-link">
@@ -245,19 +250,22 @@ export function VendorsOverviewPage() {
             ) : null
           }
         >
-          {severityBars.length === 0 ? (
-            <p className="flex items-center gap-2 text-body-md text-status-success-text">
+          {severitySegments.length === 0 ? (
+            <p className="flex items-center justify-center gap-2 py-6 text-body-md text-status-success-text">
               <Icon name="check" className="size-4 shrink-0" />
               None open
             </p>
           ) : (
-            <BarList items={severityBars} total={s.findings_open} />
+            <Donut segments={severitySegments} size={152} thickness={16} centerValue={s.findings_open} centerLabel="Open" />
           )}
-        </Panel>
+        </ChartCard>
 
-        <Panel
+        <ChartCard title="By status">
+          <BarList items={statusBars} total={s.total} />
+        </ChartCard>
+
+        <ChartCard
           title="Intake"
-          count={s.intake_pending || undefined}
           action={
             <Link to="/vendors/intake" className="text-label-sm text-text-link">
               View all
@@ -265,7 +273,7 @@ export function VendorsOverviewPage() {
           }
         >
           {s.intake_pending === 0 ? (
-            <p className="text-body-sm text-text-subtle">Nothing waiting.</p>
+            <p className="py-6 text-center text-body-sm text-text-subtle">Nothing waiting.</p>
           ) : intakeQuery.isLoading ? (
             <Skeleton className="h-16 w-full" />
           ) : (
@@ -287,53 +295,8 @@ export function VendorsOverviewPage() {
               ))}
             </ul>
           )}
-        </Panel>
+        </ChartCard>
       </div>
     </div>
-  );
-}
-
-/**
- * A headline number that is also a way in. Declared here rather than in
- * `components/ui` because both existing overviews do the same — there is no DS
- * stat primitive, and one built for three call sites would be a guess.
- */
-function Stat({
-  label,
-  value,
-  caption,
-  tone,
-  to,
-}: {
-  label: string;
-  value: number;
-  caption?: string;
-  tone: "danger" | "warning";
-  to: string;
-}) {
-  const navigate = useNavigate();
-  const quiet = value === 0;
-  return (
-    <button
-      type="button"
-      onClick={() => navigate(to)}
-      className="rounded-lg border border-border bg-surface-primary px-4 py-3 text-left transition-colors duration-80 ease-state hover:bg-surface-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-accent"
-    >
-      <p className="text-caption text-text-subtle">{label}</p>
-      <p
-        className={cn(
-          "tabular mt-1 font-display text-numeral-md",
-          // A zero is good news here, so it does not wear the alarm colour.
-          quiet
-            ? "text-text-primary"
-            : tone === "danger"
-              ? "text-status-danger-text"
-              : "text-status-warning-text",
-        )}
-      >
-        {value}
-      </p>
-      {caption ? <p className="mt-0.5 text-caption text-text-subtle">{caption}</p> : null}
-    </button>
   );
 }

@@ -56,6 +56,7 @@ export function VulnerabilitiesImportPage() {
   return (
     <div className="w-full">
       <DetailHeader
+        icon="upload"
         backTo="/vulnerabilities"
         backLabel="Back to vulnerabilities"
         title="Import findings"

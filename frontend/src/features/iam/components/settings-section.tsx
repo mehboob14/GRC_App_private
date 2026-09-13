@@ -18,13 +18,13 @@ export function SettingsSection({ categoryId }: { categoryId: string }) {
         {category.label}
       </h1>
       <nav
-        className="mb-6 mt-4 flex gap-1 border-b border-border"
+        className="mb-6 mt-4 flex overflow-x-auto border-b border-border"
         aria-label={`${category.label} sections`}
       >
         {category.tabs.map((tab) =>
           tab.soon ? (
             <Tooltip key={tab.label} content={`${tab.label} arrives in a later phase`}>
-              <span className="-mb-px flex cursor-not-allowed items-center gap-1.5 px-3 py-2.5 text-label-md text-text-subtle">
+              <span className="-mb-px flex min-w-[8.5rem] cursor-not-allowed items-center justify-center gap-1.5 px-5 py-3 text-label-md text-text-subtle">
                 {tab.label}
                 <span className="font-sans text-overline uppercase text-text-subtle">
                   Soon
@@ -37,10 +37,11 @@ export function SettingsSection({ categoryId }: { categoryId: string }) {
               to={tab.to}
               className={({ isActive }) =>
                 cn(
-                  "relative -mb-px px-3 py-2.5 text-label-md transition-colors duration-150 ease-state",
+                  "relative -mb-px flex min-w-[8.5rem] items-center justify-center px-5 py-3 text-label-md transition-colors duration-150 ease-state",
+                  "focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-action-accent",
                   isActive
-                    ? "text-action-accent"
-                    : "text-text-secondary hover:text-text-primary",
+                    ? "text-text-primary"
+                    : "text-text-secondary hover:bg-surface-hover hover:text-text-primary",
                 )
               }
             >
@@ -48,7 +49,7 @@ export function SettingsSection({ categoryId }: { categoryId: string }) {
                 <>
                   {tab.label}
                   {isActive ? (
-                    <span className="absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-action-accent" />
+                    <span className="absolute inset-x-0 -bottom-px h-[3px] rounded-t-sm bg-action-accent" />
                   ) : null}
                 </>
               )}

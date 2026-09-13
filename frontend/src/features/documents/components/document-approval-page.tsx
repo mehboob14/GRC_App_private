@@ -171,6 +171,7 @@ export function DocumentApprovalPage() {
   return (
     <div className="w-full">
       <DetailHeader
+        icon="audit"
         backTo={`/documents/${doc.id}`}
         backLabel={`Back to ${doc.code}`}
         title={doc.title}

@@ -215,6 +215,7 @@ export function CampaignPage() {
   return (
     <div className="w-full">
       <DetailHeader
+        icon="users"
         backTo={`/documents/${campaign.document_id}`}
         backLabel={`Back to ${campaign.document_code}`}
         title={campaign.title}
