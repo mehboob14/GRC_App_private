@@ -47,7 +47,7 @@ export function BulkActionBar({
       )}
     >
       <span className="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-action-accent-tint px-2.5 py-1.5">
-        <Icon name="check" className="size-3.5 text-action-accent" strokeWidth={3} />
+        <Icon name="check" className="size-3.5 text-action-accent" />
         <span className="tabular whitespace-nowrap text-label-sm font-bold text-action-accent">
           {count} selected
         </span>

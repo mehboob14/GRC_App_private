@@ -49,7 +49,7 @@ function TaskRow({ task }: { task: Task }) {
     <div className="flex items-start gap-3 border-t border-border px-5 py-3.5 first:border-t-0">
       {task.done ? (
         <span className="mt-0.5 flex size-[18px] shrink-0 items-center justify-center rounded-full bg-status-success-base text-text-inverse">
-          <Icon name="check" className="size-[11px]" strokeWidth={3} />
+          <Icon name="check" className="size-[11px]" />
         </span>
       ) : (
         <span className="mt-0.5 size-[18px] shrink-0 rounded-full border-1.5 border-border-strong" />

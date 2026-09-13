@@ -129,7 +129,7 @@ export function FilterFacet({
                   )}
                 >
                   <DropdownMenuPrimitive.ItemIndicator className="absolute left-2 text-action-accent">
-                    <Icon name="check" className="size-3.5" strokeWidth={2.5} />
+                    <Icon name="check" className="size-3.5" />
                   </DropdownMenuPrimitive.ItemIndicator>
                   {option.label}
                 </DropdownMenuPrimitive.CheckboxItem>

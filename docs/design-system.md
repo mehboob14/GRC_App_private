@@ -306,8 +306,11 @@ Default is 0 — structure comes from borders. Shadow = the element floats.
 
 ### 4.5 Icon sizes
 
-12 · 14 · 16 · 20 · 24. 24-grid, 1.8px stroke, round caps — scaled proportionally (min effective
-1.2). 16 default inline · 12 in pills · 20 feature tiles · brand logos 40–48.
+12 · 14 · 16 · 20 · 24. Solid icons from Phosphor, mapped once in `components/ui/icon.tsx`:
+shapes use the `fill` weight, bare glyphs (check, close, plus, text-format marks) use `bold`,
+because their fill variant is the glyph knocked out of a square. 16 default inline · 12 in pills ·
+20 in top-bar buttons and feature tiles · brand logos 40 to 48. Changed from 1.8px outline icons on
+2026-09-13 at the product owner's request.
 
 ### 4.6 Control heights
 

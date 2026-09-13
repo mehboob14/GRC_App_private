@@ -29,13 +29,37 @@ export type TabStripItem = {
  * that has no tab and no facet to live on. It costs no vertical space because
  * the strip row is already there.
  */
-const tabClass = (isActive: boolean) =>
-  cn(
-    "relative -mb-px flex shrink-0 items-center gap-1.5 whitespace-nowrap px-3 py-2.5 text-label-md transition-colors duration-150 ease-state",
-    isActive ? "text-action-accent" : "text-text-secondary hover:text-text-primary",
-  );
+export type TabStripVariant = "default" | "bar";
 
-function TabBody({ tab, isActive }: { tab: TabStripItem; isActive: boolean }) {
+/**
+ * `bar` is the wide navigation bar: evenly sized tabs with centred labels, a
+ * hover fill, and a heavy underline across the whole active tab, so the
+ * current section reads from across the screen.
+ */
+const tabClass = (isActive: boolean, variant: TabStripVariant) =>
+  variant === "bar"
+    ? cn(
+        "relative -mb-px flex min-w-[8.5rem] shrink-0 items-center justify-center gap-2 whitespace-nowrap px-5 py-3 text-label-md transition-colors duration-150 ease-state",
+        "focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-action-accent",
+        isActive
+          ? "text-text-primary"
+          : "text-text-secondary hover:bg-surface-hover hover:text-text-primary",
+      )
+    : cn(
+        "relative -mb-px flex shrink-0 items-center gap-1.5 whitespace-nowrap px-3 py-2.5 text-label-md transition-colors duration-150 ease-state",
+        isActive ? "text-action-accent" : "text-text-secondary hover:text-text-primary",
+      );
+
+function TabBody({
+  tab,
+  isActive,
+  variant,
+}: {
+  tab: TabStripItem;
+  isActive: boolean;
+  variant: TabStripVariant;
+}) {
+  const bar = variant === "bar";
   return (
     <>
       {tab.label}
@@ -44,7 +68,9 @@ function TabBody({ tab, isActive }: { tab: TabStripItem; isActive: boolean }) {
           className={cn(
             "tabular rounded-full px-1.5 py-0.5 text-caption font-semibold",
             isActive
-              ? "bg-action-accent-tint text-action-accent"
+              ? bar
+                ? "bg-action-accent text-white"
+                : "bg-action-accent-tint text-action-accent"
               : "bg-surface-sunken text-text-subtle",
           )}
         >
@@ -52,7 +78,13 @@ function TabBody({ tab, isActive }: { tab: TabStripItem; isActive: boolean }) {
         </span>
       ) : null}
       {isActive ? (
-        <span className="absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-action-accent" />
+        <span
+          className={
+            bar
+              ? "absolute inset-x-0 -bottom-px h-[3px] rounded-t-sm bg-action-accent"
+              : "absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-action-accent"
+          }
+        />
       ) : null}
     </>
   );
@@ -66,6 +98,7 @@ export function TabStrip({
   aside,
   className,
   inline,
+  variant = "default",
 }: {
   items: readonly TabStripItem[];
   /** aria-label for the nav, e.g. "Asset sections". */
@@ -80,12 +113,16 @@ export function TabStrip({
    *  bar — for record-level tabs on a detail page (which pair with a
    *  DetailHeader), not module-root tabs. */
   inline?: boolean;
+  variant?: TabStripVariant;
 }) {
   const shell = useShellHeader();
 
   const inner = (
     <>
-      <nav className="flex min-w-0 flex-1 gap-1 overflow-x-auto" aria-label={label}>
+      <nav
+        className={cn("flex min-w-0 flex-1 overflow-x-auto", variant === "bar" ? "gap-0" : "gap-1")}
+        aria-label={label}
+      >
         {onSelect
           ? items.map((tab) => {
               const isActive = tab.id === value;
@@ -95,9 +132,9 @@ export function TabStrip({
                   type="button"
                   aria-pressed={isActive}
                   onClick={() => onSelect(tab.id)}
-                  className={tabClass(isActive)}
+                  className={tabClass(isActive, variant)}
                 >
-                  <TabBody tab={tab} isActive={isActive} />
+                  <TabBody tab={tab} isActive={isActive} variant={variant} />
                 </button>
               );
             })
@@ -106,9 +143,9 @@ export function TabStrip({
                 key={tab.id}
                 to={tab.id}
                 end={tab.end}
-                className={({ isActive }) => tabClass(isActive)}
+                className={({ isActive }) => tabClass(isActive, variant)}
               >
-                {({ isActive }) => <TabBody tab={tab} isActive={isActive} />}
+                {({ isActive }) => <TabBody tab={tab} isActive={isActive} variant={variant} />}
               </NavLink>
             ))}
       </nav>

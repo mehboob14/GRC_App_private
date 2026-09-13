@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -49,8 +49,7 @@ import {
   VENDOR_TYPE_LABEL,
 } from "../tokens";
 import { TierBadge } from "./tier-badge";
-import { VendorFormDrawer } from "./vendor-form-drawer";
-import { RequestVendorDialog } from "./request-vendor-dialog";
+import { useVendorsOutlet } from "./vendors-outlet";
 
 const PAGE_SIZE = 25;
 
@@ -133,13 +132,11 @@ export function VendorsRegisterPage() {
   const navigate = useNavigate();
   const { principal } = useAuth();
   const canManage = hasPermission(principal, "vendors:manage");
-  const canRead = hasPermission(principal, "vendors:read");
 
   const [params, setParams] = useSearchParams();
   const filters = useMemo(() => readFilters(params), [params]);
   const page = Number(params.get("page") ?? 1) || 1;
-  const [formOpen, setFormOpen] = useState(false);
-  const [requestOpen, setRequestOpen] = useState(false);
+  const { addVendor } = useVendorsOutlet();
 
   // replace, not push: a reader adjusting four facets should not have to press
   // Back four times to leave the register.
@@ -218,22 +215,6 @@ export function VendorsRegisterPage() {
             placeholder="Search name, service or industry…"
             aria-label="Search vendors"
           />
-        }
-        actions={
-          <>
-            {canRead && !canManage ? (
-              <Button variant="secondary" onClick={() => setRequestOpen(true)}>
-                <Icon name="plus" className="size-4" />
-                Request vendor
-              </Button>
-            ) : null}
-            {canManage ? (
-              <Button onClick={() => setFormOpen(true)}>
-                <Icon name="plus" className="size-4" />
-                Add vendor
-              </Button>
-            ) : null}
-          </>
         }
       >
         <FilterFacet
@@ -325,7 +306,10 @@ export function VendorsRegisterPage() {
             onClearFilters={filtered ? clearFilters : undefined}
             action={
               !filtered && canManage ? (
-                <Button onClick={() => setFormOpen(true)}>Add vendor</Button>
+                <Button onClick={addVendor}>
+                  <Icon name="plus" className="size-4" />
+                  Add vendor
+                </Button>
               ) : undefined
             }
           />
@@ -377,8 +361,6 @@ export function VendorsRegisterPage() {
         </div>
       ) : null}
 
-      <VendorFormDrawer open={formOpen} onOpenChange={setFormOpen} />
-      <RequestVendorDialog open={requestOpen} onOpenChange={setRequestOpen} />
     </div>
   );
 }

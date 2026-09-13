@@ -49,7 +49,7 @@ export function Checkbox({
         {checked === "indeterminate" ? (
           <span className="block h-0.5 w-2 rounded-full bg-action-primary-fg" />
         ) : (
-          <Icon name="check" className="size-[11px]" strokeWidth={3} />
+          <Icon name="check" className="size-[11px]" />
         )}
       </CheckboxPrimitive.Indicator>
     </CheckboxPrimitive.Root>

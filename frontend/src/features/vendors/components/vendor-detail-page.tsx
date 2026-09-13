@@ -190,6 +190,7 @@ export function VendorDetailPage() {
       <DetailHeader
         backTo="/vendors"
         backLabel="Back to vendors"
+        icon="vendor"
         title={vendor.name}
         chips={
           <>
@@ -246,23 +247,28 @@ export function VendorDetailPage() {
           canManage ? (
             <>
               <Button variant="secondary" onClick={() => setEditing(true)}>
+                <Icon name="edit" className="size-4" />
                 Edit
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="secondary" size="icon" aria-label={`More actions for ${vendor.name}`}>
-                    <Icon name="more" className="size-4" />
+                  <Button variant="secondary" aria-label={`Actions for ${vendor.name}`}>
+                    Actions
+                    <Icon name="chev" className="size-3.5" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+                <DropdownMenuContent align="end" className="w-52">
                   <DropdownMenuItem onSelect={() => setAddingEngagement(true)}>
+                    <Icon name="briefcase" className="size-4 text-text-subtle" />
                     Add engagement
                   </DropdownMenuItem>
                   <DropdownMenuItem onSelect={() => setAddingContact(true)}>
+                    <Icon name="user" className="size-4 text-text-subtle" />
                     Add contact
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem variant="danger" onSelect={() => setOffboarding(true)}>
+                    <Icon name="signout" className="size-4" />
                     Start offboarding
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -278,6 +284,7 @@ export function VendorDetailPage() {
         value={tab}
         onSelect={(id) => goToTab(id as TabId)}
         className="mt-1"
+        variant="bar"
         inline
       />
 

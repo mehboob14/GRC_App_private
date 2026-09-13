@@ -75,14 +75,14 @@ export function AcknowledgementsBell() {
       <Tooltip content="Documents to acknowledge">
         <DropdownMenuTrigger asChild>
           <Button
-            variant="secondary"
+            variant="ghost"
             size="icon"
-            className="relative shrink-0"
+            className="relative shrink-0 rounded-full data-[state=open]:bg-surface-hover"
             aria-label={count > 0 ? `Acknowledgements, ${count} pending` : "Acknowledgements"}
           >
-            <Icon name="doc" className="size-4 text-text-secondary" />
+            <Icon name="doc" className="size-5" />
             {count > 0 ? (
-              <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-action-accent px-1 text-[10px] font-bold leading-none text-white tabular">
+              <span className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-status-danger-base px-1 text-[10px] font-bold leading-none text-white ring-2 ring-surface-primary tabular">
                 {count > 9 ? "9+" : count}
               </span>
             ) : null}

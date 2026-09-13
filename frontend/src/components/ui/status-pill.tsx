@@ -92,7 +92,6 @@ export function StatusPill({
           <Icon
             name={status === "danger" ? "x" : "check"}
             className="size-[13px]"
-            strokeWidth={2.5}
           />
         </span>
         <span className="sr-only">{label}</span>

@@ -86,16 +86,16 @@ export function NotificationBell() {
       <Tooltip content="Notifications">
         <DropdownMenuTrigger asChild>
           <Button
-            variant="secondary"
+            variant="ghost"
             size="icon"
-            className="relative shrink-0"
+            className="relative shrink-0 rounded-full data-[state=open]:bg-surface-hover"
             aria-label={
               unread > 0 ? `Notifications, ${unread} unread` : "Notifications"
             }
           >
-            <Icon name="bell" className="size-4 text-text-secondary" />
+            <Icon name="bell" className="size-5" />
             {unread > 0 ? (
-              <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-action-accent px-1 text-[10px] font-bold leading-none text-white tabular">
+              <span className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-status-danger-base px-1 text-[10px] font-bold leading-none text-white ring-2 ring-surface-primary tabular">
                 {unread > 9 ? "9+" : unread}
               </span>
             ) : null}

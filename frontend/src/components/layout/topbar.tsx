@@ -4,11 +4,9 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   Icon,
-  Tooltip,
 } from "@/components/ui";
 import { useAuth } from "@/lib/auth/auth-context";
 import { NotificationBell } from "@/features/notifications/components/notification-bell";
@@ -28,72 +26,102 @@ function navTitleForPath(pathname: string): string {
 }
 
 export function Topbar() {
-  const navigate = useNavigate();
   const location = useLocation();
-  const { principal, signOut } = useAuth();
   const shell = useShellHeader();
-
-  const title = shell?.title ?? navTitleForPath(location.pathname);
+  const heading = shell?.heading;
+  const title = heading?.title ?? navTitleForPath(location.pathname);
 
   return (
     <header className="flex shrink-0 flex-col border-b border-border bg-surface-primary">
-      {/* Row 1 — module title (left) + global actions (right) */}
-      <div className="flex h-topbar items-center gap-3.5 px-5">
-        <h1 className="min-w-0 flex-1 truncate font-display text-heading-md text-text-primary">
-          {title}
-        </h1>
+      {/* Row 1: the module heading, its own actions, then the global cluster. */}
+      <div className="flex h-topbar items-center gap-3 px-5">
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          {heading?.icon ? (
+            <span className="grid size-9 shrink-0 place-items-center rounded-md bg-action-accent-tint text-action-accent">
+              <Icon name={heading.icon} className="size-5" />
+            </span>
+          ) : null}
+          <div className="min-w-0">
+            <h1 className="truncate font-display text-heading-md text-text-primary">{title}</h1>
+            {heading?.subtitle ? (
+              <p className="truncate text-caption text-text-subtle">{heading.subtitle}</p>
+            ) : null}
+          </div>
+        </div>
 
-        <Tooltip content="Help & docs arrive in a later phase">
-          <button
-            type="button"
-            aria-label="Help, arrives in a later phase"
-            aria-disabled
-            className="flex size-9 shrink-0 cursor-not-allowed items-center justify-center rounded-sm border border-border bg-surface-primary"
-          >
-            <Icon name="help" className="size-4 text-text-subtle" />
-          </button>
-        </Tooltip>
+        <div ref={shell?.setActionsSlot} className="flex shrink-0 items-center gap-2 empty:hidden" />
 
-        <AcknowledgementsBell />
-        <NotificationBell />
+        <div className="ml-2 flex shrink-0 items-center gap-0.5">
+          <AcknowledgementsBell />
+          <NotificationBell />
+        </div>
 
-        <div className="mx-1 h-6 w-px shrink-0 bg-border" />
-
-        <DropdownMenu>
-          <Tooltip content="Account">
-            <DropdownMenuTrigger asChild>
-              <button
-                type="button"
-                className="flex shrink-0 items-center gap-2 rounded-md p-0.5 transition-colors duration-80 ease-state hover:bg-surface-hover"
-                aria-label="User menu"
-              >
-                <Avatar name={principal?.user.full_name ?? "User"} seed={principal?.user.email} />
-                <Icon name="chev" className="size-4 shrink-0 text-text-subtle" />
-              </button>
-            </DropdownMenuTrigger>
-          </Tooltip>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>{principal?.user.full_name ?? "Account"}</DropdownMenuLabel>
-            <DropdownMenuItem onSelect={() => navigate("/settings/security/mfa")}>
-              Security
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onSelect={() => {
-                signOut();
-                navigate("/sign-in", { replace: true });
-              }}
-            >
-              Sign out
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <AccountMenu />
       </div>
 
-      {/* Row 2 — the module's tab strip portals in here, separated from the
-          heading by its own divider (reference layout). `empty:hidden`
-          collapses the row — and its border — on pages that have no tabs. */}
+      {/* Row 2: the module's tab strip portals in here. `empty:hidden`
+          collapses the row, and its border, on pages that have no tabs. */}
       <div ref={shell?.setTabsSlot} className="border-t border-border px-5 empty:hidden" />
     </header>
+  );
+}
+
+/**
+ * Who is signed in, in words rather than a bare avatar: name and role on the
+ * chip, the email in the menu so a person with two accounts can tell which one
+ * this is.
+ */
+function AccountMenu() {
+  const navigate = useNavigate();
+  const { principal, signOut } = useAuth();
+  const name = principal?.user.full_name ?? "Account";
+  const role = principal?.role_names[0] ?? "Member";
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          aria-label={`Account menu for ${name}`}
+          className="ml-1 flex h-10 shrink-0 items-center gap-2 rounded-full border border-border bg-surface-primary py-1 pl-1 pr-3 transition-colors duration-80 ease-state hover:bg-surface-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-accent data-[state=open]:bg-surface-hover"
+        >
+          <Avatar name={name} seed={principal?.user.email} />
+          <span className="hidden min-w-0 text-left md:block">
+            <span className="block max-w-[10rem] truncate text-label-sm text-text-primary">
+              {name}
+            </span>
+            <span className="block max-w-[10rem] truncate text-caption text-text-subtle">
+              {role}
+            </span>
+          </span>
+          <Icon name="chev" className="size-3.5 text-text-subtle" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-64">
+        <div className="flex items-center gap-2.5 px-2.5 py-2">
+          <Avatar name={name} seed={principal?.user.email} size="lg" />
+          <div className="min-w-0">
+            <p className="truncate text-label-md text-text-primary">{name}</p>
+            <p className="truncate text-caption text-text-subtle">{principal?.user.email}</p>
+          </div>
+        </div>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onSelect={() => navigate("/settings/security/mfa")}>
+          <Icon name="lock" className="size-4 text-text-subtle" />
+          Security
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          variant="danger"
+          onSelect={() => {
+            signOut();
+            navigate("/sign-in", { replace: true });
+          }}
+        >
+          <Icon name="signout" className="size-4" />
+          Sign out
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

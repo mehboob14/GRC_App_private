@@ -200,7 +200,7 @@ export function SearchableSelect({
                     </span>
                   )}
                   {option.value === value ? (
-                    <Icon name="check" className="size-3.5 shrink-0" strokeWidth={2.5} />
+                    <Icon name="check" className="size-3.5 shrink-0" />
                   ) : null}
                 </DropdownMenuPrimitive.Item>
               ))

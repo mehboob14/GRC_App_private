@@ -33,7 +33,6 @@ import {
   SCREENING_META,
   URGENCY_META,
 } from "../tokens";
-import { RequestVendorDialog } from "./request-vendor-dialog";
 
 type Scope = "pending" | "approved" | "rejected" | "all";
 
@@ -56,7 +55,6 @@ export function VendorIntakePage() {
   const { principal } = useAuth();
   const canDecide = hasPermission(principal, "vendors:manage");
   const [scope, setScope] = useState<Scope>("pending");
-  const [requestOpen, setRequestOpen] = useState(false);
 
   const query = useQuery({
     queryKey: ["vendor-intake", scope],
@@ -68,14 +66,7 @@ export function VendorIntakePage() {
 
   return (
     <div>
-      <Toolbar
-        actions={
-          <Button variant="secondary" onClick={() => setRequestOpen(true)}>
-            <Icon name="plus" className="size-4" />
-            Request vendor
-          </Button>
-        }
-      >
+      <Toolbar>
         <SegmentedControl
           items={SCOPES}
           value={scope}
@@ -119,7 +110,6 @@ export function VendorIntakePage() {
         )}
       </div>
 
-      <RequestVendorDialog open={requestOpen} onOpenChange={setRequestOpen} />
     </div>
   );
 }

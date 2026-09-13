@@ -1,7 +1,14 @@
+import { useState } from "react";
 import { Outlet } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { PageHeader, TabStrip, type TabStripItem } from "@/components/ui";
-import { listFindings, listIntake } from "../api";
+import { Button, Icon, PageHeader, TabStrip, type TabStripItem } from "@/components/ui";
+import { useAuth } from "@/lib/auth/auth-context";
+import { hasPermission } from "@/lib/auth/session";
+import { getSummary, listFindings, listIntake } from "../api";
+import { RequestVendorDialog } from "./request-vendor-dialog";
+import { VendorFormDrawer } from "./vendor-form-drawer";
+import type { VendorsOutlet } from "./vendors-outlet";
+
 
 /**
  * The module-root surfaces.
@@ -24,6 +31,23 @@ const TABS: TabStripItem[] = [
 ];
 
 export function VendorsLayout() {
+  const { principal } = useAuth();
+  const canManage = hasPermission(principal, "vendors:manage");
+  const [formOpen, setFormOpen] = useState(false);
+  const [requestOpen, setRequestOpen] = useState(false);
+
+  const summaryQuery = useQuery({ queryKey: ["vendor-summary"], queryFn: getSummary });
+  const summary = summaryQuery.data;
+  const subtitle = summary
+    ? [
+        `${summary.total} ${summary.total === 1 ? "vendor" : "vendors"}`,
+        summary.by_tier.critical ? `${summary.by_tier.critical} critical` : null,
+        summary.findings_open ? `${summary.findings_open} open findings` : null,
+      ]
+        .filter(Boolean)
+        .join(" · ")
+    : "Third-party risk";
+
   // Both counts are the queue length a person is expected to act on, not a
   // total: requests awaiting a decision, and findings still open. The same
   // query keys the two pages use, so react-query serves them from cache.
@@ -46,9 +70,29 @@ export function VendorsLayout() {
 
   return (
     <div className="w-full">
-      <PageHeader eyebrow="Risk" title="Vendors" />
-      <TabStrip label="Vendor sections" items={tabs} />
-      <Outlet />
+      <PageHeader
+        title="Vendors"
+        icon="vendor"
+        subtitle={subtitle}
+        actions={
+          <>
+            <Button variant="secondary" onClick={() => setRequestOpen(true)}>
+              <Icon name="doc" className="size-4" />
+              Request vendor
+            </Button>
+            {canManage ? (
+              <Button onClick={() => setFormOpen(true)}>
+                <Icon name="plus" className="size-4" />
+                Add vendor
+              </Button>
+            ) : null}
+          </>
+        }
+      />
+      <TabStrip label="Vendor sections" items={tabs} variant="bar" />
+      <Outlet context={{ addVendor: () => setFormOpen(true) } satisfies VendorsOutlet} />
+      <VendorFormDrawer open={formOpen} onOpenChange={setFormOpen} />
+      <RequestVendorDialog open={requestOpen} onOpenChange={setRequestOpen} />
     </div>
   );
 }
