@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Badge,
@@ -731,10 +732,18 @@ function ResponseRow({
               </Tooltip>
             ) : null}
             {r.critical_control ? <Badge variant="countWarn">Critical control</Badge> : null}
-            {r.evidence_required ? (
-              <Badge variant={r.evidence_id ? "statusPass" : "count"}>
-                {r.evidence_id ? "Evidence attached" : "Evidence missing"}
-              </Badge>
+            {r.evidence_id ? (
+              <Link
+                to={"/evidence/" + r.evidence_id}
+                className="rounded-xs focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-accent"
+              >
+                <Badge variant="statusPass">
+                  <Icon name="doc" className="size-3" />
+                  Open evidence
+                </Badge>
+              </Link>
+            ) : r.evidence_required ? (
+              <Badge variant="count">Evidence missing</Badge>
             ) : null}
             {r.framework_refs.map((ref) => (
               <Badge key={ref} variant="neutral">

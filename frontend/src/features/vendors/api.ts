@@ -447,11 +447,23 @@ async function portalFetch(path: string, init?: RequestInit): Promise<Portal> {
     throw new PortalError(0, "Can't reach the questionnaire. Check your connection, then try again.");
   }
   if (!response.ok) {
-    throw new PortalError(
-      response.status,
+    // The server's message is written for this reader (a refused file type, a
+    // missing reason, a dead link), so show it. The fallbacks cover a body that
+    // is not the API's error shape, such as a proxy's own 413 page.
+    const body = (await response.json().catch(() => null)) as {
+      error?: { message?: string };
+    } | null;
+    const fallback =
       response.status === 429
         ? "Too many attempts. Wait a few minutes, then try again."
-        : "This questionnaire link is no longer valid. Ask your contact to send a new one.",
+        : response.status === 413
+          ? "That file is too large. Attach one under 25 MB."
+          : response.status === 404
+            ? "This questionnaire link is no longer valid. Ask your contact to send a new one."
+            : "That did not save. Try again.";
+    throw new PortalError(
+      response.status,
+      response.status === 429 ? fallback : (body?.error?.message ?? fallback),
     );
   }
   return (await response.json()) as Portal;

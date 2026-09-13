@@ -1,15 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  Badge,
-  BrandMark,
-  Button,
-  Icon,
-  Skeleton,
-  TextArea,
-  Tooltip,
-} from "@/components/ui";
+import { Badge, BrandMark, Button, Icon, Skeleton, TextArea } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import {
   answerPortalQuestion,
@@ -27,6 +19,14 @@ const ANSWERS = [
   { value: "no", label: "No" },
   { value: "na", label: "Not applicable" },
 ];
+
+/** The server's rule: a yes or a partial claims the control, so it owes its document. */
+const CLAIMS_A_CONTROL = new Set(["yes", "partial"]);
+const owesDocument = (q: PortalQuestion) =>
+  q.evidence_required && q.answer !== null && CLAIMS_A_CONTROL.has(q.answer) && !q.has_evidence;
+
+/** What the file store accepts. The server sniffs the bytes; this only filters the picker. */
+const ACCEPT = ".pdf,.png,.jpg,.jpeg,.gif,.webp,.docx,.xlsx,.pptx,.txt,.csv,.json";
 
 /**
  * The page a third party sees.
@@ -129,9 +129,15 @@ function PortalBody({
   }, [portal.questions]);
 
   const unanswered = portal.question_count - portal.answered_count;
-  const missingEvidence = portal.questions.filter(
-    (q) => q.evidence_required && q.answer !== null && q.answer !== "na" && !q.has_evidence,
-  );
+  const missingDocs = portal.questions.filter(owesDocument).length;
+  const ready = unanswered === 0 && missingDocs === 0;
+  // In page order, so "Next" walks down the page rather than jumping around it.
+  const next = Object.values(byDomain)
+    .flat()
+    .find((q) => q.answer === null || owesDocument(q));
+
+  const goTo = (id: string) =>
+    document.getElementById(`q-${id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
 
   const submit = useMutation({
     mutationFn: () => submitPortal(token),
@@ -194,7 +200,12 @@ function PortalBody({
       <div className="mt-5 space-y-5">
         {Object.entries(byDomain).map(([domain, questions]) => (
           <section key={domain} className="rounded-lg border border-border bg-surface-primary p-5">
-            <h2 className="font-display text-title-md text-text-primary">{domain}</h2>
+            <div className="flex items-baseline justify-between gap-3">
+              <h2 className="font-display text-title-md text-text-primary">{domain}</h2>
+              <span className="tabular text-caption text-text-subtle">
+                {questions.filter((q) => q.answer !== null).length}/{questions.length}
+              </span>
+            </div>
             <ul className="mt-3 divide-y divide-border">
               {questions.map((q) => (
                 <QuestionRow key={q.id} token={token} question={q} onApply={onApply} />
@@ -204,37 +215,48 @@ function PortalBody({
         ))}
       </div>
 
-      <div className="mt-5 rounded-lg border border-border bg-surface-primary p-5">
-        {unanswered > 0 ? (
-          <p className="flex items-start gap-2 text-body-md text-text-secondary">
-            <Icon name="info" className="mt-0.5 size-4 shrink-0 text-text-subtle" />
-            {unanswered} {unanswered === 1 ? "question is" : "questions are"} unanswered. You can
-            still send.
-          </p>
-        ) : null}
-        {missingEvidence.length > 0 ? (
-          <p className="mt-2 flex items-start gap-2 text-body-md text-status-warning-text">
-            <Icon name="alert" className="mt-0.5 size-4 shrink-0" />
-            {missingEvidence.length}{" "}
-            {missingEvidence.length === 1 ? "answer needs" : "answers need"} a document.
-            Without one, {missingEvidence.length === 1 ? "it counts" : "they count"} as unproven.
-          </p>
-        ) : null}
-        {submitError ? (
-          <p role="alert" className="mt-2 text-body-md text-status-danger-text">
-            {submitError}
-          </p>
-        ) : null}
-        <Button
-          className="mt-4"
-          size="lg"
-          loading={submit.isPending}
-          onClick={() => submit.mutate()}
-          disabled={portal.answered_count === 0}
-        >
-          Send answers
-        </Button>
-        <p className="mt-2 text-caption text-text-subtle">Sending closes this link.</p>
+      {/* Stays in view: what is left, a way to reach it, and the send button,
+          without scrolling back to the top of a forty question page. */}
+      <div className="sticky bottom-3 z-sticky-page mt-5 rounded-lg border border-border bg-surface-primary p-3 shadow-3">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <div className="min-w-0 flex-1">
+            {ready ? (
+              <p className="flex items-center gap-1.5 text-label-md text-status-success-text">
+                <Icon name="check" className="size-4" />
+                Ready to send
+              </p>
+            ) : (
+              <p className="flex flex-wrap items-center gap-2 text-label-md text-text-primary">
+                {unanswered > 0 ? (
+                  <Badge variant="neutral">
+                    {unanswered} {unanswered === 1 ? "question" : "questions"} left
+                  </Badge>
+                ) : null}
+                {missingDocs > 0 ? (
+                  <Badge variant="countWarn">
+                    {missingDocs} {missingDocs === 1 ? "document" : "documents"} missing
+                  </Badge>
+                ) : null}
+              </p>
+            )}
+            {submitError ? (
+              <p role="alert" className="mt-1 text-body-sm text-status-danger-text">
+                {submitError}
+              </p>
+            ) : (
+              <p className="mt-1 text-caption text-text-subtle">Sending closes this link.</p>
+            )}
+          </div>
+          {next ? (
+            <Button variant="secondary" onClick={() => goTo(next.id)}>
+              Next to do
+              <Icon name="arrowr" className="size-4" />
+            </Button>
+          ) : null}
+          <Button loading={submit.isPending} onClick={() => submit.mutate()} disabled={!ready}>
+            Send answers
+          </Button>
+        </div>
       </div>
     </div>
   );
@@ -251,8 +273,10 @@ function QuestionRow({
 }) {
   const [notes, setNotes] = useState(q.implementation_notes ?? "");
   const [naReason, setNaReason] = useState(q.na_justification ?? "");
+  // "Not applicable" is refused without its reason, so picking it opens the
+  // reason box first and the answer saves once there is a reason to save.
+  const [naOpen, setNaOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const fileInput = useRef<HTMLInputElement>(null);
 
   const fail = (e: unknown) =>
     setError(e instanceof PortalError ? e.message : "That did not save. Try again.");
@@ -267,6 +291,7 @@ function QuestionRow({
       }),
     onSuccess: (next) => {
       setError(null);
+      setNaOpen(false);
       onApply(next);
     },
     onError: fail,
@@ -281,18 +306,15 @@ function QuestionRow({
     onError: fail,
   });
 
-  const needsEvidence =
-    q.evidence_required && q.answer !== null && q.answer !== "na" && !q.has_evidence;
+  const choice = naOpen ? "na" : q.answer;
+  const saveNa = () => {
+    const reason = naReason.trim();
+    if (reason && (q.answer !== "na" || reason !== (q.na_justification ?? ""))) answer.mutate("na");
+  };
 
   return (
-    <li className="py-4">
+    <li id={`q-${q.id}`} className="scroll-mt-6 py-4">
       <p className="text-body-lg text-text-primary">{q.body}</p>
-      {q.evidence_required ? (
-        <p className="mt-1 flex items-center gap-1.5 text-caption text-text-subtle">
-          <Icon name="doc" className="size-3.5 shrink-0" />
-          Document required
-        </p>
-      ) : null}
 
       <div
         className="mt-2.5 flex flex-wrap gap-2"
@@ -300,7 +322,7 @@ function QuestionRow({
         aria-label={`Answer for ${q.code}`}
       >
         {ANSWERS.map((option) => {
-          const selected = q.answer === option.value;
+          const selected = choice === option.value;
           return (
             <button
               key={option.value}
@@ -308,7 +330,17 @@ function QuestionRow({
               role="radio"
               aria-checked={selected}
               disabled={answer.isPending}
-              onClick={() => answer.mutate(option.value)}
+              onClick={() => {
+                if (option.value !== "na") {
+                  setNaOpen(false);
+                  answer.mutate(option.value);
+                } else if (naReason.trim()) {
+                  answer.mutate("na");
+                } else {
+                  setError(null);
+                  setNaOpen(true);
+                }
+              }}
               className={cn(
                 "rounded-sm border px-3 py-1.5 text-label-md transition-colors duration-80 ease-state",
                 "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-accent",
@@ -323,63 +355,42 @@ function QuestionRow({
         })}
       </div>
 
-      {q.answer === "na" ? (
-        <TextArea
-          className="mt-3"
-          label="Why this does not apply to you"
-          value={naReason}
-          onChange={(e) => setNaReason(e.target.value)}
-          onBlur={() => answer.mutate("na")}
-          rows={2}
-          maxLength={4000}
-        />
+      {choice === "na" ? (
+        <div className="mt-3">
+          <TextArea
+            label="Why this does not apply to you"
+            value={naReason}
+            onChange={(e) => setNaReason(e.target.value)}
+            onBlur={saveNa}
+            autoFocus={naOpen}
+            rows={2}
+            maxLength={4000}
+          />
+        </div>
       ) : q.answer !== null ? (
-        <TextArea
-          className="mt-3"
-          label="How you do this"
-          optional
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          onBlur={() => {
-            if (q.answer && notes !== (q.implementation_notes ?? "")) answer.mutate(q.answer);
-          }}
-          rows={2}
-          maxLength={8000}
-        />
+        <div className="mt-3">
+          <TextArea
+            label="How you do this"
+            optional
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            onBlur={() => {
+              if (q.answer && notes !== (q.implementation_notes ?? "")) answer.mutate(q.answer);
+            }}
+            rows={2}
+            maxLength={8000}
+          />
+        </div>
       ) : null}
 
-      {q.evidence_required && q.answer !== null && q.answer !== "na" ? (
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <input
-            ref={fileInput}
-            type="file"
-            className="sr-only"
-            aria-label={`Attach a document for ${q.code}`}
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) upload.mutate(file);
-              e.target.value = "";
-            }}
-          />
-          <Button
-            variant="secondary"
-            size="sm"
-            loading={upload.isPending}
-            onClick={() => fileInput.current?.click()}
-          >
-            <Icon name="upload" className="size-4" />
-            {q.has_evidence ? "Replace document" : "Attach document"}
-          </Button>
-          {q.has_evidence ? (
-            <Tooltip content="Sent to the reviewer. You can replace it, not view it.">
-              <span>
-                <Badge variant="statusPass">Attached</Badge>
-              </span>
-            </Tooltip>
-          ) : needsEvidence ? (
-            <span className="text-caption text-status-warning-text">Still needed</span>
-          ) : null}
-        </div>
+      {q.evidence_required ? (
+        <DocumentDrop
+          question={q}
+          owed={owesDocument(q)}
+          optional={choice === "no" || choice === "na"}
+          busy={upload.isPending}
+          onFile={(file) => upload.mutate(file)}
+        />
       ) : null}
 
       {error ? (
@@ -388,5 +399,106 @@ function QuestionRow({
         </p>
       ) : null}
     </li>
+  );
+}
+
+/**
+ * Where a vendor attaches proof. Always shown on a question that asks for it,
+ * before any answer is picked, so the ask and the way to meet it sit together.
+ * Drop a file on it or browse; either way the server checks the file.
+ */
+function DocumentDrop({
+  question: q,
+  owed,
+  optional,
+  busy,
+  onFile,
+}: {
+  question: PortalQuestion;
+  /** The answer claims the control and nothing is attached yet. */
+  owed: boolean;
+  /** A "no" or "not applicable" claims nothing, so a document is welcome but not owed. */
+  optional: boolean;
+  busy: boolean;
+  onFile: (file: File) => void;
+}) {
+  const input = useRef<HTMLInputElement>(null);
+  const [over, setOver] = useState(false);
+  const attached = q.has_evidence;
+
+  return (
+    <div
+      onDragOver={(e) => {
+        e.preventDefault();
+        setOver(true);
+      }}
+      onDragLeave={() => setOver(false)}
+      onDrop={(e) => {
+        e.preventDefault();
+        setOver(false);
+        const file = e.dataTransfer.files?.[0];
+        if (file && !busy) onFile(file);
+      }}
+      className={cn(
+        "mt-3 flex items-center gap-3 rounded-md border px-3 py-2.5 transition-colors duration-80 ease-state",
+        over
+          ? "border-action-accent bg-action-accent-tint"
+          : attached
+            ? "border-status-success-border bg-status-success-bg"
+            : owed
+              ? "border-dashed border-status-warning-border bg-status-warning-bg"
+              : "border-dashed border-border-strong bg-surface-sunken",
+      )}
+    >
+      <Icon
+        name={attached ? "check" : "doc"}
+        className={cn(
+          "size-5 shrink-0",
+          attached
+            ? "text-status-success-base"
+            : owed
+              ? "text-status-warning-base"
+              : "text-text-subtle",
+        )}
+      />
+      <div className="min-w-0 flex-1">
+        <p className="flex flex-wrap items-center gap-2 text-label-md text-text-primary">
+          {attached ? "Document attached" : "Supporting document"}
+          {attached ? null : owed ? (
+            <Badge variant="countWarn">Required</Badge>
+          ) : (
+            <Badge variant="neutral">{optional ? "Optional" : "Required"}</Badge>
+          )}
+        </p>
+        <p className="mt-0.5 text-caption text-text-subtle">
+          {attached
+            ? "Sent to the reviewer. Replace it any time before you send."
+            : "Drop a file or upload. PDF, Office, image or text, up to 25 MB."}
+        </p>
+      </div>
+      <input
+        ref={input}
+        type="file"
+        accept={ACCEPT}
+        className="sr-only"
+        tabIndex={-1}
+        aria-label={`Upload a document for ${q.code}`}
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) onFile(file);
+          e.target.value = "";
+        }}
+      />
+      <Button
+        variant="secondary"
+        size="sm"
+        className="shrink-0"
+        loading={busy}
+        onClick={() => input.current?.click()}
+      >
+        <Icon name="upload" className="size-4" />
+        {attached ? "Replace" : "Upload"}
+      </Button>
+    </div>
   );
 }
