@@ -247,10 +247,38 @@ export function DocumentsRegisterPage() {
           withAck.reduce((sum, d) => sum + (d.attestation_pct ?? 0), 0) / withAck.length,
         )
       : null;
+  // Archived documents are out of all three counts; nothing while loading.
+  const subtitle = documentsQuery.data
+    ? [
+        `${activeCount} ${activeCount === 1 ? "document" : "documents"}`,
+        inReview ? `${inReview} awaiting approval` : null,
+        overdue.length ? `${overdue.length} overdue` : null,
+      ]
+        .filter(Boolean)
+        .join(" · ")
+    : undefined;
 
   return (
     <div className="w-full">
-      <PageHeader eyebrow="Compliance" title="Policies & documents" />
+      <PageHeader
+        title="Policies & documents"
+        icon="book"
+        subtitle={subtitle}
+        actions={
+          <>
+            {/* Templates first: starting from a written policy is the right
+                default, and a blank page is the harder path. */}
+            <Button variant="secondary" onClick={() => setPickingTemplate(true)}>
+              <Icon name="book" className="size-4" />
+              Templates
+            </Button>
+            <Button onClick={() => setCreating(true)}>
+              <Icon name="plus" className="size-4" />
+              New document
+            </Button>
+          </>
+        }
+      />
 
       {/* Overdue-renewal alert (Figma): leads with how many, then the worst. */}
       {scope === "active" && overdue.length > 0 ? (
@@ -313,22 +341,10 @@ export function DocumentsRegisterPage() {
           />
         }
         actions={
-          <>
-            <p aria-live="polite" className="text-caption text-text-subtle">
-              Showing <span className="tabular">{visible.length}</span> of{" "}
-              <span className="tabular">{scoped.length}</span> documents
-            </p>
-            {/* Templates first: starting from a written policy is the right
-                default, and a blank page is the harder path. */}
-            <Button variant="secondary" onClick={() => setPickingTemplate(true)}>
-              <Icon name="book" className="size-4" />
-              Templates
-            </Button>
-            <Button onClick={() => setCreating(true)}>
-              <Icon name="plus" className="size-4" />
-              New document
-            </Button>
-          </>
+          <p aria-live="polite" className="text-caption text-text-subtle">
+            Showing <span className="tabular">{visible.length}</span> of{" "}
+            <span className="tabular">{scoped.length}</span> documents
+          </p>
         }
       >
         <FilterFacet

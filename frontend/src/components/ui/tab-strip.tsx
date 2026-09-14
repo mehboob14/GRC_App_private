@@ -12,6 +12,8 @@ export type TabStripItem = {
   end?: boolean;
   /** Count badge. This is where a register's deleted summary numbers go. */
   count?: number;
+  /** A later-phase section: shown for orientation with a Soon marker. */
+  soon?: boolean;
 };
 
 /**
@@ -64,6 +66,11 @@ function TabBody({
   return (
     <>
       {tab.label}
+      {tab.soon ? (
+        <span className="rounded-full bg-surface-sunken px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-text-subtle">
+          Soon
+        </span>
+      ) : null}
       {typeof tab.count === "number" ? (
         <span
           className={cn(

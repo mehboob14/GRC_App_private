@@ -83,9 +83,15 @@ approval path.
 campaigns target a **version**, not the document. Group membership is snapshot at campaign launch, so
 later joiners fall into the next campaign rather than appearing retroactively overdue.
 
-**Risk.** A risk with no linked control is found by querying the map, never by a stored flag, so the
-warning cannot go stale. `risk_source` + `origin_id` exist now so Phase 3 ERM extends this table
-instead of replacing it.
+**Risk.** A risk with no linked control is found by querying `risk_control_map` against the active
+controls, never by a stored flag, so the warning cannot go stale. **The matrix belongs to the
+register, not the tenant**: `risk_registers` carries its own levels, labels, severity bands, category
+taxonomy (`risk_categories`, two levels) and review cadence, so a workspace can run several registers
+side by side. Scores are generated columns (likelihood × impact). `accepted` is only ever set by an
+approved `risk_acceptances` row whose approver is not the requester (a CHECK); expiry or revocation
+reopens the risk. `origin` + `origin_ref` + `template_id` record where a risk came from (library,
+import, vendor finding) so Phase 3 ERM extends these tables instead of replacing them. Column lists
+and every departure from the ER: `openspec/changes/week7-risk-register/design.md` §1.
 
 **Vendors.** Vendor is the organisation; **an engagement is one use of it, and the engagement is the
 unit of risk**. Stages, tiering runs, assessments and contracts all hang off an engagement, and
@@ -174,7 +180,8 @@ text with CHECK constraints, never enums. `tenant_id` leads every composite inde
 
 ## Scheduled jobs the model depends on
 
-Evidence staleness refresh; readiness snapshot writer; acceptance and waiver expiry; vulnerability
+Evidence staleness refresh; readiness snapshot writer; acceptance and waiver expiry (risk
+acceptances reopen their risk, `sweep_risk_register`, which also notifies overdue risk reviews); vulnerability
 SLA sweep; vendor reassessment queue; vendor document expiry; vendor SLA breach sweep; scheduled
 checks and connector syncs; acknowledgement reminders; vendor monitoring; asset hygiene;
 vulnerability enrichment (daily EPSS/KEV refresh, score recomputation, resurfacing check).

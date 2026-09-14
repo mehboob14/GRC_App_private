@@ -3786,6 +3786,44 @@ class VendorService:
             raise NotFound(_FINDING_GONE, detail=f"vendor finding {finding_id} on {vendor_id}")
         return row
 
+    async def get_finding(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, finding_id: uuid.UUID
+    ) -> FindingView:
+        """One finding with its vendor's name, for the risk register's promotion
+        (rule 4: the risk module reads it here, never from the table)."""
+        row = await session.get(VendorFinding, finding_id, populate_existing=True)
+        if row is None or row.tenant_id != tenant_id:
+            raise NotFound(_FINDING_GONE, detail=f"vendor finding {finding_id}")
+        facts = await self._vendor_facts(session, tenant_id, {row.vendor_id})
+        name, tier = facts.get(row.vendor_id, (None, None))
+        return self._finding_view(row, await self._member_names(session, tenant_id), name, tier)
+
+    async def mark_finding_promoted(
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        finding_id: uuid.UUID,
+        risk_id: uuid.UUID,
+    ) -> None:
+        """Record that the finding now lives in the risk register (spec ¶85)."""
+        row = await session.get(VendorFinding, finding_id, populate_existing=True)
+        if row is None or row.tenant_id != tenant_id:
+            raise NotFound(_FINDING_GONE, detail=f"vendor finding {finding_id}")
+        row.promoted_risk_id = risk_id
+        await self._audit.record(
+            session,
+            action="update",
+            object_type="vendor_finding",
+            object_id=row.id,
+            actor=actor,
+            tenant_id=tenant_id,
+            before={"promoted_risk_id": None},
+            after={"promoted_risk_id": str(risk_id)},
+        )
+        await session.flush([row])
+
     async def remediate_finding(  # noqa: PLR0913
         self,
         session: AsyncSession,

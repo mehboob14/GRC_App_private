@@ -46,7 +46,7 @@ export const NAV_SECTIONS: NavSection[] = [
     id: "risk",
     label: "Risk",
     items: [
-      { id: "risks", label: "Risks", icon: "risk", comingSoon: true },
+      { id: "risks", label: "Risks", icon: "risk", to: "/risks" },
       { id: "vendors", label: "Vendors", icon: "vendor", to: "/vendors" },
       { id: "assets", label: "Assets", icon: "box", to: "/assets" },
       { id: "vulnerabilities", label: "Vulnerabilities", icon: "bug", to: "/vulnerabilities" },

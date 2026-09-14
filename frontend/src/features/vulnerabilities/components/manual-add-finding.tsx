@@ -8,8 +8,8 @@ import type { CveLookup, Severity } from "../types";
 const SEVERITIES: Severity[] = ["critical", "high", "medium", "low", "info"];
 
 /**
- * The manual "add one finding" form, shared by the import page and the register
- * "Add vulnerability" drawer. CVE autofill resolves the title/CVE against NVD
+ * The manual "add one finding" form, shared by the import page and the
+ * "Add finding" drawer. CVE autofill resolves the title/CVE against NVD
  * and offers to fill empty fields — a read only, nothing saved until submit.
  */
 export function ManualAddFinding({ onAdded }: { onAdded: (id: string) => void }) {

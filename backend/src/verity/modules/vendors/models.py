@@ -1083,11 +1083,9 @@ class VendorAssessmentResponse(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
 class VendorFinding(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
     """What the review found.
 
-    ``promoted_risk_id`` ships nullable with **no foreign key and no promotion
-    action**: ``modules/risk/`` has no tables in any migration. The seam is designed
-    on both sides, so the column is here and the button is absent rather than
-    faked. Spec ¶85 and the ¶109 exit criterion are not satisfiable until a risk
-    slice lands — a sequencing gap, stated rather than hidden.
+    ``promoted_risk_id`` is set when the finding is promoted into the risk
+    register (spec ¶85). The promotion itself lives in ``risk.service``, which
+    calls back into this module's service to mark the finding.
     """
 
     __tablename__ = "vendor_findings"
@@ -1127,7 +1125,8 @@ class VendorFinding(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
         ForeignKey(_MEMBERSHIP_FK, ondelete="SET NULL"), default=None
     )
     closed_at: Mapped[datetime | None] = mapped_column(default=None)
-    # No FK: modules/risk has no tables yet. See the class docstring.
+    # The risk this finding was promoted into. A real FK to risks since the
+    # week-7 migration; bare here so the mapper never resolves another module.
     promoted_risk_id: Mapped[uuid.UUID | None] = mapped_column(default=None)
 
     __table_args__ = (

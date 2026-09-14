@@ -77,6 +77,12 @@ celery_app.conf.update(
             "task": "verity.workers.tasks.sweep_vendor_slas",
             "schedule": 24 * 3600.0,
         },
+        # Daily: expire lapsed risk acceptances (reopening the risk) and notify
+        # owners whose risk reviews are overdue.
+        "sweep-risk-register": {
+            "task": "verity.workers.tasks.sweep_risk_register",
+            "schedule": 24 * 3600.0,
+        },
         # Daily: refresh EPSS/KEV/public-exploit on open findings, recompute risk,
         # and expire lapsed risk acceptances (ADR-0010 daily enrichment).
         "refresh-vulnerabilities": {

@@ -7,17 +7,14 @@ import {
   ErrorState,
   FAMILY_CHART,
   Gauge,
-  PageHeader,
   StackedBars,
   StatTile,
-  TabStrip,
   type BarListItem,
   type ChartSegment,
 } from "@/components/ui";
 import { describeError } from "@/lib/api/describe-error";
 import { listAssetOptions, listVulnerabilities, vulnerabilityKpis, vulnerabilityThroughput } from "../api";
 import { ALL_STATES, OPEN_STATES, STATE_FAMILY, STATE_META } from "../tokens";
-import { vulnerabilityTabs } from "./vulnerability-tabs";
 
 const PRIORITY_FILL: Record<string, string> = {
   P1: "bg-status-danger-base",
@@ -70,29 +67,19 @@ export function VulnerabilitiesOverviewPage() {
   if (kpisQuery.isError) {
     const e = describeError(kpisQuery.error, "vulnerability overview");
     return (
-      <div className="w-full">
-        <PageHeader eyebrow="Risk" title="Vulnerabilities" />
-        <TabStrip label="Vulnerability sections" items={vulnerabilityTabs(k?.open_total)} />
-        <ErrorState
-          title={e.title}
-          description={e.message}
-          referenceId={e.referenceId}
-          onRetry={e.retryable ? () => void kpisQuery.refetch() : undefined}
-        />
-      </div>
+      <ErrorState
+        title={e.title}
+        description={e.message}
+        referenceId={e.referenceId}
+        onRetry={e.retryable ? () => void kpisQuery.refetch() : undefined}
+      />
     );
   }
 
   // Until the KPI query resolves, every count is a placeholder zero and the
   // gauge would read a misleading 100%. Show a skeleton instead of fake data.
   if (kpisQuery.isPending || !k) {
-    return (
-      <div className="w-full">
-        <PageHeader eyebrow="Risk" title="Vulnerabilities" />
-        <TabStrip label="Vulnerability sections" items={vulnerabilityTabs(k?.open_total)} />
-        <OverviewSkeleton />
-      </div>
-    );
+    return <OverviewSkeleton />;
   }
 
   const severityTotal = SEVERITY_ORDER.reduce((sum, sev) => sum + (k.open_by_severity[sev] ?? 0), 0);
@@ -139,9 +126,6 @@ export function VulnerabilitiesOverviewPage() {
 
   return (
     <div className="w-full">
-      <PageHeader eyebrow="Risk" title="Vulnerabilities" />
-      <TabStrip label="Vulnerability sections" items={vulnerabilityTabs(k.open_total)} />
-
       <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatTile icon="bug" label="Open findings" value={openTotal} tone="progress" />
         <StatTile icon="alert" label="P1, act now" value={k.open_by_priority.P1 ?? 0} tone="danger" />

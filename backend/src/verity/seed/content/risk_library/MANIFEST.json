@@ -1,0 +1,10 @@
+{
+  "pack": "risk_library",
+  "source": "Authored for Verity. No text from a third party risk library is reproduced (R11).",
+  "version": "2026.1",
+  "risks": 60,
+  "control_keys": "Canonical keys of the SOC 2 control templates in the soc2 pack.",
+  "sha256": {
+    "risk_templates.json": "22c5c79dc54f654984340f86eb7c68425a3f3daa921096bfda02fc9bba31487e"
+  }
+}

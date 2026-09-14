@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -32,16 +32,9 @@ import {
 } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { describeError } from "@/lib/api/describe-error";
-import {
-  assetImportTemplateCsv,
-  assetsExportCsv,
-  downloadCsv,
-  getFacets,
-  getSummary,
-  listAssets,
-  listMembers,
-} from "../api";
+import { getFacets, getSummary, listAssets, listMembers } from "../api";
 import { AssetFormDrawer } from "./asset-form-drawer";
+import { useAssetsOutlet } from "./assets-outlet";
 import {
   ASSET_STATUSES,
   ASSET_TYPES,
@@ -98,14 +91,12 @@ const EMPTY: AssetFilters = {
 export function AssetsRegisterPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { addAsset, registerView } = useAssetsOutlet();
   const [filters, setFilters] = useState<AssetFilters>(EMPTY);
   const [page, setPage] = useState(1);
+  // Add asset lives in the layout; edit needs the row, so its drawer stays here.
   const [editingId, setEditingId] = useState<string | undefined>(undefined);
   const [formOpen, setFormOpen] = useState(false);
-  const openCreate = () => {
-    setEditingId(undefined);
-    setFormOpen(true);
-  };
   const openEdit = (id: string) => {
     setEditingId(id);
     setFormOpen(true);
@@ -115,10 +106,13 @@ export function AssetsRegisterPage() {
     queryClient.invalidateQueries({ queryKey: ["asset-summary"] });
     queryClient.invalidateQueries({ queryKey: ["asset-facets"] });
   };
-  // No backend export endpoint for assets yet: export exactly what the
-  // register is currently showing, same idiom as the import template.
-  const handleExport = () => downloadCsv("assets.csv", assetsExportCsv(query.data?.items ?? []));
-  const handleTemplate = () => downloadCsv("asset-import-template.csv", assetImportTemplateCsv());
+  // Export sits in the header and downloads this same page, filters included.
+  useEffect(() => {
+    registerView.current = { filters, page, pageSize: PAGE_SIZE };
+    return () => {
+      registerView.current = null;
+    };
+  }, [registerView, filters, page]);
   const cols = useColumnPrefs("verity.assets.columns", COLUMNS);
 
   const set = <K extends keyof AssetFilters>(key: K, value: AssetFilters[K]) => {
@@ -186,7 +180,7 @@ export function AssetsRegisterPage() {
         <StatTile icon="clock" label="Stale over 90 days" value={s?.stale ?? 0} tone="warning" />
       </div>
 
-      {/* Toolbar — search, filters and actions on one line. */}
+      {/* Toolbar: search and filters. Module actions live in the header. */}
       <Toolbar
         searchLabel="Filter assets"
         search={
@@ -196,26 +190,6 @@ export function AssetsRegisterPage() {
             placeholder="Search name, host or IP…"
             aria-label="Search assets"
           />
-        }
-        actions={
-          <>
-            <Button variant="secondary" onClick={handleExport}>
-              <Icon name="download" className="size-4" />
-              Export
-            </Button>
-            <Button variant="secondary" onClick={handleTemplate}>
-              <Icon name="spreadsheet" className="size-4" />
-              Template
-            </Button>
-            <Button variant="secondary" onClick={() => navigate("/assets/import")}>
-              <Icon name="upload" className="size-4" />
-              Import
-            </Button>
-            <Button onClick={openCreate}>
-              <Icon name="plus" className="size-4" />
-              Add asset
-            </Button>
-          </>
         }
       >
         <FilterFacet
@@ -294,7 +268,7 @@ export function AssetsRegisterPage() {
                 ? "Adjust or clear the filters to see more."
                 : "Add an asset, or import your inventory from a CSV, to start."
             }
-            action={<Button onClick={openCreate}>Add asset</Button>}
+            action={<Button onClick={addAsset}>Add asset</Button>}
           />
         ) : (
           <Table actions={<ColumnPicker {...cols} />}>

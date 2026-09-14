@@ -41,6 +41,7 @@ from verity.modules.compliance.models import (
     TemplateRequirementMap,
 )
 from verity.modules.documents.models import DocumentTemplate
+from verity.modules.risk.models import RiskTemplate
 from verity.modules.vendors.models import QuestionnaireQuestion, QuestionnaireTemplate
 from verity.shared.ids import uuid7
 
@@ -403,11 +404,51 @@ async def _load_questionnaire_bank(
     await session.flush()
 
 
+async def _load_risk_templates(
+    session: AsyncSession, templates: Sequence[dict[str, Any]], result: LoadResult
+) -> None:
+    """Upsert the starter risk library, keyed on ``code``.
+
+    A template dropped upstream is pruned. Adopted risks copied its text and keep
+    only an ancestry pointer (``risks.template_id``, ``ON DELETE SET NULL``), so a
+    retired template never changes a risk someone has reviewed.
+    """
+    existing = {row.code: row for row in (await session.execute(select(RiskTemplate))).scalars()}
+    for item in templates:
+        values = {
+            "title": item["title"],
+            "description": item.get("description", ""),
+            "category": item["category"],
+            "sub_category": item.get("sub_category"),
+            "default_likelihood": item["default_likelihood"],
+            "default_impact": item["default_impact"],
+            "root_cause": item.get("root_cause"),
+            "consequences": item.get("consequences"),
+            "recommendations": item.get("recommendations"),
+            "treatment": item.get("treatment"),
+            "control_keys": item.get("control_keys") or [],
+            "frameworks": item.get("frameworks") or [],
+            "built_in": True,
+        }
+        row = existing.pop(item["code"], None)
+        if row is None:
+            session.add(RiskTemplate(id=uuid7(), code=item["code"], **values))
+            result.table("risk_templates").inserted += 1
+        elif _apply(row, values):
+            result.table("risk_templates").updated += 1
+    for stale in existing.values():
+        await session.delete(stale)
+        result.table("risk_templates").pruned += 1
+    await session.flush()
+
+
 async def load_pack(session: AsyncSession, pack: Path) -> LoadResult:
     """Load one content pack directory. Idempotent: a second run changes nothing."""
     result = LoadResult()
     # Packs are not all the same shape: the policy library ships templates and
     # no framework, so each section loads only if its file is present.
+    if (pack / "risk_templates.json").exists():
+        await _load_risk_templates(session, _read(pack, "risk_templates.json"), result)
     if (pack / "questionnaire_bank.json").exists():
         await _load_questionnaire_bank(session, _read(pack, "questionnaire_bank.json"), result)
     if (pack / "document_templates.json").exists():

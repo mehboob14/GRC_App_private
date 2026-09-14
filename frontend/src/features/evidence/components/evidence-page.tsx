@@ -910,6 +910,22 @@ export function EvidencePage() {
     setReviewFilter([]);
   }
 
+  // Nothing until the list arrives, so a loading page never claims a zero.
+  // Words match the freshness legend and facet, so a number can be filtered.
+  const stale = items.filter((item) => item.freshness === "stale").length;
+  const aging = items.filter((item) => item.freshness === "aging").length;
+  const unlinked = items.filter((item) => item.control_ids.length === 0).length;
+  const subtitle = evidenceQuery.data
+    ? [
+        `${items.length} ${items.length === 1 ? "item" : "items"}`,
+        stale ? `${stale} stale` : null,
+        aging ? `${aging} aging` : null,
+        unlinked ? `${unlinked} unlinked` : null,
+      ]
+        .filter(Boolean)
+        .join(" · ")
+    : undefined;
+
   if (evidenceQuery.isError) {
     const failure = describeError(evidenceQuery.error, "evidence library");
     return (
@@ -926,7 +942,19 @@ export function EvidencePage() {
 
   return (
     <div className="w-full">
-      <PageHeader eyebrow="Compliance" title="Evidence" />
+      <PageHeader
+        title="Evidence"
+        icon="doc"
+        subtitle={subtitle}
+        actions={
+          canManage ? (
+            <Button onClick={() => setAdding(true)}>
+              <Icon name="plus" className="size-4" />
+              Add evidence
+            </Button>
+          ) : undefined
+        }
+      />
 
       {items.length > 0 ? (
         <EvidenceOverview
@@ -947,18 +975,10 @@ export function EvidencePage() {
           />
         }
         actions={
-          <>
-            <p aria-live="polite" className="text-caption text-text-subtle">
-              Showing <span className="tabular">{visible.length}</span> of{" "}
-              <span className="tabular">{items.length}</span> items
-            </p>
-            {canManage ? (
-              <Button onClick={() => setAdding(true)}>
-                <Icon name="plus" className="size-4" />
-                Add evidence
-              </Button>
-            ) : null}
-          </>
+          <p aria-live="polite" className="text-caption text-text-subtle">
+            Showing <span className="tabular">{visible.length}</span> of{" "}
+            <span className="tabular">{items.length}</span> items
+          </p>
         }
       >
         <FilterFacet

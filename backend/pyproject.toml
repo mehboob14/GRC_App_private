@@ -613,6 +613,38 @@ forbidden_modules = [
 name = "risk reaches no other module's data"
 type = "forbidden"
 source_modules = ["verity.modules.risk"]
+# risk calls AuditService (rule 5), IamService (member and group names),
+# ControlService (the control map), TaskService (treatment actions), the links
+# primitive, NotificationService, and the asset, vulnerability, evidence, vendor
+# and document services to label linked records. Each of those services' use of
+# its own repository and models is its private business, so those legs are exempt.
+ignore_imports = [
+    "verity.modules.assets.service -> verity.modules.assets.models",
+    "verity.modules.audit.repository -> verity.modules.audit.models",
+    "verity.modules.audit.service -> verity.modules.audit.models",
+    "verity.modules.audit.service -> verity.modules.audit.repository",
+    "verity.modules.compliance.control_service -> verity.modules.compliance.models",
+    "verity.modules.compliance.service -> verity.modules.compliance.models",
+    "verity.modules.compliance.service -> verity.modules.compliance.repository",
+    "verity.modules.documents.service -> verity.modules.compliance.service",
+    "verity.modules.documents.service -> verity.modules.documents.models",
+    "verity.modules.documents.service -> verity.modules.tenancy.service",
+    "verity.modules.evidence.service -> verity.modules.evidence.models",
+    "verity.modules.iam.repository -> verity.modules.iam.models",
+    "verity.modules.iam.service -> verity.modules.iam.models",
+    "verity.modules.iam.service -> verity.modules.iam.repository",
+    "verity.modules.iam.service -> verity.modules.tenancy.service",
+    "verity.modules.notifications.service -> verity.modules.notifications.models",
+    "verity.modules.tasks.service -> verity.modules.tasks.models",
+    "verity.modules.tenancy.repository -> verity.modules.tenancy.models",
+    "verity.modules.tenancy.service -> verity.modules.tenancy.models",
+    "verity.modules.tenancy.service -> verity.modules.tenancy.repository",
+    "verity.modules.vendors.service -> verity.modules.vendors.models",
+    "verity.modules.vendors.service -> verity.modules.vendors.questionnaires",
+    "verity.modules.vendors.questionnaires -> verity.modules.vendors.models",
+    "verity.modules.vulnerabilities.service -> verity.modules.iam.service",
+    "verity.modules.vulnerabilities.service -> verity.modules.vulnerabilities.models",
+]
 forbidden_modules = [
     "verity.modules.ai.repository", "verity.modules.ai.models",
     "verity.modules.approvals.repository", "verity.modules.approvals.models",

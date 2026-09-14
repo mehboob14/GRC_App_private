@@ -32,6 +32,12 @@ NOTIFICATION_KINDS: Final[tuple[str, ...]] = (
     "sla_due",  # a task you own/work is due within the warning window
     "approval",  # an approval decision was recorded on your task
     "recurrence",  # a recurring task spawned a new occurrence
+    "vendor_reassessment_due",  # a vendor review cadence has come round
+    "vendor_document_expiring",  # a vendor certificate or report lapses soon
+    "risk_acceptance_requested",  # you are the named approver of a risk acceptance
+    "risk_acceptance_decided",  # your acceptance request was approved or rejected
+    "risk_acceptance_expired",  # an acceptance on a risk you own lapsed; the risk reopened
+    "risk_review_due",  # a risk you own is past its review date
 )
 
 _MEMBERSHIP_FK = "tenant_memberships.id"

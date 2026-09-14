@@ -1,0 +1,1392 @@
+[
+  {
+    "code": "RL-STR-001",
+    "title": "Reputation damage after a security incident",
+    "description": "A breach, outage or data handling failure becomes public through the media, social networks or customer disclosures. Prospects and customers begin to doubt that the company can be trusted with their data.",
+    "category": "Strategic",
+    "sub_category": "Reputation",
+    "default_likelihood": 3,
+    "default_impact": 4,
+    "root_cause": "No communication plan exists for incidents, and leadership has not agreed who speaks for the company. Early statements are delayed or inaccurate, and the incident itself reveals control weaknesses that are hard to explain.",
+    "consequences": "New deals stall, renewals are put at risk and customers demand audits or contract changes. Partners and investors may lose confidence, and the effect on brand and valuation can outlast the incident by years.",
+    "recommendations": "Prepare an incident communication plan with approved spokespeople, holding statements and channels for customers, media and regulators. Rehearse it with leadership in tabletop exercises. Communicate honestly and promptly, and follow up with a summary of lessons learned.",
+    "treatment": "mitigate",
+    "control_keys": [
+      "incident-response-plan",
+      "tabletop-exercise",
+      "breach-notification-commitment",
+      "incident-postmortems"
+    ],
+    "frameworks": [
+      "SOC 2",
+      "ISO 27001",
+      "NIST CSF"
+    ]
+  },
+  {
+    "code": "RL-STR-002",
+    "title": "Revenue concentration in a few large customers",
+    "description": "A small number of customers account for a large share of recurring revenue. Losing, downgrading or delaying the renewal of any one of them would materially affect growth targets, cash flow and valuation.",
+    "category": "Strategic",
+    "sub_category": "Market",
+    "default_likelihood": 2,
+    "default_impact": 4,
+    "root_cause": "Early success came from a few enterprise accounts, and sales effort has stayed focused on expanding them. Large customers negotiate bespoke terms, and no diversification targets are set or monitored.",
+    "consequences": "A single churn event can cause missed forecasts, cost cutting and difficult investor conversations. Dependence gives large customers leverage over pricing and the roadmap, and their bespoke demands can distort product strategy.",
+    "recommendations": "Track revenue concentration as a board metric with an agreed tolerance. Invest in new segments and the mid market to spread revenue. Run executive sponsor programmes and early renewal reviews for the largest accounts, and model the impact of losing each one.",
+    "treatment": "mitigate",
+    "control_keys": [],
+    "frameworks": []
+  },
+  {
+    "code": "RL-STR-003",
+    "title": "Competitors outpacing the product with AI capabilities",
+    "description": "Competitors, including new AI native entrants, release automation and AI features that make the company's product look dated. Customers come to expect similar capabilities at lower prices and switch at renewal.",
+    "category": "Strategic",
+    "sub_category": "Competitive",
+    "default_likelihood": 3,
+    "default_impact": 3,
+    "root_cause": "Product capacity is absorbed by maintenance and customer specific requests. Market and competitor monitoring is informal, and uncertainty about AI risks and data rights delays decisions until competitors have already moved.",
+    "consequences": "Win rates fall, pricing comes under pressure and churn rises at renewal. Rushing features out to catch up can create quality, security and privacy problems of its own.",
+    "recommendations": "Review the competitive landscape with leadership every quarter and protect roadmap capacity for strategic bets. Adopt AI features through a governed process covering data rights, security review and human approval, so the company can move quickly without creating new risks.",
+    "treatment": "mitigate",
+    "control_keys": [],
+    "frameworks": []
+  },
+  {
+    "code": "RL-STR-004",
+    "title": "Growth plans outpacing security and compliance readiness",
+    "description": "The company commits to new markets, regulated industries or large enterprise customers before its security and compliance capabilities can support them. Deals are signed on the assumption that certifications, controls or regional hosting will follow.",
+    "category": "Strategic",
+    "sub_category": "Strategic planning",
+    "default_likelihood": 3,
+    "default_impact": 4,
+    "root_cause": "Strategic planning does not involve security and compliance leaders, so requirements such as ISO 27001, HIPAA or DORA obligations surface late in the sales cycle. Compliance work is funded reactively once deals depend on it.",
+    "consequences": "Deals are lost or delayed, contracts are signed with obligations the company cannot meet and teams are pulled into rushed remediation. Entering a regulated market unprepared can breach the law as well as contracts.",
+    "recommendations": "Include security and compliance input in annual planning and in approving new markets or product lines. Keep a readiness roadmap for certifications and regulatory requirements linked to sales targets. Do not accept contractual requirements until there is a funded plan to meet them.",
+    "treatment": "mitigate",
+    "control_keys": [
+      "system-description",
+      "compliance-register",
+      "change-risk-review",
+      "board-security-oversight"
+    ],
+    "frameworks": [
+      "SOC 2",
+      "ISO 27001",
+      "HIPAA",
+      "DORA"
+    ]
+  },
+  {
+    "code": "RL-STR-005",
+    "title": "Brand impersonation targeting customers",
+    "description": "Criminals register lookalike domains, fake support accounts or cloned login pages that use the company's brand. Customers are tricked into sharing credentials or paying fake invoices and hold the company responsible for the loss.",
+    "category": "Strategic",
+    "sub_category": "Brand",
+    "default_likelihood": 3,
+    "default_impact": 2,
+    "root_cause": "Email authentication records are not enforced, so the company's domain can be spoofed. Lookalike domains and fake social media accounts are not monitored, and customers are not told how the company will and will not contact them.",
+    "consequences": "Customers suffer account takeovers or financial losses, and trust in genuine communications declines. Support volumes rise, and the company may face complaints and pressure to compensate affected customers.",
+    "recommendations": "Enforce SPF, DKIM and DMARC with a reject policy on all company domains. Monitor for lookalike domains and impersonating accounts and use a takedown service. Tell customers what genuine messages look like and give them an easy way to report suspected impersonation.",
+    "treatment": "mitigate",
+    "control_keys": [
+      "incident-reporting-channel"
+    ],
+    "frameworks": []
+  },
+  {
+    "code": "RL-OPS-001",
+    "title": "Key person dependency",
+    "description": "Critical knowledge of systems, customers or compliance activities sits with one or two people. If they leave, fall ill or are unavailable during an incident, work stalls and important tasks may not be done correctly.",
+    "category": "Operational",
+    "sub_category": "Human resources",
+    "default_likelihood": 3,
+    "default_impact": 4,
+    "root_cause": "Rapid growth has concentrated expertise in early employees. Documentation is thin, access and duties are not shared, and there is no succession or cross training plan for roles that hold unique knowledge.",
+    "consequences": "Incident recovery, releases or audits may be delayed or handled poorly. Controls owned by one person can lapse unnoticed, and losing a key individual may affect customer relationships and investor confidence.",
+    "recommendations": "Identify roles that are single points of knowledge and document their critical processes and runbooks. Assign trained deputies and rotate duties so others gain hands on experience. Review succession plans for key roles with leadership at least once a year.",
+    "treatment": "mitigate",
+    "control_keys": [
+      "define-roles-responsibilities",
+      "bcdr-plan",
+      "on-call",
+      "job-descriptions"
+    ],
+    "frameworks": [
+      "SOC 2",
+      "ISO 27001"
+    ]
+  },
+  {
+    "code": "RL-OPS-002",
+    "title": "Loss of skilled staff through attrition",
+    "description": "Engineers, security specialists and other hard to replace staff leave faster than they can be hired and trained. Remaining staff take on extra load, projects slip and control activities are carried out less carefully.",
+    "category": "Operational",
+    "sub_category": "Human resources",
+    "default_likelihood": 4,
+    "default_impact": 3,
+    "root_cause": "Pay lags the market, workloads are heavy and career paths are unclear. Exit feedback is not analysed, and managers are not equipped to spot early signs that key people are disengaged.",
+    "consequences": "Delivery slows, security and compliance tasks are missed and knowledge leaves with each departure. Recruitment and onboarding costs rise, and a visible wave of departures can unsettle customers and the remaining team.",
+    "recommendations": "Benchmark pay for critical roles and review workloads regularly. Hold structured performance and career conversations and act on themes from exit interviews. Track attrition by team as a leadership metric and plan backfill before roles become critical.",
+    "treatment": "mitigate",
+    "control_keys": [
+      "performance-reviews",
+      "job-descriptions",
+      "onboarding-checklist"
+    ],
+    "frameworks": [
+      "ISO 27001"
+    ]
+  },
+  {
+    "code": "RL-OPS-003",
+    "title": "Access not updated when staff join, move or leave",
+    "description": "New starters receive more access than their role needs, people who change teams keep their old permissions and leavers retain accounts after their last day. Over time many accounts hold access that nobody can justify.",
+    "category": "Operational",
+    "sub_category": "Process",
+    "default_likelihood": 4,
+    "default_impact": 3,
+    "root_cause": "HR and IT processes are not connected, so account changes depend on someone remembering to raise a request. Applications outside SSO are managed separately, and there is no regular review to catch what the process misses.",
+    "consequences": "Former staff or over privileged accounts can be used to access or leak data. Audit testing of onboarding, offboarding and access reviews often finds exceptions, which then appear in the SOC 2 report and customer due diligence.",
+    "recommendations": "Drive account creation and removal from the HR system through SSO and automated provisioning. Use role based access templates for common positions. Remove access within one business day of departure and review access to key systems every quarter.",
+    "treatment": "mitigate",
+    "control_keys": [
+      "onboarding-checklist",
+      "offboarding-checklist",
+      "timely-deprovisioning",
+      "access-approval",
+      "access-reviews"
+    ],
+    "frameworks": [
+      "SOC 2",
+      "ISO 27001",
+      "SOX"
+    ]
+  },
+  {
+    "code": "RL-OPS-004",
+    "title": "Controls not operating consistently through the audit period",
+    "description": "Recurring controls such as access reviews, training, vendor reviews and change approvals are skipped or done late during the SOC 2 observation period. The auditor samples across the whole period and finds the gaps.",
+    "category": "Operational",
+    "sub_category": "Process",
+    "default_likelihood": 4,
+    "default_impact": 3,
+    "root_cause": "Control owners are not clearly assigned or reminded, and evidence is gathered in a rush before fieldwork instead of as work happens. Nobody monitors control health between audits, and deficiencies are not tracked to closure.",
+    "consequences": "Exceptions or a qualified opinion appear in the SOC 2 report that customers read. Sales cycles lengthen as prospects ask for explanations, and repeat findings erode the credibility of the whole compliance programme.",
+    "recommendations": "Give every recurring control an owner and a schedule, and automate reminders and evidence collection. Monitor control status continuously and review it monthly with management. Run a readiness assessment before each audit period and track every deficiency to closure.",
+    "treatment": "mitigate",
+    "control_keys": [
+      "continuous-monitoring",
+      "define-roles-responsibilities",
+      "internal-audit",
+      "deficiency-tracking",
+      "management-review"
+    ],
+    "frameworks": [
+      "SOC 2",
+      "ISO 27001"
+    ]
+  },
+  {
+    "code": "RL-OPS-005",
+    "title": "Slow or disorganised response to security incidents",
+    "description": "When a security incident happens, people are unsure who leads, how to escalate or what to do first. Containment is delayed, evidence is lost and communication with customers and regulators becomes inconsistent.",
+    "category": "Operational",
+    "sub_category": "Process",
+    "default_likelihood": 3,
+    "default_impact": 4,
+    "root_cause": "The incident response plan is missing, out of date or unknown to the people who would use it. Roles, severity levels and contact lists are not defined, and the plan has never been tested in an exercise.",
+    "consequences": "Attackers have more time to cause damage, so the impact and cost of the incident grow. Poor communication erodes customer trust, and regulators and auditors may treat a weak response as a control failure in its own right.",
+    "recommendations": "Maintain an incident response plan with clear roles, severity levels, escalation paths and communication templates. Keep an on call rotation for security events and run a tabletop exercise at least once a year. Hold a postmortem after every significant incident and track the actions.",
+    "treatment": "mitigate",
+    "control_keys": [
+      "incident-response-plan",
+      "tabletop-exercise",
+      "on-call",
+      "incident-postmortems",
+      "incident-reporting-channel"
+    ],
+    "frameworks": [
+      "SOC 2",
+      "ISO 27001",
+      "NIST CSF",
+      "DORA"
+    ]
+  },
+  {
+    "code": "RL-OPS-006",
+    "title": "Cloud region outage disrupting the service",
+    "description": "The cloud region hosting production suffers a prolonged outage caused by a provider failure, network event or natural disaster. If the service runs in a single region with no tested failover, customers cannot use it until the provider recovers.",
+    "category": "Operational",
+    "sub_category": "Business continuity",
+    "default_likelihood": 2,
+    "default_impact": 4,
+    "root_cause": "The architecture was built for a single region to save cost and complexity. Recovery time objectives have not been agreed with the business, and the continuity plan assumes the provider will always recover quickly.",
+    "consequences": "A regional outage can take the service offline for hours or days, breaching availability commitments and triggering service credits. Customers who rely on the service for their own operations may escalate, churn or claim damages.",
+    "recommendations": "Agree recovery objectives with leadership based on customer commitments. Deploy across multiple availability zones and keep backups and infrastructure code ready to rebuild in a second region. Test regional failover or rebuild at least once a year and update the continuity plan.",
+    "treatment": "mitigate",
+    "control_keys": [
+      "bcdr-plan",
+      "automated-backups",
+      "backup-restore-test",
+      "tabletop-exercise"
+    ],
+    "frameworks": [
+      "SOC 2",
+      "ISO 27001",
+      "DORA"
+    ]
+  },
+  {
+    "code": "RL-OPS-007",
+    "title": "Insolvency of a key supplier",
+    "description": "A supplier the company depends on, such as a niche software vendor, data provider or outsourced support firm, goes out of business or shuts down its product after an acquisition. The service it provides stops, often with little notice.",
+    "category": "Operational",
+    "sub_category": "Supply chain",
+    "default_likelihood": 2,
+    "default_impact": 3,
+    "root_cause": "Supplier financial health is not considered when vendors are selected or reviewed. Critical dependencies on small suppliers are not identified, and contracts lack exit assistance, escrow or data return clauses.",
+    "consequences": "Features, data feeds or support functions may stop working, and replacing them under time pressure is costly. Company data held by the supplier may be hard to recover, and deletion commitments may not be honoured.",
+    "recommendations": "Rate vendors by criticality and check the financial stability of critical and smaller suppliers at onboarding and every year. Include data return, deletion and exit assistance clauses. Keep an exit plan and a known alternative for each critical supplier.",
+    "treatment": "mitigate",
+    "control_keys": [
+      "vendor-inventory",
+      "vendor-security-review",
+      "bcdr-plan",
+      "dpa-with-vendors"
+    ],
+    "frameworks": [
+      "ISO 27001",
+      "NIST CSF",
+      "DORA"
+    ]
+  },
+  {
+    "code": "RL-OPS-008",
+    "title": "Product defects reaching customers",
+    "description": "Releases introduce bugs that corrupt data, break key workflows or produce wrong results for customers. Defects in calculations or data processing can go unnoticed for some time and affect many records.",
+    "category": "Operational",
+    "sub_category": "Quality",
+    "default_likelihood": 3,
+    "default_impact": 3,
+    "root_cause": "Automated test coverage is low and releases are pushed out under deadline pressure. Expected processing behaviour is not specified, so there is nothing to test against, and outputs are not reconciled against inputs.",
+    "consequences": "Customers act on incorrect data, lose work or raise complaints, and correcting affected records takes significant effort. Repeated quality problems drive churn and undermine commitments on processing integrity.",
+    "recommendations": "Require automated tests in CI and peer review before any merge to the main branch. Document processing specifications for critical calculations. Reconcile outputs against inputs for key data pipelines and use staged rollouts with fast rollback.",
+    "treatment": "mitigate",
+    "control_keys": [
+      "ci-testing",
+      "peer-code-review",
+      "processing-specs",
+      "processing-reconciliation",
+      "pipeline-storage-integrity"
+    ],
+    "frameworks": [
+      "SOC 2",
+      "ISO 27001"
+    ]
+  },
+  {
+    "code": "RL-OPS-009",
+    "title": "Unauthorised physical access to offices",
+    "description": "Visitors, former staff or intruders get into office areas by tailgating, using badges that were never revoked or finding doors left open. They may steal devices, read confidential information or plug hardware into the network.",
+    "category": "Operational",
+    "sub_category": "Other",
+    "default_likelihood": 2,
+    "default_impact": 2,
+    "root_cause": "Badge access is not tied to offboarding, visitors are not signed in or escorted and shared workspaces offer limited control. Staff do not challenge unfamiliar people or lock screens and cabinets.",
+    "consequences": "Stolen devices and documents can expose confidential data, and rogue hardware can provide network access. For a cloud hosted business the impact is usually limited, but incidents still lead to audit findings and customer concern.",
+    "recommendations": "Control office entry with badges that are revoked at offboarding and review access lists periodically. Sign in and escort visitors and keep a visitor log. Keep the office network separate from production and encourage clear desks and locked screens.",
+    "treatment": "mitigate",
+    "control_keys": [
+      "office-physical-access",
+      "offboarding-checklist",
+      "screen-lock",
+      "network-segmentation"
+    ],
+    "frameworks": [
+      "SOC 2",
+      "ISO 27001"
+    ]
+  },
+  {
+    "code": "RL-FIN-001",
+    "title": "Insufficient cash runway",
+    "description": "Cash reserves run low because revenue grows more slowly than planned, costs rise or fundraising takes longer than expected. The company may be forced into rushed cost cuts, unfavourable financing or a distressed sale.",
+    "category": "Financial",
+    "sub_category": "Liquidity",
+    "default_likelihood": 2,
+    "default_impact": 5,
+    "root_cause": "Forecasts are optimistic and not stress tested against downside scenarios. Commitments such as hiring and multi year contracts are made ahead of revenue, and leadership does not review the cash position often enough.",
+    "consequences": "Emergency cost cutting often removes security and compliance capability first, weakening controls. Customers and partners may doubt the company's viability during due diligence, and in the worst case the business cannot continue.",
+    "recommendations": "Maintain a rolling cash forecast with base and downside scenarios reviewed monthly by leadership and the board. Set a minimum runway threshold that triggers agreed actions. Start fundraising well before that threshold and protect essential security and compliance spending.",
+    "treatment": "mitigate",
+    "control_keys": [],
+    "frameworks": []
+  },
+  {
+    "code": "RL-FIN-002",
+    "title": "Foreign exchange exposure on revenue and costs",
+    "description": "Revenue is earned in one currency while salaries, cloud costs or vendor invoices are paid in others. Currency movements can squeeze margins and make forecasts unreliable even when the business performs as planned.",
+    "category": "Financial",
+    "sub_category": "Market risk",
+    "default_likelihood": 3,
+    "default_impact": 2,
+    "root_cause": "The company has expanded internationally without aligning the currencies of its pricing and costs. Currency exposure is not measured, and there is no policy on when to accept, match or hedge it.",
+    "consequences": "Margins and cash flow fluctuate, budgets need frequent revision and reported growth may be distorted. For a company of this size the effect is usually moderate, but a sharp currency move can strain cash.",
+    "recommendations": "Measure net exposure by currency every quarter and agree a tolerance with the board. Accept exposure within that tolerance and reduce it by matching revenue and costs in the same currency. Consider simple hedging only if exposure exceeds the agreed limit.",
+    "treatment": "accept",
+    "control_keys": [],
+    "frameworks": []
+  },
+  {
+    "code": "RL-FIN-003",
+    "title": "Errors in revenue recognition or financial reporting",
+    "description": "Subscription revenue, discounts or multi year contracts are recorded incorrectly, or manual spreadsheets feeding the accounts contain errors. Financial statements, board reports or investor metrics end up materially misstated.",
+    "category": "Financial",
+    "sub_category": "Accounting",
+    "default_likelihood": 2,
+    "default_impact": 4,
+    "root_cause": "Billing and finance systems are not integrated, so data is moved and adjusted by hand. Complex contract terms are not reviewed by someone with accounting expertise, and the same people prepare and approve journal entries.",
+    "consequences": "Restated results damage credibility with investors, lenders and acquirers and may breach financing covenants. Misstated metrics lead to poor decisions, and a company that is or becomes part of a US listed group faces SOX consequences.",
+    "recommendations": "Integrate billing with the general ledger and reconcile the two every month. Separate the preparation and approval of journal entries and review revenue treatment for non standard contracts. Apply access and change controls to finance systems and have the close process reviewed independently.",
+    "treatment": "mitigate",
+    "control_keys": [
+      "segregation-of-duties",
+      "it-general-controls",
+      "processing-reconciliation",
+      "internal-audit"
+    ],
+    "frameworks": [
+      "SOX"
+    ]
+  },
+  {
+    "code": "RL-FIN-004",
+    "title": "Uncontrolled cloud spending",
+    "description": "Cloud costs grow faster than revenue because of idle resources, oversized instances, unexpected data transfer fees or a runaway job. Monthly bills exceed budget, sometimes by a wide margin, before anyone notices.",
+    "category": "Financial",
+    "sub_category": "Budget",
+    "default_likelihood": 4,
+    "default_impact": 2,
+    "root_cause": "Engineers can create resources freely without tags or named owners, and nobody reviews spend by team or service. Budget alerts are not configured, and cost is not considered when new features are designed.",
+    "consequences": "Gross margin falls and planned investment elsewhere is cut to cover the overrun. A sudden spike, for example from a compromised account used for crypto mining, can have a significant effect on cash.",
+    "recommendations": "Tag every resource with an owner and service and review cloud spend by team each month. Set budget and anomaly alerts at account level. Remove idle resources regularly, commit to reserved capacity for stable workloads and include cost estimates in design reviews.",
+    "treatment": "mitigate",
+    "control_keys": [
+      "asset-inventory",
+      "capacity-monitoring"
+    ],
+    "frameworks": []
+  },
+  {
+    "code": "RL-FIN-005",
+    "title": "Uninsured losses from a major cyber incident",
+    "description": "A serious breach or ransomware attack brings costs for forensic investigation, legal advice, notification, customer claims and lost revenue. Without adequate insurance these costs fall entirely on the company's balance sheet.",
+    "category": "Financial",
+    "sub_category": "Other",
+    "default_likelihood": 2,
+    "default_impact": 5,
+    "root_cause": "Cyber insurance is not in place, cover limits have not been revisited as the company has grown, or policy conditions such as multifactor authentication and tested backups are not met, which can put a claim at risk.",
+    "consequences": "A single incident could consume a large share of cash reserves, delay growth plans and threaten the company's ability to continue. Customer contracts that require specific insurance cover may also be breached.",
+    "recommendations": "Transfer part of the financial impact through cyber insurance sized to realistic incident scenarios and contractual requirements. Review limits and exclusions every year with a broker, and confirm the security controls the policy requires are actually operating.",
+    "treatment": "transfer",
+    "control_keys": [
+      "risk-treatment-plan",
+      "enforce-mfa",
+      "automated-backups",
+      "incident-response-plan"
+    ],
+    "frameworks": []
+  },
+  {
+    "code": "RL-CMP-001",
+    "title": "Regulatory change not identified in time",
+    "description": "New or amended laws, such as privacy, AI or operational resilience rules, come to apply to the company or its customers but are noticed late. Products, contracts and controls drift out of line with obligations before anyone acts.",
+    "category": "Compliance",
+    "sub_category": "Regulatory",
+    "default_likelihood": 4,
+    "default_impact": 3,
+    "root_cause": "Nobody owns regulatory horizon scanning, and legal advice is sought only reactively. Obligations are not recorded in one place with owners, so changes are not traced to the controls, policies and contracts they affect.",
+    "consequences": "The company may operate in breach of new rules, face fines or orders and be forced into rushed remediation. Customers in regulated sectors may pause purchases or demand contract changes the company cannot deliver in time.",
+    "recommendations": "Assign an owner for regulatory monitoring and use a legal update service or outside counsel for relevant jurisdictions. Keep a compliance obligations register linked to controls and review it every quarter. Assess the impact of significant changes and add the work to the roadmap.",
+    "treatment": "mitigate",
+    "control_keys": [
+      "compliance-register",
+      "change-risk-review",
+      "management-review"
+    ],
+    "frameworks": [
+      "ISO 27001",
+      "NIST CSF",
+      "GDPR",
+      "DORA"
+    ]
+  },
+  {
+    "code": "RL-CMP-002",
+    "title": "Late or missed personal data breach notification",
+    "description": "A security incident involving personal data is not assessed or escalated quickly enough, and notification deadlines pass. Under GDPR a controller must usually notify the regulator within 72 hours, and a processor must inform its customers without undue delay.",
+    "category": "Compliance",
+    "sub_category": "Regulatory",
+    "default_likelihood": 2,
+    "default_impact": 4,
+    "root_cause": "The incident process has no privacy assessment step and no clear decision maker for notification. Contacts, templates and the notice periods promised to customers in contracts are not prepared in advance.",
+    "consequences": "Late notification is a separate breach that can attract fines on top of the incident itself. Customers who learn of a breach late may terminate or claim damages, and the delay often harms trust more than the incident.",
+    "recommendations": "Build a breach assessment step with legal and privacy input into the incident response plan. Record contractual notice periods for key customers and prepare notification templates. Log every suspected breach and the notification decision, including cases where no notice was required.",
+    "treatment": "mitigate",
+    "control_keys": [
+      "breach-notification-process",
+      "incident-response-plan",
+      "breach-record",
+      "breach-notification-commitment"
+    ],
+    "frameworks": [
+      "GDPR",
+      "HIPAA",
+      "SOC 2",
+      "ISO 27001"
+    ]
+  },
+  {
+    "code": "RL-CMP-003",
+    "title": "Payment card data entering company systems",
+    "description": "Card numbers are collected, stored or passed through company servers, logs or support tools. This brings those systems into full PCI DSS scope and creates a valuable target for attackers seeking card data.",
+    "category": "Compliance",
+    "sub_category": "Contractual",
+    "default_likelihood": 3,
+    "default_impact": 4,
+    "root_cause": "Payments were built directly into the product instead of through a hosted payment page. Customers or support staff paste card details into tickets, chat or email, and nobody has checked where card data actually flows.",
+    "consequences": "A card data breach can bring fines passed on by acquiring banks, forensic investigation costs, customer notification and loss of the ability to accept cards. Maintaining full PCI DSS compliance is also expensive for a small team.",
+    "recommendations": "Avoid handling card data by using a PCI DSS validated provider with hosted payment fields or tokenisation, so card numbers never reach company systems. Map data flows to confirm this, block card numbers in support tools and logs, and keep the provider's compliance evidence on file.",
+    "treatment": "avoid",
+    "control_keys": [
+      "data-inventory",
+      "data-minimization",
+      "data-classification",
+      "vendor-security-review"
+    ],
+    "frameworks": [
+      "PCI DSS"
+    ]
+  },
+  {
+    "code": "RL-CMP-004",
+    "title": "Failure to handle data subject rights requests",
+    "description": "Requests from individuals to access, correct, delete or export their personal data are missed, answered late or answered incompletely. Requests may arrive through support, sales or social media rather than a dedicated channel.",
+    "category": "Compliance",
+    "sub_category": "Data privacy",
+    "default_likelihood": 3,
+    "default_impact": 3,
+    "root_cause": "There is no defined intake route or owner for requests, and staff do not recognise them. The company lacks a map of where personal data is held, so finding and deleting it across systems and vendors is slow and manual.",
+    "consequences": "Missing the one month response deadline under GDPR can lead to complaints, investigations and fines. Customers acting as controllers may hold the company in breach of its processing agreement if it cannot help them respond.",
+    "recommendations": "Publish a clear channel for privacy requests and train customer facing staff to route them. Maintain a data map so every system holding personal data is covered. Track each request against its deadline, verify identity and build tooling that helps customers answer their own requests.",
+    "treatment": "mitigate",
+    "control_keys": [
+      "dsar-process",
+      "data-inventory",
+      "data-correction",
+      "privacy-complaints"
+    ],
+    "frameworks": [
+      "GDPR",
+      "SOC 2"
+    ]
+  },
+  {
+    "code": "RL-CMP-005",
+    "title": "Unlawful cross border transfer of personal data",
+    "description": "Personal data from the EU or UK is stored in or accessed from countries without adequate protection, through hosting, support teams or subprocessors, and no valid transfer mechanism is in place. Customers may also have been promised that their data stays in region.",
+    "category": "Compliance",
+    "sub_category": "Data privacy",
+    "default_likelihood": 3,
+    "default_impact": 4,
+    "root_cause": "Data flows to other countries are not mapped, especially remote access by support staff and subprocessors. Standard contractual clauses and transfer risk assessments are missing or out of date, and hosting regions are chosen without checking contracts.",
+    "consequences": "Regulators can order transfers to stop and impose significant fines. Customers with data residency requirements may terminate, and an order to suspend transfers could disrupt the service if key vendors are affected.",
+    "recommendations": "Map where personal data is stored and where it is accessed from. Put standard contractual clauses or another valid mechanism in place for each transfer and record a transfer risk assessment. Offer regional hosting where customers need it and disclose subprocessor locations.",
+    "treatment": "mitigate",
+    "control_keys": [
+      "data-inventory",
+      "dpa-with-vendors",
+      "subprocessor-list",
+      "privacy-notice"
+    ],
+    "frameworks": [
+      "GDPR"
+    ]
+  },
+  {
+    "code": "RL-CMP-006",
+    "title": "Inadequate data processing terms with vendors",
+    "description": "Vendors that process personal data for the company are engaged without a data processing agreement, or with terms weaker than what the company has promised its own customers. Gaps often concern breach notice, subprocessors, audit rights and deletion.",
+    "category": "Compliance",
+    "sub_category": "Data privacy",
+    "default_likelihood": 4,
+    "default_impact": 3,
+    "root_cause": "Procurement accepts vendor standard terms without privacy review, and small or free tools bypass procurement entirely. There is no list of required clauses, and agreements are not revisited when commitments to customers change.",
+    "consequences": "The company may breach GDPR rules on processor contracts as well as its own customer agreements. When a vendor has an incident, the company may have no contractual right to timely notice, cooperation or deletion of data.",
+    "recommendations": "Require a data processing agreement before any vendor receives personal data. Keep a clause checklist covering breach notice periods, subprocessor approval, audit rights, transfers and deletion. Flow customer commitments down to vendors and review key agreements every year.",
+    "treatment": "mitigate",
+    "control_keys": [
+      "dpa-with-vendors",
+      "vendor-breach-terms",
+      "vendor-inventory",
+      "subprocessor-list"
+    ],
+    "frameworks": [
+      "GDPR",
+      "SOC 2",
+      "ISO 27001"
+    ]
+  },
+  {
+    "code": "RL-CMP-007",
+    "title": "Breach of customer SLA commitments",
+    "description": "The company fails to meet uptime, support response or recovery commitments written into customer contracts. Repeated misses can trigger service credits, termination rights and disputes, particularly with large enterprise customers.",
+    "category": "Compliance",
+    "sub_category": "Contractual",
+    "default_likelihood": 3,
+    "default_impact": 3,
+    "root_cause": "Sales teams agree bespoke service levels without checking what operations can deliver. Commitments are not tracked centrally, service levels are not measured the way contracts define them and early warning signs go unnoticed.",
+    "consequences": "The company pays service credits, faces early terminations and may be drawn into disputes or damages claims. Enterprise renewals get harder, and new customers may demand stricter terms and penalties.",
+    "recommendations": "Standardise service levels in a published SLA and require approval for any deviation. Record every contractual commitment in one register. Measure availability and support performance as the contracts define them, report monthly and invest in resilience before raising commitments.",
+    "treatment": "mitigate",
+    "control_keys": [
+      "external-commitments",
+      "compliance-register",
+      "capacity-monitoring",
+      "bcdr-plan"
+    ],
+    "frameworks": [
+      "SOC 2",
+      "ISO 27001"
+    ]
+  },
+  {
+    "code": "RL-CMP-008",
+    "title": "Misleading security or compliance claims",
+    "description": "Sales material, marketing or security questionnaire answers overstate the company's controls or certification status, for example claiming SOC 2 compliance before any report exists. Customers rely on these statements when choosing and contracting with the company.",
+    "category": "Compliance",
+    "sub_category": "Ethical",
+    "default_likelihood": 2,
+    "default_impact": 4,
+    "root_cause": "Commercial pressure rewards saying yes to every requirement. Questionnaire answers are copied from old responses without checking, and no one owns or reviews public statements about security.",
+    "consequences": "Misrepresentation can lead to contract claims, termination and regulatory action for deceptive practices. Discovery during a customer audit or after an incident severely damages credibility and can expose individuals to disciplinary action.",
+    "recommendations": "Give security or compliance ownership of all external security statements. Keep an approved answer library tied to current evidence and refresh it after each audit. Train sales staff on what can be claimed and review any new commitment before it is made.",
+    "treatment": "mitigate",
+    "control_keys": [
+      "external-commitments",
+      "code-of-conduct",
+      "system-description"
+    ],
+    "frameworks": [
+      "SOC 2",
+      "ISO 27001"
+    ]
+  },
+  {
+    "code": "RL-TEC-001",
+    "title": "Unauthorised access to production systems",
+    "description": "An attacker or an insider without a legitimate need gains access to production infrastructure, databases or admin consoles. This could happen through stolen credentials, excessive standing permissions or accounts that were never removed. Customer data and service integrity are directly exposed.",
+    "category": "Technology",
+    "sub_category": "Cybersecurity",
+    "default_likelihood": 3,
+    "default_impact": 5,
+    "root_cause": "Access is granted informally and rarely reviewed, so permissions accumulate over time. Multifactor authentication is not enforced everywhere, shared or long lived admin accounts remain in use, and privileged sessions are not logged or monitored.",
+    "consequences": "Customer data could be viewed, altered or exfiltrated, triggering breach notifications, contractual claims and loss of trust. An exposure of this kind can lead to exceptions in the SOC 2 report, regulatory scrutiny and significant incident response costs.",
+    "recommendations": "Enforce SSO and multifactor authentication for all production access. Grant privileged access just in time with approval and remove standing admin rights. Review production access every quarter and send all privileged session logs to a central store with alerting.",
+    "treatment": "mitigate",
+    "control_keys": [
+      "enforce-sso",
+      "enforce-mfa",
+      "privileged-access",
+      "rbac-least-privilege",
+      "access-reviews"
+    ],
+    "frameworks": [
+      "SOC 2",
+      "ISO 27001",
+      "NIST CSF"
+    ]
+  },
+  {
+    "code": "RL-TEC-002",
+    "title": "Ransomware attack on company systems",
+    "description": "Criminals gain a foothold through a phishing email, an exposed service or a compromised device and then deploy ransomware. Laptops, file shares or production workloads are encrypted, and data is often stolen first to support extortion.",
+    "category": "Technology",
+    "sub_category": "Cybersecurity",
+    "default_likelihood": 3,
+    "default_impact": 5,
+    "root_cause": "Endpoints lack consistent protection and patching, and remote access paths are exposed to the internet. Backups share credentials or networks with production, so they can be encrypted too. Recovery has never been rehearsed.",
+    "consequences": "Operations and customer service could stop for days. The company may face extortion demands, breach notification duties if data was stolen, costly recovery work, lost revenue and lasting damage to customer confidence.",
+    "recommendations": "Deploy EDR on all endpoints and servers and keep them patched. Keep immutable or offline backup copies under separate credentials and test restores regularly. Put remote access behind a zero trust gateway and rehearse a ransomware scenario in a tabletop exercise.",
+    "treatment": "mitigate",
+    "control_keys": [
+      "endpoint-edr",
+      "patch-management",
+      "automated-backups",
+      "backup-restore-test",
+      "zero-trust-access"
+    ],
+    "frameworks": [
+      "SOC 2",
+      "ISO 27001",
+      "NIST CSF"
+    ]
+  },
+  {
+    "code": "RL-TEC-003",
+    "title": "Phishing and credential theft",
+    "description": "Staff receive convincing phishing emails, messages or fake login pages and hand over passwords or approve fraudulent sign in prompts. Attackers then take over email, collaboration or cloud accounts and use them to move further into the organisation.",
+    "category": "Technology",
+    "sub_category": "Cybersecurity",
+    "default_likelihood": 4,
+    "default_impact": 4,
+    "root_cause": "Authentication relies on passwords or push approvals that can be phished. Awareness training is infrequent and generic, suspicious messages are hard to report, and alerts from the mailbox and identity provider are not reviewed.",
+    "consequences": "Compromised accounts can expose confidential email and documents, give attackers a route into production and be used to defraud customers or suppliers. Investigation and recovery take time and may require notifying affected parties.",
+    "recommendations": "Enforce SSO with phishing resistant multifactor authentication such as security keys or passkeys. Run regular awareness training with realistic simulations and make reporting a suspicious message a single click. Alert on unusual sign in activity and new mailbox forwarding rules.",
+    "treatment": "mitigate",
+    "control_keys": [
+      "security-training",
+      "enforce-mfa",
+      "enforce-sso",
+      "incident-reporting-channel",
+      "security-alerting"
+    ],
+    "frameworks": [
+      "SOC 2",
+      "ISO 27001",
+      "NIST CSF"
+    ]
+  },
+  {
+    "code": "RL-TEC-004",
+    "title": "Insider misuse of privileged access",
+    "description": "An employee or administrator with legitimate privileged access uses it to view, copy or change data without authorisation. This may be deliberate, for personal gain or out of grievance, or careless, such as exporting customer data to a personal device.",
+    "category": "Technology",
+    "sub_category": "Cybersecurity",
+    "default_likelihood": 2,
+    "default_impact": 5,
+    "root_cause": "Privileged access is broad and permanent rather than granted per task. Administrator activity is not logged or reviewed independently, and screening and security expectations for sensitive roles are not defined.",
+    "consequences": "Customer or company data could be leaked, sold or destroyed. Detection is often slow, so the damage grows before it is found. The company faces breach obligations, legal action and hard questions from customers and auditors about internal controls.",
+    "recommendations": "Apply least privilege and time limited elevation for administrators. Send privileged activity logs to a store that administrators cannot alter and review them regularly. Screen staff before hire where local law allows, and cover insider threats in the annual risk assessment.",
+    "treatment": "mitigate",
+    "control_keys": [
+      "privileged-access",
+      "centralized-logging",
+      "background-checks",
+      "fraud-risk",
+      "segregation-of-duties"
+    ],
+    "frameworks": [
+      "SOC 2",
+      "ISO 27001",
+      "NIST CSF"
+    ]
+  },
+  {
+    "code": "RL-TEC-005",
+    "title": "Gaps in security logging and monitoring",
+    "description": "Important systems do not produce logs, logs are not kept long enough or nobody reviews the alerts they generate. An intrusion or misuse could go unnoticed for weeks, and there may not be enough evidence to investigate it afterwards.",
+    "category": "Technology",
+    "sub_category": "Cybersecurity",
+    "default_likelihood": 4,
+    "default_impact": 3,
+    "root_cause": "Logging is configured system by system with no agreed standard. Logs are not centralised, retention is left at default settings rather than set by need, and alerts lack clear owners or an on call process for triage.",
+    "consequences": "Incidents are discovered late, often by a customer or an outside party. The scope of a breach cannot be established, which can force wider notifications than necessary and produce audit exceptions for monitoring controls.",
+    "recommendations": "Define which events each type of system must log and send them to a central platform with agreed retention. Build alerts for high value signals, give each an owner and route them to an on call rotation. Record the triage decision for every alert.",
+    "treatment": "mitigate",
+    "control_keys": [
+      "centralized-logging",
+      "security-alerting",
+      "event-triage",
+      "on-call",
+      "continuous-monitoring"
+    ],
+    "frameworks": [
+      "SOC 2",
+      "ISO 27001",
+      "NIST CSF"
+    ]
+  },
+  {
+    "code": "RL-TEC-006",
+    "title": "Insecure cloud configuration",
+    "description": "A cloud resource is deployed or changed with an unsafe setting, such as a public storage bucket, an open database port or an overly permissive role. Data or services become reachable from the internet without anyone intending it.",
+    "category": "Technology",
+    "sub_category": "Infrastructure",
+    "default_likelihood": 4,
+    "default_impact": 4,
+    "root_cause": "Resources are created by hand in the console instead of through reviewed infrastructure as code. No hardening baseline exists and nothing checks automatically for drift, so a single change can silently remove a control.",
+    "consequences": "Exposed data can be found by automated scanners within hours, leading to a breach, regulatory notification and customer claims. Exposed services can be taken over and used for further attacks or crypto mining at the company's expense.",
+    "recommendations": "Manage cloud resources through infrastructure as code with peer review. Adopt a hardening baseline such as the CIS benchmarks and scan continuously for drift and public exposure. Block public storage access by default at account level and keep admin ports off the internet.",
+    "treatment": "mitigate",
+    "control_keys": [
+      "hardening-baselines",
+      "config-drift-detection",
+      "no-public-admin-ports",
+      "firewall-default-deny",
+      "network-segmentation"
+    ],
+    "frameworks": [
+      "SOC 2",
+      "ISO 27001",
+      "NIST CSF"
+    ]
+  },
+  {
+    "code": "RL-TEC-007",
+    "title": "Exploitation of unpatched vulnerabilities",
+    "description": "Attackers exploit a known flaw in an operating system, container image, open source library or network device that has not been patched. Published vulnerabilities are often exploited within days, well before routine patch cycles catch up.",
+    "category": "Technology",
+    "sub_category": "Infrastructure",
+    "default_likelihood": 3,
+    "default_impact": 4,
+    "root_cause": "There is no complete inventory of assets and components, so some systems are never scanned. Remediation timeframes are not set by severity, ownership of fixes is unclear and end of life software stays in service.",
+    "consequences": "A single exposed flaw can give attackers remote access to systems and data. Failing to patch a known issue is hard to defend to customers, auditors and regulators, and it undermines answers given in security questionnaires.",
+    "recommendations": "Maintain an asset inventory and scan infrastructure, images and dependencies continuously. Set remediation deadlines by severity, putting known exploited vulnerabilities first, and track exceptions with an owner and expiry date. Commission an independent penetration test every year.",
+    "treatment": "mitigate",
+    "control_keys": [
+      "vulnerability-management",
+      "patch-management",
+      "dependency-scanning",
+      "asset-inventory",
+      "penetration-test"
+    ],
+    "frameworks": [
+      "SOC 2",
+      "ISO 27001",
+      "NIST CSF"
+    ]
+  },
+  {
+    "code": "RL-TEC-008",
+    "title": "Lost or stolen laptops and mobile devices",
+    "description": "A laptop or phone used for work is lost while travelling or stolen from a home, car or office. If the device is unencrypted or unlocked, company documents, source code, saved credentials and customer data on it can be accessed.",
+    "category": "Technology",
+    "sub_category": "Infrastructure",
+    "default_likelihood": 4,
+    "default_impact": 3,
+    "root_cause": "Devices are not centrally managed, so encryption, screen lock and remote wipe cannot be enforced or verified. Staff keep data locally and stay signed in to sensitive applications for long periods.",
+    "consequences": "Data on the device may have to be treated as a breach, with investigation and possible notification. Stolen sessions or credentials can open a path into company systems. The hardware cost is minor next to the potential exposure.",
+    "recommendations": "Enrol all company devices in MDM and enforce full disk encryption, screen lock and a strong passcode. Make remote wipe part of the lost device procedure and of offboarding. Keep work data in managed cloud storage and require staff to report a lost device straight away.",
+    "treatment": "mitigate",
+    "control_keys": [
+      "mdm-enrollment",
+      "endpoint-encryption",
+      "remote-wipe",
+      "screen-lock"
+    ],
+    "frameworks": [
+      "SOC 2",
+      "ISO 27001",
+      "GDPR"
+    ]
+  },
+  {
+    "code": "RL-TEC-009",
+    "title": "Data loss from deletion or corruption",
+    "description": "Customer or business data is permanently lost or corrupted through accidental deletion, a faulty script or release, storage failure or malicious action. Without a clean recovery point the data cannot be rebuilt.",
+    "category": "Technology",
+    "sub_category": "Data",
+    "default_likelihood": 3,
+    "default_impact": 5,
+    "root_cause": "Engineers can run destructive commands against production without safeguards or review. Soft delete and versioning are not used for critical stores, and there is no clear map of where important data lives or how it is protected.",
+    "consequences": "Customers could lose records they depend on, leading to service credits, contract terminations and legal claims. The company may breach its integrity and availability commitments and suffer serious reputational harm.",
+    "recommendations": "Map critical data stores and confirm each has automated backups and point in time recovery. Restrict destructive production operations to approved changes and turn on deletion protection and object versioning. Test restores of every critical store on a schedule.",
+    "treatment": "mitigate",
+    "control_keys": [
+      "automated-backups",
+      "backup-restore-test",
+      "data-inventory",
+      "change-approval",
+      "privileged-access"
+    ],
+    "frameworks": [
+      "SOC 2",
+      "ISO 27001",
+      "NIST CSF",
+      "GDPR"
+    ]
+  },
+  {
+    "code": "RL-TEC-010",
+    "title": "Backups failing silently or missing critical data",
+    "description": "Backup jobs stop running, finish with errors nobody sees, or were never set up for a newly added data store. The gap only becomes visible when a restore is needed and the latest usable copy is weeks old or missing.",
+    "category": "Technology",
+    "sub_category": "Data",
+    "default_likelihood": 3,
+    "default_impact": 4,
+    "root_cause": "Backup coverage is configured by hand and never checked against the list of data stores. Failed jobs do not raise alerts, retention is not aligned with recovery objectives and no one clearly owns backups.",
+    "consequences": "An otherwise recoverable incident becomes permanent data loss. Recovery point commitments to customers are missed, and the business may have to rebuild data by hand at high cost and with incomplete results.",
+    "recommendations": "Define backups as code so every new data store is covered by default. Alert on any failed or missed backup job and review backup status every week. Keep copies in a separate account or region with retention set by recovery point objectives.",
+    "treatment": "mitigate",
+    "control_keys": [
+      "automated-backups",
+      "backup-restore-test",
+      "asset-inventory",
+      "continuous-monitoring"
+    ],
+    "frameworks": [
+      "SOC 2",
+      "ISO 27001",
+      "NIST CSF"
+    ]
+  },
+  {
+    "code": "RL-TEC-011",
+    "title": "Confidential data exposed through generative AI tools",
+    "description": "Employees paste customer data, source code or confidential documents into public AI assistants, or connect unapproved AI tools to company systems. The provider may retain the data, use it for training or expose it through its own weaknesses.",
+    "category": "Technology",
+    "sub_category": "Data",
+    "default_likelihood": 4,
+    "default_impact": 3,
+    "root_cause": "There is no approved list of AI tools and no clear guidance on what data may be shared with them. Enterprise AI services with proper data protection terms are not provided, so staff turn to free consumer versions.",
+    "consequences": "Confidential or personal data leaves the company without a contract, breaching customer agreements and data protection law. Trade secrets may lose protection, and customers may question how the company handles their data.",
+    "recommendations": "Publish an acceptable use policy for AI that names approved tools and the data classes allowed in each. Provide an enterprise AI service that does not train on company data. Assess AI vendors like any other vendor and monitor for unapproved AI applications.",
+    "treatment": "mitigate",
+    "control_keys": [
+      "data-classification",
+      "limit-pi-use",
+      "vendor-security-review",
+      "shadow-it-detection",
+      "security-training"
+    ],
+    "frameworks": [
+      "SOC 2",
+      "ISO 27001",
+      "GDPR"
+    ]
+  },
+  {
+    "code": "RL-TEC-012",
+    "title": "Production data copied into test environments",
+    "description": "Real customer data is copied into development, staging or analytics environments to reproduce bugs or test features. Those environments have weaker access controls and monitoring, so the data can be seen or leaked by people who should never have it.",
+    "category": "Technology",
+    "sub_category": "Data",
+    "default_likelihood": 3,
+    "default_impact": 3,
+    "root_cause": "Realistic test data is not available, so copying production is the quickest option. Environments are not clearly separated, and no rule or technical block stops production data moving into lower environments.",
+    "consequences": "Personal data is processed outside its agreed purpose and controls, which may breach customer contracts and data protection law. A leak from a test system counts as a breach just as much as a leak from production.",
+    "recommendations": "Prohibit production data in lower environments and enforce this with separate accounts and restricted access. Provide synthetic or properly masked data for testing. Where production data is truly needed to diagnose an issue, require approval and time limited access.",
+    "treatment": "mitigate",
+    "control_keys": [
+      "no-prod-in-lower-envs",
+      "separate-environments",
+      "data-classification",
+      "data-minimization"
+    ],
+    "frameworks": [
+      "SOC 2",
+      "ISO 27001",
+      "GDPR"
+    ]
+  },
+  {
+    "code": "RL-TEC-013",
+    "title": "Failed restore during recovery",
+    "description": "During an incident the team tries to restore systems or data from backup and the restore fails, is incomplete or takes far longer than planned. Recovery time and recovery point objectives promised to customers are missed.",
+    "category": "Technology",
+    "sub_category": "System availability",
+    "default_likelihood": 2,
+    "default_impact": 5,
+    "root_cause": "Restores are never tested end to end, so broken backups, missing encryption keys or undocumented dependencies are discovered in the middle of an incident. Recovery steps live only in the heads of a few engineers.",
+    "consequences": "A contained incident turns into an extended outage or permanent data loss. The company may breach SLAs and continuity commitments, pay service credits, lose customers and face regulatory questions in regulated sectors.",
+    "recommendations": "Test restores of each critical system at least quarterly and record the time taken against recovery objectives. Keep step by step recovery runbooks together with the keys and access they need. Include a full restore scenario in the annual continuity exercise.",
+    "treatment": "mitigate",
+    "control_keys": [
+      "backup-restore-test",
+      "incident-recovery",
+      "bcdr-plan",
+      "tabletop-exercise",
+      "key-management"
+    ],
+    "frameworks": [
+      "SOC 2",
+      "ISO 27001",
+      "NIST CSF",
+      "DORA"
+    ]
+  },
+  {
+    "code": "RL-TEC-014",
+    "title": "Distributed denial of service attack",
+    "description": "Attackers flood public websites, APIs or login pages with traffic so that legitimate customers cannot use the service. Attacks may be used for extortion, as protest or to distract from another intrusion.",
+    "category": "Technology",
+    "sub_category": "System availability",
+    "default_likelihood": 2,
+    "default_impact": 4,
+    "root_cause": "Public endpoints are served directly without a content delivery network, web application firewall or rate limiting. Normal traffic levels are unknown, so an attack is hard to tell apart from real demand, and there is no response plan.",
+    "consequences": "The service becomes slow or unavailable, breaching uptime commitments and frustrating customers. Engineers are diverted to emergency mitigation, and a prolonged attack may lead to service credits and churn.",
+    "recommendations": "Place public endpoints behind a provider that offers DDoS protection and a web application firewall. Rate limit APIs and authentication endpoints and monitor traffic against normal baselines. Add a DDoS playbook with provider escalation contacts to the incident response plan.",
+    "treatment": "mitigate",
+    "control_keys": [
+      "waf-ddos",
+      "capacity-monitoring",
+      "incident-response-plan",
+      "on-call"
+    ],
+    "frameworks": [
+      "SOC 2",
+      "ISO 27001",
+      "NIST CSF"
+    ]
+  },
+  {
+    "code": "RL-TEC-015",
+    "title": "Capacity limits causing service degradation",
+    "description": "Growth in customers, data volumes or sudden usage spikes pushes databases, queues or compute past their limits. The service slows down, jobs back up or requests fail, often at the busiest time for customers.",
+    "category": "Technology",
+    "sub_category": "System availability",
+    "default_likelihood": 3,
+    "default_impact": 3,
+    "root_cause": "Capacity is not monitored against forecast demand, and alerts fire only once limits are reached. Cloud quotas and database limits are not tracked, and major features are released without load testing.",
+    "consequences": "Customers see slow or failed transactions and may miss their own deadlines. Uptime and performance commitments are breached, support volumes rise and the engineering team is pulled into firefighting.",
+    "recommendations": "Monitor utilisation of key resources with alerts set well below hard limits. Review capacity against growth forecasts every quarter and track cloud service quotas. Load test significant features before release and use autoscaling where the architecture allows.",
+    "treatment": "mitigate",
+    "control_keys": [
+      "capacity-monitoring",
+      "on-call",
+      "ci-testing"
+    ],
+    "frameworks": [
+      "SOC 2",
+      "ISO 27001"
+    ]
+  },
+  {
+    "code": "RL-TEC-016",
+    "title": "Secrets exposed in source code or logs",
+    "description": "API keys, database passwords or cloud credentials are committed to a code repository, written to logs or shared in chat. Anyone who can read those places, including an attacker who obtains a copy, can use the secrets to reach systems directly.",
+    "category": "Technology",
+    "sub_category": "Software",
+    "default_likelihood": 4,
+    "default_impact": 4,
+    "root_cause": "There is no central secrets manager, so credentials sit in configuration and environment files. Repositories are not scanned for secrets, keys are long lived and rarely rotated, and logging does not mask sensitive values.",
+    "consequences": "Leaked credentials can give immediate access to production data or cloud accounts, and secrets pushed to public repositories are found by automated scanners within minutes. Rotating secrets in a hurry can also cause outages.",
+    "recommendations": "Store all secrets in a managed vault and inject them at runtime. Scan every commit and the full repository history, and block pushes that contain secrets. Rotate keys on a schedule and immediately after any exposure, and mask secrets in application logs.",
+    "treatment": "mitigate",
+    "control_keys": [
+      "secret-scanning",
+      "secrets-management",
+      "key-management",
+      "peer-code-review"
+    ],
+    "frameworks": [
+      "SOC 2",
+      "ISO 27001",
+      "NIST CSF"
+    ]
+  },
+  {
+    "code": "RL-TEC-017",
+    "title": "Cross tenant data exposure through application flaws",
+    "description": "A flaw in the application, such as a broken authorisation check or an injection vulnerability, lets one customer or an outside attacker read or change another customer's data. On a shared platform a single defect can affect every tenant at once.",
+    "category": "Technology",
+    "sub_category": "Software",
+    "default_likelihood": 3,
+    "default_impact": 5,
+    "root_cause": "Tenant isolation depends on developers remembering to add checks to each query. Secure coding standards are not defined, code review does not look for authorisation flaws, and there is no automated security testing or independent penetration test.",
+    "consequences": "Exposing one customer's data to another is among the most damaging events for a SaaS business. It can trigger breach notifications to many customers at once, contract terminations and a lasting loss of trust in the product.",
+    "recommendations": "Enforce tenant isolation in a shared layer such as database row level security rather than in each query. Adopt a secure development standard with mandatory peer review and automated authorisation tests. Validate input at every boundary and commission an annual penetration test.",
+    "treatment": "mitigate",
+    "control_keys": [
+      "sdlc-policy",
+      "peer-code-review",
+      "input-validation",
+      "ci-testing",
+      "penetration-test"
+    ],
+    "frameworks": [
+      "SOC 2",
+      "ISO 27001",
+      "GDPR"
+    ]
+  },
+  {
+    "code": "RL-TEC-018",
+    "title": "Unapproved software and shadow IT",
+    "description": "Teams sign up for SaaS tools, browser extensions or integrations without procurement or security review. Company and customer data ends up in services that nobody has assessed or contracted and that nobody can switch off when someone leaves.",
+    "category": "Technology",
+    "sub_category": "Software",
+    "default_likelihood": 5,
+    "default_impact": 2,
+    "root_cause": "Buying software is easy while the approved route is slow or unclear. There is no way to discover which applications are in use, and software bought on expenses or company cards is not routed for review.",
+    "consequences": "Data sits in unvetted services without a data processing agreement, weakening privacy compliance and customer commitments. Leavers may keep access to these tools, and a breach at one of them may never be reported to the company.",
+    "recommendations": "Offer a quick, clear route for requesting new tools and publish a list of approved applications. Detect unsanctioned applications through SSO logs, expense reviews and browser management. Bring useful tools under contract and review, and retire the rest.",
+    "treatment": "mitigate",
+    "control_keys": [
+      "shadow-it-detection",
+      "vendor-inventory",
+      "vendor-security-review",
+      "enforce-sso"
+    ],
+    "frameworks": [
+      "SOC 2",
+      "ISO 27001",
+      "GDPR"
+    ]
+  },
+  {
+    "code": "RL-TPR-001",
+    "title": "Critical vendor outage",
+    "description": "A vendor the service depends on, such as the identity provider, payment processor, email delivery service or a core API, suffers an outage. Features that rely on it fail, and customers face disruption the company cannot fix directly.",
+    "category": "Third party",
+    "sub_category": "Vendor",
+    "default_likelihood": 4,
+    "default_impact": 3,
+    "root_cause": "Dependencies on outside services are not mapped or ranked by criticality. The product has no fallback or graceful degradation, and vendor status is not monitored, so the team hears about outages from customers.",
+    "consequences": "Customers cannot sign in, pay, receive notifications or complete key tasks. Availability commitments may be breached even though the fault lies elsewhere, and vendor SLAs rarely compensate for the company's own losses.",
+    "recommendations": "Map critical vendors to the features they support and set recovery expectations for each. Build fallbacks, queues and graceful degradation for key dependencies. Monitor vendor status, include vendor outages in continuity plans and check that vendor SLAs support the company's own commitments.",
+    "treatment": "mitigate",
+    "control_keys": [
+      "vendor-inventory",
+      "vendor-security-review",
+      "bcdr-plan",
+      "incident-response-plan"
+    ],
+    "frameworks": [
+      "SOC 2",
+      "ISO 27001",
+      "DORA"
+    ]
+  },
+  {
+    "code": "RL-TPR-002",
+    "title": "Breach at a vendor with access to company systems",
+    "description": "A vendor with access to company systems or data, such as a managed service provider, support platform or development agency, is compromised. Attackers use the vendor's trusted connections or stored credentials to reach the company's environment.",
+    "category": "Third party",
+    "sub_category": "Vendor",
+    "default_likelihood": 3,
+    "default_impact": 4,
+    "root_cause": "Vendors are onboarded without due diligence proportionate to their access. Their accounts and integrations hold broad permissions that are never reviewed, and contracts do not require prompt breach notification.",
+    "consequences": "The company may suffer a breach it had little ability to detect or prevent, with the same notification duties and customer impact as a direct attack. Customers and auditors still hold the company responsible for its vendors.",
+    "recommendations": "Tier vendors by the access and data they hold and scale due diligence to match. Grant vendor access with least privilege, time limits and logging, and review it regularly. Require breach notification within a defined period and reassess critical vendors every year.",
+    "treatment": "mitigate",
+    "control_keys": [
+      "vendor-security-review",
+      "vendor-breach-terms",
+      "rbac-least-privilege",
+      "access-reviews",
+      "vendor-inventory"
+    ],
+    "frameworks": [
+      "SOC 2",
+      "ISO 27001",
+      "NIST CSF"
+    ]
+  },
+  {
+    "code": "RL-TPR-003",
+    "title": "Subprocessor breach exposing customer personal data",
+    "description": "A subprocessor that stores or processes customer personal data on the company's behalf suffers a breach. The company remains accountable to its customers and must support their notifications even though the failure happened elsewhere.",
+    "category": "Third party",
+    "sub_category": "Outsourcing",
+    "default_likelihood": 2,
+    "default_impact": 5,
+    "root_cause": "Subprocessors are chosen for features and price without assessing their security. The subprocessor list is incomplete, agreements lack clear breach notice and cooperation terms, and more customer data is shared than each one needs.",
+    "consequences": "Customers must be told and may in turn need to notify regulators and individuals. The company faces contract claims and hard questions about why the subprocessor was trusted, and regulators may examine its selection and oversight.",
+    "recommendations": "Assess subprocessors before use and every year, including their SOC 2 or ISO 27001 reports. Keep an accurate published subprocessor list and notify customers of changes. Share only the personal data each subprocessor needs and require breach notice within a short, defined period.",
+    "treatment": "mitigate",
+    "control_keys": [
+      "subprocessor-list",
+      "vendor-security-review",
+      "dpa-with-vendors",
+      "vendor-breach-terms",
+      "data-minimization"
+    ],
+    "frameworks": [
+      "SOC 2",
+      "ISO 27001",
+      "GDPR",
+      "HIPAA"
+    ]
+  },
+  {
+    "code": "RL-TPR-004",
+    "title": "Concentration on a single cloud provider",
+    "description": "The entire service runs on one cloud hosting provider. A provider wide failure, account suspension, major price rise or change in terms would affect every part of the business at once, with no quick way to move.",
+    "category": "Third party",
+    "sub_category": "Outsourcing",
+    "default_likelihood": 2,
+    "default_impact": 5,
+    "root_cause": "Building on one provider's managed services is faster and cheaper, and running across several clouds adds significant complexity. The degree of lock in is rarely assessed or discussed with leadership.",
+    "consequences": "A provider level event could halt the service entirely, and a forced migration would take months. Customers in regulated sectors, especially financial services, increasingly ask how this concentration is managed.",
+    "recommendations": "Formally accept the concentration with leadership sign off and revisit the decision every year. Limit the residual risk with multiple availability zones, backups in a separate account, infrastructure as code and a documented exit plan. Protect the root account and set billing alerts.",
+    "treatment": "accept",
+    "control_keys": [
+      "risk-register",
+      "vendor-security-review",
+      "bcdr-plan",
+      "automated-backups",
+      "cloud-physical-inherited"
+    ],
+    "frameworks": [
+      "SOC 2",
+      "ISO 27001",
+      "DORA"
+    ]
+  },
+  {
+    "code": "RL-TPR-005",
+    "title": "Contractor access and data handling not governed",
+    "description": "Freelancers and contractors get access to code, systems or customer data without the screening, agreements and training required of employees. Their access often continues after the engagement ends because nobody is responsible for removing it.",
+    "category": "Third party",
+    "sub_category": "Contractor",
+    "default_likelihood": 3,
+    "default_impact": 3,
+    "root_cause": "Contractors are engaged by individual managers outside the HR process that triggers onboarding and offboarding. Confidentiality and security terms are not standard, and contractors may work on personal devices.",
+    "consequences": "Company or customer data could be leaked, kept or misused, and ownership of intellectual property may be unclear. Audit tests of access removal and agreements often fail for contractors, producing exceptions.",
+    "recommendations": "Route every contractor engagement through a defined process with a named sponsor and an end date. Require signed confidentiality and intellectual property terms and security training. Grant access through SSO with automatic expiry and review contractor access every quarter.",
+    "treatment": "mitigate",
+    "control_keys": [
+      "contractor-management",
+      "confidentiality-agreements",
+      "timely-deprovisioning",
+      "access-reviews"
+    ],
+    "frameworks": [
+      "SOC 2",
+      "ISO 27001"
+    ]
+  },
+  {
+    "code": "RL-TPR-006",
+    "title": "Compromised integration partner accessing customer data",
+    "description": "A technology partner connected to the product through APIs or OAuth tokens is breached. Attackers use the partner's stored tokens to pull data from many customer accounts, bypassing the company's own login protections.",
+    "category": "Third party",
+    "sub_category": "Partnership",
+    "default_likelihood": 2,
+    "default_impact": 4,
+    "root_cause": "Integrations are granted broad, long lived scopes, and partners are approved for commercial reasons without security review. Unusual API activity by integrations is not monitored, and tokens cannot be revoked quickly in bulk.",
+    "consequences": "Large volumes of customer data can be taken in a short time, affecting many customers at once. Customers may blame the company even though the partner was breached, and notification and clean up effort can be significant.",
+    "recommendations": "Review partner security before listing an integration and set minimum requirements. Limit OAuth scopes, use short lived tokens and let customers see and revoke connected apps. Monitor integration API usage for anomalies and keep a playbook for revoking tokens at scale.",
+    "treatment": "mitigate",
+    "control_keys": [
+      "vendor-security-review",
+      "service-account-inventory",
+      "security-alerting",
+      "incident-response-plan"
+    ],
+    "frameworks": [
+      "SOC 2",
+      "ISO 27001",
+      "NIST CSF"
+    ]
+  },
+  {
+    "code": "RL-PRJ-001",
+    "title": "Unauthorised or untested changes to production",
+    "description": "Code, configuration or infrastructure changes reach production without review, testing or approval. A single faulty or malicious change can cause an outage, open a security hole or corrupt data.",
+    "category": "Project and change",
+    "sub_category": "Change management",
+    "default_likelihood": 4,
+    "default_impact": 4,
+    "root_cause": "Branch protection is not enforced, engineers can deploy directly or edit production by hand, and emergency changes skip the process without being reviewed afterwards. Change records do not link to approvals or test results.",
+    "consequences": "Outages and security regressions become more frequent and harder to diagnose. Auditors test change management closely, so gaps produce exceptions in SOC 2 and SOX reviews and weaken customer confidence.",
+    "recommendations": "Enforce branch protection with peer review and passing CI tests before merge. Deploy only through automated pipelines and remove rights to edit production directly. Define an emergency change process with review after the fact, and alert on configuration changes made outside the pipeline.",
+    "treatment": "mitigate",
+    "control_keys": [
+      "change-approval",
+      "peer-code-review",
+      "ci-testing",
+      "emergency-change",
+      "config-drift-detection"
+    ],
+    "frameworks": [
+      "SOC 2",
+      "ISO 27001",
+      "SOX"
+    ]
+  },
+  {
+    "code": "RL-PRJ-002",
+    "title": "Failed system or data migration",
+    "description": "A migration to a new database, cloud platform or core system goes wrong. Data is lost, duplicated or corrupted in transfer, cutover takes far longer than planned or the new system cannot handle production load.",
+    "category": "Project and change",
+    "sub_category": "Project delivery",
+    "default_likelihood": 3,
+    "default_impact": 4,
+    "root_cause": "Migration plans lack rehearsals, data validation and a tested rollback. Timelines follow commercial deadlines rather than readiness, and controls such as access, logging and backups are not rebuilt in the new environment before go live.",
+    "consequences": "Customers face extended downtime or incorrect data, and the business may run on an unstable system for weeks. Security and compliance controls can silently lapse during the transition, creating audit and breach exposure.",
+    "recommendations": "Rehearse the migration with production scale data and reconcile record counts and checksums at each step. Define go or no go criteria and a tested rollback plan. Confirm backups, logging and access controls work in the target environment before cutover, and assess the risk of the change formally.",
+    "treatment": "mitigate",
+    "control_keys": [
+      "change-risk-review",
+      "processing-reconciliation",
+      "backup-restore-test",
+      "change-approval",
+      "pipeline-storage-integrity"
+    ],
+    "frameworks": [
+      "SOC 2",
+      "ISO 27001"
+    ]
+  },
+  {
+    "code": "RL-PRJ-003",
+    "title": "Scope creep in the compliance programme",
+    "description": "A compliance initiative such as a first SOC 2 or ISO 27001 project keeps expanding with extra frameworks, systems and customer requests. Deadlines slip, costs rise and the report or certificate that sales is counting on arrives late.",
+    "category": "Project and change",
+    "sub_category": "Scope",
+    "default_likelihood": 4,
+    "default_impact": 2,
+    "root_cause": "Scope and objectives were never formally agreed or tied to business drivers. Each new questionnaire or framework is added without assessing the effort, and no one has the authority to decline requests or defer them to a later phase.",
+    "consequences": "The audit is delayed, prospects wait or walk away and teams tire of an effort with no visible end. Budgets are exceeded, and rushed work to recover the timeline weakens the controls being built.",
+    "recommendations": "Agree scope, systems, frameworks and target dates in a charter with an executive sponsor. Assess every change request for effort and value and defer extras to a later phase. Report progress against plan monthly and reuse controls across frameworks instead of building separate programmes.",
+    "treatment": "mitigate",
+    "control_keys": [
+      "system-description",
+      "compliance-register",
+      "define-roles-responsibilities"
+    ],
+    "frameworks": [
+      "SOC 2",
+      "ISO 27001"
+    ]
+  },
+  {
+    "code": "RL-PRJ-004",
+    "title": "Security and control gaps after an acquisition",
+    "description": "An acquired company brings systems, staff and customer data that do not meet the acquirer's security and compliance standards. Unknown vulnerabilities, unmanaged accounts and weaker controls become part of the combined environment.",
+    "category": "Project and change",
+    "sub_category": "Integration",
+    "default_likelihood": 2,
+    "default_impact": 4,
+    "root_cause": "Security due diligence before the deal was limited or skipped. Integration plans focus on revenue and product, networks and identity systems are connected before assessment, and acquired systems fall outside audit scope without anyone deciding so.",
+    "consequences": "An existing compromise in the acquired business can spread to the acquirer. Certifications and SOC 2 scope statements may become inaccurate, customer commitments may be breached and integration costs rise unexpectedly.",
+    "recommendations": "Include security, privacy and compliance in due diligence. Keep acquired environments separate until they are assessed and remediated, and bring identities under central SSO early. Agree a roadmap for integrating controls and update the system description and audit scope deliberately.",
+    "treatment": "mitigate",
+    "control_keys": [
+      "change-risk-review",
+      "asset-inventory",
+      "network-segmentation",
+      "enforce-sso",
+      "system-description"
+    ],
+    "frameworks": [
+      "SOC 2",
+      "ISO 27001",
+      "GDPR"
+    ]
+  },
+  {
+    "code": "RL-INT-001",
+    "title": "Employee expense fraud",
+    "description": "Employees submit inflated, duplicated or personal expenses for reimbursement, or use company cards for private purchases. Individual amounts are often small, but losses add up and can continue for years.",
+    "category": "Internal",
+    "sub_category": "Fraud",
+    "default_likelihood": 3,
+    "default_impact": 2,
+    "root_cause": "Managers approve expense claims without checking receipts, and card statements are not reviewed independently. The expense policy is unclear, and nothing automatically checks for duplicates or unusual patterns.",
+    "consequences": "The company loses money, and discovery leads to investigations, dismissals and possible legal action. Tolerated misconduct signals that rules are optional, which weakens the wider control environment that auditors assess.",
+    "recommendations": "Publish a clear expense policy and require receipts for all claims. Use expense software that flags duplicates, weekend spending and unusual merchants. Have finance review a sample of claims and card transactions every month and apply the disciplinary process consistently.",
+    "treatment": "mitigate",
+    "control_keys": [
+      "fraud-risk",
+      "code-of-conduct",
+      "disciplinary-process",
+      "segregation-of-duties",
+      "whistleblower"
+    ],
+    "frameworks": [
+      "SOX"
+    ]
+  },
+  {
+    "code": "RL-INT-002",
+    "title": "Payment redirection fraud",
+    "description": "Criminals impersonate a supplier or executive, often from a compromised or lookalike email account, and ask finance to change bank details or make an urgent payment. The money goes to an account the fraudsters control and is rarely recovered.",
+    "category": "Internal",
+    "sub_category": "Fraud",
+    "default_likelihood": 3,
+    "default_impact": 4,
+    "root_cause": "Bank detail changes are accepted by email without independent verification. One person can set up and release a payment, finance staff are not trained on this scam and email accounts lack strong authentication.",
+    "consequences": "A single fraudulent transfer can cost tens or hundreds of thousands with little chance of recovery. Suppliers may still demand the original payment, and a compromised mailbox may point to a wider security incident.",
+    "recommendations": "Verify any change to supplier bank details by calling a known contact on a number already on file. Require two people to approve new payees and large payments. Train finance staff on impersonation tactics and enforce multifactor authentication on all email accounts.",
+    "treatment": "mitigate",
+    "control_keys": [
+      "fraud-risk",
+      "segregation-of-duties",
+      "security-training",
+      "enforce-mfa"
+    ],
+    "frameworks": [
+      "SOX"
+    ]
+  },
+  {
+    "code": "RL-INT-003",
+    "title": "Segregation of duties failure",
+    "description": "One person can carry out every step of a sensitive process, such as writing and deploying code to production, creating and paying a vendor, or granting their own access. Errors and deliberate misuse can then pass without any independent check.",
+    "category": "Internal",
+    "sub_category": "Process integrity",
+    "default_likelihood": 3,
+    "default_impact": 3,
+    "root_cause": "Small teams combine roles for speed, and nobody has mapped which duties conflict. System permissions are granted broadly and not reviewed for conflicts, and no compensating controls are defined where separation is impractical.",
+    "consequences": "Fraud, unauthorised changes and errors go undetected. Auditors record exceptions in change management and financial controls, and customers and acquirers may question the reliability of the company's processes.",
+    "recommendations": "Define incompatible duties across engineering, finance and access administration. Enforce separation in systems through branch protection, approval workflows and role design. Where a small team cannot separate duties, add and document compensating controls such as independent log review.",
+    "treatment": "mitigate",
+    "control_keys": [
+      "segregation-of-duties",
+      "peer-code-review",
+      "change-approval",
+      "rbac-least-privilege",
+      "access-reviews"
+    ],
+    "frameworks": [
+      "SOC 2",
+      "ISO 27001",
+      "SOX"
+    ]
+  },
+  {
+    "code": "RL-INT-004",
+    "title": "Weak leadership oversight of security and compliance",
+    "description": "The board and executive team receive little information about security risk, control health or compliance status. Important risks are not escalated, and investment decisions are made without a clear view of the company's exposure.",
+    "category": "Internal",
+    "sub_category": "Governance",
+    "default_likelihood": 3,
+    "default_impact": 4,
+    "root_cause": "No one senior enough is accountable for security, reporting lines are unclear and there is no regular reporting cadence. Risk assessments are treated as an audit exercise rather than a management tool.",
+    "consequences": "Serious risks stay untreated until an incident exposes them. Auditors may find the control environment lacks oversight, and after a breach regulators and investors will ask what leadership knew and when.",
+    "recommendations": "Appoint a senior security officer with direct access to the executive team. Report key risks, control health and incidents to the board at least twice a year. Hold a quarterly management review of the risk register and record decisions and accepted risks.",
+    "treatment": "mitigate",
+    "control_keys": [
+      "board-security-oversight",
+      "designate-security-officer",
+      "management-review",
+      "security-org-structure",
+      "risk-register"
+    ],
+    "frameworks": [
+      "SOC 2",
+      "ISO 27001",
+      "NIST CSF"
+    ]
+  },
+  {
+    "code": "RL-INT-005",
+    "title": "Culture that tolerates non compliance",
+    "description": "Staff and managers see security and compliance as paperwork for auditors rather than part of how work gets done. Policies are acknowledged but not followed, and shortcuts are tolerated whenever deadlines are tight.",
+    "category": "Internal",
+    "sub_category": "Culture",
+    "default_likelihood": 4,
+    "default_impact": 3,
+    "root_cause": "Leaders do not model or talk about security, training is generic and annual, and rules are seen as obstacles. People who raise concerns are not thanked, and repeated non compliance has no visible consequence.",
+    "consequences": "Controls pass the audit but fail in practice, so real incidents become more likely. Evidence is produced late or recreated after the fact, which can become an integrity issue, and good staff grow cynical about the programme.",
+    "recommendations": "Have leaders explain why security matters and visibly follow the rules. Make training short, role specific and frequent. Recognise people who report issues, make the compliant way the easy way, and deal with repeated non compliance consistently through the disciplinary process.",
+    "treatment": "mitigate",
+    "control_keys": [
+      "code-of-conduct",
+      "security-training",
+      "publish-policies",
+      "disciplinary-process",
+      "whistleblower"
+    ],
+    "frameworks": [
+      "SOC 2",
+      "ISO 27001"
+    ]
+  }
+]

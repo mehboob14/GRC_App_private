@@ -15,8 +15,8 @@ const TABS: TabStripItem[] = [
 export function FrameworksLayout() {
   return (
     <div className="w-full">
-      <PageHeader eyebrow="Compliance" title="Frameworks" />
-      <TabStrip label="Framework sections" items={TABS} />
+      <PageHeader title="Frameworks" icon="shield" />
+      <TabStrip label="Framework sections" items={TABS} variant="bar" />
       <Outlet />
     </div>
   );

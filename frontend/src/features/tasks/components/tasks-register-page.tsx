@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useOutletContext, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   Avatar,
@@ -27,7 +27,7 @@ import {
 } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { describeError } from "@/lib/api/describe-error";
-import { getSummary, listMembers, listSavedViews, listTasks } from "../api";
+import { listMembers, listSavedViews, listTasks } from "../api";
 import {
   CATEGORIES,
   PRIORITIES,
@@ -42,9 +42,9 @@ import {
   type TaskStatus,
 } from "../types";
 import { PRIORITY_META, SLA_META, STATUS_META, fmtDate } from "../tokens";
-import { TaskFormDialog } from "./task-form-dialog";
 import { TaskBoard } from "./task-board";
 import { TaskDetail } from "./task-detail-page";
+import type { TasksOutlet } from "./tasks-outlet";
 
 const PAGE_SIZE = 40;
 
@@ -120,7 +120,7 @@ export function TasksRegisterPage() {
   const [filters, setFilters] = useState<TaskFilters>(() => filtersFromParams(searchParams));
   const [activeView, setActiveView] = useState<string | null>(null);
   const [page, setPage] = useState(1);
-  const [creating, setCreating] = useState(false);
+  const { addTask } = useOutletContext<TasksOutlet>();
   const [view, setView] = useState<"list" | "board">("list");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const cols = useColumnPrefs("verity.tasks.columns", TASK_COLUMNS);
@@ -133,7 +133,6 @@ export function TasksRegisterPage() {
 
   const viewsQuery = useQuery({ queryKey: ["task-saved-views"], queryFn: listSavedViews });
   const membersQuery = useQuery({ queryKey: ["task-members"], queryFn: listMembers });
-  const summaryQuery = useQuery({ queryKey: ["task-summary"], queryFn: getSummary });
 
   const query = useQuery({
     queryKey: ["tasks", filters, page],
@@ -213,18 +212,7 @@ export function TasksRegisterPage() {
         }
         actions={
           <>
-            {summaryQuery.data ? (
-              <span className="text-caption text-text-subtle">
-                <span className="tabular font-medium text-text-secondary">{summaryQuery.data.open_total}</span> open
-                {" · "}
-                <span className={cn("tabular font-medium", summaryQuery.data.breaching_now > 0 ? "text-status-danger-text" : "text-text-secondary")}>
-                  {summaryQuery.data.breaching_now}
-                </span>{" "}
-                overdue
-              </span>
-            ) : null}
             <SegmentedControl items={VIEW_ITEMS} value={view} onChange={setView} label="Task view" />
-            <Button onClick={() => setCreating(true)}>New task</Button>
           </>
         }
       >
@@ -323,7 +311,7 @@ export function TasksRegisterPage() {
               ? "Adjust or clear the filters to see more."
               : "Raise a task or issue to start tracking remediation work."
           }
-          action={<Button onClick={() => setCreating(true)}>New task</Button>}
+          action={<Button onClick={addTask}>New task</Button>}
           className="mt-6"
         />
       ) : (
@@ -379,7 +367,6 @@ export function TasksRegisterPage() {
         </div>
       )}
 
-      <TaskFormDialog mode="create" open={creating} onOpenChange={setCreating} />
     </div>
   );
 }

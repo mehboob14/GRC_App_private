@@ -83,7 +83,7 @@ export const VULN_TEMPLATE_COLUMNS = [
 ] as const;
 
 /** Build and download a sample import CSV (header + one worked example) so a
- *  downloaded-and-filled file imports cleanly. Shared by the register toolbar
+ *  downloaded-and-filled file imports cleanly. Shared by the module header
  *  and the import page. */
 export function downloadVulnImportTemplate(): void {
   const example: Record<string, string> = {

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -9,13 +9,10 @@ import {
   EmptyState,
   ErrorState,
   FilterFacet,
-  Icon,
   KevBadge,
-  PageHeader,
   SearchInput,
   Table,
   TableSkeleton,
-  TabStrip,
   TBody,
   TD,
   TH,
@@ -28,17 +25,11 @@ import {
 } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { describeError } from "@/lib/api/describe-error";
-import {
-  downloadVulnImportTemplate,
-  listAssetOptions,
-  listVulnerabilities,
-  vulnerabilityKpis,
-} from "../api";
+import { listAssetOptions, listVulnerabilities, vulnerabilityKpis } from "../api";
 import type { Severity, VulnInstance, VulnListFilters } from "../types";
 import { STATE_META } from "../tokens";
 import { SeverityBadge } from "./severity-badge";
-import { vulnerabilityTabs } from "./vulnerability-tabs";
-import { AddFindingDrawer } from "./add-finding-drawer";
+import { useVulnerabilitiesOutlet } from "./vulnerabilities-outlet";
 import {
   CveCell,
   CvssCell,
@@ -137,7 +128,7 @@ export function VulnerabilitiesRegisterPage() {
   });
   const [search, setSearch] = useState("");
   const [exploit, setExploit] = useState<"all" | "yes" | "no">("all");
-  const [addOpen, setAddOpen] = useState(false);
+  const { setExportRows } = useVulnerabilitiesOutlet();
 
   const set = <K extends keyof VulnListFilters>(key: K, value: VulnListFilters[K]) =>
     setFilters((f) => ({ ...f, [key]: value }));
@@ -170,25 +161,11 @@ export function VulnerabilitiesRegisterPage() {
     [assetOptQuery.data],
   );
 
-  const handleExport = () => {
-    const cols = [
-      "id", "title", "cve_id", "cwe_id", "severity", "cvss_score", "cvss_vector",
-      "epss_score", "priority_band", "risk_score", "state", "kev_flag",
-      "public_exploit_count", "patch_available", "asset_name", "owner_name",
-      "sla_due_at", "overdue",
-    ] as const;
-    const esc = (v: string) => (/[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
-    const lines = rows.map((v) =>
-      cols.map((c) => esc(v[c] == null ? "" : String(v[c]))).join(","),
-    );
-    const csv = `${cols.join(",")}\n${lines.join("\n")}\n`;
-    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "vulnerabilities.csv";
-    a.click();
-    URL.revokeObjectURL(url);
-  };
+  // The header's Export saves exactly these rows, every filter applied.
+  useEffect(() => {
+    setExportRows(rows);
+    return () => setExportRows(null);
+  }, [rows, setExportRows]);
 
   const k = kpisQuery.data;
   const cols = useColumnPrefs("verity.vulnerabilities.columns", COLUMNS, DEFAULT_HIDDEN);
@@ -226,9 +203,6 @@ export function VulnerabilitiesRegisterPage() {
 
   return (
     <div className="w-full">
-      <PageHeader eyebrow="Risk" title="Vulnerabilities" />
-      <TabStrip label="Vulnerability sections" items={vulnerabilityTabs(k?.open_total)} />
-
       {kpisQuery.isError ? (
         <p className="mb-4 text-body-sm text-status-danger-text">
           {describeError(kpisQuery.error, "summary").message}
@@ -251,26 +225,6 @@ export function VulnerabilitiesRegisterPage() {
             onChange={setSearch}
             aria-label="Search vulnerabilities"
           />
-        }
-        actions={
-          <>
-            <Button variant="secondary" onClick={handleExport}>
-              <Icon name="download" className="size-4" />
-              Export
-            </Button>
-            <Button variant="secondary" onClick={() => downloadVulnImportTemplate()}>
-              <Icon name="spreadsheet" className="size-4" />
-              Template
-            </Button>
-            <Button variant="secondary" onClick={() => navigate("/vulnerabilities/import")}>
-              <Icon name="upload" className="size-4" />
-              Bulk upload
-            </Button>
-            <Button onClick={() => setAddOpen(true)}>
-              <Icon name="plus" className="size-4" />
-              Add vulnerability
-            </Button>
-          </>
         }
       >
         <FilterFacet
@@ -370,8 +324,6 @@ export function VulnerabilitiesRegisterPage() {
         </Table>
         </div>
       )}
-
-      <AddFindingDrawer open={addOpen} onOpenChange={setAddOpen} />
     </div>
   );
 }

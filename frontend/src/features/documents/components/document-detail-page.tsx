@@ -149,16 +149,22 @@ export function DocumentDetailPage() {
           </>
         }
         actions={
-          doc.lifecycle === "published" && !doc.acknowledged_by_me ? (
-            <Button
-              variant="secondary"
-              loading={action.isPending}
-              onClick={() => action.mutate(() => acknowledgeDocument(doc.id))}
-            >
-              <Icon name="check" className="size-4" />
-              Acknowledge
+          <>
+            {doc.lifecycle === "published" && !doc.acknowledged_by_me ? (
+              <Button
+                variant="secondary"
+                loading={action.isPending}
+                onClick={() => action.mutate(() => acknowledgeDocument(doc.id))}
+              >
+                <Icon name="check" className="size-4" />
+                Acknowledge
+              </Button>
+            ) : null}
+            <Button variant="secondary" onClick={() => setEditing(true)}>
+              <Icon name="edit" className="size-4" />
+              Edit details
             </Button>
-          ) : undefined
+          </>
         }
       />
 
@@ -209,14 +215,7 @@ export function DocumentDetailPage() {
       <div>
         {tab === "overview" ? (
           <div className="grid gap-4 lg:grid-cols-[1fr_20rem]">
-            <Panel
-              title="Details"
-              action={
-                <Button variant="secondary" size="sm" onClick={() => setEditing(true)}>
-                  Edit
-                </Button>
-              }
-            >
+            <Panel title="Details">
               <dl className="grid grid-cols-2 gap-x-6 gap-y-4">
                 <Meta label="Document name" value={doc.title} />
                 <Meta label="Type" value={TYPE_LABEL[doc.doc_type]} />

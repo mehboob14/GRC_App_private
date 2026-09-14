@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Badge,
@@ -22,6 +23,10 @@ import {
   type Severity,
 } from "@/components/ui";
 import { cn } from "@/lib/cn";
+import { useAuth } from "@/lib/auth/auth-context";
+import { hasPermission } from "@/lib/auth/session";
+import { listRegisters, promoteFinding } from "@/features/risk/api";
+import { rememberedRegister } from "@/features/risk/components/risks-outlet";
 import { describeError, errorToast } from "@/lib/api/describe-error";
 import { acceptFinding, closeFinding, listFindings, listMembers, remediateFinding } from "../api";
 import type { Finding } from "../types";
@@ -124,6 +129,9 @@ function FindingItem({
   onSettled: () => void;
 }) {
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { principal } = useAuth();
+  const canPromote = hasPermission(principal, "risks:manage");
   const [accepting, setAccepting] = useState(false);
   const [closing, setClosing] = useState(false);
   const [owner, setOwner] = useState<string | null>(f.owner_membership_id);
@@ -145,6 +153,25 @@ function FindingItem({
           : "Remediation task opened",
         tone: "success",
       });
+    },
+    onError: fail,
+  });
+
+  // Spec 85: a vendor finding can become a risk in the register. It lands in the
+  // register the person last worked in, or the default one.
+  const promote = useMutation({
+    mutationFn: async () => {
+      const registers = await listRegisters();
+      const target =
+        registers.find((r) => r.id === rememberedRegister() && r.status === "active") ??
+        registers.find((r) => r.is_default) ??
+        registers[0];
+      return promoteFinding(f.id, target.id);
+    },
+    onSuccess: (risk) => {
+      onSettled();
+      toast({ title: `${risk.code} added to the risk register`, tone: "success" });
+      navigate(`/risks/${risk.id}`);
     },
     onError: fail,
   });
@@ -207,7 +234,23 @@ function FindingItem({
             ) : null}
           </p>
         </div>
-        <StatusPill status={status.family} label={status.label} kind="inline" />
+        <div className="flex items-center gap-2">
+          {f.promoted_risk_id ? (
+            <Link
+              to={`/risks/${f.promoted_risk_id}`}
+              className="inline-flex items-center gap-1 text-label-sm text-text-link hover:underline"
+            >
+              <Icon name="risk" className="size-3.5" />
+              In risk register
+            </Link>
+          ) : canPromote ? (
+            <Button variant="ghost" size="sm" loading={promote.isPending} onClick={() => promote.mutate()}>
+              <Icon name="risk" className="size-3.5" />
+              Promote to risk
+            </Button>
+          ) : null}
+          <StatusPill status={status.family} label={status.label} kind="inline" />
+        </div>
       </div>
 
       {f.status === "accepted" ? (

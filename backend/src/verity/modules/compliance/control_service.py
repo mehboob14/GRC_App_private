@@ -245,6 +245,39 @@ class ControlService:
         owners = await self._owner_names(session, tenant_id)
         return [self._view(control, keys, owners) for control in controls]
 
+    async def active_control_ids(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID
+    ) -> set[uuid.UUID]:
+        """Ids of the controls not retired. The risk register counts only these as
+        mitigating, without paying for the full view build."""
+        return set(
+            (
+                await session.execute(
+                    select(Control.id).where(
+                        Control.tenant_id == tenant_id, Control.disabled_at.is_(None)
+                    )
+                )
+            ).scalars()
+        )
+
+    async def control_ids_for_keys(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, keys: list[str]
+    ) -> dict[str, uuid.UUID]:
+        """The tenant's active control for each template canonical key it adopted.
+        Starter library risks name controls by canonical key, not by tenant id."""
+        if not keys:
+            return {}
+        rows = await session.execute(
+            select(ControlTemplate.canonical_key, Control.id)
+            .join(ControlTemplate, ControlTemplate.id == Control.template_id)
+            .where(
+                Control.tenant_id == tenant_id,
+                Control.disabled_at.is_(None),
+                ControlTemplate.canonical_key.in_(keys),
+            )
+        )
+        return dict(rows.tuples().all())
+
     async def get_control(
         self, session: AsyncSession, *, tenant_id: uuid.UUID, control_id: uuid.UUID
     ) -> ControlView:

@@ -28,6 +28,7 @@ from verity.modules.evidence import models as _evidence_models  # noqa: F401
 from verity.modules.iam import models as _iam_models  # noqa: F401
 from verity.modules.links import models as _links_models  # noqa: F401
 from verity.modules.notifications import models as _notifications_models  # noqa: F401
+from verity.modules.risk import models as _risk_models  # noqa: F401
 from verity.modules.tasks import models as _tasks_models  # noqa: F401
 from verity.modules.tenancy import models as _tenancy_models  # noqa: F401
 from verity.modules.vendors import models as _vendors_models  # noqa: F401

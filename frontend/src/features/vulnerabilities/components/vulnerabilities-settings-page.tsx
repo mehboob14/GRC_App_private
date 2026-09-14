@@ -1,20 +1,11 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  Button,
-  ErrorState,
-  PageHeader,
-  Skeleton,
-  TabStrip,
-  TextField,
-  useToast,
-} from "@/components/ui";
+import { Button, ErrorState, Skeleton, TextField, useToast } from "@/components/ui";
 import { describeError, errorToast } from "@/lib/api/describe-error";
 import { useAuth } from "@/lib/auth/auth-context";
 import { hasPermission } from "@/lib/auth/session";
-import { getSlaPolicy, setSlaPolicy, vulnerabilityKpis } from "../api";
+import { getSlaPolicy, setSlaPolicy } from "../api";
 import type { Severity, SlaPolicy } from "../types";
-import { vulnerabilityTabs } from "./vulnerability-tabs";
 
 const SEVERITY_ORDER: Severity[] = ["critical", "high", "medium", "low", "info"];
 
@@ -39,15 +30,7 @@ const DEFAULT_DAYS: Record<Severity, number | null> = {
 export function VulnerabilitiesSettingsPage() {
   const { principal } = useAuth();
   const canEdit = hasPermission(principal, "vulnerabilities:manage");
-  const kpisQuery = useQuery({ queryKey: ["vuln-kpis"], queryFn: vulnerabilityKpis });
-
-  return (
-    <div className="w-full">
-      <PageHeader eyebrow="Risk" title="Vulnerabilities" />
-      <TabStrip label="Vulnerability sections" items={vulnerabilityTabs(kpisQuery.data?.open_total)} />
-      <SlaCard canEdit={canEdit} />
-    </div>
-  );
+  return <SlaCard canEdit={canEdit} />;
 }
 
 function SlaCard({ canEdit }: { canEdit: boolean }) {

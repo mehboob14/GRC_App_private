@@ -3,8 +3,8 @@ import { Drawer, DrawerBody, DrawerContent, DrawerHeader, DrawerTitle } from "@/
 import { ManualAddFinding } from "./manual-add-finding";
 
 /**
- * The register's "Add vulnerability" affordance — the shared manual-add form in
- * a right-side drawer, so a finding can be added without leaving the register.
+ * The module header's "Add finding" affordance — the shared manual-add form in
+ * a right-side drawer, so a finding can be added without leaving the page.
  * On success it refreshes the register/KPIs and closes.
  */
 export function AddFindingDrawer({
@@ -27,7 +27,7 @@ export function AddFindingDrawer({
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent>
         <DrawerHeader>
-          <DrawerTitle>Add vulnerability</DrawerTitle>
+          <DrawerTitle>Add finding</DrawerTitle>
         </DrawerHeader>
         <DrawerBody>
           {/* Remount per open so the form starts empty each time. */}

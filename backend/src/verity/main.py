@@ -40,6 +40,7 @@ from verity.modules.iam.router import (
 )
 from verity.modules.iam.router import provider_router as iam_provider_router
 from verity.modules.notifications.router import notifications_router
+from verity.modules.risk.router import risks_router
 from verity.modules.tasks.router import tasks_router
 from verity.modules.tenancy.provider_auth import router as provider_auth_router
 from verity.modules.tenancy.router import provider_tenants_router, tenant_router
@@ -138,6 +139,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(assets_router, prefix=API_PREFIX)
     app.include_router(vulnerabilities_router, prefix=API_PREFIX)
     app.include_router(vendors_router, prefix=API_PREFIX)
+    app.include_router(risks_router, prefix=API_PREFIX)
     # Unauthenticated by design — see modules/vendors/portal_router.py. Mounted
     # under its own path so a proxy can treat it as a distinct surface.
     app.include_router(vendor_portal_router, prefix=API_PREFIX)

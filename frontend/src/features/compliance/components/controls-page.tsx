@@ -838,6 +838,18 @@ export function ControlsPage() {
       !control.disabled_at && (evidenceCounts.get(control.id) ?? 0) === 0,
   ).length;
 
+  // Top bar line, built only from what this page already loads. Nothing while
+  // the library loads, and no evidence figure until evidence is actually known.
+  const subtitle = controlsQuery.data
+    ? [
+        `${controls.length} ${controls.length === 1 ? "control" : "controls"}`,
+        unowned ? `${unowned} without owner` : null,
+        evidenceKnown && noEvidence ? `${noEvidence} without evidence` : null,
+      ]
+        .filter(Boolean)
+        .join(" · ")
+    : undefined;
+
   const activeFilters = [
     ...types.map((t) => `Type: ${t}`),
     ...trustServices.map((t) => `Trust Services: ${t}`),
@@ -879,7 +891,44 @@ export function ControlsPage() {
 
   return (
     <div className="w-full">
-      <PageHeader eyebrow="Compliance" title="Controls library" />
+      <PageHeader
+        eyebrow="Compliance"
+        title="Controls library"
+        icon="controls"
+        subtitle={subtitle}
+        actions={
+          <>
+            {canExport ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="secondary" loading={exporting !== null}>
+                    <Icon name="export" className="size-4" />
+                    Export
+                    <Icon name="chev" className="size-3.5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onSelect={() => void handleExport("pdf")}>
+                    PDF report
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => void handleExport("xlsx")}>
+                    Excel workbook
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => void handleExport("csv")}>
+                    CSV
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : null}
+            {canManage ? (
+              <Button onClick={() => setCreating(true)}>
+                <Icon name="plus" className="size-4" />
+                New control
+              </Button>
+            ) : null}
+          </>
+        }
+      />
 
       <Toolbar
         searchLabel="Filter controls"
@@ -890,14 +939,6 @@ export function ControlsPage() {
             placeholder="Search by name, code or criterion…"
             aria-label="Search controls"
           />
-        }
-        actions={
-          canManage ? (
-            <Button onClick={() => setCreating(true)}>
-              <Icon name="plus" className="size-4" />
-              New control
-            </Button>
-          ) : null
         }
       >
         {vocabulary ? (
@@ -1002,38 +1043,7 @@ export function ControlsPage() {
           onClearFilters={clearFilters}
         />
       ) : (
-        <Table
-          density="comfortable"
-          actions={
-            <>
-              <ColumnPicker {...cols} />
-              {canExport ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="secondary" loading={exporting !== null}>
-                      <Icon name="download" className="size-4" />
-                      Export
-                      <Icon name="chev" className="size-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onSelect={() => void handleExport("pdf")}>
-                      PDF report
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onSelect={() => void handleExport("xlsx")}
-                    >
-                      Excel workbook
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onSelect={() => void handleExport("csv")}>
-                      CSV
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              ) : null}
-            </>
-          }
-        >
+        <Table density="comfortable" actions={<ColumnPicker {...cols} />}>
           <THead>
             <TR>
               {/* Selection exists to drive bulk actions — without the

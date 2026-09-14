@@ -301,3 +301,29 @@ async def _sweep_vendor_slas() -> dict[str, Any]:
             raised += await vendor_service.raise_sla_findings(session, tenant_id=tenant_id)
     logger.info("worker.sweep_vendor_slas", findings_raised=raised)
     return {"findings_raised": raised}
+
+
+@celery_app.task(name="verity.workers.tasks.sweep_risk_register")
+def sweep_risk_register() -> dict[str, Any]:
+    """Expire lapsed risk acceptances and nudge owners of overdue reviews.
+
+    Expiry writes, deliberately: the signed spec says an expired acceptance
+    reopens the risk, so leaving it accepted past its date would be the platform
+    asserting a decision nobody renewed. Both halves are idempotent, the first
+    because an expired row is no longer active, the second through notify_once.
+    """
+    return asyncio.run(_sweep_risk_register())
+
+
+async def _sweep_risk_register() -> dict[str, Any]:
+    from verity.modules.risk.service import risk_service  # noqa: PLC0415
+
+    expired = notified = 0
+    for tenant_id in await _active_tenant_ids():
+        async with session_scope(tenant_id) as session:
+            expired += await risk_service.expire_acceptances(session, tenant_id=tenant_id)
+            notified += await risk_service.notify_reviews_due(session, tenant_id=tenant_id)
+    logger.info(
+        "worker.sweep_risk_register", acceptances_expired=expired, reviews_notified=notified
+    )
+    return {"acceptances_expired": expired, "reviews_notified": notified}

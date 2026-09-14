@@ -42,6 +42,7 @@ import { AssetsRegisterPage } from "@/features/assets/components/assets-register
 import { AssetsOverviewPage } from "@/features/assets/components/assets-overview-page";
 import { AssetDetailPage } from "@/features/assets/components/asset-detail-page";
 import { AssetsImportPage } from "@/features/assets/components/assets-import-page";
+import { VulnerabilitiesLayout } from "@/features/vulnerabilities/components/vulnerabilities-layout";
 import { VulnerabilitiesRegisterPage } from "@/features/vulnerabilities/components/vulnerabilities-register-page";
 import { VulnerabilitiesOverviewPage } from "@/features/vulnerabilities/components/vulnerabilities-overview-page";
 import { VulnerabilitiesImportPage } from "@/features/vulnerabilities/components/vulnerabilities-import-page";
@@ -62,6 +63,13 @@ import { VendorDetailPage } from "@/features/vendors/components/vendor-detail-pa
 import { VendorPortalPage } from "@/features/vendors/components/vendor-portal-page";
 import { VendorQuestionnairesPage } from "@/features/vendors/components/vendor-questionnaires-page";
 import { QuestionnaireBuilderPage } from "@/features/vendors/components/questionnaire-builder-page";
+import { RisksLayout } from "@/features/risk/components/risks-layout";
+import { RisksOverviewPage } from "@/features/risk/components/risks-overview-page";
+import { RisksRegisterPage } from "@/features/risk/components/risks-register-page";
+import { RiskLibraryPage } from "@/features/risk/components/risk-library-page";
+import { RisksSettingsPage } from "@/features/risk/components/risks-settings-page";
+import { RiskAssessmentsPage, RiskIndicatorsPage } from "@/features/risk/components/risks-soon-pages";
+import { RiskDetailPage } from "@/features/risk/components/risk-detail-page";
 import { ConnectionsLayout } from "@/features/connectors/components/connections-layout";
 import { ConnectionsPage } from "@/features/connectors/components/connections-page";
 
@@ -162,11 +170,24 @@ export function AppRoutes() {
             element={<QuestionnaireBuilderPage />}
           />
           <Route path="vendors/:vendorId" element={<VendorDetailPage />} />
-          <Route path="vulnerabilities" element={<VulnerabilitiesRegisterPage />} />
-          <Route path="vulnerabilities/overview" element={<VulnerabilitiesOverviewPage />} />
-          <Route path="vulnerabilities/import" element={<VulnerabilitiesImportPage />} />
+          <Route path="risks" element={<RisksLayout />}>
+            <Route index element={<RisksRegisterPage />} />
+            {/* Literal segments only; the :riskId route is a sibling below. */}
+            <Route path="overview" element={<RisksOverviewPage />} />
+            <Route path="library" element={<RiskLibraryPage />} />
+            <Route path="assessments" element={<RiskAssessmentsPage />} />
+            <Route path="indicators" element={<RiskIndicatorsPage />} />
+            <Route path="settings" element={<RisksSettingsPage />} />
+          </Route>
+          <Route path="risks/:riskId" element={<RiskDetailPage />} />
+          <Route path="vulnerabilities" element={<VulnerabilitiesLayout />}>
+            <Route index element={<VulnerabilitiesRegisterPage />} />
+            {/* Literal segments only; the :instanceId route is a sibling below. */}
+            <Route path="overview" element={<VulnerabilitiesOverviewPage />} />
+            <Route path="settings" element={<VulnerabilitiesSettingsPage />} />
+          </Route>
           {/* Literal segments must precede the :instanceId route below. */}
-          <Route path="vulnerabilities/settings" element={<VulnerabilitiesSettingsPage />} />
+          <Route path="vulnerabilities/import" element={<VulnerabilitiesImportPage />} />
           <Route path="vulnerabilities/:instanceId" element={<VulnerabilityDetailPage />} />
           <Route
             path="scope"
