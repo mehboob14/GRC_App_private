@@ -11,7 +11,7 @@ from __future__ import annotations
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, File, Query, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from verity.core.deps import (
@@ -31,9 +31,10 @@ from verity.modules.assets.schemas import (
     FacetsOut,
     ImportRequest,
     ImportResultOut,
+    SheetOut,
     TransitionRequest,
 )
-from verity.modules.assets.service import AssetFilters, AssetInput, asset_service
+from verity.modules.assets.service import AssetFilters, AssetInput, asset_service, read_sheet
 from verity.modules.audit.service import Membership
 
 assets_router = APIRouter(prefix="/assets", tags=["assets"])
@@ -130,6 +131,14 @@ async def import_assets(
         rows=[_to_input(row) for row in body.rows],
     )
     return ImportResultOut(created=created)
+
+
+@assets_router.post("/import/sheet", response_model=SheetOut, summary="Read an Excel import file")
+async def read_import_sheet(
+    _p: Annotated[Principal, Depends(require_import)],
+    file: Annotated[UploadFile, File()],
+) -> SheetOut:
+    return SheetOut(rows=read_sheet(await file.read()))
 
 
 @assets_router.post(

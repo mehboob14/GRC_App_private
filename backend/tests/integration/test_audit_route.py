@@ -117,9 +117,9 @@ async def test_a_permitted_caller_gets_the_tenants_trail_newest_first(
         assert item["tenant_id"] == str(TENANT_A)
         assert item["occurred_at"].endswith("Z"), "ISO 8601 UTC with a Z suffix"
         # The UI renders these; every row must carry non-empty labels (the audit-log
-        # page white-screened without them). object_label is humanised kind + short id.
+        # page white-screened without them). Unresolved objects fall back to the
+        # humanised kind alone, with no id noise.
         assert item["actor_label"]
-        assert " · " in item["object_label"]
         assert item["object_label"].lower().startswith(item["object_type"].replace("_", " ")[:5])
 
 

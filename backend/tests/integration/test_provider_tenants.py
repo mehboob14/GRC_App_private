@@ -12,6 +12,7 @@ from fastapi import FastAPI
 from sqlalchemy import select
 from sqlalchemy.exc import DBAPIError
 
+from tests.support.audit import full_stream
 from tests.support.tenancy import (
     bearer,
     provider_session_headers,
@@ -24,7 +25,6 @@ from verity.core.db import dispose_engine, provider_session_scope
 from verity.core.security import issue_token
 from verity.main import create_app
 from verity.modules.audit.models import AuditLog
-from verity.modules.audit.service import audit_service
 from verity.modules.tenancy.models import Tenant, TenantBranding
 from verity.modules.tenancy.repository import PlatformAdminRepository, TenantRepository
 from verity.modules.tenancy.service import (
@@ -64,9 +64,7 @@ async def onboarding() -> dict[str, str]:
 
 
 async def _tenant_stream(tenant_id: uuid.UUID) -> list[AuditLog]:
-    async with provider_session_scope() as session:
-        entries, _ = await audit_service.list_page(session, tenant_id=tenant_id, limit=100)
-    return entries
+    return await full_stream(tenant_id)
 
 
 # ---------------------------------------------------------------------------

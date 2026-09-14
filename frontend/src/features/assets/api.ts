@@ -360,6 +360,14 @@ export function assetsExportCsv(rows: Asset[]): string {
   return `${EXPORT_COLUMNS.join(",")}\n${lines.join("\n")}\n`;
 }
 
+/** The first worksheet of an Excel file as text rows, header first. The import
+ *  page reads CSV itself; Excel is opened by the server. */
+export function readAssetSheet(file: File): Promise<{ rows: string[][] }> {
+  const form = new FormData();
+  form.append("file", file);
+  return apiFetch<{ rows: string[][] }>("/assets/import/sheet", { method: "POST", body: form });
+}
+
 export async function importAssets(inputs: AssetInput[]): Promise<{ created: number }> {
   return apiFetch<{ created: number }>("/assets/import", {
     method: "POST",

@@ -25,9 +25,11 @@ from fastapi import FastAPI
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 
+from tests.support.audit import full_stream
 from tests.support.iam import (
     INVITEE_PASSWORD,
     SIGNUP_PASSWORD,
+    all_permission_keys,
     invite_directly,
     signup_workspace,
     tenant_session_headers,
@@ -43,7 +45,6 @@ from verity.core.db import dispose_engine, provider_session_scope
 from verity.core.security import decode_token, issue_token
 from verity.main import create_app
 from verity.modules.audit.models import AuditLog
-from verity.modules.audit.service import audit_service
 from verity.modules.iam.models import TenantMembership, User, UserIdentity
 from verity.modules.iam.repository import UserRepository
 from verity.modules.tenancy.service import tenancy_service
@@ -76,25 +77,6 @@ WORKSPACE_FIELDS = {
     "tenant_slug",
     "role_name",
     "status",
-}
-ALL_WEEK1_KEYS = {
-    "tenant:read",
-    "tenant:manage",
-    "members:read",
-    "members:invite",
-    "members:disable",
-    "members:manage",
-    "groups:read",
-    "groups:manage",
-    "roles:read",
-    "roles:manage",
-    "audit:read",
-    "security:manage",
-    "frameworks:read",
-    "controls:manage",
-    "evidence:read",
-    "evidence:manage",
-    "evidence:review",
 }
 
 
@@ -145,9 +127,7 @@ async def _verify_email(client: httpx.AsyncClient, email: str) -> dict[str, Any]
 
 async def _stream(tenant_id: uuid.UUID | None) -> list[AuditLog]:
     """One tenant's committed audit stream (or the provider stream), newest first."""
-    async with provider_session_scope() as session:
-        entries, _ = await audit_service.list_page(session, tenant_id=tenant_id, limit=100)
-    return entries
+    return await full_stream(tenant_id)
 
 
 def _attempt_outcomes(entries: list[AuditLog]) -> list[str]:
@@ -242,7 +222,7 @@ async def test_full_signup_matches_the_frontend_contract(client: httpx.AsyncClie
     assert principal["tenant_name"] == "Acme"
     assert principal["role_names"] == ["Admin"]
     # Decision 13: Admin is every key that exists at check time.
-    assert set(principal["permissions"]) == ALL_WEEK1_KEYS
+    assert set(principal["permissions"]) == await all_permission_keys()
 
     assert len(body["workspaces"]) == 1
     assert set(body["workspaces"][0]) >= WORKSPACE_FIELDS
@@ -450,7 +430,10 @@ async def test_a_completed_login_writes_a_session_row_in_the_tenant_stream(
 async def test_invite_accept_login_for_a_new_user(client: httpx.AsyncClient) -> None:
     workspace = await signup_workspace()
     invited = await invite_directly(
-        workspace, email="employee@acme.example", full_name="Plain Employee", role_name="Employee"
+        workspace,
+        email="employee@acme.example",
+        full_name="Plain Employee",
+        role_name="Chief Executive Officer",
     )
     assert "/accept-invite?token=" in invited.accept_url
 
@@ -475,7 +458,7 @@ async def test_invite_accept_login_for_a_new_user(client: httpx.AsyncClient) -> 
     )
     assert login.status_code == 200
     assert login.json()["status"] == "authenticated", "a non-admin needs no TOTP in Week 1"
-    assert login.json()["principal"]["role_names"] == ["Employee"]
+    assert login.json()["principal"]["role_names"] == ["Chief Executive Officer"]
 
     # A new user setting their name on accept is a state change on the global users
     # row and is audited like every other write in that flow (review finding 4).
@@ -516,7 +499,10 @@ async def test_accept_refuses_garbage_tokens_and_weak_passwords(
 ) -> None:
     workspace = await signup_workspace()
     invited = await invite_directly(
-        workspace, email="second@acme.example", full_name="Second", role_name="Employee"
+        workspace,
+        email="second@acme.example",
+        full_name="Second",
+        role_name="Chief Executive Officer",
     )
 
     garbage = await client.post(ACCEPT_URL, json={"token": "not-a-token"})
@@ -556,7 +542,7 @@ async def test_an_existing_user_is_invited_into_a_second_tenant_time_boxed(
         host,
         email=home.email,
         full_name="Guest Auditor",
-        role_name="Auditor",
+        role_name="Security Officer",
         valid_from=today,
         valid_until=today + timedelta(days=30),
     )
@@ -593,7 +579,7 @@ async def test_an_existing_user_is_invited_into_a_second_tenant_time_boxed(
         },
     )
     assert into_host.json()["status"] == "authenticated"
-    assert into_host.json()["principal"]["role_names"] == ["Auditor"]
+    assert into_host.json()["principal"]["role_names"] == ["Security Officer"]
 
 
 async def test_workspace_switch_issues_a_new_session_audited_in_the_target_stream(
@@ -602,7 +588,7 @@ async def test_workspace_switch_issues_a_new_session_audited_in_the_target_strea
     home = await signup_workspace(company="Acme Compliance", email="dual@firm.example")
     host = await signup_workspace(company="Bravo Assurance", email="founder@bravo.example")
     invited = await invite_directly(
-        host, email=home.email, full_name="Dual Member", role_name="Employee"
+        host, email=home.email, full_name="Dual Member", role_name="Chief Executive Officer"
     )
     await client.post(ACCEPT_URL, json={"token": invited.invite_token})
 
@@ -681,7 +667,7 @@ async def test_a_sole_out_of_window_membership_refuses_login(
         host,
         email="expired@guest.example",
         full_name="Expired Guest",
-        role_name="Auditor",
+        role_name="Security Officer",
         valid_from=today - timedelta(days=30),
         valid_until=today - timedelta(days=1),
     )
@@ -717,7 +703,7 @@ async def test_an_in_window_sole_membership_still_logs_in(
         host,
         email="current@guest.example",
         full_name="Current Guest",
-        role_name="Auditor",
+        role_name="Security Officer",
         valid_from=today - timedelta(days=1),
         valid_until=today + timedelta(days=30),
     )
@@ -734,7 +720,7 @@ async def test_an_in_window_sole_membership_still_logs_in(
     )
     assert login.status_code == 200
     assert login.json()["status"] == "authenticated"
-    assert login.json()["principal"]["role_names"] == ["Auditor"]
+    assert login.json()["principal"]["role_names"] == ["Security Officer"]
 
 
 async def test_login_lists_only_in_window_workspaces(
@@ -747,7 +733,7 @@ async def test_login_lists_only_in_window_workspaces(
     today = datetime.now(UTC).date()
 
     in_a = await invite_directly(
-        a, email="dual@guest.example", full_name="Dual Guest", role_name="Employee"
+        a, email="dual@guest.example", full_name="Dual Guest", role_name="Chief Executive Officer"
     )
     await client.post(
         ACCEPT_URL,
@@ -761,7 +747,7 @@ async def test_login_lists_only_in_window_workspaces(
         b,
         email="dual@guest.example",
         full_name="Dual Guest",
-        role_name="Auditor",
+        role_name="Security Officer",
         valid_from=today - timedelta(days=30),
         valid_until=today - timedelta(days=1),
     )

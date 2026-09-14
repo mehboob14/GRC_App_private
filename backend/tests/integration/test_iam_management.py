@@ -15,9 +15,11 @@ import pytest
 from fastapi import FastAPI
 from sqlalchemy import select
 
+from tests.support.audit import full_stream
 from tests.support.iam import (
     INVITEE_PASSWORD,
     Workspace,
+    all_permission_keys,
     invite_directly,
     signup_workspace,
     tenant_session_headers,
@@ -27,9 +29,8 @@ from verity.core.db import dispose_engine, get_sessionmaker, provider_session_sc
 from verity.core.rls import bind_tenant_context
 from verity.main import create_app
 from verity.modules.audit.models import AuditLog
-from verity.modules.audit.service import audit_service
 from verity.modules.iam.models import RoleAssignment
-from verity.modules.iam.service import iam_auth_service, iam_service
+from verity.modules.iam.service import BUILT_IN_ROLE_KEYS, iam_auth_service, iam_service
 
 pytestmark = pytest.mark.integration
 
@@ -48,25 +49,6 @@ MEMBER_FIELDS = {
     "role_names",
     "group_names",
     "mfa_enabled",
-}
-ALL_WEEK1_KEYS = {
-    "tenant:read",
-    "tenant:manage",
-    "members:read",
-    "members:invite",
-    "members:disable",
-    "members:manage",
-    "groups:read",
-    "groups:manage",
-    "roles:read",
-    "roles:manage",
-    "audit:read",
-    "security:manage",
-    "frameworks:read",
-    "controls:manage",
-    "evidence:read",
-    "evidence:manage",
-    "evidence:review",
 }
 
 
@@ -106,7 +88,7 @@ async def _accepted_employee(
 ) -> uuid.UUID:
     """An invited-and-accepted Employee membership in the workspace."""
     invited = await invite_directly(
-        workspace, email=email, full_name="Plain Employee", role_name="Employee"
+        workspace, email=email, full_name="Plain Employee", role_name="Chief Executive Officer"
     )
     await iam_auth_service.accept_invitation(
         token=invited.invite_token, full_name="Plain Employee", password=INVITEE_PASSWORD
@@ -120,9 +102,7 @@ async def _role_id(client: httpx.AsyncClient, headers: dict[str, str], name: str
 
 
 async def _stream(tenant_id: uuid.UUID) -> list[AuditLog]:
-    async with provider_session_scope() as session:
-        entries, _ = await audit_service.list_page(session, tenant_id=tenant_id, limit=200)
-    return entries
+    return await full_stream(tenant_id)
 
 
 # ---------------------------------------------------------------------------
@@ -143,7 +123,7 @@ async def test_the_members_list_carries_roles_groups_and_mfa(
 
     assert members[workspace.email]["role_names"] == ["Admin"]
     assert members[workspace.email]["mfa_enabled"] is True
-    assert members["employee@acme.example"]["role_names"] == ["Employee"]
+    assert members["employee@acme.example"]["role_names"] == ["Chief Executive Officer"]
     assert members["employee@acme.example"]["mfa_enabled"] is False
     assert members["employee@acme.example"]["status"] == "active"
 
@@ -151,7 +131,7 @@ async def test_the_members_list_carries_roles_groups_and_mfa(
 async def test_invite_is_idempotent_and_an_active_member_is_409(
     client: httpx.AsyncClient, workspace: Workspace, admin_headers: dict[str, str]
 ) -> None:
-    employee_role = await _role_id(client, admin_headers, "Employee")
+    employee_role = await _role_id(client, admin_headers, "Chief Executive Officer")
     body = {"email": "new@acme.example", "full_name": "New Member", "role_id": employee_role}
 
     first = await client.post(INVITE_URL, json=body, headers=admin_headers)
@@ -184,7 +164,7 @@ async def test_the_invite_window_lands_on_the_role_assignment(
     client: httpx.AsyncClient, workspace: Workspace, admin_headers: dict[str, str]
 ) -> None:
     """The guest-auditor path: the optional body window time-boxes the grant."""
-    auditor_role = await _role_id(client, admin_headers, "Auditor")
+    auditor_role = await _role_id(client, admin_headers, "Security Officer")
     response = await client.post(
         INVITE_URL,
         json={
@@ -243,7 +223,7 @@ async def test_disable_revokes_the_session_and_reinvite_reactivates(
     )
 
     # Re-inviting the disabled membership is a reactivation, audited as update.
-    employee_role = await _role_id(client, admin_headers, "Employee")
+    employee_role = await _role_id(client, admin_headers, "Chief Executive Officer")
     revived = await client.post(
         INVITE_URL,
         json={
@@ -275,14 +255,14 @@ async def test_put_member_roles_replaces_the_direct_role(
     client: httpx.AsyncClient, workspace: Workspace, admin_headers: dict[str, str]
 ) -> None:
     membership_id = await _accepted_employee(workspace)
-    manager_role = await _role_id(client, admin_headers, "Compliance Manager")
+    manager_role = await _role_id(client, admin_headers, "Security Officer")
     response = await client.put(
         f"{MEMBERS_URL}/{membership_id}/roles",
         json={"role_id": manager_role},
         headers=admin_headers,
     )
     assert response.status_code == 200
-    assert response.json()["role_names"] == ["Compliance Manager"]
+    assert response.json()["role_names"] == ["Security Officer"]
 
 
 # ---------------------------------------------------------------------------
@@ -335,21 +315,26 @@ async def test_groups_hold_memberships_and_refuse_user_ids(
 # ---------------------------------------------------------------------------
 
 
-async def test_admin_lists_every_key_and_built_ins_refuse_delete(
+async def test_admin_lists_every_key_and_only_the_last_role_manager_is_guarded(
     client: httpx.AsyncClient, workspace: Workspace, admin_headers: dict[str, str]
 ) -> None:
     response = await client.get(ROLES_URL, headers=admin_headers)
     assert response.status_code == 200
     roles = {role["name"]: role for role in response.json()}
-    assert set(roles) == {"Admin", "Compliance Manager", "Control Owner", "Employee", "Auditor"}
+    assert set(roles) == set(BUILT_IN_ROLE_KEYS)
     assert all(role["built_in"] for role in roles.values())
     # Decision 13: Admin's bundle is every key that exists, resolved at read time.
-    assert set(roles["Admin"]["permission_keys"]) == ALL_WEEK1_KEYS
+    assert set(roles["Admin"]["permission_keys"]) == await all_permission_keys()
     assert roles["Admin"]["assignment_count"] == 1
 
-    refused = await client.delete(f"{ROLES_URL}/{roles['Employee']['id']}", headers=admin_headers)
+    # D15: built-in roles are ordinary, deletable roles. The one refusal is the
+    # write that would leave nobody able to manage roles.
+    built_in_id = roles["Chief Executive Officer"]["id"]
+    deleted = await client.delete(f"{ROLES_URL}/{built_in_id}", headers=admin_headers)
+    assert deleted.status_code == 204
+    admin_id = roles["Admin"]["id"]
+    refused = await client.delete(f"{ROLES_URL}/{admin_id}", headers=admin_headers)
     assert refused.status_code == 409
-    assert refused.json()["error"]["code"] == "built_in_role_immutable"
 
 
 async def test_a_custom_role_grants_and_revokes_permissions_live(
@@ -471,7 +456,7 @@ async def test_a_rolled_back_invite_leaves_no_audit_row(
             actor_membership_id=workspace.membership_id,
             email="vanishing@acme.example",
             full_name="Vanishing Invite",
-            role_id=uuid.UUID(await _role_id(client, admin_headers, "Employee")),
+            role_id=uuid.UUID(await _role_id(client, admin_headers, "Chief Executive Officer")),
         )
         await session.rollback()
     assert result is not None, "the service call itself succeeded before the rollback"

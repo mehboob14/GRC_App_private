@@ -15,10 +15,11 @@ group names via IAM.
 
 from __future__ import annotations
 
+import io
 import uuid
 from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from typing import Any, Final
 
 from sqlalchemy import func, or_, select
@@ -314,6 +315,58 @@ def _member_of(mid: uuid.UUID | None, names: dict[uuid.UUID, str]) -> Member | N
 
 
 # -- service -----------------------------------------------------------------
+
+
+_MAX_SHEET_BYTES: Final = 10 * 1024 * 1024
+
+
+def _sheet_cell(value: object) -> str:
+    """One Excel cell as the text a CSV would have held."""
+    if value is None:
+        return ""
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, float) and value.is_integer():
+        return str(int(value))
+    if isinstance(value, datetime):
+        return value.date().isoformat()
+    if isinstance(value, date):
+        return value.isoformat()
+    return str(value).strip()
+
+
+def read_sheet(data: bytes) -> list[list[str]]:
+    """The first worksheet of an .xlsx file as text rows, header first, blank rows dropped.
+
+    The import page previews and validates in the browser and reads CSV itself;
+    Excel is the one format it cannot open, so the server only turns the workbook
+    into the same grid and the import then goes through ``import_assets`` as ever.
+    """
+    if len(data) > _MAX_SHEET_BYTES:
+        raise InvalidInput(
+            "This file is larger than 10 MB. Split it and import the parts one at a time.",
+            detail="asset import sheet too large (max 10 MB)",
+        )
+    from zipfile import BadZipFile  # noqa: PLC0415
+
+    import openpyxl  # noqa: PLC0415 — heavy import, only on the Excel path
+    from openpyxl.utils.exceptions import InvalidFileException  # noqa: PLC0415
+
+    try:
+        workbook = openpyxl.load_workbook(io.BytesIO(data), read_only=True, data_only=True)
+    except (BadZipFile, InvalidFileException, KeyError, ValueError, OSError) as exc:
+        raise InvalidInput(
+            "We could not read this Excel file. Save it as .xlsx and try again.",
+            detail=f"openpyxl could not open the upload ({type(exc).__name__})",
+        ) from exc
+    try:
+        sheet = workbook.active
+        if sheet is None:
+            return []
+        rows = ([_sheet_cell(v) for v in values] for values in sheet.iter_rows(values_only=True))
+        return [cells for cells in rows if any(cells)]
+    finally:
+        workbook.close()
 
 
 class AssetService:

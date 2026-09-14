@@ -14,6 +14,7 @@ from verity.modules.iam.service import (
     BUILT_IN_ROLE_DESCRIPTIONS,
     BUILT_IN_ROLE_KEYS,
     MIN_PASSWORD_LENGTH,
+    PasswordPolicy,
     derive_slug_candidates,
     normalize_email,
     tenant_display_name,
@@ -83,10 +84,22 @@ def test_every_built_in_role_ships_a_description() -> None:
     assert all(text.strip() for text in BUILT_IN_ROLE_DESCRIPTIONS.values())
 
 
-def test_password_policy_is_ten_characters() -> None:
+def test_password_policy_floor_and_default_rules() -> None:
+    # A workspace may loosen its policy down to the platform floor, never below it.
+    loosest = PasswordPolicy(
+        min_length=1,
+        require_upper=False,
+        require_lower=False,
+        require_digit=False,
+        require_symbol=False,
+    )
     with pytest.raises(WeakPassword):
-        validate_password("a" * (MIN_PASSWORD_LENGTH - 1))
-    validate_password("a" * MIN_PASSWORD_LENGTH)
+        validate_password("a" * (MIN_PASSWORD_LENGTH - 1), loosest)
+    validate_password("a" * MIN_PASSWORD_LENGTH, loosest)
+    # The default asks for 12 characters with an upper, a lower, a digit and a symbol.
+    with pytest.raises(WeakPassword):
+        validate_password("a" * MIN_PASSWORD_LENGTH)
+    validate_password("Harbor!light9")
 
 
 def test_slug_candidates_are_deterministic_and_dns_safe() -> None:

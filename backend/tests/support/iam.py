@@ -160,3 +160,15 @@ def tenant_session_headers(membership_id: uuid.UUID) -> dict[str, str]:
     """
     issued = issue_token(subject=membership_id, plane="tenant", typ="session")
     return {"Authorization": f"Bearer {issued.token}"}
+
+
+async def all_permission_keys() -> set[str]:
+    """Every permission key the platform ships right now: what Admin resolves to
+    (decision 13). Read from the table, so a module adding keys never breaks this."""
+    from sqlalchemy import select  # noqa: PLC0415
+
+    from verity.core.db import provider_session_scope  # noqa: PLC0415
+    from verity.modules.iam.models import Permission  # noqa: PLC0415
+
+    async with provider_session_scope() as session:
+        return set((await session.execute(select(Permission.key))).scalars().all())

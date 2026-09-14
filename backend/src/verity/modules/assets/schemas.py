@@ -11,7 +11,14 @@ import uuid
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from verity.modules.assets.models import ASSET_TYPES, CRITICALITY_TIERS, DATA_CLASSIFICATIONS
 from verity.modules.tenancy.schemas import UtcDateTime
+
+
+def _one_of(values: tuple[str, ...]) -> str:
+    # The same lists the table's check constraints hold, so a bad value is a 422
+    # here instead of a constraint violation (a 500) at insert.
+    return f"^({'|'.join(values)})$"
 
 
 class _Request(BaseModel):
@@ -156,6 +163,12 @@ class ImportResultOut(_Response):
     created: int
 
 
+class SheetOut(_Response):
+    """An uploaded Excel file as rows of text, header row first."""
+
+    rows: list[list[str]]
+
+
 # -- requests ----------------------------------------------------------------
 
 
@@ -164,14 +177,14 @@ class AssetWrite(_Request):
     override come in, never the score/tier."""
 
     name: str = Field(min_length=1, max_length=300)
-    asset_type: str = "application"
+    asset_type: str = Field(default="application", pattern=_one_of(ASSET_TYPES))
     description: str | None = Field(default=None, max_length=8000)
     hostname: str | None = None
     ip_address: str | None = None
     environment: str | None = None
     location: str | None = None
     vendor_ref: str | None = None
-    data_classification: str | None = None
+    data_classification: str | None = Field(default=None, pattern=_one_of(DATA_CLASSIFICATIONS))
     regulated_data_type: str | None = None
     compliance_scope: list[str] = Field(default_factory=list)
     internet_facing: bool = False
@@ -181,7 +194,7 @@ class AssetWrite(_Request):
     confidentiality: int | None = Field(default=None, ge=1, le=5)
     integrity: int | None = Field(default=None, ge=1, le=5)
     availability: int | None = Field(default=None, ge=1, le=5)
-    tier_override: str | None = None
+    tier_override: str | None = Field(default=None, pattern=_one_of(CRITICALITY_TIERS))
     tier_override_reason: str | None = None
     primary_owner_membership_id: uuid.UUID | None = None
     secondary_owner_membership_id: uuid.UUID | None = None

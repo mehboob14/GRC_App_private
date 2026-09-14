@@ -16,6 +16,7 @@ import httpx
 import pytest
 from fastapi import FastAPI
 
+from tests.support.audit import full_stream
 from tests.support.tenancy import (
     ADMIN_PASSWORD,
     bearer,
@@ -24,12 +25,11 @@ from tests.support.tenancy import (
     totp_code,
 )
 from verity.core.config import Settings
-from verity.core.db import dispose_engine, provider_session_scope
+from verity.core.db import dispose_engine
 from verity.core.errors import InvalidToken
 from verity.core.security import decode_token
 from verity.main import create_app
 from verity.modules.audit.models import AuditLog
-from verity.modules.audit.service import audit_service
 
 pytestmark = pytest.mark.integration
 
@@ -62,9 +62,7 @@ async def client(app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
 
 async def _provider_stream() -> list[AuditLog]:
     """Every committed provider-plane audit row (tenant_id IS NULL), newest first."""
-    async with provider_session_scope() as session:
-        entries, _ = await audit_service.list_page(session, tenant_id=None, limit=100)
-    return entries
+    return await full_stream(None)
 
 
 def _attempt_outcomes(entries: list[AuditLog]) -> list[str]:

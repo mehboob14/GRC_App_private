@@ -15,7 +15,8 @@ import {
 } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { describeError, errorToast } from "@/lib/api/describe-error";
-import { ASSET_TEMPLATE_COLUMNS, assetImportTemplateCsv, importAssets, listMembers, type AssetInput } from "../api";
+import { ApiError } from "@/lib/api/client";
+import { ASSET_TEMPLATE_COLUMNS, assetImportTemplateCsv, importAssets, listMembers, readAssetSheet, type AssetInput } from "../api";
 import {
   ASSET_TYPES,
   CRITICALITY_TIERS,
@@ -166,8 +167,17 @@ export function AssetsImportPage() {
     setFileName(file.name);
     setParseError(null);
     setRows(null);
-    const text = await file.text();
-    const grid = parseCsv(text);
+    let grid: string[][];
+    if (/\.(xlsx|xlsm)$/i.test(file.name)) {
+      try {
+        grid = (await readAssetSheet(file)).rows;
+      } catch (error) {
+        setParseError(error instanceof ApiError ? error.message : "We could not read this Excel file. Try again.");
+        return;
+      }
+    } else {
+      grid = parseCsv(await file.text());
+    }
     if (grid.length < 2) {
       setParseError("The file has no data rows.");
       return;
@@ -195,9 +205,9 @@ export function AssetsImportPage() {
       <DetailHeader icon="upload" backTo="/assets" backLabel="Back to assets" title="Import assets" />
 
       <div className="grid gap-4 lg:grid-cols-2">
-        {/* CSV — available now. */}
+        {/* CSV is read in the browser, Excel by the server. */}
         <div className="rounded-lg border border-border bg-surface-primary p-5">
-          <h2 className="font-display text-title-sm text-text-primary">Upload a CSV</h2>
+          <h2 className="font-display text-title-sm text-text-primary">Upload a CSV or Excel file</h2>
           <p className="mt-1 text-body-sm text-text-subtle">
             Download the template, fill it in, and upload. Criticality is derived from the CIA ratings.
           </p>
@@ -205,12 +215,12 @@ export function AssetsImportPage() {
             <Button variant="secondary" onClick={download}>
               Download template
             </Button>
-            <Button onClick={() => fileInput.current?.click()}>Choose CSV</Button>
+            <Button onClick={() => fileInput.current?.click()}>Choose file</Button>
             {fileName ? <span className="text-body-sm text-text-subtle">{fileName}</span> : null}
             <input
               ref={fileInput}
               type="file"
-              accept=".csv,text/csv"
+              accept=".csv,.xlsx,.xlsm,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
               className="hidden"
               onChange={(e) => {
                 const f = e.target.files?.[0];
