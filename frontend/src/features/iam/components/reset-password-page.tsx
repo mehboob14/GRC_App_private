@@ -1,23 +1,28 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AuthSplitLayout } from "@/features/iam/components/auth-split-layout";
-import { Button, ErrorBanner, Icon, PasswordField } from "@/components/ui";
 import { authApi } from "@/lib/api/endpoints";
-import { describeAuthError } from "@/lib/api/describe-error";
-import { useAlertFocus } from "@/features/iam/hooks/use-alert-focus";
+import { authSuccessDelay } from "@/features/iam/auth-motion";
+import { AuthSplitLayout } from "@/features/iam/components/auth-split-layout";
+import { AuthSubmitButton } from "@/features/iam/components/auth-submit-button";
+import { FailureAlert } from "@/features/iam/auth-kit/auth-alert";
+import { CtaLink } from "@/features/iam/auth-kit/auth-bits";
+import { linkClass, secondaryPill } from "@/features/iam/auth-kit/helpers";
+import { describeAuthFailure } from "@/features/iam/auth-kit/auth-errors";
+import { AuthPasswordField } from "@/features/iam/auth-kit/auth-field";
+import { newPasswordSchema } from "@/features/iam/auth-kit/password-rules";
 
 const schema = z
   .object({
-    password: z.string().min(10, "Use at least 10 characters."),
-    confirm: z.string(),
+    password: newPasswordSchema,
+    confirm: z.string().min(1, "Enter the new password again."),
   })
   .refine((v) => v.password === v.confirm, {
     path: ["confirm"],
-    message: "Passwords don’t match.",
+    message: "Passwords don't match.",
   });
 type Values = z.infer<typeof schema>;
 
@@ -25,108 +30,147 @@ export function ResetPasswordPage() {
   const [params] = useSearchParams();
   const token = params.get("token") ?? "";
   const [done, setDone] = useState(false);
+  const [updated, setUpdated] = useState(false);
+  const [shakeKey, setShakeKey] = useState(0);
+  const alertRef = useRef<HTMLDivElement>(null);
 
   const form = useForm<Values>({
     resolver: zodResolver(schema),
     defaultValues: { password: "", confirm: "" },
-    mode: "onBlur",
+    mode: "onTouched",
   });
+  const password = form.watch("password");
+  const confirm = form.watch("confirm");
+
   const mutation = useMutation({
     mutationFn: (values: Values) =>
       authApi.confirmPasswordReset(token, values.password),
-    onSuccess: () => setDone(true),
+    onSuccess: () => {
+      const delay = authSuccessDelay();
+      if (!delay) {
+        setDone(true);
+        return;
+      }
+      setUpdated(true);
+      window.setTimeout(() => setDone(true), delay);
+    },
+    onError: (error) => {
+      setShakeKey((k) => k + 1);
+      // Too weak or recently used: say it on the field. A dead link gets the banner.
+      const failure = describeAuthFailure(error, "reset");
+      if (failure.field === "password") {
+        form.setError(
+          "password",
+          { type: "server", message: failure.title },
+          { shouldFocus: true },
+        );
+      } else {
+        window.requestAnimationFrame(() => alertRef.current?.focus());
+      }
+    },
   });
-  const alertRef = useAlertFocus(mutation.isError);
 
   if (!token) {
     return (
       <AuthSplitLayout
-        title="Reset your password"
-        subtitle="This link is missing its token."
+        mark={{ icon: "alert", tone: "warning" }}
+        title="This link is incomplete"
+        subtitle="Open the full link from your email, or request a new one."
       >
-        <p className="text-body-md text-text-secondary">
-          Open the full link from your email, or{" "}
-          <Link className="font-semibold text-text-link" to="/forgot-password">
-            request a new one
-          </Link>
-          .
-        </p>
-      </AuthSplitLayout>
-    );
-  }
-
-  if (done) {
-    return (
-      <AuthSplitLayout title="Password updated" subtitle="You’re all set.">
-        <div className="flex flex-col gap-4">
-          <div
-            className="flex items-center gap-2 rounded-md border border-status-success-border bg-status-success-bg px-3.5 py-3"
-            role="status"
-          >
-            <Icon name="check" className="size-5 text-status-success-text" />
-            <p className="text-body-md text-status-success-text">
-              Your password was changed and any other sessions were signed out.
-            </p>
-          </div>
-          <Link
-            className="text-body-sm font-semibold text-text-link"
-            to="/sign-in"
-          >
-            Continue to sign in
+        <div className="flex flex-col gap-3">
+          <CtaLink to="/forgot-password">Request a new link</CtaLink>
+          <Link to="/sign-in" className={secondaryPill}>
+            Back to sign in
           </Link>
         </div>
       </AuthSplitLayout>
     );
   }
 
+  if (done) {
+    return (
+      <AuthSplitLayout
+        mark={{ icon: "check", tone: "success" }}
+        title="Password updated"
+        subtitle="Other sessions were signed out. Sign in with your new password."
+      >
+        <CtaLink
+          to="/sign-in"
+          replace
+          state={{
+            notice: "Password updated. Sign in with your new password.",
+          }}
+        >
+          Continue to sign in
+        </CtaLink>
+      </AuthSplitLayout>
+    );
+  }
+
+  const failure = mutation.isError
+    ? describeAuthFailure(mutation.error, "reset")
+    : null;
+  const bannerFailure = failure && !failure.field ? failure : null;
+  const submit = form.handleSubmit(
+    (values) => mutation.mutate(values),
+    () => setShakeKey((k) => k + 1),
+  );
+  const clearFailure = () => {
+    if (mutation.isError) mutation.reset();
+  };
+
   return (
     <AuthSplitLayout
+      mark={{ icon: "key" }}
       title="Set a new password"
-      subtitle="Choose a strong password you don’t use anywhere else."
+      subtitle="Choose one you don't use anywhere else."
     >
       <form
-        className="flex flex-col gap-3"
-        onSubmit={(e) =>
-          void form.handleSubmit((v) => mutation.mutate(v))(e)
-        }
+        className="flex flex-col gap-4"
         noValidate
+        onSubmit={(e) => void submit(e)}
       >
-        {mutation.isError ? (
-          <ErrorBanner
+        {bannerFailure ? (
+          <FailureAlert
             ref={alertRef}
-            title={describeAuthError(mutation.error).message}
-          >
-            {/* Not a restatement of the message: the way out of a dead link. */}
-            <Link className="font-semibold underline" to="/forgot-password">
-              Request a new link
-            </Link>
-          </ErrorBanner>
+            failure={bannerFailure}
+            onRetry={() => void submit()}
+            action={
+              bannerFailure.kind === "rejected" ? (
+                <Link className={linkClass} to="/forgot-password">
+                  Request a new link
+                </Link>
+              ) : undefined
+            }
+          />
         ) : null}
-        <PasswordField
+        <AuthPasswordField
           label="New password"
-          size="lg"
           autoComplete="new-password"
-          placeholder="At least 10 characters"
+          autoFocus
+          rules
+          typed={password}
           error={form.formState.errors.password?.message}
-          {...form.register("password")}
+          {...form.register("password", { onChange: clearFailure })}
         />
-        <PasswordField
+        <AuthPasswordField
           label="Confirm new password"
-          size="lg"
           autoComplete="new-password"
-          placeholder="Re-enter password"
+          valid={
+            Boolean(confirm) &&
+            confirm === password &&
+            !form.formState.errors.confirm
+          }
           error={form.formState.errors.confirm?.message}
-          {...form.register("confirm")}
+          {...form.register("confirm", { onChange: clearFailure })}
         />
-        <Button
-          type="submit"
-          className="auth-cta mt-1 w-full rounded-full bg-gradient-to-r from-action-accent via-action-primary to-action-primary-hover"
-          size="lg"
-          loading={mutation.isPending}
-        >
-          Update password
-          <Icon name="arrowr" className="size-4" />
-        </Button>
+        <AuthSubmitButton
+          label="Update password"
+          steps={["Updating your password", "Signing out other sessions"]}
+          successLabel="Password updated"
+          phase={updated ? "success" : mutation.isPending ? "loading" : "idle"}
+          shakeKey={shakeKey}
+        />
       </form>
     </AuthSplitLayout>
   );

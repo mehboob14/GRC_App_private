@@ -66,6 +66,24 @@ import { SlidersHorizontal } from "@phosphor-icons/react/SlidersHorizontal";
 import { SquaresFour } from "@phosphor-icons/react/SquaresFour";
 import { Stack } from "@phosphor-icons/react/Stack";
 import { Star } from "@phosphor-icons/react/Star";
+import { EnvelopeSimple } from "@phosphor-icons/react/EnvelopeSimple";
+import { EyeSlash } from "@phosphor-icons/react/EyeSlash";
+import { ArrowFatLineUp } from "@phosphor-icons/react/ArrowFatLineUp";
+import { Key } from "@phosphor-icons/react/Key";
+import { WifiSlash } from "@phosphor-icons/react/WifiSlash";
+import { Fingerprint } from "@phosphor-icons/react/Fingerprint";
+import { ClockCountdown } from "@phosphor-icons/react/ClockCountdown";
+import { Sparkle } from "@phosphor-icons/react/Sparkle";
+import { GridFour } from "@phosphor-icons/react/GridFour";
+import { TrendUp } from "@phosphor-icons/react/TrendUp";
+import { Camera } from "@phosphor-icons/react/Camera";
+import { Scales } from "@phosphor-icons/react/Scales";
+import { Lightning } from "@phosphor-icons/react/Lightning";
+import { TreeStructure } from "@phosphor-icons/react/TreeStructure";
+import { UsersThree } from "@phosphor-icons/react/UsersThree";
+import { Calculator } from "@phosphor-icons/react/Calculator";
+import { Textbox } from "@phosphor-icons/react/Textbox";
+import { Function } from "@phosphor-icons/react/Function";
 import { Sun } from "@phosphor-icons/react/Sun";
 import { Target } from "@phosphor-icons/react/Target";
 import { TextAlignLeft } from "@phosphor-icons/react/TextAlignLeft";
@@ -178,6 +196,31 @@ const ICONS = {
   star: [Star, "fill"],
   flag: [Flag, "fill"],
   sliders: [SlidersHorizontal, "fill"],
+  // The risk register.
+  sparkle: [Sparkle, "fill"],
+  heatmap: [GridFour, "fill"],
+  target: [Target, "fill"],
+  trend: [TrendUp, "bold"],
+  camera: [Camera, "fill"],
+  report: [FileText, "fill"],
+  scales: [Scales, "fill"],
+  lightning: [Lightning, "fill"],
+  pulse: [Pulse, "bold"],
+  workflow: [TreeStructure, "fill"],
+  team: [UsersThree, "fill"],
+  calculator: [Calculator, "fill"],
+  clipboard: [ClipboardText, "fill"],
+  textbox: [Textbox, "fill"],
+  formula: [Function, "bold"],
+  // Sign in and sign up.
+  mail: [EnvelopeSimple, "fill"],
+  eyeOff: [EyeSlash, "fill"],
+  capsLock: [ArrowFatLineUp, "fill"],
+  key: [Key, "fill"],
+  wifiOff: [WifiSlash, "fill"],
+  fingerprint: [Fingerprint, "fill"],
+  countdown: [ClockCountdown, "fill"],
+  shieldCheck: [ShieldCheck, "fill"],
 } as const satisfies Record<string, readonly [PhosphorIcon, IconWeight]>;
 
 export type IconName = keyof typeof ICONS;

@@ -1,15 +1,32 @@
-import { useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { QRCodeSVG } from "qrcode.react";
-import { AuthSplitLayout } from "@/features/iam/components/auth-split-layout";
-import { RecoveryCodesPanel } from "@/features/iam/components/recovery-codes-panel";
-import { Button, ErrorBanner, Icon, Skeleton, TextField } from "@/components/ui";
+import { Icon, Skeleton } from "@/components/ui";
+import { cn } from "@/lib/cn";
 import { authApi } from "@/lib/api/endpoints";
-import { describeAuthError } from "@/lib/api/describe-error";
 import { useAuth } from "@/lib/auth/auth-context";
-import { useAlertFocus } from "@/features/iam/hooks/use-alert-focus";
 import type { LoginSuccess } from "@/lib/api/types";
+import { AuthSplitLayout } from "@/features/iam/components/auth-split-layout";
+import { AuthSubmitButton } from "@/features/iam/components/auth-submit-button";
+import { RecoveryCodesPanel } from "@/features/iam/components/recovery-codes-panel";
+import { FailureAlert } from "@/features/iam/auth-kit/auth-alert";
+import { linkClass, secondaryPill } from "@/features/iam/auth-kit/helpers";
+import { describeAuthFailure } from "@/features/iam/auth-kit/auth-errors";
+import { OtpInput } from "@/features/iam/auth-kit/otp-input";
+
+function Step({ n, children }: { n: number; children: ReactNode }) {
+  return (
+    <li className="flex items-start gap-3">
+      <span className="grid size-6 shrink-0 place-items-center rounded-full bg-action-accent-tint text-caption font-bold text-action-primary">
+        {n}
+      </span>
+      <span className="pt-0.5 text-body-md text-text-secondary">
+        {children}
+      </span>
+    </li>
+  );
+}
 
 export function MfaEnrollPage() {
   const [params] = useSearchParams();
@@ -17,7 +34,12 @@ export function MfaEnrollPage() {
   const navigate = useNavigate();
   const { applyLogin } = useAuth();
   const [code, setCode] = useState("");
+  const [codeHint, setCodeHint] = useState<string | null>(null);
   const [saved, setSaved] = useState<LoginSuccess | null>(null);
+  const [showKey, setShowKey] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [shakeKey, setShakeKey] = useState(0);
+  const alertRef = useRef<HTMLDivElement>(null);
 
   function enterApp(session: LoginSuccess) {
     applyLogin(session);
@@ -28,34 +50,40 @@ export function MfaEnrollPage() {
     queryKey: ["mfa-enroll", challengeToken],
     queryFn: () => authApi.startMfaEnroll(challengeToken),
     enabled: challengeToken.length > 0,
-    // The challenge is single-use and short-lived: never refetch or retry it.
+    // The challenge is single use and short lived: never refetch or retry it.
     staleTime: Infinity,
     retry: false,
   });
 
   const confirmMutation = useMutation({
-    mutationFn: () =>
-      authApi.confirmMfaEnroll({ challenge_token: challengeToken, code }),
+    mutationFn: (value: string) =>
+      authApi.confirmMfaEnroll({
+        challenge_token: challengeToken,
+        code: value,
+      }),
     onSuccess: (response) => {
       if (response.status !== "authenticated") return;
       // The plaintext recovery codes are returned exactly here, once. Hold the
-      // session and make the user acknowledge them before entering the app.
+      // session until the user has saved them.
       if (response.recovery_codes && response.recovery_codes.length > 0) {
         setSaved(response);
       } else {
         enterApp(response);
       }
     },
+    onError: (error) => {
+      setShakeKey((k) => k + 1);
+      if (describeAuthFailure(error, "enroll").field === "code") setCode("");
+      else window.requestAnimationFrame(() => alertRef.current?.focus());
+    },
   });
-
-  const enrollAlertRef = useAlertFocus(enrollQuery.isError);
-  const confirmAlertRef = useAlertFocus(confirmMutation.isError);
 
   if (saved?.recovery_codes) {
     return (
       <AuthSplitLayout
+        mark={{ icon: "key", tone: "success" }}
         title="Save your recovery codes"
-        subtitle="Each code works once, if you lose your authenticator. This is the only time they're shown. Store them somewhere safe."
+        subtitle="Each works once if you lose your phone. You won't see them again."
       >
         <RecoveryCodesPanel
           codes={saved.recovery_codes}
@@ -68,112 +96,156 @@ export function MfaEnrollPage() {
   if (!challengeToken) {
     return (
       <AuthSplitLayout
-        title="MFA enrollment"
-        subtitle="This enrollment link is missing its challenge. Sign in again to restart."
+        mark={{ icon: "alert", tone: "warning" }}
+        title="This setup link is incomplete"
+        subtitle="Sign in again to restart MFA setup."
       >
-        <Link
-          className="font-semibold text-text-link"
-          to="/sign-in"
-        >
+        <Link to="/sign-in" className={secondaryPill}>
           Back to sign in
         </Link>
       </AuthSplitLayout>
     );
   }
 
+  if (enrollQuery.isError) {
+    const failure = describeAuthFailure(enrollQuery.error, "select");
+    return (
+      <AuthSplitLayout
+        mark={{ icon: "fingerprint", tone: "warning" }}
+        title="We couldn't start setup"
+      >
+        <div className="flex flex-col gap-4">
+          <FailureAlert failure={failure} />
+          <Link to="/sign-in" className={secondaryPill}>
+            Back to sign in
+          </Link>
+        </div>
+      </AuthSplitLayout>
+    );
+  }
+
+  const failure = confirmMutation.isError
+    ? describeAuthFailure(confirmMutation.error, "enroll")
+    : null;
+  const setup = enrollQuery.data;
+  const phase = confirmMutation.isPending ? "loading" : "idle";
+
+  async function copyKey() {
+    if (!setup) return;
+    try {
+      await navigator.clipboard.writeText(setup.secret);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard blocked: the key is on screen to copy by hand.
+    }
+  }
+
   return (
     <AuthSplitLayout
-      title="Set up authenticator"
-      subtitle="Admins must enroll MFA before accessing the workspace."
+      mark={{ icon: "fingerprint" }}
+      title="Protect your admin account"
+      subtitle="Admins sign in with a code from an authenticator app."
     >
-      {enrollQuery.isError ? (
-        <>
-          <ErrorBanner
-            ref={enrollAlertRef}
-            className="mb-2"
-            title={describeAuthError(enrollQuery.error).message}
-          />
-          <p className="mb-4">
-            <Link className="font-semibold text-text-link" to="/sign-in">
-              Back to sign in
-            </Link>
-          </p>
-        </>
-      ) : null}
-
-      <ol className="mb-5 list-decimal space-y-2 pl-4 text-body-md text-text-secondary">
-        <li>Open your authenticator app (Google Authenticator, Authy, 1Password…).</li>
-        <li>Scan the QR code below.</li>
-        <li>Enter the 6-digit code it shows to confirm.</li>
+      <ol className="flex flex-col gap-3">
+        <Step n={1}>
+          Open an authenticator app such as Google Authenticator, Authy or
+          1Password.
+        </Step>
+        <Step n={2}>Scan this QR code.</Step>
       </ol>
 
-      <div className="mb-4 flex flex-col items-center gap-3">
-        {enrollQuery.data ? (
-          // QR encodes the otpauth:// URL; rendered locally, never leaves the page.
-          <div className="rounded-lg border border-border bg-white p-3">
+      <div className="mt-4 flex flex-col items-center gap-3 rounded-2xl border border-border bg-surface-sunken p-4">
+        {setup ? (
+          // Encodes the otpauth URL; rendered locally, never leaves the page.
+          <div className="auth-mark-in rounded-xl bg-white p-3 shadow-2 ring-1 ring-border">
             <QRCodeSVG
-              value={enrollQuery.data.otpauth_url}
-              size={168}
+              value={setup.otpauth_url}
+              size={152}
               level="M"
               aria-label="Authenticator setup QR code"
             />
           </div>
         ) : (
-          <Skeleton className="size-[186px] rounded-lg" />
+          <Skeleton className="size-[176px] rounded-xl" />
         )}
-
-        <details className="w-full">
-          <summary className="cursor-pointer text-body-sm text-text-link">
-            Can't scan? Enter the key manually
-          </summary>
-          <div className="mt-2 rounded-md border border-border bg-surface-sunken px-3 py-2">
-            <p className="type-overline text-text-subtle">Setup key</p>
-            {enrollQuery.data ? (
-              <p className="mt-1 select-all font-mono text-body-md tracking-wide text-text-primary">
-                {enrollQuery.data.secret}
-              </p>
-            ) : (
-              <Skeleton className="mt-1 h-5 w-56 max-w-full" />
-            )}
+        {showKey && setup ? (
+          <div className="auth-msg-in flex w-full items-center gap-2 rounded-xl border border-border bg-surface-primary py-1.5 pl-3 pr-1.5">
+            <span className="min-w-0 flex-1 select-all break-all font-mono text-body-sm font-semibold tracking-wide text-text-primary">
+              {setup.secret}
+            </span>
+            <button
+              type="button"
+              onClick={() => void copyKey()}
+              className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-label-sm text-text-link hover:bg-surface-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-action-accent"
+            >
+              <Icon name={copied ? "check" : "copy"} className="size-3.5" />
+              {copied ? "Copied" : "Copy"}
+            </button>
           </div>
-        </details>
+        ) : (
+          <button
+            type="button"
+            className={cn(linkClass, "text-body-sm")}
+            onClick={() => setShowKey(true)}
+            disabled={!setup}
+          >
+            Can't scan? Enter a setup key instead
+          </button>
+        )}
       </div>
 
-      {confirmMutation.isError ? (
-        <ErrorBanner
-          ref={confirmAlertRef}
-          className="mb-4"
-          title={describeAuthError(confirmMutation.error).message}
-        />
-      ) : null}
+      <ol className="mt-4 flex flex-col gap-3">
+        <Step n={3}>Enter the 6 digit code the app shows.</Step>
+      </ol>
+
       <form
+        className="mt-3 flex flex-col gap-4"
+        noValidate
         onSubmit={(e) => {
           e.preventDefault();
-          if (code.length === 6 && enrollQuery.data) confirmMutation.mutate();
-        }}
-        noValidate
-      >
-        <TextField
-          label="Authenticator code"
-          size="lg"
-          inputMode="numeric"
-          autoComplete="one-time-code"
-          placeholder="000000"
-          value={code}
-          onChange={(e) =>
-            setCode(e.target.value.replace(/\D/g, "").slice(0, 6))
+          if (confirmMutation.isPending || !setup) return;
+          if (code.length !== 6) {
+            setCodeHint("Enter all 6 digits.");
+            setShakeKey((k) => k + 1);
+            return;
           }
+          confirmMutation.mutate(code);
+        }}
+      >
+        {failure ? <FailureAlert ref={alertRef} failure={failure} /> : null}
+        <div>
+          <OtpInput
+            value={code}
+            disabled={!setup || confirmMutation.isPending}
+            invalid={failure?.field === "code" || Boolean(codeHint)}
+            onChange={(value) => {
+              setCode(value);
+              setCodeHint(null);
+              if (confirmMutation.isError) confirmMutation.reset();
+            }}
+            onComplete={(value) => {
+              if (setup && !confirmMutation.isPending)
+                confirmMutation.mutate(value);
+            }}
+          />
+          {codeHint ? (
+            <p
+              role="alert"
+              className="auth-msg-in mt-2 flex items-center gap-1.5 text-body-sm font-medium text-status-danger-text"
+            >
+              <Icon name="alert" className="size-3.5" />
+              {codeHint}
+            </p>
+          ) : null}
+        </div>
+        <AuthSubmitButton
+          label="Turn on MFA"
+          steps={["Checking your code", "Creating recovery codes"]}
+          successLabel="MFA is on"
+          phase={phase}
+          shakeKey={shakeKey}
         />
-        <Button
-          type="submit"
-          className="mt-4 w-full"
-          size="lg"
-          loading={confirmMutation.isPending}
-          disabled={code.length !== 6 || !enrollQuery.data}
-        >
-          Confirm and continue
-          <Icon name="arrowr" className="size-4" />
-        </Button>
       </form>
     </AuthSplitLayout>
   );

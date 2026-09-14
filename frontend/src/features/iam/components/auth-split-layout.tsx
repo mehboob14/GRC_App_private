@@ -1,32 +1,37 @@
 import { Link } from "react-router-dom";
-import type { ReactNode } from "react";
-import { BrandMark, Icon } from "@/components/ui";
-import { FrameworkLogo } from "@/features/iam/components/framework-logo";
+import type { CSSProperties, ReactNode } from "react";
+import { BrandMark, Icon, type IconName } from "@/components/ui";
+import { cn } from "@/lib/cn";
+import { ControlMap } from "@/features/iam/auth-kit/control-map";
 
-// The continuous GRC loop, shown as a flow (security-first framing): assess
-// risk → close the gaps → watch continuously → prove it to auditors.
-const LIFECYCLE = ["Assess", "Remediate", "Monitor", "Attest"];
-
-// Full framework catalogue for the bottom marquee. Text chips (no third-party
-// brand marks) — a shield glyph stands in for each logo.
-const FRAMEWORKS: { label: string; blurb: string }[] = [
-  { label: "ISO 27001", blurb: "Information security" },
-  { label: "SOC 2", blurb: "Trust services" },
-  { label: "GDPR", blurb: "Data protection" },
-  { label: "HIPAA", blurb: "Health data" },
-  { label: "NIS2", blurb: "EU cyber directive" },
-  { label: "CIS Controls", blurb: "Security baselines" },
-  { label: "PCI DSS", blurb: "Payment security" },
-  { label: "NIST CSF", blurb: "Cyber framework" },
+// The chain Verity runs end to end, each module handing its findings to the
+// next. The links light in turn, like work moving down the line.
+const CHAIN: { icon: IconName; from: string; to: string }[] = [
+  { icon: "box", from: "Asset", to: "Exposure" },
+  { icon: "bug", from: "Vulnerability", to: "Risk" },
+  { icon: "shieldCheck", from: "Risk", to: "Remediation" },
 ];
 
-const MARQUEE_MASK =
-  "linear-gradient(to right, transparent, black 8%, black 92%, transparent)";
+type MarkTone = "accent" | "success" | "warning" | "danger";
+
+const MARK_TONE: Record<MarkTone, string> = {
+  accent:
+    "bg-action-accent text-white shadow-[0_12px_24px_-10px_rgb(var(--color-action-accent)/0.7)]",
+  success:
+    "bg-status-success-base text-white shadow-[0_12px_24px_-10px_rgb(var(--color-status-success-base)/0.7)]",
+  warning:
+    "bg-status-warning-base text-white shadow-[0_12px_24px_-10px_rgb(var(--color-status-warning-base)/0.7)]",
+  danger:
+    "bg-status-danger-base text-white shadow-[0_12px_24px_-10px_rgb(var(--color-status-danger-base)/0.7)]",
+};
 
 function Wordmark() {
   return (
-    <Link to="/sign-in" className="inline-flex items-center gap-2.5">
-      <BrandMark size={36} />
+    <Link
+      to="/sign-in"
+      className="inline-flex items-center gap-2.5 rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-action-accent"
+    >
+      <BrandMark size={34} />
       <span className="font-display text-heading-sm text-text-primary">
         Verity
       </span>
@@ -34,178 +39,130 @@ function Wordmark() {
   );
 }
 
-function LifecycleFlow() {
-  return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-3">
-      {LIFECYCLE.map((stage, i) => (
-        <div key={stage} className="flex items-center gap-3">
-          <span className="flex flex-col">
-            <span className="text-body-md font-semibold tracking-tight text-text-primary">
-              {stage}
-            </span>
-            <span className="mt-1 h-[3px] w-9 rounded-full bg-gradient-to-r from-action-accent to-action-accent/30" />
-          </span>
-          {i < LIFECYCLE.length - 1 ? (
-            <Icon
-              name="arrowr"
-              className="size-4 shrink-0 text-action-accent/60"
-            />
-          ) : null}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function FrameworkMarquee() {
-  const cards = [...FRAMEWORKS, ...FRAMEWORKS];
-  return (
-    <div className="relative z-10 w-full pb-10 pt-2">
-      <p className="mb-3 text-center type-overline text-text-subtle">
-        Frameworks built in
-      </p>
-      <div className="mx-auto w-[min(92%,72rem)] rounded-full border border-white/70 bg-surface-primary/50 p-2 shadow-2 backdrop-blur-md">
-        <div
-          className="overflow-hidden rounded-full"
-          style={{ maskImage: MARQUEE_MASK, WebkitMaskImage: MARQUEE_MASK }}
-        >
-          <div className="auth-marquee-track flex w-max items-center gap-3 py-1 pr-3">
-            {cards.map(({ label, blurb }, i) => (
-              <div
-                key={`${label}-${i}`}
-                className="flex h-[3.25rem] items-center gap-3 rounded-full border border-border bg-surface-primary py-2 pl-3 pr-6 shadow-1"
-              >
-                <span className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface-primary ring-1 ring-border">
-                  <FrameworkLogo name={label} size={26} eager />
-                </span>
-                <span className="flex flex-col leading-tight">
-                  <span className="whitespace-nowrap text-sm font-bold text-text-primary">
-                    {label}
-                  </span>
-                  <span className="whitespace-nowrap text-[11px] font-medium text-text-subtle">
-                    {blurb}
-                  </span>
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 /**
- * Auth shell for sign-in & sign-up — one continuous light gradient (Verity
- * blue), a brand hero on the left, the form in a floating white card on the
- * right, and a full-width framework marquee along the bottom. Forced light
- * (`.light`) so the auth screens stay white even under the app's dark theme.
+ * The shell for every signed out screen. Left, the product in one picture: a
+ * control proven once lighting up six frameworks. Right, the form on a
+ * floating card. Forced light (`.light`) so auth stays bright under the app's
+ * dark theme. `mark` puts a status medallion over the title for outcome
+ * screens (email sent, password updated, link expired).
  */
 export function AuthSplitLayout({
   title,
   subtitle,
   children,
+  mark,
 }: {
   title: string;
-  subtitle: string;
+  subtitle?: ReactNode;
   children: ReactNode;
+  mark?: { icon: IconName; tone?: MarkTone };
 }) {
   return (
-    <div className="light relative flex min-h-screen w-full flex-col overflow-hidden bg-gradient-to-br from-action-accent-tint to-surface-primary text-text-primary lg:h-screen">
-      {/* soft decorative glow — one surface across the whole page */}
+    <div className="light relative flex min-h-screen w-full flex-col overflow-hidden bg-gradient-to-br from-action-accent-tint via-surface-primary to-surface-primary text-text-primary lg:h-screen">
       <div aria-hidden className="pointer-events-none absolute inset-0">
-        <div className="auth-blob-1 absolute -left-32 -top-32 size-[26rem] rounded-full bg-action-accent/10 blur-3xl" />
-        <div className="auth-blob-2 absolute -bottom-40 right-1/3 size-[28rem] rounded-full bg-surface-primary/70 blur-3xl" />
-        <div className="auth-blob-3 absolute right-0 top-0 size-[22rem] rounded-full bg-action-accent/[0.07] blur-3xl" />
+        <div className="auth-blob-1 absolute -left-40 -top-40 size-[30rem] rounded-full bg-action-accent/10 blur-3xl" />
+        <div className="auth-blob-3 absolute bottom-0 left-1/4 size-[24rem] rounded-full bg-action-accent/[0.06] blur-3xl" />
+        <div className="auth-grid absolute inset-y-0 left-0 w-full lg:w-[52%]" />
       </div>
 
-      <div className="relative z-10 flex min-h-0 flex-1 flex-col lg:grid lg:grid-cols-[46fr_54fr]">
-        {/* ── LEFT · brand hero ─────────────────────────────────────────── */}
-        <aside className="hidden min-h-0 p-8 lg:flex lg:flex-col lg:justify-between xl:p-10">
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <aside className="hidden min-h-0 flex-col justify-between gap-6 px-10 py-8 lg:flex xl:px-14">
           <div className="auth-fade-up">
             <Wordmark />
           </div>
 
-          <div className="flex min-h-0 max-w-lg flex-col justify-center gap-6 py-4">
-            <p className="auth-fade-up font-sans text-overline uppercase text-action-accent">
-              AI-native enterprise GRC
-            </p>
-
-            <h1
-              className="auth-fade-up font-display text-heading-xl leading-[1.14] tracking-tight text-text-primary xl:text-display-lg"
-              style={{ animationDelay: "0.05s" }}
-            >
-              The GRC platform
-              <br />
-              your auditors trust.
-            </h1>
-
-            <div
-              className="auth-fade-up flex flex-col gap-3"
-              style={{ animationDelay: "0.12s" }}
-            >
-              <p className="text-body-lg font-medium text-text-secondary">
-                Governance, risk &amp; compliance.{" "}
-                <span className="font-semibold text-action-accent">
-                  One continuous loop.
-                </span>
-              </p>
-              <LifecycleFlow />
-            </div>
-
-            <div
-              className="auth-fade-up h-px w-24 bg-gradient-to-r from-action-accent to-transparent"
-              style={{ animationDelay: "0.18s" }}
-            />
-
-            <div
-              className="auth-fade-up flex items-center gap-4 text-body-sm font-medium text-text-secondary"
-              style={{ animationDelay: "0.22s" }}
-            >
-              <span className="whitespace-nowrap">AI-native</span>
-              <span className="h-3.5 w-px bg-border" />
-              <span className="whitespace-nowrap">Continuous evidence</span>
-              <span className="h-3.5 w-px bg-border" />
-              <span className="whitespace-nowrap">Audit-ready</span>
-            </div>
-
+          <div className="flex w-full max-w-[34rem] flex-col self-center">
             <p
-              className="auth-fade-up max-w-sm text-body-lg font-semibold leading-snug tracking-tight text-text-primary"
-              style={{ animationDelay: "0.28s" }}
+              className="auth-fade-up text-overline uppercase text-action-accent"
+              style={{ animationDelay: "0.04s" }}
             >
-              One workspace for risk, compliance and audit readiness.
+              Governance, risk and compliance
             </p>
+            <h1
+              className="auth-fade-up mt-3 text-balance font-display text-heading-xl text-text-primary xl:text-display-xl"
+              style={{ animationDelay: "0.08s" }}
+            >
+              The GRC platform your auditors trust.
+            </h1>
+            <p
+              className="auth-fade-up mt-3 text-body-lg text-text-secondary"
+              style={{ animationDelay: "0.14s" }}
+            >
+              Map a control once. Prove it in every framework.
+            </p>
+            <div
+              className="auth-fade-up mt-7 [@media(max-height:680px)]:hidden"
+              style={{ animationDelay: "0.2s" }}
+            >
+              <ControlMap />
+            </div>
           </div>
 
-          <div />
+          <ol
+            aria-label="How Verity connects security work"
+            className="auth-fade-up flex flex-wrap items-center gap-x-3 gap-y-3"
+            style={{ animationDelay: "0.26s" }}
+          >
+            {CHAIN.map((step, i) => (
+              <li key={step.to} className="flex items-center gap-3">
+                {i > 0 ? (
+                  <Icon name="chevr" className="size-3 text-action-accent/40" />
+                ) : null}
+                <span
+                  className="flex items-center gap-2.5"
+                  style={{ "--i": i } as CSSProperties}
+                >
+                  <span className="auth-chain-icon grid size-8 shrink-0 place-items-center rounded-xl bg-surface-primary text-action-accent shadow-1 ring-1 ring-border">
+                    <Icon name={step.icon} className="size-4" />
+                  </span>
+                  <span className="whitespace-nowrap leading-tight">
+                    <span className="block text-caption text-text-subtle">
+                      From {step.from}
+                    </span>
+                    <span className="block text-label-md text-text-primary">
+                      to {step.to}
+                    </span>
+                  </span>
+                </span>
+              </li>
+            ))}
+          </ol>
         </aside>
 
-        {/* ── RIGHT · white form card ───────────────────────────────────── */}
-        <main className="flex min-h-0 flex-1 items-stretch justify-center px-4 py-4 sm:px-6 lg:pl-0 lg:pr-8">
+        <main className="flex min-h-0 flex-1 items-stretch justify-center px-4 py-4 sm:px-6 lg:py-6 lg:pl-0 lg:pr-8">
           <div
-            className="auth-fade-up auth-no-scrollbar flex w-full flex-col items-center overflow-y-auto rounded-[28px] bg-surface-primary px-5 py-6 shadow-3 ring-1 ring-black/5 sm:px-10 lg:max-w-[33rem]"
-            style={{ animationDelay: "0.08s" }}
+            className="auth-fade-up auth-no-scrollbar flex w-full flex-col items-center overflow-y-auto rounded-[28px] bg-surface-primary px-5 py-8 shadow-3 ring-1 ring-black/5 sm:px-10 lg:max-w-[34rem]"
+            style={{ animationDelay: "0.06s" }}
           >
-            <div className="my-auto w-full max-w-md">
-              <div className="mb-6 flex justify-center lg:hidden">
+            <div className="my-auto w-full max-w-[25rem]">
+              <div className="mb-7 flex justify-center lg:hidden">
                 <Wordmark />
               </div>
-              <div className="mb-5 text-center">
-                <h2 className="font-display text-heading-lg text-text-primary">
+              <div className="mb-6 flex flex-col items-center text-center">
+                {mark ? (
+                  <span
+                    className={cn(
+                      "auth-mark-in mb-4 grid size-14 place-items-center rounded-2xl",
+                      MARK_TONE[mark.tone ?? "accent"],
+                    )}
+                  >
+                    <Icon name={mark.icon} className="size-7" />
+                  </span>
+                ) : null}
+                <h2 className="text-balance font-display text-heading-lg text-text-primary">
                   {title}
                 </h2>
-                <p className="mt-1.5 text-body-md text-text-secondary">
-                  {subtitle}
-                </p>
+                {subtitle ? (
+                  <p className="mt-1.5 text-balance text-body-lg text-text-secondary">
+                    {subtitle}
+                  </p>
+                ) : null}
               </div>
               {children}
             </div>
           </div>
         </main>
       </div>
-
-      {/* ── BOTTOM · full-width framework marquee ─────────────────────────── */}
-      <FrameworkMarquee />
     </div>
   );
 }

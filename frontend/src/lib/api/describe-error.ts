@@ -131,39 +131,3 @@ export function describeError(error: unknown, subject?: string): DescribedError 
 export function errorToast(error: unknown, subject?: string): string {
   return describeError(error, subject).message;
 }
-
-/**
- * One line for a credential form: sign in, sign up, verify email, accept invite,
- * MFA.
- *
- * These need their own mapping because a 401 here does NOT mean "your session
- * expired" (the reader has no session yet), it means the credentials were
- * refused. On these endpoints every 4xx message is written for the reader by
- * design, so it passes straight through; only infrastructure failures get
- * substituted copy.
- *
- * Returns a single sentence. Render it as the ErrorBanner *title* with no body:
- * "Sign-in failed" above "Sign-in refused: ..." said the same thing twice.
- */
-export function describeAuthError(error: unknown): { message: string; retryable: boolean } {
-  if (error instanceof ApiError) {
-    if (error.status === 0) {
-      const d = describeError(error);
-      return { message: d.message, retryable: true };
-    }
-    if (error.status === 429) {
-      return {
-        message: "Too many attempts. Wait a moment before trying again.",
-        retryable: true,
-      };
-    }
-    if (error.status >= 500) {
-      return {
-        message: "Something went wrong. We're on it. Try again in a moment.",
-        retryable: true,
-      };
-    }
-    return { message: error.message, retryable: false };
-  }
-  return { message: "Something went wrong. Try again.", retryable: true };
-}

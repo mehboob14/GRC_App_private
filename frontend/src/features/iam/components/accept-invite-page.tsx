@@ -1,30 +1,33 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AuthSplitLayout } from "@/features/iam/components/auth-split-layout";
-import {
-  Button,
-  Checkbox,
-  ErrorBanner,
-  Icon,
-  PasswordField,
-  TextField,
-} from "@/components/ui";
+import { cn } from "@/lib/cn";
 import { authApi } from "@/lib/api/endpoints";
-import { describeAuthError } from "@/lib/api/describe-error";
 import { useAuth } from "@/lib/auth/auth-context";
-import { useAlertFocus } from "@/features/iam/hooks/use-alert-focus";
 import type { AcceptInvitationRequest } from "@/lib/api/types";
+import { authSuccessDelay } from "@/features/iam/auth-motion";
+import { AuthSplitLayout } from "@/features/iam/components/auth-split-layout";
+import { AuthSubmitButton } from "@/features/iam/components/auth-submit-button";
+import { AuthAlert, FailureAlert } from "@/features/iam/auth-kit/auth-alert";
+import { CtaLink } from "@/features/iam/auth-kit/auth-bits";
+import { linkClass, secondaryPill } from "@/features/iam/auth-kit/helpers";
+import { describeAuthFailure } from "@/features/iam/auth-kit/auth-errors";
+import {
+  AuthField,
+  AuthPasswordField,
+} from "@/features/iam/auth-kit/auth-field";
+import { newPasswordSchema } from "@/features/iam/auth-kit/password-rules";
 
 const newUserSchema = z.object({
-  full_name: z.string().min(2, "Enter your full name."),
-  password: z.string().min(10, "Use at least 10 characters."),
+  full_name: z.string().trim().min(2, "Enter your full name."),
+  password: newPasswordSchema,
 });
 
 type NewUserValues = z.infer<typeof newUserSchema>;
+type Choice = "new" | "existing";
 
 export function AcceptInvitePage() {
   const [params] = useSearchParams();
@@ -32,55 +35,71 @@ export function AcceptInvitePage() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
-  const [existingAccount, setExistingAccount] = useState(false);
-  // A signed-in visitor is definitionally an existing user joining a second
-  // workspace: no new-user fields, and they stay in the app afterwards.
-  const asExistingUser = existingAccount || isAuthenticated;
+  const [choice, setChoice] = useState<Choice>("new");
+  const [accepted, setAccepted] = useState(false);
+  const [shakeKey, setShakeKey] = useState(0);
+  const alertRef = useRef<HTMLDivElement>(null);
+  // A signed in visitor is by definition an existing user joining another
+  // workspace: no new user fields, and they stay in the app afterwards.
+  const asExistingUser = choice === "existing" || isAuthenticated;
 
   const form = useForm<NewUserValues>({
     resolver: zodResolver(newUserSchema),
     defaultValues: { full_name: "", password: "" },
-    mode: "onBlur",
+    mode: "onTouched",
   });
+  const password = form.watch("password");
 
   const acceptMutation = useMutation({
     mutationFn: (body: AcceptInvitationRequest) =>
       authApi.acceptInvitation(body),
     onSuccess: (result) => {
       if (isAuthenticated) {
-        // Their session already knows them; refresh the switcher's workspace list
-        // so the new one appears, and show a success state rather than bouncing.
+        // Their session already knows them: refresh the switcher so the new
+        // workspace appears, and show a success state rather than bouncing.
         void queryClient.invalidateQueries({ queryKey: ["workspaces"] });
         return;
       }
-      navigate("/sign-in", {
-        replace: true,
-        state: {
-          notice: `Invitation accepted. Sign in to ${result.tenant_name} with your email${
-            existingAccount ? "" : " and new password"
-          }.`,
-        },
-      });
+      const go = () =>
+        navigate("/sign-in", {
+          replace: true,
+          state: {
+            notice: `You joined ${result.tenant_name}. Sign in with your email${asExistingUser ? "" : " and new password"}.`,
+          },
+        });
+      const delay = authSuccessDelay();
+      if (!delay) {
+        go();
+        return;
+      }
+      setAccepted(true);
+      window.setTimeout(go, delay);
+    },
+    onError: (error) => {
+      setShakeKey((k) => k + 1);
+      const failure = describeAuthFailure(error, "invite");
+      if (failure.field === "password" && !asExistingUser) {
+        form.setError(
+          "password",
+          { type: "server", message: failure.title },
+          { shouldFocus: true },
+        );
+      } else {
+        window.requestAnimationFrame(() => alertRef.current?.focus());
+      }
     },
   });
 
-  const alertRef = useAlertFocus(acceptMutation.isError);
-
-  if (isAuthenticated && acceptMutation.isSuccess && acceptMutation.data) {
-    const joined = acceptMutation.data.tenant_name;
+  if (isAuthenticated && acceptMutation.isSuccess) {
     return (
       <AuthSplitLayout
+        mark={{ icon: "check", tone: "success" }}
         title="You're in"
-        subtitle={`You've joined ${joined}. It's now in your workspace switcher, top left, so you can jump between organisations.`}
+        subtitle={`You joined ${acceptMutation.data.tenant_name}. Switch to it any time from the workspace menu.`}
       >
-        <Button
-          className="w-full"
-          size="lg"
-          onClick={() => navigate("/quick-start", { replace: true })}
-        >
+        <CtaLink to="/quick-start" replace>
           Continue to Verity
-          <Icon name="arrowr" className="size-4" />
-        </Button>
+        </CtaLink>
       </AuthSplitLayout>
     );
   }
@@ -88,97 +107,151 @@ export function AcceptInvitePage() {
   if (!token) {
     return (
       <AuthSplitLayout
-        title="Join your workspace"
-        subtitle="This invite link is missing its token. Open the full link you were given, or ask a workspace admin to send a new one."
+        mark={{ icon: "alert", tone: "warning" }}
+        title="This invite link is incomplete"
+        subtitle="Open the full link you were sent, or ask a workspace admin for a new one."
       >
-        <Link className="font-semibold text-text-link" to="/sign-in">
+        <Link to="/sign-in" className={secondaryPill}>
           Back to sign in
         </Link>
       </AuthSplitLayout>
     );
   }
 
-  function submitNewUser(values: NewUserValues) {
-    acceptMutation.mutate({ token, ...values });
-  }
+  const failure = acceptMutation.isError
+    ? describeAuthFailure(acceptMutation.error, "invite")
+    : null;
+  const bannerFailure =
+    failure && !(failure.field === "password" && !asExistingUser)
+      ? failure
+      : null;
+  const shake = () => setShakeKey((k) => k + 1);
+  const clearFailure = () => {
+    if (acceptMutation.isError) acceptMutation.reset();
+  };
+  const submitNew = form.handleSubmit(
+    (values) => acceptMutation.mutate({ token, ...values }),
+    shake,
+  );
+  const submit = () => {
+    if (asExistingUser) acceptMutation.mutate({ token });
+    else void submitNew();
+  };
 
   return (
     <AuthSplitLayout
-      title="Join your workspace"
-      subtitle="Accept your invitation to finish setting up access. You'll sign in right after."
+      mark={{ icon: "team" }}
+      title="Join your team"
+      subtitle="Accept your invitation to get started."
     >
       <form
-        className="flex flex-col gap-3"
-        onSubmit={(e) => {
-          if (asExistingUser) {
-            e.preventDefault();
-            acceptMutation.mutate({ token });
-            return;
-          }
-          void form.handleSubmit(submitNewUser)(e);
-        }}
+        className="flex flex-col gap-4"
         noValidate
+        onSubmit={(e) => {
+          e.preventDefault();
+          submit();
+        }}
       >
-        {acceptMutation.isError ? (
-          <ErrorBanner
+        {bannerFailure ? (
+          <FailureAlert
             ref={alertRef}
-            title={describeAuthError(acceptMutation.error).message}
+            failure={bannerFailure}
+            onRetry={submit}
           />
         ) : null}
+
         {isAuthenticated ? null : (
-          <label className="flex items-center gap-2 text-body-md text-text-primary">
-            <Checkbox
-              checked={existingAccount}
-              onCheckedChange={setExistingAccount}
-            />
-            I already have a Verity account
-          </label>
+          <div
+            role="radiogroup"
+            aria-label="Your Verity account"
+            className="grid grid-cols-2 gap-1 rounded-full bg-surface-sunken p-1 ring-1 ring-border"
+          >
+            {(
+              [
+                ["new", "I'm new to Verity"],
+                ["existing", "I have an account"],
+              ] as const
+            ).map(([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                role="radio"
+                aria-checked={choice === id}
+                onClick={() => {
+                  setChoice(id);
+                  clearFailure();
+                }}
+                className={cn(
+                  "h-9 rounded-full text-label-md transition-[background-color,color,box-shadow] duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-accent",
+                  choice === id
+                    ? "bg-surface-primary text-text-primary shadow-2"
+                    : "text-text-subtle hover:text-text-primary",
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         )}
 
         {asExistingUser ? (
-          <p className="text-body-sm text-text-secondary">
+          <AuthAlert
+            tone="info"
+            icon="user"
+            title={
+              isAuthenticated
+                ? "You're signed in"
+                : "We'll add this workspace to your account"
+            }
+          >
             {isAuthenticated
-              ? "You're signed in. Accepting attaches this workspace to your account."
-              : "We'll attach this workspace to your existing account. Sign in with your usual email and password afterwards."}
-          </p>
+              ? "Accepting adds this workspace to your account."
+              : "Sign in with your usual email and password afterwards."}
+          </AuthAlert>
         ) : (
           <>
-            <TextField
+            <AuthField
               label="Full name"
-              size="lg"
+              icon="user"
               autoComplete="name"
-              placeholder="Your name as teammates will see it"
+              placeholder="How teammates will see you"
+              valid={
+                Boolean(form.formState.touchedFields.full_name) &&
+                !form.formState.errors.full_name
+              }
               error={form.formState.errors.full_name?.message}
-              {...form.register("full_name")}
+              {...form.register("full_name", { onChange: clearFailure })}
             />
-            <PasswordField
-              label="Password"
-              size="lg"
+            <AuthPasswordField
+              label="Create a password"
               autoComplete="new-password"
-              placeholder="At least 10 characters"
+              rules
+              typed={password}
               error={form.formState.errors.password?.message}
-              {...form.register("password")}
+              {...form.register("password", { onChange: clearFailure })}
             />
           </>
         )}
 
-        <Button
-          type="submit"
-          className="mt-1 w-full"
-          size="lg"
-          loading={acceptMutation.isPending}
-        >
-          Accept invitation
-          <Icon name="arrowr" className="size-4" />
-        </Button>
+        <AuthSubmitButton
+          label="Accept invitation"
+          steps={["Joining the workspace"]}
+          successLabel="Invitation accepted"
+          phase={
+            accepted ? "success" : acceptMutation.isPending ? "loading" : "idle"
+          }
+          shakeKey={shakeKey}
+        />
       </form>
 
-      <p className="mt-6 text-body-sm text-text-secondary">
-        Already a member of this workspace?{" "}
-        <Link className="font-semibold text-text-link" to="/sign-in">
-          Sign in
-        </Link>
-      </p>
+      {isAuthenticated ? null : (
+        <p className="mt-7 text-center text-body-md text-text-secondary">
+          Already a member?{" "}
+          <Link className={linkClass} to="/sign-in">
+            Sign in
+          </Link>
+        </p>
+      )}
     </AuthSplitLayout>
   );
 }

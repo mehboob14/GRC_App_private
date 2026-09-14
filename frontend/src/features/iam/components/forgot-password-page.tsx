@@ -1,66 +1,132 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useRef, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AuthSplitLayout } from "@/features/iam/components/auth-split-layout";
-import { Button, ErrorBanner, Icon, TextField } from "@/components/ui";
 import { authApi } from "@/lib/api/endpoints";
-import { describeAuthError } from "@/lib/api/describe-error";
-import { useAlertFocus } from "@/features/iam/hooks/use-alert-focus";
+import { authSuccessDelay } from "@/features/iam/auth-motion";
+import { AuthSplitLayout } from "@/features/iam/components/auth-split-layout";
+import { AuthSubmitButton } from "@/features/iam/components/auth-submit-button";
+import { AuthAlert, FailureAlert } from "@/features/iam/auth-kit/auth-alert";
+import {
+  EmailSuggestion,
+  SentTo,
+  WebmailLinks,
+} from "@/features/iam/auth-kit/auth-bits";
+import {
+  linkClass,
+  secondaryPill,
+  useCooldown,
+} from "@/features/iam/auth-kit/helpers";
+import { describeAuthFailure } from "@/features/iam/auth-kit/auth-errors";
+import { AuthField } from "@/features/iam/auth-kit/auth-field";
 
 const schema = z.object({
-  email: z.string().email("Enter the email you sign in with."),
+  email: z
+    .string()
+    .trim()
+    .min(1, "Enter your work email.")
+    .email("Enter a valid email, like name@company.com."),
 });
 type Values = z.infer<typeof schema>;
 
 export function ForgotPasswordPage() {
+  const location = useLocation();
+  const prefill = (location.state as { email?: string } | null)?.email ?? "";
   const [sentTo, setSentTo] = useState<string | null>(null);
+  const [sent, setSent] = useState(false);
+  const [resent, setResent] = useState(false);
+  const [shakeKey, setShakeKey] = useState(0);
+  const alertRef = useRef<HTMLDivElement>(null);
+  const cooldown = useCooldown();
+
   const form = useForm<Values>({
     resolver: zodResolver(schema),
-    defaultValues: { email: "" },
-    mode: "onBlur",
+    defaultValues: { email: prefill },
+    mode: "onTouched",
   });
+  const email = form.watch("email");
+
   const mutation = useMutation({
     mutationFn: (values: Values) => authApi.requestPasswordReset(values.email),
-    onSuccess: (_data, values) => setSentTo(values.email),
+    onSuccess: (_data, values) => {
+      cooldown.start(30);
+      if (sentTo) {
+        // A resend from the sent screen stays put and says so.
+        setResent(true);
+        return;
+      }
+      const delay = authSuccessDelay();
+      if (!delay) {
+        setSentTo(values.email);
+        return;
+      }
+      setSent(true);
+      window.setTimeout(() => setSentTo(values.email), delay);
+    },
+    onError: () => {
+      setShakeKey((k) => k + 1);
+      window.requestAnimationFrame(() => alertRef.current?.focus());
+    },
   });
-  const alertRef = useAlertFocus(mutation.isError);
+  const failure = mutation.isError
+    ? describeAuthFailure(mutation.error, "forgot")
+    : null;
 
   if (sentTo) {
     return (
       <AuthSplitLayout
-        title="Check your email"
-        subtitle="Follow the link to set a new password."
+        mark={{ icon: "mail" }}
+        title="Check your inbox"
+        subtitle="If an account uses this email, a reset link is on its way."
       >
         <div className="flex flex-col gap-4">
-          <div
-            className="flex items-center gap-2 rounded-md border border-status-success-border bg-status-success-bg px-3.5 py-3"
-            role="status"
-          >
-            <Icon name="check" className="size-5 text-status-success-text" />
-            <p className="text-body-md text-status-success-text">
-              If an account exists for{" "}
-              <span className="font-semibold">{sentTo}</span>, a reset link is on
-              its way.
-            </p>
-          </div>
-          <p className="text-body-sm text-text-secondary">
-            The link expires in 45 minutes and works once. Didn&rsquo;t get it?
-            Check spam, or{" "}
-            <button
-              type="button"
-              className="font-semibold text-text-link"
-              onClick={() => setSentTo(null)}
-            >
-              try another email
-            </button>
-            .
+          <SentTo
+            email={sentTo}
+            onChange={() => {
+              setSentTo(null);
+              setSent(false);
+              setResent(false);
+              mutation.reset();
+              window.requestAnimationFrame(() =>
+                form.setFocus("email", { shouldSelect: true }),
+              );
+            }}
+          />
+          {failure ? (
+            <FailureAlert
+              ref={alertRef}
+              failure={failure}
+              onRetry={() => mutation.mutate({ email: sentTo })}
+            />
+          ) : null}
+          {resent && cooldown.left > 0 ? (
+            <AuthAlert tone="success" title="A new link is on its way" />
+          ) : null}
+          <WebmailLinks email={sentTo} />
+          <p className="text-center text-body-sm text-text-subtle">
+            The link works once and expires in 45 minutes. No email? Check spam,
+            or{" "}
+            {cooldown.left > 0 ? (
+              <span className="font-semibold tabular-nums text-text-secondary">
+                resend in {cooldown.left}s
+              </span>
+            ) : (
+              <button
+                type="button"
+                className={linkClass}
+                disabled={mutation.isPending}
+                onClick={() => mutation.mutate({ email: sentTo })}
+              >
+                {mutation.isPending ? "sending" : "send it again"}
+              </button>
+            )}
           </p>
           <Link
-            className="text-body-sm font-semibold text-text-link"
             to="/sign-in"
+            state={{ email: sentTo }}
+            className={secondaryPill}
           >
             Back to sign in
           </Link>
@@ -69,52 +135,73 @@ export function ForgotPasswordPage() {
     );
   }
 
+  const submit = form.handleSubmit(
+    (values) => mutation.mutate(values),
+    () => setShakeKey((k) => k + 1),
+  );
+
   return (
     <AuthSplitLayout
+      mark={{ icon: "key" }}
       title="Reset your password"
-      subtitle="Enter your email and we’ll send a link to set a new one."
+      subtitle="Enter your email and we'll send you a link to set a new one."
     >
       <form
-        className="flex flex-col gap-3"
-        onSubmit={(e) =>
-          void form.handleSubmit((v) => mutation.mutate(v))(e)
-        }
+        className="flex flex-col gap-4"
         noValidate
+        onSubmit={(e) => void submit(e)}
       >
-        {mutation.isError ? (
-          <ErrorBanner
+        {failure ? (
+          <FailureAlert
             ref={alertRef}
-            title={describeAuthError(mutation.error).message}
+            failure={failure}
+            onRetry={() => void submit()}
           />
         ) : null}
-        <TextField
+        <AuthField
           label="Work email"
-          size="lg"
+          icon="mail"
           type="email"
+          inputMode="email"
           autoComplete="username"
+          autoCapitalize="none"
+          spellCheck={false}
           placeholder="name@company.com"
+          autoFocus={!prefill}
           error={form.formState.errors.email?.message}
-          {...form.register("email")}
+          below={
+            form.formState.errors.email ? null : (
+              <EmailSuggestion
+                email={email}
+                onAccept={(value) =>
+                  form.setValue("email", value, { shouldValidate: true })
+                }
+              />
+            )
+          }
+          {...form.register("email", {
+            onChange: () => {
+              if (mutation.isError) mutation.reset();
+            },
+          })}
         />
-        <Button
-          type="submit"
-          className="auth-cta mt-1 w-full rounded-full bg-gradient-to-r from-action-accent via-action-primary to-action-primary-hover"
-          size="lg"
-          loading={mutation.isPending}
-        >
-          Send reset link
-          <Icon name="arrowr" className="size-4" />
-        </Button>
+        <AuthSubmitButton
+          label="Send reset link"
+          steps={["Sending your reset link"]}
+          successLabel="Link sent"
+          phase={sent ? "success" : mutation.isPending ? "loading" : "idle"}
+          shakeKey={shakeKey}
+        />
       </form>
-      <p className="mt-6 text-body-sm text-text-secondary">
+      <p className="mt-7 text-center text-body-md text-text-secondary">
         Remembered it?{" "}
-        <Link className="font-semibold text-text-link" to="/sign-in">
-          Sign in
+        <Link
+          className={linkClass}
+          to="/sign-in"
+          state={email ? { email } : undefined}
+        >
+          Back to sign in
         </Link>
-      </p>
-      <p className="mt-3 text-body-sm text-text-subtle">
-        Signs in with Microsoft or Okta? Reset your password with your identity
-        provider instead.
       </p>
     </AuthSplitLayout>
   );
