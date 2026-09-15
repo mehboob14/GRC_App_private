@@ -220,5 +220,13 @@ class DecommissionRequest(_Request):
     reason: str = Field(min_length=1, max_length=2000)
 
 
+class AssetImportRow(AssetWrite):
+    """One imported row. It may start its lifecycle as planned, active or in
+    maintenance; decommissioned and retired need the guarded decommission flow,
+    which records the disposal, so an import cannot land there."""
+
+    status: str = Field(default="active", pattern="^(planned|active|in_maintenance)$")
+
+
 class ImportRequest(_Request):
-    rows: list[AssetWrite]
+    rows: list[AssetImportRow]

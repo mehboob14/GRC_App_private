@@ -265,15 +265,22 @@ export const ASSET_TEMPLATE_COLUMNS = [
   "vendor",
   "location",
   "operating_system",
+  "status",
   "confidentiality_rating",
   "integrity_rating",
   "availability_rating",
   "data_classification",
+  "regulated_data_type",
   "internet_facing",
+  "customer_facing",
   "business_function",
   "network_segment",
   "compliance_scope",
   "owner_name",
+  "secondary_owner_name",
+  "business_owner_name",
+  "custodian_name",
+  "escalation_contact_name",
   "owning_team",
   "valuation",
   "criticality",
@@ -296,15 +303,22 @@ export function assetImportTemplateCsv(): string {
     "",
     "",
     "",
+    "active",
     "5",
     "5",
     "4",
     "restricted",
+    "PCI",
+    "true",
     "true",
     "Payment processing",
     "",
     "SOC2;PCI",
     "Omar Reyes",
+    "",
+    "",
+    "",
+    "",
     "Payments Engineering",
     "4200000",
     "",
@@ -368,10 +382,13 @@ export function readAssetSheet(file: File): Promise<{ rows: string[][] }> {
   return apiFetch<{ rows: string[][] }>("/assets/import/sheet", { method: "POST", body: form });
 }
 
-export async function importAssets(inputs: AssetInput[]): Promise<{ created: number }> {
+/** An import row may start as planned, active or in maintenance. */
+export type ImportStatus = "planned" | "active" | "in_maintenance";
+
+export async function importAssets(rows: { input: AssetInput; status: ImportStatus }[]): Promise<{ created: number }> {
   return apiFetch<{ created: number }>("/assets/import", {
     method: "POST",
-    body: JSON.stringify({ rows: inputs.map(writeBody) }),
+    body: JSON.stringify({ rows: rows.map((r) => ({ ...writeBody(r.input), status: r.status })) }),
   });
 }
 

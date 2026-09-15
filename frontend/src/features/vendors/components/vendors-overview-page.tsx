@@ -19,7 +19,8 @@ import {
 } from "@/components/ui";
 import { describeError } from "@/lib/api/describe-error";
 import { getSummary, listIntake } from "../api";
-import { ATTENTION_META, fmtDate, LIFECYCLE_META, TIER_META } from "../tokens";
+import { ATTENTION_META, fmtDate, GRADE_META, LIFECYCLE_META, TIER_META } from "../tokens";
+import { TierBadge } from "./tier-badge";
 import { TIER_TONE, UNTIERED_TONE } from "./tier-tone";
 
 /**
@@ -294,6 +295,52 @@ export function VendorsOverviewPage() {
                 </li>
               ))}
             </ul>
+          )}
+        </ChartCard>
+
+        <ChartCard
+          title="Highest residual risk"
+          className="lg:col-span-3"
+          action={
+            s.highest_residual.length > 0 ? (
+              <Link to="/vendors" className="text-label-sm text-text-link">
+                View register
+              </Link>
+            ) : null
+          }
+        >
+          {s.highest_residual.length === 0 ? (
+            <p className="py-6 text-center text-body-sm text-text-subtle">No scored assessments yet.</p>
+          ) : (
+            <ol className="-my-1 divide-y divide-border">
+              {s.highest_residual.map((v) => (
+                <li key={v.id}>
+                  <Link
+                    to={`/vendors/${v.id}`}
+                    className="grid grid-cols-[minmax(0,1fr)_auto_minmax(6rem,14rem)_auto] items-center gap-4 rounded-sm py-2 transition-colors hover:bg-surface-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-action-accent"
+                  >
+                    <span className="truncate text-body-sm font-semibold text-text-primary">{v.name}</span>
+                    <TierBadge tier={v.tier} />
+                    <span className="flex items-center gap-2" aria-label={`Residual score ${Math.round(v.residual_score)} of 100`}>
+                      <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-sunken">
+                        <span
+                          className="block h-full rounded-full bg-status-danger-base"
+                          style={{ width: `${Math.min(100, Math.max(0, v.residual_score))}%` }}
+                        />
+                      </span>
+                      <span className="tabular w-8 text-right text-caption font-semibold text-text-secondary">
+                        {Math.round(v.residual_score)}
+                      </span>
+                    </span>
+                    {v.grade ? (
+                      <StatusPill status={GRADE_META[v.grade]?.family ?? "neutral"} label={`Grade ${v.grade}`} kind="inline" />
+                    ) : (
+                      <span />
+                    )}
+                  </Link>
+                </li>
+              ))}
+            </ol>
           )}
         </ChartCard>
       </div>

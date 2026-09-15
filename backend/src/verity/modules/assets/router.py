@@ -54,7 +54,8 @@ def _actor(context: TenantContext) -> Membership:
 
 
 def _to_input(body: AssetWrite) -> AssetInput:
-    return AssetInput(**body.model_dump())
+    # An import row carries its starting status on top of the write fields.
+    return AssetInput(**body.model_dump(exclude={"status"}))
 
 
 # -- static collection paths first -------------------------------------------
@@ -129,6 +130,7 @@ async def import_assets(
         tenant_id=context.tenant_id,
         actor=_actor(context),
         rows=[_to_input(row) for row in body.rows],
+        statuses=[row.status for row in body.rows],
     )
     return ImportResultOut(created=created)
 

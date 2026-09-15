@@ -213,6 +213,7 @@ class VendorView:
     stores_pii: bool
     data_location: str | None
     data_types_in_scope: list[str]
+    systems_in_scope: list[str]
     data_classification: str | None
     lifecycle_status: str
     tier: str | None
@@ -230,6 +231,17 @@ class VendorView:
     attention_code: str | None = None
     """What this vendor is waiting on -- see ``ATTENTION_CODES``. None means
     nothing is outstanding, which the register renders as its healthy line."""
+
+
+@dataclass(frozen=True, slots=True)
+class ResidualVendor:
+    """A vendor on the portfolio's highest residual risk list."""
+
+    id: uuid.UUID
+    name: str
+    tier: str | None
+    residual_score: float
+    grade: str | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -260,6 +272,8 @@ class SummaryView:
     findings_open: int
     findings_overdue: int
     intake_pending: int
+    highest_residual: list[ResidualVendor]
+    """Live vendors with a scored assessment, worst residual score first, top five."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -376,6 +390,7 @@ class VendorInput:
     stores_pii: bool = False
     data_location: str | None = None
     data_types_in_scope: tuple[str, ...] = ()
+    systems_in_scope: tuple[str, ...] = ()
     data_classification: str | None = None
     tags: tuple[str, ...] = ()
     business_owner_membership_id: uuid.UUID | None = None
@@ -1167,6 +1182,12 @@ class VendorService:
         vendor.stores_pii = data.stores_pii
         vendor.data_location = self._clean(data.data_location)
         vendor.data_types_in_scope = list(data.data_types_in_scope)
+        # Trimmed, blanks dropped, first spelling kept: "AWS" and "aws " are one system.
+        systems: dict[str, str] = {}
+        for system in data.systems_in_scope:
+            if system.strip():
+                systems.setdefault(system.strip().lower(), system.strip())
+        vendor.systems_in_scope = list(systems.values())
         vendor.data_classification = data.data_classification
         vendor.tags = list(data.tags)
         vendor.business_owner_membership_id = data.business_owner_membership_id
@@ -1298,6 +1319,7 @@ class VendorService:
             stores_pii=vendor.stores_pii,
             data_location=vendor.data_location,
             data_types_in_scope=list(vendor.data_types_in_scope or []),
+            systems_in_scope=list(vendor.systems_in_scope or []),
             data_classification=vendor.data_classification,
             lifecycle_status=vendor.lifecycle_status,
             tier=vendor.tier,
@@ -1562,6 +1584,25 @@ class VendorService:
             findings_open=len(open_findings),
             findings_overdue=overdue,
             intake_pending=int(intake_pending),
+            highest_residual=[
+                ResidualVendor(
+                    id=vendor.id,
+                    name=vendor.name,
+                    tier=vendor.tier,
+                    residual_score=vendor.current_residual_score or 0.0,
+                    grade=vendor.current_grade,
+                )
+                for vendor in sorted(
+                    (
+                        v
+                        for v in vendors
+                        if v.current_residual_score is not None
+                        and v.lifecycle_status not in _CLOSED_STATUSES
+                    ),
+                    key=lambda v: v.current_residual_score or 0.0,
+                    reverse=True,
+                )[:5]
+            ],
         )
 
     async def get_vendor(

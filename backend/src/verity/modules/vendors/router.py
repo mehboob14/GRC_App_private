@@ -120,6 +120,7 @@ def _to_input(body: VendorWrite) -> VendorInput:
         stores_pii=body.stores_pii,
         data_location=body.data_location,
         data_types_in_scope=tuple(body.data_types_in_scope),
+        systems_in_scope=tuple(body.systems_in_scope),
         data_classification=body.data_classification,
         tags=tuple(body.tags),
         business_owner_membership_id=body.business_owner_membership_id,

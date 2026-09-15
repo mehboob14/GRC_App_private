@@ -16,7 +16,7 @@ import {
 import { cn } from "@/lib/cn";
 import { describeError, errorToast } from "@/lib/api/describe-error";
 import { ApiError } from "@/lib/api/client";
-import { ASSET_TEMPLATE_COLUMNS, assetImportTemplateCsv, importAssets, listMembers, readAssetSheet, type AssetInput } from "../api";
+import { ASSET_TEMPLATE_COLUMNS, assetImportTemplateCsv, importAssets, listMembers, readAssetSheet, type AssetInput, type ImportStatus } from "../api";
 import {
   ASSET_TYPES,
   CRITICALITY_TIERS,
@@ -29,7 +29,9 @@ import {
 } from "../types";
 import { ASSET_TYPE_META } from "../tokens";
 
-type ParsedRow = { line: number; input: AssetInput; errors: string[] };
+type ParsedRow = { line: number; input: AssetInput; status: ImportStatus; errors: string[] };
+
+const IMPORT_STATUSES: ImportStatus[] = ["planned", "active", "in_maintenance"];
 
 /** Minimal CSV parse with quoted-field support — the real backend uses a proper
  *  parser (and reads Excel); this is enough for the in-browser preview. */
@@ -99,9 +101,20 @@ function mapRow(header: string[], cells: string[], line: number, members: Member
   const tier_override = rawTier && CRITICALITY_TIERS.includes(rawTier as CriticalityTier) ? (rawTier as CriticalityTier) : null;
   if (rawTier && !tier_override) errors.push(`criticality "${rawTier}" is not a valid tier`);
 
-  const ownerName = get("owner_name");
-  const owner = ownerName ? members.find((m) => m.name.toLowerCase() === ownerName.toLowerCase()) : undefined;
-  if (ownerName && !owner) errors.push(`owner "${ownerName}" not found`);
+  // Every person column is matched by name to a workspace member.
+  const person = (col: string, label: string): string | null => {
+    const wanted = get(col);
+    if (!wanted) return null;
+    const match = members.find((m) => m.name.toLowerCase() === wanted.toLowerCase());
+    if (!match) errors.push(`${label} "${wanted}" not found`);
+    return match?.membership_id ?? null;
+  };
+
+  const rawStatus = get("status").toLowerCase().replace(/\s+/g, "_") || "active";
+  const status = IMPORT_STATUSES.includes(rawStatus as ImportStatus) ? (rawStatus as ImportStatus) : "active";
+  if (!IMPORT_STATUSES.includes(rawStatus as ImportStatus)) {
+    errors.push(`status "${get("status")}" must be planned, active or in maintenance`);
+  }
 
   const valuationRaw = get("valuation");
   const valuation = valuationRaw ? Number(valuationRaw.replace(/[^0-9.]/g, "")) || null : null;
@@ -116,10 +129,10 @@ function mapRow(header: string[], cells: string[], line: number, members: Member
     location: get("location") || null,
     vendor_ref: get("vendor") || null,
     data_classification,
-    regulated_data_type: null,
+    regulated_data_type: get("regulated_data_type") || null,
     compliance_scope: get("compliance_scope").split(";").map((s) => s.trim()).filter(Boolean),
     internet_facing: bool(get("internet_facing")),
-    customer_facing: false,
+    customer_facing: bool(get("customer_facing")),
     network_segment: get("network_segment") || null,
     business_function: get("business_function") || null,
     confidentiality: cia(get("confidentiality_rating"), "confidentiality_rating", errors),
@@ -127,17 +140,17 @@ function mapRow(header: string[], cells: string[], line: number, members: Member
     availability: cia(get("availability_rating"), "availability_rating", errors),
     tier_override,
     tier_override_reason: get("criticality_override_reason") || null,
-    primary_owner_id: owner?.membership_id ?? null,
-    secondary_owner_id: null,
-    business_owner_id: null,
-    custodian_id: null,
-    escalation_contact_id: null,
+    primary_owner_id: person("owner_name", "owner"),
+    secondary_owner_id: person("secondary_owner_name", "secondary owner"),
+    business_owner_id: person("business_owner_name", "business owner"),
+    custodian_id: person("custodian_name", "custodian"),
+    escalation_contact_id: person("escalation_contact_name", "escalation contact"),
     owning_team: get("owning_team") || null,
     valuation,
     business_impact_notes: null,
     operational_dependency_rating: null,
   };
-  return { line, input, errors };
+  return { line, input, status, errors };
 }
 
 export function AssetsImportPage() {
@@ -192,7 +205,7 @@ export function AssetsImportPage() {
   }
 
   const commit = useMutation({
-    mutationFn: () => importAssets(valid.map((r) => r.input)),
+    mutationFn: () => importAssets(valid.map((r) => ({ input: r.input, status: r.status }))),
     onSuccess: (res) => {
       toast({ title: `Imported ${res.created} asset${res.created === 1 ? "" : "s"}`, tone: "success" });
       navigate("/assets");

@@ -93,10 +93,20 @@ async def test_week6_review_path_and_tenant_wall(
 
         imported = await api.post(
             "/assets/import",
-            json={"rows": [{"name": "Build server", "asset_type": "infrastructure"}]},
+            json={
+                "rows": [
+                    {"name": "Build server", "asset_type": "infrastructure", "status": "planned"}
+                ]
+            },
         )
         assert imported.status_code == 200, imported.text
         assert imported.json()["created"] == 1
+        items = (await api.get("/assets")).json()["items"]
+        assert next(a["status"] for a in items if a["name"] == "Build server") == "planned"
+        retired = await api.post(
+            "/assets/import", json={"rows": [{"name": "Old box", "status": "retired"}]}
+        )
+        assert retired.status_code == 422, "retiring goes through the decommission flow"
         # A value outside the table's allowed list is refused up front, never a 500.
         bad_type = await api.post(
             "/assets/import", json={"rows": [{"name": "X", "asset_type": "server"}]}

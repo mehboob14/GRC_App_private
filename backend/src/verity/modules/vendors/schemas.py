@@ -54,6 +54,7 @@ class VendorWrite(_Request):
     stores_pii: bool = False
     data_location: str | None = Field(default=None, max_length=300)
     data_types_in_scope: list[str] = Field(default_factory=list)
+    systems_in_scope: list[str] = Field(default_factory=list, max_length=100)
     data_classification: str | None = None
     tags: list[str] = Field(default_factory=list)
     business_owner_membership_id: uuid.UUID | None = None
@@ -132,6 +133,7 @@ class VendorOut(_Response):
     stores_pii: bool
     data_location: str | None
     data_types_in_scope: list[str]
+    systems_in_scope: list[str]
     data_classification: str | None
     lifecycle_status: str
     tier: str | None
@@ -273,6 +275,14 @@ class AttentionCountOut(_Response):
     count: int
 
 
+class ResidualVendorOut(_Response):
+    id: uuid.UUID
+    name: str
+    tier: str | None
+    residual_score: float
+    grade: str | None
+
+
 class SummaryOut(_Response):
     """The portfolio picture the overview reads, in one round trip."""
 
@@ -287,6 +297,7 @@ class SummaryOut(_Response):
     findings_open: int
     findings_overdue: int
     intake_pending: int
+    highest_residual: list[ResidualVendorOut]
 
 
 class TransitionOut(_Response):

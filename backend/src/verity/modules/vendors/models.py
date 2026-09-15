@@ -334,6 +334,10 @@ class Vendor(UUIDPrimaryKey, TenantScoped, Timestamped, Integratable, Base):
     data_types_in_scope: Mapped[list[str]] = mapped_column(
         postgresql.JSONB, default=list, server_default=text("'[]'::jsonb")
     )
+    # The systems of ours the vendor touches or connects to, by name.
+    systems_in_scope: Mapped[list[str]] = mapped_column(
+        postgresql.JSONB, default=list, server_default=text("'[]'::jsonb")
+    )
     data_classification: Mapped[str | None] = mapped_column(default=None)
 
     lifecycle_status: Mapped[str] = mapped_column(default="requested", server_default="requested")

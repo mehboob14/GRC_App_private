@@ -940,13 +940,14 @@ class AssetService:
         tenant_id: uuid.UUID,
         actor: Actor,
         rows: Sequence[AssetInput],
+        statuses: Sequence[str] | None = None,
     ) -> int:
         now = datetime.now(UTC)
-        for data in rows:
+        for index, data in enumerate(rows):
             asset = Asset(
                 id=uuid7(),
                 tenant_id=tenant_id,
-                status="active",
+                status=statuses[index] if statuses else "active",
                 source="import",
                 first_seen_at=now,
                 last_seen_at=now,

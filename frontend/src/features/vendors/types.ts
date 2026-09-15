@@ -151,6 +151,7 @@ export type Vendor = {
   stores_pii: boolean;
   data_location: string | null;
   data_types_in_scope: string[];
+  systems_in_scope: string[];
   data_classification: string | null;
   lifecycle_status: string;
   tier: string | null;
@@ -255,6 +256,16 @@ export type VendorSummary = {
   findings_open: number;
   findings_overdue: number;
   intake_pending: number;
+  /** Live vendors with a scored assessment, worst residual score first, top five. */
+  highest_residual: ResidualVendor[];
+};
+
+export type ResidualVendor = {
+  id: string;
+  name: string;
+  tier: string | null;
+  residual_score: number;
+  grade: string | null;
 };
 
 export type StageFacet = { stage: string; label: string; is_gate: boolean; is_required: boolean };
@@ -804,6 +815,7 @@ export type VendorInput = {
   stores_pii?: boolean;
   data_location?: string | null;
   data_types_in_scope?: string[];
+  systems_in_scope?: string[];
   data_classification?: string | null;
   tags?: string[];
   business_owner_membership_id?: string | null;

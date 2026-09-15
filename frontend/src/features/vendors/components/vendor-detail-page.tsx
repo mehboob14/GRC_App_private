@@ -523,6 +523,22 @@ function OverviewTab({
             }
           />
           <Field label="Where it lives" value={vendor.data_location || "Not recorded"} />
+          <Field
+            label="Systems in scope"
+            value={
+              vendor.systems_in_scope.length > 0 ? (
+                <span className="flex flex-wrap gap-1.5">
+                  {vendor.systems_in_scope.map((system) => (
+                    <Badge key={system} variant="neutral">
+                      {system}
+                    </Badge>
+                  ))}
+                </span>
+              ) : (
+                "None recorded"
+              )
+            }
+          />
           <Field label="Annual value" value={fmtMoney(vendor.annual_contract_value)} />
           <Field
             label="Tags"

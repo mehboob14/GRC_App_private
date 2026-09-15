@@ -39,6 +39,8 @@ type FormState = {
   services_provided: string;
   stores_pii: boolean;
   data_location: string;
+  /** Comma separated in the field, a list on the vendor. */
+  systems_in_scope: string;
   data_classification: string;
   business_owner_membership_id: string | null;
   security_owner_membership_id: string | null;
@@ -55,6 +57,7 @@ const BLANK: FormState = {
   services_provided: "",
   stores_pii: false,
   data_location: "",
+  systems_in_scope: "",
   data_classification: "",
   business_owner_membership_id: null,
   security_owner_membership_id: null,
@@ -72,6 +75,7 @@ function fromVendor(v: VendorDetail): FormState {
     services_provided: v.services_provided,
     stores_pii: v.stores_pii,
     data_location: v.data_location ?? "",
+    systems_in_scope: (v.systems_in_scope ?? []).join(", "),
     data_classification: v.data_classification ?? "",
     business_owner_membership_id: v.ownership.business_owner_membership_id,
     security_owner_membership_id: v.ownership.security_owner_membership_id,
@@ -148,6 +152,7 @@ export function VendorFormDrawer({
         services_provided: form.services_provided.trim(),
         stores_pii: form.stores_pii,
         data_location: form.data_location.trim() || null,
+        systems_in_scope: form.systems_in_scope.split(",").map((s) => s.trim()).filter(Boolean),
         data_classification: form.data_classification || null,
         business_owner_membership_id: form.business_owner_membership_id,
         security_owner_membership_id: form.security_owner_membership_id,
@@ -314,6 +319,14 @@ export function VendorFormDrawer({
                   value={form.data_location}
                   onChange={(e) => set("data_location", e.target.value)}
                   placeholder="EU (Frankfurt)"
+                />
+                <TextField
+                  label="Systems in scope"
+                  optional
+                  value={form.systems_in_scope}
+                  onChange={(e) => set("systems_in_scope", e.target.value)}
+                  placeholder="Salesforce, AWS production"
+                  hint="Separate systems with commas."
                 />
               </div>
             </div>
