@@ -230,6 +230,208 @@ export type VendorDetail = Vendor & {
   subprocessors: Subprocessor[];
   /** Newest cycle first. */
   assessments: AssessmentSummary[];
+  /** Newest first. An open one has no `completed_at`. */
+  offboardings: Offboarding[];
+  /** Every stage move, newest first. Append-only on the server. */
+  transitions: Transition[];
+  /** Adverse events recorded against the vendor, newest first. */
+  signals: Signal[];
+  /** Committed service levels, across this vendor's contracts. */
+  slas: Sla[];
+};
+
+export const SIGNAL_TYPES = [
+  "breach",
+  "adverse_media",
+  "rating_change",
+  "financial",
+  "sla_breach",
+  "cert_expiry",
+] as const;
+
+export const SIGNAL_SOURCE_CLASSES = [
+  "internal",
+  "media",
+  "breach_intel",
+  "rating_platform",
+  "financial_provider",
+] as const;
+
+export type Signal = {
+  id: string;
+  vendor_id: string;
+  signal_type: string;
+  source_class: string;
+  severity: string;
+  title: string;
+  detail: string;
+  status: string;
+  acknowledged_by_name: string | null;
+  acknowledged_at: string | null;
+  observed_at: string;
+  created_at: string;
+};
+
+export type SignalInput = {
+  signal_type: string;
+  title: string;
+  severity?: string;
+  detail?: string;
+  source_class?: string;
+  observed_on?: string | null;
+  /** Raise a finding with it, for a signal somebody has to act on. */
+  raise_finding?: boolean;
+};
+
+export const FINDING_SEVERITIES = ["critical", "high", "medium", "low"] as const;
+
+/** The risk domains a questionnaire scores, and so the parts a review splits into. */
+export const RISK_DOMAINS = [
+  { key: "information_security", label: "Information security programme" },
+  { key: "access_control", label: "Access control" },
+  { key: "data_protection_privacy", label: "Data protection and privacy" },
+  { key: "business_continuity", label: "Business continuity and resilience" },
+  { key: "incident_response", label: "Incident response" },
+  { key: "secure_development", label: "Secure development" },
+  { key: "infrastructure_cloud", label: "Infrastructure and cloud" },
+  { key: "personnel_security", label: "Personnel security" },
+  { key: "compliance_legal", label: "Compliance and legal" },
+  { key: "fourth_party_management", label: "Fourth-party management" },
+] as const;
+
+export type Reviewer = {
+  id: string;
+  assessment_id: string;
+  domain: string | null;
+  domain_label: string;
+  reviewer_membership_id: string;
+  reviewer_name: string | null;
+  status: string;
+  note: string | null;
+  decided_at: string | null;
+};
+
+export type Comment = {
+  id: string;
+  assessment_id: string;
+  question_id: string | null;
+  author_name: string;
+  author_type: string;
+  /** `vendor_shared` reaches the portal; anything else never leaves the team. */
+  visibility: string;
+  body: string;
+  created_at: string;
+};
+
+export type AlertRule = {
+  id: string;
+  name: string;
+  signal_types: string[];
+  tier_scope: string[];
+  min_severity: string;
+  action: string;
+  channel: string;
+  is_enabled: boolean;
+};
+
+export type AlertRuleInput = Omit<AlertRule, "id">;
+
+export const ALERT_ACTIONS = ["notify", "create_task", "trigger_reassessment"] as const;
+
+export type DiscoveredApp = {
+  id: string;
+  app_name: string;
+  authorizing_users: number;
+  oauth_scopes: string[];
+  first_seen_at: string | null;
+  disposition: string;
+  vendor_id: string | null;
+  source: string;
+  created_at: string;
+};
+
+export const DISCOVERED_DISPOSITIONS = [
+  "pending",
+  "added_as_vendor",
+  "linked_to_vendor",
+  "ignored",
+] as const;
+
+export const SLA_STATUSES = ["on_track", "at_risk", "breached"] as const;
+
+export type Sla = {
+  id: string;
+  contract_id: string;
+  contract_title: string | null;
+  name: string;
+  target: string;
+  measurement: string | null;
+  measured_on: string | null;
+  cure_period_days: number | null;
+  status: string;
+};
+
+export type SlaInput = {
+  contract_id: string;
+  name: string;
+  target: string;
+  measurement?: string | null;
+  measured_on?: string | null;
+  cure_period_days?: number | null;
+  status?: string;
+};
+
+export type FindingInput = {
+  title: string;
+  detail?: string;
+  severity?: string;
+  engagement_id?: string | null;
+  is_blocking?: boolean;
+  owner_membership_id?: string | null;
+};
+
+/** The workspace's tiering policy: what the tier is worth in work. */
+export type Policy = {
+  tier_thresholds: Record<string, number>;
+  cadence_days_by_tier: Record<string, number>;
+  finding_sla_days_by_severity: Record<string, number>;
+  stage_skip_matrix_by_tier: Record<string, string[]>;
+  required_reviewer_roles_by_tier: Record<string, string[]>;
+  /** False while the workspace is still on the shipped defaults. */
+  is_customised: boolean;
+  skippable_stages: string[];
+  roster_roles: string[];
+};
+
+export type PolicyInput = Omit<Policy, "is_customised" | "skippable_stages" | "roster_roles">;
+
+/** One move of the review: an advance, a send-back or a skip, with its reason. */
+export type Transition = {
+  id: string;
+  engagement_id: string;
+  cycle: number;
+  action: string;
+  from_stage: string | null;
+  to_stage: string | null;
+  reason: string | null;
+  /** Null when the platform moved it rather than a person. */
+  actor: string | null;
+  occurred_at: string;
+};
+
+/** One exit (ER 127): four steps, each evidenced, before the vendor is archived. */
+export type Offboarding = {
+  id: string;
+  /** Null means the whole relationship rather than one engagement. */
+  engagement_id: string | null;
+  reason: string;
+  access_revoked_at: string | null;
+  data_return_attested_at: string | null;
+  contract_provisions_reviewed: boolean;
+  final_payments_settled: boolean;
+  notes: string | null;
+  completed_at: string | null;
+  created_at: string;
 };
 
 export type VendorPage = { items: Vendor[]; total: number };
@@ -256,6 +458,9 @@ export type VendorSummary = {
   findings_open: number;
   findings_overdue: number;
   intake_pending: number;
+  /** Every live vendor with no business owner, not only those it is the top concern for. */
+  unowned: number;
+  critical_overdue: number;
   /** Live vendors with a scored assessment, worst residual score first, top five. */
   highest_residual: ResidualVendor[];
 };
@@ -587,6 +792,9 @@ export type Assessment = {
   portal_link_expires_at: string | null;
   created_at: string;
   updated_at: string;
+  /** Who is reading which domain, and how far each has got. */
+  reviewers: Reviewer[];
+  comments: Comment[];
 };
 
 export type Finding = {

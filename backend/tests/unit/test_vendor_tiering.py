@@ -298,8 +298,8 @@ def test_diligence_names_the_reviewer_roles_that_are_still_missing() -> None:
     blocked = next(
         c for c in lifecycle.blockers(checks) if c.code == "diligence.reviewers_assigned"
     )
-    assert blocked.detail is not None
-    assert "legal" in blocked.detail
+    # In words a reader recognises, and only the role still missing.
+    assert blocked.detail == "Still unassigned: Legal."
 
 
 def test_monitoring_never_reads_as_blocked() -> None:
@@ -517,3 +517,55 @@ def test_residual_never_silently_exceeds_inherent_without_the_clamp_firing() -> 
             inherent=inherent,
         )
         assert result.score <= inherent + 0.01, inherent
+
+
+def test_only_the_current_stage_offers_any_move() -> None:
+    """Stages finish in order. A stage that is not current offers nothing, so no
+    client can advance, skip or send back from somewhere the work is not."""
+    clear = lifecycle.evaluate_exit("onboarding", _facts())
+    assert lifecycle.allowed_transitions(_state("onboarding"), clear, is_current=False) == ()
+    assert "advance" in lifecycle.allowed_transitions(_state("onboarding"), clear)
+
+
+def test_the_current_stage_is_the_first_one_not_done() -> None:
+    rows = [
+        ("intake", "complete"),
+        ("tiering", "complete"),
+        ("diligence", "skipped"),
+        ("questionnaire", "not_started"),
+        ("contracting", "in_progress"),
+    ]
+    # Order decides, not the in-progress flag: a retier can re-open work behind it.
+    assert lifecycle.current_stage(rows) == "questionnaire"
+    assert lifecycle.open_before(rows, "approval") == ("questionnaire", "contracting")
+    assert lifecycle.current_stage([("intake", "complete")]) is None
+
+
+def test_a_later_rejection_reads_as_the_reason_the_gate_is_shut() -> None:
+    entered = datetime.now(UTC)
+    checks = lifecycle.evaluate_exit(
+        "approval",
+        _facts(
+            approvals_available=True,
+            findings_available=True,
+            stage_entered_at=entered,
+            approval_decided_at=None,
+            approval_last_decision="reject",
+        ),
+    )
+    decided = next(c for c in checks if c.code == "approval.decided")
+    assert decided.satisfied is False
+    assert "rejected" in (decided.detail or "")
+
+
+def test_the_gate_names_earlier_stages_left_open() -> None:
+    checks = lifecycle.evaluate_exit(
+        "approval",
+        _facts(
+            approvals_available=True,
+            findings_available=True,
+            open_earlier_stages=("questionnaire", "scoring"),
+        ),
+    )
+    review = next(c for c in lifecycle.blockers(checks) if c.code == "approval.review_complete")
+    assert review.detail == "Still open: Questionnaire, Scoring."

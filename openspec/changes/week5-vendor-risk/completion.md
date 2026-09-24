@@ -3,6 +3,42 @@
 Written at close, 2026-09-10. What shipped, what knowingly did not, and what the next person
 needs to know before they touch this module.
 
+## Addendum, 2026-09-22
+
+Two things below are no longer true, and the module was hardened before the client review:
+
+- **Promotion is built.** `POST /risks/from-vendor-finding` writes the risk and sets
+  `promoted_risk_id`; the findings panel has "Promote to risk". The shortfall section below is
+  historical.
+- **Integrity fixes:** stages move only from the current stage; the latest gate decision wins;
+  approve is refused over open critical or blocking findings (scoped to the engagement plus
+  vendor-wide) or unfinished stages; closing a critical or blocking finding needs a note; findings
+  reopen; lapsed acceptances reopen nightly (`expire_vendor_acceptances`); scoring only after
+  submit; questionnaires need this cycle's tiering; the reassessment date no longer compounds and a
+  new cycle needs the gate passed; offboarding runs once, revokes portal links, freezes stages and
+  completes through the on-screen checklist; the vendor status rollup reads exit records, not its
+  own cached value.
+- **The phase-1 gaps closed on 2026-09-23** (migration `8a1f4c26d05b` adds `manual` to
+  `vendor_findings.finding_source`): signals recorded, acknowledged and dismissed by hand on the
+  Monitoring tab, optionally raising a finding; findings raised by hand; documents edited, marked
+  reviewed and carrying the file itself through `evidence_service.add_file`; service levels entered
+  and measured against a contract; and a Policy screen (`GET`/`PUT /vendors/policy`) for tier bands,
+  cadences, finding windows, the skip matrix and reviewer roles, with the gate refused in the skip
+  matrix. Finding due dates now read the policy rather than the module constant.
+- **The rest closed the same day** (migrations `5c93b7e2a481` review collaboration,
+  `9f2d1a7c6b40` built-in role grants): `vendor_assessment_reviewers` splits a review by risk
+  domain so several people read it at once, each with their own state; `vendor_assessment_comments`
+  is written at last, internal or vendor-shared, with the portal reading only the shared ones and
+  the contact able to reply; alert rules fire on a recorded signal (notify / create_task /
+  trigger_reassessment, Slack still inert); discovered apps are recorded and triaged, and
+  `added_as_vendor` raises an intake request rather than creating the vendor; the Security,
+  Privacy and Business Operations built-ins now hold `vendors:read`; and the register orders,
+  pages and counts in the query except when an attention filter or a grade/owner sort needs the
+  scan.
+- **Still not built, and all of it external:** provider feeds (ratings, breach intelligence,
+  news), identity-provider app discovery, and Slack delivery. Each is an adapter onto tables and
+  screens that now work by hand.
+
 ## What shipped
 
 Sections 0 through 6 of `tasks.md`, in six commits:

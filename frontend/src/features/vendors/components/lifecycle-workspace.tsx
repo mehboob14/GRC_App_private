@@ -35,6 +35,7 @@ import {
   getRoster,
   listMembers,
   listQuestionnaires,
+  notifyStage,
   sendBackStage,
   skipStage,
 } from "../api";
@@ -268,13 +269,17 @@ export function LifecycleWorkspace({
           <div className="min-w-0 p-5">
             {tiered && selected ? (
               <StageDetail
+                vendorId={vendor.id}
                 stage={selected}
                 isCurrent={selected.id === current?.id}
                 canManage={canManage}
                 nextStage={nextActionableAfter(stages, selected)}
                 reviewerRoles={reviewerRoles}
                 reviewerNames={resolveReviewers(
-                  reviewerRoles,
+                  // The gate is decided by approvers, so name the designated ones.
+                  nextActionableAfter(stages, selected)?.is_gate
+                    ? ["exec_approver", ...reviewerRoles]
+                    : reviewerRoles,
                   rosterQuery.data?.roles ?? {},
                   membersQuery.data ?? [],
                 )}
@@ -311,6 +316,8 @@ export function LifecycleWorkspace({
         </div>
       </section>
 
+      <StageHistory vendor={vendor} engagementId={engagementId} />
+
       <SendBackDialog
         open={sendBackOpen}
         onOpenChange={setSendBackOpen}
@@ -327,6 +334,65 @@ export function LifecycleWorkspace({
         onSubmit={(reason) => skip.mutate(reason)}
       />
     </>
+  );
+}
+
+const ACTION_WORDS: Record<string, string> = {
+  advance: "Advanced",
+  send_back: "Sent back",
+  skip: "Skipped",
+};
+
+/** The review's own timeline: who moved it, where, when and why. */
+function StageHistory({
+  vendor,
+  engagementId,
+}: {
+  vendor: VendorDetail;
+  engagementId: string | null;
+}) {
+  const [all, setAll] = useState(false);
+  const rows = vendor.transitions.filter(
+    (t) => engagementId === null || t.engagement_id === engagementId,
+  );
+  if (rows.length === 0) return null;
+  const shown = all ? rows : rows.slice(0, 6);
+  const label = (stage: string | null) => (stage ? (STAGE_LABEL[stage] ?? stage) : "");
+
+  return (
+    <section
+      aria-label="Stage history"
+      className="mt-4 rounded-lg border border-border bg-surface-primary px-4 py-3"
+    >
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="font-display text-title-sm text-text-primary">History</h3>
+        {rows.length > 6 ? (
+          <Button variant="ghost" size="sm" onClick={() => setAll((v) => !v)}>
+            {all ? "Show fewer" : `Show all ${rows.length}`}
+          </Button>
+        ) : null}
+      </div>
+      <ol className="mt-1 divide-y divide-border">
+        {shown.map((t) => (
+          <li
+            key={t.id}
+            className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5 py-2"
+          >
+            <span className="min-w-0 text-body-sm text-text-primary">
+              <span className="font-semibold">{ACTION_WORDS[t.action] ?? t.action}</span>{" "}
+              {label(t.from_stage)}
+              {t.to_stage ? ` to ${label(t.to_stage)}` : ""}
+              {t.reason ? (
+                <span className="block text-caption text-text-subtle">{t.reason}</span>
+              ) : null}
+            </span>
+            <span className="shrink-0 text-caption text-text-subtle">
+              {t.actor ?? "Platform"} · {fmtDate(t.occurred_at)} · review {t.cycle}
+            </span>
+          </li>
+        ))}
+      </ol>
+    </section>
   );
 }
 
@@ -539,9 +605,10 @@ function resolveReviewers(
   roles: string[],
   roster: Record<string, string[]>,
   members: { membership_id: string; name: string }[],
-): { role: string; names: string[] }[] {
+): { role: string; names: string[]; ids: string[] }[] {
   return roles.map((role) => ({
     role,
+    ids: roster[role] ?? [],
     names: (roster[role] ?? []).map(
       (id) => members.find((m) => m.membership_id === id)?.name ?? "Unnamed member",
     ),
@@ -565,6 +632,7 @@ function Callout({ tone, children }: { tone: "success" | "neutral"; children: Re
 }
 
 function StageDetail({
+  vendorId,
   stage,
   isCurrent,
   canManage,
@@ -579,12 +647,13 @@ function StageDetail({
   onGo,
   children,
 }: {
+  vendorId: string;
   stage: StageRow;
   isCurrent: boolean;
   canManage: boolean;
   nextStage: StageRow | null;
   reviewerRoles: string[];
-  reviewerNames: { role: string; names: string[] }[];
+  reviewerNames: { role: string; names: string[]; ids: string[] }[];
   /** All three lookups resolved. Until then nobody can honestly say who holds a role. */
   reviewersReady: boolean;
   advancing: boolean;
@@ -704,6 +773,7 @@ function StageDetail({
 
       {isCurrent && canManage && nextStage && blockers.length === 0 && canAdvance ? (
         <NextActor
+          vendorId={vendorId}
           stage={nextStage}
           reviewerRoles={reviewerRoles}
           reviewers={reviewerNames}
@@ -727,25 +797,40 @@ function StageDetail({
  * reason a review stalls silently.
  */
 function NextActor({
+  vendorId,
   stage,
   reviewerRoles,
   reviewers,
   ready,
   onGo,
 }: {
+  vendorId: string;
   stage: StageRow;
   reviewerRoles: string[];
-  reviewers: { role: string; names: string[] }[];
+  reviewers: { role: string; names: string[]; ids: string[] }[];
   ready: boolean;
   onGo: (target: string) => void;
 }) {
+  const { toast } = useToast();
+  const notify = useMutation({
+    mutationFn: (ids: string[]) => notifyStage(vendorId, stage.id, ids),
+    onSuccess: (sent) =>
+      toast({
+        title: `Notified ${sent} ${sent === 1 ? "person" : "people"} in the app and by email`,
+        tone: "success",
+      }),
+    onError: (e: unknown) => toast({ title: errorToast(e, "notification"), tone: "danger" }),
+  });
+
   if (!ready) return <Skeleton className="mt-5 h-11 w-full" />;
 
   const relevant = stage.is_gate
     ? reviewers.filter((r) => r.role === "exec_approver" || reviewerRoles.includes(r.role))
     : reviewers;
   const named = relevant.filter((r) => r.names.length > 0);
-  const unfilled = relevant.filter((r) => r.names.length === 0);
+  // Anyone holding the approval permission can decide the gate, so an empty
+  // executive approver slot is not a gap worth a warning.
+  const unfilled = relevant.filter((r) => r.names.length === 0 && r.role !== "exec_approver");
   const roleLabel = (role: string) => ROSTER_ROLE_META[role]?.label ?? role;
 
   return (
@@ -764,6 +849,8 @@ function NextActor({
               </span>
             ))}
           </>
+        ) : stage.is_gate ? (
+          " goes to anyone who can approve vendors, other than the business owner and whoever submits it"
         ) : null}
         {unfilled.length > 0 ? (
           <span className="block text-status-warning-text">
@@ -779,17 +866,8 @@ function NextActor({
         <Button
           variant="secondary"
           size="sm"
-          onClick={() => {
-            const to = named.flatMap((r) => r.names).join(", ");
-            const subject = encodeURIComponent(`Vendor review: ${stage.label} is ready for you`);
-            const body = encodeURIComponent(
-              `${stage.label} is unblocked and waiting on you.\n\n${window.location.href}`,
-            );
-            // No notification endpoint exists for vendor stages yet, so this
-            // hands off through the reader's own mail client rather than
-            // pretending a message was sent.
-            window.location.href = `mailto:?subject=${subject}&body=${body}&to=${encodeURIComponent(to)}`;
-          }}
+          loading={notify.isPending}
+          onClick={() => notify.mutate(named.flatMap((r) => r.ids))}
         >
           <Icon name="bell" className="size-4" />
           Notify

@@ -95,21 +95,23 @@ class NotificationService:
         object_type: str | None = None,
         object_id: uuid.UUID | None = None,
         email: bool = False,
+        since: datetime | None = None,
     ) -> bool:
         """Notify unless an identical (recipient, kind, object) notice already
         exists. This is what makes the SLA sweep idempotent without a marker
         column: one breach alert per task per person, however often it runs.
+        ``since`` narrows "already exists" to notices written after it, for a
+        reminder that should come round again rather than fire once ever.
         Returns True if a row was written."""
-        exists = (
-            await session.execute(
-                select(Notification.id).where(
-                    Notification.tenant_id == tenant_id,
-                    Notification.recipient_membership_id == recipient_membership_id,
-                    Notification.kind == kind,
-                    Notification.object_id == object_id,
-                )
-            )
-        ).first()
+        stmt = select(Notification.id).where(
+            Notification.tenant_id == tenant_id,
+            Notification.recipient_membership_id == recipient_membership_id,
+            Notification.kind == kind,
+            Notification.object_id == object_id,
+        )
+        if since is not None:
+            stmt = stmt.where(Notification.created_at >= since)
+        exists = (await session.execute(stmt)).first()
         if exists is not None:
             return False
         await self.notify(

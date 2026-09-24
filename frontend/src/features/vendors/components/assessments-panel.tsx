@@ -29,6 +29,7 @@ import { describeError, errorToast } from "@/lib/api/describe-error";
 import {
   getAssessment,
   issueQuestionnaire,
+  listMembers,
   listQuestionnaires,
   openReassessment,
   scoreAssessment,
@@ -49,6 +50,7 @@ import {
   GRADE_META,
 } from "../tokens";
 import { Panel } from "./panel";
+import { ReviewCollaboration } from "./review-collab";
 
 /**
  * The questionnaire side of a vendor: send one, watch it come back, score it,
@@ -72,7 +74,12 @@ export function AssessmentsPanel({
   const [openId, setOpenId] = useState<string | null>(null);
 
   const engagement = vendor.engagements.find((e) => e.id === engagementId) ?? null;
+  // Tierings carry the current review only, so this is "tiered for this review".
   const tiered = vendor.tierings.some((t) => t.engagement_id === engagementId);
+  // The next review opens once this one has passed the gate.
+  const gatePassed = vendor.stages.some(
+    (s) => s.engagement_id === engagementId && s.is_gate && s.status === "complete",
+  );
   const portalContact =
     vendor.contacts.find((c) => c.contact_type === "portal") ?? vendor.contacts[0] ?? null;
 
@@ -91,7 +98,10 @@ export function AssessmentsPanel({
     onSuccess: (next) => {
       onApply(next);
       void queryClient.invalidateQueries({ queryKey: ["vendors"] });
-      toast({ title: "Reassessment cycle opened", tone: "success" });
+      toast({
+        title: "New review opened. Re-tier the engagement to set its depth.",
+        tone: "success",
+      });
     },
     onError: (e: unknown) => toast({ title: errorToast(e, "reassessment"), tone: "danger" }),
   });
@@ -122,7 +132,7 @@ export function AssessmentsPanel({
                 size="sm"
                 loading={reassess.isPending}
                 onClick={() => reassess.mutate()}
-                disabled={!tiered || assessments.length === 0}
+                disabled={!gatePassed}
               >
                 Reassess
               </Button>
@@ -387,7 +397,7 @@ function IssueDialog({
               Cancel
             </Button>
             <Button type="submit" loading={issue.isPending} disabled={!contactId || !questionnaireId}>
-              Create link
+              Send questionnaire
             </Button>
           </DialogFooter>
         </form>
@@ -397,10 +407,10 @@ function IssueDialog({
 }
 
 /**
- * The link is shown exactly once.
+ * The link is already on its way: the server emails it to the contact.
  *
- * Only a hash of the token is stored, so there is no second chance to read it —
- * which is why this dialog says plainly what happens if it is closed.
+ * It is also shown once here, for a vendor who needs it another way. Only a hash
+ * of the token is stored, so there is no second chance to read it.
  */
 function PortalLinkDialog({
   issued,
@@ -416,9 +426,9 @@ function PortalLinkDialog({
     <Dialog open={issued !== null} onOpenChange={(open) => !open && onClose()}>
       <DialogContent size="md">
         <DialogHeader>
-          <DialogTitle>Send this link to {issued?.email}</DialogTitle>
+          <DialogTitle>Questionnaire sent to {issued?.email}</DialogTitle>
           <DialogDescription>
-            {issued?.count} questions in scope. Anyone with the link can answer.
+            {issued?.count} questions. We emailed the link, and it works for 30 days.
           </DialogDescription>
         </DialogHeader>
         <DialogBody>
@@ -446,26 +456,15 @@ function PortalLinkDialog({
               <Icon name={copied ? "check" : "link"} className="size-4" />
               {copied ? "Copied" : "Copy link"}
             </Button>
-            <Button
-              variant="secondary"
-              onClick={() => {
-                const subject = encodeURIComponent("Security questionnaire");
-                const body = encodeURIComponent(
-                  `Please complete our security questionnaire:\n\n${issued?.url ?? ""}`,
-                );
-                window.location.href = `mailto:${issued?.email ?? ""}?subject=${subject}&body=${body}`;
-              }}
-            >
-              Open in email
-            </Button>
           </div>
-          <p className="mt-3 flex items-start gap-1.5 rounded-md border border-status-warning-border bg-status-warning-bg p-3 text-body-sm text-status-warning-text">
-            <Icon name="alert" className="mt-px size-4 shrink-0" />
-            Shown only once. If lost, issue a new link, which revokes this one.
+          <p className="mt-3 flex items-start gap-1.5 text-body-sm text-text-subtle">
+            <Icon name="info" className="mt-px size-4 shrink-0" />
+            Anyone with the link can answer, so share it only with this contact. Resending
+            makes a new link and turns this one off.
           </p>
         </DialogBody>
         <DialogFooter>
-          <Button onClick={onClose}>I copied it</Button>
+          <Button onClick={onClose}>Done</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -488,6 +487,7 @@ function AssessmentDialog({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const key = ["vendor-assessment", assessment.id];
+  const membersQuery = useQuery({ queryKey: ["vendor-members"], queryFn: listMembers });
   const query = useQuery({
     queryKey: key,
     queryFn: () => getAssessment(vendorId, assessment.id),
@@ -534,7 +534,21 @@ function AssessmentDialog({
           ) : !a ? (
             <Skeleton className="h-64 w-full" />
           ) : (
-            <AssessmentBody assessment={a} prior={priorQuery.data ?? null} />
+            <>
+              <section className="mb-4 rounded-md border border-border bg-surface-sunken p-3.5">
+                <ReviewCollaboration
+                  vendorId={vendorId}
+                  assessment={a}
+                  people={(membersQuery.data ?? []).map((m) => ({
+                    id: m.membership_id,
+                    name: m.name,
+                  }))}
+                  canAssess={canAssess}
+                  onApply={(next) => queryClient.setQueryData(key, next)}
+                />
+              </section>
+              <AssessmentBody assessment={a} prior={priorQuery.data ?? null} />
+            </>
           )}
         </DialogBody>
         <DialogFooter>

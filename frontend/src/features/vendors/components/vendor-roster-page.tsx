@@ -1,7 +1,9 @@
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import {
   Avatar,
+  Button,
   ErrorState,
+  Icon,
   PersonSelect,
   Skeleton,
   useToast,
@@ -9,7 +11,7 @@ import {
 import { describeError, errorToast } from "@/lib/api/describe-error";
 import { useAuth } from "@/lib/auth/auth-context";
 import { hasPermission } from "@/lib/auth/session";
-import { getRoster, listMembers, setRosterRole } from "../api";
+import { getRoster, listMembers, removeRosterRole, setRosterRole } from "../api";
 import { ROSTER_ROLES } from "../types";
 import { ROSTER_ROLE_META } from "../tokens";
 
@@ -35,6 +37,16 @@ export function VendorRosterPage() {
     onSuccess: (next) => {
       queryClient.setQueryData(["vendor-roster"], next);
       toast({ title: "Roster updated", tone: "success" });
+    },
+    onError: (e: unknown) => toast({ title: errorToast(e, "roster"), tone: "danger" }),
+  });
+
+  const unassign = useMutation({
+    mutationFn: (input: { role: string; membershipId: string }) =>
+      removeRosterRole(input.role, input.membershipId),
+    onSuccess: (next) => {
+      queryClient.setQueryData(["vendor-roster"], next);
+      toast({ title: "Removed from the roster", tone: "success" });
     },
     onError: (e: unknown) => toast({ title: errorToast(e, "roster"), tone: "danger" }),
   });
@@ -87,9 +99,23 @@ export function VendorRosterPage() {
                     {ids.length > 0 ? (
                       <ul className="flex flex-wrap gap-2">
                         {ids.map((id) => (
-                          <li key={id} className="flex items-center gap-2">
+                          <li
+                            key={id}
+                            className="flex items-center gap-2 rounded-full border border-border bg-surface-sunken py-0.5 pl-0.5 pr-1"
+                          >
                             <Avatar name={nameFor(id)} seed={id} size="sm" />
                             <span className="text-body-sm text-text-primary">{nameFor(id)}</span>
+                            {canManage ? (
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                aria-label={`Remove ${nameFor(id)} from ${meta.label}`}
+                                disabled={unassign.isPending}
+                                onClick={() => unassign.mutate({ role, membershipId: id })}
+                              >
+                                <Icon name="x" className="size-3.5" />
+                              </Button>
+                            ) : null}
                           </li>
                         ))}
                       </ul>
@@ -97,10 +123,6 @@ export function VendorRosterPage() {
                       <p className="text-body-sm text-text-subtle">Nobody assigned</p>
                     )}
                     {canManage ? (
-                      // A single-add picker rather than a multi-select with
-                      // removable chips: the API assigns and cannot unassign, and
-                      // a remove button that silently does nothing is worse than
-                      // no remove button.
                       <PersonSelect
                         people={people.filter((p) => !ids.includes(p.id))}
                         value={null}
@@ -118,9 +140,6 @@ export function VendorRosterPage() {
             })}
       </div>
 
-      <p className="mt-3 text-caption text-text-subtle">
-        Removal is not available yet. Assign a replacement and both get asked.
-      </p>
     </div>
   );
 }

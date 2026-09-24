@@ -22,6 +22,7 @@ import {
 } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { describeError, errorToast } from "@/lib/api/describe-error";
+import { useAuth } from "@/lib/auth/auth-context";
 import { closeCondition, decideGate, listApprovers } from "../api";
 import type { Approval, Approver, ConditionInput, VendorDetail } from "../types";
 import { CONDITION_STATUS_META, DECISION_META, fmtDate } from "../tokens";
@@ -56,27 +57,35 @@ export function ApprovalSection({
   const { toast } = useToast();
   const [deciding, setDeciding] = useState(false);
 
-  const approvals = vendor.approvals.filter(
-    (a) => engagementId === null || a.engagement_id === engagementId,
-  );
-  const latest = approvals.length > 0 ? approvals.reduce((a, b) => (b.cycle >= a.cycle ? b : a)) : null;
-
   const gate = vendor.stages.find(
     (s) => s.is_gate && (engagementId === null || s.engagement_id === engagementId),
   );
-  const gateReached = gate?.status === "in_progress" || gate?.status === "complete";
-  // `approval.decided` is the blocker this very button clears, so it must not
-  // disable it, or nobody could ever pass the gate. The rest are listed with the
-  // stage's own checks directly above this section.
-  const blocked = (gate?.blockers ?? []).some((b) => b.code !== "approval.decided");
+  // Newest first from the server, and only this cycle's decisions bear on this
+  // gate. The latest one is what counts: a later defer or reject withdraws an
+  // earlier approval.
+  const decisions = vendor.approvals.filter(
+    (a) =>
+      (engagementId === null || a.engagement_id === engagementId) &&
+      (gate === undefined || a.cycle === gate.cycle),
+  );
+  const latest = decisions[0] ?? null;
+  const earlier = decisions.slice(1);
+  const gateOpen = gate?.status === "in_progress";
+  // `approval.decided` is the blocker a decision clears. Any other blocker holds
+  // back an approval only: deferring or rejecting is always allowed.
+  const approveBlocked = (gate?.blockers ?? []).some((b) => b.code !== "approval.decided");
 
   return (
     <section>
       <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
         <h4 className="font-sans text-label-md text-text-primary">Decision</h4>
-        {canApprove && gateReached && latest === null ? (
-          <Button size="sm" onClick={() => setDeciding(true)} disabled={blocked}>
-            Record decision
+        {canApprove && gateOpen ? (
+          <Button
+            size="sm"
+            variant={latest ? "secondary" : "primary"}
+            onClick={() => setDeciding(true)}
+          >
+            {latest ? "Record a new decision" : "Record decision"}
           </Button>
         ) : null}
       </div>
@@ -92,20 +101,46 @@ export function ApprovalSection({
         />
       ) : (
         <p className="text-body-sm text-text-subtle">
-          {!gateReached
-            ? "Opens when the earlier stages are done."
-            : blocked
-              ? "Clear the checks above first."
-              : canApprove
-                ? "Ready for a decision."
-                : "Needs the Approve vendors permission."}
+          {gate?.status === "complete"
+            ? "Passed."
+            : !gateOpen
+              ? "Opens when the earlier stages are done."
+              : approveBlocked
+                ? "Approving waits on the checks above. Deferring or rejecting does not."
+                : canApprove
+                  ? "Ready for a decision."
+                  : "Needs the Approve vendors permission."}
         </p>
       )}
+
+      {earlier.length > 0 ? (
+        <div className="mt-4 border-t border-border pt-3">
+          <p className="type-overline">Earlier in this review</p>
+          <ul className="mt-2 space-y-1.5">
+            {earlier.map((a) => {
+              const meta = DECISION_META[a.decision] ?? {
+                label: a.decision,
+                family: "neutral" as const,
+              };
+              return (
+                <li
+                  key={a.id}
+                  className="flex flex-wrap items-center gap-2 text-caption text-text-subtle"
+                >
+                  <StatusPill status={meta.family} label={meta.label} kind="inline" />
+                  {a.decided_by_name ?? "Unattributed"} · {fmtDate(a.decided_at)}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ) : null}
 
       {deciding && engagementId ? (
         <DecisionDialog
           vendorId={vendor.id}
           engagementId={engagementId}
+          approveBlocked={approveBlocked}
           onClose={() => setDeciding(false)}
           onDecided={(next) => {
             onApply(next);
@@ -216,16 +251,19 @@ function DecisionRecord({
 function DecisionDialog({
   vendorId,
   engagementId,
+  approveBlocked,
   onClose,
   onDecided,
 }: {
   vendorId: string;
   engagementId: string;
+  approveBlocked: boolean;
   onClose: () => void;
   onDecided: (next: VendorDetail) => void;
 }) {
   const { toast } = useToast();
-  const [decision, setDecision] = useState<string>("approve");
+  const { principal } = useAuth();
+  const [decision, setDecision] = useState<string>(approveBlocked ? "defer" : "approve");
   const [rationale, setRationale] = useState("");
   const [conditions, setConditions] = useState<ConditionInput[]>([]);
 
@@ -246,7 +284,13 @@ function DecisionDialog({
   });
 
   const withConditions = decision === "approve_with_conditions";
-  const usable = rationale.trim() && (!withConditions || conditions.some((c) => c.description.trim()));
+  // Segregation of duties, shown before the rationale is written.
+  const me = (approversQuery.data ?? []).find((a) => a.membership_id === principal?.membership_id);
+  const barred = me?.disqualified_reason ?? null;
+  const usable =
+    !barred &&
+    rationale.trim() &&
+    (!withConditions || conditions.some((c) => c.description.trim()));
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
@@ -272,17 +316,30 @@ function DecisionDialog({
               }
             />
 
+            {barred ? (
+              <p className="rounded-md border border-status-warning-border bg-status-warning-bg px-3 py-2 text-body-sm text-status-warning-text">
+                You cannot decide this one ({barred}). Ask one of the people listed above.
+              </p>
+            ) : null}
+
             <div>
               <p className="mb-1.5 font-sans text-label-sm text-text-secondary">Decision</p>
               <RadioGroup value={decision} onValueChange={setDecision} className="space-y-2">
-                {DECISIONS.map((d) => (
-                  <RadioGroupItem
-                    key={d}
-                    value={d}
-                    label={DECISION_META[d].label}
-                    description={DECISION_META[d].blurb}
-                  />
-                ))}
+                {DECISIONS.map((d) => {
+                  const held =
+                    approveBlocked && (d === "approve" || d === "approve_with_conditions");
+                  return (
+                    <RadioGroupItem
+                      key={d}
+                      value={d}
+                      disabled={held}
+                      label={DECISION_META[d].label}
+                      description={
+                        held ? "Unavailable until the stage checks clear." : DECISION_META[d].blurb
+                      }
+                    />
+                  );
+                })}
               </RadioGroup>
             </div>
 

@@ -25,7 +25,13 @@ import { cn } from "@/lib/cn";
 import { describeError } from "@/lib/api/describe-error";
 import { listFindings } from "../api";
 import type { Finding } from "../types";
-import { daysUntil, fmtCountdown, FINDING_SOURCE_LABEL, FINDING_STATUS_META } from "../tokens";
+import {
+  daysUntil,
+  fmtCountdown,
+  fmtDate,
+  FINDING_SOURCE_LABEL,
+  FINDING_STATUS_META,
+} from "../tokens";
 
 type Scope = "open" | "accepted" | "closed" | "all";
 
@@ -117,7 +123,7 @@ export function VendorFindingsPage() {
                 <TH>Status</TH>
                 <TH {...thProps("due")}>Remediation due</TH>
                 <TH {...thProps("owner")}>Owner</TH>
-                <TH>Raised by</TH>
+                <TH>Source</TH>
               </TR>
             </THead>
             <TBody>
@@ -171,7 +177,7 @@ function FindingRow({ finding: f }: { finding: Finding }) {
       <TD>
         <StatusPill status={status.family} label={status.label} kind="inline" />
         {f.status === "accepted" && f.accepted_until ? (
-          <p className="mt-0.5 text-caption text-text-subtle">until {f.accepted_until}</p>
+          <p className="mt-0.5 text-caption text-text-subtle">until {fmtDate(f.accepted_until)}</p>
         ) : null}
       </TD>
       <TD>

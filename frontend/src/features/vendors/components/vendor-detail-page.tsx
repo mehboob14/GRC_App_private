@@ -5,6 +5,7 @@ import {
   Avatar,
   Badge,
   Button,
+  Checkbox,
   Dialog,
   DialogBody,
   DialogContent,
@@ -37,8 +38,15 @@ import {
 import { describeError, errorToast } from "@/lib/api/describe-error";
 import { useAuth } from "@/lib/auth/auth-context";
 import { hasPermission } from "@/lib/auth/session";
-import { addContact, addEngagement, getVendor, offboard } from "../api";
-import type { Tiering, VendorDetail } from "../types";
+import {
+  addContact,
+  addEngagement,
+  completeOffboarding,
+  getVendor,
+  offboard,
+  updateContact,
+} from "../api";
+import type { Contact, Offboarding, Tiering, VendorDetail } from "../types";
 import { CONTACT_TYPES } from "../types";
 import {
   CLASSIFICATION_META,
@@ -62,6 +70,7 @@ import { FindingsPanel } from "./findings-panel";
 import { DocumentsPanel } from "./documents-panel";
 import { SocReviewPanel } from "./soc-review-panel";
 import { ContractsPanel } from "./contracts-panel";
+import { SlasPanel } from "./slas-panel";
 import { SubprocessorsPanel } from "./subprocessors-panel";
 import { MonitoringPanel } from "./monitoring-panel";
 import { VendorFormDrawer } from "./vendor-form-drawer";
@@ -100,7 +109,15 @@ export function VendorDetailPage() {
   const canApprove = hasPermission(principal, "vendors:approve");
 
   const key = ["vendor", vendorId];
-  const query = useQuery({ queryKey: key, queryFn: () => getVendor(vendorId) });
+  const query = useQuery({
+    queryKey: key,
+    queryFn: () => getVendor(vendorId),
+    // While a questionnaire is out, the vendor's progress shows up without a reload.
+    refetchInterval: (q) =>
+      q.state.data?.assessments.some((a) => a.status === "pending" || a.status === "in_progress")
+        ? 30_000
+        : false,
+  });
   const vendor = query.data ?? null;
 
   // Derived, not seeded. A useState initialiser reads the query string once, so
@@ -113,6 +130,7 @@ export function VendorDetailPage() {
   const [editing, setEditing] = useState(false);
   const [addingEngagement, setAddingEngagement] = useState(false);
   const [addingContact, setAddingContact] = useState(false);
+  const [editingContact, setEditingContact] = useState<Contact | null>(null);
   const [offboarding, setOffboarding] = useState(false);
   // The tiering popup lives on the page, not inside one tab, so the header,
   // the Overview tab, the Lifecycle tab and a link from the register can all
@@ -221,6 +239,8 @@ export function VendorDetailPage() {
   };
   const engagement = vendor.engagements.find((e) => e.id === engagementId) ?? null;
   const untiered = engagement !== null && !engagement.tier;
+  const openExit = vendor.offboardings.find((o) => o.completed_at === null) ?? null;
+  const exiting = vendor.lifecycle_status === "offboarding" || vendor.lifecycle_status === "archived";
 
   return (
     <div>
@@ -319,11 +339,15 @@ export function VendorDetailPage() {
                         <Icon name="user" className="size-4 text-text-subtle" />
                         Add contact
                       </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem variant="danger" onSelect={() => setOffboarding(true)}>
-                        <Icon name="signout" className="size-4" />
-                        Start offboarding
-                      </DropdownMenuItem>
+                      {!exiting ? (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem variant="danger" onSelect={() => setOffboarding(true)}>
+                            <Icon name="signout" className="size-4" />
+                            Start offboarding
+                          </DropdownMenuItem>
+                        </>
+                      ) : null}
                     </>
                   ) : null}
                 </DropdownMenuContent>
@@ -343,7 +367,18 @@ export function VendorDetailPage() {
         inline
       />
 
-      {vendor.engagements.length > 1 && tab !== "overview" && tab !== "monitoring" ? (
+      {openExit ? (
+        <ExitChecklist
+          vendor={vendor}
+          exit={openExit}
+          canManage={canManage}
+          onApply={apply}
+        />
+      ) : null}
+
+      {/* Findings and paperwork are vendor-wide, so only the per-engagement tabs
+          get the picker. */}
+      {vendor.engagements.length > 1 && (tab === "lifecycle" || tab === "assessments") ? (
         <div className="mt-4 flex flex-wrap items-center gap-2 rounded-md border border-border bg-surface-sunken px-3.5 py-2.5">
           <span className="text-label-sm text-text-secondary">Engagement</span>
           <div className="w-64">
@@ -417,16 +452,18 @@ export function VendorDetailPage() {
                 vendorId={vendor.id}
                 canManage={canManage}
                 canApprove={canApprove}
+                engagementId={engagementId}
               />
             ) : tab === "paperwork" ? (
               <>
                 <DocumentsPanel vendor={vendor} canManage={canManage} onApply={apply} />
                 <SocReviewPanel vendor={vendor} canAssess={canAssess} onApply={apply} />
                 <ContractsPanel vendor={vendor} canManage={canManage} onApply={apply} />
+                <SlasPanel vendor={vendor} canManage={canManage} onApply={apply} />
                 <SubprocessorsPanel vendor={vendor} canManage={canManage} onApply={apply} />
               </>
             ) : tab === "monitoring" ? (
-              <MonitoringPanel vendor={vendor} />
+              <MonitoringPanel vendor={vendor} canManage={canManage} onApply={apply} />
             ) : null}
           </div>
 
@@ -437,6 +474,7 @@ export function VendorDetailPage() {
               vendor={vendor}
               canManage={canManage}
               onAdd={() => setAddingContact(true)}
+              onEdit={setEditingContact}
             />
             {vendor.duplicates.length > 0 ? <DuplicatesPanel vendor={vendor} /> : null}
             {engagement ? <EngagementPanel vendor={vendor} engagementId={engagement.id} /> : null}
@@ -461,11 +499,18 @@ export function VendorDetailPage() {
         vendorId={vendor.id}
         onAdded={apply}
       />
-      <AddContactDialog
-        open={addingContact}
-        onOpenChange={setAddingContact}
+      <ContactDialog
+        key={editingContact?.id ?? "new"}
+        open={addingContact || editingContact !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setAddingContact(false);
+            setEditingContact(null);
+          }
+        }}
         vendorId={vendor.id}
-        onAdded={apply}
+        contact={editingContact}
+        onSaved={apply}
       />
       <OffboardDialog
         open={offboarding}
@@ -682,10 +727,12 @@ function ContactsPanel({
   vendor,
   canManage,
   onAdd,
+  onEdit,
 }: {
   vendor: VendorDetail;
   canManage: boolean;
   onAdd: () => void;
+  onEdit: (contact: Contact) => void;
 }) {
   return (
     <Panel
@@ -704,12 +751,24 @@ function ContactsPanel({
       ) : (
         <ul className="space-y-2.5">
           {vendor.contacts.map((c) => (
-            <li key={c.id}>
-              <p className="text-body-sm text-text-primary">{c.name}</p>
-              <p className="text-caption text-text-subtle">
-                {CONTACT_TYPE_LABEL[c.contact_type] ?? c.contact_type}
-                {c.email ? ` · ${c.email}` : ""}
-              </p>
+            <li key={c.id} className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-body-sm text-text-primary">{c.name}</p>
+                <p className="break-all text-caption text-text-subtle">
+                  {CONTACT_TYPE_LABEL[c.contact_type] ?? c.contact_type}
+                  {c.email ? ` · ${c.email}` : ""}
+                </p>
+              </div>
+              {canManage ? (
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label={`Edit ${c.name}`}
+                  onClick={() => onEdit(c)}
+                >
+                  <Icon name="edit" className="size-3.5" />
+                </Button>
+              ) : null}
             </li>
           ))}
         </ul>
@@ -849,33 +908,48 @@ function AddEngagementDialog({
   );
 }
 
-function AddContactDialog({
+function ContactDialog({
   open,
   onOpenChange,
   vendorId,
-  onAdded,
+  contact,
+  onSaved,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   vendorId: string;
-  onAdded: (next: VendorDetail) => void;
+  /** Null adds a contact; a contact edits it. */
+  contact: Contact | null;
+  onSaved: (next: VendorDetail) => void;
 }) {
   const { toast } = useToast();
-  const [form, setForm] = useState({ name: "", email: "", phone: "", contact_type: "portal" });
+  const blank = { name: "", email: "", phone: "", contact_type: "portal" };
+  const [form, setForm] = useState(
+    contact
+      ? {
+          name: contact.name,
+          email: contact.email ?? "",
+          phone: contact.phone ?? "",
+          contact_type: contact.contact_type,
+        }
+      : blank,
+  );
 
   const add = useMutation({
-    mutationFn: () =>
-      addContact(vendorId, {
+    mutationFn: () => {
+      const body = {
         name: form.name.trim(),
         email: form.email.trim() || null,
         phone: form.phone.trim() || null,
         contact_type: form.contact_type,
-      }),
+      };
+      return contact ? updateContact(vendorId, contact.id, body) : addContact(vendorId, body);
+    },
     onSuccess: (next) => {
-      onAdded(next);
+      onSaved(next);
       onOpenChange(false);
-      setForm({ name: "", email: "", phone: "", contact_type: "portal" });
-      toast({ title: "Contact added", tone: "success" });
+      if (!contact) setForm(blank);
+      toast({ title: contact ? "Contact saved" : "Contact added", tone: "success" });
     },
     onError: (e: unknown) => toast({ title: errorToast(e, "contact"), tone: "danger" }),
   });
@@ -884,7 +958,7 @@ function AddContactDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="sm">
         <DialogHeader>
-          <DialogTitle>Add contact</DialogTitle>
+          <DialogTitle>{contact ? "Edit contact" : "Add contact"}</DialogTitle>
           <DialogDescription>Questionnaires go to the portal contact.</DialogDescription>
         </DialogHeader>
         <form
@@ -937,12 +1011,148 @@ function AddContactDialog({
               Cancel
             </Button>
             <Button type="submit" loading={add.isPending} disabled={!form.name.trim()}>
-              Add contact
+              {contact ? "Save contact" : "Add contact"}
             </Button>
           </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+const EXIT_STEPS = [
+  {
+    key: "access_revoked",
+    label: "Access revoked",
+    hint: "Accounts, keys and network paths the vendor held are closed.",
+    done: (o: Offboarding) => o.access_revoked_at !== null,
+  },
+  {
+    key: "data_returned",
+    label: "Data returned or destroyed",
+    hint: "The vendor has attested to it in writing.",
+    done: (o: Offboarding) => o.data_return_attested_at !== null,
+  },
+  {
+    key: "contract_provisions_reviewed",
+    label: "Exit terms reviewed",
+    hint: "Termination, retention and survival clauses are checked.",
+    done: (o: Offboarding) => o.contract_provisions_reviewed,
+  },
+  {
+    key: "final_payments_settled",
+    label: "Final payments settled",
+    hint: "Nothing is owed either way.",
+    done: (o: Offboarding) => o.final_payments_settled,
+  },
+] as const;
+
+/**
+ * The open exit, as a checklist on top of the record. Each tick is saved as it
+ * is made, and the exit only completes with all four done: an offboarding closed
+ * with access still live is the record an auditor uses to show the process is
+ * theatre.
+ */
+function ExitChecklist({
+  vendor,
+  exit,
+  canManage,
+  onApply,
+}: {
+  vendor: VendorDetail;
+  exit: Offboarding;
+  canManage: boolean;
+  onApply: (next: VendorDetail) => void;
+}) {
+  const { toast } = useToast();
+  const [notes, setNotes] = useState(exit.notes ?? "");
+  const scope = exit.engagement_id
+    ? (vendor.engagements.find((e) => e.id === exit.engagement_id)?.name ?? "One engagement")
+    : "The whole relationship";
+  const doneCount = EXIT_STEPS.filter((s) => s.done(exit)).length;
+  const allDone = doneCount === EXIT_STEPS.length;
+
+  const save = useMutation({
+    mutationFn: (body: Record<string, boolean | string | null>) =>
+      completeOffboarding(vendor.id, exit.id, body),
+    onSuccess: (next, body) => {
+      onApply(next);
+      if (body.complete) toast({ title: "Exit complete. The vendor is archived.", tone: "success" });
+    },
+    onError: (e: unknown) => toast({ title: errorToast(e, "offboarding"), tone: "danger" }),
+  });
+
+  return (
+    <section
+      aria-label="Offboarding checklist"
+      className="mt-4 rounded-md border border-status-warning-border bg-surface-card p-4"
+    >
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="flex items-center gap-2 font-sans text-label-md text-text-primary">
+            <Icon name="signout" className="size-4 text-status-warning-text" />
+            Offboarding · {scope}
+          </p>
+          <p className="mt-1 text-body-sm text-text-secondary">{exit.reason}</p>
+          <p className="mt-0.5 text-caption text-text-subtle">
+            Started {fmtDate(exit.created_at)} · {doneCount} of {EXIT_STEPS.length} steps done ·
+            portal links revoked
+          </p>
+        </div>
+        {canManage ? (
+          <Button
+            size="sm"
+            disabled={!allDone}
+            loading={save.isPending && save.variables?.complete === true}
+            onClick={() => save.mutate({ notes: notes.trim() || null, complete: true })}
+          >
+            Complete exit
+          </Button>
+        ) : null}
+      </div>
+
+      <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+        {EXIT_STEPS.map((step) => {
+          const done = step.done(exit);
+          return (
+            <li key={step.key}>
+              <label className="flex items-start gap-2.5 rounded-md border border-border bg-surface-primary px-3 py-2.5">
+                <Checkbox
+                  className="mt-0.5"
+                  checked={done}
+                  disabled={done || !canManage || save.isPending}
+                  onCheckedChange={(checked) => {
+                    if (checked) save.mutate({ [step.key]: true });
+                  }}
+                  aria-label={step.label}
+                />
+                <span className="min-w-0">
+                  <span className="block font-sans text-label-sm text-text-primary">{step.label}</span>
+                  <span className="block text-caption text-text-subtle">{step.hint}</span>
+                </span>
+              </label>
+            </li>
+          );
+        })}
+      </ul>
+
+      {canManage ? (
+        <div className="mt-3">
+          <TextArea
+            label="Notes"
+            optional
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            onBlur={() => {
+              if (notes.trim() !== (exit.notes ?? "")) save.mutate({ notes: notes.trim() || null });
+            }}
+            rows={2}
+            maxLength={8000}
+            placeholder="Where the destruction certificate is filed, who confirmed access removal."
+          />
+        </div>
+      ) : null}
+    </section>
   );
 }
 

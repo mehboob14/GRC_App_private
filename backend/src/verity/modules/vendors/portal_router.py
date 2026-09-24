@@ -97,6 +97,20 @@ class PortalQuestionOut(_Response):
     has_evidence: bool
 
 
+class PortalCommentWrite(_Request):
+    body: str = Field(min_length=1, max_length=8000)
+    question_id: uuid.UUID | None = None
+
+
+class PortalCommentOut(_Response):
+    id: uuid.UUID
+    question_id: uuid.UUID | None
+    author: str
+    from_vendor: bool
+    body: str
+    created_at: object
+
+
 class PortalOut(_Response):
     """Deliberately narrow. A token shows one questionnaire and nothing else —
     no scores, no findings, no other vendors, no internal names."""
@@ -110,6 +124,7 @@ class PortalOut(_Response):
     answered_count: int
     submitted_at: object | None
     questions: list[PortalQuestionOut]
+    comments: list[PortalCommentOut] = Field(default_factory=list)
 
 
 def _client_host(request: Request) -> str | None:
@@ -164,6 +179,21 @@ async def attach_evidence(
             question_id=question_id,
             filename=file.filename or "attachment",
             data=await file.read(),
+        )
+    )
+
+
+@vendor_portal_router.post(
+    "/{token}/comments", response_model=PortalOut, summary="Reply to the review team"
+)
+async def add_comment(request: Request, token: _Token, body: PortalCommentWrite) -> PortalOut:
+    """A question about a question. It reaches the reviewers and nobody else."""
+    return _out(
+        await vendor_portal_service.add_comment(
+            token,
+            client_host=_client_host(request),
+            body=body.body,
+            question_id=body.question_id,
         )
     )
 

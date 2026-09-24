@@ -77,6 +77,11 @@ celery_app.conf.update(
             "task": "verity.workers.tasks.sweep_vendor_slas",
             "schedule": 24 * 3600.0,
         },
+        # Daily: reopen vendor findings whose risk acceptance has lapsed.
+        "expire-vendor-acceptances": {
+            "task": "verity.workers.tasks.expire_vendor_acceptances",
+            "schedule": 24 * 3600.0,
+        },
         # Daily: expire lapsed risk acceptances (reopening the risk) and notify
         # owners whose risk reviews are overdue.
         "sweep-risk-register": {
@@ -88,6 +93,12 @@ celery_app.conf.update(
         "refresh-vulnerabilities": {
             "task": "verity.workers.tasks.refresh_vulnerabilities",
             "schedule": 24 * 3600.0,
+        },
+        # Hourly: run the connections whose daily checks are due. Hourly rather
+        # than daily so a missed slot (a restart, an outage) recovers within the hour.
+        "run-connector-checks": {
+            "task": "verity.workers.tasks.run_connector_checks",
+            "schedule": 3600.0,
         },
     },
 )

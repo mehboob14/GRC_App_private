@@ -164,7 +164,7 @@ export function VendorsOverviewPage() {
         <StatTile
           icon="users"
           label="No business owner"
-          value={attention.get("unowned") ?? 0}
+          value={s.unowned}
           tone="warning"
           to="/vendors?owner=unassigned"
         />
@@ -179,7 +179,7 @@ export function VendorsOverviewPage() {
           icon="alert"
           label="Critical findings"
           value={s.findings_by_severity.critical ?? 0}
-          caption={s.findings_overdue > 0 ? `${s.findings_overdue} overdue` : undefined}
+          caption={s.critical_overdue > 0 ? `${s.critical_overdue} overdue` : undefined}
           tone="danger"
           to="/vendors/findings"
         />

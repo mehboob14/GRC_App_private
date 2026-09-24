@@ -24,6 +24,7 @@ import {
 import { describeError, errorToast } from "@/lib/api/describe-error";
 import { useAuth } from "@/lib/auth/auth-context";
 import { hasPermission } from "@/lib/auth/session";
+import { ShadowItPanel } from "./shadow-it-panel";
 import { decideIntake, listIntake } from "../api";
 import type { IntakeRequest } from "../types";
 import {
@@ -110,6 +111,9 @@ export function VendorIntakePage() {
         )}
       </div>
 
+      <div className="mt-4">
+        <ShadowItPanel canManage={canDecide} />
+      </div>
     </div>
   );
 }

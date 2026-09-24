@@ -183,10 +183,16 @@ through its service interface only, never its models (import-linter enforces).""
 BUILT_IN_ROLE_KEYS: Final[dict[str, tuple[str, ...] | None]] = {
     ADMIN_ROLE_NAME: None,  # every key that exists, resolved at check time (decision 13)
     "Chief Executive Officer": ("tenant:read",),
-    "Security Officer": ("tenant:read", "audit:read", "frameworks:read", "evidence:read"),
-    "Privacy Officer": ("tenant:read", "audit:read", "frameworks:read"),
+    "Security Officer": (
+        "tenant:read",
+        "audit:read",
+        "frameworks:read",
+        "evidence:read",
+        "vendors:read",
+    ),
+    "Privacy Officer": ("tenant:read", "audit:read", "frameworks:read", "vendors:read"),
     "Engineering Lead": ("tenant:read", "frameworks:read", "evidence:read"),
-    "Business Operations/Finance Lead": ("tenant:read", "frameworks:read"),
+    "Business Operations/Finance Lead": ("tenant:read", "frameworks:read", "vendors:read"),
 }
 """The built-in roles seeded into every tenant, and the keys they start with.
 

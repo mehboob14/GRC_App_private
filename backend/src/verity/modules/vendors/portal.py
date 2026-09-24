@@ -54,6 +54,7 @@ from verity.modules.vendors.models import (
     RISK_DOMAIN_LABELS,
     QuestionnaireQuestion,
     VendorAssessment,
+    VendorAssessmentComment,
     VendorAssessmentResponse,
     VendorPortalToken,
 )
@@ -68,6 +69,7 @@ from verity.modules.vendors.questionnaires import (
     response_value,
     visible_keys,
 )
+from verity.shared.ids import uuid7
 
 logger: Final = structlog.get_logger(__name__)
 
@@ -140,6 +142,18 @@ class PortalQuestion:
 
 
 @dataclass(frozen=True, slots=True)
+class PortalComment:
+    """One message on the review, on whichever side wrote it."""
+
+    id: uuid.UUID
+    question_id: uuid.UUID | None
+    author: str
+    from_vendor: bool
+    body: str
+    created_at: datetime
+
+
+@dataclass(frozen=True, slots=True)
 class PortalView:
     """The whole of what a token grants sight of: one questionnaire.
 
@@ -157,6 +171,9 @@ class PortalView:
     answered_count: int
     submitted_at: datetime | None
     questions: list[PortalQuestion]
+    comments: list[PortalComment]
+    """Only what was shared: an internal comment reaching this screen is a
+    disclosure, so the read is filtered at the query rather than in the template."""
 
 
 class VendorPortalService:
@@ -298,7 +315,80 @@ class VendorPortalService:
             answered_count=sum(1 for r, q in asked if is_answered(r, q)),
             submitted_at=assessment.submitted_at,
             questions=[self._question(response, question) for response, question in rows],
+            comments=await self._comments(session, resolved, assessment),
         )
+
+    async def _comments(
+        self, session: AsyncSession, resolved: _Resolved, assessment: VendorAssessment
+    ) -> list[PortalComment]:
+        """What the two sides have said to each other, and nothing else.
+
+        The filter is in the query rather than the template: an internal comment
+        reaching this screen is a disclosure incident, and a template is the wrong
+        place to hold a security boundary.
+        """
+        from verity.modules.vendors.service import vendor_service  # noqa: PLC0415
+
+        shared = await vendor_service.comments(
+            session,
+            tenant_id=resolved.tenant_id,
+            assessment_id=assessment.id,
+            shared_only=True,
+        )
+        return [
+            PortalComment(
+                id=c.id,
+                question_id=c.question_id,
+                author=c.author_name if c.author_type == "vendor_contact" else "The review team",
+                from_vendor=c.author_type == "vendor_contact",
+                body=c.body,
+                created_at=c.created_at,
+            )
+            for c in shared
+        ]
+
+    async def add_comment(
+        self,
+        token: str,
+        *,
+        client_host: str | None,
+        body: str,
+        question_id: uuid.UUID | None = None,
+    ) -> PortalView:
+        """Let the vendor answer a question about their answers.
+
+        Written as the contact, never as a member, and always ``vendor_shared``:
+        the vendor cannot post into the internal conversation, by construction
+        rather than by a flag they could set.
+        """
+        resolved = await self._resolve(token, client_host=client_host)
+        if not body.strip():
+            raise InvalidInput("Write something first.", detail="empty portal comment")
+        async with session_scope(resolved.tenant_id) as session:
+            assessment = await self._assessment(session, resolved, for_write=True)
+            comment = VendorAssessmentComment(
+                id=uuid7(),
+                tenant_id=resolved.tenant_id,
+                assessment_id=assessment.id,
+                question_id=question_id,
+                author_type="vendor_contact",
+                author_id=assessment.portal_contact_id,
+                visibility="vendor_shared",
+                body=body.strip()[:8000],
+            )
+            session.add(comment)
+            await self._audit.record(
+                session,
+                action="create",
+                object_type="vendor_assessment_comment",
+                object_id=comment.id,
+                actor=self._actor(assessment),
+                tenant_id=resolved.tenant_id,
+                before=None,
+                after={"visibility": "vendor_shared", "from": "vendor_contact"},
+            )
+            await session.flush()
+            return await self._view(session, resolved, assessment)
 
     @staticmethod
     def _question(response: VendorAssessmentResponse, question: AskedQuestion) -> PortalQuestion:

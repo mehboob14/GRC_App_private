@@ -24,7 +24,7 @@ import {
 } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { errorToast } from "@/lib/api/describe-error";
-import { addContract } from "../api";
+import { addContract, updateContract } from "../api";
 import { CONTRACT_TYPES, type Contract, type VendorDetail } from "../types";
 import {
   CONTRACT_STATUS_META,
@@ -54,6 +54,7 @@ export function ContractsPanel({
   onApply: (next: VendorDetail) => void;
 }) {
   const [adding, setAdding] = useState(false);
+  const [editing, setEditing] = useState<Contract | null>(null);
   const contracts = vendor.contracts;
 
   return (
@@ -76,18 +77,25 @@ export function ContractsPanel({
           <ul className="space-y-3">
             {contracts.map((c) => (
               <li key={c.id}>
-                <ContractCard contract={c} />
+                <ContractCard contract={c} onEdit={canManage ? () => setEditing(c) : undefined} />
               </li>
             ))}
           </ul>
         )}
       </Panel>
 
-      <AddContractDialog
-        open={adding}
-        onOpenChange={setAdding}
+      <ContractDialog
+        key={editing?.id ?? "new"}
+        open={adding || editing !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setAdding(false);
+            setEditing(null);
+          }
+        }}
         vendor={vendor}
-        onAdded={onApply}
+        contract={editing}
+        onSaved={onApply}
       />
     </>
   );
@@ -111,7 +119,7 @@ const CLAUSES = [
   },
 ];
 
-function ContractCard({ contract: c }: { contract: Contract }) {
+function ContractCard({ contract: c, onEdit }: { contract: Contract; onEdit?: () => void }) {
   const status = CONTRACT_STATUS_META[c.status] ?? { label: c.status, family: "neutral" as const };
   const noticeDays = daysUntil(c.notice_deadline);
   const noticeSoon = noticeDays !== null && noticeDays <= 60;
@@ -129,7 +137,14 @@ function ContractCard({ contract: c }: { contract: Contract }) {
             {c.value !== null ? ` · ${fmtMoney(c.value)}` : ""}
           </p>
         </div>
-        <StatusPill status={status.family} label={status.label} kind="inline" />
+        <div className="flex shrink-0 items-center gap-2">
+          <StatusPill status={status.family} label={status.label} kind="inline" />
+          {onEdit ? (
+            <Button variant="ghost" size="icon-sm" aria-label={`Edit ${c.title}`} onClick={onEdit}>
+              <Icon name="edit" className="size-4" />
+            </Button>
+          ) : null}
+        </div>
       </div>
 
       {c.auto_renew ? (
@@ -195,42 +210,45 @@ function ContractCard({ contract: c }: { contract: Contract }) {
   );
 }
 
-function AddContractDialog({
+/** Add a contract, or edit one: a draft being signed is how it becomes active. */
+function ContractDialog({
   open,
   onOpenChange,
   vendor,
-  onAdded,
+  contract,
+  onSaved,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   vendor: VendorDetail;
-  onAdded: (next: VendorDetail) => void;
+  contract: Contract | null;
+  onSaved: (next: VendorDetail) => void;
 }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [form, setForm] = useState({
-    title: "",
-    contract_type: "master",
-    engagement_id: "",
-    start_date: "",
-    end_date: "",
-    renewal_date: "",
-    auto_renew: false,
-    notice_period_days: "",
-    breach_notification_hours: "",
-    right_to_audit: false,
-    subprocessor_terms: false,
-    exit_data_return_clause: false,
-    value: "",
-    status: "active",
+    title: contract?.title ?? "",
+    contract_type: contract?.contract_type ?? "master",
+    engagement_id: contract?.engagement_id ?? "",
+    start_date: contract?.start_date ?? "",
+    end_date: contract?.end_date ?? "",
+    renewal_date: contract?.renewal_date ?? "",
+    auto_renew: contract?.auto_renew ?? false,
+    notice_period_days: contract?.notice_period_days?.toString() ?? "",
+    breach_notification_hours: contract?.breach_notification_hours?.toString() ?? "",
+    right_to_audit: contract?.right_to_audit ?? false,
+    subprocessor_terms: contract?.subprocessor_terms ?? false,
+    exit_data_return_clause: contract?.exit_data_return_clause ?? false,
+    value: contract?.value?.toString() ?? "",
+    status: contract?.status ?? "active",
   });
 
   const set = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
 
   const add = useMutation({
-    mutationFn: () =>
-      addContract(vendor.id, {
+    mutationFn: () => {
+      const body = {
         title: form.title.trim(),
         contract_type: form.contract_type,
         engagement_id: form.engagement_id || null,
@@ -247,12 +265,19 @@ function AddContractDialog({
         exit_data_return_clause: form.exit_data_return_clause,
         value: form.value ? Number(form.value) : null,
         status: form.status,
-      }),
-    onSuccess: (created) => {
-      onAdded({ ...vendor, contracts: [...vendor.contracts, created] });
+      };
+      return contract ? updateContract(vendor.id, contract.id, body) : addContract(vendor.id, body);
+    },
+    onSuccess: (saved) => {
+      onSaved({
+        ...vendor,
+        contracts: contract
+          ? vendor.contracts.map((c) => (c.id === saved.id ? saved : c))
+          : [...vendor.contracts, saved],
+      });
       void queryClient.invalidateQueries({ queryKey: ["vendor", vendor.id] });
       onOpenChange(false);
-      toast({ title: "Contract added", tone: "success" });
+      toast({ title: contract ? "Contract saved" : "Contract added", tone: "success" });
     },
     onError: (e: unknown) => toast({ title: errorToast(e, "contract"), tone: "danger" }),
   });
@@ -261,7 +286,7 @@ function AddContractDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="lg" scrollBody>
         <DialogHeader>
-          <DialogTitle>Add contract</DialogTitle>
+          <DialogTitle>{contract ? "Edit contract" : "Add contract"}</DialogTitle>
           <DialogDescription>Tick only clauses in the signed contract.</DialogDescription>
         </DialogHeader>
         <form
@@ -406,7 +431,7 @@ function AddContractDialog({
               Cancel
             </Button>
             <Button type="submit" loading={add.isPending} disabled={!form.title.trim()}>
-              Add contract
+              {contract ? "Save contract" : "Add contract"}
             </Button>
           </DialogFooter>
         </form>

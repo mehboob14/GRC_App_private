@@ -17,7 +17,7 @@ from __future__ import annotations
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, File, Query, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from verity.core.deps import (
@@ -33,35 +33,61 @@ from verity.modules.vendors.questionnaire_router import questionnaire_router
 from verity.modules.vendors.schemas import (
     AcceptFindingWrite,
     AdvanceWrite,
+    AlertRuleOut,
+    AlertRulePageOut,
+    AlertRuleWrite,
     ApproverOut,
     ApproverPageOut,
     AssessmentOut,
     CloseFindingWrite,
+    CommentOut,
+    CommentPageOut,
+    CommentWrite,
     ConditionCloseWrite,
     ConditionOut,
     ContactWrite,
     ContractOut,
     ContractWrite,
     DecisionWrite,
+    DiscoveredAppOut,
+    DiscoveredAppPageOut,
+    DiscoveredAppTriageWrite,
+    DiscoveredAppWrite,
+    DocumentEditWrite,
     DocumentOut,
     DocumentWrite,
     DuplicateCheckOut,
     EngagementWrite,
     FindingOut,
     FindingPageOut,
+    FindingWrite,
     IntakeDecisionWrite,
     IntakeOut,
     IntakePageOut,
     IntakeWrite,
     IssuedQuestionnaireOut,
     IssueQuestionnaireWrite,
+    NotifyOut,
+    NotifyWrite,
     OffboardingCompletionWrite,
     OffboardWrite,
+    PolicyOut,
+    PolicyWrite,
     RemediateWrite,
+    ReopenFindingWrite,
+    ReviewerOut,
+    ReviewerPageOut,
+    ReviewerWrite,
+    ReviewStatusWrite,
     RosterOut,
     RosterWrite,
     SendBackWrite,
+    SignalStatusWrite,
+    SignalWrite,
     SkipWrite,
+    SlaOut,
+    SlaPageOut,
+    SlaWrite,
     SocReviewOut,
     SocReviewWrite,
     SubprocessorOut,
@@ -77,14 +103,20 @@ from verity.modules.vendors.schemas import (
     VendorWrite,
 )
 from verity.modules.vendors.service import (
+    AlertRuleInput,
     ConditionInput,
     ContactInput,
     ContractInput,
+    DiscoveredAppInput,
     DocumentInput,
     EngagementInput,
+    FindingInput,
     IntakeInput,
     OffboardingCompletion,
+    PolicyInput,
     QuestionnaireTieringInput,
+    SignalInput,
+    SlaInput,
     SocReviewInput,
     SubprocessorInput,
     TieringAnswers,
@@ -282,6 +314,177 @@ async def list_intake(
     return IntakePageOut(items=[IntakeOut.model_validate(i) for i in items], total=len(items))
 
 
+@vendors_router.get(
+    "/alert-rules", response_model=AlertRulePageOut, summary="What a signal sets off"
+)
+async def list_alert_rules(
+    _p: Annotated[Principal, Depends(require_read)],
+    context: _Ctx,
+    session: _Db,
+) -> AlertRulePageOut:
+    items = await vendor_service.alert_rules(session, tenant_id=context.tenant_id)
+    return AlertRulePageOut(items=[AlertRuleOut.model_validate(r) for r in items])
+
+
+@vendors_router.post(
+    "/alert-rules",
+    response_model=AlertRulePageOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="Add an alert rule",
+)
+async def add_alert_rule(
+    _p: Annotated[Principal, Depends(require_manage)],
+    context: _Ctx,
+    session: _Db,
+    body: AlertRuleWrite,
+) -> AlertRulePageOut:
+    items = await vendor_service.save_alert_rule(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(context),
+        data=AlertRuleInput(
+            name=body.name,
+            signal_types=tuple(body.signal_types),
+            tier_scope=tuple(body.tier_scope),
+            min_severity=body.min_severity,
+            action=body.action,
+            channel=body.channel,
+            is_enabled=body.is_enabled,
+        ),
+    )
+    return AlertRulePageOut(items=[AlertRuleOut.model_validate(r) for r in items])
+
+
+@vendors_router.put(
+    "/alert-rules/{rule_id}", response_model=AlertRulePageOut, summary="Edit an alert rule"
+)
+async def update_alert_rule(
+    _p: Annotated[Principal, Depends(require_manage)],
+    context: _Ctx,
+    session: _Db,
+    rule_id: uuid.UUID,
+    body: AlertRuleWrite,
+) -> AlertRulePageOut:
+    items = await vendor_service.save_alert_rule(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(context),
+        rule_id=rule_id,
+        data=AlertRuleInput(
+            name=body.name,
+            signal_types=tuple(body.signal_types),
+            tier_scope=tuple(body.tier_scope),
+            min_severity=body.min_severity,
+            action=body.action,
+            channel=body.channel,
+            is_enabled=body.is_enabled,
+        ),
+    )
+    return AlertRulePageOut(items=[AlertRuleOut.model_validate(r) for r in items])
+
+
+@vendors_router.delete(
+    "/alert-rules/{rule_id}", response_model=AlertRulePageOut, summary="Remove an alert rule"
+)
+async def delete_alert_rule(
+    _p: Annotated[Principal, Depends(require_manage)],
+    context: _Ctx,
+    session: _Db,
+    rule_id: uuid.UUID,
+) -> AlertRulePageOut:
+    items = await vendor_service.delete_alert_rule(
+        session, tenant_id=context.tenant_id, actor=_actor(context), rule_id=rule_id
+    )
+    return AlertRulePageOut(items=[AlertRuleOut.model_validate(r) for r in items])
+
+
+@vendors_router.get(
+    "/discovered-apps", response_model=DiscoveredAppPageOut, summary="Apps that skipped intake"
+)
+async def list_discovered_apps(
+    _p: Annotated[Principal, Depends(require_read)],
+    context: _Ctx,
+    session: _Db,
+) -> DiscoveredAppPageOut:
+    items = await vendor_service.discovered_apps(session, tenant_id=context.tenant_id)
+    return DiscoveredAppPageOut(items=[DiscoveredAppOut.model_validate(a) for a in items])
+
+
+@vendors_router.post(
+    "/discovered-apps",
+    response_model=DiscoveredAppPageOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="Record an app in use",
+)
+async def record_discovered_app(
+    _p: Annotated[Principal, Depends(require_manage)],
+    context: _Ctx,
+    session: _Db,
+    body: DiscoveredAppWrite,
+) -> DiscoveredAppPageOut:
+    items = await vendor_service.record_discovered_app(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(context),
+        data=DiscoveredAppInput(
+            app_name=body.app_name,
+            authorizing_users=body.authorizing_users,
+            oauth_scopes=tuple(body.oauth_scopes),
+            first_seen_on=body.first_seen_on,
+        ),
+    )
+    return DiscoveredAppPageOut(items=[DiscoveredAppOut.model_validate(a) for a in items])
+
+
+@vendors_router.post(
+    "/discovered-apps/{app_id}/triage",
+    response_model=DiscoveredAppPageOut,
+    summary="Decide what a discovered app is",
+)
+async def triage_discovered_app(
+    _p: Annotated[Principal, Depends(require_manage)],
+    context: _Ctx,
+    session: _Db,
+    app_id: uuid.UUID,
+    body: DiscoveredAppTriageWrite,
+) -> DiscoveredAppPageOut:
+    items = await vendor_service.triage_discovered_app(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(context),
+        app_id=app_id,
+        disposition=body.disposition,
+        vendor_id=body.vendor_id,
+    )
+    return DiscoveredAppPageOut(items=[DiscoveredAppOut.model_validate(a) for a in items])
+
+
+@vendors_router.get("/policy", response_model=PolicyOut, summary="The workspace's tiering policy")
+async def get_policy(
+    _p: Annotated[Principal, Depends(require_read)],
+    context: _Ctx,
+    session: _Db,
+) -> PolicyOut:
+    view = await vendor_service.policy_view(session, tenant_id=context.tenant_id)
+    return PolicyOut.model_validate(view)
+
+
+@vendors_router.put("/policy", response_model=PolicyOut, summary="Retune the tiering policy")
+async def update_policy(
+    _p: Annotated[Principal, Depends(require_manage)],
+    context: _Ctx,
+    session: _Db,
+    body: PolicyWrite,
+) -> PolicyOut:
+    view = await vendor_service.update_policy(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(context),
+        data=PolicyInput(**body.model_dump()),
+    )
+    return PolicyOut.model_validate(view)
+
+
 @vendors_router.get("/roster", response_model=RosterOut, summary="Who plays which role")
 async def get_roster(
     _p: Annotated[Principal, Depends(require_read)], context: _Ctx, session: _Db
@@ -373,6 +576,53 @@ async def update_engagement(
         data=_to_engagement(body),
     )
     return VendorDetailOut.model_validate(view)
+
+
+@vendors_router.put(
+    "/{vendor_id}/contacts/{contact_id}",
+    response_model=VendorDetailOut,
+    summary="Edit a contact",
+)
+async def update_contact(
+    _p: Annotated[Principal, Depends(require_manage)],
+    context: _Ctx,
+    session: _Db,
+    vendor_id: uuid.UUID,
+    contact_id: uuid.UUID,
+    body: ContactWrite,
+) -> VendorDetailOut:
+    view = await vendor_service.update_contact(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(context),
+        vendor_id=vendor_id,
+        contact_id=contact_id,
+        data=ContactInput(**body.model_dump()),
+    )
+    return VendorDetailOut.model_validate(view)
+
+
+@vendors_router.post(
+    "/{vendor_id}/stages/{stage_id}/notify",
+    response_model=NotifyOut,
+    summary="Tell the next reviewers a stage is theirs",
+)
+async def notify_stage(
+    _p: Annotated[Principal, Depends(require_manage)],
+    context: _Ctx,
+    session: _Db,
+    vendor_id: uuid.UUID,
+    stage_id: uuid.UUID,
+    body: NotifyWrite,
+) -> NotifyOut:
+    sent = await vendor_service.notify_stage(
+        session,
+        tenant_id=context.tenant_id,
+        vendor_id=vendor_id,
+        stage_id=stage_id,
+        membership_ids=body.membership_ids,
+    )
+    return NotifyOut(sent=sent)
 
 
 @vendors_router.post(
@@ -675,6 +925,293 @@ async def close_finding(
     return FindingOut.model_validate(view)
 
 
+@vendors_router.post(
+    "/{vendor_id}/assessments/{assessment_id}/reviewers",
+    response_model=ReviewerPageOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="Hand a domain of the review to somebody",
+)
+async def assign_reviewer(
+    _p: Annotated[Principal, Depends(require_assess)],
+    context: _Ctx,
+    session: _Db,
+    vendor_id: uuid.UUID,  # noqa: ARG001 — the path names it; the assessment carries it
+    assessment_id: uuid.UUID,
+    body: ReviewerWrite,
+) -> ReviewerPageOut:
+    items = await vendor_service.assign_reviewer(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(context),
+        assessment_id=assessment_id,
+        membership_id=body.membership_id,
+        domain=body.domain,
+    )
+    return ReviewerPageOut(items=[ReviewerOut.model_validate(r) for r in items])
+
+
+@vendors_router.post(
+    "/{vendor_id}/assessments/{assessment_id}/reviewers/{reviewer_id}",
+    response_model=ReviewerPageOut,
+    summary="Move a reviewer's part along, or take it off them",
+)
+async def set_review_status(  # noqa: PLR0913, PLR0917
+    _p: Annotated[Principal, Depends(require_assess)],
+    context: _Ctx,
+    session: _Db,
+    vendor_id: uuid.UUID,  # noqa: ARG001 — the path names it; the assessment carries it
+    assessment_id: uuid.UUID,
+    reviewer_id: uuid.UUID,
+    body: ReviewStatusWrite,
+) -> ReviewerPageOut:
+    items = await vendor_service.set_review_status(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(context),
+        assessment_id=assessment_id,
+        reviewer_id=reviewer_id,
+        status=body.status,
+        note=body.note,
+    )
+    return ReviewerPageOut(items=[ReviewerOut.model_validate(r) for r in items])
+
+
+@vendors_router.get(
+    "/{vendor_id}/assessments/{assessment_id}/comments",
+    response_model=CommentPageOut,
+    summary="The conversation on a review",
+)
+async def list_comments(
+    _p: Annotated[Principal, Depends(require_read)],
+    context: _Ctx,
+    session: _Db,
+    vendor_id: uuid.UUID,  # noqa: ARG001 — the path names it; the assessment carries it
+    assessment_id: uuid.UUID,
+) -> CommentPageOut:
+    items = await vendor_service.comments(
+        session, tenant_id=context.tenant_id, assessment_id=assessment_id
+    )
+    return CommentPageOut(items=[CommentOut.model_validate(c) for c in items])
+
+
+@vendors_router.post(
+    "/{vendor_id}/assessments/{assessment_id}/comments",
+    response_model=CommentPageOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="Say something about a review",
+)
+async def add_comment(
+    _p: Annotated[Principal, Depends(require_assess)],
+    context: _Ctx,
+    session: _Db,
+    vendor_id: uuid.UUID,  # noqa: ARG001 — the path names it; the assessment carries it
+    assessment_id: uuid.UUID,
+    body: CommentWrite,
+) -> CommentPageOut:
+    items = await vendor_service.add_comment(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(context),
+        assessment_id=assessment_id,
+        body=body.body,
+        question_id=body.question_id,
+        visibility=body.visibility,
+    )
+    return CommentPageOut(items=[CommentOut.model_validate(c) for c in items])
+
+
+@vendors_router.post(
+    "/{vendor_id}/findings",
+    response_model=FindingOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="Raise a finding by hand",
+)
+async def create_finding(
+    _p: Annotated[Principal, Depends(require_manage)],
+    context: _Ctx,
+    session: _Db,
+    vendor_id: uuid.UUID,
+    body: FindingWrite,
+) -> FindingOut:
+    view = await vendor_service.create_finding(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(context),
+        vendor_id=vendor_id,
+        data=FindingInput(**body.model_dump()),
+    )
+    return FindingOut.model_validate(view)
+
+
+@vendors_router.post(
+    "/{vendor_id}/signals",
+    response_model=VendorDetailOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="Record an adverse signal",
+)
+async def record_signal(
+    _p: Annotated[Principal, Depends(require_manage)],
+    context: _Ctx,
+    session: _Db,
+    vendor_id: uuid.UUID,
+    body: SignalWrite,
+) -> VendorDetailOut:
+    view = await vendor_service.record_signal(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(context),
+        vendor_id=vendor_id,
+        data=SignalInput(**body.model_dump()),
+    )
+    return VendorDetailOut.model_validate(view)
+
+
+@vendors_router.post(
+    "/{vendor_id}/signals/{signal_id}/status",
+    response_model=VendorDetailOut,
+    summary="Acknowledge or dismiss a signal",
+)
+async def set_signal_status(
+    _p: Annotated[Principal, Depends(require_manage)],
+    context: _Ctx,
+    session: _Db,
+    vendor_id: uuid.UUID,
+    signal_id: uuid.UUID,
+    body: SignalStatusWrite,
+) -> VendorDetailOut:
+    view = await vendor_service.set_signal_status(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(context),
+        vendor_id=vendor_id,
+        signal_id=signal_id,
+        status=body.status,
+    )
+    return VendorDetailOut.model_validate(view)
+
+
+@vendors_router.post(
+    "/{vendor_id}/slas",
+    response_model=SlaPageOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="Record a service level",
+)
+async def add_sla(
+    _p: Annotated[Principal, Depends(require_manage)],
+    context: _Ctx,
+    session: _Db,
+    vendor_id: uuid.UUID,
+    body: SlaWrite,
+) -> SlaPageOut:
+    items = await vendor_service.save_sla(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(context),
+        vendor_id=vendor_id,
+        data=SlaInput(**body.model_dump()),
+    )
+    return SlaPageOut(items=[SlaOut.model_validate(s) for s in items])
+
+
+@vendors_router.put(
+    "/{vendor_id}/slas/{sla_id}",
+    response_model=SlaPageOut,
+    summary="Update a service level or its measurement",
+)
+async def update_sla(
+    _p: Annotated[Principal, Depends(require_manage)],
+    context: _Ctx,
+    session: _Db,
+    vendor_id: uuid.UUID,
+    sla_id: uuid.UUID,
+    body: SlaWrite,
+) -> SlaPageOut:
+    items = await vendor_service.save_sla(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(context),
+        vendor_id=vendor_id,
+        sla_id=sla_id,
+        data=SlaInput(**body.model_dump()),
+    )
+    return SlaPageOut(items=[SlaOut.model_validate(s) for s in items])
+
+
+@vendors_router.put(
+    "/{vendor_id}/documents/{document_id}",
+    response_model=VendorDetailOut,
+    summary="Edit or review a document",
+)
+async def update_document(
+    _p: Annotated[Principal, Depends(require_manage)],
+    context: _Ctx,
+    session: _Db,
+    vendor_id: uuid.UUID,
+    document_id: uuid.UUID,
+    body: DocumentEditWrite,
+) -> VendorDetailOut:
+    view = await vendor_service.update_document(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(context),
+        vendor_id=vendor_id,
+        document_id=document_id,
+        data=DocumentInput(**body.model_dump(exclude={"review_notes"})),
+        review_notes=body.review_notes,
+    )
+    return VendorDetailOut.model_validate(view)
+
+
+@vendors_router.post(
+    "/{vendor_id}/documents/{document_id}/file",
+    response_model=VendorDetailOut,
+    summary="Attach the document itself",
+)
+async def attach_document_file(
+    _p: Annotated[Principal, Depends(require_manage)],
+    context: _Ctx,
+    session: _Db,
+    vendor_id: uuid.UUID,
+    document_id: uuid.UUID,
+    file: Annotated[UploadFile, File()],
+) -> VendorDetailOut:
+    """The bytes go to the shared evidence store, which sniffs, caps and hashes."""
+    view = await vendor_service.attach_document_file(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(context),
+        vendor_id=vendor_id,
+        document_id=document_id,
+        filename=file.filename or "document",
+        data=await file.read(),
+    )
+    return VendorDetailOut.model_validate(view)
+
+
+@vendors_router.post(
+    "/{vendor_id}/findings/{finding_id}/reopen",
+    response_model=FindingOut,
+    summary="Reopen a closed or accepted finding",
+)
+async def reopen_finding(
+    _p: Annotated[Principal, Depends(require_manage)],
+    context: _Ctx,
+    session: _Db,
+    vendor_id: uuid.UUID,
+    finding_id: uuid.UUID,
+    body: ReopenFindingWrite,
+) -> FindingOut:
+    view = await vendor_service.reopen_finding(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(context),
+        vendor_id=vendor_id,
+        finding_id=finding_id,
+        reason=body.reason,
+    )
+    return FindingOut.model_validate(view)
+
+
 # -- intake, the roster and the gate ------------------------------------------
 
 
@@ -737,6 +1274,26 @@ async def set_roster_role(
         membership_id=body.membership_id,
     )
     return RosterOut(roles={role: list(ids) for role, ids in roster.items()})
+
+
+@vendors_router.delete(
+    "/roster/{role}/{membership_id}", response_model=RosterOut, summary="Remove a role"
+)
+async def remove_roster_role(
+    _p: Annotated[Principal, Depends(require_manage)],
+    context: _Ctx,
+    session: _Db,
+    role: str,
+    membership_id: uuid.UUID,
+) -> RosterOut:
+    roster = await vendor_service.remove_roster_role(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(context),
+        role=role,
+        membership_id=membership_id,
+    )
+    return RosterOut(roles={r: list(ids) for r, ids in roster.items()})
 
 
 @vendors_router.get(
@@ -903,6 +1460,52 @@ async def add_contract(
         data=ContractInput(**body.model_dump()),
     )
     return ContractOut.model_validate(view)
+
+
+@vendors_router.put(
+    "/{vendor_id}/contracts/{contract_id}",
+    response_model=ContractOut,
+    summary="Edit a contract",
+)
+async def update_contract(
+    _p: Annotated[Principal, Depends(require_manage)],
+    context: _Ctx,
+    session: _Db,
+    vendor_id: uuid.UUID,
+    contract_id: uuid.UUID,
+    body: ContractWrite,
+) -> ContractOut:
+    view = await vendor_service.update_contract(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(context),
+        vendor_id=vendor_id,
+        contract_id=contract_id,
+        data=ContractInput(**body.model_dump()),
+    )
+    return ContractOut.model_validate(view)
+
+
+@vendors_router.post(
+    "/{vendor_id}/subprocessors/{subprocessor_id}/remove",
+    response_model=SubprocessorPageOut,
+    summary="Mark a fourth party no longer used",
+)
+async def remove_subprocessor(
+    _p: Annotated[Principal, Depends(require_manage)],
+    context: _Ctx,
+    session: _Db,
+    vendor_id: uuid.UUID,
+    subprocessor_id: uuid.UUID,
+) -> SubprocessorPageOut:
+    items = await vendor_service.remove_subprocessor(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(context),
+        vendor_id=vendor_id,
+        subprocessor_id=subprocessor_id,
+    )
+    return SubprocessorPageOut(items=[SubprocessorOut.model_validate(s) for s in items])
 
 
 @vendors_router.post(

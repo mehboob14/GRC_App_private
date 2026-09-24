@@ -194,6 +194,7 @@ GRADES: Final[tuple[str, ...]] = ("A", "B", "C", "D", "F")
 
 FINDING_SOURCES: Final[tuple[str, ...]] = (
     "assessment",
+    "manual",
     "sla_breach",
     "signal",
     "document_review",
@@ -1631,6 +1632,54 @@ class VendorSignal(UUIDPrimaryKey, TenantScoped, Timestamped, Integratable, Base
         UniqueConstraint("tenant_id", "dedup_key", name="uq_vendor_signals__dedup_key"),
         tenant_index("vendor_signals", "vendor_id", "status"),
         tenant_index("vendor_signals", "observed_at"),
+    )
+
+
+REVIEWER_STATUSES: Final[tuple[str, ...]] = ("assigned", "in_review", "done")
+
+
+class VendorAssessmentReviewer(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
+    """One risk domain of a review, handed to one person.
+
+    A questionnaire comes back as one object with ten domains in it. Security
+    should be reading the access-control answers while legal reads the contract
+    ones, and each should be able to finish without waiting for the other, which
+    a status column on the assessment cannot express.
+    """
+
+    __tablename__ = "vendor_assessment_reviewers"
+
+    assessment_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("vendor_assessments.id", ondelete="CASCADE")
+    )
+    domain: Mapped[str | None] = mapped_column(default=None)
+    """Null means the whole review, which is how a small team delegates."""
+    reviewer_membership_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey(_MEMBERSHIP_FK, ondelete="CASCADE")
+    )
+    status: Mapped[str] = mapped_column(default="assigned", server_default="assigned")
+    note: Mapped[str | None] = mapped_column(default=None)
+    decided_at: Mapped[datetime | None] = mapped_column(default=None)
+    assigned_by_membership_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey(_MEMBERSHIP_FK, ondelete="SET NULL"), default=None
+    )
+
+    __table_args__ = (
+        status_check("vendor_assessment_reviewers", "status", REVIEWER_STATUSES),
+        UniqueConstraint(
+            "tenant_id",
+            "assessment_id",
+            "domain",
+            "reviewer_membership_id",
+            name="uq_vendor_assessment_reviewers__assessment_domain_reviewer",
+        ),
+        tenant_index("vendor_assessment_reviewers", "assessment_id"),
+        # Named by hand: the generated name is two characters past Postgres's 63.
+        Index(
+            "ix_vendor_assessment_reviewers__tenant_id_reviewer",
+            "tenant_id",
+            "reviewer_membership_id",
+        ),
     )
 
 

@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Badge,
   Button,
+  ConfirmDialog,
   DetailHeader,
   DropdownMenu,
   DropdownMenuContent,
@@ -86,10 +87,12 @@ export function QuestionnaireBuilderPage() {
     onSuccess: apply,
     onError: fail,
   });
+  const [removing, setRemoving] = useState<BuilderQuestion | null>(null);
   const remove = useMutation({
     mutationFn: (questionId: string) => deleteQuestion(questionnaireId, questionId),
     onSuccess: (next) => {
       apply(next);
+      setRemoving(null);
       toast({ title: "Question removed", tone: "success" });
     },
     onError: fail,
@@ -365,7 +368,7 @@ export function QuestionnaireBuilderPage() {
                       onEdit={() => setEditing({ question, afterId: null })}
                       onAddBelow={() => setEditing({ question: null, afterId: question.id })}
                       onMove={(delta) => move(question, delta)}
-                      onDelete={() => remove.mutate(question.id)}
+                      onDelete={() => setRemoving(question)}
                     />
                   ))}
                 </ol>
@@ -387,6 +390,24 @@ export function QuestionnaireBuilderPage() {
             onSaved={(next) => {
               apply(next);
               setEditing(null);
+            }}
+          />
+          <ConfirmDialog
+            open={removing !== null}
+            onOpenChange={(open) => {
+              if (!open) setRemoving(null);
+            }}
+            title="Remove this question?"
+            consequence={
+              <>
+                <span className="font-semibold text-text-primary">{removing?.prompt}</span> leaves
+                this questionnaire. Reviews already sent keep their own copy.
+              </>
+            }
+            confirmLabel="Remove question"
+            loading={remove.isPending}
+            onConfirm={() => {
+              if (removing) remove.mutate(removing.id);
             }}
           />
           <LibraryPickerDialog

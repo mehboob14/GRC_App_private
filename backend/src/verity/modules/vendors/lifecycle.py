@@ -66,6 +66,17 @@ GATES: Final[frozenset[str]] = frozenset({"approval"})
 """V2. A gate exits only on an approval decided for the current attempt, and a
 database CHECK refuses to mark one skipped."""
 
+ROLE_LABELS: Final[dict[str, str]] = {
+    "tprm_lead": "TPRM lead",
+    "analyst": "Analyst",
+    "security": "Security",
+    "privacy": "Privacy",
+    "legal": "Legal",
+    "procurement": "Procurement",
+    "exec_approver": "Executive approver",
+    "it": "IT",
+}
+
 REQUIRED_STAGES: Final[frozenset[str]] = frozenset({"intake", "tiering", "approval"})
 """Never skippable by any tier. ``tiering`` is here rather than in GATES — that is
 the whole of V2."""
@@ -170,12 +181,19 @@ class StageFacts:
     residual_score: float | None = None
     findings_available: bool = False
     open_critical_findings: int = 0
+    """Open findings that are critical or marked blocking, on this engagement or on
+    the vendor as a whole. The name predates blocking findings."""
 
     # -- section 4: contracting, approval ------------------------------------
     contracts_available: bool = False
     contract_count: int = 0
     approvals_available: bool = False
     approval_decided_at: datetime | None = None
+    """When this cycle was last approved. None when the latest decision was a defer
+    or a reject: a later "no" withdraws an earlier "yes"."""
+    approval_last_decision: str | None = None
+    open_earlier_stages: tuple[str, ...] = ()
+    """Stages before the gate that are neither complete nor skipped."""
 
 
 def _intake(f: StageFacts) -> list[ExitCheck]:
@@ -203,7 +221,7 @@ def _intake(f: StageFacts) -> list[ExitCheck]:
             satisfied=f.data_classification is not None,
             detail=None
             if f.data_classification
-            else "Classification drives the tier, so tiering cannot run without it.",
+            else "Say what kind of data we share, so reviewers know what is at stake.",
             clears_with="vendor",
             clears_id=f.vendor_id,
         ),
@@ -216,7 +234,9 @@ def _tiering(f: StageFacts) -> list[ExitCheck]:
             code="tiering.assessed",
             label="A tiering assessment exists for this cycle",
             satisfied=f.tiering_assessment_id is not None,
-            detail=None if f.tiering_assessment_id else "Score the five factors to set the tier.",
+            detail=None
+            if f.tiering_assessment_id
+            else "Answer the tiering questionnaire to set the tier.",
             clears_with="vendor_tiering_assessment",
             clears_id=f.tiering_assessment_id,
         )
@@ -228,7 +248,7 @@ def _diligence(f: StageFacts) -> list[ExitCheck]:
     return [
         ExitCheck(
             code="diligence.bank_selected",
-            label="A questionnaire bank is selected",
+            label="A questionnaire is sent to the vendor",
             satisfied=(f.selected_bank_count > 0) if f.assessments_available else None,
             clears_with="vendor_assessment",
         ),
@@ -236,9 +256,11 @@ def _diligence(f: StageFacts) -> list[ExitCheck]:
         # of which exist now, so this one is answerable today.
         ExitCheck(
             code="diligence.reviewers_assigned",
-            label=f"The {f.tier or 'tier'} reviewers are assigned",
+            label=f"The {f.tier or 'tier'} tier reviewers are on the roster",
             satisfied=not missing,
-            detail=f"Still unassigned: {', '.join(missing)}." if missing else None,
+            detail="Still unassigned: " + ", ".join(ROLE_LABELS.get(r, r) for r in missing) + "."
+            if missing
+            else None,
             clears_with="vendor_team_roster",
         ),
     ]
@@ -293,9 +315,9 @@ def _findings(f: StageFacts) -> list[ExitCheck]:
     return [
         ExitCheck(
             code="findings.no_open_critical",
-            label="No critical finding is open without an accepted risk",
+            label="No critical or blocking finding is open",
             satisfied=(f.open_critical_findings == 0) if f.findings_available else None,
-            detail=f"{f.open_critical_findings} open critical."
+            detail=f"{f.open_critical_findings} still open. Fix, accept or close each one."
             if f.open_critical_findings
             else None,
             clears_with="vendor_finding",
@@ -343,23 +365,43 @@ def _approval(f: StageFacts) -> list[ExitCheck]:
         # decided before that restart no longer satisfies it — without ever
         # mutating the append-only approval row.
         decided = f.approval_decided_at >= f.stage_entered_at
-    return [
+    detail: str | None = None
+    if decided is False and f.approval_last_decision in {"defer", "reject"}:
+        word = "deferred" if f.approval_last_decision == "defer" else "rejected"
+        detail = f"The last decision {word} it. Record a new one when the vendor is ready."
+    elif decided is False and f.approval_decided_at is not None:
+        detail = "The last decision predates the current attempt, so it no longer counts."
+    checks = [
         ExitCheck(
             code="approval.decided",
-            label="An approver has decided, for this attempt",
+            label="An approver has approved, for this attempt",
             satisfied=decided,
-            detail="The last decision predates the current attempt, so it no longer counts."
-            if decided is False and f.approval_decided_at is not None
-            else None,
+            detail=detail,
             clears_with="vendor_approval",
         ),
         ExitCheck(
             code="approval.no_unmitigated_critical",
-            label="No unmitigated critical finding remains",
+            label="No critical or blocking finding is open",
             satisfied=(f.open_critical_findings == 0) if f.findings_available else None,
+            detail=f"{f.open_critical_findings} still open." if f.open_critical_findings else None,
             clears_with="vendor_finding",
         ),
     ]
+    if f.open_earlier_stages:
+        # Stages complete in order, so this only fires when a retier re-opened
+        # review work behind the gate. It is what stops that work being walked round.
+        checks.append(
+            ExitCheck(
+                code="approval.review_complete",
+                label="Every earlier stage is finished",
+                satisfied=False,
+                detail="Still open: "
+                + ", ".join(STAGE_LABELS[s] for s in f.open_earlier_stages)
+                + ".",
+                clears_with="vendor_stage",
+            )
+        )
+    return checks
 
 
 def _onboarding(_f: StageFacts) -> list[ExitCheck]:
@@ -447,13 +489,17 @@ def allowed_transitions(
     *,
     skippable: frozenset[str] = frozenset(),
     has_earlier_stage: bool = True,
+    is_current: bool = True,
 ) -> tuple[str, ...]:
     """What the machine will accept next, served so no client hardcodes it.
 
     The interface asks the server rather than reimplementing V2 and V9 in
     TypeScript, which is how the two drift apart and the UI offers a move the API
-    then refuses.
+    then refuses. Only the current stage moves: stages finish in order, so no
+    route to the gate goes round the review.
     """
+    if not is_current:
+        return ()
     moves: list[str] = []
     if current.status != "complete" and not blockers(checks) and current.stage != TERMINAL_STAGE:
         moves.append("advance")
@@ -500,6 +546,29 @@ def plan_cycle(
             skipped_by_policy=reason if stage in skipped else None,
         )
         for stage in STAGES
+    )
+
+
+def current_stage(stages: list[tuple[str, str]]) -> str | None:
+    """Where the work is: the first stage, in order, neither complete nor skipped.
+
+    A freshly planned cycle marks nothing in progress, so the status alone cannot
+    answer this. Order can.
+    """
+    order = {stage: index for index, stage in enumerate(STAGES)}
+    for stage, status in sorted(stages, key=lambda row: order[row[0]]):
+        if status not in {"complete", "skipped"}:
+            return stage
+    return None
+
+
+def open_before(stages: list[tuple[str, str]], stage: str) -> tuple[str, ...]:
+    """Stages earlier than ``stage`` that are neither complete nor skipped."""
+    order = {name: index for index, name in enumerate(STAGES)}
+    return tuple(
+        name
+        for name, status in sorted(stages, key=lambda row: order[row[0]])
+        if order[name] < order[stage] and status not in {"complete", "skipped"}
     )
 
 

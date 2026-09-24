@@ -11,7 +11,7 @@ from __future__ import annotations
 import uuid
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from sqlalchemy import func, select
@@ -436,14 +436,18 @@ async def test_an_override_beats_the_arithmetic_and_keeps_both_on_the_record(
 
 
 async def test_the_next_review_is_scheduled_from_the_cadence(seeded: Seeded) -> None:
-    """Anchored to the schedule, not to the completion date, so a late review does
-    not push the next one late (ER ¶101)."""
+    """Booked from the first tiering, and moved by a retier only as far as the
+    cadence changed. Adding a whole cadence on every tiering pushed the review
+    further out each time somebody re-answered the questions."""
     first = await _tier(seeded, data_sensitivity=4, business_criticality=4, system_access=4)
-    assert first.next_reassessment_on is not None
     booked = first.next_reassessment_on
+    assert booked == datetime.now(UTC).date() + timedelta(days=180)
 
-    second = await _tier(seeded, data_sensitivity=4, business_criticality=4, system_access=4)
-    assert second.next_reassessment_on == booked + timedelta(days=180)
+    same = await _tier(seeded, data_sensitivity=4, business_criticality=4, system_access=4)
+    assert same.next_reassessment_on == booked, "the same tier again moves nothing"
+
+    lower = await _tier(seeded, fourth_party_reliance=2)
+    assert lower.next_reassessment_on == booked + timedelta(days=1095 - 180)
 
 
 async def test_a_stage_belonging_to_another_vendor_is_not_found(seeded: Seeded) -> None:
@@ -486,3 +490,89 @@ async def test_every_exit_check_is_answerable_now_that_all_four_modules_exist(
     by_stage = {s.stage: s for s in detail.stages}
     assert [c.code for c in by_stage["contracting"].blockers] == ["contracting.contract_linked"]
     assert "approval.decided" in {c.code for c in by_stage["approval"].blockers}
+
+
+async def _advance(seeded: Seeded, detail: VendorDetailView, name: str) -> VendorDetailView:
+    async with session_scope(seeded.tenant_id) as session:
+        return await vendor_service.advance_stage(
+            session,
+            tenant_id=seeded.tenant_id,
+            actor=seeded.actor,
+            vendor_id=seeded.vendor_id,
+            stage_id=_stage(detail, name),
+        )
+
+
+async def test_only_the_current_stage_can_move(seeded: Seeded) -> None:
+    """Without this any stage could be advanced in any order, and the gate reached
+    with the review never done."""
+    detail = await _tier(seeded, data_sensitivity=4, business_criticality=4, system_access=4)
+    by_stage = {s.stage: s for s in detail.stages}
+    assert "advance" in by_stage["intake"].allowed_transitions
+    assert by_stage["contracting"].allowed_transitions == []
+
+    for stage in ("contracting", "approval"):
+        async with session_scope(seeded.tenant_id) as session:
+            with pytest.raises(Conflict, match="in order"):
+                await vendor_service.advance_stage(
+                    session,
+                    tenant_id=seeded.tenant_id,
+                    actor=seeded.actor,
+                    vendor_id=seeded.vendor_id,
+                    stage_id=_stage(detail, stage),
+                )
+
+
+async def test_a_retier_that_adds_review_work_sends_the_engagement_back_to_it(
+    seeded: Seeded,
+) -> None:
+    """Low tier skipped the questionnaire and the engagement moved on. Raising the
+    tier re-opens that work, and the engagement goes back to it rather than
+    walking round it to the gate."""
+    detail = await _tier(seeded, fourth_party_reliance=2)
+    detail = await _advance(seeded, detail, "intake")
+    detail = await _advance(seeded, detail, "tiering")
+    assert {s.stage: s.status for s in detail.stages}["contracting"] == "in_progress"
+
+    detail = await _tier(seeded, data_sensitivity=4, business_criticality=4, system_access=4)
+    by_stage = {s.stage: s for s in detail.stages}
+    assert by_stage["tiering"].status == "complete", "work already done stays done"
+    assert by_stage["diligence"].status == "in_progress"
+    assert by_stage["contracting"].status == "not_started"
+    # Diligence is where the work is now: it takes the moves, and it waits for
+    # its questionnaire and the reviewers a critical tier needs before it advances.
+    assert "send_back" in by_stage["diligence"].allowed_transitions
+    assert {c.code for c in by_stage["diligence"].blockers} == {
+        "diligence.bank_selected",
+        "diligence.reviewers_assigned",
+    }
+    assert by_stage["contracting"].allowed_transitions == []
+    moved = detail.transitions[0]
+    assert (moved.action, moved.to_stage) == ("send_back", "diligence")
+    assert "critical" in (moved.reason or "")
+
+
+async def test_skipping_enters_the_next_stage(seeded: Seeded) -> None:
+    """A skip is a move like any other: the work lands somewhere rather than
+    sitting on no stage at all."""
+    detail = await _tier(seeded, data_sensitivity=4, business_criticality=4)
+    assert detail.engagements[0].tier == "high"
+    detail = await _advance(seeded, detail, "intake")
+    detail = await _advance(seeded, detail, "tiering")
+    # Retiered to medium while diligence is under way: medium skips diligence,
+    # and work already started is never re-planned, so it is skipped by hand.
+    detail = await _tier(seeded, data_sensitivity=2, business_criticality=2, system_access=2)
+    assert detail.engagements[0].tier == "medium"
+    async with session_scope(seeded.tenant_id) as session:
+        detail = await vendor_service.skip_stage(
+            session,
+            tenant_id=seeded.tenant_id,
+            actor=seeded.actor,
+            vendor_id=seeded.vendor_id,
+            stage_id=_stage(detail, "diligence"),
+            reason="Medium tier needs no diligence.",
+        )
+    by_stage = {s.stage: s for s in detail.stages}
+    assert by_stage["diligence"].status == "skipped"
+    assert by_stage["questionnaire"].status == "in_progress"
+    assert by_stage["questionnaire"].entered_at is not None

@@ -31,6 +31,7 @@ import { hasPermission } from "@/lib/auth/session";
 import {
   createQuestionnaire,
   duplicateQuestionnaire,
+  getQuestionnaire,
   getQuestionnaireLibrary,
   listQuestionnaires,
   setQuestionnaireStatus,
@@ -188,14 +189,18 @@ function QuestionnaireCard({ row, canManage }: { row: QuestionnaireSummary; canM
     onError: (e: unknown) => toast({ title: errorToast(e, "questionnaire"), tone: "danger" }),
   });
   const makeDefault = useMutation({
-    mutationFn: () =>
-      updateQuestionnaire(row.id, {
+    // The update replaces every field, and the card only carries a summary, so
+    // read the questionnaire's own tier bands first rather than wiping them.
+    mutationFn: async () => {
+      const full = await getQuestionnaire(row.id);
+      return updateQuestionnaire(row.id, {
         name: row.name,
         description: row.description,
         default_tiers: row.default_tiers,
-        tier_thresholds: {},
+        tier_thresholds: full.tier_thresholds,
         is_default: true,
-      }),
+      });
+    },
     onSuccess: () => {
       refresh();
       toast({ title: `${row.name} is now the default`, tone: "success" });

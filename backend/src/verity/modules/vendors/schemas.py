@@ -298,6 +298,8 @@ class SummaryOut(_Response):
     findings_overdue: int
     intake_pending: int
     highest_residual: list[ResidualVendorOut]
+    unowned: int = 0
+    critical_overdue: int = 0
 
 
 class TransitionOut(_Response):
@@ -312,6 +314,204 @@ class TransitionOut(_Response):
     reason: str | None
     actor: str | None
     occurred_at: UtcDateTime
+
+
+class ReviewerWrite(_Request):
+    membership_id: uuid.UUID
+    domain: str | None = None
+    """Null hands over the whole review rather than one domain."""
+
+
+class ReviewStatusWrite(_Request):
+    status: str
+    note: str | None = Field(default=None, max_length=4000)
+
+
+class ReviewerOut(_Response):
+    id: uuid.UUID
+    assessment_id: uuid.UUID
+    domain: str | None
+    domain_label: str
+    reviewer_membership_id: uuid.UUID
+    reviewer_name: str | None
+    status: str
+    note: str | None
+    decided_at: UtcDateTime | None
+
+
+class ReviewerPageOut(_Response):
+    items: list[ReviewerOut]
+
+
+class CommentWrite(_Request):
+    body: str = Field(min_length=1, max_length=8000)
+    question_id: uuid.UUID | None = None
+    visibility: str = "internal_only"
+    """``vendor_shared`` reaches the portal. Anything else never leaves the team."""
+
+
+class CommentOut(_Response):
+    id: uuid.UUID
+    assessment_id: uuid.UUID
+    question_id: uuid.UUID | None
+    author_name: str
+    author_type: str
+    visibility: str
+    body: str
+    created_at: UtcDateTime
+
+
+class CommentPageOut(_Response):
+    items: list[CommentOut]
+
+
+class AlertRuleWrite(_Request):
+    name: str = Field(min_length=1, max_length=200)
+    signal_types: list[str] = Field(default_factory=list)
+    tier_scope: list[str] = Field(default_factory=list)
+    min_severity: str = "medium"
+    action: str = "notify"
+    channel: str = "in_app"
+    is_enabled: bool = True
+
+
+class AlertRuleOut(AlertRuleWrite):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+
+
+class AlertRulePageOut(_Response):
+    items: list[AlertRuleOut]
+
+
+class DiscoveredAppWrite(_Request):
+    app_name: str = Field(min_length=1, max_length=300)
+    authorizing_users: int = Field(default=0, ge=0, le=1_000_000)
+    oauth_scopes: list[str] = Field(default_factory=list)
+    first_seen_on: date | None = None
+
+
+class DiscoveredAppTriageWrite(_Request):
+    disposition: str
+    vendor_id: uuid.UUID | None = None
+
+
+class DiscoveredAppOut(_Response):
+    id: uuid.UUID
+    app_name: str
+    authorizing_users: int
+    oauth_scopes: list[str]
+    first_seen_at: UtcDateTime | None
+    disposition: str
+    vendor_id: uuid.UUID | None
+    source: str
+    created_at: UtcDateTime
+
+
+class DiscoveredAppPageOut(_Response):
+    items: list[DiscoveredAppOut]
+
+
+class SignalWrite(_Request):
+    signal_type: str
+    title: str = Field(min_length=1, max_length=300)
+    severity: str = "medium"
+    detail: str = Field(default="", max_length=8000)
+    source_class: str = "internal"
+    observed_on: date | None = None
+    raise_finding: bool = False
+    """Raise a finding alongside it. A breach nobody has to act on is a note."""
+
+
+class SignalStatusWrite(_Request):
+    status: str
+
+
+class SignalOut(_Response):
+    id: uuid.UUID
+    vendor_id: uuid.UUID
+    signal_type: str
+    source_class: str
+    severity: str
+    title: str
+    detail: str
+    status: str
+    acknowledged_by_name: str | None
+    acknowledged_at: UtcDateTime | None
+    observed_at: UtcDateTime
+    created_at: UtcDateTime
+
+
+class SlaWrite(_Request):
+    contract_id: uuid.UUID
+    name: str = Field(min_length=1, max_length=300)
+    target: str = Field(min_length=1, max_length=300)
+    measurement: str | None = Field(default=None, max_length=300)
+    measured_on: date | None = None
+    cure_period_days: int | None = Field(default=None, ge=0, le=365)
+    status: str = "on_track"
+
+
+class SlaOut(_Response):
+    id: uuid.UUID
+    contract_id: uuid.UUID
+    contract_title: str | None
+    name: str
+    target: str
+    measurement: str | None
+    measured_on: date | None
+    cure_period_days: int | None
+    status: str
+
+
+class SlaPageOut(_Response):
+    items: list[SlaOut]
+
+
+class FindingWrite(_Request):
+    title: str = Field(min_length=1, max_length=300)
+    detail: str = Field(default="", max_length=8000)
+    severity: str = "medium"
+    engagement_id: uuid.UUID | None = None
+    is_blocking: bool = False
+    owner_membership_id: uuid.UUID | None = None
+
+
+class PolicyWrite(_Request):
+    tier_thresholds: dict[str, float]
+    cadence_days_by_tier: dict[str, int]
+    finding_sla_days_by_severity: dict[str, int]
+    stage_skip_matrix_by_tier: dict[str, list[str]]
+    required_reviewer_roles_by_tier: dict[str, list[str]]
+
+
+class PolicyOut(_Response):
+    """The policy in force, defaults filled in, plus what the editor may offer."""
+
+    tier_thresholds: dict[str, float]
+    cadence_days_by_tier: dict[str, int]
+    finding_sla_days_by_severity: dict[str, int]
+    stage_skip_matrix_by_tier: dict[str, list[str]]
+    required_reviewer_roles_by_tier: dict[str, list[str]]
+    is_customised: bool
+    skippable_stages: list[str]
+    roster_roles: list[str]
+
+
+class OffboardingOut(_Response):
+    """One exit, with its four evidenced steps."""
+
+    id: uuid.UUID
+    engagement_id: uuid.UUID | None
+    reason: str
+    access_revoked_at: UtcDateTime | None
+    data_return_attested_at: UtcDateTime | None
+    contract_provisions_reviewed: bool
+    final_payments_settled: bool
+    notes: str | None
+    completed_at: UtcDateTime | None
+    created_at: UtcDateTime
 
 
 class AssessmentSummaryOut(_Response):
@@ -347,6 +547,9 @@ class VendorDetailOut(VendorOut):
     subprocessors: list[SubprocessorOut] = Field(default_factory=list)
     assessments: list[AssessmentSummaryOut] = Field(default_factory=list)
     transitions: list[TransitionOut] = Field(default_factory=list)
+    offboardings: list[OffboardingOut] = Field(default_factory=list)
+    signals: list[SignalOut] = Field(default_factory=list)
+    slas: list[SlaOut] = Field(default_factory=list)
 
 
 class VendorPageOut(_Response):
@@ -467,6 +670,8 @@ class FindingPageOut(_Response):
 
 
 class AssessmentOut(_Response):
+    reviewers: list[ReviewerOut] = Field(default_factory=list)
+    comments: list[CommentOut] = Field(default_factory=list)
     id: uuid.UUID
     vendor_id: uuid.UUID
     engagement_id: uuid.UUID
@@ -506,6 +711,10 @@ class AcceptFindingWrite(_Request):
 
 class CloseFindingWrite(_Request):
     note: str | None = Field(default=None, max_length=4000)
+
+
+class ReopenFindingWrite(_Request):
+    reason: str = Field(min_length=1, max_length=4000)
 
 
 # -- the decision, the paperwork and the exit (section 4) ---------------------
@@ -576,6 +785,12 @@ class DocumentWrite(_Request):
     valid_until: date | None = None
     collection_status: str = "requested"
     evidence_id: uuid.UUID | None = None
+
+
+class DocumentEditWrite(DocumentWrite):
+    """An edit, with the reviewer's note when the status moves to reviewed."""
+
+    review_notes: str | None = Field(default=None, max_length=8000)
 
 
 class DocumentOut(_Response):
@@ -739,6 +954,14 @@ class RosterWrite(_Request):
 
 class RosterOut(_Response):
     roles: dict[str, list[uuid.UUID]]
+
+
+class NotifyWrite(_Request):
+    membership_ids: list[uuid.UUID] = Field(min_length=1, max_length=50)
+
+
+class NotifyOut(_Response):
+    sent: int
 
 
 class OffboardWrite(_Request):

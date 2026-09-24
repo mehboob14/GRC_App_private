@@ -13,6 +13,11 @@ import {
   DialogTitle,
   Icon,
   PersonSelect,
+  Select,
+  SelectContent,
+  SelectField,
+  SelectItem,
+  SelectTrigger,
   SeverityChip,
   Skeleton,
   StatusPill,
@@ -23,12 +28,21 @@ import {
   type Severity,
 } from "@/components/ui";
 import { cn } from "@/lib/cn";
+import { FINDING_SEVERITIES } from "../types";
 import { useAuth } from "@/lib/auth/auth-context";
 import { hasPermission } from "@/lib/auth/session";
 import { listRegisters, promoteFinding } from "@/features/risk/api";
 import { rememberedRegister } from "@/features/risk/components/risks-outlet";
 import { describeError, errorToast } from "@/lib/api/describe-error";
-import { acceptFinding, closeFinding, listFindings, listMembers, remediateFinding } from "../api";
+import {
+  acceptFinding,
+  closeFinding,
+  createFinding,
+  listFindings,
+  listMembers,
+  remediateFinding,
+  reopenFinding,
+} from "../api";
 import type { Finding } from "../types";
 import {
   daysUntil,
@@ -52,12 +66,16 @@ export function FindingsPanel({
   vendorId,
   canManage,
   canApprove,
+  engagementId = null,
 }: {
   vendorId: string;
   canManage: boolean;
   canApprove: boolean;
+  /** Attached to a finding raised by hand, so it holds that gate rather than all of them. */
+  engagementId?: string | null;
 }) {
   const queryClient = useQueryClient();
+  const [adding, setAdding] = useState(false);
   const query = useQuery({
     queryKey: ["vendor-findings", { vendor_id: vendorId }],
     queryFn: () => listFindings({ vendor_id: vendorId }),
@@ -83,7 +101,23 @@ export function FindingsPanel({
           ? `${blocking.length} blocking the approval gate`
           : undefined
       }
+      action={
+        canManage ? (
+          <Button variant="secondary" size="sm" onClick={() => setAdding(true)}>
+            <Icon name="plus" className="size-4" />
+            Raise finding
+          </Button>
+        ) : null
+      }
     >
+      <RaiseFindingDialog
+        open={adding}
+        onOpenChange={setAdding}
+        vendorId={vendorId}
+        engagementId={engagementId}
+        people={(membersQuery.data ?? []).map((m) => ({ id: m.membership_id, name: m.name }))}
+        onRaised={settle}
+      />
       {query.isError ? (
         <p className="text-body-md text-status-danger-text">
           {describeError(query.error, "findings").message}
@@ -113,6 +147,136 @@ export function FindingsPanel({
   );
 }
 
+function RaiseFindingDialog({
+  open,
+  onOpenChange,
+  vendorId,
+  engagementId,
+  people,
+  onRaised,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  vendorId: string;
+  engagementId: string | null;
+  people: { id: string; name: string }[];
+  onRaised: () => void;
+}) {
+  const { toast } = useToast();
+  const blank = { title: "", detail: "", severity: "medium", is_blocking: false };
+  const [form, setForm] = useState(blank);
+  const [owner, setOwner] = useState<string | null>(null);
+
+  const raise = useMutation({
+    mutationFn: () =>
+      createFinding(vendorId, {
+        title: form.title.trim(),
+        detail: form.detail.trim(),
+        severity: form.severity,
+        engagement_id: engagementId,
+        is_blocking: form.is_blocking,
+        owner_membership_id: owner,
+      }),
+    onSuccess: () => {
+      onRaised();
+      onOpenChange(false);
+      setForm(blank);
+      setOwner(null);
+      toast({ title: "Finding raised", tone: "success" });
+    },
+    onError: (e: unknown) => toast({ title: errorToast(e, "finding"), tone: "danger" }),
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent size="sm">
+        <DialogHeader>
+          <DialogTitle>Raise a finding</DialogTitle>
+          <DialogDescription>
+            For a gap no question asked about. Its due date comes from the severity.
+          </DialogDescription>
+        </DialogHeader>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (form.title.trim()) raise.mutate();
+          }}
+        >
+          <DialogBody className="space-y-3.5">
+            <TextField
+              label="What is wrong"
+              value={form.title}
+              onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+              placeholder="No MFA on their support console"
+              autoFocus
+            />
+            <TextArea
+              label="Detail"
+              optional
+              value={form.detail}
+              onChange={(e) => setForm((f) => ({ ...f, detail: e.target.value }))}
+              rows={3}
+              maxLength={8000}
+              placeholder="Raised on the quarterly call with their security lead."
+            />
+            <div className="grid gap-3.5 sm:grid-cols-2">
+              <SelectField label="Severity">
+                <Select
+                  value={form.severity}
+                  onValueChange={(v) => setForm((f) => ({ ...f, severity: v }))}
+                >
+                  <SelectTrigger aria-label="Severity" />
+                  <SelectContent>
+                    {FINDING_SEVERITIES.map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {s.charAt(0).toUpperCase() + s.slice(1)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </SelectField>
+              <div>
+                <p className="mb-1.5 font-sans text-label-sm text-text-secondary">Owner</p>
+                <PersonSelect
+                  people={people}
+                  value={owner}
+                  onChange={setOwner}
+                  placeholder="Unassigned"
+                  aria-label="Finding owner"
+                />
+              </div>
+            </div>
+            <label className="flex items-start gap-2.5 rounded-md border border-border bg-surface-sunken px-3 py-2.5">
+              <input
+                type="checkbox"
+                className="mt-1 size-4 accent-action-accent"
+                checked={form.is_blocking}
+                onChange={(e) => setForm((f) => ({ ...f, is_blocking: e.target.checked }))}
+              />
+              <span>
+                <span className="block font-sans text-label-sm text-text-primary">
+                  Holds the approval gate
+                </span>
+                <span className="block text-caption text-text-subtle">
+                  The vendor cannot be approved until this is fixed, accepted or closed.
+                </span>
+              </span>
+            </label>
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" loading={raise.isPending} disabled={!form.title.trim()}>
+              Raise finding
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function FindingItem({
   finding: f,
   vendorId,
@@ -134,6 +298,7 @@ function FindingItem({
   const canPromote = hasPermission(principal, "risks:manage");
   const [accepting, setAccepting] = useState(false);
   const [closing, setClosing] = useState(false);
+  const [reopening, setReopening] = useState(false);
   const [owner, setOwner] = useState<string | null>(f.owner_membership_id);
 
   const status = FINDING_STATUS_META[f.status] ?? { label: f.status, family: "neutral" as const };
@@ -166,9 +331,14 @@ function FindingItem({
         registers.find((r) => r.id === rememberedRegister() && r.status === "active") ??
         registers.find((r) => r.is_default) ??
         registers[0];
-      return promoteFinding(f.id, target.id);
+      return target ? promoteFinding(f.id, target.id) : null;
     },
     onSuccess: (risk) => {
+      if (risk === null) {
+        toast({ title: "Create a risk register first, then promote this finding.", tone: "neutral" });
+        navigate("/risks");
+        return;
+      }
       onSettled();
       toast({ title: `${risk.code} added to the risk register`, tone: "success" });
       navigate(`/risks/${risk.id}`);
@@ -193,6 +363,16 @@ function FindingItem({
       setClosing(false);
       onSettled();
       toast({ title: "Finding closed", tone: "success" });
+    },
+    onError: fail,
+  });
+
+  const reopen = useMutation({
+    mutationFn: (reason: string) => reopenFinding(vendorId, f.id, reason),
+    onSuccess: () => {
+      setReopening(false);
+      onSettled();
+      toast({ title: "Finding reopened", tone: "success" });
     },
     onError: fail,
   });
@@ -264,6 +444,15 @@ function FindingItem({
         </div>
       ) : null}
 
+      {settled && canManage ? (
+        <div className="mt-2.5">
+          <Button variant="ghost" size="sm" onClick={() => setReopening(true)}>
+            <Icon name="undo" className="size-3.5" />
+            Reopen
+          </Button>
+        </div>
+      ) : null}
+
       {!settled && canManage ? (
         <div className="mt-2.5 flex flex-wrap items-center gap-2">
           <div className="w-56">
@@ -323,8 +512,16 @@ function FindingItem({
         open={closing}
         onOpenChange={setClosing}
         title={f.title}
+        noteRequired={f.severity === "critical" || f.is_blocking}
         loading={close.isPending}
         onClose={(note) => close.mutate(note)}
+      />
+      <ReopenDialog
+        open={reopening}
+        onOpenChange={setReopening}
+        title={f.title}
+        loading={reopen.isPending}
+        onReopen={(reason) => reopen.mutate(reason)}
       />
     </li>
   );
@@ -393,12 +590,15 @@ function CloseDialog({
   open,
   onOpenChange,
   title,
+  noteRequired,
   loading,
   onClose,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
+  /** Critical and blocking findings say how they were resolved. */
+  noteRequired: boolean;
   loading: boolean;
   onClose: (note: string) => void;
 }) {
@@ -414,14 +614,15 @@ function CloseDialog({
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            onClose(note.trim());
+            if (!noteRequired || note.trim()) onClose(note.trim());
           }}
         >
           <DialogBody className="space-y-3.5">
             <p className="text-body-sm text-text-secondary">{title}</p>
             <TextArea
               label="What was done"
-              optional
+              optional={!noteRequired}
+              hint={noteRequired ? "Required for a critical or blocking finding." : undefined}
               value={note}
               onChange={(e) => setNote(e.target.value)}
               maxLength={4000}
@@ -432,8 +633,61 @@ function CloseDialog({
             <Button variant="secondary" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" loading={loading}>
+            <Button type="submit" loading={loading} disabled={noteRequired && !note.trim()}>
               Close finding
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function ReopenDialog({
+  open,
+  onOpenChange,
+  title,
+  loading,
+  onReopen,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  title: string;
+  loading: boolean;
+  onReopen: (reason: string) => void;
+}) {
+  const [reason, setReason] = useState("");
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent size="sm">
+        <DialogHeader>
+          <DialogTitle>Reopen this finding?</DialogTitle>
+          <DialogDescription>It goes back on the open list and counts again.</DialogDescription>
+        </DialogHeader>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (reason.trim()) onReopen(reason.trim());
+          }}
+        >
+          <DialogBody className="space-y-3.5">
+            <p className="text-body-sm text-text-secondary">{title}</p>
+            <TextArea
+              label="Why"
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              maxLength={4000}
+              placeholder="The fix was rolled back in the last release"
+              autoFocus
+            />
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" loading={loading} disabled={!reason.trim()}>
+              Reopen finding
             </Button>
           </DialogFooter>
         </form>

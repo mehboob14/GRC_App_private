@@ -1,5 +1,16 @@
 import { ApiError, apiFetch } from "@/lib/api/client";
 import type {
+  AlertRule,
+  AlertRuleInput,
+  Comment,
+  DiscoveredApp,
+  FindingInput,
+  Reviewer,
+  Policy,
+  PolicyInput,
+  SignalInput,
+  Sla,
+  SlaInput,
   Approver,
   Assessment,
   Condition,
@@ -144,6 +155,30 @@ export async function addContact(vendorId: string, body: ContactInput): Promise<
     method: "POST",
     body: JSON.stringify(body),
   });
+}
+
+export async function updateContact(
+  vendorId: string,
+  contactId: string,
+  body: ContactInput,
+): Promise<VendorDetail> {
+  return apiFetch<VendorDetail>(`/vendors/${vendorId}/contacts/${contactId}`, {
+    method: "PUT",
+    body: JSON.stringify(body),
+  });
+}
+
+/** Tell the people a stage waits on that it is theirs: in-app and by email. */
+export async function notifyStage(
+  vendorId: string,
+  stageId: string,
+  membershipIds: string[],
+): Promise<number> {
+  const out = await apiFetch<{ sent: number }>(`/vendors/${vendorId}/stages/${stageId}/notify`, {
+    method: "POST",
+    body: JSON.stringify({ membership_ids: membershipIds }),
+  });
+  return out.sent;
 }
 
 export type Member = { membership_id: string; name: string };
@@ -405,6 +440,165 @@ export async function closeFinding(
   });
 }
 
+export async function reopenFinding(
+  vendorId: string,
+  findingId: string,
+  reason: string,
+): Promise<Finding> {
+  return apiFetch<Finding>(`/vendors/${vendorId}/findings/${findingId}/reopen`, {
+    method: "POST",
+    body: JSON.stringify({ reason }),
+  });
+}
+
+/** Raise a finding by hand, for what no question asked about. */
+export async function createFinding(vendorId: string, body: FindingInput): Promise<Finding> {
+  return apiFetch<Finding>(`/vendors/${vendorId}/findings`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+// -- reviewing together -------------------------------------------------------
+
+export async function assignReviewer(
+  vendorId: string,
+  assessmentId: string,
+  body: { membership_id: string; domain: string | null },
+): Promise<Reviewer[]> {
+  const out = await apiFetch<{ items: Reviewer[] }>(
+    `/vendors/${vendorId}/assessments/${assessmentId}/reviewers`,
+    { method: "POST", body: JSON.stringify(body) },
+  );
+  return out.items;
+}
+
+/** `removed` takes it off them; the rest move their part along. */
+export async function setReviewStatus(
+  vendorId: string,
+  assessmentId: string,
+  reviewerId: string,
+  status: string,
+  note?: string | null,
+): Promise<Reviewer[]> {
+  const out = await apiFetch<{ items: Reviewer[] }>(
+    `/vendors/${vendorId}/assessments/${assessmentId}/reviewers/${reviewerId}`,
+    { method: "POST", body: JSON.stringify({ status, note: note ?? null }) },
+  );
+  return out.items;
+}
+
+export async function addComment(
+  vendorId: string,
+  assessmentId: string,
+  body: { body: string; visibility: string; question_id?: string | null },
+): Promise<Comment[]> {
+  const out = await apiFetch<{ items: Comment[] }>(
+    `/vendors/${vendorId}/assessments/${assessmentId}/comments`,
+    { method: "POST", body: JSON.stringify(body) },
+  );
+  return out.items;
+}
+
+// -- alert rules and shadow IT ------------------------------------------------
+
+export async function listAlertRules(): Promise<AlertRule[]> {
+  const out = await apiFetch<{ items: AlertRule[] }>("/vendors/alert-rules");
+  return out.items;
+}
+
+export async function saveAlertRule(
+  body: AlertRuleInput,
+  ruleId?: string,
+): Promise<AlertRule[]> {
+  const out = await apiFetch<{ items: AlertRule[] }>(
+    ruleId ? `/vendors/alert-rules/${ruleId}` : "/vendors/alert-rules",
+    { method: ruleId ? "PUT" : "POST", body: JSON.stringify(body) },
+  );
+  return out.items;
+}
+
+export async function deleteAlertRule(ruleId: string): Promise<AlertRule[]> {
+  const out = await apiFetch<{ items: AlertRule[] }>(`/vendors/alert-rules/${ruleId}`, {
+    method: "DELETE",
+  });
+  return out.items;
+}
+
+export async function listDiscoveredApps(): Promise<DiscoveredApp[]> {
+  const out = await apiFetch<{ items: DiscoveredApp[] }>("/vendors/discovered-apps");
+  return out.items;
+}
+
+export async function recordDiscoveredApp(body: {
+  app_name: string;
+  authorizing_users?: number;
+  oauth_scopes?: string[];
+  first_seen_on?: string | null;
+}): Promise<DiscoveredApp[]> {
+  const out = await apiFetch<{ items: DiscoveredApp[] }>("/vendors/discovered-apps", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+  return out.items;
+}
+
+export async function triageDiscoveredApp(
+  appId: string,
+  disposition: string,
+  vendorId?: string | null,
+): Promise<DiscoveredApp[]> {
+  const out = await apiFetch<{ items: DiscoveredApp[] }>(
+    `/vendors/discovered-apps/${appId}/triage`,
+    { method: "POST", body: JSON.stringify({ disposition, vendor_id: vendorId ?? null }) },
+  );
+  return out.items;
+}
+
+// -- monitoring signals -------------------------------------------------------
+
+export async function recordSignal(vendorId: string, body: SignalInput): Promise<VendorDetail> {
+  return apiFetch<VendorDetail>(`/vendors/${vendorId}/signals`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function setSignalStatus(
+  vendorId: string,
+  signalId: string,
+  status: "acknowledged" | "dismissed",
+): Promise<VendorDetail> {
+  return apiFetch<VendorDetail>(`/vendors/${vendorId}/signals/${signalId}/status`, {
+    method: "POST",
+    body: JSON.stringify({ status }),
+  });
+}
+
+// -- service levels -----------------------------------------------------------
+
+export async function saveSla(
+  vendorId: string,
+  body: SlaInput,
+  slaId?: string,
+): Promise<Sla[]> {
+  const out = await apiFetch<{ items: Sla[] }>(
+    slaId ? `/vendors/${vendorId}/slas/${slaId}` : `/vendors/${vendorId}/slas`,
+    { method: slaId ? "PUT" : "POST", body: JSON.stringify(body) },
+  );
+  return out.items;
+}
+
+// -- the tiering policy -------------------------------------------------------
+
+export async function getPolicy(): Promise<Policy> {
+  return apiFetch<Policy>("/vendors/policy");
+}
+
+export async function updatePolicy(body: PolicyInput): Promise<Policy> {
+  return apiFetch<Policy>("/vendors/policy", { method: "PUT", body: JSON.stringify(body) });
+}
+
 // -- the decision -------------------------------------------------------------
 
 export async function listApprovers(vendorId: string, engagementId: string): Promise<Approver[]> {
@@ -453,11 +647,59 @@ export async function reviewSocReport(vendorId: string, body: SocReviewInput): P
   });
 }
 
+export async function updateDocument(
+  vendorId: string,
+  documentId: string,
+  body: DocumentInput & { review_notes?: string | null },
+): Promise<VendorDetail> {
+  return apiFetch<VendorDetail>(`/vendors/${vendorId}/documents/${documentId}`, {
+    method: "PUT",
+    body: JSON.stringify(body),
+  });
+}
+
+/** The file itself, through the shared evidence store. */
+export async function attachDocumentFile(
+  vendorId: string,
+  documentId: string,
+  file: File,
+): Promise<VendorDetail> {
+  const form = new FormData();
+  form.append("file", file);
+  return apiFetch<VendorDetail>(`/vendors/${vendorId}/documents/${documentId}/file`, {
+    method: "POST",
+    body: form,
+  });
+}
+
 export async function addContract(vendorId: string, body: ContractInput): Promise<Contract> {
   return apiFetch<Contract>(`/vendors/${vendorId}/contracts`, {
     method: "POST",
     body: JSON.stringify(body),
   });
+}
+
+export async function updateContract(
+  vendorId: string,
+  contractId: string,
+  body: ContractInput,
+): Promise<Contract> {
+  return apiFetch<Contract>(`/vendors/${vendorId}/contracts/${contractId}`, {
+    method: "PUT",
+    body: JSON.stringify(body),
+  });
+}
+
+/** Kept on the record as removed, and returns the whole list. */
+export async function removeSubprocessor(
+  vendorId: string,
+  subprocessorId: string,
+): Promise<Subprocessor[]> {
+  const out = await apiFetch<{ items: Subprocessor[] }>(
+    `/vendors/${vendorId}/subprocessors/${subprocessorId}/remove`,
+    { method: "POST" },
+  );
+  return out.items;
 }
 
 /** Returns the whole subprocessor list, not just the row that was added. */
@@ -503,6 +745,10 @@ export async function setRosterRole(role: string, membershipId: string): Promise
     method: "POST",
     body: JSON.stringify({ role, membership_id: membershipId }),
   });
+}
+
+export async function removeRosterRole(role: string, membershipId: string): Promise<Roster> {
+  return apiFetch<Roster>(`/vendors/roster/${role}/${membershipId}`, { method: "DELETE" });
 }
 
 // -- the exit -----------------------------------------------------------------

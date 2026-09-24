@@ -36,7 +36,7 @@ from __future__ import annotations
 
 import asyncio
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any, Final
 
 from sqlalchemy import text
@@ -185,6 +185,15 @@ async def _flush_notification_emails() -> dict[str, Any]:
     return {"emails_sent": sent}
 
 
+_VENDOR_RENOTIFY_DAYS: Final = 30
+"""A due review or a lapsing document nags again after this long, rather than once
+per vendor forever: the second review three years on deserves its own nudge."""
+
+
+def _renotify_after() -> datetime:
+    return datetime.now(UTC) - timedelta(days=_VENDOR_RENOTIFY_DAYS)
+
+
 @celery_app.task(name="verity.workers.tasks.queue_vendor_reassessments")
 def queue_vendor_reassessments() -> dict[str, Any]:
     """Tell owners which vendor reviews have come round.
@@ -226,6 +235,7 @@ async def _queue_vendor_reassessments() -> dict[str, Any]:
                         object_type="vendor",
                         object_id=vendor_id,
                         email=True,
+                        since=_renotify_after(),
                     )
                 )
     logger.info("worker.queue_vendor_reassessments", notifications_written=written)
@@ -274,6 +284,7 @@ async def _sweep_vendor_documents() -> dict[str, Any]:
                         object_type="vendor",
                         object_id=document.vendor_id,
                         email=True,
+                        since=_renotify_after(),
                     )
                 )
     logger.info("worker.sweep_vendor_documents", notifications_written=written)
@@ -303,6 +314,29 @@ async def _sweep_vendor_slas() -> dict[str, Any]:
     return {"findings_raised": raised}
 
 
+@celery_app.task(name="verity.workers.tasks.expire_vendor_acceptances")
+def expire_vendor_acceptances() -> dict[str, Any]:
+    """Reopen vendor findings whose accepted risk has lapsed.
+
+    Writes, like the risk register's expiry: an acceptance is time-boxed so that
+    somebody looks again, and leaving it accepted past its date would keep the
+    approval gate open on a risk nobody renewed. Idempotent, because a reopened
+    finding is no longer accepted.
+    """
+    return asyncio.run(_expire_vendor_acceptances())
+
+
+async def _expire_vendor_acceptances() -> dict[str, Any]:
+    from verity.modules.vendors.service import vendor_service  # noqa: PLC0415
+
+    reopened = 0
+    for tenant_id in await _active_tenant_ids():
+        async with session_scope(tenant_id) as session:
+            reopened += await vendor_service.expire_acceptances(session, tenant_id=tenant_id)
+    logger.info("worker.expire_vendor_acceptances", findings_reopened=reopened)
+    return {"findings_reopened": reopened}
+
+
 @celery_app.task(name="verity.workers.tasks.sweep_risk_register")
 def sweep_risk_register() -> dict[str, Any]:
     """Expire lapsed risk acceptances and nudge owners of overdue reviews.
@@ -327,3 +361,31 @@ async def _sweep_risk_register() -> dict[str, Any]:
         "worker.sweep_risk_register", acceptances_expired=expired, reviews_notified=notified
     )
     return {"acceptances_expired": expired, "reviews_notified": notified}
+
+
+@celery_app.task(name="verity.workers.tasks.run_connector_checks")
+def run_connector_checks() -> dict[str, Any]:
+    """Run every connection whose checks are due (daily), one tenant at a time.
+
+    Idempotent: a connection that ran in the last 20 hours is not due, and a
+    connection already running is skipped by the row lock in the service.
+    A provider outage is recorded on the run as ``error`` (rule 7), never ``fail``.
+    """
+    return asyncio.run(_run_connector_checks())
+
+
+async def _run_connector_checks() -> dict[str, Any]:
+    from verity.modules.audit.service import System  # noqa: PLC0415
+    from verity.modules.connectors.service import connector_service  # noqa: PLC0415
+
+    runs = 0
+    for tenant_id in await _active_tenant_ids():
+        async with session_scope(tenant_id) as session:
+            due = await connector_service.due_connection_ids(session, tenant_id=tenant_id)
+        for connection_id in due:
+            ran = await connector_service.run(
+                tenant_id=tenant_id, connection_id=connection_id, trigger="schedule", actor=System()
+            )
+            runs += int(ran is not None)
+    logger.info("worker.run_connector_checks", runs=runs)
+    return {"runs": runs}

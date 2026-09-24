@@ -24,19 +24,28 @@ from verity.core.errors import Conflict, InvalidInput
 from verity.modules.audit.service import Membership
 from verity.modules.tasks.service import task_service
 from verity.modules.vendors import lifecycle
-from verity.modules.vendors.models import VendorApproval, VendorOffboarding
+from verity.modules.vendors.models import (
+    Vendor,
+    VendorApproval,
+    VendorFinding,
+    VendorOffboarding,
+    VendorStage,
+)
 from verity.modules.vendors.service import (
     ConditionInput,
     ContractInput,
     DocumentInput,
+    EngagementInput,
     IntakeInput,
     OffboardingCompletion,
     SocReviewInput,
     SubprocessorInput,
     TieringAnswers,
+    VendorDetailView,
     VendorInput,
     vendor_service,
 )
+from verity.shared.ids import uuid7
 
 pytestmark = [pytest.mark.integration]
 
@@ -117,7 +126,9 @@ async def _make(company: str, email: str, *, answers: TieringAnswers) -> Ready:
         workspace,
         email=f"reviewer@{email}",
         full_name="Robin Shaw",
-        role_name="Security Officer",
+        # An approver has to hold vendors:approve, and of the built-in roles only
+        # Admin does. The picker bars everyone else, which is tested below.
+        role_name="Admin",
     )
     actor = Membership(workspace.membership_id)
     async with session_scope(workspace.tenant_id) as session:
@@ -789,44 +800,91 @@ async def test_offboarding_without_a_reason_is_refused(ready: Ready) -> None:
 # -- reassessment --------------------------------------------------------------
 
 
-async def test_a_new_cycle_lays_out_fresh_stages_and_keeps_the_old_ones(
-    ready: Ready,
-) -> None:
+async def _go_live(ready: Ready) -> VendorDetailView:
+    """Approve the engagement at the gate and walk it through onboarding."""
     async with session_scope(ready.tenant_id) as session:
-        before = await vendor_service.get_vendor(
-            session, tenant_id=ready.tenant_id, vendor_id=ready.vendor_id
+        detail = await vendor_service.decide(
+            session,
+            tenant_id=ready.tenant_id,
+            actor=ready.other,
+            vendor_id=ready.vendor_id,
+            engagement_id=ready.engagement_id,
+            decision="approve",
+            rationale="Reviewed.",
         )
-        detail = await vendor_service.open_reassessment(
+        for name in ("approval", "onboarding"):
+            detail = await vendor_service.advance_stage(
+                session,
+                tenant_id=ready.tenant_id,
+                actor=ready.other,
+                vendor_id=ready.vendor_id,
+                stage_id=next(s.id for s in detail.stages if s.stage == name),
+            )
+    return detail
+
+
+async def _reassess(ready: Ready) -> VendorDetailView:
+    async with session_scope(ready.tenant_id) as session:
+        return await vendor_service.open_reassessment(
             session,
             tenant_id=ready.tenant_id,
             actor=ready.owner,
             vendor_id=ready.vendor_id,
             engagement_id=ready.engagement_id,
         )
+
+
+async def test_a_new_cycle_lays_out_fresh_stages_and_keeps_the_old_ones(
+    ready: Ready,
+) -> None:
+    before = await _go_live(ready)
+    assert before.engagements[0].status == "active"
+    detail = await _reassess(ready)
     assert {s.cycle for s in before.stages} == {1}
     assert {s.cycle for s in detail.stages} == {2}
     assert len(detail.stages) == len(lifecycle.STAGES)
+    # The old cycle is closed, not left with a stage in progress forever.
+    async with session_scope(ready.tenant_id) as session:
+        old = (await session.execute(select(VendorStage).where(VendorStage.cycle == 1))).scalars()
+        statuses = {row.stage: row.status for row in old}
+    assert "in_progress" not in statuses.values()
+    assert statuses["reassessment"] == "complete"
+
+
+async def test_the_next_review_waits_for_this_one_to_pass_the_gate(ready: Ready) -> None:
+    """Opening a new cycle mid-review would hide the review in flight."""
+    async with session_scope(ready.tenant_id) as session:
+        with pytest.raises(Conflict, match="still under way"):
+            await vendor_service.open_reassessment(
+                session,
+                tenant_id=ready.tenant_id,
+                actor=ready.owner,
+                vendor_id=ready.vendor_id,
+                engagement_id=ready.engagement_id,
+            )
 
 
 async def test_a_late_review_does_not_push_the_next_one_late(ready: Ready) -> None:
     """Reviews drifting a little further out every cycle is the failure this rule
     exists to prevent (ER 101)."""
+    await _go_live(ready)
+    due = _today() - timedelta(days=40)
     async with session_scope(ready.tenant_id) as session:
-        first = await vendor_service.get_vendor(
-            session, tenant_id=ready.tenant_id, vendor_id=ready.vendor_id
-        )
-        booked = first.next_reassessment_on
-        assert booked is not None
-        detail = await vendor_service.open_reassessment(
-            session,
-            tenant_id=ready.tenant_id,
-            actor=ready.owner,
-            vendor_id=ready.vendor_id,
-            engagement_id=ready.engagement_id,
-        )
-    # Anchored to the previous due date, not to today. Low tier reviews every
-    # three years, which is the proportionality the tier is *for*.
-    assert detail.next_reassessment_on == booked + timedelta(days=_LOW_TIER_CADENCE_DAYS)
+        vendor = await session.get(Vendor, ready.vendor_id)
+        assert vendor is not None
+        vendor.next_reassessment_on = due
+    detail = await _reassess(ready)
+    # Anchored to the date it was due, not to today. Low tier reviews every three
+    # years, which is the proportionality the tier is *for*.
+    assert detail.next_reassessment_on == due + timedelta(days=_LOW_TIER_CADENCE_DAYS)
+
+
+async def test_an_early_review_books_the_next_one_from_today(ready: Ready) -> None:
+    """Anchoring an early review on its due date would stretch the gap between two
+    reviews past the cadence."""
+    await _go_live(ready)
+    detail = await _reassess(ready)
+    assert detail.next_reassessment_on == _today() + timedelta(days=_LOW_TIER_CADENCE_DAYS)
 
 
 async def test_the_reassessment_queue_finds_what_is_due(ready: Ready) -> None:
@@ -916,7 +974,7 @@ async def test_the_roster_resolves_a_role_to_a_person(critical: Ready) -> None:
     reviewers = next(c for c in diligence.checks if c.code == "diligence.reviewers_assigned")
     # Critical tier wants security, privacy and legal; only security is rostered.
     assert reviewers.satisfied is False
-    assert "privacy" in (reviewers.detail or "")
+    assert "Privacy" in (reviewers.detail or "")
 
 
 async def test_setting_a_roster_role_twice_is_idempotent(ready: Ready) -> None:
@@ -936,3 +994,298 @@ async def test_setting_a_roster_role_twice_is_idempotent(ready: Ready) -> None:
             membership_id=ready.other_membership_id,
         )
     assert roster["legal"] == (ready.other_membership_id,)
+
+
+# -- the gate refuses an unsupported "yes" --------------------------------------
+
+
+async def _finding(
+    ready: Ready,
+    *,
+    engagement_id: uuid.UUID | None,
+    severity: str = "high",
+    blocking: bool = True,
+) -> uuid.UUID:
+    async with session_scope(ready.tenant_id) as session:
+        finding = VendorFinding(
+            id=uuid7(),
+            tenant_id=ready.tenant_id,
+            vendor_id=ready.vendor_id,
+            engagement_id=engagement_id,
+            title="No MFA on administrator accounts",
+            finding_source="assessment",
+            severity=severity,
+            is_blocking=blocking,
+        )
+        session.add(finding)
+        await session.flush()
+        return finding.id
+
+
+async def _decide(ready: Ready, decision: str, rationale: str = "Reviewed.") -> VendorDetailView:
+    async with session_scope(ready.tenant_id) as session:
+        return await vendor_service.decide(
+            session,
+            tenant_id=ready.tenant_id,
+            actor=ready.other,
+            vendor_id=ready.vendor_id,
+            engagement_id=ready.engagement_id,
+            decision=decision,
+            rationale=rationale,
+        )
+
+
+async def test_the_gate_refuses_an_approval_while_a_blocking_finding_is_open(
+    ready: Ready,
+) -> None:
+    """A non-negotiable answered badly blocks, whatever its severity, and the gate
+    refuses the "yes" rather than recording it and failing the exit later."""
+    finding_id = await _finding(ready, engagement_id=ready.engagement_id)
+    with pytest.raises(Conflict, match="still open"):
+        await _decide(ready, "approve")
+
+    # Saying "not yet" is always allowed.
+    deferred = await _decide(ready, "defer", "Waiting on the MFA fix.")
+    assert deferred.approvals[0].decision == "defer"
+
+    # Closing a blocking finding needs a note, and closing it clears the way.
+    async with session_scope(ready.tenant_id) as session:
+        with pytest.raises(InvalidInput, match="how this was resolved"):
+            await vendor_service.close_finding(
+                session,
+                tenant_id=ready.tenant_id,
+                actor=ready.owner,
+                vendor_id=ready.vendor_id,
+                finding_id=finding_id,
+            )
+        await vendor_service.close_finding(
+            session,
+            tenant_id=ready.tenant_id,
+            actor=ready.owner,
+            vendor_id=ready.vendor_id,
+            finding_id=finding_id,
+            note="MFA enforced for every administrator; screenshot on file.",
+        )
+    approved = await _decide(ready, "approve", "MFA now enforced.")
+    assert approved.approvals[0].decision == "approve"
+
+
+async def test_a_blocking_finding_on_another_engagement_does_not_hold_this_gate(
+    ready: Ready,
+) -> None:
+    """One department's review is not held by another's. Vendor-wide findings,
+    with no engagement named, still hold every gate."""
+    async with session_scope(ready.tenant_id) as session:
+        detail = await vendor_service.add_engagement(
+            session,
+            tenant_id=ready.tenant_id,
+            actor=ready.owner,
+            vendor_id=ready.vendor_id,
+            data=EngagementInput(name="Marketing analytics"),
+        )
+    elsewhere = next(e.id for e in detail.engagements if e.id != ready.engagement_id)
+    await _finding(ready, engagement_id=elsewhere)
+    approved = await _decide(ready, "approve")
+    assert approved.approvals[0].decision == "approve"
+
+
+async def test_a_vendor_wide_blocking_finding_holds_the_gate(ready: Ready) -> None:
+    await _finding(ready, engagement_id=None, severity="critical", blocking=False)
+    with pytest.raises(Conflict, match="still open"):
+        await _decide(ready, "approve")
+
+
+async def test_a_later_reject_withdraws_an_earlier_approval(ready: Ready) -> None:
+    """Counting approvals alone let a later "no" sit on the record while the gate
+    still opened on the "yes" before it."""
+    await _decide(ready, "approve")
+    detail = await _decide(ready, "reject", "Their breach notice changes this.")
+    gate = next(s for s in detail.stages if s.stage == "approval")
+    decided = next(c for c in gate.checks if c.code == "approval.decided")
+    assert decided.satisfied is False
+    assert "rejected" in (decided.detail or "")
+    assert "advance" not in gate.allowed_transitions
+    assert detail.engagements[0].status == "on_hold"
+
+
+async def test_the_picker_bars_a_member_who_cannot_approve_vendors(ready: Ready) -> None:
+    """The route refuses them anyway. The picker says so before a rationale is
+    written, and lists the people who can decide first."""
+    invited = await invite_directly(
+        ready.workspace,
+        email="analyst@alpha.example",
+        full_name="Sam Lee",
+        role_name="Security Officer",
+    )
+    async with session_scope(ready.tenant_id) as session:
+        approvers = await vendor_service.approvers(
+            session, tenant_id=ready.tenant_id, engagement_id=ready.engagement_id
+        )
+    sam = next(a for a in approvers if a.membership_id == invited.member.membership_id)
+    assert sam.disqualified_reason == "does not hold the vendor approval permission"
+    assert approvers[0].disqualified_reason is None
+
+
+async def test_a_lapsed_acceptance_reopens_the_finding(ready: Ready) -> None:
+    """Leaving a finding accepted past its date is the platform asserting a
+    decision nobody renewed."""
+    finding_id = await _finding(ready, engagement_id=ready.engagement_id)
+    async with session_scope(ready.tenant_id) as session:
+        await vendor_service.accept_finding(
+            session,
+            tenant_id=ready.tenant_id,
+            actor=ready.other,
+            vendor_id=ready.vendor_id,
+            finding_id=finding_id,
+            until=_today() + timedelta(days=30),
+            rationale="Compensating control: admin access only from the office network.",
+        )
+    async with session_scope(ready.tenant_id) as session:
+        row = await session.get(VendorFinding, finding_id)
+        assert row is not None
+        row.accepted_until = _today() - timedelta(days=1)  # the clock moves on
+    async with session_scope(ready.tenant_id) as session:
+        assert await vendor_service.expire_acceptances(session, tenant_id=ready.tenant_id) == 1
+    async with session_scope(ready.tenant_id) as session:
+        finding = await vendor_service.get_finding(
+            session, tenant_id=ready.tenant_id, finding_id=finding_id
+        )
+        assert await vendor_service.expire_acceptances(session, tenant_id=ready.tenant_id) == 0
+    assert finding.status == "open"
+    assert finding.accepted_until is None
+
+
+async def test_a_closed_finding_can_be_reopened_with_a_reason(ready: Ready) -> None:
+    finding_id = await _finding(ready, engagement_id=ready.engagement_id, blocking=False)
+    async with session_scope(ready.tenant_id) as session:
+        await vendor_service.close_finding(
+            session,
+            tenant_id=ready.tenant_id,
+            actor=ready.owner,
+            vendor_id=ready.vendor_id,
+            finding_id=finding_id,
+        )
+        with pytest.raises(Conflict, match="already closed"):
+            await vendor_service.close_finding(
+                session,
+                tenant_id=ready.tenant_id,
+                actor=ready.owner,
+                vendor_id=ready.vendor_id,
+                finding_id=finding_id,
+            )
+        reopened = await vendor_service.reopen_finding(
+            session,
+            tenant_id=ready.tenant_id,
+            actor=ready.owner,
+            vendor_id=ready.vendor_id,
+            finding_id=finding_id,
+            reason="The fix was rolled back.",
+        )
+    assert reopened.status == "open"
+    assert reopened.closed_at is None
+
+
+# -- the exit, end to end --------------------------------------------------------
+
+
+async def test_an_exit_runs_once_closes_the_review_and_lists_its_steps(ready: Ready) -> None:
+    async with session_scope(ready.tenant_id) as session:
+        detail = await vendor_service.offboard(
+            session,
+            tenant_id=ready.tenant_id,
+            actor=ready.owner,
+            vendor_id=ready.vendor_id,
+            engagement_id=None,
+            reason="Contract not renewed.",
+        )
+    assert detail.lifecycle_status == "offboarding"
+    assert [o.reason for o in detail.offboardings] == ["Contract not renewed."]
+    exit_stage = next(s for s in detail.stages if s.stage == "offboarding")
+    assert exit_stage.status == "in_progress"
+    # The review is closed: nothing moves, and nothing can be approved.
+    assert all(s.allowed_transitions == [] for s in detail.stages)
+    with pytest.raises(Conflict, match="offboarded"):
+        await _decide(ready, "approve")
+
+    async with session_scope(ready.tenant_id) as session:
+        with pytest.raises(Conflict, match="already under way"):
+            await vendor_service.offboard(
+                session,
+                tenant_id=ready.tenant_id,
+                actor=ready.owner,
+                vendor_id=ready.vendor_id,
+                engagement_id=None,
+                reason="Again.",
+            )
+
+    everything = OffboardingCompletion(
+        access_revoked=True,
+        data_returned=True,
+        contract_provisions_reviewed=True,
+        final_payments_settled=True,
+        complete=True,
+    )
+    async with session_scope(ready.tenant_id) as session:
+        done = await vendor_service.complete_offboarding(
+            session,
+            tenant_id=ready.tenant_id,
+            actor=ready.owner,
+            vendor_id=ready.vendor_id,
+            offboarding_id=detail.offboardings[0].id,
+            data=everything,
+        )
+    assert done.lifecycle_status == "archived"
+    assert done.offboardings[0].completed_at is not None
+    assert next(s for s in done.stages if s.stage == "offboarding").status == "complete"
+
+    async with session_scope(ready.tenant_id) as session:
+        with pytest.raises(Conflict, match="already complete"):
+            await vendor_service.complete_offboarding(
+                session,
+                tenant_id=ready.tenant_id,
+                actor=ready.owner,
+                vendor_id=ready.vendor_id,
+                offboarding_id=detail.offboardings[0].id,
+                data=everything,
+            )
+
+
+async def test_ending_one_engagement_does_not_end_the_vendor(ready: Ready) -> None:
+    """Rolled up to the vendor while it runs, and released when it is done: the
+    vendor reads what its remaining engagement says, not "offboarding" forever."""
+    async with session_scope(ready.tenant_id) as session:
+        detail = await vendor_service.add_engagement(
+            session,
+            tenant_id=ready.tenant_id,
+            actor=ready.owner,
+            vendor_id=ready.vendor_id,
+            data=EngagementInput(name="Marketing analytics"),
+        )
+        leaving = next(e.id for e in detail.engagements if e.id != ready.engagement_id)
+        started = await vendor_service.offboard(
+            session,
+            tenant_id=ready.tenant_id,
+            actor=ready.owner,
+            vendor_id=ready.vendor_id,
+            engagement_id=leaving,
+            reason="Marketing moved to another tool.",
+        )
+    assert started.lifecycle_status == "offboarding"
+    async with session_scope(ready.tenant_id) as session:
+        done = await vendor_service.complete_offboarding(
+            session,
+            tenant_id=ready.tenant_id,
+            actor=ready.owner,
+            vendor_id=ready.vendor_id,
+            offboarding_id=started.offboardings[0].id,
+            data=OffboardingCompletion(
+                access_revoked=True,
+                data_returned=True,
+                contract_provisions_reviewed=True,
+                final_payments_settled=True,
+                complete=True,
+            ),
+        )
+    by_id = {e.id: e.status for e in done.engagements}
+    assert by_id[leaving] == "archived"
+    assert done.lifecycle_status == by_id[ready.engagement_id] == "under_review"

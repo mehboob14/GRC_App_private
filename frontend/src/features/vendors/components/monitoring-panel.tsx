@@ -2,21 +2,27 @@ import { Badge, Icon, StatusPill } from "@/components/ui";
 import type { VendorDetail } from "../types";
 import { daysUntil, fmtCountdown, fmtDate, TIER_META } from "../tokens";
 import { NotConnected, Panel } from "./panel";
+import { SignalsPanel } from "./signals-panel";
 
 /**
  * Continuous monitoring, and an honest account of how much of it is running.
  *
- * Three of the four things this tab would show need a data source nobody has
- * connected: breach and news signals, an external security scorecard, and the
- * discovered-app feed. Each says so in its own words rather than rendering an
- * empty table, because an empty table is a claim — it reads as "we looked and
- * there is nothing", which about a vendor's breach history is a dangerous thing
- * to say by accident.
- *
- * The fourth is real: the reassessment clock is derived from the tier and runs
- * whether or not anything is connected.
+ * Two of these are real: the reassessment clock, which the tier drives, and
+ * signals, which people record by hand until the feeds land. The other two need
+ * a data source nobody has connected, and each says so in its own words rather
+ * than rendering an empty table: an empty table is a claim, and "we looked and
+ * there is nothing" about a vendor's breach history is a dangerous thing to say
+ * by accident.
  */
-export function MonitoringPanel({ vendor }: { vendor: VendorDetail }) {
+export function MonitoringPanel({
+  vendor,
+  canManage,
+  onApply,
+}: {
+  vendor: VendorDetail;
+  canManage: boolean;
+  onApply: (next: VendorDetail) => void;
+}) {
   const due = daysUntil(vendor.next_reassessment_on);
   const overdue = due !== null && due < 0;
   const soon = due !== null && due >= 0 && due <= 30;
@@ -55,17 +61,12 @@ export function MonitoringPanel({ vendor }: { vendor: VendorDetail }) {
         )}
       </Panel>
 
-      <Panel title="Signals" description="Breaches, outages and vendor news.">
-        <NotConnected
-          what="No data source connected"
-          why="Nothing has been checked, so this is not a clean bill of health."
-        />
-      </Panel>
+      <SignalsPanel vendor={vendor} canManage={canManage} onApply={onApply} />
 
       <Panel title="Security scorecard">
         <NotConnected
           what="No scorecard provider connected"
-          why="The residual grade uses questionnaire answers only."
+          why="The residual grade uses questionnaire answers and recorded signals only."
         />
       </Panel>
 

@@ -624,12 +624,14 @@ async def test_an_accepted_risk_stops_counting_as_open(issued: Issued) -> None:
         before = await vendor_service.open_critical_count(
             session, tenant_id=issued.tenant_id, vendor_id=issued.vendor_id
         )
+        # What holds the gate: critical findings, and any finding a
+        # non-negotiable question marked blocking, whatever its severity.
         criticals = [
             f
             for f in await vendor_service.list_findings(
                 session, tenant_id=issued.tenant_id, vendor_id=issued.vendor_id
             )
-            if f.severity == "critical"
+            if f.severity == "critical" or f.is_blocking
         ]
     assert before == len(criticals) > 0
 
@@ -730,3 +732,45 @@ async def test_a_review_sent_from_the_shipped_bank_still_answers_and_scores() ->
     await _answer_all(legacy, "yes")
     submitted = await vendor_portal_service.submit(token, client_host=HOST)
     assert submitted.status == "scored"
+
+
+async def test_offboarding_revokes_the_portal_link(issued: Issued) -> None:
+    """A portal link is a credential held outside the organisation. It must not
+    outlive the relationship it was issued for."""
+    await vendor_portal_service.open_portal(issued.token, client_host=HOST)
+    async with session_scope(issued.tenant_id) as session:
+        await vendor_service.offboard(
+            session,
+            tenant_id=issued.tenant_id,
+            actor=issued.actor,
+            vendor_id=issued.vendor_id,
+            engagement_id=None,
+            reason="Contract ended.",
+        )
+    with pytest.raises(NotFound):
+        await vendor_portal_service.open_portal(issued.token, client_host=HOST)
+    async with session_scope(issued.tenant_id) as session:
+        view = await vendor_service.get_assessment(
+            session, tenant_id=issued.tenant_id, assessment_id=issued.assessment_id
+        )
+        with pytest.raises(Conflict, match="offboarded"):
+            await vendor_service.issue_questionnaire(
+                session,
+                tenant_id=issued.tenant_id,
+                actor=issued.actor,
+                vendor_id=issued.vendor_id,
+                engagement_id=issued.engagement_id,
+            )
+    assert view.status == "expired"
+
+
+async def test_a_questionnaire_is_scored_only_once_submitted(issued: Issued) -> None:
+    """Scoring an unsubmitted questionnaire locked the vendor out of answering it."""
+    async with session_scope(issued.tenant_id) as session:
+        with pytest.raises(Conflict, match="not submitted"):
+            await vendor_service.score_assessment(
+                session,
+                tenant_id=issued.tenant_id,
+                actor=issued.actor,
+                assessment_id=issued.assessment_id,
+            )

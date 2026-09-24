@@ -28,7 +28,7 @@ import {
   useToast,
 } from "@/components/ui";
 import { errorToast } from "@/lib/api/describe-error";
-import { addSubprocessor } from "../api";
+import { addSubprocessor, removeSubprocessor } from "../api";
 import type { VendorDetail } from "../types";
 import { PROVENANCE_META } from "../tokens";
 import { Panel } from "./panel";
@@ -51,9 +51,22 @@ export function SubprocessorsPanel({
   canManage: boolean;
   onApply: (next: VendorDetail) => void;
 }) {
+  const { toast } = useToast();
   const [adding, setAdding] = useState(false);
-  const rows = vendor.subprocessors;
+  // Removed ones stay on the record ("who processed our data, and when") but
+  // leave the working list.
+  const rows = vendor.subprocessors.filter((s) => s.status !== "removed");
+  const removedCount = vendor.subprocessors.length - rows.length;
   const shared = rows.filter((s) => s.also_used_by_vendors > 0);
+
+  const remove = useMutation({
+    mutationFn: (id: string) => removeSubprocessor(vendor.id, id),
+    onSuccess: (items) => {
+      onApply({ ...vendor, subprocessors: items });
+      toast({ title: "Subprocessor removed. It stays on the record.", tone: "success" });
+    },
+    onError: (e: unknown) => toast({ title: errorToast(e, "subprocessor"), tone: "danger" }),
+  });
 
   return (
     <>
@@ -61,9 +74,12 @@ export function SubprocessorsPanel({
         title="Subprocessors"
         count={rows.length || undefined}
         description={
-          shared.length > 0
-            ? `${shared.length} shared with other vendors`
-            : undefined
+          [
+            shared.length > 0 ? `${shared.length} shared with other vendors` : null,
+            removedCount > 0 ? `${removedCount} no longer used` : null,
+          ]
+            .filter(Boolean)
+            .join(" · ") || undefined
         }
         action={
           canManage ? (
@@ -87,6 +103,7 @@ export function SubprocessorsPanel({
                 <TH>Where</TH>
                 <TH>Source</TH>
                 <TH numeric>Also used by</TH>
+                {canManage ? <TH aria-label="Actions" /> : null}
               </TR>
             </THead>
             <TBody>
@@ -139,6 +156,21 @@ export function SubprocessorsPanel({
                         {s.also_used_by_vendors > 0 ? `${s.also_used_by_vendors} others` : "None"}
                       </span>
                     </TD>
+                    {canManage ? (
+                      <TD>
+                        <Tooltip content="No longer used by this vendor">
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            aria-label={`Remove ${s.name}`}
+                            loading={remove.isPending && remove.variables === s.id}
+                            onClick={() => remove.mutate(s.id)}
+                          >
+                            <Icon name="x" className="size-4" />
+                          </Button>
+                        </Tooltip>
+                      </TD>
+                    ) : null}
                   </TR>
                 );
               })}

@@ -15,13 +15,14 @@ import {
   SelectField,
   SelectItem,
   SelectTrigger,
+  TextArea,
   StatusPill,
   TextField,
   useToast,
 } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { errorToast } from "@/lib/api/describe-error";
-import { addDocument } from "../api";
+import { addDocument, attachDocumentFile, updateDocument } from "../api";
 import { DOC_TYPES, type VendorDetail, type VendorDocument } from "../types";
 import { COLLECTION_STATUS_META, DOC_TYPE_LABEL, fmtCountdown, fmtDate } from "../tokens";
 import { Panel } from "./panel";
@@ -44,6 +45,7 @@ export function DocumentsPanel({
   onApply: (next: VendorDetail) => void;
 }) {
   const [adding, setAdding] = useState(false);
+  const [editing, setEditing] = useState<VendorDocument | null>(null);
   const documents = vendor.documents;
   const expiring = documents.filter(
     (d) => d.is_expired || (d.expires_in_days !== null && d.expires_in_days <= 60),
@@ -75,18 +77,38 @@ export function DocumentsPanel({
         ) : (
           <ul className="divide-y divide-border">
             {documents.map((d) => (
-              <DocumentRow key={d.id} document={d} canManage={canManage} />
+              <DocumentRow
+                key={d.id}
+                document={d}
+                canManage={canManage}
+                vendorId={vendor.id}
+                onApply={onApply}
+                onEdit={() => setEditing(d)}
+                sendTo={
+                  (
+                    vendor.contacts.find((c) => c.contact_type === "security" && c.email) ??
+                    vendor.contacts.find((c) => c.email)
+                  )?.email ?? ""
+                }
+              />
             ))}
           </ul>
         )}
       </Panel>
 
       <AddDocumentDialog
-        open={adding}
-        onOpenChange={setAdding}
+        key={editing?.id ?? "new"}
+        open={adding || editing !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setAdding(false);
+            setEditing(null);
+          }
+        }}
         vendorId={vendor.id}
         onAdded={onApply}
         vendor={vendor}
+        document={editing}
       />
     </>
   );
@@ -95,10 +117,28 @@ export function DocumentsPanel({
 function DocumentRow({
   document: d,
   canManage,
+  sendTo,
+  vendorId,
+  onApply,
+  onEdit,
 }: {
   document: VendorDocument;
   canManage: boolean;
+  /** The vendor contact a renewal request goes to, security first. */
+  sendTo: string;
+  vendorId: string;
+  onApply: (next: VendorDetail) => void;
+  onEdit: () => void;
 }) {
+  const { toast } = useToast();
+  const upload = useMutation({
+    mutationFn: (file: File) => attachDocumentFile(vendorId, d.id, file),
+    onSuccess: (next) => {
+      onApply(next);
+      toast({ title: "File attached", tone: "success" });
+    },
+    onError: (e: unknown) => toast({ title: errorToast(e, "document"), tone: "danger" }),
+  });
   const status = COLLECTION_STATUS_META[d.collection_status] ?? {
     label: d.collection_status,
     family: "neutral" as const,
@@ -152,14 +192,36 @@ function DocumentRow({
               const body = encodeURIComponent(
                 `Our copy of ${d.title} ${d.is_expired ? "has expired" : `expires ${fmtCountdown(d.expires_in_days)}`}. Could you send the current version?`,
               );
-              // There is no notification route for vendor documents yet, so the
-              // request goes out through the reader's own mail client rather
-              // than pretending Verity sent it.
-              window.location.href = `mailto:?subject=${subject}&body=${body}`;
+              // The request goes to the vendor from the reader's own mail client,
+              // addressed to their security contact where there is one.
+              window.location.href = `mailto:${encodeURIComponent(sendTo)}?subject=${subject}&body=${body}`;
             }}
           >
             Request renewal
           </Button>
+        ) : null}
+        {canManage ? (
+          <>
+            <label
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-label-sm text-text-secondary hover:bg-surface-hover"
+              aria-busy={upload.isPending}
+            >
+              <Icon name="paperclip" className="size-3.5" />
+              {upload.isPending ? "Attaching…" : d.evidence_id ? "Replace file" : "Attach file"}
+              <input
+                type="file"
+                className="sr-only"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) upload.mutate(file);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+            <Button variant="ghost" size="icon-sm" aria-label={`Edit ${d.title}`} onClick={onEdit}>
+              <Icon name="edit" className="size-4" />
+            </Button>
+          </>
         ) : null}
       </div>
     </li>
@@ -171,39 +233,58 @@ function AddDocumentDialog({
   onOpenChange,
   vendorId,
   vendor,
+  document: editing,
   onAdded,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   vendorId: string;
   vendor: VendorDetail;
+  /** Null adds a document; a document edits it, and can mark it reviewed. */
+  document: VendorDocument | null;
   onAdded: (next: VendorDetail) => void;
 }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [title, setTitle] = useState("");
-  const [docType, setDocType] = useState<string>("soc_report");
-  const [issueDate, setIssueDate] = useState("");
-  const [validUntil, setValidUntil] = useState("");
-  const [collectionStatus, setCollectionStatus] = useState("requested");
+  const [title, setTitle] = useState(editing?.title ?? "");
+  const [docType, setDocType] = useState<string>(editing?.doc_type ?? "soc_report");
+  const [issueDate, setIssueDate] = useState(editing?.issue_date ?? "");
+  const [validUntil, setValidUntil] = useState(editing?.valid_until ?? "");
+  const [collectionStatus, setCollectionStatus] = useState(
+    editing?.collection_status ?? "requested",
+  );
+  const [reviewNotes, setReviewNotes] = useState(editing?.review_notes ?? "");
 
-  const add = useMutation({
-    mutationFn: () =>
-      addDocument(vendorId, {
+  const add = useMutation<VendorDetail | VendorDocument>({
+    mutationFn: () => {
+      const body = {
         title: title.trim(),
         doc_type: docType,
         issue_date: issueDate || null,
         valid_until: validUntil || null,
         collection_status: collectionStatus,
-      }),
+      };
+      return editing
+        ? updateDocument(vendorId, editing.id, {
+            ...body,
+            review_notes: reviewNotes.trim() || null,
+          })
+        : addDocument(vendorId, body);
+    },
     onSuccess: (created) => {
       // This route answers with the one row, not the whole vendor, so patch the
       // detail cache rather than refetching the lot.
-      onAdded({ ...vendor, documents: [...vendor.documents, created] });
+      // Adding answers with the one row and editing with the whole vendor, so
+      // patch the detail cache either way rather than refetching the lot.
+      onAdded(
+        "documents" in created
+          ? (created as VendorDetail)
+          : { ...vendor, documents: [...vendor.documents, created as VendorDocument] },
+      );
       void queryClient.invalidateQueries({ queryKey: ["vendor", vendorId] });
       onOpenChange(false);
-      setTitle("");
-      toast({ title: "Document added", tone: "success" });
+      if (!editing) setTitle("");
+      toast({ title: editing ? "Document saved" : "Document added", tone: "success" });
     },
     onError: (e: unknown) => toast({ title: errorToast(e, "document"), tone: "danger" }),
   });
@@ -212,8 +293,10 @@ function AddDocumentDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="sm">
         <DialogHeader>
-          <DialogTitle>Add document</DialogTitle>
-          <DialogDescription>Outstanding requests count toward lifecycle checks.</DialogDescription>
+          <DialogTitle>{editing ? "Edit document" : "Add document"}</DialogTitle>
+          <DialogDescription>
+            Record what the vendor sent. The owner is reminded before it expires.
+          </DialogDescription>
         </DialogHeader>
         <form
           onSubmit={(e) => {
@@ -269,13 +352,24 @@ function AddDocumentDialog({
                 onChange={(e) => setValidUntil(e.target.value)}
               />
             </div>
+            {editing ? (
+              <TextArea
+                label="Review notes"
+                optional
+                hint="Stamped with your name when the status is Reviewed."
+                value={reviewNotes}
+                onChange={(e) => setReviewNotes(e.target.value)}
+                rows={3}
+                maxLength={8000}
+              />
+            ) : null}
           </DialogBody>
           <DialogFooter>
             <Button variant="secondary" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
             <Button type="submit" loading={add.isPending} disabled={!title.trim()}>
-              Add document
+              {editing ? "Save document" : "Add document"}
             </Button>
           </DialogFooter>
         </form>
