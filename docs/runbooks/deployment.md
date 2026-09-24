@@ -184,8 +184,10 @@ dc run --rm api python -m verity.manage seed-content   # pick up new shipped con
 Two things hold state: the Postgres volume and the MinIO (evidence) volume.
 
 ```bash
-# Backup the database (custom format, compressed)
-dc exec -T postgres pg_dump -U "$DATABASE_OWNER_USER" -Fc "$DATABASE_NAME" > verity-$(date +%F).dump
+# Backup the database (custom format, compressed). The user and database names are
+# read inside the container, where .env.production put them: your own shell has
+# neither, and pg_dump -U "" falls back to your login name ("role root does not exist").
+dc exec -T postgres sh -c 'pg_dump -U "$POSTGRES_USER" -Fc "$POSTGRES_DB"' > verity-$(date +%F).dump
 
 # Backup evidence objects (MinIO data volume) — snapshot the named volume
 docker run --rm -v verity_minio-data:/data -v "$PWD":/backup alpine \
@@ -194,7 +196,7 @@ docker run --rm -v verity_minio-data:/data -v "$PWD":/backup alpine \
 
 ```bash
 # Restore the database into a fresh, empty DB (roles must already exist)
-dc exec -T postgres pg_restore -U "$DATABASE_OWNER_USER" -d "$DATABASE_NAME" --clean --if-exists < verity-YYYY-MM-DD.dump
+dc exec -T postgres sh -c 'pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --clean --if-exists' < verity-YYYY-MM-DD.dump
 
 # Restore evidence objects
 docker run --rm -v verity_minio-data:/data -v "$PWD":/backup alpine \
