@@ -179,6 +179,18 @@ export async function reenrichVulnerability(id: string): Promise<VulnInstanceDet
 /** Set the accountable owner and replace the finding's assignment targets.
  *  Owner drives SLA escalation and remediation approval; targets are the
  *  additional people, roles and groups on the finding. */
+/** The workspace's own fields on one finding. A scanner fills the rest; these
+ *  are what a person adds that no scanner can know. */
+export async function setVulnerabilityCustomFields(
+  id: string,
+  values: Record<string, string | number | boolean>,
+): Promise<VulnInstanceDetail> {
+  return apiFetch<VulnInstanceDetail>(`/vulnerabilities/${id}/custom-fields`, {
+    method: "PATCH",
+    body: JSON.stringify({ values }),
+  });
+}
+
 export async function assignVulnerability(
   id: string,
   ownerMembershipId: string | null,

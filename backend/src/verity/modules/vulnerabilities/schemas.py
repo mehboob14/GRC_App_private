@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -175,6 +176,7 @@ class ReferenceOut(_Response):
 class InstanceDetailOut(InstanceOut):
     # cvss_vector / cwe_id / epss_percentile / patch_available are inherited
     # from InstanceOut — the register shows them too.
+    custom_fields: dict[str, Any]
     definition_id: uuid.UUID
     description: str | None
     recommendation: str | None
@@ -254,6 +256,41 @@ class ImportResultOut(_Response):
     definitions: int
     status: str
     parse_error: str | None
+
+
+class CustomFieldOut(_Response):
+    """One tenant-defined field on a finding."""
+
+    id: uuid.UUID
+    key: str
+    label: str
+    field_type: str
+    options: list[str]
+    help_text: str | None
+    required: bool
+    position: int
+    archived: bool
+
+
+class CustomFieldPageOut(_Response):
+    items: list[CustomFieldOut]
+
+
+class CustomFieldWrite(_Request):
+    label: str = Field(min_length=1, max_length=80)
+    field_type: str = Field(default="text", pattern="^(text|textarea|number|date|select|checkbox)$")
+    options: list[str] = Field(default_factory=list, max_length=50)
+    help_text: str | None = Field(default=None, max_length=300)
+    required: bool = False
+    position: int = Field(default=0, ge=0, le=999)
+
+
+class CustomFieldArchiveWrite(_Request):
+    archived: bool = True
+
+
+class CustomFieldValuesWrite(_Request):
+    values: dict[str, Any] = Field(default_factory=dict)
 
 
 class SlaPolicyOut(_Response):

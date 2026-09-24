@@ -24,11 +24,17 @@ from verity.core.deps import (
 )
 from verity.core.errors import InvalidInput
 from verity.modules.audit.service import Membership
+from verity.modules.customfields.service import FieldInput
 from verity.modules.vulnerabilities.schemas import (
     AcceptRequest,
     AddFindingRequest,
     AssignRequest,
     CancelRemediationRequest,
+    CustomFieldArchiveWrite,
+    CustomFieldOut,
+    CustomFieldPageOut,
+    CustomFieldValuesWrite,
+    CustomFieldWrite,
     ExceptionDecisionIn,
     ExceptionRequestIn,
     ImportResultOut,
@@ -106,6 +112,85 @@ async def kpis(
     return KpiOut.model_validate(
         await vulnerability_service.kpis(session, tenant_id=context.tenant_id)
     )
+
+
+@vulnerabilities_router.get(
+    "/custom-fields", response_model=CustomFieldPageOut, summary="Fields this tenant adds"
+)
+async def list_custom_fields(
+    context: _Ctx,
+    session: _Db,
+    _principal: Annotated[Principal, Depends(require_read)],
+    include_archived: bool = False,
+) -> CustomFieldPageOut:
+    items = await vulnerability_service.custom_fields(
+        session, tenant_id=context.tenant_id, include_archived=include_archived
+    )
+    return CustomFieldPageOut(items=[CustomFieldOut.model_validate(i) for i in items])
+
+
+@vulnerabilities_router.post(
+    "/custom-fields",
+    response_model=CustomFieldOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="Add a field",
+)
+async def create_custom_field(
+    body: CustomFieldWrite,
+    context: _Ctx,
+    session: _Db,
+    principal: Annotated[Principal, Depends(require_manage)],
+) -> CustomFieldOut:
+    view = await vulnerability_service.save_custom_field(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(principal),
+        field_id=None,
+        data=FieldInput(**{**body.model_dump(), "options": tuple(body.options)}),
+    )
+    return CustomFieldOut.model_validate(view)
+
+
+@vulnerabilities_router.patch(
+    "/custom-fields/{field_id}", response_model=CustomFieldOut, summary="Edit a field"
+)
+async def update_custom_field(
+    field_id: uuid.UUID,
+    body: CustomFieldWrite,
+    context: _Ctx,
+    session: _Db,
+    principal: Annotated[Principal, Depends(require_manage)],
+) -> CustomFieldOut:
+    view = await vulnerability_service.save_custom_field(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(principal),
+        field_id=field_id,
+        data=FieldInput(**{**body.model_dump(), "options": tuple(body.options)}),
+    )
+    return CustomFieldOut.model_validate(view)
+
+
+@vulnerabilities_router.post(
+    "/custom-fields/{field_id}/archive",
+    response_model=CustomFieldOut,
+    summary="Stop collecting a field",
+)
+async def archive_custom_field(
+    field_id: uuid.UUID,
+    body: CustomFieldArchiveWrite,
+    context: _Ctx,
+    session: _Db,
+    principal: Annotated[Principal, Depends(require_manage)],
+) -> CustomFieldOut:
+    view = await vulnerability_service.set_custom_field_archived(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(principal),
+        field_id=field_id,
+        archived=body.archived,
+    )
+    return CustomFieldOut.model_validate(view)
 
 
 @vulnerabilities_router.get(
@@ -356,6 +441,28 @@ async def reenrich(
 ) -> InstanceDetailOut:
     view = await vulnerability_service.reenrich_instance(
         session, tenant_id=context.tenant_id, actor=_actor(principal), instance_id=instance_id
+    )
+    return InstanceDetailOut.model_validate(view)
+
+
+@vulnerabilities_router.patch(
+    "/{instance_id}/custom-fields",
+    response_model=InstanceDetailOut,
+    summary="Set this workspace's own fields on a finding",
+)
+async def set_instance_custom_fields(
+    instance_id: uuid.UUID,
+    body: CustomFieldValuesWrite,
+    context: _Ctx,
+    session: _Db,
+    principal: Annotated[Principal, Depends(require_manage)],
+) -> InstanceDetailOut:
+    view = await vulnerability_service.set_instance_custom_fields(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(principal),
+        instance_id=instance_id,
+        values=body.values,
     )
     return InstanceDetailOut.model_validate(view)
 

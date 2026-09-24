@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import Final
+from typing import Any, Final
 
 from sqlalchemy import Float, ForeignKey, UniqueConstraint, func, text
 from sqlalchemy.dialects import postgresql
@@ -172,6 +172,12 @@ class VulnInstance(UUIDPrimaryKey, TenantScoped, Timestamped, Integratable, Base
     # every scanner/source that has reported this instance (dedup keeps one row)
     detected_by: Mapped[list[str]] = mapped_column(
         postgresql.JSONB, default=list, server_default=text("'[]'::jsonb")
+    )
+
+    # Tenant-defined extras (``customfields``). Validated against the definitions
+    # before it lands here, so this is a blob with a schema, not a free-for-all.
+    custom_fields: Mapped[dict[str, Any]] = mapped_column(
+        postgresql.JSONB, default=dict, server_default=text("'{}'::jsonb")
     )
 
     # closure — fixed is scanner-verified or formally approved, never just asserted

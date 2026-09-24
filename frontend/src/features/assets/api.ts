@@ -25,6 +25,7 @@ import type {
   LinkTarget,
   Member,
   RelationshipType,
+  ReviewCadence,
 } from "./types";
 
 /** The backend does not model asset links or relationships yet, so a detail
@@ -137,6 +138,7 @@ export type AssetInput = {
   valuation: number | null;
   business_impact_notes: string | null;
   operational_dependency_rating: string | null;
+  custom_fields: Record<string, string | number | boolean>;
 };
 
 
@@ -205,6 +207,19 @@ export async function updateAsset(id: string, input: AssetInput): Promise<AssetD
       body: JSON.stringify(writeBody(input)),
     }),
   );
+}
+
+export async function getReviewCadence(): Promise<ReviewCadence> {
+  const out = await apiFetch<{ days_by_tier: ReviewCadence }>("/assets/policy");
+  return out.days_by_tier;
+}
+
+export async function setReviewCadence(days: Partial<ReviewCadence>): Promise<ReviewCadence> {
+  const out = await apiFetch<{ days_by_tier: ReviewCadence }>("/assets/policy", {
+    method: "PATCH",
+    body: JSON.stringify({ days_by_tier: days }),
+  });
+  return out.days_by_tier;
 }
 
 export async function transitionAsset(

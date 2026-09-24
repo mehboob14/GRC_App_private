@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import Final
+from typing import Any, Final
 
 from sqlalchemy import CheckConstraint, Float, ForeignKey, UniqueConstraint, text
 from sqlalchemy.dialects import postgresql
@@ -60,6 +60,17 @@ ENVIRONMENTS: Final[tuple[str, ...]] = ("prod", "staging", "dev", "test", "dr")
 
 _MEMBERSHIP_FK = "tenant_memberships.id"
 
+
+# How long an asset of each criticality may go unreviewed before the inventory
+# hygiene panel calls it stale. The tenant overrides these in ``asset_policies``;
+# "unrated" covers an asset with no tier yet, which is the one most worth chasing.
+DEFAULT_REVIEW_DAYS_BY_TIER: Final[dict[str, int]] = {
+    "critical": 90,
+    "high": 90,
+    "medium": 90,
+    "low": 90,
+    "unrated": 90,
+}
 
 RELATIONSHIP_TYPES: Final[tuple[str, ...]] = (
     "depends_on",
@@ -110,6 +121,12 @@ class Asset(UUIDPrimaryKey, TenantScoped, Timestamped, Integratable, Base):
     valuation: Mapped[float | None] = mapped_column(Float, default=None)
     business_impact_notes: Mapped[str | None] = mapped_column(default=None)
     operational_dependency_rating: Mapped[str | None] = mapped_column(default=None)
+
+    # Tenant-defined extras (``customfields``). Validated against the definitions
+    # before it lands here, so this is a blob with a schema, not a free-for-all.
+    custom_fields: Mapped[dict[str, Any]] = mapped_column(
+        postgresql.JSONB, default=dict, server_default=text("'{}'::jsonb")
+    )
 
     # ownership chain — every person a membership (rule 3); the team a group.
     primary_owner_membership_id: Mapped[uuid.UUID | None] = mapped_column(
@@ -206,6 +223,24 @@ class DecommissionRecord(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
         UniqueConstraint("tenant_id", "asset_id", name="uq_decommission_records__asset"),
         tenant_index("decommission_records", "asset_id"),
     )
+
+
+class AssetPolicy(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
+    """Per-tenant inventory settings. One row, and only if it was customised.
+
+    The same arrangement the vendor tiering policy uses: ``DEFAULT_*`` in code is
+    the default and this row is the override, so a new tenant needs no
+    provisioning step and no migration has to insert a tenant-owned row it cannot
+    see through that row's own RLS policy.
+    """
+
+    __tablename__ = "asset_policies"
+
+    review_cadence_days_by_tier: Mapped[dict[str, Any]] = mapped_column(
+        postgresql.JSONB, default=dict, server_default=text("'{}'::jsonb")
+    )
+
+    __table_args__ = (UniqueConstraint("tenant_id", name="uq_asset_policies__tenant_id"),)
 
 
 class AssetRelationship(UUIDPrimaryKey, TenantScoped, Timestamped, Integratable, Base):

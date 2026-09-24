@@ -4,6 +4,7 @@ import { Button, ErrorState, Skeleton, TextField, useToast } from "@/components/
 import { describeError, errorToast } from "@/lib/api/describe-error";
 import { useAuth } from "@/lib/auth/auth-context";
 import { hasPermission } from "@/lib/auth/session";
+import { CustomFieldsCard } from "@/features/custom-fields/components/custom-fields-card";
 import { getSlaPolicy, setSlaPolicy } from "../api";
 import type { Severity, SlaPolicy } from "../types";
 
@@ -30,7 +31,12 @@ const DEFAULT_DAYS: Record<Severity, number | null> = {
 export function VulnerabilitiesSettingsPage() {
   const { principal } = useAuth();
   const canEdit = hasPermission(principal, "vulnerabilities:manage");
-  return <SlaCard canEdit={canEdit} />;
+  return (
+    <div className="mt-4 max-w-[860px] space-y-4">
+      <SlaCard canEdit={canEdit} />
+      <CustomFieldsCard scope="vulnerabilities" noun="finding" canEdit={canEdit} />
+    </div>
+  );
 }
 
 function SlaCard({ canEdit }: { canEdit: boolean }) {
@@ -49,7 +55,7 @@ function SlaCard({ canEdit }: { canEdit: boolean }) {
   });
 
   return (
-    <div className="mt-4 max-w-[720px] rounded-lg border border-border bg-surface-primary p-5">
+    <div className="rounded-lg border border-border bg-surface-primary p-5">
       <h2 className="font-display text-title-sm text-text-primary">Remediation windows</h2>
       <p className="mt-1 text-body-sm text-text-secondary">
         How long a finding of each severity may stay open before it is overdue. The clock starts

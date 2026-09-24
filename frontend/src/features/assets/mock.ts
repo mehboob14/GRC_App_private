@@ -119,6 +119,7 @@ export function computeHygiene(a: {
   return {
     score: Math.round(((5 - missing.length) / 5) * 100),
     missing,
+    review_days: STALE_DAYS,
     is_stale: isStale(a.last_reviewed_at ?? a.last_seen_at),
   };
 }
@@ -238,6 +239,7 @@ function build(seed: Seed): AssetDetail {
   });
 
   return {
+    custom_fields: {},
     id: seed.id,
     name: seed.name,
     asset_type: seed.asset_type,

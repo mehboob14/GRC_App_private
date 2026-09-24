@@ -23,6 +23,7 @@ from verity.db.base import Base
 from verity.modules.assets import models as _assets_models  # noqa: F401
 from verity.modules.audit import models as _audit_models  # noqa: F401
 from verity.modules.compliance import models as _compliance_models  # noqa: F401
+from verity.modules.customfields import models as _customfields_models  # noqa: F401
 from verity.modules.documents import models as _documents_models  # noqa: F401
 from verity.modules.evidence import models as _evidence_models  # noqa: F401
 from verity.modules.iam import models as _iam_models  # noqa: F401

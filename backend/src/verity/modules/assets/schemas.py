@@ -8,6 +8,7 @@ via ``from_attributes``.
 from __future__ import annotations
 
 import uuid
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -60,6 +61,7 @@ class HygieneOut(_Response):
     score: int
     missing: list[str]
     is_stale: bool
+    review_days: int
 
 
 class AssetOut(_Response):
@@ -93,6 +95,7 @@ class AssetOut(_Response):
     updated_at: UtcDateTime
     source: str
     hygiene: HygieneOut
+    custom_fields: dict[str, Any]
     vuln_count: int
     link_count: int
     relationship_count: int
@@ -197,6 +200,47 @@ class SheetOut(_Response):
 # -- requests ----------------------------------------------------------------
 
 
+class CustomFieldOut(_Response):
+    """One tenant-defined field, as the settings screen and the form read it."""
+
+    id: uuid.UUID
+    key: str
+    label: str
+    field_type: str
+    options: list[str]
+    help_text: str | None
+    required: bool
+    position: int
+    archived: bool
+
+
+class CustomFieldPageOut(_Response):
+    items: list[CustomFieldOut]
+
+
+class CustomFieldWrite(_Request):
+    label: str = Field(min_length=1, max_length=80)
+    field_type: str = Field(default="text", pattern="^(text|textarea|number|date|select|checkbox)$")
+    options: list[str] = Field(default_factory=list, max_length=50)
+    help_text: str | None = Field(default=None, max_length=300)
+    required: bool = False
+    position: int = Field(default=0, ge=0, le=999)
+
+
+class CustomFieldArchiveWrite(_Request):
+    archived: bool = True
+
+
+class ReviewCadenceOut(_Response):
+    """Days before an asset of each criticality counts as unreviewed."""
+
+    days_by_tier: dict[str, int]
+
+
+class ReviewCadenceWrite(_Request):
+    days_by_tier: dict[str, int]
+
+
 class AssetWrite(_Request):
     """The create/edit payload. Criticality is derived, so the CIA inputs and the
     override come in, never the score/tier."""
@@ -230,6 +274,7 @@ class AssetWrite(_Request):
     valuation: float | None = None
     business_impact_notes: str | None = None
     operational_dependency_rating: str | None = None
+    custom_fields: dict[str, Any] = Field(default_factory=dict)
 
 
 class TransitionRequest(_Request):

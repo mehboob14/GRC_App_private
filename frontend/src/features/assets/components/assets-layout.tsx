@@ -24,6 +24,7 @@ import type { AssetsOutlet, RegisterView } from "./assets-outlet";
 const TABS: TabStripItem[] = [
   { id: "/assets/overview", label: "Overview" },
   { id: "/assets", label: "Register", end: true },
+  { id: "/assets/settings", label: "Settings" },
 ];
 
 export function AssetsLayout() {

@@ -120,6 +120,9 @@ function mapRow(header: string[], cells: string[], line: number, members: Member
   const valuation = valuationRaw ? Number(valuationRaw.replace(/[^0-9.]/g, "")) || null : null;
 
   const input: AssetInput = {
+    // An import row fills the shipped columns; the tenant's own fields are set
+    // on the record afterwards, where the definitions can be shown.
+    custom_fields: {},
     name,
     asset_type: (ASSET_TYPES.includes(rawType as AssetType) ? rawType : "application") as AssetType,
     description: get("description"),

@@ -44,8 +44,10 @@ import {
   transitionAsset,
 } from "../api";
 import {
-  type AssetRelationship, RELATIONSHIP_TYPES } from "../types";
+  type AssetRelationship, HYGIENE_FLAGS, RELATIONSHIP_TYPES } from "../types";
 import type { AssetDetail, AssetStatus, HygieneFlag, RelationshipType } from "../types";
+import { customFieldText } from "@/features/custom-fields/format";
+import { useCustomFields } from "@/features/custom-fields/hooks";
 import { AssetFormDrawer } from "./asset-form-drawer";
 import { linkVulnerabilityAsset, listVulnerabilities } from "@/features/vulnerabilities/api";
 import { AddFindingDrawer } from "@/features/vulnerabilities/components/add-finding-drawer";
@@ -85,14 +87,6 @@ function lifecycleLabel(from: AssetStatus, to: AssetStatus): string {
   if (to === "retired") return "Retire";
   return cap(humanize(to));
 }
-
-const HYGIENE_LABEL: Record<HygieneFlag, string> = {
-  no_owner: "No primary owner",
-  no_type: "No type set",
-  no_criticality: "No criticality",
-  no_classification: "No data classification",
-  no_cia: "CIA not rated",
-};
 
 const TABS = [
   { id: "overview", label: "Overview" },
@@ -375,6 +369,7 @@ function OverviewTab({ a, onChange }: { a: AssetDetail; onChange: () => void }) 
 
       <div className="space-y-4">
         <HygienePanel a={a} onChange={onChange} />
+        <CustomFieldsPanel a={a} />
         <Panel title="Record">
           <dl className="space-y-2.5 text-body-sm">
             <Meta label="Source" value={cap(a.source)} />
@@ -389,6 +384,23 @@ function OverviewTab({ a, onChange }: { a: AssetDetail; onChange: () => void }) 
   );
 }
 
+/** The tenant's own fields, if this workspace defined any. Values are edited in
+ *  the asset form beside everything else, so this is a read. */
+function CustomFieldsPanel({ a }: { a: AssetDetail }) {
+  const fields = useCustomFields("assets").data ?? [];
+  const shown = fields.filter((f) => a.custom_fields[f.key] !== undefined || f.required);
+  if (shown.length === 0) return null;
+  return (
+    <Panel title="Also recorded">
+      <dl className="space-y-2.5 text-body-sm">
+        {shown.map((f) => (
+          <Meta key={f.id} label={f.label} value={customFieldText(f, a.custom_fields[f.key])} />
+        ))}
+      </dl>
+    </Panel>
+  );
+}
+
 function HygienePanel({ a, onChange }: { a: AssetDetail; onChange: () => void }) {
   const clean = a.hygiene.missing.length === 0 && !a.hygiene.is_stale;
   const { toast } = useToast();
@@ -400,6 +412,9 @@ function HygienePanel({ a, onChange }: { a: AssetDetail; onChange: () => void })
     },
     onError: (error) => toast({ title: errorToast(error, "asset"), tone: "danger" }),
   });
+  const since = a.last_reviewed_at
+    ? Math.floor((Date.now() - new Date(a.last_reviewed_at).getTime()) / 86_400_000)
+    : null;
   return (
     <Panel
       title="Inventory hygiene"
@@ -409,7 +424,7 @@ function HygienePanel({ a, onChange }: { a: AssetDetail; onChange: () => void })
         </Button>
       }
     >
-      <div className="flex items-center gap-3">
+      <div className="flex items-baseline gap-2">
         <span
           className={cn(
             "font-display text-heading-md tabular",
@@ -418,29 +433,77 @@ function HygienePanel({ a, onChange }: { a: AssetDetail; onChange: () => void })
         >
           {a.hygiene.score}%
         </span>
-        <span className="text-body-sm text-text-subtle">complete</span>
+        <span className="text-body-sm text-text-subtle">
+          {5 - a.hygiene.missing.length} of 5 assessed
+        </span>
       </div>
-      {clean ? (
-        <p className="mt-2 text-body-sm text-status-success-text">Fully assessed and current.</p>
-      ) : (
-        <ul className="mt-3 space-y-1.5">
-          {a.hygiene.missing.map((m) => (
-            <li key={m} className="flex items-center gap-2 text-body-sm text-text-secondary">
-              <Icon name="alert" className="size-3.5 text-status-warning-text" />
-              {HYGIENE_LABEL[m]}
+
+      {/* Every check, answered. A bare "100%" tells a reader the number but not
+          what was counted, which is the one thing they need to trust it. */}
+      <ul className="mt-3 space-y-1.5">
+        {HYGIENE_FLAGS.map((flag) => {
+          const met = !a.hygiene.missing.includes(flag);
+          return (
+            <li key={flag} className="flex items-center gap-2 text-body-sm">
+              <Icon
+                name={met ? "check" : "alert"}
+                className={cn("size-3.5 shrink-0", met ? "text-status-success-text" : "text-status-warning-text")}
+              />
+              <span className={met ? "text-text-secondary" : "text-text-primary"}>
+                {HYGIENE_CHECK_LABEL[flag]}
+              </span>
+              <span className="ml-auto text-caption text-text-subtle">
+                {met ? HYGIENE_MET_VALUE[flag](a) : "Not set"}
+              </span>
             </li>
-          ))}
-          {a.hygiene.is_stale ? (
-            <li className="flex items-center gap-2 text-body-sm text-text-secondary">
-              <Icon name="clock" className="size-3.5 text-status-danger-text" />
-              Not reviewed in over 90 days
-            </li>
-          ) : null}
-        </ul>
+          );
+        })}
+      </ul>
+
+      <p
+        className={cn(
+          "mt-3 border-t border-border pt-2.5 text-body-sm",
+          a.hygiene.is_stale ? "text-status-danger-text" : "text-text-subtle",
+        )}
+      >
+        {a.hygiene.is_stale
+          ? `Not reviewed in over ${a.hygiene.review_days} days.`
+          : since === null
+            ? `Never reviewed. Reviewed every ${a.hygiene.review_days} days.`
+            : `Reviewed ${since === 0 ? "today" : since === 1 ? "yesterday" : `${since} days ago`}, due again in ${Math.max(0, a.hygiene.review_days - since)} days.`}
+      </p>
+      {clean ? null : (
+        <p className="mt-1 text-caption text-text-subtle">
+          Edit the asset to fill in what is missing.
+        </p>
       )}
     </Panel>
   );
 }
+
+/** What each check asks for, and what it found. The register's "needs
+ *  attention" filter keys off exactly these five plus the review window. */
+const HYGIENE_CHECK_LABEL: Record<HygieneFlag, string> = {
+  no_owner: "Primary owner",
+  no_type: "Type",
+  no_criticality: "Criticality",
+  no_classification: "Data classification",
+  no_cia: "CIA rating",
+};
+
+const HYGIENE_MET_VALUE: Record<HygieneFlag, (a: AssetDetail) => string> = {
+  no_owner: (a) => a.ownership.primary_owner?.name ?? "Set",
+  no_type: (a) => ASSET_TYPE_META[a.asset_type]?.label ?? a.asset_type,
+  no_criticality: (a) => {
+    const tier = displayTier(a.criticality);
+    return tier ? TIER_META[tier].label : "Set";
+  },
+  no_classification: (a) =>
+    a.data_classification ? CLASSIFICATION_META[a.data_classification].label : "Set",
+  no_cia: (a) =>
+    `C${a.criticality.confidentiality} I${a.criticality.integrity} A${a.criticality.availability}`,
+};
+
 
 function CriticalityTab({ a }: { a: AssetDetail }) {
   const c = a.criticality;

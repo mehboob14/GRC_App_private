@@ -42,6 +42,7 @@ import { AssetsRegisterPage } from "@/features/assets/components/assets-register
 import { AssetsOverviewPage } from "@/features/assets/components/assets-overview-page";
 import { AssetDetailPage } from "@/features/assets/components/asset-detail-page";
 import { AssetsImportPage } from "@/features/assets/components/assets-import-page";
+import { AssetsSettingsPage } from "@/features/assets/components/assets-settings-page";
 import { VulnerabilitiesLayout } from "@/features/vulnerabilities/components/vulnerabilities-layout";
 import { VulnerabilitiesRegisterPage } from "@/features/vulnerabilities/components/vulnerabilities-register-page";
 import { VulnerabilitiesOverviewPage } from "@/features/vulnerabilities/components/vulnerabilities-overview-page";
@@ -153,6 +154,7 @@ export function AppRoutes() {
           <Route path="assets" element={<AssetsLayout />}>
             <Route index element={<AssetsRegisterPage />} />
             <Route path="overview" element={<AssetsOverviewPage />} />
+            <Route path="settings" element={<AssetsSettingsPage />} />
           </Route>
           <Route path="assets/import" element={<AssetsImportPage />} />
           <Route path="assets/:assetId" element={<AssetDetailPage />} />

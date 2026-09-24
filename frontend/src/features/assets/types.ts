@@ -126,7 +126,13 @@ export type Hygiene = {
   score: number;
   missing: HygieneFlag[];
   is_stale: boolean;
+  /** The review window this asset was judged against, from the inventory
+   *  settings. "Not reviewed in 90 days" means nothing without it. */
+  review_days: number;
 };
+
+/** The tenant's review cadence, in days, per effective criticality. */
+export type ReviewCadence = Record<"critical" | "high" | "medium" | "low" | "unrated", number>;
 
 // -- the asset ---------------------------------------------------------------
 
@@ -173,6 +179,9 @@ export type Asset = {
   created_at: string;
   updated_at: string;
   source: AssetSource;
+
+  /** The tenant's own fields (features/custom-fields), validated server side. */
+  custom_fields: Record<string, string | number | boolean>;
 
   // derived / badges (so a row needs no extra fetch)
   hygiene: Hygiene;

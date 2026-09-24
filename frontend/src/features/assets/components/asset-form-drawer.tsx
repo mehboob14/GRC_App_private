@@ -22,6 +22,8 @@ import {
   useToast,
 } from "@/components/ui";
 import { errorToast } from "@/lib/api/describe-error";
+import { CustomFieldInputs } from "@/features/custom-fields/components/custom-field-inputs";
+import { useCustomFields } from "@/features/custom-fields/hooks";
 import {
   createAsset,
   getAsset,
@@ -117,12 +119,14 @@ const EMPTY: AssetInput = {
   valuation: null,
   business_impact_notes: null,
   operational_dependency_rating: null,
+  custom_fields: {},
 };
 
 const NONE = "__none__";
 
 function fromDetail(a: AssetDetail): AssetInput {
   return {
+    custom_fields: { ...a.custom_fields },
     name: a.name,
     asset_type: a.asset_type,
     description: a.description,
@@ -186,6 +190,7 @@ export function AssetFormDrawer({
     setForm((f) => ({ ...f, [key]: value }));
 
   const membersQuery = useQuery({ queryKey: ["asset-members"], queryFn: listMembers, enabled: open });
+  const customFields = useCustomFields("assets").data ?? [];
   const existingQuery = useQuery({
     queryKey: ["asset", assetId],
     queryFn: () => getAsset(assetId!),
@@ -427,6 +432,19 @@ export function AssetFormDrawer({
                 <p className="mt-2 text-caption text-status-danger-text">Couldn't load the team list.</p>
               ) : null}
             </div>
+
+            {customFields.length > 0 ? (
+              <div className="rounded-md border border-border bg-surface-sunken p-3.5">
+                <p className="type-overline">This workspace also asks</p>
+                <div className="mt-3">
+                  <CustomFieldInputs
+                    fields={customFields}
+                    values={form.custom_fields}
+                    onChange={(values) => set("custom_fields", values)}
+                  />
+                </div>
+              </div>
+            ) : null}
           </DrawerBody>
 
           <DrawerFooter>

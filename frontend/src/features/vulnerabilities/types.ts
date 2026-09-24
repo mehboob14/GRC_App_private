@@ -140,6 +140,8 @@ export type VulnReference = {
 };
 
 export type VulnInstanceDetail = VulnInstance & {
+  /** The tenant's own fields (features/custom-fields), validated server side. */
+  custom_fields: Record<string, string | number | boolean>;
   kev_vendor: string | null;
   kev_product: string | null;
   kev_required_action: string | null;

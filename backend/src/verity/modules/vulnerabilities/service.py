@@ -25,6 +25,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from verity.core.errors import Conflict, InvalidInput, NotFound
 from verity.core.storage import ObjectStore, get_object_store
 from verity.modules.audit.service import Actor, AuditService, System, audit_service
+from verity.modules.customfields.service import (
+    FieldDefinition,
+    FieldInput,
+    custom_field_service,
+)
 from verity.modules.vulnerabilities import enrichment, remediation
 from verity.modules.vulnerabilities.models import (
     ASSIGNMENT_TARGET_TYPES,
@@ -167,6 +172,7 @@ class AffectedAssetView:
 class InstanceDetailView(InstanceView):
     # cvss_vector, cwe_id, epss_percentile and patch_available live on the base
     # InstanceView (the register needs them too) — do not redeclare them here.
+    custom_fields: dict[str, Any]
     definition_id: uuid.UUID
     description: str | None
     recommendation: str | None
@@ -649,6 +655,7 @@ class VulnerabilityService:
         targets = await self._assignment_targets(session, tenant_id, inst.id)
         return InstanceDetailView(
             **{f: getattr(base, f) for f in base.__dataclass_fields__},
+            custom_fields=dict(inst.custom_fields or {}),
             definition_id=defn.id,
             description=defn.description,
             recommendation=defn.recommendation,
@@ -1067,6 +1074,111 @@ class VulnerabilityService:
             unmatched=unmatched,
             definitions=len(touched_defs),
         )
+
+    # -- the tenant's own fields ---------------------------------------------
+
+    async def custom_fields(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, include_archived: bool = False
+    ) -> list[FieldDefinition]:
+        return await custom_field_service.definitions(
+            session,
+            tenant_id=tenant_id,
+            object_type="vulnerability",
+            include_archived=include_archived,
+        )
+
+    async def save_custom_field(
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        field_id: uuid.UUID | None,
+        data: FieldInput,
+    ) -> FieldDefinition:
+        """Define or reword an extra field. The audit row belongs to this module,
+        not to the primitive that stores the definition."""
+        if field_id is None:
+            view = await custom_field_service.create(
+                session, tenant_id=tenant_id, object_type="vulnerability", data=data
+            )
+        else:
+            view = await custom_field_service.update(
+                session, tenant_id=tenant_id, field_id=field_id, data=data
+            )
+        await self._audit.record(
+            session,
+            action="create" if field_id is None else "update",
+            object_type="vulnerability_custom_field",
+            object_id=view.id,
+            actor=actor,
+            tenant_id=tenant_id,
+            after={"key": view.key, "label": view.label, "field_type": view.field_type},
+        )
+        await session.flush()
+        return view
+
+    async def set_custom_field_archived(
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        field_id: uuid.UUID,
+        archived: bool,
+    ) -> FieldDefinition:
+        view = await custom_field_service.set_archived(
+            session, tenant_id=tenant_id, field_id=field_id, archived=archived
+        )
+        await self._audit.record(
+            session,
+            action="update",
+            object_type="vulnerability_custom_field",
+            object_id=view.id,
+            actor=actor,
+            tenant_id=tenant_id,
+            after={"key": view.key, "archived": archived},
+        )
+        await session.flush()
+        return view
+
+    async def set_instance_custom_fields(
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        instance_id: uuid.UUID,
+        values: dict[str, Any],
+    ) -> InstanceDetailView:
+        """Write the tenant's own fields on one finding.
+
+        Scanners fill the rest of a finding; these are what a person adds that no
+        scanner can know — a change ticket, a business owner's sign-off date.
+        """
+        instance = await session.get(VulnInstance, instance_id, populate_existing=True)
+        if instance is None or instance.tenant_id != tenant_id:
+            raise NotFound("That finding no longer exists.", detail=f"vuln instance {instance_id}")
+        before = dict(instance.custom_fields or {})
+        instance.custom_fields = await custom_field_service.clean(
+            session,
+            tenant_id=tenant_id,
+            object_type="vulnerability",
+            values=values,
+            previous=before,
+        )
+        await self._audit.record(
+            session,
+            action="update",
+            object_type="vulnerability",
+            object_id=instance.id,
+            actor=actor,
+            tenant_id=tenant_id,
+            before={"custom_fields": before},
+            after={"custom_fields": instance.custom_fields},
+        )
+        await session.flush()
+        return await self.get_instance(session, tenant_id=tenant_id, instance_id=instance.id)
 
     async def add_finding(
         self,

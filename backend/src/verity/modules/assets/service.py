@@ -27,13 +27,20 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from verity.core.errors import Conflict, InvalidInput, NotFound
 from verity.modules.assets.models import (
+    DEFAULT_REVIEW_DAYS_BY_TIER,
     RELATIONSHIP_TYPES,
     Asset,
+    AssetPolicy,
     AssetRelationship,
     AssetTransition,
     DecommissionRecord,
 )
 from verity.modules.audit.service import Actor, AuditService, Membership, audit_service
+from verity.modules.customfields.service import (
+    FieldDefinition,
+    FieldInput,
+    custom_field_service,
+)
 from verity.shared.ids import uuid7
 
 # -- shared rules (the client is served these; it never hardcodes them) ------
@@ -48,6 +55,8 @@ LIFECYCLE_TRANSITIONS: Final[dict[str, tuple[str, ...]]] = {
 
 _HARM: Final[dict[int, float]] = {1: 2.0, 2: 4.0, 3: 6.0, 4: 8.0, 5: 10.0}
 _STALE_DAYS: Final = 90
+_MIN_REVIEW_DAYS: Final = 7
+_MAX_REVIEW_DAYS: Final = 1095
 # Score thresholds for the tier bands (out of 10).
 _CRITICAL_AT: Final = 8.5
 _HIGH_AT: Final = 6.5
@@ -112,8 +121,20 @@ def _is_stale(last: datetime | None, *, now: datetime) -> bool:
     return last is not None and (now - last) > timedelta(days=_STALE_DAYS)
 
 
-def compute_hygiene(asset: Asset, *, now: datetime) -> tuple[int, list[str], bool]:
-    """Five checks; NULL means unmet, so an unassessed record scores low honestly."""
+def review_days_for(asset: Asset, cadence: dict[str, int]) -> int:
+    """How long this asset may go unreviewed, by its effective criticality."""
+    tier = _effective_tier(asset) or "unrated"
+    return int(cadence.get(tier, cadence.get("unrated", _STALE_DAYS)))
+
+
+def compute_hygiene(
+    asset: Asset, *, now: datetime, cadence: dict[str, int] | None = None
+) -> tuple[int, list[str], bool, int]:
+    """Five checks; NULL means unmet, so an unassessed record scores low honestly.
+
+    The fourth return is the review window this asset was judged against, because
+    "stale" means nothing to a reader who cannot see the number behind it.
+    """
     missing: list[str] = []
     if asset.primary_owner_membership_id is None:
         missing.append("no_owner")
@@ -126,7 +147,10 @@ def compute_hygiene(asset: Asset, *, now: datetime) -> tuple[int, list[str], boo
     if asset.confidentiality is None or asset.integrity is None or asset.availability is None:
         missing.append("no_cia")
     score = round((5 - len(missing)) / 5 * 100)
-    return score, missing, _is_stale(asset.last_reviewed_at or asset.last_seen_at, now=now)
+    days = review_days_for(asset, cadence or DEFAULT_REVIEW_DAYS_BY_TIER)
+    last = asset.last_reviewed_at or asset.last_seen_at
+    stale = last is not None and (now - last) > timedelta(days=days)
+    return score, missing, stale, days
 
 
 def _effective_tier(asset: Asset) -> str | None:
@@ -168,6 +192,9 @@ class HygieneView:
     score: int
     missing: list[str]
     is_stale: bool
+    #: The window this asset was judged against, in days. Set per criticality in
+    #: the inventory settings; "not reviewed in 90 days" is meaningless without it.
+    review_days: int = _STALE_DAYS
 
 
 @dataclass(frozen=True, slots=True)
@@ -202,6 +229,7 @@ class AssetView:
     updated_at: datetime
     source: str
     hygiene: HygieneView
+    custom_fields: dict[str, Any]
     vuln_count: int
     link_count: int
     relationship_count: int
@@ -339,6 +367,7 @@ class AssetInput:
     valuation: float | None = None
     business_impact_notes: str | None = None
     operational_dependency_rating: str | None = None
+    custom_fields: dict[str, Any] = field(default_factory=dict)
 
 
 def _member_of(mid: uuid.UUID | None, names: dict[uuid.UUID, str]) -> Member | None:
@@ -503,15 +532,17 @@ class AssetService:
         asset.criticality_score = result[0] if result else None
         asset.tier = result[1] if result else None
 
-    def _to_view(
+    def _to_view(  # noqa: PLR0913
         self,
         asset: Asset,
         names: dict[uuid.UUID, str],
         groups: dict[uuid.UUID, str],
         now: datetime,
         vuln_counts: dict[uuid.UUID, int] | None = None,
+        *,
+        cadence: dict[str, int] | None = None,
     ) -> AssetView:
-        score, missing, stale = compute_hygiene(asset, now=now)
+        score, missing, stale, days = compute_hygiene(asset, now=now, cadence=cadence)
         return AssetView(
             id=asset.id,
             name=asset.name,
@@ -559,7 +590,8 @@ class AssetService:
             created_at=asset.created_at,
             updated_at=asset.updated_at,
             source=asset.source,
-            hygiene=HygieneView(score=score, missing=missing, is_stale=stale),
+            hygiene=HygieneView(score=score, missing=missing, is_stale=stale, review_days=days),
+            custom_fields=dict(asset.custom_fields or {}),
             vuln_count=(vuln_counts or {}).get(asset.id, 0),
             link_count=0,
             relationship_count=0,
@@ -616,7 +648,8 @@ class AssetService:
         names = await self._member_names(session, tenant_id)
         groups = await self._group_names(session, tenant_id)
         vuln_counts = await self._vuln_counts(session, tenant_id)
-        views = [self._to_view(a, names, groups, now, vuln_counts) for a in assets]
+        cadence = await self.review_cadence(session, tenant_id=tenant_id)
+        views = [self._to_view(a, names, groups, now, vuln_counts, cadence=cadence) for a in assets]
         if filters.needs_attention:
             views = [v for v in views if v.hygiene.missing or v.hygiene.is_stale]
 
@@ -866,7 +899,8 @@ class AssetService:
         names = await self._member_names(session, tenant_id)
         groups = await self._group_names(session, tenant_id)
         vuln_counts = await self._vuln_counts(session, tenant_id)
-        base = self._to_view(asset, names, groups, now, vuln_counts)
+        cadence = await self.review_cadence(session, tenant_id=tenant_id)
+        base = self._to_view(asset, names, groups, now, vuln_counts, cadence=cadence)
 
         transitions = list(
             (
@@ -978,6 +1012,9 @@ class AssetService:
             last_reviewed_at=now,
         )
         self._assign(asset, data)
+        asset.custom_fields = await custom_field_service.clean(
+            session, tenant_id=tenant_id, object_type="asset", values=data.custom_fields
+        )
         self._apply_criticality(asset)
         session.add(asset)
         await session.flush([asset])
@@ -1011,6 +1048,13 @@ class AssetService:
         before = _effective_tier(asset)
         before_exposure = (asset.internet_facing, asset.customer_facing)
         self._assign(asset, data)
+        asset.custom_fields = await custom_field_service.clean(
+            session,
+            tenant_id=tenant_id,
+            object_type="asset",
+            values=data.custom_fields,
+            previous=dict(asset.custom_fields or {}),
+        )
         self._apply_criticality(asset)
         asset.last_reviewed_at = datetime.now(UTC)
         after = _effective_tier(asset)
@@ -1197,6 +1241,132 @@ class AssetService:
             )
         return len(rows)
 
+    # -- settings ------------------------------------------------------------
+
+    async def review_cadence(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID
+    ) -> dict[str, int]:
+        """The review window per criticality tier: the shipped defaults, with
+        whatever this tenant overrode on top. No row means the defaults."""
+        row = (
+            await session.execute(select(AssetPolicy).where(AssetPolicy.tenant_id == tenant_id))
+        ).scalar_one_or_none()
+        cadence = dict(DEFAULT_REVIEW_DAYS_BY_TIER)
+        for tier, days in (row.review_cadence_days_by_tier if row else {}).items():
+            if tier in cadence and isinstance(days, int):
+                cadence[tier] = days
+        return cadence
+
+    async def set_review_cadence(
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        cadence: dict[str, int],
+    ) -> dict[str, int]:
+        """Set the review window for one or more tiers. Out of range is refused
+        rather than clamped: a cadence of 0 would mark everything stale at once."""
+        clean: dict[str, int] = {}
+        for tier, days in cadence.items():
+            if tier not in DEFAULT_REVIEW_DAYS_BY_TIER:
+                raise InvalidInput(
+                    "That is not a criticality this inventory uses.",
+                    detail=f"review cadence tier {tier!r}",
+                )
+            if not isinstance(days, int) or not _MIN_REVIEW_DAYS <= days <= _MAX_REVIEW_DAYS:
+                raise InvalidInput(
+                    f"A review window is between {_MIN_REVIEW_DAYS} and {_MAX_REVIEW_DAYS} days.",
+                    detail=f"review cadence {tier}={days!r}",
+                )
+            clean[tier] = days
+        row = (
+            await session.execute(select(AssetPolicy).where(AssetPolicy.tenant_id == tenant_id))
+        ).scalar_one_or_none()
+        before = dict(row.review_cadence_days_by_tier) if row else {}
+        if row is None:
+            row = AssetPolicy(id=uuid7(), tenant_id=tenant_id, review_cadence_days_by_tier={})
+            session.add(row)
+        row.review_cadence_days_by_tier = {**before, **clean}
+        await session.flush([row])
+        await self._audit.record(
+            session,
+            action="update",
+            object_type="asset_policy",
+            object_id=row.id,
+            actor=actor,
+            tenant_id=tenant_id,
+            before={"review_cadence_days_by_tier": before},
+            after={"review_cadence_days_by_tier": row.review_cadence_days_by_tier},
+        )
+        await session.flush()
+        return await self.review_cadence(session, tenant_id=tenant_id)
+
+    async def custom_fields(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, include_archived: bool = False
+    ) -> list[FieldDefinition]:
+        return await custom_field_service.definitions(
+            session,
+            tenant_id=tenant_id,
+            object_type="asset",
+            include_archived=include_archived,
+        )
+
+    async def save_custom_field(
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        field_id: uuid.UUID | None,
+        data: FieldInput,
+    ) -> FieldDefinition:
+        """Define or reword an extra field. The audit row is written here, not in
+        the primitive: the module whose settings changed owns that history."""
+        if field_id is None:
+            view = await custom_field_service.create(
+                session, tenant_id=tenant_id, object_type="asset", data=data
+            )
+        else:
+            view = await custom_field_service.update(
+                session, tenant_id=tenant_id, field_id=field_id, data=data
+            )
+        await self._audit.record(
+            session,
+            action="create" if field_id is None else "update",
+            object_type="asset_custom_field",
+            object_id=view.id,
+            actor=actor,
+            tenant_id=tenant_id,
+            after={"key": view.key, "label": view.label, "field_type": view.field_type},
+        )
+        await session.flush()
+        return view
+
+    async def set_custom_field_archived(
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        field_id: uuid.UUID,
+        archived: bool,
+    ) -> FieldDefinition:
+        view = await custom_field_service.set_archived(
+            session, tenant_id=tenant_id, field_id=field_id, archived=archived
+        )
+        await self._audit.record(
+            session,
+            action="update",
+            object_type="asset_custom_field",
+            object_id=view.id,
+            actor=actor,
+            tenant_id=tenant_id,
+            after={"key": view.key, "archived": archived},
+        )
+        await session.flush()
+        return view
+
     # -- dashboard -----------------------------------------------------------
 
     async def summary(self, session: AsyncSession, *, tenant_id: uuid.UUID) -> dict[str, Any]:
@@ -1208,11 +1378,12 @@ class AssetService:
         by_status = dict.fromkeys(LIFECYCLE_TRANSITIONS, 0)
         by_type: dict[str, int] = {}
         needs_cia = regulated = stale = hygiene_total = 0
+        cadence = await self.review_cadence(session, tenant_id=tenant_id)
         for a in assets:
             by_tier[_effective_tier(a) or "unassessed"] += 1
             by_status[a.status] = by_status.get(a.status, 0) + 1
             by_type[a.asset_type] = by_type.get(a.asset_type, 0) + 1
-            score, missing, is_stale = compute_hygiene(a, now=now)
+            score, missing, is_stale, _days = compute_hygiene(a, now=now, cadence=cadence)
             if "no_cia" in missing:
                 needs_cia += 1
             if a.regulated_data_type or "PCI" in (a.compliance_scope or []):
@@ -1243,13 +1414,14 @@ class AssetService:
         environment: dict[str, int] = {}
         tier = {"critical": 0, "high": 0, "medium": 0, "low": 0, "unassessed": 0}
         needs_attention = 0
+        cadence = await self.review_cadence(session, tenant_id=tenant_id)
         for a in assets:
             asset_type[a.asset_type] = asset_type.get(a.asset_type, 0) + 1
             status[a.status] = status.get(a.status, 0) + 1
             if a.environment:
                 environment[a.environment] = environment.get(a.environment, 0) + 1
             tier[_effective_tier(a) or "unassessed"] += 1
-            _score, missing, is_stale = compute_hygiene(a, now=now)
+            _score, missing, is_stale, _days = compute_hygiene(a, now=now, cadence=cadence)
             if missing or is_stale:
                 needs_attention += 1
         return {

@@ -231,3 +231,84 @@ async def test_a_declared_dependency_reads_from_both_ends(
         assert removed.status_code == 200, removed.text
         assert removed.json()["items"] == []
         assert (await api.get(f"/assets/{api_asset['id']}")).json()["relationships"] == []
+
+
+async def test_a_workspace_defines_its_own_fields_and_its_own_review_cadence(
+    app: FastAPI, workspaces: tuple[Workspace, Workspace]
+) -> None:
+    """The two halves of the inventory settings screen: extra fields a workspace
+    collects, and how long each criticality may go unreviewed."""
+    home, other = workspaces
+    async with _client(app, home) as api, _client(app, other) as outsider:
+        defined = await api.post(
+            "/assets/custom-fields",
+            json={
+                "label": "Cost centre",
+                "field_type": "select",
+                "options": ["CC-100", "CC-200"],
+                "required": False,
+            },
+        )
+        assert defined.status_code == 201, defined.text
+        field = defined.json()
+        assert field["key"] == "cost_centre"
+
+        # A choice field with no choices is refused, and so is a value that is
+        # not one of them.
+        assert (
+            await api.post("/assets/custom-fields", json={"label": "Empty", "field_type": "select"})
+        ).status_code == 422
+        asset = await api.post(
+            "/assets", json={"name": "Payments API", "custom_fields": {"cost_centre": "CC-999"}}
+        )
+        assert asset.status_code == 422, asset.text
+
+        created = await api.post(
+            "/assets",
+            json={"name": "Payments API", "custom_fields": {"cost_centre": "CC-100"}},
+        )
+        assert created.status_code == 201, created.text
+        assert created.json()["custom_fields"] == {"cost_centre": "CC-100"}
+
+        # A key this workspace never defined does not quietly land in the blob.
+        stray = await api.post(
+            "/assets", json={"name": "Stray", "custom_fields": {"nobody_defined_this": "x"}}
+        )
+        assert stray.status_code == 422, stray.text
+
+        # Archived stops the field being offered; the value already written stays.
+        archived = await api.post(
+            f"/assets/custom-fields/{field['id']}/archive", json={"archived": True}
+        )
+        assert archived.status_code == 200, archived.text
+        assert (await api.get("/assets/custom-fields")).json()["items"] == []
+        kept = await api.patch(
+            f"/assets/{created.json()['id']}", json={"name": "Payments API", "custom_fields": {}}
+        )
+        assert kept.status_code == 200, kept.text
+        assert kept.json()["custom_fields"] == {"cost_centre": "CC-100"}
+
+        # The cadence is per criticality, and the hygiene panel reports the one
+        # this asset was judged against.
+        assert (await api.get("/assets/policy")).json()["days_by_tier"]["low"] == 90
+        saved = await api.patch("/assets/policy", json={"days_by_tier": {"low": 180}})
+        assert saved.status_code == 200, saved.text
+        assert saved.json()["days_by_tier"]["low"] == 180
+        assert (
+            await api.patch("/assets/policy", json={"days_by_tier": {"low": 0}})
+        ).status_code == 422
+        rated = await api.patch(
+            f"/assets/{created.json()['id']}",
+            json={
+                "name": "Payments API",
+                "confidentiality": 1,
+                "integrity": 1,
+                "availability": 1,
+            },
+        )
+        assert rated.json()["criticality"]["tier"] == "low"
+        assert rated.json()["hygiene"]["review_days"] == 180
+
+        # None of it is visible to another workspace.
+        assert (await outsider.get("/assets/custom-fields")).json()["items"] == []
+        assert (await outsider.get("/assets/policy")).json()["days_by_tier"]["low"] == 90

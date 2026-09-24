@@ -27,6 +27,10 @@ from verity.modules.assets.schemas import (
     AssetPageOut,
     AssetSummaryOut,
     AssetWrite,
+    CustomFieldArchiveWrite,
+    CustomFieldOut,
+    CustomFieldPageOut,
+    CustomFieldWrite,
     DecommissionRequest,
     FacetsOut,
     ImportRequest,
@@ -34,6 +38,8 @@ from verity.modules.assets.schemas import (
     RelationshipOut,
     RelationshipPageOut,
     RelationshipWrite,
+    ReviewCadenceOut,
+    ReviewCadenceWrite,
     SheetOut,
     TransitionRequest,
 )
@@ -45,6 +51,7 @@ from verity.modules.assets.service import (
     read_sheet,
 )
 from verity.modules.audit.service import Membership
+from verity.modules.customfields.service import FieldInput
 
 assets_router = APIRouter(prefix="/assets", tags=["assets"])
 
@@ -125,6 +132,114 @@ async def facets(
     return FacetsOut.model_validate(
         await asset_service.facets(session, tenant_id=context.tenant_id)
     )
+
+
+# -- settings: the review cadence and the tenant's own fields ----------------
+
+
+@assets_router.get("/policy", response_model=ReviewCadenceOut, summary="Inventory review cadence")
+async def get_policy(
+    _p: Annotated[Principal, Depends(require_read)], context: _Ctx, session: _Db
+) -> ReviewCadenceOut:
+    return ReviewCadenceOut(
+        days_by_tier=await asset_service.review_cadence(session, tenant_id=context.tenant_id)
+    )
+
+
+@assets_router.patch("/policy", response_model=ReviewCadenceOut, summary="Set the review cadence")
+async def set_policy(
+    _p: Annotated[Principal, Depends(require_manage)],
+    context: _Ctx,
+    session: _Db,
+    body: ReviewCadenceWrite,
+) -> ReviewCadenceOut:
+    return ReviewCadenceOut(
+        days_by_tier=await asset_service.set_review_cadence(
+            session,
+            tenant_id=context.tenant_id,
+            actor=_actor(context),
+            cadence=body.days_by_tier,
+        )
+    )
+
+
+@assets_router.get(
+    "/custom-fields", response_model=CustomFieldPageOut, summary="Fields this tenant adds"
+)
+async def list_custom_fields(
+    _p: Annotated[Principal, Depends(require_read)],
+    context: _Ctx,
+    session: _Db,
+    include_archived: bool = False,
+) -> CustomFieldPageOut:
+    items = await asset_service.custom_fields(
+        session, tenant_id=context.tenant_id, include_archived=include_archived
+    )
+    return CustomFieldPageOut(items=[CustomFieldOut.model_validate(i) for i in items])
+
+
+@assets_router.post(
+    "/custom-fields",
+    response_model=CustomFieldOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="Add a field",
+)
+async def create_custom_field(
+    _p: Annotated[Principal, Depends(require_manage)],
+    context: _Ctx,
+    session: _Db,
+    body: CustomFieldWrite,
+) -> CustomFieldOut:
+    view = await asset_service.save_custom_field(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(context),
+        field_id=None,
+        data=FieldInput(**{**body.model_dump(), "options": tuple(body.options)}),
+    )
+    return CustomFieldOut.model_validate(view)
+
+
+@assets_router.patch(
+    "/custom-fields/{field_id}", response_model=CustomFieldOut, summary="Edit a field"
+)
+async def update_custom_field(
+    _p: Annotated[Principal, Depends(require_manage)],
+    context: _Ctx,
+    session: _Db,
+    field_id: uuid.UUID,
+    body: CustomFieldWrite,
+) -> CustomFieldOut:
+    view = await asset_service.save_custom_field(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(context),
+        field_id=field_id,
+        data=FieldInput(**{**body.model_dump(), "options": tuple(body.options)}),
+    )
+    return CustomFieldOut.model_validate(view)
+
+
+@assets_router.post(
+    "/custom-fields/{field_id}/archive",
+    response_model=CustomFieldOut,
+    summary="Stop collecting a field",
+)
+async def archive_custom_field(
+    _p: Annotated[Principal, Depends(require_manage)],
+    context: _Ctx,
+    session: _Db,
+    field_id: uuid.UUID,
+    body: CustomFieldArchiveWrite,
+) -> CustomFieldOut:
+    view = await asset_service.set_custom_field_archived(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(context),
+        field_id=field_id,
+        archived=body.archived,
+    )
+    return CustomFieldOut.model_validate(view)
 
 
 @assets_router.post("/import", response_model=ImportResultOut, summary="Bulk import assets")
