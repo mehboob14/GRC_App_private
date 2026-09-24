@@ -9,6 +9,7 @@
 import { ApiError, apiFetch } from "@/lib/api/client";
 import { computeCriticality, effectiveTier, isHighImpact } from "./mock";
 import type {
+  AssetRelationship,
   Asset,
   AssetDetail,
   AssetFilters,
@@ -38,10 +39,12 @@ const NO_LINKS: Record<LinkTarget, number> = {
   vulnerability: 0,
 };
 
-type AssetDetailResponse = Omit<AssetDetail, "links" | "relationships" | "linked_summary">;
+type AssetDetailResponse = Omit<AssetDetail, "links" | "linked_summary">;
 
 function withEmptyLinks(a: AssetDetailResponse): AssetDetail {
-  return { ...a, links: [], relationships: [], linked_summary: NO_LINKS };
+  // Relationships ride on the detail; cross-module links come from the linkage
+  // endpoints, which the Linked records panel fetches for itself.
+  return { ...a, links: [], relationships: a.relationships ?? [], linked_summary: NO_LINKS };
 }
 
 // -- reads -------------------------------------------------------------------
@@ -225,22 +228,28 @@ export type RelationshipInput = {
   other_asset_id: string;
 };
 
-/** Asset-to-asset relationships have no backend yet — no table, no endpoint — so
- *  declaring one fails loudly rather than writing to a store nothing else can
- *  see. `AssetDetail.relationships` stays empty until that ships. */
+/** Declare a dependency. One edge is stored once and read from both ends, so
+ *  the answer comes back as this asset's whole list rather than the new row. */
 export async function addRelationship(
   assetId: string,
   input: RelationshipInput,
-): Promise<AssetDetail> {
-  void assetId;
-  void input;
-  throw new Error("Asset relationships aren't available yet.");
+): Promise<AssetRelationship[]> {
+  const out = await apiFetch<{ items: AssetRelationship[] }>(
+    `/assets/${assetId}/relationships`,
+    { method: "POST", body: JSON.stringify(input) },
+  );
+  return out.items;
 }
 
-export async function deleteRelationship(assetId: string, relId: string): Promise<AssetDetail> {
-  void assetId;
-  void relId;
-  throw new Error("Asset relationships aren't available yet.");
+export async function deleteRelationship(
+  assetId: string,
+  relId: string,
+): Promise<AssetRelationship[]> {
+  const out = await apiFetch<{ items: AssetRelationship[] }>(
+    `/assets/${assetId}/relationships/${relId}`,
+    { method: "DELETE" },
+  );
+  return out.items;
 }
 
 /** Inventory attestation: the owner signs off that the record was reviewed, which

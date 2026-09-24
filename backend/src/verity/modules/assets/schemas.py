@@ -118,6 +118,30 @@ class TransitionOut(_Response):
     occurred_at: UtcDateTime
 
 
+class RelationshipOut(_Response):
+    """One dependency edge, read from the asset being looked at."""
+
+    id: uuid.UUID
+    direction: str
+    type: str
+    other_asset_id: uuid.UUID
+    other_asset_name: str
+    provenance: str
+    note: str | None
+
+
+class RelationshipWrite(_Request):
+    other_asset_id: uuid.UUID
+    type: str = "depends_on"
+    direction: str = "outbound"
+    """``outbound`` reads "this asset → other"; ``inbound`` the other way."""
+    note: str | None = Field(default=None, max_length=2000)
+
+
+class RelationshipPageOut(_Response):
+    items: list[RelationshipOut]
+
+
 class AssetDetailOut(AssetOut):
     serial_number: str | None
     primary_mac: str | None
@@ -128,6 +152,7 @@ class AssetDetailOut(AssetOut):
     transitions: list[TransitionOut]
     watchers: list[MemberOut]
     allowed_transitions: list[str]
+    relationships: list[RelationshipOut] = Field(default_factory=list)
 
 
 class AssetPageOut(_Response):

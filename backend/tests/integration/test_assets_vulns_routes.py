@@ -175,3 +175,59 @@ async def test_week6_review_path_and_tenant_wall(
         assert (await outsider.get("/vulnerabilities")).json() == []
         assert (await outsider.get(f"/assets/{asset['id']}")).status_code == 404
         assert (await outsider.get(f"/vulnerabilities/{finding['id']}")).status_code == 404
+
+
+async def test_a_declared_dependency_reads_from_both_ends(
+    app: FastAPI, workspaces: tuple[Workspace, Workspace]
+) -> None:
+    """One row, two sentences. Storing the inverse separately would let the two
+    disagree, and disagreeing edges are worse than none when the question is what
+    else goes down with this."""
+    home, other = workspaces
+    async with _client(app, home) as api, _client(app, other) as outsider:
+        api_asset = (await api.post("/assets", json={"name": "Payments API"})).json()
+        cluster = (
+            await api.post("/assets", json={"name": "Prod cluster", "asset_type": "infrastructure"})
+        ).json()
+
+        declared = await api.post(
+            f"/assets/{api_asset['id']}/relationships",
+            json={"other_asset_id": cluster["id"], "type": "runs_on", "direction": "outbound"},
+        )
+        assert declared.status_code == 201, declared.text
+        edge = declared.json()["items"][0]
+        assert (edge["direction"], edge["type"], edge["other_asset_name"]) == (
+            "outbound",
+            "runs_on",
+            "Prod cluster",
+        )
+
+        # The other end reads the same row the other way round, on its detail.
+        detail = (await api.get(f"/assets/{cluster['id']}")).json()
+        assert [(r["direction"], r["other_asset_name"]) for r in detail["relationships"]] == [
+            ("inbound", "Payments API")
+        ]
+
+        # Declared twice is one edge; an asset cannot depend on itself.
+        again = await api.post(
+            f"/assets/{api_asset['id']}/relationships",
+            json={"other_asset_id": cluster["id"], "type": "runs_on", "direction": "outbound"},
+        )
+        assert again.status_code == 409, again.text
+        itself = await api.post(
+            f"/assets/{api_asset['id']}/relationships",
+            json={"other_asset_id": api_asset["id"], "type": "depends_on"},
+        )
+        assert itself.status_code == 422, itself.text
+
+        # Another tenant can neither see it nor reach it.
+        assert (await outsider.get(f"/assets/{cluster['id']}/relationships")).status_code == 404
+        assert (
+            await outsider.delete(f"/assets/{cluster['id']}/relationships/{edge['id']}")
+        ).status_code == 404
+
+        # Either end may withdraw it, and it goes from both.
+        removed = await api.delete(f"/assets/{cluster['id']}/relationships/{edge['id']}")
+        assert removed.status_code == 200, removed.text
+        assert removed.json()["items"] == []
+        assert (await api.get(f"/assets/{api_asset['id']}")).json()["relationships"] == []

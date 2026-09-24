@@ -31,10 +31,19 @@ from verity.modules.assets.schemas import (
     FacetsOut,
     ImportRequest,
     ImportResultOut,
+    RelationshipOut,
+    RelationshipPageOut,
+    RelationshipWrite,
     SheetOut,
     TransitionRequest,
 )
-from verity.modules.assets.service import AssetFilters, AssetInput, asset_service, read_sheet
+from verity.modules.assets.service import (
+    AssetFilters,
+    AssetInput,
+    RelationshipInput,
+    asset_service,
+    read_sheet,
+)
 from verity.modules.audit.service import Membership
 
 assets_router = APIRouter(prefix="/assets", tags=["assets"])
@@ -234,6 +243,68 @@ async def decommission(
         reason=body.reason,
     )
     return AssetDetailOut.model_validate(view)
+
+
+@assets_router.get(
+    "/{asset_id}/relationships",
+    response_model=RelationshipPageOut,
+    summary="Dependencies either way",
+)
+async def list_relationships(
+    _p: Annotated[Principal, Depends(require_read)],
+    context: _Ctx,
+    session: _Db,
+    asset_id: uuid.UUID,
+) -> RelationshipPageOut:
+    items = await asset_service.relationships(
+        session, tenant_id=context.tenant_id, asset_id=asset_id
+    )
+    return RelationshipPageOut(items=[RelationshipOut.model_validate(r) for r in items])
+
+
+@assets_router.post(
+    "/{asset_id}/relationships",
+    response_model=RelationshipPageOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="Declare a dependency",
+)
+async def add_relationship(
+    _p: Annotated[Principal, Depends(require_manage)],
+    context: _Ctx,
+    session: _Db,
+    asset_id: uuid.UUID,
+    body: RelationshipWrite,
+) -> RelationshipPageOut:
+    items = await asset_service.add_relationship(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(context),
+        asset_id=asset_id,
+        data=RelationshipInput(**body.model_dump()),
+    )
+    return RelationshipPageOut(items=[RelationshipOut.model_validate(r) for r in items])
+
+
+@assets_router.delete(
+    "/{asset_id}/relationships/{relationship_id}",
+    response_model=RelationshipPageOut,
+    summary="Withdraw a dependency",
+)
+async def remove_relationship(
+    _p: Annotated[Principal, Depends(require_manage)],
+    context: _Ctx,
+    session: _Db,
+    asset_id: uuid.UUID,
+    relationship_id: uuid.UUID,
+) -> RelationshipPageOut:
+    items = await asset_service.remove_relationship(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(context),
+        asset_id=asset_id,
+        relationship_id=relationship_id,
+    )
+    return RelationshipPageOut(items=[RelationshipOut.model_validate(r) for r in items])
 
 
 @assets_router.post("/{asset_id}/review", response_model=AssetDetailOut, summary="Mark reviewed")

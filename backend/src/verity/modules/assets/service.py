@@ -18,7 +18,7 @@ from __future__ import annotations
 import io
 import uuid
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, date, datetime, timedelta
 from typing import Any, Final
 
@@ -26,7 +26,13 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from verity.core.errors import Conflict, InvalidInput, NotFound
-from verity.modules.assets.models import Asset, AssetTransition, DecommissionRecord
+from verity.modules.assets.models import (
+    RELATIONSHIP_TYPES,
+    Asset,
+    AssetRelationship,
+    AssetTransition,
+    DecommissionRecord,
+)
 from verity.modules.audit.service import Actor, AuditService, Membership, audit_service
 from verity.shared.ids import uuid7
 
@@ -247,6 +253,32 @@ class TransitionView:
 
 
 @dataclass(frozen=True, slots=True)
+class RelationshipView:
+    """One edge, as it reads from the asset being looked at.
+
+    ``direction`` is relative to that asset rather than to the stored row, so the
+    same edge reads "runs on the cluster" from the application and "is run on by
+    the application" from the cluster, without a second row to disagree with.
+    """
+
+    id: uuid.UUID
+    direction: str
+    type: str
+    other_asset_id: uuid.UUID
+    other_asset_name: str
+    provenance: str
+    note: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class RelationshipInput:
+    other_asset_id: uuid.UUID
+    type: str = "depends_on"
+    direction: str = "outbound"
+    note: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class AssetDetailView(AssetView):
     serial_number: str | None
     primary_mac: str | None
@@ -257,6 +289,7 @@ class AssetDetailView(AssetView):
     transitions: list[TransitionView]
     watchers: list[Member]
     allowed_transitions: list[str]
+    relationships: list[RelationshipView] = field(default_factory=list)
 
 
 @dataclass(frozen=True, slots=True)
@@ -634,6 +667,197 @@ class AssetService:
         attention = 0 if (v.hygiene.missing or v.hygiene.is_stale) else 1
         return tier_rank, attention, v.name.lower()
 
+    async def relationships(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, asset_id: uuid.UUID
+    ) -> list[RelationshipView]:
+        """Every edge touching this asset, read from its own point of view.
+
+        The asset is loaded first so an id from another tenant answers 404 like
+        every other route, rather than an empty list that quietly confirms the id
+        exists somewhere.
+        """
+        await self._load(session, tenant_id, asset_id)
+        rows = list(
+            (
+                await session.execute(
+                    select(AssetRelationship)
+                    .where(AssetRelationship.tenant_id == tenant_id)
+                    .where(
+                        or_(
+                            AssetRelationship.source_asset_id == asset_id,
+                            AssetRelationship.target_asset_id == asset_id,
+                        )
+                    )
+                    .order_by(AssetRelationship.created_at)
+                )
+            ).scalars()
+        )
+        if not rows:
+            return []
+        other_ids = {
+            r.target_asset_id if r.source_asset_id == asset_id else r.source_asset_id for r in rows
+        }
+        names = {
+            row.id: row.name
+            for row in (
+                await session.execute(
+                    select(Asset.id, Asset.name)
+                    .where(Asset.tenant_id == tenant_id)
+                    .where(Asset.id.in_(list(other_ids)))
+                )
+            ).all()
+        }
+        views: list[RelationshipView] = []
+        for row in rows:
+            outbound = row.source_asset_id == asset_id
+            other = row.target_asset_id if outbound else row.source_asset_id
+            views.append(
+                RelationshipView(
+                    id=row.id,
+                    direction="outbound" if outbound else "inbound",
+                    type=row.relationship_type,
+                    other_asset_id=other,
+                    other_asset_name=names.get(other, "An asset you cannot see"),
+                    provenance=row.provenance,
+                    note=row.note,
+                )
+            )
+        return views
+
+    async def add_relationship(
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        asset_id: uuid.UUID,
+        data: RelationshipInput,
+    ) -> list[RelationshipView]:
+        """Declare a dependency. The inverse reads off the same row.
+
+        ``direction`` decides which end is stored as the source, so "this runs on
+        that" and "that is run on by this" are the same edge rather than two.
+        """
+        asset = await self._load(session, tenant_id, asset_id)
+        other = await self._load(session, tenant_id, data.other_asset_id)
+        if other.id == asset.id:
+            raise InvalidInput(
+                "An asset cannot depend on itself.", detail=f"self edge on {asset_id}"
+            )
+        if data.type not in RELATIONSHIP_TYPES:
+            raise InvalidInput(
+                "That is not a relationship this inventory records.",
+                detail=f"relationship_type {data.type!r}",
+            )
+        if data.direction not in {"outbound", "inbound"}:
+            raise InvalidInput(
+                "A dependency runs one way or the other.",
+                detail=f"direction {data.direction!r}",
+            )
+        source_id, target_id = (
+            (asset.id, other.id) if data.direction == "outbound" else (other.id, asset.id)
+        )
+        existing = (
+            await session.execute(
+                select(AssetRelationship)
+                .where(AssetRelationship.tenant_id == tenant_id)
+                .where(AssetRelationship.source_asset_id == source_id)
+                .where(AssetRelationship.target_asset_id == target_id)
+                .where(AssetRelationship.relationship_type == data.type)
+            )
+        ).scalar_one_or_none()
+        if existing is not None:
+            raise Conflict(
+                "That dependency is already recorded.",
+                detail=f"edge {source_id} {data.type} {target_id} exists",
+            )
+        row = AssetRelationship(
+            id=uuid7(),
+            tenant_id=tenant_id,
+            source_asset_id=source_id,
+            target_asset_id=target_id,
+            relationship_type=data.type,
+            provenance="declared",
+            note=(data.note or "").strip() or None,
+            created_by_membership_id=actor.id if isinstance(actor, Membership) else None,
+        )
+        session.add(row)
+        await session.flush([row])
+        await self._audit.record(
+            session,
+            action="create",
+            object_type="asset_relationship",
+            object_id=row.id,
+            actor=actor,
+            tenant_id=tenant_id,
+            before=None,
+            after={
+                "source_asset_id": str(source_id),
+                "target_asset_id": str(target_id),
+                "relationship_type": data.type,
+            },
+        )
+        await session.flush()
+        return await self.relationships(session, tenant_id=tenant_id, asset_id=asset_id)
+
+    async def remove_relationship(
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        asset_id: uuid.UUID,
+        relationship_id: uuid.UUID,
+    ) -> list[RelationshipView]:
+        """Withdraw a declared dependency, from either end of it."""
+        row = await session.get(AssetRelationship, relationship_id, populate_existing=True)
+        if (
+            row is None
+            or row.tenant_id != tenant_id
+            or asset_id
+            not in {
+                row.source_asset_id,
+                row.target_asset_id,
+            }
+        ):
+            raise NotFound(
+                "That dependency no longer exists.",
+                detail=f"relationship {relationship_id} on asset {asset_id}",
+            )
+        before = {
+            "source_asset_id": str(row.source_asset_id),
+            "target_asset_id": str(row.target_asset_id),
+            "relationship_type": row.relationship_type,
+        }
+        await session.delete(row)
+        await self._audit.record(
+            session,
+            action="delete",
+            object_type="asset_relationship",
+            object_id=relationship_id,
+            actor=actor,
+            tenant_id=tenant_id,
+            before=before,
+            after=None,
+        )
+        await session.flush()
+        return await self.relationships(session, tenant_id=tenant_id, asset_id=asset_id)
+
+    async def _relationship_counts(
+        self, session: AsyncSession, tenant_id: uuid.UUID
+    ) -> dict[uuid.UUID, int]:
+        """Edges per asset, counted from both ends in one pass."""
+        counts: dict[uuid.UUID, int] = {}
+        rows = await session.execute(
+            select(AssetRelationship.source_asset_id, AssetRelationship.target_asset_id).where(
+                AssetRelationship.tenant_id == tenant_id
+            )
+        )
+        for source_id, target_id in rows.all():
+            counts[source_id] = counts.get(source_id, 0) + 1
+            counts[target_id] = counts.get(target_id, 0) + 1
+        return counts
+
     async def get_asset(
         self, session: AsyncSession, *, tenant_id: uuid.UUID, asset_id: uuid.UUID
     ) -> AssetDetailView:
@@ -664,7 +888,9 @@ class AssetService:
             )
         ).scalar_one_or_none()
 
+        relationships = await self.relationships(session, tenant_id=tenant_id, asset_id=asset.id)
         return AssetDetailView(
+            relationships=relationships,
             **{f: getattr(base, f) for f in base.__dataclass_fields__},
             serial_number=asset.serial_number,
             primary_mac=asset.primary_mac,

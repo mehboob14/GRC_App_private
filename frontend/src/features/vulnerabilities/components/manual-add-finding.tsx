@@ -12,9 +12,16 @@ const SEVERITIES: Severity[] = ["critical", "high", "medium", "low", "info"];
  * "Add finding" drawer. CVE autofill resolves the title/CVE against NVD
  * and offers to fill empty fields — a read only, nothing saved until submit.
  */
-export function ManualAddFinding({ onAdded }: { onAdded: (id: string) => void }) {
+export function ManualAddFinding({
+  onAdded,
+  defaultAssetId = null,
+}: {
+  onAdded: (id: string) => void;
+  /** Opened from an asset: that asset is already chosen. */
+  defaultAssetId?: string | null;
+}) {
   const { toast } = useToast();
-  const [assetId, setAssetId] = useState<string | null>(null);
+  const [assetId, setAssetId] = useState<string | null>(defaultAssetId);
   const [title, setTitle] = useState("");
   const [severity, setSeverity] = useState<Severity>("high");
   const [cve, setCve] = useState("");

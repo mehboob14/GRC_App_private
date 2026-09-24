@@ -61,6 +61,16 @@ ENVIRONMENTS: Final[tuple[str, ...]] = ("prod", "staging", "dev", "test", "dr")
 _MEMBERSHIP_FK = "tenant_memberships.id"
 
 
+RELATIONSHIP_TYPES: Final[tuple[str, ...]] = (
+    "depends_on",
+    "runs_on",
+    "contains",
+    "connects_to",
+    "processes_data_for",
+)
+RELATIONSHIP_PROVENANCE: Final[tuple[str, ...]] = ("declared", "discovered")
+
+
 class Asset(UUIDPrimaryKey, TenantScoped, Timestamped, Integratable, Base):
     """One asset in the inventory."""
 
@@ -195,6 +205,49 @@ class DecommissionRecord(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
         # One decommission per asset.
         UniqueConstraint("tenant_id", "asset_id", name="uq_decommission_records__asset"),
         tenant_index("decommission_records", "asset_id"),
+    )
+
+
+class AssetRelationship(UUIDPrimaryKey, TenantScoped, Timestamped, Integratable, Base):
+    """One directed dependency between two assets (A8).
+
+    Stored once and read from both ends. A second row for the inverse would let
+    the two disagree, and disagreeing edges are worse than no edges when the
+    question being asked is what else goes down with this.
+
+    ``provenance`` keeps a person's claim distinguishable from a scanner's
+    observation, which is the same distinction the subprocessor register draws
+    and for the same reason.
+    """
+
+    __tablename__ = "asset_relationships"
+
+    source_asset_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("assets.id", ondelete="CASCADE"))
+    target_asset_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("assets.id", ondelete="CASCADE"))
+    relationship_type: Mapped[str] = mapped_column(default="depends_on")
+    provenance: Mapped[str] = mapped_column(default="declared", server_default="declared")
+    note: Mapped[str | None] = mapped_column(default=None)
+    created_by_membership_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("tenant_memberships.id", ondelete="SET NULL"), default=None
+    )
+
+    __table_args__ = (
+        status_check("asset_relationships", "relationship_type", RELATIONSHIP_TYPES),
+        status_check("asset_relationships", "provenance", RELATIONSHIP_PROVENANCE),
+        CheckConstraint(
+            "source_asset_id <> target_asset_id",
+            name=conv("ck_asset_relationships__no_self_edge"),
+        ),
+        UniqueConstraint(
+            "tenant_id",
+            "source_asset_id",
+            "target_asset_id",
+            "relationship_type",
+            name="uq_asset_relationships__edge",
+        ),
+        integration_unique("asset_relationships"),
+        tenant_index("asset_relationships", "source_asset_id"),
+        tenant_index("asset_relationships", "target_asset_id"),
     )
 
 

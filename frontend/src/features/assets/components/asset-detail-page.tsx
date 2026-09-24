@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useDeferredValue, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -7,7 +7,9 @@ import {
   Button,
   Checkbox,
   Dialog,
+  DialogBody,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -19,6 +21,7 @@ import {
   DropdownMenuTrigger,
   ErrorState,
   Icon,
+  SearchInput,
   Select,
   SelectContent,
   SelectField,
@@ -40,10 +43,16 @@ import {
   recordReview,
   transitionAsset,
 } from "../api";
-import { RELATIONSHIP_TYPES } from "../types";
-import type { AssetDetail, AssetStatus, HygieneFlag, LinkTarget, RelationshipType } from "../types";
+import {
+  type AssetRelationship, RELATIONSHIP_TYPES } from "../types";
+import type { AssetDetail, AssetStatus, HygieneFlag, RelationshipType } from "../types";
 import { AssetFormDrawer } from "./asset-form-drawer";
-import { listVulnerabilities } from "@/features/vulnerabilities/api";
+import { linkVulnerabilityAsset, listVulnerabilities } from "@/features/vulnerabilities/api";
+import { AddFindingDrawer } from "@/features/vulnerabilities/components/add-finding-drawer";
+import { LinkedRecordsPanel } from "@/features/linkage/components/linked-records-panel";
+import { useLinkedRecords } from "@/features/linkage/hooks";
+import { useAuth } from "@/lib/auth/auth-context";
+import { hasPermission } from "@/lib/auth/session";
 import { SeverityBadge } from "@/features/vulnerabilities/components/severity-badge";
 import {
   ASSET_TYPE_META,
@@ -92,7 +101,7 @@ const TABS = [
   { id: "lifecycle", label: "Lifecycle" },
   { id: "vulnerabilities", label: "Vulnerabilities" },
   { id: "relationships", label: "Relationships" },
-  { id: "linked", label: "Related" },
+  { id: "linked", label: "Linked records" },
   { id: "activity", label: "Activity" },
 ] as const;
 type TabId = (typeof TABS)[number]["id"];
@@ -107,6 +116,7 @@ export function AssetDetailPage() {
 
   const query = useQuery({ queryKey: ["asset", assetId], queryFn: () => getAsset(assetId), enabled: assetId.length > 0 });
   const a = query.data;
+  const linksQuery = useLinkedRecords("asset", assetId);
 
   const invalidate = () => {
     void queryClient.invalidateQueries({ queryKey: ["asset", assetId] });
@@ -148,7 +158,6 @@ export function AssetDetailPage() {
 
   const tier = displayTier(a.criticality);
   const tierMeta = tier ? TIER_META[tier] : NEEDS_ASSESSMENT;
-  const linkedCounts = Object.entries(a.linked_summary).filter(([, n]) => n > 0);
   // The single obvious next lifecycle move stays a button; the rest fold into ⋯.
   const primaryTo = a.allowed_transitions.find((t) => t === PRIMARY_NEXT[a.status]) ?? null;
   const otherTransitions = a.allowed_transitions.filter((t) => t !== primaryTo);
@@ -260,7 +269,7 @@ export function AssetDetailPage() {
           label: t.label,
           count:
             (t.id === "linked"
-              ? linkedCounts.reduce((sum, [, n]) => sum + n, 0)
+              ? linksQuery.data?.records.length
               : t.id === "relationships"
                 ? a.relationship_count
                 : undefined) || undefined,
@@ -276,7 +285,7 @@ export function AssetDetailPage() {
         {tab === "criticality" ? <CriticalityTab a={a} /> : null}
         {tab === "ownership" ? <OwnershipTab a={a} /> : null}
         {tab === "lifecycle" ? <LifecycleTab a={a} /> : null}
-        {tab === "vulnerabilities" ? <VulnerabilitiesTab assetId={a.id} onOpen={(id) => navigate(`/vulnerabilities/${id}`)} /> : null}
+        {tab === "vulnerabilities" ? <VulnerabilitiesTab assetId={a.id} assetName={a.name} onOpen={(id) => navigate(`/vulnerabilities/${id}`)} /> : null}
         {tab === "relationships" ? <RelationshipsTab a={a} onChange={invalidate} onOpen={(id) => navigate(`/assets/${id}`)} /> : null}
         {tab === "linked" ? <LinkedTab a={a} /> : null}
         {tab === "activity" ? <ActivityTab a={a} /> : null}
@@ -594,7 +603,7 @@ function RelationshipsTab({ a, onChange, onOpen }: { a: AssetDetail; onChange: (
         <ul className="space-y-2">
           {a.relationships.map((r) => (
             <li key={r.id} className="flex items-center gap-2.5 rounded-sm border border-border px-3 py-2">
-              <Badge variant="neutral">{r.direction === "outbound" ? humanize(r.type) : `is ${humanize(r.type)} by`}</Badge>
+              <Badge variant="neutral">{relationshipLabel(r)}</Badge>
               <button type="button" onClick={() => onOpen(r.other_asset_id)} className="min-w-0 flex-1 truncate text-left text-body-sm text-text-primary hover:underline">
                 {r.other_asset_name}
               </button>
@@ -609,6 +618,27 @@ function RelationshipsTab({ a, onChange, onOpen }: { a: AssetDetail; onChange: (
       {adding ? <RelationshipDialog a={a} onOpenChange={setAdding} onDone={() => { setAdding(false); onChange(); }} /> : null}
     </Panel>
   );
+}
+
+/**
+ * How an edge reads from the asset you are looking at.
+ *
+ * One stored row, two sentences: the inverse of "runs on" is "hosts", not
+ * "is runs on by". Mechanically inverting the verb is how a dependency map ends
+ * up unreadable in exactly the direction people scan it.
+ */
+const INVERSE_LABEL: Record<RelationshipType, string> = {
+  depends_on: "is depended on by",
+  runs_on: "hosts",
+  contains: "is part of",
+  connects_to: "is connected to by",
+  processes_data_for: "has data processed by",
+};
+
+function relationshipLabel(r: AssetRelationship): string {
+  return r.direction === "outbound"
+    ? humanize(r.type)
+    : (INVERSE_LABEL[r.type] ?? `is ${humanize(r.type)} by`);
 }
 
 function RelationshipDialog({ a, onOpenChange, onDone }: { a: AssetDetail; onOpenChange: (o: boolean) => void; onDone: () => void }) {
@@ -684,15 +714,19 @@ function RelationshipDialog({ a, onOpenChange, onDone }: { a: AssetDetail; onOpe
   );
 }
 
-const LINKED_MODULES: { type: LinkTarget; label: string }[] = [
-  { type: "control", label: "Controls" },
-  { type: "risk", label: "Risks" },
-  { type: "vulnerability", label: "Vulnerabilities" },
-  { type: "evidence", label: "Evidence" },
-  { type: "document", label: "Documents" },
-];
-
-function VulnerabilitiesTab({ assetId, onOpen }: { assetId: string; onOpen: (id: string) => void }) {
+function VulnerabilitiesTab({
+  assetId,
+  assetName,
+  onOpen,
+}: {
+  assetId: string;
+  assetName: string;
+  onOpen: (id: string) => void;
+}) {
+  const { principal } = useAuth();
+  const canManage = hasPermission(principal, "vulnerabilities:manage");
+  const [adding, setAdding] = useState(false);
+  const [linking, setLinking] = useState(false);
   const query = useQuery({
     queryKey: ["asset-vulns", assetId],
     queryFn: () => listVulnerabilities({ asset_id: assetId, state: "all" }),
@@ -702,26 +736,44 @@ function VulnerabilitiesTab({ assetId, onOpen }: { assetId: string; onOpen: (id:
 
   return (
     <div className="rounded-lg border border-border bg-surface-primary p-5">
-      <div className="mb-3 flex items-center justify-between gap-3">
+      <div className="mb-3 flex flex-wrap items-center gap-2">
         <h2 className="font-display text-title-md text-text-primary">
           Vulnerabilities
           <span className="ml-2 tabular text-body-sm text-text-subtle">{open.length} open</span>
         </h2>
-        <Link
-          to={`/vulnerabilities?asset_id=${assetId}`}
-          className="text-caption font-semibold text-text-link"
-        >
-          Open in register →
-        </Link>
+        <span className="ml-auto flex flex-wrap items-center gap-2">
+          <Button size="sm" variant="ghost" asChild>
+            <Link to={`/vulnerabilities?asset_id=${assetId}`}>
+              View in register
+              <Icon name="chevr" className="size-3.5" />
+            </Link>
+          </Button>
+          {canManage ? (
+            <>
+              <Button size="sm" variant="secondary" onClick={() => setLinking(true)}>
+                <Icon name="link" className="size-3.5" />
+                Link finding
+              </Button>
+              <Button size="sm" onClick={() => setAdding(true)}>
+                <Icon name="plus" className="size-3.5" />
+                Add finding
+              </Button>
+            </>
+          ) : null}
+        </span>
       </div>
       {query.isLoading ? (
-        <p className="text-body-sm text-text-subtle">Loading…</p>
+        <p className="text-body-sm text-text-subtle">Loading</p>
       ) : query.isError ? (
         <p className="text-body-sm text-status-danger-text">{describeError(query.error, "vulnerability list").message}</p>
       ) : rows.length === 0 ? (
-        <p className="text-body-sm text-text-subtle">
-          No vulnerabilities on this asset. Findings imported for it appear here, prioritised by risk.
-        </p>
+        <div className="flex flex-col items-center gap-2 rounded-md bg-surface-sunken px-4 py-8 text-center">
+          <span className="grid size-10 place-items-center rounded-xl bg-surface-primary text-text-subtle shadow-1">
+            <Icon name="bug" className="size-5" />
+          </span>
+          <p className="text-body-sm text-text-secondary">No vulnerabilities on this asset.</p>
+          <p className="text-caption text-text-subtle">Imported scans land here, prioritised by risk.</p>
+        </div>
       ) : (
         <ul className="space-y-1.5">
           {rows.map((v) => (
@@ -747,49 +799,122 @@ function VulnerabilitiesTab({ assetId, onOpen }: { assetId: string; onOpen: (id:
           ))}
         </ul>
       )}
+      <AddFindingDrawer open={adding} onOpenChange={setAdding} assetId={assetId} />
+      {linking ? (
+        <LinkFindingDialog assetId={assetId} assetName={assetName} onOpenChange={setLinking} onAsset={rows} />
+      ) : null}
     </div>
   );
 }
 
-function LinkedTab({ a }: { a: AssetDetail }) {
-  const groups = new Map<LinkTarget, typeof a.links>();
-  for (const l of a.links) groups.set(l.to_type, [...(groups.get(l.to_type) ?? []), l]);
+/**
+ * Record a finding that already exists elsewhere on this asset too. It becomes
+ * its own instance here, with its own status, SLA and score, so fixing it on
+ * one asset never closes it on another.
+ */
+function LinkFindingDialog({
+  assetId,
+  assetName,
+  onOpenChange,
+  onAsset,
+}: {
+  assetId: string;
+  assetName: string;
+  onOpenChange: (open: boolean) => void;
+  onAsset: { cve_id: string | null; title: string }[];
+}) {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [search, setSearch] = useState("");
+  const query = useDeferredValue(search);
+  const results = useQuery({
+    queryKey: ["asset-link-finding", query],
+    queryFn: () => listVulnerabilities({ search: query, state: "all" }),
+  });
+  const keyOf = (v: { cve_id: string | null; title: string }) => (v.cve_id || v.title).toLowerCase();
+  const here = new Set(onAsset.map(keyOf));
+  const findings = [...new Map((results.data ?? []).map((v) => [keyOf(v), v])).values()].slice(0, 30);
+
+  const link = useMutation({
+    mutationFn: (instanceId: string) => linkVulnerabilityAsset(instanceId, assetId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["asset-vulns", assetId] });
+      void queryClient.invalidateQueries({ queryKey: ["vulnerabilities"] });
+      void queryClient.invalidateQueries({ queryKey: ["vuln-kpis"] });
+      toast({ title: `Finding added to ${assetName}`, tone: "success" });
+    },
+    onError: (error: unknown) => toast({ title: errorToast(error, "finding"), tone: "danger" }),
+  });
+
   return (
-    <Panel title="Linked records">
-      {a.links.length > 0 ? (
-        <div className="mb-5 space-y-4">
-          {[...groups.entries()].map(([type, links]) => (
-            <div key={type}>
-              <p className="type-overline mb-1.5 text-text-subtle">{cap(type)}</p>
-              <ul className="space-y-1.5">
-                {links.map((l) => (
-                  <li key={l.id} className="flex items-center gap-2.5 rounded-sm border border-border px-3 py-2">
-                    <span className="min-w-0 flex-1 truncate text-body-sm text-text-primary">{l.to_label}</span>
-                    <Badge variant="neutral">{humanize(l.relation)}</Badge>
+    <Dialog open onOpenChange={onOpenChange}>
+      <DialogContent size="lg" scrollBody className="max-h-[86vh]">
+        <DialogHeader>
+          <DialogTitle>Link a finding</DialogTitle>
+          <DialogDescription>
+            Record an existing finding on {assetName} too. It gets its own status and SLA here.
+          </DialogDescription>
+        </DialogHeader>
+        <SearchInput value={search} onChange={setSearch} placeholder="Search by title or CVE" aria-label="Search findings" />
+        <DialogBody className="mt-3">
+          {results.isLoading ? (
+            <p className="py-8 text-center text-body-sm text-text-subtle">Searching</p>
+          ) : results.isError ? (
+            <p className="py-8 text-center text-body-sm text-text-subtle">
+              {describeError(results.error, "findings").message}
+            </p>
+          ) : findings.length === 0 ? (
+            <p className="py-8 text-center text-body-sm text-text-subtle">No findings match.</p>
+          ) : (
+            <ul className="divide-y divide-border rounded-lg border border-border">
+              {findings.map((v) => {
+                const already = here.has(keyOf(v));
+                return (
+                  <li key={v.id} className="flex items-center gap-3 px-3 py-2.5">
+                    <SeverityBadge severity={v.severity} />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-body-sm font-medium text-text-primary">
+                        {v.cve_id ? (
+                          <span className="mr-1.5 font-mono text-caption font-semibold text-text-subtle">{v.cve_id}</span>
+                        ) : null}
+                        {v.title}
+                      </span>
+                      <span className="block truncate text-caption text-text-subtle">Seen on {v.asset_name}</span>
+                    </span>
+                    <Button
+                      size="sm"
+                      variant={already ? "ghost" : "secondary"}
+                      disabled={already || link.isPending}
+                      loading={link.isPending && link.variables === v.id}
+                      onClick={() => link.mutate(v.id)}
+                    >
+                      {already ? (
+                        <>
+                          <Icon name="check" className="size-3.5" />
+                          On this asset
+                        </>
+                      ) : (
+                        "Add here"
+                      )}
+                    </Button>
                   </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-      ) : null}
-      <p className="mb-3 text-body-sm text-text-subtle">
-        As the compliance modules connect, the controls, risks and vulnerabilities this asset ties into
-        appear here for end-to-end traceability.
-      </p>
-      <ul className="space-y-2">
-        {LINKED_MODULES.map((m) => {
-          const n = a.linked_summary[m.type] ?? 0;
-          return (
-            <li key={m.type} className="flex items-center justify-between rounded-md border border-border px-3 py-2">
-              <span className="text-body-sm text-text-primary">{m.label}</span>
-              {n > 0 ? <Badge variant="neutral">{n} linked</Badge> : <span className="text-caption text-text-subtle">Soon</span>}
-            </li>
-          );
-        })}
-      </ul>
-    </Panel>
+                );
+              })}
+            </ul>
+          )}
+        </DialogBody>
+        <DialogFooter>
+          <Button variant="secondary" onClick={() => onOpenChange(false)}>
+            Done
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
+}
+
+function LinkedTab({ a }: { a: AssetDetail }) {
+  return <LinkedRecordsPanel anchorType="asset" anchorId={a.id} />;
 }
 
 function ActivityTab({ a }: { a: AssetDetail }) {

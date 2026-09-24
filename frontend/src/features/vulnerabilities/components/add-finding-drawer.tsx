@@ -10,9 +10,12 @@ import { ManualAddFinding } from "./manual-add-finding";
 export function AddFindingDrawer({
   open,
   onOpenChange,
+  assetId,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Preselect the asset when adding from its page. */
+  assetId?: string;
 }) {
   const queryClient = useQueryClient();
 
@@ -20,6 +23,7 @@ export function AddFindingDrawer({
     queryClient.invalidateQueries({ queryKey: ["vulnerabilities"] });
     queryClient.invalidateQueries({ queryKey: ["vuln-kpis"] });
     queryClient.invalidateQueries({ queryKey: ["vuln-all"] });
+    if (assetId) queryClient.invalidateQueries({ queryKey: ["asset-vulns", assetId] });
     onOpenChange(false);
   };
 
@@ -31,7 +35,7 @@ export function AddFindingDrawer({
         </DrawerHeader>
         <DrawerBody>
           {/* Remount per open so the form starts empty each time. */}
-          {open ? <ManualAddFinding onAdded={onAdded} /> : null}
+          {open ? <ManualAddFinding onAdded={onAdded} defaultAssetId={assetId ?? null} /> : null}
         </DrawerBody>
       </DrawerContent>
     </Drawer>
