@@ -157,7 +157,7 @@ sudo certbot renew --dry-run                      # confirm renewal works
 
 `verity-web`'s own nginx already reverse-proxies `/api` to the `api` service, so the host proxy
 only needs the single `location /` block above. The API's `/readyz` (reachable as
-`http://verity-web/api/v1/... ` internally, or `dc exec api curl localhost:8000/readyz`)
+`http://verity-web/api/v1/... ` internally, or `dc exec -T api python -c "import urllib.request;print(urllib.request.urlopen('http://127.0.0.1:8000/readyz').read().decode())"`)
 reports each dependency and answers 503 when one is down.
 
 ## Routine deployment (updating)
@@ -178,6 +178,12 @@ dc run --rm api python -m verity.manage seed-content   # pick up new shipped con
 - `worker` and `beat` run on by default; a code change reaches them on the next `dc up -d`
   because they share the `verity-api` image.
 - Zero-downtime is not a Phase-1 goal; `dc up -d` recreates in place with a brief blip.
+
+- **Run the deploy inside `tmux`** (`tmux new -s deploy`, reattach with `tmux attach -t
+  deploy`). The frontend image compiles with `tsc -b && vite build`, which takes minutes on
+  this box, and an SSH drop mid-build kills the build and everything queued behind it.
+- The API image ships no `curl`. Its HEALTHCHECK uses Python's urllib and so does the
+  readiness probe this runbook gives; `dc ps` shows the same answer as a status column.
 
 ## Backup and restore
 
@@ -220,7 +226,7 @@ dc down -v                             # stop AND delete all data — destructiv
 
 - **Logs** are structured and run through the redaction pipeline — connector credentials and
   anything password-shaped never reach them.
-- **Health:** `dc exec api curl -s localhost:8000/readyz` → `database`, `redis` each report
+- **Health:** `dc exec -T api python -c "import urllib.request;print(urllib.request.urlopen('http://127.0.0.1:8000/readyz').read().decode())"` → `database`, `redis` each report
   `ok`/`down`; the process answers 503 (not death) when a dependency is down, so an unready
   replica leaves the load balancer and keeps running.
 
