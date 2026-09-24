@@ -278,6 +278,22 @@ class ControlService:
         )
         return dict(rows.tuples().all())
 
+    async def control_ids_for_templates(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, template_ids: set[uuid.UUID]
+    ) -> list[uuid.UUID]:
+        """The tenant's active controls adopted from these templates. Connector
+        evidence attaches to them, because checks map to templates, not tenants."""
+        if not template_ids:
+            return []
+        rows = await session.execute(
+            select(Control.id).where(
+                Control.tenant_id == tenant_id,
+                Control.disabled_at.is_(None),
+                Control.template_id.in_(template_ids),
+            )
+        )
+        return list(rows.scalars())
+
     async def get_control(
         self, session: AsyncSession, *, tenant_id: uuid.UUID, control_id: uuid.UUID
     ) -> ControlView:

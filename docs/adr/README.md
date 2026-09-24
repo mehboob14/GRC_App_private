@@ -24,3 +24,4 @@ it for reversible, local choices.
 | [0011](0011-tenant-membership-model.md) | Users are global; membership is `tenant_memberships` (global-users-ready) | Accepted |
 | [0012](0012-document-editor-and-viewer-stack.md) | Rich-text editor and document viewer stack | Accepted |
 | [0013](0013-tenant-built-vendor-questionnaires.md) | Tenant-built vendor questionnaires, snapshotted where used | Accepted |
+| [0014](0014-common-control-framework.md) | One Verity control framework, mapped to frameworks and automated through capabilities | Proposed |

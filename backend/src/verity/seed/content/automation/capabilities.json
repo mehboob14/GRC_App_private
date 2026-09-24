@@ -1,0 +1,142 @@
+[
+  {
+    "key": "version_control",
+    "name": "Version control",
+    "description": "Where code changes are proposed, reviewed and merged.",
+    "providers": [
+      {"key": "github", "name": "GitHub", "status": "available", "phase": null},
+      {"key": "gitlab", "name": "GitLab", "status": "planned", "phase": "Phase 2"},
+      {"key": "bitbucket", "name": "Bitbucket", "status": "planned", "phase": "Phase 2"}
+    ]
+  },
+  {
+    "key": "cloud_infrastructure",
+    "name": "Cloud infrastructure",
+    "description": "Where production systems and data run.",
+    "providers": [
+      {"key": "aws", "name": "Amazon Web Services", "status": "planned", "phase": "Phase 2"},
+      {"key": "azure", "name": "Microsoft Azure", "status": "planned", "phase": "Phase 3"},
+      {"key": "gcp", "name": "Google Cloud", "status": "planned", "phase": "Phase 3"},
+      {"key": "digitalocean", "name": "DigitalOcean", "status": "planned", "phase": "Phase 3"},
+      {"key": "heroku", "name": "Heroku", "status": "planned", "phase": "Phase 3"},
+      {"key": "render", "name": "Render", "status": "planned", "phase": "Phase 3"},
+      {"key": "vercel", "name": "Vercel", "status": "planned", "phase": "Phase 3"},
+      {"key": "netlify", "name": "Netlify", "status": "planned", "phase": "Phase 3"},
+      {"key": "supabase", "name": "Supabase", "status": "planned", "phase": "Phase 3"},
+      {"key": "neon", "name": "Neon", "status": "planned", "phase": "Phase 3"},
+      {"key": "qovery", "name": "Qovery", "status": "planned", "phase": "Phase 3"}
+    ]
+  },
+  {
+    "key": "asset_discovery",
+    "name": "Asset discovery",
+    "description": "A system that knows which servers, services and resources exist.",
+    "providers": [
+      {"key": "aws", "name": "Amazon Web Services", "status": "planned", "phase": "Phase 2"},
+      {"key": "azure", "name": "Microsoft Azure", "status": "planned", "phase": "Phase 3"},
+      {"key": "gcp", "name": "Google Cloud", "status": "planned", "phase": "Phase 3"},
+      {"key": "bmc", "name": "BMC", "status": "planned", "phase": "Phase 3"}
+    ]
+  },
+  {
+    "key": "identity_provider",
+    "name": "Identity provider",
+    "description": "Where staff accounts, sign in rules and group access live.",
+    "providers": [
+      {"key": "okta", "name": "Okta", "status": "planned", "phase": "Phase 2"},
+      {"key": "gws", "name": "Google Workspace", "status": "planned", "phase": "Phase 2"},
+      {"key": "entra", "name": "Microsoft 365 and Entra ID", "status": "planned", "phase": "Phase 2"}
+    ]
+  },
+  {
+    "key": "password_manager",
+    "name": "Password manager",
+    "description": "The company vault staff use for shared and personal credentials.",
+    "providers": [
+      {"key": "onepassword", "name": "1Password", "status": "planned", "phase": "Phase 2"}
+    ]
+  },
+  {
+    "key": "ticketing",
+    "name": "Ticketing",
+    "description": "Where changes, access requests and remediation work are tracked.",
+    "providers": [
+      {"key": "jira", "name": "Jira", "status": "planned", "phase": "Phase 2"},
+      {"key": "linear", "name": "Linear", "status": "planned", "phase": "Phase 3"},
+      {"key": "asana", "name": "Asana", "status": "planned", "phase": "Phase 3"},
+      {"key": "clickup", "name": "ClickUp", "status": "planned", "phase": "Phase 3"},
+      {"key": "monday", "name": "Monday", "status": "planned", "phase": "Phase 3"},
+      {"key": "notion", "name": "Notion", "status": "planned", "phase": "Phase 3"}
+    ]
+  },
+  {
+    "key": "alerting",
+    "name": "On call and alerting",
+    "description": "Where alerts page the person on call and incidents are run.",
+    "providers": [
+      {"key": "pagerduty", "name": "PagerDuty", "status": "planned", "phase": "Phase 2"},
+      {"key": "slack", "name": "Slack", "status": "planned", "phase": "Phase 2"}
+    ]
+  },
+  {
+    "key": "network_edge",
+    "name": "Network and edge",
+    "description": "What sits in front of applications and private systems.",
+    "providers": [
+      {"key": "cloudflare", "name": "Cloudflare", "status": "planned", "phase": "Phase 2"},
+      {"key": "tailscale", "name": "Tailscale", "status": "planned", "phase": "Phase 2"}
+    ]
+  },
+  {
+    "key": "observability",
+    "name": "Observability",
+    "description": "Where logs, metrics and application errors are collected.",
+    "providers": [
+      {"key": "datadog", "name": "Datadog", "status": "planned", "phase": "Phase 2"},
+      {"key": "sentry", "name": "Sentry", "status": "planned", "phase": "Phase 2"},
+      {"key": "grafana", "name": "Grafana", "status": "planned", "phase": "Phase 3"},
+      {"key": "signoz", "name": "SigNoz", "status": "planned", "phase": "Phase 3"},
+      {"key": "betterstack", "name": "Better Stack", "status": "planned", "phase": "Phase 3"}
+    ]
+  },
+  {
+    "key": "vulnerability_scanner",
+    "name": "Vulnerability scanner",
+    "description": "What scans servers and applications for known weaknesses.",
+    "providers": [
+      {"key": "tenable", "name": "Tenable Nessus", "status": "planned", "phase": "Phase 3"},
+      {"key": "rapid7", "name": "Rapid7 Nexpose", "status": "planned", "phase": "Phase 3"},
+      {"key": "qualys", "name": "Qualys", "status": "planned", "phase": "Phase 3"}
+    ]
+  },
+  {
+    "key": "hr_system",
+    "name": "HR system",
+    "description": "The record of who joined, moved and left.",
+    "providers": [
+      {"key": "workday", "name": "Workday", "status": "not_planned", "phase": null},
+      {"key": "bamboohr", "name": "BambooHR", "status": "not_planned", "phase": null},
+      {"key": "rippling", "name": "Rippling", "status": "not_planned", "phase": null},
+      {"key": "gusto", "name": "Gusto", "status": "not_planned", "phase": null}
+    ]
+  },
+  {
+    "key": "device_management",
+    "name": "Device management",
+    "description": "What enrols, configures and can wipe company laptops.",
+    "providers": [
+      {"key": "jamf", "name": "Jamf", "status": "not_planned", "phase": null},
+      {"key": "kandji", "name": "Kandji", "status": "not_planned", "phase": null},
+      {"key": "intune", "name": "Microsoft Intune", "status": "not_planned", "phase": null}
+    ]
+  },
+  {
+    "key": "endpoint_protection",
+    "name": "Endpoint protection",
+    "description": "The agent that detects and stops malware on laptops and servers.",
+    "providers": [
+      {"key": "crowdstrike", "name": "CrowdStrike", "status": "not_planned", "phase": null},
+      {"key": "sentinelone", "name": "SentinelOne", "status": "not_planned", "phase": null}
+    ]
+  }
+]

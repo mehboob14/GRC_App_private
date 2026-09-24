@@ -1,7 +1,29 @@
 # Connector framework
 
-Phase 1 models connectors and shows placeholders. Phase 2 builds the framework and the first
-fifteen. Phase 3 delivers the rest of the catalogue.
+Phase 1 ships the framework with one live connector, GitHub (build plan week 7: "connect GitHub and
+watch controls marked pass or fail from real repository data"). Phase 2 adds the rest of the first
+fifteen and continuous monitoring (findings, alerts, waivers). Phase 3 delivers the rest of the
+catalogue.
+
+## How it works today
+
+- **Checks are content** (`backend/src/verity/seed/content/automation/`): each names the
+  capabilities it needs (`version_control`, `identity_provider`), the providers whose collector
+  implements it, and the control templates it maps to. One connected provider per capability is
+  enough. `seed-content` loads them into `integration_capabilities`, `checks` and
+  `control_template_checks`.
+- **A connection** holds one provider account and an envelope encrypted, read only token.
+  Disconnecting destroys the token; the row and its history stay.
+- **A run** collects once (outside any transaction), evaluates every implemented check as a pure
+  function of the snapshot, and then writes in one transaction: one `check_results` row per check and
+  resource, the snapshot as an evidence file on every mapped control (at most one a day unless the
+  results change), and the connection's health. Runs are daily from the worker
+  (`run_connector_checks`, hourly beat, due after 20 hours) and on demand.
+- **The control page** reads `GET /controls/{id}/automation`: tests, the capability and providers
+  ("connect any one of"), per resource results, and a 30 day history. A system Verity does not
+  support is requested through `integration_requests`.
+- Not built yet (Phase 2): findings with auto resolve, alerts, waivers, scoping and exclusions.
+  Until then the latest run's failing rows are the open issues.
 
 ## Non-negotiables
 

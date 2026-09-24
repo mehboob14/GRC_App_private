@@ -266,6 +266,7 @@ containers = [
     "verity.modules.documents",
     "verity.modules.evidence",
     "verity.modules.iam",
+    "verity.modules.linkage",
     "verity.modules.notifications",
     "verity.modules.risk",
     "verity.modules.tasks",
@@ -440,6 +441,39 @@ forbidden_modules = [
 name = "connectors reaches no other module's data"
 type = "forbidden"
 source_modules = ["verity.modules.connectors"]
+# connectors resolves controls through ComplianceControlService, files run
+# snapshots through EvidenceService and audits through AuditService. What each
+# of those does with its own repository and models is its private business.
+ignore_imports = [
+    "verity.modules.assets.service -> verity.modules.assets.models",
+    "verity.modules.audit.repository -> verity.modules.audit.models",
+    "verity.modules.audit.service -> verity.modules.audit.models",
+    "verity.modules.audit.service -> verity.modules.audit.repository",
+    "verity.modules.compliance.control_service -> verity.modules.compliance.models",
+    "verity.modules.compliance.control_service -> verity.modules.iam.service",
+    "verity.modules.compliance.service -> verity.modules.compliance.models",
+    "verity.modules.compliance.service -> verity.modules.compliance.repository",
+    "verity.modules.documents.service -> verity.modules.compliance.service",
+    "verity.modules.documents.service -> verity.modules.documents.models",
+    "verity.modules.documents.service -> verity.modules.tenancy.service",
+    "verity.modules.evidence.service -> verity.modules.assets.service",
+    "verity.modules.evidence.service -> verity.modules.documents.service",
+    "verity.modules.evidence.service -> verity.modules.evidence.models",
+    "verity.modules.evidence.service -> verity.modules.iam.service",
+    "verity.modules.evidence.service -> verity.modules.tasks.service",
+    "verity.modules.evidence.service -> verity.modules.vulnerabilities.service",
+    "verity.modules.iam.repository -> verity.modules.iam.models",
+    "verity.modules.iam.service -> verity.modules.iam.models",
+    "verity.modules.iam.service -> verity.modules.iam.repository",
+    "verity.modules.iam.service -> verity.modules.tenancy.service",
+    "verity.modules.notifications.service -> verity.modules.notifications.models",
+    "verity.modules.tasks.service -> verity.modules.notifications.service",
+    "verity.modules.tasks.service -> verity.modules.tasks.models",
+    "verity.modules.tenancy.repository -> verity.modules.tenancy.models",
+    "verity.modules.tenancy.service -> verity.modules.tenancy.models",
+    "verity.modules.tenancy.service -> verity.modules.tenancy.repository",
+    "verity.modules.vulnerabilities.service -> verity.modules.vulnerabilities.models",
+]
 forbidden_modules = [
     "verity.modules.ai.repository", "verity.modules.ai.models",
     "verity.modules.approvals.repository", "verity.modules.approvals.models",
@@ -656,6 +690,61 @@ forbidden_modules = [
     "verity.modules.evidence.repository", "verity.modules.evidence.models",
     "verity.modules.iam.repository", "verity.modules.iam.models",
     "verity.modules.notifications.repository", "verity.modules.notifications.models",
+    "verity.modules.tasks.repository", "verity.modules.tasks.models",
+    "verity.modules.tenancy.repository", "verity.modules.tenancy.models",
+    "verity.modules.vendors.repository", "verity.modules.vendors.models",
+    "verity.modules.vulnerabilities.repository", "verity.modules.vulnerabilities.models",
+]
+
+[[tool.importlinter.contracts]]
+name = "linkage reaches no other module's data"
+type = "forbidden"
+source_modules = ["verity.modules.linkage"]
+# linkage labels and draws links through every linked module's service (asset,
+# vulnerability, risk, control, evidence, document, vendor, task) and audits through
+# AuditService. Each service's use of its own repository and models is its private
+# business, so those legs are exempt.
+ignore_imports = [
+    "verity.modules.risk.service -> verity.modules.risk.models",
+    "verity.modules.risk.scoring -> verity.modules.risk.models",
+    "verity.modules.assets.service -> verity.modules.assets.models",
+    "verity.modules.audit.repository -> verity.modules.audit.models",
+    "verity.modules.audit.service -> verity.modules.audit.models",
+    "verity.modules.audit.service -> verity.modules.audit.repository",
+    "verity.modules.compliance.control_service -> verity.modules.compliance.models",
+    "verity.modules.compliance.service -> verity.modules.compliance.models",
+    "verity.modules.compliance.service -> verity.modules.compliance.repository",
+    "verity.modules.documents.service -> verity.modules.compliance.service",
+    "verity.modules.documents.service -> verity.modules.documents.models",
+    "verity.modules.documents.service -> verity.modules.tenancy.service",
+    "verity.modules.evidence.service -> verity.modules.evidence.models",
+    "verity.modules.iam.repository -> verity.modules.iam.models",
+    "verity.modules.iam.service -> verity.modules.iam.models",
+    "verity.modules.iam.service -> verity.modules.iam.repository",
+    "verity.modules.iam.service -> verity.modules.tenancy.service",
+    "verity.modules.notifications.service -> verity.modules.notifications.models",
+    "verity.modules.tasks.service -> verity.modules.tasks.models",
+    "verity.modules.tenancy.repository -> verity.modules.tenancy.models",
+    "verity.modules.tenancy.service -> verity.modules.tenancy.models",
+    "verity.modules.tenancy.service -> verity.modules.tenancy.repository",
+    "verity.modules.vendors.service -> verity.modules.vendors.models",
+    "verity.modules.vendors.service -> verity.modules.vendors.questionnaires",
+    "verity.modules.vendors.questionnaires -> verity.modules.vendors.models",
+    "verity.modules.vulnerabilities.service -> verity.modules.iam.service",
+    "verity.modules.vulnerabilities.service -> verity.modules.vulnerabilities.models",
+]
+forbidden_modules = [
+    "verity.modules.ai.repository", "verity.modules.ai.models",
+    "verity.modules.approvals.repository", "verity.modules.approvals.models",
+    "verity.modules.assets.repository", "verity.modules.assets.models",
+    "verity.modules.audit.repository", "verity.modules.audit.models",
+    "verity.modules.compliance.repository", "verity.modules.compliance.models",
+    "verity.modules.connectors.repository", "verity.modules.connectors.models",
+    "verity.modules.documents.repository", "verity.modules.documents.models",
+    "verity.modules.evidence.repository", "verity.modules.evidence.models",
+    "verity.modules.iam.repository", "verity.modules.iam.models",
+    "verity.modules.notifications.repository", "verity.modules.notifications.models",
+    "verity.modules.risk.repository", "verity.modules.risk.models",
     "verity.modules.tasks.repository", "verity.modules.tasks.models",
     "verity.modules.tenancy.repository", "verity.modules.tenancy.models",
     "verity.modules.vendors.repository", "verity.modules.vendors.models",

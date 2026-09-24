@@ -58,6 +58,7 @@ import { VendorsOverviewPage } from "@/features/vendors/components/vendors-overv
 import { VendorsRegisterPage } from "@/features/vendors/components/vendors-register-page";
 import { VendorIntakePage } from "@/features/vendors/components/vendor-intake-page";
 import { VendorFindingsPage } from "@/features/vendors/components/vendor-findings-page";
+import { VendorPolicyPage } from "@/features/vendors/components/vendor-policy-page";
 import { VendorRosterPage } from "@/features/vendors/components/vendor-roster-page";
 import { VendorDetailPage } from "@/features/vendors/components/vendor-detail-page";
 import { VendorPortalPage } from "@/features/vendors/components/vendor-portal-page";
@@ -164,6 +165,7 @@ export function AppRoutes() {
             <Route path="findings" element={<VendorFindingsPage />} />
             <Route path="questionnaires" element={<VendorQuestionnairesPage />} />
             <Route path="roster" element={<VendorRosterPage />} />
+            <Route path="policy" element={<VendorPolicyPage />} />
           </Route>
           <Route
             path="vendors/questionnaires/:questionnaireId"

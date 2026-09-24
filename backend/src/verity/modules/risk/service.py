@@ -1774,6 +1774,31 @@ class RiskService:
             for r, reg in (await session.execute(stmt)).all()
         ]
 
+    async def get_ref(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, risk_id: uuid.UUID
+    ) -> RiskRef:
+        """One risk as another module shows it in a list of linked records."""
+        row = (
+            await session.execute(
+                select(Risk, RiskRegister)
+                .join(RiskRegister, RiskRegister.id == Risk.register_id)
+                .where(Risk.tenant_id == tenant_id, Risk.id == risk_id)
+            )
+        ).first()
+        if row is None:
+            raise NotFound(_RISK_GONE, detail=f"risk {risk_id}")
+        risk, register = row
+        return RiskRef(
+            id=risk.id,
+            code=risk.code,
+            title=risk.title,
+            status=risk.status,
+            band=scoring.band_for(
+                register.severity_bands, risk.residual_score or risk.inherent_score
+            ),
+            register_name=register.name,
+        )
+
     # =========================================================================
     # Controls
     # =========================================================================
@@ -2045,9 +2070,10 @@ class RiskService:
         risk_id: uuid.UUID,
         target_type: str,
         target_id: uuid.UUID,
+        relation: str = "relates_to",
     ) -> RiskDetailView:
         risk = await self._load(session, tenant_id, risk_id)
-        await self._link(session, risk, actor, target_type, target_id)
+        await self._link(session, risk, actor, target_type, target_id, relation)
         return await self.get_risk(session, tenant_id=tenant_id, risk_id=risk.id)
 
     async def _link(  # noqa: PLR0913, PLR0917

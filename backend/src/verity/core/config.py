@@ -162,6 +162,17 @@ class AISettings(_Section):
     api_key: SecretStr | None = None
 
 
+class ConnectorSettings(_Section):
+    """Outbound connector calls. The GitHub base URL is a setting so GitHub
+    Enterprise Server, or a recorded fixture server in a local check, can stand in
+    for github.com."""
+
+    model_config = SettingsConfigDict(env_prefix="CONNECTORS_")
+
+    github_api_url: str = "https://api.github.com"
+    timeout_seconds: float = Field(default=20.0, gt=0)
+
+
 class LangSmithSettings(_Section):
     """Tracing configuration.
 
@@ -262,6 +273,7 @@ class Settings(_Section):
     storage: StorageSettings = Field(default_factory=StorageSettings)
     ai: AISettings = Field(default_factory=AISettings)
     langsmith: LangSmithSettings = Field(default_factory=LangSmithSettings)
+    connectors: ConnectorSettings = Field(default_factory=ConnectorSettings)
 
     @model_validator(mode="after")
     def _reject_development_defaults_when_deployed(self) -> Settings:

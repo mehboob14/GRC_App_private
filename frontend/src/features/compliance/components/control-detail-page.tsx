@@ -11,7 +11,6 @@ import {
   Icon,
   Skeleton,
   StatusPill,
-  Tooltip,
   useToast,
   TabStrip,
 } from "@/components/ui";
@@ -33,6 +32,15 @@ import {
 // re-implemented, so the fields cannot drift between the two entry points.
 import { AddEvidenceDialog } from "@/features/evidence/components/evidence-page";
 import { OwnerSelect } from "@/features/iam/components/owner-select";
+import { LinkedRecordsPanel } from "@/features/linkage/components/linked-records-panel";
+import {
+  AutomationHeaderButton,
+  AutomationPanel,
+  AutomationSummary,
+} from "@/features/connectors/components/automation-panel";
+import { ago } from "@/features/connectors/api";
+import { useAutomation } from "@/features/connectors/hooks";
+import { useLinkedRecords } from "@/features/linkage/hooks";
 import type { Control, Evidence, EvidenceFreshness } from "@/lib/api/types";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -225,7 +233,7 @@ function ChangeSummary({
   );
 }
 
-type TabId = "overview" | "evidence" | "tests" | "requirements" | "history";
+type TabId = "overview" | "evidence" | "tests" | "requirements" | "linked" | "history";
 
 export function ControlDetailPage() {
   const { controlId = "" } = useParams();
@@ -233,6 +241,9 @@ export function ControlDetailPage() {
   const canManage = Boolean(principal?.permissions.includes("controls:manage"));
   const canReadAudit = Boolean(principal?.permissions.includes("audit:read"));
   const [tab, setTab] = useState<TabId>("overview");
+  const linksQuery = useLinkedRecords("control", controlId);
+  // Same query key as the Automation tab, so the rail and the tab share one fetch.
+  const automation = useAutomation(controlId).data;
   const [editing, setEditing] = useState(false);
   const [linking, setLinking] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -391,8 +402,9 @@ export function ControlDetailPage() {
   const tabs: { id: TabId; label: string; count?: number }[] = [
     { id: "overview", label: "Overview" },
     { id: "evidence", label: "Evidence", count: evidence.length },
-    { id: "tests", label: "Tests" },
+    { id: "tests", label: "Automation" },
     { id: "requirements", label: "Requirements", count: criteria.length },
+    { id: "linked", label: "Linked records", count: linksQuery.data?.records.length },
     { id: "history", label: "History", count: history.length },
   ];
 
@@ -457,16 +469,10 @@ export function ControlDetailPage() {
                 Edit
               </Button>
             ) : null}
-            {/* Honest later-phase affordance (DS): keyboard-reachable, explicitly
-                not enabled, and the tooltip says when it arrives. */}
-            <Tooltip content="Automated testing arrives with connectors in Phase 2">
-              <span tabIndex={0} className="rounded-sm">
-                <Button disabled>
-                  <Icon name="activity" className="size-4" />
-                  Run test
-                </Button>
-              </span>
-            </Tooltip>
+            <AutomationHeaderButton
+              controlId={controlId}
+              onOpen={() => setTab("tests")}
+            />
           </>
         }
       />
@@ -510,22 +516,10 @@ export function ControlDetailPage() {
                 </Panel>
               ) : null}
 
-              {/* The design shows automated test results here. There is no test
-                  engine yet, so the panel states that instead of rendering
-                  invented passes. */}
-              <Panel title="Automated tests">
-                <div className="flex items-start gap-2.5 rounded-md border border-border bg-surface-sunken px-3.5 py-3">
-                  <Icon
-                    name="alert"
-                    className="mt-0.5 size-4 shrink-0 text-text-subtle"
-                  />
-                  <p className="text-body-sm text-text-secondary">
-                    Continuous tests run against connected systems and arrive
-                    with connectors in Phase 2. Until a connector is live, this
-                    control is evidenced manually. See Evidence.
-                  </p>
-                </div>
-              </Panel>
+              <AutomationSummary
+                controlId={controlId}
+                onOpen={() => setTab("tests")}
+              />
             </>
           ) : null}
 
@@ -615,15 +609,9 @@ export function ControlDetailPage() {
             </Panel>
           ) : null}
 
-          {tab === "tests" ? (
-            <Panel title="Automated tests">
-              <EmptyState
-                icon="activity"
-                title="No automated tests yet"
-                description="Continuous tests run against connected systems and arrive with connectors in Phase 2. Until one is live, this control is evidenced manually."
-              />
-            </Panel>
-          ) : null}
+          {tab === "tests" ? <AutomationPanel controlId={controlId} /> : null}
+
+          {tab === "linked" ? <LinkedRecordsPanel anchorType="control" anchorId={controlId} /> : null}
 
           {tab === "history" ? (
             <Panel title="History">
@@ -799,10 +787,19 @@ export function ControlDetailPage() {
                 )
               }
             />
-            {/* Testing fields from the design that nothing measures yet. Shown
-                as unavailable rather than omitted, so the gap is visible. */}
-            <Fact label="Last tested" value="Not tested" muted />
-            <Fact label="Test frequency" value="Manual" muted />
+            {/* Measured by the connected systems; muted while nothing runs. */}
+            <Fact
+              label="Last tested"
+              value={
+                automation?.last_run_at ? ago(automation.last_run_at) : "Not tested"
+              }
+              muted={!automation?.last_run_at}
+            />
+            <Fact
+              label="Test frequency"
+              value={automation?.tests_running ? "Daily" : "Manual"}
+              muted={!automation?.tests_running}
+            />
           </section>
 
           <section className="rounded-lg border border-border bg-surface-primary p-5">

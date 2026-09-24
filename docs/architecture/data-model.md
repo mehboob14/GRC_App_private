@@ -169,7 +169,13 @@ approved, never asserted. A reappearing definition flips the old instance to `re
 **Connectors and checks.** Checks are global content mapped to the stable control template identity.
 `error` is a first-class state, never conflated with `fail`. `check_results` is the one high-volume
 table: append-only, partitioned by month from day one. Findings are opened per failing check +
-connection + resource, so a check failing on three buckets raises three findings.
+connection + resource, so a check failing on three buckets raises three findings. Checks bind to
+capabilities (version control, identity provider), never to one vendor; mappings from controls to
+requirements carry a reviewed relationship and rationale. Tables and columns:
+`openspec/changes/common-control-framework/design.md` (ADR-0014). Built: global
+`integration_capabilities`, `checks`, `control_template_checks`; tenant `connections`,
+`check_runs`, `check_results` (partitioned by month, pre-created to December 2028 plus a
+default partition), `integration_requests`.
 
 ## Conventions
 

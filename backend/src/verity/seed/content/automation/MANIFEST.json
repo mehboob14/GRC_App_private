@@ -1,0 +1,12 @@
+{
+  "pack": "automation",
+  "source": "Authored for Verity. Capabilities and providers follow section 8 of the signed specification; providers outside it are marked not_planned.",
+  "version": "2026.1",
+  "capabilities": 13,
+  "checks": 59,
+  "controls_mapped": 53,
+  "sha256": {
+    "capabilities.json": "5cc4c0df4dcb8f0b825dfeacc978ff0a65bc89d817660068aa1c7fbdcb7bdfce",
+    "checks.json": "62e76e22d2d1238b115046589ef2432d3e9f5946db4420a76333c5520e9df9ad"
+  }
+}

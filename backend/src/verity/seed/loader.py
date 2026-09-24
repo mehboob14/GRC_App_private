@@ -21,6 +21,7 @@ would orphan tenant data fails loudly instead of silently cascading.
 from __future__ import annotations
 
 import json
+import uuid
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -40,6 +41,7 @@ from verity.modules.compliance.models import (
     Requirement,
     TemplateRequirementMap,
 )
+from verity.modules.connectors.models import Check, ControlTemplateCheck, IntegrationCapability
 from verity.modules.documents.models import DocumentTemplate
 from verity.modules.risk.models import RiskTemplate
 from verity.modules.vendors.models import QuestionnaireQuestion, QuestionnaireTemplate
@@ -442,11 +444,105 @@ async def _load_risk_templates(
     await session.flush()
 
 
+async def _load_capabilities(
+    session: AsyncSession, docs: Sequence[dict[str, Any]], result: LoadResult
+) -> dict[str, IntegrationCapability]:
+    """Upsert capabilities by key. Stale ones are handed back for a late prune."""
+    existing = {
+        row.key: row for row in (await session.execute(select(IntegrationCapability))).scalars()
+    }
+    for doc in docs:
+        values = {
+            "name": doc["name"],
+            "description": doc["description"],
+            "providers": doc["providers"],
+        }
+        row = existing.pop(doc["key"], None)
+        if row is None:
+            session.add(IntegrationCapability(id=uuid7(), key=doc["key"], **values))
+            result.table("integration_capabilities").inserted += 1
+        elif _apply(row, values):
+            result.table("integration_capabilities").updated += 1
+    return existing
+
+
+async def _load_automation(
+    session: AsyncSession,
+    capabilities: Sequence[dict[str, Any]],
+    checks: Sequence[dict[str, Any]],
+    result: LoadResult,
+) -> None:
+    """Upsert capabilities, checks and the check to control template map.
+
+    Checks name templates by code, so this pack loads after the packs that define
+    templates (``load_all`` orders it last). A check that has already produced
+    results cannot be pruned: ``check_results`` references it without a cascade,
+    so the prune fails loudly and history is never orphaned.
+    """
+    stale_capabilities = await _load_capabilities(session, capabilities, result)
+    capability_keys = {doc["key"] for doc in capabilities}
+    templates = {
+        row.code: row.id for row in (await session.execute(select(ControlTemplate))).scalars()
+    }
+    existing_checks = {row.key: row for row in (await session.execute(select(Check))).scalars()}
+    wanted: dict[tuple[uuid.UUID, uuid.UUID], str] = {}
+    for doc in checks:
+        unknown = set(doc["capabilities"]) - capability_keys
+        missing = [m["code"] for m in doc["controls"] if m["code"] not in templates]
+        if unknown or missing:
+            raise ValueError(
+                f"check {doc['key']}: unknown capabilities {unknown}, controls {missing}"
+            )
+        values = {
+            "name": doc["name"],
+            "description": doc["description"],
+            "capabilities": doc["capabilities"],
+            "implementations": doc["implementations"],
+            "resource_type": doc["resource_type"],
+            "frequency": doc["frequency"],
+            "remediation": doc["remediation"],
+        }
+        check = existing_checks.pop(doc["key"], None)
+        if check is None:
+            check = Check(id=uuid7(), key=doc["key"], **values)
+            session.add(check)
+            result.table("checks").inserted += 1
+        elif _apply(check, values):
+            result.table("checks").updated += 1
+        for mapping in doc["controls"]:
+            wanted[(templates[mapping["code"]], check.id)] = mapping["coverage"]
+    await session.flush()
+
+    existing_map = {
+        (row.template_id, row.check_id): row
+        for row in (await session.execute(select(ControlTemplateCheck))).scalars()
+    }
+    for (template_id, check_id), coverage in wanted.items():
+        row = existing_map.pop((template_id, check_id), None)
+        if row is None:
+            session.add(
+                ControlTemplateCheck(
+                    id=uuid7(), template_id=template_id, check_id=check_id, coverage=coverage
+                )
+            )
+            result.table("control_template_checks").inserted += 1
+        elif _apply(row, {"coverage": coverage}):
+            result.table("control_template_checks").updated += 1
+    for stale in [*existing_map.values(), *existing_checks.values(), *stale_capabilities.values()]:
+        await session.delete(stale)
+        result.table(type(stale).__tablename__).pruned += 1
+        await session.flush()
+
+
 async def load_pack(session: AsyncSession, pack: Path) -> LoadResult:
     """Load one content pack directory. Idempotent: a second run changes nothing."""
     result = LoadResult()
     # Packs are not all the same shape: the policy library ships templates and
     # no framework, so each section loads only if its file is present.
+    if (pack / "checks.json").exists():
+        await _load_automation(
+            session, _read(pack, "capabilities.json"), _read(pack, "checks.json"), result
+        )
     if (pack / "risk_templates.json").exists():
         await _load_risk_templates(session, _read(pack, "risk_templates.json"), result)
     if (pack / "questionnaire_bank.json").exists():
@@ -486,7 +582,13 @@ async def load_all(packs: Sequence[Path] | None = None) -> LoadResult:
     try:
         maker = async_sessionmaker(bind=engine, expire_on_commit=False)
         async with maker() as session, session.begin():
-            for pack in packs or sorted(p for p in CONTENT_ROOT.iterdir() if p.is_dir()):
+            # Checks map to control templates, so a pack that ships checks loads
+            # after the packs that define templates.
+            ordered = sorted(
+                (p for p in CONTENT_ROOT.iterdir() if p.is_dir()),
+                key=lambda p: ((p / "checks.json").exists(), p.name),
+            )
+            for pack in packs or ordered:
                 one = await load_pack(session, pack)
                 for name, table in one.tables.items():
                     total = combined.table(name)

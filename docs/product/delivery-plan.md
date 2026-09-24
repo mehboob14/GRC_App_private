@@ -45,6 +45,10 @@ each taken through review, approval, and staff acknowledgement.
 - **3.2** Remaining connectors, live scanner integrations, CIS hardening benchmarks, SSO, access
   reviews in full, read-only auditor access.
 
+How the control library, the automation catalogue behind 2.1 and 2.2, module evidence and the
+Phase 3 frameworks fit together, and which parts are extensions:
+[control-framework-requirements.md](control-framework-requirements.md) (ADR-0014).
+
 ## Out of scope
 
 Automated answering of inbound security questionnaires, built-in training courseware, endpoint or
