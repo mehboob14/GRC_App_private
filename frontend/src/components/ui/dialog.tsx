@@ -16,6 +16,13 @@ const widths = {
   sm: "w-[min(480px,calc(100vw-2rem))]",
   md: "w-[min(600px,calc(100vw-2rem))]",
   lg: "w-[min(720px,calc(100vw-2rem))]",
+  /**
+   * Past the DS's 720, for the one shape that needs it: two columns of people,
+   * roles and groups side by side. At 720 each column is narrow enough that a
+   * full name wraps and a list of ten looks like a wall, which is exactly the
+   * case a picker has to stay readable in.
+   */
+  xl: "w-[min(920px,calc(100vw-2rem))]",
 } as const;
 
 type DialogContentProps = ComponentPropsWithoutRef<

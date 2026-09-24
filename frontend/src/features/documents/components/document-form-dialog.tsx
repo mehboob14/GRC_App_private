@@ -36,10 +36,10 @@ import {
 } from "@/features/documents/types";
 
 
-type Option = { value: string; label: string };
+export type Option = { value: string; label: string };
 
 /** Compact inline-expand multi-select (clip-safe inside the dialog). */
-function MultiSelect({
+export function MultiSelect({
   label,
   placeholder,
   options,

@@ -76,7 +76,10 @@ export function CreateCampaignDialog({
 
   return (
     <Dialog open onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[92vh] max-w-2xl overflow-y-auto">
+      {/* Wide, and scrolling the body rather than the whole dialog: the recipient
+          lists grow with the workspace, and the title and the Start button have
+          to stay put while somebody scrolls through fifty names. */}
+      <DialogContent size="xl" scrollBody className="max-h-[86vh]">
         <DialogHeader>
           <DialogTitle>Start an acknowledgement campaign</DialogTitle>
           <p className="text-body-md text-text-secondary">
@@ -115,7 +118,7 @@ export function CreateCampaignDialog({
                 </span>
               ) : null}
             </div>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-2">
               <RecipientPicker
                 label="Reviewers"
                 people={people}

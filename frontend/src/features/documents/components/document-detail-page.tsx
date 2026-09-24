@@ -32,8 +32,11 @@ import type { ApprovalTier, Document } from "@/features/documents/types";
 import { DocumentContentViewer } from "./document-content-viewer";
 import { DocumentCampaignsPanel } from "./document-campaigns-panel";
 import { DocumentFormDialog } from "./document-form-dialog";
+import { LinkControlsDialog } from "./link-controls-dialog";
 import { TierApprovalCard } from "./tier-approval-card";
 import { OwnerSelect } from "@/features/iam/components/owner-select";
+import { LinkedRecordsPanel } from "@/features/linkage/components/linked-records-panel";
+import { useLinkedRecords } from "@/features/linkage/hooks";
 import { CLASS_LABEL, LIFECYCLE_META, TYPE_LABEL } from "../labels";
 
 const APPROVAL_LABEL: Record<ApprovalTier["status"], string> = {
@@ -71,6 +74,7 @@ const TABS = [
   { id: "overview", label: "Overview" },
   { id: "content", label: "Content" },
   { id: "controls", label: "Mappings" },
+  { id: "linked", label: "Linked records" },
   { id: "history", label: "Version history" },
   { id: "workflows", label: "Workflows" },
 ] as const;
@@ -83,7 +87,9 @@ export function DocumentDetailPage() {
   const { toast } = useToast();
   const { principal } = useAuth();
   const [tab, setTab] = useState<TabId>("overview");
+  const linksQuery = useLinkedRecords("document", documentId);
   const [editing, setEditing] = useState(false);
+  const [mapping, setMapping] = useState(false);
   const [assigningOwner, setAssigningOwner] = useState(false);
 
   const canManage = Boolean(principal?.permissions.includes("documents:manage"));
@@ -205,7 +211,10 @@ export function DocumentDetailPage() {
 
       <TabStrip
         label="Document sections"
-        items={TABS}
+        items={TABS.map((t) => ({
+          ...t,
+          count: t.id === "linked" ? linksQuery.data?.records.length || undefined : undefined,
+        }))}
         value={tab}
         onSelect={(id) => setTab(id as TabId)}
         className="mt-6"
@@ -330,12 +339,14 @@ export function DocumentDetailPage() {
           </div>
         ) : null}
 
+        {tab === "linked" ? <LinkedRecordsPanel anchorType="document" anchorId={doc.id} /> : null}
+
         {tab === "controls" ? (
           <Panel
             title="Mappings"
             action={
               canManage ? (
-                <Button variant="secondary" size="sm" onClick={() => setEditing(true)}>
+                <Button variant="secondary" size="sm" onClick={() => setMapping(true)}>
                   <Icon name="plus" className="size-4" />
                   {doc.controls.length ? "Edit mappings" : "Link controls"}
                 </Button>
@@ -370,6 +381,8 @@ export function DocumentDetailPage() {
         open={editing}
         onOpenChange={setEditing}
       />
+
+      <LinkControlsDialog document={doc} open={mapping} onOpenChange={setMapping} />
 
       {assigningOwner ? (
         <AssignOwnerDialog
