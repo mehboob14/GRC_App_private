@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/auth/auth-context";
 import { hasPermission } from "@/lib/auth/session";
 import { getSummary, listFindings, listIntake } from "../api";
 import { RequestVendorDialog } from "./request-vendor-dialog";
-import { VendorFormDrawer } from "./vendor-form-drawer";
+import { VendorFormDialog } from "./vendor-form-dialog";
 import type { VendorsOutlet } from "./vendors-outlet";
 
 
@@ -93,7 +93,7 @@ export function VendorsLayout() {
       />
       <TabStrip label="Vendor sections" items={tabs} variant="bar" />
       <Outlet context={{ addVendor: () => setFormOpen(true) } satisfies VendorsOutlet} />
-      <VendorFormDrawer open={formOpen} onOpenChange={setFormOpen} />
+      <VendorFormDialog open={formOpen} onOpenChange={setFormOpen} />
       <RequestVendorDialog open={requestOpen} onOpenChange={setRequestOpen} />
     </div>
   );

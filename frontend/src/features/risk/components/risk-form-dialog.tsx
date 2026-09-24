@@ -219,7 +219,7 @@ export function RiskFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent size="lg" scrollBody className="max-h-[94vh] w-[min(1080px,calc(100vw-2rem))] p-0">
+      <DialogContent size="2xl" scrollBody className="max-h-[94vh] p-0">
         <DialogHeader className="border-b border-border px-6 pb-4 pt-5">
           <DialogTitle>{editing ? `Edit ${risk.code}` : "Add risk"}</DialogTitle>
           <DialogDescription>

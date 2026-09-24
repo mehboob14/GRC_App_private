@@ -23,6 +23,12 @@ const widths = {
    * case a picker has to stay readable in.
    */
   xl: "w-[min(920px,calc(100vw-2rem))]",
+  /**
+   * The full record form: a narrative column beside a panel of classification
+   * and ownership. Two readable columns need the room, and the alternative is
+   * the same form as one tall scroll, which is what a page is for.
+   */
+  "2xl": "w-[min(1080px,calc(100vw-2rem))]",
 } as const;
 
 type DialogContentProps = ComponentPropsWithoutRef<

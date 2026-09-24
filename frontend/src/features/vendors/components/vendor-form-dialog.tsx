@@ -4,13 +4,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Button,
   Checkbox,
-  Drawer,
-  DrawerBody,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   Icon,
   PersonSelect,
   Select,
@@ -84,7 +84,13 @@ function fromVendor(v: VendorDetail): FormState {
   };
 }
 
-export function VendorFormDrawer({
+/**
+ * The vendor, in one centred popup: who they are and what data they touch on
+ * the left, who owns them on the right, the same arrangement the risk form
+ * uses. It was a side drawer, which put the widest form in the module in the
+ * narrowest surface and made it the odd one out.
+ */
+export function VendorFormDialog({
   open,
   onOpenChange,
   vendor,
@@ -180,16 +186,16 @@ export function VendorFormDrawer({
   });
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent size="lg">
-        <DrawerHeader>
-          <DrawerTitle>{editing ? "Edit vendor" : "Add vendor"}</DrawerTitle>
-          <DrawerDescription>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent size="2xl" scrollBody className="max-h-[94vh] p-0">
+        <DialogHeader className="border-b border-border px-6 pb-4 pt-5">
+          <DialogTitle>{editing ? "Edit vendor" : "Add vendor"}</DialogTitle>
+          <DialogDescription>
             {editing
               ? "Tier, score and lifecycle are derived, not edited here."
               : "Tiering follows on the engagement."}
-          </DrawerDescription>
-        </DrawerHeader>
+          </DialogDescription>
+        </DialogHeader>
 
         <form
           className="flex min-h-0 flex-1 flex-col"
@@ -198,7 +204,7 @@ export function VendorFormDrawer({
             if (form.name.trim()) save.mutate();
           }}
         >
-          <DrawerBody className="space-y-3.5">
+          <DialogBody className="mx-0 space-y-5 px-6 py-5">
             <TextField
               label="Name"
               value={form.name}
@@ -208,7 +214,7 @@ export function VendorFormDrawer({
             />
 
             {duplicates.length > 0 ? (
-              <div className="rounded-md border border-status-warning-border bg-status-warning-bg p-3">
+              <div className="rounded-lg border border-status-warning-border bg-status-warning-bg p-3">
                 <p className="flex items-center gap-1.5 text-label-sm text-status-warning-text">
                   <Icon name="alert" className="size-4 shrink-0" />
                   {duplicates.length === 1
@@ -238,102 +244,108 @@ export function VendorFormDrawer({
               </div>
             ) : null}
 
-            <div className="grid gap-3.5 sm:grid-cols-2">
-              <SelectField label="Type">
-                <Select value={form.vendor_type} onValueChange={(v) => set("vendor_type", v)}>
-                  <SelectTrigger aria-label="Vendor type" />
-                  <SelectContent>
-                    {VENDOR_TYPES.map((t) => (
-                      <SelectItem key={t} value={t}>
-                        {VENDOR_TYPE_LABEL[t]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </SelectField>
-              <TextField
-                label="Industry"
-                optional
-                value={form.industry}
-                onChange={(e) => set("industry", e.target.value)}
-                placeholder="Marketing analytics"
-              />
-            </div>
+            <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_21rem]">
+              <div className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <SelectField label="Type">
+                    <Select value={form.vendor_type} onValueChange={(v) => set("vendor_type", v)}>
+                      <SelectTrigger aria-label="Vendor type" />
+                      <SelectContent>
+                        {VENDOR_TYPES.map((t) => (
+                          <SelectItem key={t} value={t}>
+                            {VENDOR_TYPE_LABEL[t]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </SelectField>
+                  <TextField
+                    label="Industry"
+                    optional
+                    value={form.industry}
+                    onChange={(e) => set("industry", e.target.value)}
+                    placeholder="Marketing analytics"
+                  />
+                </div>
 
-            <div className="grid gap-3.5 sm:grid-cols-2">
-              <TextField
-                label="Website"
-                optional
-                type="url"
-                value={form.website}
-                onChange={(e) => set("website", e.target.value)}
-                placeholder="https://acme.example"
-              />
-              <TextField
-                label="Business unit"
-                optional
-                value={form.business_unit}
-                onChange={(e) => set("business_unit", e.target.value)}
-                placeholder="Marketing"
-              />
-            </div>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <TextField
+                    label="Website"
+                    optional
+                    type="url"
+                    value={form.website}
+                    onChange={(e) => set("website", e.target.value)}
+                    placeholder="https://acme.example"
+                  />
+                  <TextField
+                    label="Business unit"
+                    optional
+                    value={form.business_unit}
+                    onChange={(e) => set("business_unit", e.target.value)}
+                    placeholder="Marketing"
+                  />
+                </div>
 
-            <TextField
-              label="Services provided"
-              optional
-              value={form.services_provided}
-              onChange={(e) => set("services_provided", e.target.value)}
-              placeholder="Campaign attribution and reporting"
-            />
-
-            <div className="rounded-md border border-border bg-surface-sunken p-3.5">
-              <p className="type-overline">Data</p>
-              <label className="mt-2.5 flex items-start gap-2.5">
-                <Checkbox
-                  checked={form.stores_pii}
-                  onCheckedChange={(v) => set("stores_pii", v)}
-                  id="vendor-stores-pii"
-                />
-                <span className="text-body-md text-text-primary">This vendor holds personal data</span>
-              </label>
-              <div className="mt-3 grid gap-3.5 sm:grid-cols-2">
-                <SelectField label="Classification" optional>
-                  <Select
-                    value={form.data_classification || NONE}
-                    onValueChange={(v) => set("data_classification", v === NONE ? "" : v)}
-                  >
-                    <SelectTrigger aria-label="Data classification" />
-                    <SelectContent>
-                      <SelectItem value={NONE}>Not classified</SelectItem>
-                      {DATA_CLASSIFICATIONS.map((c) => (
-                        <SelectItem key={c} value={c}>
-                          {CLASSIFICATION_META[c].label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </SelectField>
                 <TextField
-                  label="Data location"
+                  label="Services provided"
                   optional
-                  value={form.data_location}
-                  onChange={(e) => set("data_location", e.target.value)}
-                  placeholder="EU (Frankfurt)"
+                  value={form.services_provided}
+                  onChange={(e) => set("services_provided", e.target.value)}
+                  placeholder="Campaign attribution and reporting"
                 />
-                <TextField
-                  label="Systems in scope"
-                  optional
-                  value={form.systems_in_scope}
-                  onChange={(e) => set("systems_in_scope", e.target.value)}
-                  placeholder="Salesforce, AWS production"
-                  hint="Separate systems with commas."
-                />
+
+                <section className="rounded-lg border border-border p-4">
+                  <p className="type-overline">Data</p>
+                  <label className="mt-2.5 flex items-start gap-2.5">
+                    <Checkbox
+                      checked={form.stores_pii}
+                      onCheckedChange={(v) => set("stores_pii", v)}
+                      id="vendor-stores-pii"
+                    />
+                    <span className="text-body-md text-text-primary">
+                      This vendor holds personal data
+                    </span>
+                  </label>
+                  <div className="mt-3 grid gap-4 md:grid-cols-2">
+                    <SelectField label="Classification" optional>
+                      <Select
+                        value={form.data_classification || NONE}
+                        onValueChange={(v) => set("data_classification", v === NONE ? "" : v)}
+                      >
+                        <SelectTrigger aria-label="Data classification" />
+                        <SelectContent>
+                          <SelectItem value={NONE}>Not classified</SelectItem>
+                          {DATA_CLASSIFICATIONS.map((c) => (
+                            <SelectItem key={c} value={c}>
+                              {CLASSIFICATION_META[c].label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </SelectField>
+                    <TextField
+                      label="Data location"
+                      optional
+                      value={form.data_location}
+                      onChange={(e) => set("data_location", e.target.value)}
+                      placeholder="EU (Frankfurt)"
+                    />
+                  </div>
+                  <div className="mt-4">
+                    <TextField
+                      label="Systems in scope"
+                      optional
+                      value={form.systems_in_scope}
+                      onChange={(e) => set("systems_in_scope", e.target.value)}
+                      placeholder="Salesforce, AWS production"
+                      hint="Separate systems with commas."
+                    />
+                  </div>
+                </section>
               </div>
-            </div>
 
-            <div className="rounded-md border border-border bg-surface-sunken p-3.5">
-              <p className="type-overline">Ownership</p>
-              <div className="mt-3 space-y-3">
+              <div className="space-y-3.5 rounded-lg border border-border bg-surface-sunken p-4">
+                <p className="type-overline">Ownership</p>
                 <OwnerField
                   label="Business owner"
                   people={people}
@@ -352,32 +364,31 @@ export function VendorFormDrawer({
                   value={form.relationship_owner_membership_id}
                   onChange={(v) => set("relationship_owner_membership_id", v)}
                 />
+                {!editing ? (
+                  <TextField
+                    label="First engagement"
+                    optional
+                    hint="Needed before tiering. You can add it later."
+                    value={form.engagement_name}
+                    onChange={(e) => set("engagement_name", e.target.value)}
+                    placeholder="Campaign attribution"
+                  />
+                ) : null}
               </div>
             </div>
+          </DialogBody>
 
-            {!editing ? (
-              <TextField
-                label="First engagement"
-                optional
-                hint="Needed before tiering. You can add it later."
-                value={form.engagement_name}
-                onChange={(e) => set("engagement_name", e.target.value)}
-                placeholder="Campaign attribution"
-              />
-            ) : null}
-          </DrawerBody>
-
-          <DrawerFooter>
-            <Button variant="secondary" onClick={() => onOpenChange(false)}>
+          <DialogFooter className="mt-0 border-t border-border px-6 py-4">
+            <Button variant="secondary" type="button" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
             <Button type="submit" loading={save.isPending} disabled={!form.name.trim()}>
               {editing ? "Save changes" : "Add vendor"}
             </Button>
-          </DrawerFooter>
+          </DialogFooter>
         </form>
-      </DrawerContent>
-    </Drawer>
+      </DialogContent>
+    </Dialog>
   );
 }
 

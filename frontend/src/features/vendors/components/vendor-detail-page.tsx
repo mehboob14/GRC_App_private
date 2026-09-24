@@ -73,7 +73,7 @@ import { ContractsPanel } from "./contracts-panel";
 import { SlasPanel } from "./slas-panel";
 import { SubprocessorsPanel } from "./subprocessors-panel";
 import { MonitoringPanel } from "./monitoring-panel";
-import { VendorFormDrawer } from "./vendor-form-drawer";
+import { VendorFormDialog } from "./vendor-form-dialog";
 
 type TabId = "overview" | "lifecycle" | "assessments" | "findings" | "paperwork" | "monitoring";
 
@@ -492,7 +492,7 @@ export function VendorDetailPage() {
           onApply={apply}
         />
       ) : null}
-      <VendorFormDrawer open={editing} onOpenChange={setEditing} vendor={vendor} />
+      <VendorFormDialog open={editing} onOpenChange={setEditing} vendor={vendor} />
       <AddEngagementDialog
         open={addingEngagement}
         onOpenChange={setAddingEngagement}
