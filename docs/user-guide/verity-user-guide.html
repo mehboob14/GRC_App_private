@@ -1,0 +1,653 @@
+<title>Verity User Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<style>
+:root {
+  --paper: #f6f7f9;
+  --surface: #ffffff;
+  --surface-2: #eef1f5;
+  --ink: #141920;
+  --ink-2: #414b59;
+  --ink-3: #6b7685;
+  --line: #dfe4ea;
+  --accent: #14619e;
+  --accent-soft: #e7f0f8;
+  --good: #146c43;
+  --warn: #8a5a00;
+  --warn-soft: #fdf4e3;
+  --sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --paper: #0f141a;
+    --surface: #161c24;
+    --surface-2: #1d252f;
+    --ink: #e7ecf2;
+    --ink-2: #b3bdc9;
+    --ink-3: #8b97a5;
+    --line: #27313d;
+    --accent: #6fb2ec;
+    --accent-soft: #16273a;
+    --good: #5fc08a;
+    --warn: #e0b055;
+    --warn-soft: #2a2113;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #0f141a;
+  --surface: #161c24;
+  --surface-2: #1d252f;
+  --ink: #e7ecf2;
+  --ink-2: #b3bdc9;
+  --ink-3: #8b97a5;
+  --line: #27313d;
+  --accent: #6fb2ec;
+  --accent-soft: #16273a;
+  --good: #5fc08a;
+  --warn: #e0b055;
+  --warn-soft: #2a2113;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: 17px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+code { font-family: var(--mono); font-size: 0.86em; background: var(--surface-2); padding: 0.1em 0.35em; border-radius: 3px; }
+
+.masthead {
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+  padding-block: 28px 24px;
+}
+.masthead .inner { max-width: 1180px; margin: 0 auto; padding-inline: 20px; }
+.wordmark {
+  font-family: var(--sans); font-weight: 700; letter-spacing: -0.02em;
+  font-size: 15px; text-transform: uppercase; color: var(--accent); margin: 0 0 6px;
+}
+.masthead h1 { font-family: var(--sans); font-weight: 700; font-size: clamp(28px, 4vw, 40px); margin: 0; letter-spacing: -0.02em; text-wrap: balance; }
+.masthead p { color: var(--ink-2); margin: 10px 0 0; max-width: 62ch; }
+
+.shell { max-width: 1180px; margin: 0 auto; padding-inline: 20px; padding-block: 0 72px; display: grid; gap: 48px; grid-template-columns: 260px minmax(0, 1fr); align-items: start; }
+@media (max-width: 900px) { .shell { grid-template-columns: 1fr; gap: 24px; } }
+
+nav.toc { position: sticky; top: env(safe-area-inset-top, 0px); padding-block: 32px; max-height: 100vh; overflow-y: auto; font-family: var(--sans); font-size: 14px; }
+@media (max-width: 900px) { nav.toc { position: static; max-height: none; border-bottom: 1px solid var(--line); } }
+nav.toc h2 { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3); margin: 0 0 12px; font-weight: 600; }
+nav.toc ul { list-style: none; margin: 0; padding: 0; }
+.nav-chapter { margin-bottom: 4px; }
+.nav-top { display: flex; gap: 10px; align-items: baseline; padding: 5px 8px; border-radius: 5px; color: var(--ink); text-decoration: none; font-weight: 600; }
+.nav-top:hover { background: var(--surface-2); }
+.nav-top .num { font-family: var(--mono); font-size: 11px; color: var(--ink-3); min-width: 16px; }
+.nav-sub { display: none; margin: 2px 0 8px 34px; }
+.nav-chapter.open .nav-sub { display: block; }
+.nav-sub a { display: block; padding: 3px 0; color: var(--ink-2); text-decoration: none; font-weight: 500; font-size: 13px; }
+.nav-sub a:hover { color: var(--accent); }
+
+main { padding-block: 32px; min-width: 0; }
+.chapter { scroll-margin-top: 24px; padding-bottom: 56px; }
+.chapter + .chapter { border-top: 1px solid var(--line); padding-top: 48px; }
+.chapter-head { margin-bottom: 28px; }
+.eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin: 0 0 6px; }
+.chapter h2 { font-family: var(--sans); font-weight: 700; font-size: clamp(24px, 3.4vw, 32px); letter-spacing: -0.02em; margin: 0; text-wrap: balance; }
+.chapter h3 { font-family: var(--sans); font-weight: 600; font-size: 20px; margin: 40px 0 12px; scroll-margin-top: 24px; text-wrap: balance; }
+.chapter h4 { font-family: var(--sans); font-weight: 600; font-size: 16px; margin: 28px 0 10px; color: var(--ink); scroll-margin-top: 24px; }
+.chapter p, .chapter li { max-width: 68ch; }
+.chapter ol, .chapter ul { padding-left: 22px; }
+.chapter li { margin-bottom: 7px; }
+.chapter ol { counter-reset: none; }
+
+figure { margin: 26px 0; }
+figure img { width: 100%; max-width: 100%; height: auto; display: block; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+figcaption { font-family: var(--sans); font-size: 13px; color: var(--ink-3); margin-top: 8px; }
+
+.note { margin: 22px 0; padding: 14px 16px; background: var(--warn-soft); border: 1px solid var(--line); border-left: 3px solid var(--warn); border-radius: 0 6px 6px 0; }
+.note p { margin: 0; font-size: 16px; }
+
+.table-wrap { overflow-x: auto; margin: 22px 0; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-family: var(--sans); font-size: 14.5px; }
+th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-weight: 600; background: var(--surface-2); white-space: nowrap; }
+tbody tr:last-child td { border-bottom: 0; }
+
+footer.colophon { border-top: 1px solid var(--line); background: var(--surface); font-family: var(--sans); font-size: 13.5px; color: var(--ink-3); }
+footer.colophon .inner { max-width: 1180px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 40px; }
+footer.colophon p { max-width: 70ch; margin: 0 0 8px; }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+html { scroll-behavior: smooth; }
+</style>
+
+<header class="masthead" id="top">
+  <div class="inner">
+    <p class="wordmark">Verity</p>
+    <h1>User guide</h1>
+    <p>How to run compliance in Verity, screen by screen. Written for the people who
+    use it: the compliance lead preparing for an audit, the control owner asked for
+    evidence, the security officer triaging a finding, the manager signing off a
+    policy.</p>
+  </div>
+</header>
+
+<div class="shell">
+  <nav class="toc" aria-label="Contents">
+    <h2>Contents</h2>
+    <ul><li class="nav-chapter"><a class="nav-top" href="#ch1"><span class="num">1</span>Getting started</a><ul class="nav-sub"><li><a href="#ch1-what-verity-is">What Verity is</a></li><li><a href="#ch1-signing-in-for-the-first-time">Signing in for the first time</a></li><li><a href="#ch1-get-started">Get Started</a></li><li><a href="#ch1-your-first-half-hour">Your first half hour</a></li><li><a href="#ch1-switching-workspace">Switching workspace</a></li><li><a href="#ch1-signing-out-and-sessions">Signing out and sessions</a></li><li><a href="#ch1-forgotten-password">Forgotten password</a></li></ul></li><li class="nav-chapter"><a class="nav-top" href="#ch2"><span class="num">2</span>Finding your way around</a><ul class="nav-sub"><li><a href="#ch2-1-the-navigation">1. The navigation</a></li><li><a href="#ch2-2-the-module-header">2. The module header</a></li><li><a href="#ch2-3-the-register">3. The register</a></li><li><a href="#ch2-4-the-detail-page">4. The detail page</a></li><li><a href="#ch2-the-things-in-the-top-bar">The things in the top bar</a></li><li><a href="#ch2-status-colour-and-badges">Status, colour and badges</a></li><li><a href="#ch2-when-something-goes-wrong">When something goes wrong</a></li></ul></li><li class="nav-chapter"><a class="nav-top" href="#ch3"><span class="num">3</span>Frameworks and controls</a><ul class="nav-sub"><li><a href="#ch3-what-a-control-is-here">What a control is here</a></li><li><a href="#ch3-frameworks">Frameworks</a></li><li><a href="#ch3-the-controls-library">The controls library</a></li><li><a href="#ch3-automation">Automation</a></li><li><a href="#ch3-adding-a-control-of-your-own">Adding a control of your own</a></li><li><a href="#ch3-retiring-a-control">Retiring a control</a></li></ul></li><li class="nav-chapter"><a class="nav-top" href="#ch4"><span class="num">4</span>Evidence</a><ul class="nav-sub"><li><a href="#ch4-what-evidence-is-for">What evidence is for</a></li><li><a href="#ch4-the-register">The register</a></li><li><a href="#ch4-adding-evidence">Adding evidence</a></li><li><a href="#ch4-reviewing-evidence">Reviewing evidence</a></li><li><a href="#ch4-keeping-evidence-fresh">Keeping evidence fresh</a></li><li><a href="#ch4-where-evidence-comes-from-without-anyone-uploading-it">Where evidence comes from without anyone uploading it</a></li></ul></li><li class="nav-chapter"><a class="nav-top" href="#ch5"><span class="num">5</span>Policies and documents</a><ul class="nav-sub"><li><a href="#ch5-what-this-module-holds">What this module holds</a></li><li><a href="#ch5-the-life-of-a-document">The life of a document</a></li><li><a href="#ch5-creating-a-document">Creating a document</a></li><li><a href="#ch5-the-editor">The editor</a></li><li><a href="#ch5-mappings">Mappings</a></li><li><a href="#ch5-approval">Approval</a></li><li><a href="#ch5-acknowledgement-campaigns">Acknowledgement campaigns</a></li><li><a href="#ch5-reviews-and-expiry">Reviews and expiry</a></li></ul></li><li class="nav-chapter"><a class="nav-top" href="#ch6"><span class="num">6</span>Tasks</a><ul class="nav-sub"><li><a href="#ch6-what-tasks-are-for">What tasks are for</a></li><li><a href="#ch6-tasks-and-issues">Tasks and issues</a></li><li><a href="#ch6-states">States</a></li><li><a href="#ch6-walkthrough-raise-and-assign-a-task">Walkthrough: raise and assign a task</a></li><li><a href="#ch6-walkthrough-work-and-close-a-task">Walkthrough: work and close a task</a></li><li><a href="#ch6-service-levels">Service levels</a></li><li><a href="#ch6-approvals">Approvals</a></li><li><a href="#ch6-corrective-actions-on-an-issue">Corrective actions on an issue</a></li><li><a href="#ch6-sub-tasks-and-related-records">Sub-tasks and related records</a></li><li><a href="#ch6-settings">Settings</a></li></ul></li><li class="nav-chapter"><a class="nav-top" href="#ch7"><span class="num">7</span>Risks</a><ul class="nav-sub"><li><a href="#ch7-what-a-register-is">What a register is</a></li><li><a href="#ch7-scoring-inherent-and-residual">Scoring: inherent and residual</a></li><li><a href="#ch7-walkthrough-add-a-risk">Walkthrough: add a risk</a></li><li><a href="#ch7-the-states-a-risk-moves-through">The states a risk moves through</a></li><li><a href="#ch7-walkthrough-treat-a-risk">Walkthrough: treat a risk</a></li><li><a href="#ch7-walkthrough-accept-a-risk">Walkthrough: accept a risk</a></li><li><a href="#ch7-the-library-and-importing">The library and importing</a></li><li><a href="#ch7-risks-raised-from-elsewhere">Risks raised from elsewhere</a></li><li><a href="#ch7-settings">Settings</a></li></ul></li><li class="nav-chapter"><a class="nav-top" href="#ch8"><span class="num">8</span>Vendors</a><ul class="nav-sub"><li><a href="#ch8-what-this-module-does">What this module does</a></li><li><a href="#ch8-the-shape-of-it">The shape of it</a></li><li><a href="#ch8-the-twelve-stages">The twelve stages</a></li><li><a href="#ch8-getting-a-vendor-into-verity">Getting a vendor into Verity</a></li><li><a href="#ch8-tiering">Tiering</a></li><li><a href="#ch8-questionnaires-and-the-vendor-portal">Questionnaires and the vendor portal</a></li><li><a href="#ch8-assessment-scoring-and-review">Assessment, scoring and review</a></li><li><a href="#ch8-findings">Findings</a></li><li><a href="#ch8-the-approval-gate">The approval gate</a></li><li><a href="#ch8-contracts-and-paperwork">Contracts and paperwork</a></li><li><a href="#ch8-monitoring">Monitoring</a></li><li><a href="#ch8-shadow-it">Shadow IT</a></li><li><a href="#ch8-offboarding">Offboarding</a></li><li><a href="#ch8-policy">Policy</a></li><li><a href="#ch8-overview">Overview</a></li></ul></li><li class="nav-chapter"><a class="nav-top" href="#ch9"><span class="num">9</span>Assets</a><ul class="nav-sub"><li><a href="#ch9-what-the-inventory-is-for">What the inventory is for</a></li><li><a href="#ch9-what-counts-as-an-asset">What counts as an asset</a></li><li><a href="#ch9-walkthrough-add-an-asset">Walkthrough: add an asset</a></li><li><a href="#ch9-criticality-how-the-tier-is-derived">Criticality: how the tier is derived</a></li><li><a href="#ch9-inventory-hygiene">Inventory hygiene</a></li><li><a href="#ch9-walkthrough-set-your-own-review-cadence">Walkthrough: set your own review cadence</a></li><li><a href="#ch9-dependencies">Dependencies</a></li><li><a href="#ch9-vulnerabilities-on-an-asset">Vulnerabilities on an asset</a></li><li><a href="#ch9-linked-records">Linked records</a></li><li><a href="#ch9-lifecycle">Lifecycle</a></li><li><a href="#ch9-importing-a-spreadsheet">Importing a spreadsheet</a></li><li><a href="#ch9-custom-fields">Custom fields</a></li></ul></li><li class="nav-chapter"><a class="nav-top" href="#ch10"><span class="num">10</span>Vulnerabilities</a><ul class="nav-sub"><li><a href="#ch10-what-this-module-does">What this module does</a></li><li><a href="#ch10-definitions-and-findings">Definitions and findings</a></li><li><a href="#ch10-priority-why-the-order-is-not-just-cvss">Priority: why the order is not just CVSS</a></li><li><a href="#ch10-getting-findings-in">Getting findings in</a></li><li><a href="#ch10-working-a-finding">Working a finding</a></li><li><a href="#ch10-remediation-windows">Remediation windows</a></li><li><a href="#ch10-remediation-plans">Remediation plans</a></li><li><a href="#ch10-exceptions-and-acceptance">Exceptions and acceptance</a></li><li><a href="#ch10-custom-fields">Custom fields</a></li><li><a href="#ch10-overview">Overview</a></li></ul></li><li class="nav-chapter"><a class="nav-top" href="#ch11"><span class="num">11</span>Connections</a><ul class="nav-sub"><li><a href="#ch11-what-a-connection-does">What a connection does</a></li><li><a href="#ch11-what-is-available-today">What is available today</a></li><li><a href="#ch11-walkthrough-connect-github">Walkthrough: connect GitHub</a></li><li><a href="#ch11-what-the-checks-look-at">What the checks look at</a></li><li><a href="#ch11-reading-the-results">Reading the results</a></li><li><a href="#ch11-when-a-connection-breaks">When a connection breaks</a></li></ul></li><li class="nav-chapter"><a class="nav-top" href="#ch12"><span class="num">12</span>Settings and administration</a><ul class="nav-sub"><li><a href="#ch12-people">People</a></li><li><a href="#ch12-roles">Roles</a></li><li><a href="#ch12-groups">Groups</a></li><li><a href="#ch12-security">Security</a></li><li><a href="#ch12-organisation-profile">Organisation profile</a></li><li><a href="#ch12-custom-fields">Custom fields</a></li><li><a href="#ch12-the-audit-log">The audit log</a></li><li><a href="#ch12-data-isolation">Data isolation</a></li></ul></li><li class="nav-chapter"><a class="nav-top" href="#ch13"><span class="num">13</span>Glossary</a><ul class="nav-sub"></ul></li></ul>
+  </nav>
+  <main><section class="chapter" id="ch1"><header class="chapter-head"><p class="eyebrow">Chapter 1</p><h2>Getting started</h2></header>
+<h3 id="ch1-what-verity-is">What Verity is</h3>
+<p>Verity is where your organisation keeps the evidence that its security promises are true. One place holds the controls you claim to operate, the proof that each one works, the policies people have signed, the risks you have accepted, the third parties you rely on, and the assets and weaknesses underneath all of it.</p>
+<p>The job it does for you: when an auditor asks "show me", the answer is a link, not a week of chasing.</p>
+<h3 id="ch1-signing-in-for-the-first-time">Signing in for the first time</h3>
+<p>You will arrive either from an invitation email or from a workspace your organisation already created.</p>
+<ol><li>Open the link in your invitation and set a password. It must be at least 12 characters and mix upper case, lower case, a digit and a symbol. Your organisation's administrator can make the rule stricter.</li><li>Sign in with your work email and that password.</li><li>If your workspace requires two factor authentication for your role, you will be asked to set it up now. Scan the QR code with an authenticator app such as 1Password, Authy or Google Authenticator, then type the six digit code.</li><li>Save your recovery codes somewhere safe and offline. They are shown once. If you lose your phone, they are how you get back in.</li></ol>
+<aside class="note"><p><strong>If you belong to more than one organisation</strong>, Verity asks which workspace you want after you sign in. External auditors and consultants usually see this. You can switch later without signing out.</p></aside>
+<h3 id="ch1-get-started">Get Started</h3>
+<p>The first screen you land on is a setup checklist that tracks your real progress.</p>
+<figure><img src="images/quick-start.png" alt="The Get Started checklist" loading="lazy" decoding="async"><figcaption>The Get Started checklist</figcaption></figure>
+<p>It groups the setup into five pieces: your workspace details, who can get in and what they must prove, what you are being audited against, working your controls, and connecting the systems those controls run on. The counter at the top is your actual state, not a demonstration, and each item links straight to the screen that completes it.</p>
+<p>You can leave it at any time and come back. Nothing expires.</p>
+<h3 id="ch1-your-first-half-hour">Your first half hour</h3>
+<p>You do not have to do everything at once. This order gets you useful fastest.</p>
+<ol><li><strong>Look at your controls.</strong> Go to <strong>Controls</strong>. Every workspace starts with the full SOC 2 control library already adopted, so this list is not empty. See <a href="#ch3">Frameworks and controls</a>.</li><li><strong>Give the important ones an owner.</strong> A control with no owner is nobody's job. Filter the register by <strong>Owner: None</strong> and work down the list.</li><li><strong>Put your people in.</strong> <strong>Settings &gt; Access &gt; People</strong>. Invite the people who will own controls, approve policies and answer vendor questions. See <a href="#ch12">Settings and administration</a>.</li><li><strong>Load what you already have.</strong> Most teams already keep an asset list and a vendor list in a spreadsheet. Import them: <a href="#importing-a-spreadsheet">Assets</a> and <a href="#ch8">Vendors</a>.</li><li><strong>Attach your first evidence.</strong> Pick one control you know you operate and attach the proof. See <a href="#ch4">Evidence</a>.</li></ol>
+<h3 id="ch1-switching-workspace">Switching workspace</h3>
+<p>The workspace switcher sits at the bottom of the left navigation, showing the organisation name and your role in it. Click it to change workspace. Your session, your permissions and everything you can see change with it. Nothing you do in one workspace is visible from another.</p>
+<h3 id="ch1-signing-out-and-sessions">Signing out and sessions</h3>
+<p>Open the menu on your name, top right, and choose sign out. Sessions expire on their own after a period of inactivity set by your administrator, so a shared machine does not stay signed in forever.</p>
+<h3 id="ch1-forgotten-password">Forgotten password</h3>
+<p>Use <strong>Forgot password?</strong> on the sign in screen. You will get an email with a reset link. If two factor authentication is on for your account, you will still be asked for a code after resetting, and your recovery codes still work.</p></section><section class="chapter" id="ch2"><header class="chapter-head"><p class="eyebrow">Chapter 2</p><h2>Finding your way around</h2></header>
+<p>Every module in Verity is built from the same four pieces. Learn them once and the rest of the product reads itself.</p>
+<figure><img src="images/controls-register.png" alt="The controls register, showing navigation, module header, filters and table" loading="lazy" decoding="async"><figcaption>The controls register, showing navigation, module header, filters and table</figcaption></figure>
+<h3 id="ch2-1-the-navigation">1. The navigation</h3>
+<p>The left rail never changes. It is grouped by what you are trying to do:</p>
+<ul><li><strong>Overview</strong>: Get Started, Dashboard, Tasks.</li><li><strong>Compliance</strong>: Frameworks, Controls, Evidence, Policies and Documents.</li><li><strong>Risk</strong>: Risks, Vendors, Assets, Vulnerabilities.</li><li><strong>Bottom</strong>: Connections and Settings.</li></ul>
+<p>Your workspace and role show at the very bottom. Click there to switch workspace.</p>
+<p>You only see modules your role allows. If something in this guide is missing from your navigation, your role does not include it. See <a href="#roles-and-what-they-allow">the permission table</a>.</p>
+<h3 id="ch2-2-the-module-header">2. The module header</h3>
+<p>Every module opens on the same pattern: an icon, the module name, a live one line summary underneath, the buttons for the things you can start here, and a strip of tabs for the sections inside.</p>
+<p>The summary line is real. On Controls it reads like "114 controls, 96 without owner, 112 without evidence", which is usually the fastest read on where you stand.</p>
+<p>Most modules have an <strong>Overview</strong> tab (charts and counts), a <strong>Register</strong> tab (the list) and, where there is something to configure, a <strong>Settings</strong> tab.</p>
+<h3 id="ch2-3-the-register">3. The register</h3>
+<p>The list of records. Registers work the same way everywhere:</p>
+<ul><li><strong>Search</strong> by name or code in the box at the top left.</li><li><strong>Filters</strong> sit in one row. They narrow the list and stack, so Owner plus Status</li></ul>
+<p>plus Framework is three filters at once.</p>
+<ul><li><strong>Columns</strong> lets you choose what the table shows. Your choice is remembered.</li><li><strong>Sorting</strong>: click a column heading. Click again to reverse it.</li><li><strong>The row menu</strong> (the ⋯ at the end of a row, or an Actions button) holds the</li></ul>
+<p>things you can do without opening the record.</p>
+<ul><li><strong>Export</strong> produces a spreadsheet of what you are currently looking at, filters</li></ul>
+<p>included.</p>
+<h3 id="ch2-4-the-detail-page">4. The detail page</h3>
+<p>Clicking a row opens the record. Detail pages share a layout:</p>
+<ul><li>The <strong>header</strong> carries the name, the badges that matter (tier, severity, status)</li></ul>
+<p>and the primary action.</p>
+<ul><li><strong>Tabs</strong> divide the record. Overview is the summary; the rest are the deep ends.</li><li>The <strong>right hand column</strong> holds the facts that do not change often: ownership,</li></ul>
+<p>dates, where the record came from.</p>
+<ul><li><strong>Linked records</strong> appears on assets, findings, controls and documents. It</li></ul>
+<p>answers "what else is attached to this" in one place, and you can link something new from there.</p>
+<ul><li><strong>Activity</strong> or <strong>History</strong> is the record's own trail: who changed what and when.</li></ul>
+<figure><img src="images/asset-detail.png" alt="An asset detail page, with tabs, the summary panel and the record&#x27;s own trail" loading="lazy" decoding="async"><figcaption>An asset detail page, with tabs, the summary panel and the record's own trail</figcaption></figure>
+<h3 id="ch2-the-things-in-the-top-bar">The things in the top bar</h3>
+<ul><li><strong>The document icon</strong> opens the pending acknowledgements and approvals waiting on</li></ul>
+<p>you personally.</p>
+<ul><li><strong>The bell</strong> is your notification list: policies to sign, approvals to decide,</li></ul>
+<p>findings escalated to you, tasks that are about to breach their service level.</p>
+<ul><li><strong>Your name</strong> opens the profile and sign out menu.</li></ul>
+<h3 id="ch2-status-colour-and-badges">Status, colour and badges</h3>
+<p>Colour means the same thing everywhere.</p>
+<div class="table-wrap"><table><thead><tr><th>Look</th><th>Meaning</th></tr></thead><tbody><tr><td>Green</td><td>Passing, active, complete, on track</td></tr><tr><td>Amber</td><td>Needs review, due soon, partially answered</td></tr><tr><td>Red</td><td>Failing, overdue, critical, blocked</td></tr><tr><td>Grey</td><td>Not started, not set, not applicable</td></tr><tr><td>Violet</td><td>Informational, for example the Trust Services category on a control</td></tr></tbody></table></div>
+<p>A <strong>Soon</strong> badge means the screen is a placeholder for work that is not built yet. Nothing behind one holds real data.</p>
+<h3 id="ch2-when-something-goes-wrong">When something goes wrong</h3>
+<p>Verity does not show technical errors. If an action cannot complete you get a plain sentence explaining what happened and what to do next. If you see a message that says the request could not be processed and nothing more, that is a bug worth reporting: note what you were doing and tell your administrator.</p></section><section class="chapter" id="ch3"><header class="chapter-head"><p class="eyebrow">Chapter 3</p><h2>Frameworks and controls</h2></header>
+<h3 id="ch3-what-a-control-is-here">What a control is here</h3>
+<p>A control is something your organisation does to keep a promise: backups run and are tested, access is removed when someone leaves, changes are reviewed before release. A framework such as SOC 2 is a list of criteria an auditor will check, and each control you operate answers one or more of them.</p>
+<p>Verity gives every new workspace the whole SOC 2 control library already adopted, so you start by editing reality rather than building a list from nothing.</p>
+<h3 id="ch3-frameworks">Frameworks</h3>
+<figure><img src="images/frameworks-dashboard.png" alt="The compliance dashboard, with readiness by criterion" loading="lazy" decoding="async"><figcaption>The compliance dashboard, with readiness by criterion</figcaption></figure>
+<p><strong>Frameworks</strong> has three sections.</p>
+<ul><li><strong>Dashboard</strong> is the posture read: how many controls are passing, which criteria</li></ul>
+<p>are weak, what is in review.</p>
+<ul><li><strong>Frameworks</strong> lists the frameworks available and which version you are working</li></ul>
+<p>to.</p>
+<ul><li><strong>Scope</strong> is where you record what is in and out of the audit, and why.</li></ul>
+<figure><img src="images/frameworks-list.png" alt="The framework list" loading="lazy" decoding="async"><figcaption>The framework list</figcaption></figure>
+<h3 id="ch3-the-controls-library">The controls library</h3>
+<figure><img src="images/controls-register.png" alt="The controls register" loading="lazy" decoding="async"><figcaption>The controls register</figcaption></figure>
+<p>Open <strong>Controls</strong>. The summary line under the title is the fastest read you have: how many controls exist, how many have no owner, how many have no evidence.</p>
+<p>Each row shows the control code and name, the Trust Services categories it serves, the criteria it maps to, its owner, how many pieces of evidence are attached, and its status.</p>
+<p><strong>Status</strong> is what your team says about implementation:</p>
+<div class="table-wrap"><table><thead><tr><th>Status</th><th>Use it when</th></tr></thead><tbody><tr><td>Not started</td><td>Nobody has begun</td></tr><tr><td>In progress</td><td>Work is under way but the control is not operating yet</td></tr><tr><td>Implemented</td><td>The control operates and you can prove it</td></tr><tr><td>Not applicable</td><td>The control genuinely does not apply, with a reason recorded</td></tr></tbody></table></div>
+<h4 id="ch3-walkthrough-give-a-control-an-owner">Walkthrough: give a control an owner</h4>
+<ol><li>Go to <strong>Controls</strong>.</li><li>Set the <strong>Owner</strong> filter to <strong>None</strong>. What remains is every control nobody has claimed.</li><li>Click the control you want to assign.</li><li>On the <strong>Overview</strong> tab, use the owner picker in the right hand column and choose a person.</li></ol>
+<p>The owner is a member of this workspace, not an email address. Change of ownership is recorded in the control's history.</p>
+<h4 id="ch3-walkthrough-work-a-control-end-to-end">Walkthrough: work a control end to end</h4>
+<ol><li>Open the control from the register.</li><li>Read the <strong>statement</strong>: what this control has to achieve. Under it are the <strong>guidance steps</strong>, a short recipe for what operating it usually involves.</li><li>Set the owner and move the status to <strong>In progress</strong>.</li><li>Go to the <strong>Evidence</strong> tab and attach the proof. See <a href="#ch4">Evidence</a>.</li><li>When the control genuinely operates and the proof is attached, set the status to <strong>Implemented</strong>.</li></ol>
+<figure><img src="images/control-detail.png" alt="A control detail page" loading="lazy" decoding="async"><figcaption>A control detail page</figcaption></figure>
+<h4 id="ch3-the-tabs-on-a-control">The tabs on a control</h4>
+<div class="table-wrap"><table><thead><tr><th>Tab</th><th>What is there</th></tr></thead><tbody><tr><td>Overview</td><td>The statement, guidance, owner, status</td></tr><tr><td>Evidence</td><td>Everything attached as proof, and the button to attach more</td></tr><tr><td>Automation</td><td>Checks that a connected system runs for this control on a schedule</td></tr><tr><td>Requirements</td><td>The framework criteria this control answers</td></tr><tr><td>Linked records</td><td>Risks, documents, assets and other records attached to it</td></tr><tr><td>History</td><td>Every change, who made it and when</td></tr></tbody></table></div>
+<h3 id="ch3-automation">Automation</h3>
+<p>If your workspace has a connection to a system such as GitHub, some controls can be checked automatically. The <strong>Automation</strong> tab shows what runs, when it last ran and what it found, and the output is attached to the control as evidence without anyone uploading anything. See <a href="#ch11">Connections</a>.</p>
+<h3 id="ch3-adding-a-control-of-your-own">Adding a control of your own</h3>
+<p>Some controls are yours alone and answer no framework criterion. Use <strong>New control</strong> at the top of the register. It behaves like any other control, and the register marks it as custom so an auditor can see which controls came from the shipped library and which you wrote.</p>
+<h3 id="ch3-retiring-a-control">Retiring a control</h3>
+<p>Controls are never deleted. Use <strong>Disable</strong> on the control, with a reason. It leaves the register's active view and keeps its whole history, evidence and mapping, so the record of what you operated last year survives. <strong>Enable</strong> brings it back.</p>
+<aside class="note"><p><strong>Why not delete?</strong> An audit asks what you were doing in the window under review. A deleted control cannot answer that. This is the same rule everywhere in Verity: compliance records close, they do not disappear.</p></aside></section><section class="chapter" id="ch4"><header class="chapter-head"><p class="eyebrow">Chapter 4</p><h2>Evidence</h2></header>
+<h3 id="ch4-what-evidence-is-for">What evidence is for</h3>
+<p>A control that nobody can prove is an opinion. Evidence is the artefact that turns "we do reviews every quarter" into something an auditor can open: the exported policy, the signed review, the screenshot of the setting, the ticket that shows the work happened.</p>
+<figure><img src="images/evidence-register.png" alt="The evidence register" loading="lazy" decoding="async"><figcaption>The evidence register</figcaption></figure>
+<h3 id="ch4-the-register">The register</h3>
+<p>Each row is one artefact: its title, type, who owns it, when it was collected, the controls it supports, and its freshness.</p>
+<p><strong>Freshness</strong> is the column people miss. Evidence expires. A password policy export from two years ago proves nothing about today, so every piece of evidence carries a renewal date and the register shows you what has gone stale.</p>
+<h3 id="ch4-adding-evidence">Adding evidence</h3>
+<p>There are two kinds, and the difference matters.</p>
+<p><strong>A file</strong> is a copy Verity holds: a PDF, an export, a screenshot. It cannot change underneath you, which is exactly what an auditor wants.</p>
+<p><strong>A link</strong> points at something that lives elsewhere: a dashboard, a ticket, a shared drive. It stays current on its own, but whoever reads it later needs access to that system.</p>
+<h4 id="ch4-walkthrough-attach-evidence-to-a-control">Walkthrough: attach evidence to a control</h4>
+<ol><li>Go to <strong>Evidence</strong> and click <strong>Add evidence</strong>, or open the control and use the <strong>Evidence</strong> tab so the control is already filled in.</li><li>Choose whether you are uploading a file or recording a link.</li><li>Give it a title a stranger would understand. "AWS IAM password policy export, September" beats "screenshot 3".</li><li>Pick the <strong>type</strong>. The type sets a sensible default validity: a configuration export is good for 90 days, a policy document for a year, a log export for 30 days.</li><li>Set the <strong>owner</strong>: the person who will be asked to refresh it.</li><li>Attach it to the controls it supports. One artefact usually proves several controls, and attaching it once to all of them is correct.</li><li>Save.</li></ol>
+<h4 id="ch4-walkthrough-use-the-mapping-suggestions">Walkthrough: use the mapping suggestions</h4>
+<p>Verity can propose which controls a piece of evidence supports.</p>
+<ol><li>Open the evidence record.</li><li>On the <strong>Controls</strong> tab, use the suggest option.</li><li>You get a list of proposed controls with a reason for each. Nothing is attached yet.</li><li>Approve the ones that are right and ignore the rest.</li></ol>
+<aside class="note"><p><strong>A suggestion is a draft, always.</strong> Nothing Verity proposes is attached to a control until a person approves it, and the approval is recorded with your name against it. That rule holds everywhere in the product.</p></aside>
+<h3 id="ch4-reviewing-evidence">Reviewing evidence</h3>
+<p>Evidence gets reviewed so somebody other than the person who uploaded it agrees it proves what it claims.</p>
+<ol><li>Open the evidence record.</li><li>Read what is attached and which controls it is said to support.</li><li>Use <strong>Review</strong> to accept it, or reject it with a reason.</li></ol>
+<p>A rejection is not a delete. The artefact stays with the reason attached, so the next person can see it was considered and why it was not good enough.</p>
+<figure><img src="images/evidence-detail.png" alt="An evidence record" loading="lazy" decoding="async"><figcaption>An evidence record</figcaption></figure>
+<h3 id="ch4-keeping-evidence-fresh">Keeping evidence fresh</h3>
+<ol><li>Filter the register by <strong>Freshness</strong> to find what has expired or is close to it.</li><li>Each expiring item has an owner. That is who collects the new copy.</li><li>Attach the new artefact and set a new renewal date. Keep the old one: it proves the control was operating in the earlier window, which is exactly what a Type II audit examines.</li></ol>
+<h3 id="ch4-where-evidence-comes-from-without-anyone-uploading-it">Where evidence comes from without anyone uploading it</h3>
+<ul><li><strong>Connections.</strong> A connected system runs checks and attaches their output to the</li></ul>
+<p>controls those checks map to. See <a href="#ch11">Connections</a>.</p>
+<ul><li><strong>Other modules.</strong> A published policy, a completed task and a vendor's SOC 2</li></ul>
+<p>report can all act as evidence for the control they serve.</p></section><section class="chapter" id="ch5"><header class="chapter-head"><p class="eyebrow">Chapter 5</p><h2>Policies and documents</h2></header>
+<h3 id="ch5-what-this-module-holds">What this module holds</h3>
+<p>Your written commitments: policies, standards, procedures, guidelines and charters. Verity keeps the text, the version history, who approved each version, and who has read and signed it.</p>
+<figure><img src="images/documents-register.png" alt="The documents register" loading="lazy" decoding="async"><figcaption>The documents register</figcaption></figure>
+<h3 id="ch5-the-life-of-a-document">The life of a document</h3>
+<div class="table-wrap"><table><thead><tr><th>State</th><th>What it means</th></tr></thead><tbody><tr><td>Draft</td><td>Being written. Nobody outside the authors needs to see it</td></tr><tr><td>Needs approval</td><td>Sent for sign off and waiting on a decision</td></tr><tr><td>Approved</td><td>Every required approver said yes, not yet published</td></tr><tr><td>Published</td><td>Live. This is the version people are held to</td></tr><tr><td>Expired</td><td>Its review date passed without a new version</td></tr><tr><td>Archived</td><td>Retired on purpose, kept for the record</td></tr></tbody></table></div>
+<p>A published document is never deleted. It is archived, and the text stays readable, because an auditor will ask what your policy said during the period under review.</p>
+<h3 id="ch5-creating-a-document">Creating a document</h3>
+<p>You have three ways in, all from <strong>New</strong> on the register.</p>
+<ol><li><strong>From a template.</strong> Verity ships a library of policy templates. Pick one and you get a complete draft in your workspace's name, ready to edit. This is the fastest route and the one most teams should use.</li><li><strong>From scratch.</strong> A blank document with the same metadata.</li><li><strong>Upload a file.</strong> If your policy already exists as a PDF or Word file, upload it. Everything else (approval, publishing, acknowledgement) works the same way.</li></ol>
+<h4 id="ch5-walkthrough-draft-a-policy-from-a-template">Walkthrough: draft a policy from a template</h4>
+<ol><li>Go to <strong>Policies and Documents</strong> and click <strong>New</strong>.</li><li>Choose the template, for example Access Control Policy.</li><li>Set the <strong>owner</strong>: the person accountable for the content, not necessarily the author.</li><li>Set <strong>classification</strong> (internal, confidential, and so on) and the <strong>review cadence</strong>, which is how often this document must be revisited.</li><li>Save. You now have a draft with its own code, for example POL-004.</li></ol>
+<h3 id="ch5-the-editor">The editor</h3>
+<p>Open the document and use <strong>Edit</strong> to open the full screen editor.</p>
+<figure><img src="images/document-editor.png" alt="The document editor" loading="lazy" decoding="async"><figcaption>The document editor</figcaption></figure>
+<p>It is a normal rich text editor: headings, lists, tables, links. Two things are worth knowing.</p>
+<ul><li><strong>Every save makes a version.</strong> You can compare any two versions and restore an</li></ul>
+<p>earlier one. Nothing is lost by saving often.</p>
+<ul><li><strong>A change is major, minor or patch.</strong> You choose when you save. Major means</li></ul>
+<p>people need to read it again, and that choice drives whether a new acknowledgement is expected.</p>
+<h3 id="ch5-mappings">Mappings</h3>
+<p>The <strong>Mappings</strong> tab connects the document to the frameworks and controls it satisfies. Use <strong>Link controls</strong> and pick the frameworks and controls. That link is what lets a policy stand as evidence for a control.</p>
+<figure><img src="images/document-detail.png" alt="A document detail page" loading="lazy" decoding="async"><figcaption>A document detail page</figcaption></figure>
+<h3 id="ch5-approval">Approval</h3>
+<p>Approval in Verity is tiered. A tier is one round of sign off, and each tier can name people, roles or groups.</p>
+<ul><li>Assign a <strong>named person</strong> and that person must decide.</li><li>Assign a <strong>role or group</strong> and any one member of it can decide on behalf of all.</li><li>More than one tier runs in order: tier 2 opens only when tier 1 has cleared.</li></ul>
+<h4 id="ch5-walkthrough-send-a-policy-for-approval">Walkthrough: send a policy for approval</h4>
+<ol><li>Open the document and go to <strong>Workflows</strong>.</li><li>On tier 1, choose who approves: a person, a role such as Security Officer, or a group.</li><li>Assigning tier 1 starts the workflow and notifies the people in it. There is no separate send button.</li><li>Each approver gets a notification and a dedicated review page. They read the document and type approve or reject to confirm the decision.</li><li>When the last required decision lands, the document is published automatically.</li></ol>
+<aside class="note"><p><strong>A rejection needs a reason.</strong> It goes back to the owner with the reason attached, so the next draft can answer it.</p></aside>
+<h3 id="ch5-acknowledgement-campaigns">Acknowledgement campaigns</h3>
+<p>Publishing is not the same as people having read it. A campaign asks named people to read and sign.</p>
+<h4 id="ch5-walkthrough-run-an-acknowledgement-campaign">Walkthrough: run an acknowledgement campaign</h4>
+<ol><li>Open the published document.</li><li>Use <strong>Start an acknowledgement campaign</strong>.</li><li>Choose who must acknowledge. You can target individual people, whole roles or groups, and mix them.</li><li>Set a due date and send.</li><li>Each recipient gets a notification and a read and sign page. They cannot sign until they have opened the document.</li><li>Track progress from the campaign page: who has signed, who has not, with a reminder you can send.</li></ol>
+<p>The campaign's record is the evidence: an auditor asking "how do you know staff read the policy" gets a list of names, dates and versions.</p>
+<h3 id="ch5-reviews-and-expiry">Reviews and expiry</h3>
+<p>A document with a review cadence gets a next review date. As it approaches, the owner is reminded. If the date passes with no new version, the document moves to <strong>Expired</strong>, which is visible in the register. Expired is not archived: the text is still live, it is just overdue.</p></section><section class="chapter" id="ch6"><header class="chapter-head"><p class="eyebrow">Chapter 6</p><h2>Tasks</h2></header>
+<h3 id="ch6-what-tasks-are-for">What tasks are for</h3>
+<p>Everything in Verity eventually becomes work somebody has to do: collect this evidence, review that access list, fix the finding, update the policy. Tasks are where that work is assigned, tracked and closed.</p>
+<figure><img src="images/tasks-register.png" alt="The tasks register" loading="lazy" decoding="async"><figcaption>The tasks register</figcaption></figure>
+<h3 id="ch6-tasks-and-issues">Tasks and issues</h3>
+<p>Two kinds share one register.</p>
+<ul><li>A <strong>task</strong> is planned work. It has an owner and a due date.</li><li>An <strong>issue</strong> is something that went wrong. It carries a severity, and it can hold</li></ul>
+<p>corrective and preventive actions underneath it.</p>
+<p>The difference matters for an auditor: issues show that when something broke, you noticed, acted, and can show the actions you took.</p>
+<h3 id="ch6-states">States</h3>
+<div class="table-wrap"><table><thead><tr><th>State</th><th>Meaning</th></tr></thead><tbody><tr><td>Open</td><td>Raised, not started</td></tr><tr><td>In progress</td><td>Being worked</td></tr><tr><td>Blocked</td><td>Waiting on something outside the owner's control</td></tr><tr><td>Under review</td><td>Done in the owner's view, waiting on a check</td></tr><tr><td>Closed</td><td>Finished</td></tr><tr><td>Cancelled</td><td>Dropped on purpose, with a reason</td></tr></tbody></table></div>
+<h3 id="ch6-walkthrough-raise-and-assign-a-task">Walkthrough: raise and assign a task</h3>
+<ol><li>Go to <strong>Tasks</strong> and click <strong>New task</strong>.</li><li>Give it a title that says what done looks like: "Collect the Q3 access review sign off from IT" rather than "access review".</li><li>Choose a <strong>category</strong> (security, privacy, operations, data, regulatory, vendor or other) and a <strong>priority</strong>.</li><li>Set the <strong>owner</strong>, who is accountable, and <strong>assignees</strong>, who do the work. They are often the same person.</li><li>Set a <strong>due date</strong>.</li><li>Save. The assignees are notified.</li></ol>
+<h3 id="ch6-walkthrough-work-and-close-a-task">Walkthrough: work and close a task</h3>
+<ol><li>Open the task from the register or from your notifications.</li><li>Move it to <strong>In progress</strong> using the status control in the header.</li><li>Use <strong>Comments</strong> to keep the conversation in one place. Comments are part of the record.</li><li>Attach whatever you produced: a file, a link, or a piece of evidence.</li><li>Move it to <strong>Under review</strong> if somebody else checks it, or straight to <strong>Closed</strong> if not.</li></ol>
+<p>Every transition is recorded with the person and time in the <strong>Activity</strong> tab.</p>
+<figure><img src="images/task-detail.png" alt="A task detail page" loading="lazy" decoding="async"><figcaption>A task detail page</figcaption></figure>
+<h3 id="ch6-service-levels">Service levels</h3>
+<p>A service level is a promise about how quickly work of a given priority gets done. Tasks that breach one are visible, escalated and countable, which is what turns "we fix critical issues quickly" into something you can show.</p>
+<p>The <strong>Overview</strong> tab shows how you are doing against them.</p>
+<figure><img src="images/tasks-overview.png" alt="The tasks overview" loading="lazy" decoding="async"><figcaption>The tasks overview</figcaption></figure>
+<h3 id="ch6-approvals">Approvals</h3>
+<p>Some work should not be closed on the word of the person who did it. A task can require approval: it moves to <strong>Under review</strong>, the approver gets a notification and decides, and their decision is recorded.</p>
+<h3 id="ch6-corrective-actions-on-an-issue">Corrective actions on an issue</h3>
+<p>Open an issue and use the <strong>Actions</strong> tab. Each action has its own type, owner and state:</p>
+<ul><li><strong>Containment</strong>: stop the bleeding now.</li><li><strong>Corrective</strong>: fix the thing that broke.</li><li><strong>Preventive</strong>: stop it happening again.</li><li><strong>Verification</strong>: check the fix actually worked.</li></ul>
+<p>An action can be promoted to a task of its own when it turns out to be a piece of work in its own right.</p>
+<h3 id="ch6-sub-tasks-and-related-records">Sub-tasks and related records</h3>
+<ul><li><strong>Sub-tasks</strong> break a large task into steps that can be assigned separately.</li><li><strong>Related</strong> shows what this task is attached to: the control, the finding, the</li></ul>
+<p>vendor or the document that caused it.</p>
+<h3 id="ch6-settings">Settings</h3>
+<p><strong>Tasks &gt; Settings</strong> is where an administrator sets the service level targets, the severity matrix (how impact and urgency combine into a severity) and the automation rules that raise tasks on their own.</p>
+<figure><img src="images/tasks-settings.png" alt="Task settings" loading="lazy" decoding="async"><figcaption>Task settings</figcaption></figure></section><section class="chapter" id="ch7"><header class="chapter-head"><p class="eyebrow">Chapter 7</p><h2>Risks</h2></header>
+<h3 id="ch7-what-a-register-is">What a register is</h3>
+<p>A risk register is a list of things that could go wrong, scored so you can argue about the right ones. Verity supports more than one register, because an operational risk register and a project register usually want different scales and different owners.</p>
+<p>Each register owns its own:</p>
+<ul><li><strong>Scoring matrix</strong>: the likelihood and impact scales, and what counts as low,</li></ul>
+<p>medium, high or critical.</p>
+<ul><li><strong>Taxonomy</strong>: the categories and subcategories risks are filed under.</li><li><strong>Review cadence</strong>: how often a risk in it must be revisited.</li></ul>
+<figure><img src="images/risks-register.png" alt="The risk register" loading="lazy" decoding="async"><figcaption>The risk register</figcaption></figure>
+<h3 id="ch7-scoring-inherent-and-residual">Scoring: inherent and residual</h3>
+<p>Every risk carries two scores.</p>
+<ul><li><strong>Inherent</strong> is the risk before your controls do anything.</li><li><strong>Residual</strong> is what is left once they do.</li></ul>
+<p>Both are likelihood times impact on the register's scale. The gap between them is the argument for the controls you operate, which is exactly what an auditor is looking for.</p>
+<h3 id="ch7-walkthrough-add-a-risk">Walkthrough: add a risk</h3>
+<ol><li>Go to <strong>Risks</strong> and click <strong>Add risk</strong>.</li><li>Write the <strong>title</strong> as a sentence with a consequence: "Customer data exposed through a misconfigured storage bucket" rather than "S3".</li><li>Use <strong>AI Assist</strong> if you want a starting draft. It proposes a category, description, root cause, consequences, recommendations and an opening score. Nothing it suggests is applied until you click to use it, field by field or all at once.</li><li>Choose the <strong>category</strong> and subcategory.</li><li>Score the <strong>inherent</strong> risk, then the <strong>residual</strong> risk.</li><li>Pick a <strong>treatment</strong>: mitigate, accept, avoid or transfer.</li><li>Set the <strong>business owner</strong> and a <strong>treatment due date</strong>.</li><li>Save.</li></ol>
+<figure><img src="images/dialog-add-risk.png" alt="The add risk dialog" loading="lazy" decoding="async"><figcaption>The add risk dialog</figcaption></figure>
+<h3 id="ch7-the-states-a-risk-moves-through">The states a risk moves through</h3>
+<div class="table-wrap"><table><thead><tr><th>State</th><th>Meaning</th></tr></thead><tbody><tr><td>Open</td><td>Recorded, not being treated yet</td></tr><tr><td>In treatment</td><td>Work is under way to reduce it</td></tr><tr><td>Mitigated</td><td>Treated down to its residual level</td></tr><tr><td>Accepted</td><td>Consciously tolerated, with an approval behind it</td></tr><tr><td>Closed</td><td>No longer relevant</td></tr></tbody></table></div>
+<h3 id="ch7-walkthrough-treat-a-risk">Walkthrough: treat a risk</h3>
+<ol><li>Open the risk and go to <strong>Treatment</strong>.</li><li>Write the plan: the steps, who owns them and by when.</li><li>Raise the actions as tasks so the work is tracked where all other work lives.</li><li>On the <strong>Controls</strong> tab, attach the controls that reduce this risk. That link is what makes your control library an answer to your risk register rather than a separate exercise.</li><li>As the work lands, update the residual score.</li></ol>
+<figure><img src="images/risk-detail.png" alt="A risk detail page" loading="lazy" decoding="async"><figcaption>A risk detail page</figcaption></figure>
+<h3 id="ch7-walkthrough-accept-a-risk">Walkthrough: accept a risk</h3>
+<p>Acceptance is the formal act of saying "we will live with this". It is separated from the rest of the record on purpose.</p>
+<ol><li>Open the risk and go to <strong>Acceptance</strong>.</li><li>Request acceptance: state the justification, the compensating measures and an expiry date.</li><li>Somebody other than the requester decides. Verity refuses to let the same person both request and approve.</li><li>On approval the risk moves to <strong>Accepted</strong> and carries its expiry.</li><li>When the expiry passes, the acceptance lapses and the risk reopens on its own, so a decision made two years ago does not quietly become permanent.</li></ol>
+<aside class="note"><p><strong>Acceptance has an owner and an end date, always.</strong> That is the difference between an accepted risk and an ignored one.</p></aside>
+<h3 id="ch7-the-library-and-importing">The library and importing</h3>
+<ul><li><strong>Library</strong> is a catalogue of common risks, already written and scored, that you</li></ul>
+<p>can adopt into a register. Faster than staring at an empty page, and you can edit anything you adopt.</p>
+<ul><li><strong>Import</strong> takes a spreadsheet. Download the template, fill it in, preview what</li></ul>
+<p>Verity read, then commit. The preview is where you catch a column that mapped to the wrong field.</p>
+<h3 id="ch7-risks-raised-from-elsewhere">Risks raised from elsewhere</h3>
+<p>A risk can arrive from another module:</p>
+<ul><li>From a <strong>vendor finding</strong>: a weakness in a third party that you decide to carry as</li></ul>
+<p>your own risk.</p>
+<ul><li>From an <strong>assessment</strong> or an <strong>import</strong>.</li></ul>
+<p>The register records where each risk came from, so "who raised this and why" is always answerable.</p>
+<figure><img src="images/risks-overview.png" alt="The risks overview" loading="lazy" decoding="async"><figcaption>The risks overview</figcaption></figure>
+<h3 id="ch7-settings">Settings</h3>
+<p><strong>Risks &gt; Settings</strong> is where an administrator manages registers: the scales, the bands, the categories and the review cadence.</p>
+<figure><img src="images/risks-settings.png" alt="Risk settings" loading="lazy" decoding="async"><figcaption>Risk settings</figcaption></figure>
+<p>Tabs marked <strong>Soon</strong>, such as Assessments and KRIs, are placeholders for later work.</p></section><section class="chapter" id="ch8"><header class="chapter-head"><p class="eyebrow">Chapter 8</p><h2>Vendors</h2></header>
+<h3 id="ch8-what-this-module-does">What this module does</h3>
+<p>Third party risk, end to end. Who you rely on, how much of your exposure sits with each one, what you asked them, what they answered, what you found, what you are doing about it, and what happens when the relationship ends.</p>
+<figure><img src="images/vendors-register.png" alt="The vendor register" loading="lazy" decoding="async"><figcaption>The vendor register</figcaption></figure>
+<h3 id="ch8-the-shape-of-it">The shape of it</h3>
+<ul><li>A <strong>vendor</strong> is the organisation.</li><li>An <strong>engagement</strong> is one thing you use them for. A vendor can have several, and</li></ul>
+<p>each is assessed on its own, because hosting production is not the same risk as running a design project.</p>
+<ul><li>The <strong>lifecycle</strong> runs on the engagement, in twelve stages.</li></ul>
+<h3 id="ch8-the-twelve-stages">The twelve stages</h3>
+<div class="table-wrap"><table><thead><tr><th>Stage</th><th>What happens</th></tr></thead><tbody><tr><td>Intake</td><td>Somebody asks for the vendor, and the request is decided</td></tr><tr><td>Tiering</td><td>Five questions set how much diligence this engagement earns</td></tr><tr><td>Diligence</td><td>Reviewers are assigned and the paperwork is gathered</td></tr><tr><td>Questionnaire</td><td>The vendor answers, usually through the portal</td></tr><tr><td>Scoring</td><td>Their answers become a residual score and a grade</td></tr><tr><td>Findings</td><td>Gaps become findings with owners and due dates</td></tr><tr><td>Contracting</td><td>The contract, the DPA, the renewal terms</td></tr><tr><td>Approval</td><td>The gate: somebody accountable says yes or no</td></tr><tr><td>Onboarding</td><td>Access is granted and the relationship starts</td></tr><tr><td>Monitoring</td><td>Signals, alerts and document expiry are watched</td></tr><tr><td>Reassessment</td><td>The whole thing comes round again on a cadence</td></tr><tr><td>Offboarding</td><td>Access is revoked, data is returned or destroyed</td></tr></tbody></table></div>
+<p>Stages do not skip. The workspace can mark a stage not applicable through policy, and the record shows it was skipped by policy rather than forgotten.</p>
+<h3 id="ch8-getting-a-vendor-into-verity">Getting a vendor into Verity</h3>
+<p>There are two doors, and which one you use depends on who you are.</p>
+<h4 id="ch8-anyone-request-a-vendor">Anyone: request a vendor</h4>
+<p>If you can see the vendor register you can ask for a new vendor. You are not creating one.</p>
+<figure><img src="images/dialog-request-vendor.png" alt="The request a vendor dialog" loading="lazy" decoding="async"><figcaption>The request a vendor dialog</figcaption></figure>
+<ol><li>Click <strong>Request vendor</strong> in the header.</li><li>Give the vendor's name, your department, what you want them to do, and how urgent it is.</li><li>Submit. Verity checks the name against the register. If it looks like a vendor you already use, the dialog stays open and shows you which, before anyone reviews it.</li></ol>
+<p>The request lands in <strong>Vendors &gt; Intake</strong>. Nothing is in the register yet.</p>
+<h4 id="ch8-the-third-party-risk-team-add-a-vendor-directly">The third party risk team: add a vendor directly</h4>
+<figure><img src="images/dialog-add-vendor.png" alt="The add vendor dialog" loading="lazy" decoding="async"><figcaption>The add vendor dialog</figcaption></figure>
+<ol><li>Click <strong>Add vendor</strong>.</li><li>Fill in the name, type, industry, website and business unit.</li><li>Record what data they touch: whether they hold personal data, the classification, where it lives, which systems are in scope.</li><li>Name the three owners: business, security and relationship.</li><li>Name the <strong>first engagement</strong>. This is what gets tiered.</li></ol>
+<h4 id="ch8-walkthrough-decide-an-intake-request">Walkthrough: decide an intake request</h4>
+<figure><img src="images/vendors-intake.png" alt="The intake queue" loading="lazy" decoding="async"><figcaption>The intake queue</figcaption></figure>
+<ol><li>Go to <strong>Vendors &gt; Intake</strong>. Pending requests sort first, and the tab carries a count of what is waiting.</li><li>Read the request. If screening flagged possible duplicates, the matching vendors are listed with links.</li><li><strong>Approve</strong> creates the vendor and its first engagement and takes you to it.</li><li><strong>Decline</strong> requires a reason. Nothing is created, and the reason is kept.</li></ol>
+<aside class="note"><p><strong>You cannot decide the same request twice</strong>, and a decline cannot be undone. If circumstances change, raise a new request so the history shows both decisions.</p></aside>
+<figure><img src="images/vendor-detail.png" alt="A vendor record" loading="lazy" decoding="async"><figcaption>A vendor record</figcaption></figure>
+<h3 id="ch8-tiering">Tiering</h3>
+<p>Tiering decides how much diligence this engagement earns. Five questions, each scored 0 to 4:</p>
+<ol><li><strong>Data sensitivity</strong>: what they hold.</li><li><strong>Business criticality</strong>: what breaks if they stop.</li><li><strong>System access</strong>: how far into your estate they reach.</li><li><strong>Regulatory scope</strong>: whether regulators care about this relationship.</li><li><strong>Fourth party reliance</strong>: who they in turn depend on.</li></ol>
+<p>The answers are weighted and produce a band: <strong>Low</strong>, <strong>Medium</strong>, <strong>High</strong> or <strong>Critical</strong>. The tier drives the questionnaire the vendor is sent, the reassessment cadence, and how strict the approval gate is.</p>
+<h4 id="ch8-walkthrough-tier-an-engagement">Walkthrough: tier an engagement</h4>
+<ol><li>Open the vendor and go to <strong>Lifecycle</strong>.</li><li>Open the <strong>Tiering</strong> stage and answer the five questions.</li><li>Save. The tier appears on the vendor header and on the engagement, and the twelve stages are planned.</li></ol>
+<p><strong>Re-tiering</strong> later is allowed and honest about its consequences: if the new tier demands work the old one skipped, the affected stages reopen.</p>
+<figure><img src="images/vendor-lifecycle.png" alt="The lifecycle workspace" loading="lazy" decoding="async"><figcaption>The lifecycle workspace</figcaption></figure>
+<h3 id="ch8-questionnaires-and-the-vendor-portal">Questionnaires and the vendor portal</h3>
+<p>Your workspace builds its own questionnaires. <strong>Vendors &gt; Questionnaires</strong> holds them, with a library to start from.</p>
+<figure><img src="images/vendors-questionnaires.png" alt="The questionnaire list" loading="lazy" decoding="async"><figcaption>The questionnaire list</figcaption></figure>
+<p>Two purposes:</p>
+<ul><li><strong>Tiering questionnaires</strong> are answered by your team, about the vendor.</li><li><strong>Due diligence questionnaires</strong> are answered by the vendor, and drive the</li></ul>
+<p>residual score and the findings.</p>
+<h4 id="ch8-walkthrough-send-a-questionnaire-to-a-vendor">Walkthrough: send a questionnaire to a vendor</h4>
+<ol><li>Open the vendor and add a <strong>portal contact</strong> with an email address.</li><li>Go to <strong>Lifecycle &gt; Questionnaire</strong> and dispatch the questionnaire for this engagement.</li><li>Verity produces a single use portal link. Send it to the contact.</li><li>The vendor opens the link with no account and no password, answers the questions, attaches files, and saves as they go.</li><li>You watch progress from the <strong>Assessments</strong> tab.</li></ol>
+<aside class="note"><p><strong>The link is shown once.</strong> Verity keeps only a hash of it, so it cannot be recovered later. If it is lost, issue a new one.</p></aside>
+<h3 id="ch8-assessment-scoring-and-review">Assessment, scoring and review</h3>
+<figure><img src="images/vendor-assessments.png" alt="The assessments tab" loading="lazy" decoding="async"><figcaption>The assessments tab</figcaption></figure>
+<p>When answers come back, the assessment produces a <strong>residual score</strong> and a letter grade from A to F. A control the vendor does not have caps the score, and a missing critical control puts a floor under the risk no matter how well they answer everything else.</p>
+<p>Reviews can be shared. Assign a domain of the questionnaire, or the whole review, to a colleague. Each assignment has its own state, and comments can be internal or shared with the vendor. The vendor sees only shared comments.</p>
+<h3 id="ch8-findings">Findings</h3>
+<figure><img src="images/vendors-findings.png" alt="The findings register" loading="lazy" decoding="async"><figcaption>The findings register</figcaption></figure>
+<p>A gap becomes a finding: a severity, an owner, a due date driven by your policy, and a state. Findings can also be raised by hand, because not everything you learn comes from a questionnaire.</p>
+<p>Your options on a finding:</p>
+<ul><li><strong>Remediate</strong>: the vendor fixes it, you verify and close.</li><li><strong>Accept</strong>: you tolerate it, with a justification and an expiry date. When the</li></ul>
+<p>expiry passes the finding reopens on its own.</p>
+<ul><li><strong>Raise a risk</strong>: promote it to your own risk register.</li></ul>
+<h3 id="ch8-the-approval-gate">The approval gate</h3>
+<p>Approval is the one stage that is a gate. Verity refuses to let it clear while:</p>
+<ul><li>any earlier stage is still open,</li><li>any critical or blocking finding is open, on this engagement or vendor wide,</li><li>the required reviewers have not been assigned.</li></ul>
+<p>Separation of duties applies: the person who requests approval cannot be the person who grants it. The gate clears itself as soon as the thing blocking it is resolved, so you do not have to remember to come back and unstick it.</p>
+<h3 id="ch8-contracts-and-paperwork">Contracts and paperwork</h3>
+<p>The <strong>Paperwork</strong> tab holds contracts, DPAs, SOC 2 reports, certificates and your service level agreements. Each document carries an expiry, and expiring paperwork appears in monitoring before it lapses rather than after.</p>
+<h3 id="ch8-monitoring">Monitoring</h3>
+<p>The <strong>Monitoring</strong> tab is the ongoing view: signals you record about the vendor (an outage, a breach report, a news item), alert rules that decide what a signal sets off, and the reassessment clock.</p>
+<p>An alert rule can notify someone, raise a task, or bring the reassessment forward to today.</p>
+<h3 id="ch8-shadow-it">Shadow IT</h3>
+<p>Software that arrived without going through intake. Record a discovered app, then triage it: add it as a vendor (which raises an intake request), link it to a vendor you already have, or ignore it with a reason.</p>
+<h3 id="ch8-offboarding">Offboarding</h3>
+<p>Ending a relationship is a stage, not a delete.</p>
+<ol><li>Open the vendor and start offboarding.</li><li>Work the checklist: revoke access, confirm data return or destruction, close contracts, settle invoices.</li><li>Portal tokens are revoked as soon as offboarding starts.</li><li>The vendor moves to archived when every exit check is complete, and the whole record stays readable.</li></ol>
+<h3 id="ch8-policy">Policy</h3>
+<figure><img src="images/vendors-policy.png" alt="The vendor policy screen" loading="lazy" decoding="async"><figcaption>The vendor policy screen</figcaption></figure>
+<p><strong>Vendors &gt; Policy</strong> is where an administrator sets the rules the module runs on: the tiering bands, reassessment cadences per tier, the remediation window for each finding severity, which stages a tier may skip, and which roles must review.</p>
+<p>Change the policy and new work follows the new rules. Work already under way keeps the policy it started under, so a vendor assessed last quarter can still be explained.</p>
+<h3 id="ch8-overview">Overview</h3>
+<figure><img src="images/vendors-overview.png" alt="The vendors overview" loading="lazy" decoding="async"><figcaption>The vendors overview</figcaption></figure>
+<p>The <strong>Overview</strong> tab is the portfolio read: vendors by tier, what is awaiting a decision, open findings by severity, and what is due for reassessment.</p></section><section class="chapter" id="ch9"><header class="chapter-head"><p class="eyebrow">Chapter 9</p><h2>Assets</h2></header>
+<h3 id="ch9-what-the-inventory-is-for">What the inventory is for</h3>
+<p>You cannot protect what you cannot list. The asset inventory is the record of what you run, how important each thing is, who owns it, and what depends on what. Every other module leans on it: a vulnerability is a weakness *on an asset*, a risk is usually about *an asset*, an auditor's first question about scope is *which assets*.</p>
+<figure><img src="images/assets-register.png" alt="The asset register" loading="lazy" decoding="async"><figcaption>The asset register</figcaption></figure>
+<h3 id="ch9-what-counts-as-an-asset">What counts as an asset</h3>
+<p>Six types: application, infrastructure, data, cloud resource, third party and business service. If it processes, stores or carries something you care about, it belongs here.</p>
+<h3 id="ch9-walkthrough-add-an-asset">Walkthrough: add an asset</h3>
+<ol><li>Go to <strong>Assets</strong> and click <strong>New asset</strong>.</li><li>Name it as your team refers to it: "Payments API Gateway", not "prod-01".</li><li>Set the <strong>type</strong> and describe what it does in one sentence.</li><li>Fill in identity where you know it: hostname, IP address, location, environment, operating system.</li><li>Record <strong>classification and exposure</strong>: the data classification, whether it is internet facing, whether it is customer facing, its network segment, its business function.</li><li>Rate <strong>confidentiality, integrity and availability</strong> from 1 to 5. See below.</li><li>Name the <strong>owners</strong>.</li><li>Save.</li></ol>
+<h3 id="ch9-criticality-how-the-tier-is-derived">Criticality: how the tier is derived</h3>
+<p>You do not type a criticality. You rate the asset on three axes and Verity derives the tier:</p>
+<ul><li><strong>Confidentiality</strong>: how bad is disclosure.</li><li><strong>Integrity</strong>: how bad is silent corruption.</li><li><strong>Availability</strong>: how bad is downtime.</li></ul>
+<p>Exposure raises it: internet facing and customer facing assets score higher, and so does one carrying regulated data. The result is a score out of 10 and a tier of low, medium, high or critical.</p>
+<p>If the derived tier is wrong for a reason a formula cannot see, you can <strong>override</strong> it, but the override asks for a reason and the record keeps both numbers. An auditor can see what the system derived and what a human decided.</p>
+<aside class="note"><p><strong>Not rated is not medium.</strong> An asset with no CIA rating has no tier at all, and shows as unassessed. Verity will not invent a middle value for you.</p></aside>
+<figure><img src="images/asset-detail.png" alt="An asset detail page" loading="lazy" decoding="async"><figcaption>An asset detail page</figcaption></figure>
+<h3 id="ch9-inventory-hygiene">Inventory hygiene</h3>
+<p>The panel on the right of every asset is the completeness score. Five checks, each worth twenty points:</p>
+<ol><li>Primary owner</li><li>Type</li><li>Criticality</li><li>Data classification</li><li>CIA rating</li></ol>
+<p>Each is listed with a tick or a warning and what it found, so a score of 100 per cent is checkable rather than asserted. Under them is the freshness line: when the asset was last reviewed and when it is due again.</p>
+<p><strong>Mark reviewed</strong> does one thing: it records that a person looked at this record today and restarts the clock. It does not change the score, because the score is about fields and the clock is about attention.</p>
+<h3 id="ch9-walkthrough-set-your-own-review-cadence">Walkthrough: set your own review cadence</h3>
+<p>The default is 90 days for everything. Most teams want longer for low criticality assets.</p>
+<ol><li>Go to <strong>Assets &gt; Settings</strong>.</li><li>Under <strong>Review cadence</strong>, set the number of days for each criticality tier. Anything from 7 to 1095 days.</li><li>Save the row. The change applies immediately, and each asset's hygiene panel then reports the window it was judged against.</li></ol>
+<figure><img src="images/assets-settings.png" alt="Asset settings" loading="lazy" decoding="async"><figcaption>Asset settings</figcaption></figure>
+<h3 id="ch9-dependencies">Dependencies</h3>
+<p>The <strong>Relationships</strong> tab records what depends on what: this application runs on that cluster, this service connects to that database.</p>
+<ol><li>Open the asset and go to <strong>Relationships</strong>.</li><li>Use <strong>Add dependency</strong>.</li><li>Pick the other asset, the kind of relationship, and which way it runs.</li></ol>
+<p>One edge is stored once and read from both ends, so the same dependency reads "runs on the cluster" from the application and "is run on by the application" from the cluster. They can never disagree.</p>
+<p>This is what answers "what else goes down with this" when you are triaging.</p>
+<h3 id="ch9-vulnerabilities-on-an-asset">Vulnerabilities on an asset</h3>
+<p>The <strong>Vulnerabilities</strong> tab lists the open findings on this asset, and you can add one from here with the asset already filled in. See <a href="#ch10">Vulnerabilities</a>.</p>
+<h3 id="ch9-linked-records">Linked records</h3>
+<p>Controls, risks, evidence, documents and vendors attached to this asset, in one place, with the ability to link more.</p>
+<h3 id="ch9-lifecycle">Lifecycle</h3>
+<p>An asset moves through planned, active, in maintenance, decommissioned and retired. Decommissioning is a guarded step: it records the disposal and closes the asset's open findings, because a finding on a machine that no longer exists is noise.</p>
+<h3 id="ch9-importing-a-spreadsheet">Importing a spreadsheet</h3>
+<p>Most teams arrive with a list already.</p>
+<ol><li>Go to <strong>Assets</strong> and choose <strong>Import</strong>.</li><li>Download the template so your columns match.</li><li>Upload your file. Verity reads it and shows you what it understood, row by row, with errors called out before anything is created.</li><li>Fix anything wrong in the sheet and upload again, or commit what parsed.</li></ol>
+<h3 id="ch9-custom-fields">Custom fields</h3>
+<p>If your organisation tracks something this inventory does not ask for, add it.</p>
+<ol><li>Go to <strong>Assets &gt; Settings &gt; Custom fields</strong> and click <strong>Add field</strong>.</li><li>Name it, choose the type (text, long text, number, date, choice or yes/no), and for a choice field list the choices one per line.</li><li>Mark it required if every asset must have it.</li></ol>
+<figure><img src="images/dialog-custom-field.png" alt="Adding a custom field" loading="lazy" decoding="async"><figcaption>Adding a custom field</figcaption></figure>
+<p>The field then appears on the asset form under "This workspace also asks", and on the asset record. Fields are archived rather than deleted, so a value written last year stays readable after you stop collecting it.</p>
+<figure><img src="images/assets-overview.png" alt="The assets overview" loading="lazy" decoding="async"><figcaption>The assets overview</figcaption></figure></section><section class="chapter" id="ch10"><header class="chapter-head"><p class="eyebrow">Chapter 10</p><h2>Vulnerabilities</h2></header>
+<h3 id="ch10-what-this-module-does">What this module does</h3>
+<p>Scanners produce thousands of findings. This module turns that pile into a list somebody can work, in the order that actually reduces your risk, with a clock on each one.</p>
+<figure><img src="images/vulnerabilities-register.png" alt="The vulnerability register" loading="lazy" decoding="async"><figcaption>The vulnerability register</figcaption></figure>
+<h3 id="ch10-definitions-and-findings">Definitions and findings</h3>
+<p>Two things share the module.</p>
+<ul><li>A <strong>definition</strong> is the weakness itself, for example CVE-2021-44228 (Log4Shell).</li></ul>
+<p>It is the same weakness wherever it appears.</p>
+<ul><li>A <strong>finding</strong> is that weakness *on one of your assets*, at one location. Two</li></ul>
+<p>servers with Log4Shell are two findings of one definition.</p>
+<p>That split is why you can fix a finding on one host without the register pretending the whole CVE has gone away.</p>
+<h3 id="ch10-priority-why-the-order-is-not-just-cvss">Priority: why the order is not just CVSS</h3>
+<p>A CVSS score describes the weakness in the abstract. Verity prioritises what it means *to you*, combining:</p>
+<ul><li>the weakness: CVSS, whether an exploit exists, the EPSS probability that it will</li></ul>
+<p>be exploited, and whether it is on the Known Exploited Vulnerabilities catalogue,</p>
+<ul><li>the asset: its criticality, whether it is internet facing, whether it carries</li></ul>
+<p>regulated data.</p>
+<p>A medium CVSS on your payment gateway can outrank a high on a test box, which is the right answer. A finding on the KEV catalogue is floored at a high priority no matter what else is true, because something is being exploited right now.</p>
+<h3 id="ch10-getting-findings-in">Getting findings in</h3>
+<h4 id="ch10-walkthrough-import-a-scanner-export">Walkthrough: import a scanner export</h4>
+<ol><li>Go to <strong>Vulnerabilities</strong> and choose <strong>Import</strong>.</li><li>Give the report a name, for example "Quarterly external scan", pick the report type and name the tool.</li><li>Upload the CSV. The file can be up to 10 MB.</li><li>Verity matches each row to an asset in your inventory, deduplicates against what is already open, and tells you what it created, what it updated, what resurfaced and what it could not match.</li></ol>
+<p>Findings that resurface after being fixed are marked as such and carry a count, so a recurring failure is visible instead of looking like a new problem each time.</p>
+<h4 id="ch10-walkthrough-add-a-finding-by-hand">Walkthrough: add a finding by hand</h4>
+<ol><li>Click <strong>Add finding</strong>, or open an asset and add it from the <strong>Vulnerabilities</strong> tab, which fills the asset in for you.</li><li>Enter the title, severity and affected asset.</li><li>If you have a CVE identifier, enter it: Verity looks it up and fills in the description, score, vector and threat intelligence.</li></ol>
+<h3 id="ch10-working-a-finding">Working a finding</h3>
+<figure><img src="images/vulnerability-detail.png" alt="A vulnerability detail page" loading="lazy" decoding="async"><figcaption>A vulnerability detail page</figcaption></figure>
+<div class="table-wrap"><table><thead><tr><th>State</th><th>Meaning</th></tr></thead><tbody><tr><td>New</td><td>Just arrived, not triaged</td></tr><tr><td>Active</td><td>Triaged and confirmed</td></tr><tr><td>In progress</td><td>Being fixed</td></tr><tr><td>Pending retest</td><td>Fixed in the team's view, waiting on proof</td></tr><tr><td>Fixed</td><td>Verified as fixed</td></tr><tr><td>Resurfaced</td><td>Was fixed, has come back</td></tr><tr><td>Accepted</td><td>Tolerated on purpose, with an approval and an expiry</td></tr><tr><td>False positive</td><td>Not real, with a reason recorded</td></tr></tbody></table></div>
+<p>A finding is never closed on assertion alone. <strong>Fixed</strong> means a scanner confirmed it or an approval was recorded.</p>
+<h3 id="ch10-remediation-windows">Remediation windows</h3>
+<p>Every finding gets a due date from its severity. The shipped defaults are 15 days for critical, 30 for high, 60 for medium and 90 for low, with no clock on informational.</p>
+<p>Change them in <strong>Vulnerabilities &gt; Settings</strong>. A change applies to findings detected from then on, and does not silently move the due date on findings that already exist.</p>
+<figure><img src="images/vulnerabilities-settings.png" alt="Vulnerability settings" loading="lazy" decoding="async"><figcaption>Vulnerability settings</figcaption></figure>
+<p>Findings are flagged "due soon" in their last seven days, and breached findings escalate to the owner.</p>
+<h3 id="ch10-remediation-plans">Remediation plans</h3>
+<p>For work that is more than a patch, a finding carries a plan that moves through preview, approval, apply and verify. Each step is recorded, so the trail shows what was proposed, who approved it, when it was applied and how it was verified.</p>
+<h3 id="ch10-exceptions-and-acceptance">Exceptions and acceptance</h3>
+<p>Sometimes the fix is worse than the finding, or it cannot be done yet.</p>
+<ol><li>Open the finding and request an exception.</li><li>State the justification, the compensating controls and an expiry date.</li><li>An approver decides.</li><li>On expiry the acceptance lapses and the finding returns to the open register.</li></ol>
+<h3 id="ch10-custom-fields">Custom fields</h3>
+<p>Scanners fill most of a finding. What they cannot know is your change ticket number, the business sign off, the maintenance window. Add those as custom fields.</p>
+<ol><li>Go to <strong>Vulnerabilities &gt; Settings &gt; Custom fields</strong> and add a field.</li><li>It appears on every finding under "Also recorded", where anybody with manage rights can fill it in.</li></ol>
+<h3 id="ch10-overview">Overview</h3>
+<figure><img src="images/vulnerabilities-overview.png" alt="The vulnerabilities overview" loading="lazy" decoding="async"><figcaption>The vulnerabilities overview</figcaption></figure>
+<p>Open findings by severity, what is overdue, throughput over time, and where the concentration sits.</p></section><section class="chapter" id="ch11"><header class="chapter-head"><p class="eyebrow">Chapter 11</p><h2>Connections</h2></header>
+<h3 id="ch11-what-a-connection-does">What a connection does</h3>
+<p>A connection lets Verity check a system for you, on a schedule, and attach what it finds to the controls those checks answer. Instead of somebody screenshotting a setting every quarter, the setting is read every day and the evidence appears on its own.</p>
+<figure><img src="images/connections.png" alt="The connections page" loading="lazy" decoding="async"><figcaption>The connections page</figcaption></figure>
+<h3 id="ch11-what-is-available-today">What is available today</h3>
+<p><strong>GitHub</strong> is the first live connector. Later phases add identity providers, cloud accounts, device management and ticketing. Anything marked <strong>Soon</strong> on this page is not connected to real data yet.</p>
+<p>You can register interest in a system that is not there yet using the request option. It records what you need so it can be prioritised.</p>
+<h3 id="ch11-walkthrough-connect-github">Walkthrough: connect GitHub</h3>
+<ol><li>Go to <strong>Connections</strong> and choose <strong>Connect</strong> on GitHub.</li><li>Give the connection a name, for example "GitHub, engineering org".</li><li>Paste a personal access token with read access to the organisation you want checked. Read only is enough, and read only is what you should use.</li><li>Save. Verity encrypts the credential before it is stored, and it never appears in a log or on a screen again.</li><li>The first run starts right away. After that it runs on a schedule.</li></ol>
+<aside class="note"><p><strong>Use a token that can only read.</strong> Nothing in Verity needs to write to your source control, and a read only token limits what a mistake can cost.</p></aside>
+<h3 id="ch11-what-the-checks-look-at">What the checks look at</h3>
+<p>The GitHub connector answers questions a SOC 2 auditor asks about how software gets built and released, for example:</p>
+<ul><li>is two factor authentication required for the organisation,</li><li>are branch protection rules in place on the default branch,</li><li>are pull requests reviewed before merge,</li><li>who has administrative access,</li><li>are secret scanning and dependency alerts switched on.</li></ul>
+<p>Each check maps to the controls it can support.</p>
+<h3 id="ch11-reading-the-results">Reading the results</h3>
+<p>Open a control and go to its <strong>Automation</strong> tab.</p>
+<ul><li><strong>Passing</strong> means the check ran and found what the control claims.</li><li><strong>Failing</strong> means it ran and found something else. The detail says what.</li><li><strong>Needs review</strong> means the check could not decide by itself.</li></ul>
+<p>The output is attached to the control as evidence, dated, so the control's evidence list fills without anybody uploading anything. Evidence is attached at most once a day unless the result changes, so a passing check does not bury the record in identical copies.</p>
+<h3 id="ch11-when-a-connection-breaks">When a connection breaks</h3>
+<p>A connection whose token has expired or whose permissions were reduced shows as unhealthy on the Connections page with the reason. The checks stop rather than quietly report a pass. Reconnect with a fresh token and the schedule resumes.</p></section><section class="chapter" id="ch12"><header class="chapter-head"><p class="eyebrow">Chapter 12</p><h2>Settings and administration</h2></header>
+<p>This chapter is for whoever administers the workspace. Everything here sits under <strong>Settings</strong> at the bottom of the navigation.</p>
+<h3 id="ch12-people">People</h3>
+<figure><img src="images/settings-people.png" alt="The people list" loading="lazy" decoding="async"><figcaption>The people list</figcaption></figure>
+<h4 id="ch12-walkthrough-invite-someone">Walkthrough: invite someone</h4>
+<ol><li>Go to <strong>Settings &gt; Access &gt; People</strong> and click <strong>Invite</strong>.</li><li>Enter their work email and choose the roles they should hold.</li><li>For an external auditor or consultant, set an <strong>access window</strong>: the dates between which they can sign in. Outside those dates the account still exists but cannot get in.</li><li>Send. They get an email, set their own password, and enrol in two factor authentication if your policy requires it.</li></ol>
+<h4 id="ch12-removing-someone">Removing someone</h4>
+<p>Disable the membership rather than deleting it. Their name stays on the approvals they gave and the evidence they collected, which is the point: an audit trail with holes in it is not an audit trail.</p>
+<h3 id="ch12-roles">Roles</h3>
+<figure><img src="images/settings-roles.png" alt="The roles list" loading="lazy" decoding="async"><figcaption>The roles list</figcaption></figure>
+<p>Verity ships six roles. Five of them are about accountability rather than access: they name who is answerable for an area, and they start with read access.</p>
+<div class="table-wrap"><table><thead><tr><th>Role</th><th>Starts with</th></tr></thead><tbody><tr><td>Admin</td><td>Everything</td></tr><tr><td>Chief Executive Officer</td><td>Workspace read</td></tr><tr><td>Security Officer</td><td>Workspace, audit log, frameworks, evidence, vendors</td></tr><tr><td>Privacy Officer</td><td>Workspace, audit log, frameworks, vendors</td></tr><tr><td>Engineering Lead</td><td>Workspace, frameworks, evidence</td></tr><tr><td>Business Operations/Finance Lead</td><td>Workspace, frameworks, vendors</td></tr></tbody></table></div>
+<p>You can create roles of your own and choose exactly which permissions they carry. Permissions read as <code>module:action</code>, for example <code>vendors:manage</code> or <code>evidence:review</code>.</p>
+<aside class="note"><p><strong>Deny by default.</strong> A permission nobody has been granted is denied. If somebody cannot see a module, add the permission to a role rather than making them an admin.</p></aside>
+<h4 id="ch12-roles-and-what-they-allow">Roles and what they allow</h4>
+<p>Access has two layers.</p>
+<ol><li><strong>The permission</strong> decides whether you can reach a screen at all.</li><li><strong>Object scope</strong> decides which rows you see once you are there. A control owner sees the controls assigned to them; an auditor sees the engagement window they were invited for.</li></ol>
+<h3 id="ch12-groups">Groups</h3>
+<p>Groups are teams: Engineering, Finance, the Security Council. They are useful in three places: assigning a control or task to a team, targeting an acknowledgement campaign at everyone in a department, and naming a group as an approver where any one member can decide.</p>
+<h3 id="ch12-security">Security</h3>
+<p><strong>Settings &gt; Security</strong> holds:</p>
+<ul><li><strong>Two factor authentication</strong>: whether it is required, and for which roles.</li></ul>
+<p>Requiring it for admins is the usual minimum.</p>
+<ul><li><strong>Password policy</strong>: length and complexity. The shipped rule is 12 characters</li></ul>
+<p>with mixed case, a digit and a symbol.</p>
+<h3 id="ch12-organisation-profile">Organisation profile</h3>
+<p>Your legal name, trading name, registration number, address and primary contact. This is what appears on exported reports, so it is worth getting right before your first audit.</p>
+<h3 id="ch12-custom-fields">Custom fields</h3>
+<p>Two modules let you add fields of your own: <a href="#custom-fields">Assets</a> and <a href="#custom-fields">Vulnerabilities</a>. Each is configured on that module's own Settings tab, so the permission that guards the module guards its fields.</p>
+<h3 id="ch12-the-audit-log">The audit log</h3>
+<figure><img src="images/audit-log.png" alt="The audit log" loading="lazy" decoding="async"><figcaption>The audit log</figcaption></figure>
+<p>Every state changing action in the workspace writes a row here: who did it, when, what the record looked like before and what it looked like after.</p>
+<p>The log is append only. It cannot be edited or deleted by anyone, including an administrator, and that is enforced by the database rather than by convention. When an auditor asks how you know your records have not been quietly rewritten, this is the answer.</p>
+<p>Filter it by actor, by object type or by date, and export what you filtered.</p>
+<h3 id="ch12-data-isolation">Data isolation</h3>
+<p>Each workspace is sealed. A person who belongs to two organisations sees one at a time, and there is no screen, filter or export anywhere in the product that can show data from two workspaces together. This is enforced in the database itself, on every query, not in the interface.</p></section><section class="chapter" id="ch13"><header class="chapter-head"><p class="eyebrow">Chapter 13</p><h2>Glossary</h2></header>
+<p>Words this platform uses, and what they mean here. Where a word has a general industry meaning and a narrower Verity meaning, both are given.</p>
+<p><strong>Acceptance.</strong> A recorded decision to tolerate a risk or a finding rather than fix it. Always has a justification, an approver who is not the requester, and an expiry date. When the expiry passes, the thing reopens on its own.</p>
+<p><strong>Acknowledgement campaign.</strong> A targeted request for named people to read and sign a published document. The record of who signed, and when, is the evidence that a policy reached its audience.</p>
+<p><strong>Approval gate.</strong> A lifecycle stage that will not clear until specific conditions are met. The vendor approval stage is one: open findings and unfinished earlier stages block it.</p>
+<p><strong>Asset.</strong> Anything you run that processes, stores or carries something you care about: an application, a server, a dataset, a cloud resource, a business service.</p>
+<p><strong>Audit log.</strong> The append only record of every state changing action. Cannot be edited or deleted by anyone, including an administrator.</p>
+<p><strong>CIA rating.</strong> Confidentiality, integrity and availability, each rated 1 to 5. The three inputs from which an asset's criticality is derived.</p>
+<p><strong>Control.</strong> Something your organisation does to keep a promise. A control answers one or more framework criteria and is proven by evidence.</p>
+<p><strong>Criterion.</strong> A single requirement in a framework, for example SOC 2 CC6.1.</p>
+<p><strong>Criticality tier.</strong> Low, medium, high or critical. Derived for assets from the CIA rating and exposure; derived for vendor engagements from the five tiering questions.</p>
+<p><strong>Definition (vulnerability).</strong> The weakness itself, for example a CVE. Distinct from a finding, which is that weakness on one of your assets.</p>
+<p><strong>Engagement.</strong> One thing you use a vendor for. A vendor can have several, and each is tiered and assessed separately.</p>
+<p><strong>EPSS.</strong> Exploit Prediction Scoring System: the probability that a given vulnerability will be exploited in the wild in the next 30 days.</p>
+<p><strong>Evidence.</strong> An artefact that proves a control operates: a file Verity holds, or a link to something that lives elsewhere.</p>
+<p><strong>Finding (vendor).</strong> A gap identified in a third party, with a severity, an owner and a due date.</p>
+<p><strong>Finding (vulnerability).</strong> A weakness on one of your assets at one location.</p>
+<p><strong>Framework.</strong> A published set of criteria you are being measured against, for example SOC 2.</p>
+<p><strong>Freshness.</strong> How current a piece of evidence is, against the renewal date its type implies.</p>
+<p><strong>Group.</strong> A team of people in the workspace, usable as an assignee, an approver or a campaign target.</p>
+<p><strong>Inventory hygiene.</strong> The completeness score on an asset: five checks on the record plus a freshness clock on when a person last reviewed it.</p>
+<p><strong>KEV.</strong> The Known Exploited Vulnerabilities catalogue published by CISA. A vulnerability on it is being exploited now, and Verity floors its priority accordingly.</p>
+<p><strong>Membership.</strong> A person's place in one workspace. All ownership and assignment in Verity points at a membership, never at a global user, so nobody can be attached to a workspace they do not belong to.</p>
+<p><strong>Portal (vendor).</strong> The unauthenticated page where a vendor answers a questionnaire. Reached by a single use link that is shown once.</p>
+<p><strong>Register.</strong> The list view of a module: controls, risks, vendors, assets, findings, tasks, documents.</p>
+<p><strong>Residual risk.</strong> What is left after your controls act. Contrast inherent risk, which is the level before they do.</p>
+<p><strong>Review cadence.</strong> How often a record must be revisited. Set per criticality for assets, per tier for vendors, per document for policies.</p>
+<p><strong>Scope.</strong> What is in and out of an audit, and why.</p>
+<p><strong>Separation of duties.</strong> The rule that the person who requests something cannot be the person who approves it. Enforced on risk acceptance and the vendor approval gate.</p>
+<p><strong>Service level (SLA).</strong> A promise about how quickly work of a given priority or severity is completed. Breaches are visible and escalate.</p>
+<p><strong>Shadow IT.</strong> Software in use that never went through intake. Recorded as a discovered app and triaged into a vendor, a link to an existing vendor, or ignored with a reason.</p>
+<p><strong>Soon.</strong> A badge marking a screen that is not built yet. Nothing behind one holds real data.</p>
+<p><strong>Subprocessor.</strong> A third party your vendor relies on. Your fourth party.</p>
+<p><strong>Tiering.</strong> The five question assessment that decides how much diligence a vendor engagement earns.</p>
+<p><strong>Trust Services Criteria.</strong> The five SOC 2 categories: Security, Availability, Processing Integrity, Confidentiality and Privacy.</p>
+<p><strong>Workspace.</strong> One organisation's sealed area of Verity. A person may belong to several and sees one at a time.</p></section></main>
+</div>
+
+<footer class="colophon">
+  <div class="inner">
+    <p>Screenshots come from a demonstration workspace, so the names, numbers and
+    people in them are invented. Your workspace shows your own data in the same
+    places.</p>
+    <p>Screens marked Soon are not built yet and hold no real data.</p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var links = Array.prototype.slice.call(document.querySelectorAll('.nav-top'));
+  var chapters = links.map(function (a) { return document.querySelector(a.getAttribute('href')); });
+  function mark() {
+    var best = 0;
+    for (var i = 0; i < chapters.length; i++) {
+      if (chapters[i] && chapters[i].getBoundingClientRect().top <= 120) best = i;
+    }
+    links.forEach(function (a, i) {
+      a.parentNode.classList.toggle('open', i === best);
+    });
+  }
+  mark();
+  window.addEventListener('scroll', mark, { passive: true });
+})();
+</script>
