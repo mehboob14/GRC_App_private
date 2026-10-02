@@ -1,0 +1,8 @@
+node_modules/
+.next/
+out/
+public/guide-images/
+public/guide-search.json
+.env.local
+.npm-cache/
+*.tsbuildinfo
