@@ -1,0 +1,119 @@
+---
+title: Remediation and exceptions
+description: Work a finding through its states, meet remediation windows, run a remediation plan, and record a time-boxed exception when a fix has to wait.
+status: live
+updated: 2026-10-02
+---
+
+Once a finding is in the register, somebody has to fix it, on time, and prove it. This page covers the states a finding moves through, the remediation windows that set due dates, remediation plans, exceptions and acceptance, and the custom fields you can add to findings.
+
+## Work a finding
+
+<Screenshot name="vulnerability-detail" alt="A finding's detail page with severity, KEV and priority badges, a Change status button, the Actions menu, an Assignment panel, detection dates with the SLA due date, and a Risk exception card" />
+
+<Lifecycle title="The states a finding moves through" stages={[{ name: "New", note: "Just arrived, not triaged" }, { name: "Active", note: "Triaged and confirmed" }, { name: "In progress", note: "Being fixed" }, { name: "Pending retest", note: "Fixed in the team's view, waiting on proof" }, { name: "Fixed", note: "Verified as fixed" }, { name: "Resurfaced", note: "Was fixed, has come back" }, { name: "Accepted", note: "Tolerated on purpose, with an approval and an expiry" }, { name: "False positive", note: "Not real, with a reason recorded" }]} />
+
+Use **Change status** in the finding's header to move it on. The dialog offers only the steps allowed from where the finding is now, and your optional note is recorded on the finding's timeline. **Actions > Assign** sets the owner, and **Actions > Mark false positive** asks why before it closes the finding.
+
+A finding is never closed on assertion alone. It reaches **Fixed** only from **Pending retest**, when a person confirms the retest with **Verify fixed**. The confirmation is recorded against their name, and they can add a note on how it was fixed.
+
+## Remediation windows
+
+Every finding gets a due date from its severity. The clock starts when the finding is first detected. The shipped defaults are 15 days for critical, 30 for high, 60 for medium and 90 for low, with no clock on informational.
+
+Change them in **Vulnerabilities > Settings**, under **Remediation windows**. Leave a window empty to use the default.
+
+<Callout type="note" title="Existing due dates do not move">
+
+A change applies to findings detected from then on. It does not silently move the due date on findings that already exist.
+
+</Callout>
+
+<Screenshot name="vulnerabilities-settings" alt="The Vulnerabilities Settings tab with remediation windows of 15, 30, 60 and 90 days for critical to low, no SLA for informational, and a Custom fields card below" />
+
+Findings are flagged "due soon" in their last seven days. A breached finding escalates: Verity notifies the asset's escalation contact, or the finding's owner if the asset has none, and the finding shows an **Escalated** badge.
+
+## Remediation plans
+
+For work that is more than a patch, a finding carries a plan that moves through preview, approval, apply and verify. Each step is recorded, so the trail shows what was proposed, who approved it, when it was applied and how it was verified. Plans live on the finding's **Remediation** tab.
+
+<Steps>
+<Step title="Generate the plan">
+
+Click **Generate plan**. The plan names the fix type (patch, config change, script or mitigation), the fix steps, why it matters now and how to roll back. A plan drafted by AI is marked **AI draft**. Use **Regenerate** for another draft.
+
+</Step>
+<Step title="Approve it">
+
+Click **Approve**. The plan records who approved it.
+
+</Step>
+<Step title="Make the change, then record it">
+
+Make the change on your systems, then click **Apply (simulated)**. Verity does not touch your systems: this records the plan as applied and moves the finding to **Pending retest**.
+
+</Step>
+<Step title="Verify the fix">
+
+Click **Verify fixed**, give the evidence that the fix worked, such as a retest result, scan output or ticket reference, and click **Mark verified**. The plan is marked verified and the finding closes as **Fixed**.
+
+</Step>
+</Steps>
+
+If a plan is overtaken by events, **Cancel plan** asks for a reason.
+
+## Exceptions and acceptance
+
+Sometimes the fix is worse than the finding, or it cannot be done yet. An exception is a time-boxed waiver, not a dismissal.
+
+<Steps>
+<Step title="Request an exception">
+
+Open the finding. On the **Overview** tab, in the **Risk exception** card, click **Request exception**.
+
+</Step>
+<Step title="Make the case">
+
+Set the **Duration in days**, up to 365. The clock starts when the exception is approved, not today. State the **Rationale**, the **Potential risks if granted** and any **Compensating controls**, then click **Submit request**.
+
+</Step>
+<Step title="An approver decides">
+
+Someone with permission to decide risk exceptions approves or rejects it. Whoever raised it cannot decide it, and a rejection needs a reason.
+
+</Step>
+<Step title="On expiry">
+
+The acceptance lapses and the finding returns to the open register on its own.
+
+</Step>
+</Steps>
+
+If you hold the permission to decide risk exceptions, **Actions > Accept risk** records an acceptance directly, with a reason, compensating controls and an expiry date. The expiry is required: there are no permanent waivers. You cannot accept the risk on a finding you own.
+
+## Custom fields
+
+Scanners fill most of a finding. What they cannot know is your change ticket number, the business sign off, the maintenance window. Add those as custom fields.
+
+<Steps>
+<Step title="Add the field">
+
+Go to **Vulnerabilities > Settings** and, under **Custom fields**, click **Add field**. Name it, choose its type and decide whether it is required, as described for [asset custom fields](/docs/assets/import-and-custom-fields/#custom-fields).
+
+</Step>
+<Step title="Fill it in on findings">
+
+It appears on every finding under "Also recorded", where anybody with manage rights can fill it in.
+
+</Step>
+</Steps>
+
+See [Custom fields](/docs/admin/custom-fields/) for how fields are archived rather than deleted.
+
+## Related pages
+
+<Cards>
+<Card title="Findings and priority" href="/docs/vulnerabilities/findings-and-priority/" icon="target">How the order of the register is decided.</Card>
+<Card title="Treat or accept a risk" href="/docs/risk/treatment-and-acceptance/" icon="scales">The same acceptance rules, applied to risks.</Card>
+<Card title="Tasks and issues" href="/docs/tasks/overview/" icon="clipboard">Track remediation work alongside everything else.</Card>
+</Cards>

@@ -1,0 +1,31 @@
+---
+title: Single sign-on
+description: Planned. Sign in to Verity through your organisation's own identity provider over OIDC or SAML, with accounts kept in step automatically.
+status: soon
+updated: 2026-10-02
+---
+
+Single sign-on will let your people sign in to Verity with the accounts they already use at work, through your organisation's own identity provider. This page describes what is planned, what stays the same, and how people sign in today.
+
+## What it will do
+
+- **Federate your identity provider.** Verity will trust your identity provider over the standard OIDC or SAML protocols, for example Microsoft Entra ID, Okta or Google Workspace.
+- **Create accounts on first sign-in.** A person's Verity account will be created the first time they sign in through your identity provider, so you do not have to invite everyone by hand.
+- **Keep joiners and leavers in step.** Through SCIM, accounts will follow your identity provider as people join and leave.
+- **Two-factor in one place.** For a workspace that signs in through its identity provider, two-factor authentication will be handled there.
+- **A fallback while you move over.** Passwords will remain available as a fallback until your workspace has moved to single sign-on.
+
+## What stays in Verity
+
+Your identity provider will answer "who is this?". Verity will keep answering "what may they do?".
+
+- **Roles, groups and permissions** stay in Verity, including object scope, such as a control owner seeing the controls assigned to them. See [Roles and groups](/docs/admin/roles-and-groups/).
+- **Auditor access windows** stay in Verity, because an identity provider has no concept of an audit engagement window. See [People and invitations](/docs/admin/people/).
+- **Membership is still checked on every request.** Verity will confirm that the person really belongs to the workspace they are trying to reach, rather than trusting what the sign-in claims.
+- **Vendors never need an account.** The questionnaire portal keeps using single-use links. See [Questionnaires and the portal](/docs/vendors/questionnaires/).
+
+## What you can use today
+
+People sign in with their work email and a password and, where your workspace requires it, two-factor authentication from an authenticator app. See [Sign in and two-factor](/docs/get-started/sign-in-and-security/).
+
+As an administrator you can require two-factor authentication for admins and set the password policy for every account. See [Security settings](/docs/admin/security-settings/). The **SSO** and **Authentication** tabs under **Settings > Security** are already there, marked **Soon**.

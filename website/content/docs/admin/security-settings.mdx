@@ -1,0 +1,59 @@
+---
+title: Security settings
+description: Require two-factor authentication for admins, set the password policy for every account, and keep your organisation profile right for reports.
+status: live
+updated: 2026-10-02
+---
+
+**Settings > Security** holds the sign-in rules for your workspace, and **Settings > Organization** holds the profile that appears on your reports. This page covers both. Only people with permission to manage the security policy or the company profile can change them; everyone else sees the current settings.
+
+## Two-factor authentication
+
+Go to **Settings > Security > MFA**. **Require MFA for admins** decides whether two-factor authentication is required for members who hold the Admin role. When it is on, they must set up an authenticator app before they can sign in. It is off by default.
+
+Requiring it for admins is the usual minimum. The **MFA** column in the [people list](/docs/admin/people/) shows who has set it up.
+
+<Callout type="note" title="Tell your admins first">
+
+When you switch it on, any admin who has not set up two-factor authentication is asked to do so the next time they sign in, before they can get in. How enrolment works is covered in [Sign in and two-factor](/docs/get-started/sign-in-and-security/).
+
+</Callout>
+
+## Password policy
+
+Go to **Settings > Security > Password policy**. The policy applies to every account created in this workspace, including members, invited guests and auditors, wherever a password is set: signing up, accepting an invitation and resetting a password.
+
+The shipped rule is 12 characters with mixed case, a digit and a symbol, and no reuse of the last 5 passwords.
+
+| Setting | What it does |
+|---|---|
+| **Minimum length** | From 8 to 128 characters. 12 or more is recommended. |
+| **Uppercase letter**, **Lowercase letter**, **Digit**, **Special character** | Each one ticked must appear in every password. |
+| **Disallow reuse of last N passwords** | From 0 to 24. 0 turns the history check off. |
+
+Click **Save changes** when you are done.
+
+Some settings on this screen are saved but not applied yet, and are marked **Not enforced yet**: **Max password age**, **Failed attempts before lock**, **Lock duration** and **Idle session timeout**. Sessions already expire 12 hours after sign-in.
+
+## Single sign-on
+
+Signing in through your own identity provider is <Status value="soon" />. The **SSO** and **Authentication** tabs under **Settings > Security** are marked **Soon**. See [Single sign-on](/docs/roadmap/single-sign-on/).
+
+Other tabs marked **Soon** here include **Remediation SLAs** and **CIS benchmark hardening**. Remediation windows for vulnerability findings already work, under **Vulnerabilities > Settings**. See [Remediation and exceptions](/docs/vulnerabilities/remediation/#remediation-windows).
+
+## Organisation profile
+
+Go to **Settings > Organization > Org info**. The **Company profile** holds your company name, legal or registered name, registration number, industry, company size, headquarters, primary domain and website, a short description of what you do, the frameworks in scope, and links to your privacy policy and terms.
+
+This is what appears on exported reports, so it is worth getting right before your first audit. Click **Save profile** to keep your changes.
+
+### Outbound email
+
+On the same page, **Outbound email (SMTP)** decides how Verity sends this workspace's email, such as invitations and verification links. By default it uses the platform's mail server. To send from your own, choose **Configure** and switch on **Use my own SMTP**. You can send a test message before relying on it.
+
+If email cannot be sent, invitations still work: Verity shows you the accept link to pass on yourself. See [People and invitations](/docs/admin/people/).
+
+<Cards>
+<Card title="People and invitations" href="/docs/admin/people/" icon="user">Invite people and see who has set up two-factor.</Card>
+<Card title="Sign in and two-factor" href="/docs/get-started/sign-in-and-security/" icon="key">What your people see when they sign in.</Card>
+</Cards>

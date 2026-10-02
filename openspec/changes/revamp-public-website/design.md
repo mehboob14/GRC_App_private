@@ -172,8 +172,8 @@ attention that generic copy cannot.
   fail, humans approve AI, isolation and audit trail), plus a comparison of spreadsheets, point
   tools and Verity by capability, naming no competitors.
 - **Security:** only verifiable facts. Database-enforced workspace isolation with automated
-  isolation tests; roles, groups and granular permissions; two-factor policy by role; a 12-character
-  password policy; time-boxed auditor access windows; an append-only audit log enforced by the
+  isolation tests; roles, groups and granular permissions; a two-factor requirement for administrators; a
+  12-character password policy; time-boxed auditor access windows; an append-only audit log enforced by the
   database; secrets encrypted at the application layer; evidence files in object storage;
   read-only, least-privilege connector tokens; AI governance. Single sign-on is Coming soon. No
   certification is claimed.

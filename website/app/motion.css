@@ -1,0 +1,91 @@
+/* Component styles that need keyframes or SVG selectors. Every animation has a
+   meaningful final state, so the reduced-motion rule in globals.css (which
+   collapses animations to their end) always leaves a complete picture. */
+
+/* ------------------------------------------------------------- dialog */
+.demo-dialog[open] { animation: pop-in 220ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+.demo-dialog[open]::backdrop { animation: fade-in 200ms ease-out both; }
+@keyframes pop-in { from { opacity: 0; transform: translateY(8px) scale(0.98); } to { opacity: 1; transform: none; } }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* ------------------------------------------------------- isometric hero */
+.iso-wire-face { fill: rgb(255 255 255 / 0.55); stroke: #9aa7b8; stroke-width: 1.15; stroke-dasharray: 3.5 3.5; stroke-linejoin: round; }
+.iso-hidden-edge { stroke: #c3cbd6; stroke-width: 1; stroke-dasharray: 2.5 4; }
+.iso-wire-layer { fill: rgb(255 255 255 / 0.7); stroke: #a5b1c1; stroke-width: 1.05; stroke-linejoin: round; }
+.iso-dot { fill: #a3aebd; }
+.iso-ring { fill: none; stroke: #a5b1c1; stroke-width: 1.15; stroke-dasharray: 3 4; }
+.iso-face-top { fill: #e5f5fe; stroke: #38bdf8; stroke-width: 1.2; stroke-linejoin: round; }
+.iso-face-left { fill: #c7eafc; stroke: #38bdf8; stroke-width: 1.2; stroke-linejoin: round; }
+.iso-face-right { fill: #a9ddf8; stroke: #38bdf8; stroke-width: 1.2; stroke-linejoin: round; }
+.iso-layer { fill: #f0f9ff; stroke: #0ea5e9; stroke-width: 1.2; stroke-linejoin: round; }
+.iso-dot-active { fill: #0ea5e9; }
+.iso-orb-core { fill: #0ea5e9; opacity: 0.9; }
+.iso-check { fill: none; stroke: #0369a1; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 120; stroke-dashoffset: 0; }
+.iso-plane-fill { fill: rgb(14 165 233 / 0.05); }
+.iso-plane-edge { fill: none; stroke: #38bdf8; stroke-width: 1.1; stroke-dasharray: 5 5; }
+.iso-plane-node { fill: #fff; stroke: #38bdf8; stroke-width: 1.2; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .iso-wire, .iso-plane { animation: iso-fade-in 900ms ease-out both; animation-delay: var(--d, 0ms); }
+  .iso-solid { animation: iso-drop 1000ms cubic-bezier(0.16, 1, 0.3, 1) both; animation-delay: var(--d, 0ms); }
+  .iso-plane-edge { animation: iso-march 14s linear infinite; }
+  .iso-layer { animation: iso-float 4.8s ease-in-out infinite; animation-delay: calc(var(--n, 0) * 180ms + 1.2s); }
+  .iso-wire-layer { animation: iso-float 6s ease-in-out infinite; animation-delay: calc(var(--n, 0) * 220ms); }
+  .iso-orb { transform-box: fill-box; transform-origin: center; animation: iso-pulse 3.4s ease-in-out infinite; animation-delay: 1.4s; }
+  .iso-dot-active { animation: iso-twinkle 2.8s ease-in-out infinite; animation-delay: calc(var(--n, 0) * 140ms); }
+  .iso-check { stroke-dashoffset: 120; animation: iso-draw 900ms cubic-bezier(0.65, 0, 0.35, 1) forwards; animation-delay: 1.9s; }
+}
+@keyframes iso-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes iso-drop { from { opacity: 0; transform: translateY(-26px); } to { opacity: 1; transform: none; } }
+@keyframes iso-march { to { stroke-dashoffset: -200; } }
+@keyframes iso-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+@keyframes iso-pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.12); opacity: 0.75; } }
+@keyframes iso-twinkle { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+@keyframes iso-draw { to { stroke-dashoffset: 0; } }
+
+/* --------------------------------------------------- in-view sequences */
+/* [data-animate] containers get .is-visible from RevealObserver. Children use
+   --i for their position in a sequence. */
+@media (prefers-reduced-motion: no-preference) {
+  .js [data-animate] .seq { opacity: 0; transform: translateY(10px); transition: opacity 500ms ease-out, transform 600ms cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(var(--i, 0) * var(--step, 220ms) + var(--base, 0ms)); }
+  .js [data-animate].is-visible .seq { opacity: 1; transform: none; }
+
+  .js [data-animate] .seq-pop { opacity: 0; transform: scale(0.85); transition: opacity 300ms ease-out, transform 450ms cubic-bezier(0.34, 1.56, 0.64, 1); transition-delay: calc(var(--i, 0) * var(--step, 220ms) + var(--base, 0ms) + 180ms); }
+  .js [data-animate].is-visible .seq-pop { opacity: 1; transform: none; }
+
+  .js [data-animate] .seq-line { transform: scaleY(0); transform-origin: top; transition: transform 500ms cubic-bezier(0.65, 0, 0.35, 1); transition-delay: calc(var(--i, 0) * var(--step, 220ms) + var(--base, 0ms) + 250ms); }
+  .js [data-animate].is-visible .seq-line { transform: none; }
+
+  .js [data-animate] .grow-y { transform: scaleY(0); transform-origin: bottom; transition: transform 800ms cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(var(--i, 0) * 90ms + var(--base, 200ms)); }
+  .js [data-animate].is-visible .grow-y { transform: none; }
+
+  .js [data-animate] .grow-x { transform: scaleX(0); transform-origin: left; transition: transform 900ms cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(var(--i, 0) * 110ms + var(--base, 200ms)); }
+  [dir="rtl"] .js [data-animate] .grow-x { transform-origin: right; }
+  .js [data-animate].is-visible .grow-x { transform: none; }
+
+  /* Donut segments: stroke-dasharray holds the segment; the offset sweeps it in. */
+  .js [data-animate] .sweep { stroke-dashoffset: var(--len); transition: stroke-dashoffset 1100ms cubic-bezier(0.65, 0, 0.35, 1); transition-delay: calc(var(--i, 0) * 120ms + var(--base, 200ms)); }
+  .js [data-animate].is-visible .sweep { stroke-dashoffset: 0; }
+
+  .js [data-animate] .draw { stroke-dashoffset: var(--len, 400); transition: stroke-dashoffset 1200ms cubic-bezier(0.65, 0, 0.35, 1); transition-delay: calc(var(--i, 0) * 140ms + var(--base, 300ms)); }
+  .js [data-animate].is-visible .draw { stroke-dashoffset: 0; }
+
+  .flow-dash { animation: flow-dash 1.6s linear infinite; }
+  .typing-dot { animation: typing 1.2s ease-in-out infinite; }
+  .typing-dot:nth-child(2) { animation-delay: 150ms; }
+  .typing-dot:nth-child(3) { animation-delay: 300ms; }
+  .pulse-ring { animation: pulse-ring 2.4s cubic-bezier(0.16, 1, 0.3, 1) infinite; }
+  .float-slow { animation: float-slow 7s ease-in-out infinite; }
+  .float-slow-2 { animation: float-slow 8s ease-in-out infinite; animation-delay: -3s; }
+}
+@keyframes flow-dash { to { stroke-dashoffset: -16; } }
+@keyframes typing { 0%, 60%, 100% { opacity: 0.25; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-2px); } }
+@keyframes pulse-ring { 0% { transform: scale(0.8); opacity: 0.7; } 100% { transform: scale(2.2); opacity: 0; } }
+@keyframes float-slow { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+
+/* Mask that fades a product composition into the page, like the reference's long tables. */
+.fade-bottom { -webkit-mask-image: linear-gradient(to bottom, #000 70%, transparent); mask-image: linear-gradient(to bottom, #000 70%, transparent); }
+.fade-right { -webkit-mask-image: linear-gradient(to right, #000 80%, transparent); mask-image: linear-gradient(to right, #000 80%, transparent); }
+
+/* Fade the hero art into whatever is behind it (no white box). */
+.iso-hero { -webkit-mask-image: linear-gradient(to bottom, #000 74%, transparent 98%); mask-image: linear-gradient(to bottom, #000 74%, transparent 98%); overflow: visible; }

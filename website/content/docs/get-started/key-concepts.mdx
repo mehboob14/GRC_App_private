@@ -1,0 +1,73 @@
+---
+title: Key concepts
+description: The ideas Verity is built on, from controls as the hub and evidence collected once to owners, approvals, linked records and the audit log.
+status: live
+updated: 2026-10-02
+---
+
+A few ideas run through every module in Verity. Learn them here and the rest of these docs will make more sense. For short definitions of every term, see the [Glossary](/docs/reference/glossary/).
+
+## Controls are the hub
+
+A **control** is something your organisation does to keep a promise: backups run and are tested, access is removed when someone leaves, changes are reviewed before release. Everything else connects to controls. Framework criteria explain why a control exists, evidence proves it works, and risks, policies, assets and tasks all trace back to it.
+
+Every new workspace starts with the whole SOC 2 control library already adopted, so you begin by editing reality rather than building a list from nothing. See [Controls](/docs/compliance/controls/).
+
+## Frameworks and criteria
+
+A **framework** is a published set of criteria you are measured against, for example SOC 2. A **criterion** is a single requirement in a framework, for example SOC 2 CC6.1. Each control you operate answers one or more criteria. SOC 2 groups its criteria into five Trust Services Criteria categories: Security, Availability, Processing Integrity, Confidentiality and Privacy.
+
+Your **scope** records what is in and out of the audit. Readiness is measured only against the criteria in scope. See [Frameworks and readiness](/docs/compliance/frameworks/).
+
+## Evidence is collected once
+
+**Evidence** is an artefact that proves a control operates: a file Verity holds, or a link to something that lives elsewhere. Evidence attaches to controls, not to criteria. One artefact usually proves several controls, and each control can answer several criteria, so you collect a piece of proof once and it counts everywhere that control does.
+
+Evidence also expires. **Freshness** shows how current each piece is against its renewal date. See [Evidence](/docs/compliance/evidence/).
+
+## Owners are members of the workspace
+
+Controls, evidence, documents and tasks each have an **owner**: the person accountable for them. An owner is always a member of this workspace, never just an email address. Your **membership** is your place in one workspace, and all ownership and assignment points at it, so nobody can be attached to a workspace they do not belong to.
+
+A **group** is a team, such as Engineering or Finance, that you can use as an assignee, an approver or the audience for an acknowledgement campaign. Your **role** decides which modules you can reach. See [Roles and groups](/docs/admin/roles-and-groups/).
+
+## Registers and detail pages
+
+Every module has a **register**, the list of its records, and a detail page for each record. They work the same way everywhere. See [Finding your way around](/docs/get-started/navigating-verity/).
+
+## People decide, and decisions are recorded
+
+Where a decision matters, a person makes it and Verity records who decided and when. Evidence is reviewed before it is relied on. Policies pass through tiered approval before they are published. Risk acceptance and the vendor approval gate apply **separation of duties**: the person who requests something cannot be the person who approves it.
+
+Suggestions are drafts. When Verity proposes something, such as the controls a piece of evidence may support, nothing is applied until a person approves it, and the approval is recorded with that person's name. AI drafting <Status value="soon" /> will follow the same rule: it drafts, and a person reviews and approves. See [AI assistant and drafting](/docs/roadmap/ai-assistant/).
+
+## Tasks and issues carry the work
+
+A **task** is planned work with an owner and a due date. An **issue** is something that went wrong: it carries a severity and the corrective and preventive actions you took. **Service levels** turn "we fix critical issues quickly" into something you can show. See [Tasks and issues](/docs/tasks/overview/).
+
+## Linked records trace impact
+
+Records in different modules link to each other, and the **Linked records** tab on assets, findings, controls and documents shows what is attached in one place. That lets you follow impact in either direction. For example:
+
+1. A **vulnerability** is found on an **asset**.
+2. The asset carries a **risk**.
+3. The risk is treated by a **control**.
+4. The control is backed by a **policy** and proven by **evidence**.
+
+Every step in that trace is recorded in the audit log.
+
+## Records close, they do not disappear
+
+Compliance records are retired with a recorded reason, not deleted. A control is disabled, a published document is archived, and rejected evidence keeps its rejection reason. An audit asks what you were doing during the period under review, and a deleted record cannot answer that.
+
+## The audit log is permanent
+
+The **audit log** is the append-only record of every state-changing action: who did it, when, and what the record looked like before and after. Nobody can edit or delete it, including an administrator. See [Audit log and isolation](/docs/admin/audit-log-and-isolation/).
+
+## Each workspace is sealed
+
+A **workspace** is one organisation's sealed area of Verity. A person may belong to several and sees one at a time. No screen, filter or export shows data from two workspaces together.
+
+## Error is never shown as fail
+
+When a connected system checks a control automatically, **Failing** means the check ran and found a problem. If the check could not run, for example because a connection's token expired, the result reads **Could not check** instead. A broken connection never looks like a failed control, and it never quietly reports a pass. See [Automated checks](/docs/compliance/automated-checks/).

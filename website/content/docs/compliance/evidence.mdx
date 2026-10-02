@@ -1,0 +1,158 @@
+---
+title: Evidence
+description: Collect proof that your controls operate, attach it once to every control it supports, review it, and keep it fresh before it expires.
+status: live
+updated: 2026-10-02
+---
+
+A control that nobody can prove is an opinion. This page shows you how to add evidence, attach it to the controls it supports, review it and keep it fresh.
+
+## What evidence is for
+
+Evidence is the artefact that turns "we do reviews every quarter" into something an auditor can open: the exported policy, the signed review, the screenshot of the setting, the ticket that shows the work happened.
+
+## Read the evidence register
+
+<Screenshot name="evidence-register" alt="The evidence register, with freshness, owner and coverage summaries above a table showing each item's type, controls, owner, renewal date, freshness and review state" />
+
+Each row is one artefact: its title, its type, the controls it supports, who owns it, its renewal date, its freshness and its review state.
+
+**Freshness** is the column people miss. Evidence expires. A password policy export from two years ago proves nothing about today, so every piece of evidence carries a renewal date and the register shows you what has gone stale.
+
+| Freshness | Meaning |
+|---|---|
+| Current | Inside its validity period |
+| Aging | Within 30 days of its renewal date |
+| Stale | Past its renewal date |
+| No expiry | No renewal date applies |
+
+## Choose a file or a link
+
+There are two kinds of evidence, and the difference matters.
+
+- **A file** is a copy Verity holds: a PDF, an export, a screenshot. It cannot change underneath you, which is exactly what an auditor wants.
+- **A link** points at something that lives elsewhere: a dashboard, a ticket, a shared drive. It stays current on its own, but whoever reads it later needs access to that system.
+
+## Attach evidence to a control
+
+<Steps>
+<Step title="Start from Evidence or from the control">
+
+Go to **Evidence** and choose **Add evidence**. Or open the control and choose **Add evidence** on its **Evidence** tab, so the control is already filled in.
+
+</Step>
+<Step title="Choose File or Link">
+
+Choose whether you are uploading a file or recording a link.
+
+</Step>
+<Step title="Give it a clear title">
+
+Use a title a stranger would understand. "AWS IAM password policy export, September" beats "screenshot 3".
+
+</Step>
+<Step title="Pick the evidence type">
+
+The **Evidence type** sets a sensible default validity: a configuration export is good for 90 days, a policy document for a year, a log export for 30 days. Change the **Validity period** if this item needs a different renewal date.
+
+</Step>
+<Step title="Set the owner">
+
+The **Owner** is the person who will be asked to refresh it.
+
+</Step>
+<Step title="Attach it to every control it supports">
+
+Under **Controls**, pick the controls it supports. One artefact usually proves several controls, and attaching it once to all of them is correct.
+
+</Step>
+<Step title="Save">
+
+Choose **Add evidence**.
+
+</Step>
+</Steps>
+
+## Use the mapping suggestions
+
+Verity can propose which controls a piece of evidence supports.
+
+<Steps>
+<Step title="Open the evidence record">
+
+Open the item from the register.
+
+</Step>
+<Step title="Ask for suggestions">
+
+On the **Controls** tab, choose **Suggest mappings**.
+
+</Step>
+<Step title="Read the proposals">
+
+You get a list of proposed controls with a reason for each. Nothing is attached yet.
+
+</Step>
+<Step title="Keep the right ones">
+
+Choose **Link** on the ones that are right and **Dismiss** the rest.
+
+</Step>
+</Steps>
+
+<Callout type="note" title="A suggestion is a draft, always">
+
+Nothing Verity proposes is attached to a control until a person approves it, and the approval is recorded with your name against it. That rule holds everywhere in the product.
+
+</Callout>
+
+## Review evidence
+
+Evidence gets reviewed so somebody other than the person who uploaded it agrees it proves what it claims. Review starts once the evidence is linked to a control.
+
+<Steps>
+<Step title="Open the evidence record">
+
+Set the register's **Review** filter to **Pending review** and open the item.
+
+</Step>
+<Step title="Check what it proves">
+
+Read what is attached and which controls it is said to support.
+
+</Step>
+<Step title="Record your decision">
+
+In the **Review** panel, choose **Approve**, or choose **Reject** and say what needs fixing.
+
+</Step>
+</Steps>
+
+A rejection is not a delete. The artefact stays with the reason attached, so the next person can see it was considered and why it was not good enough.
+
+<Screenshot name="evidence-detail" alt="An evidence record with its freshness and review badges, the linked artefact, a Review panel with Approve and Reject buttons, and its details" />
+
+## Keep evidence fresh
+
+<Steps>
+<Step title="Find what is expiring">
+
+Filter the register by **Freshness** to find what is **Stale** or **Aging**.
+
+</Step>
+<Step title="Go to the owner">
+
+Each expiring item has an owner. That is who collects the new copy.
+
+</Step>
+<Step title="Add the new copy and keep the old one">
+
+Attach the new artefact with a new renewal date. Keep the old one: it proves the control was operating in the earlier window, which is exactly what a Type II audit examines.
+
+</Step>
+</Steps>
+
+## Evidence that arrives without uploading
+
+- **Connections.** A connected system runs checks and attaches their output to the controls those checks map to. See [Automated checks](/docs/compliance/automated-checks/).
+- **Other modules.** A published policy, a completed task and a vendor's SOC 2 report can all act as evidence for the control they serve.

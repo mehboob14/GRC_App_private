@@ -1,0 +1,56 @@
+---
+title: How vendor risk works
+description: What the vendors module covers, how vendors and engagements relate, the twelve lifecycle stages, and how to read the portfolio on the Overview tab.
+status: live
+updated: 2026-10-02
+---
+
+This page explains what the vendors module does, how Verity models a vendor and the work you do with it, the twelve stages every engagement moves through, and how to read your portfolio at a glance.
+
+## What the module does
+
+Third-party risk, end to end: who you rely on, how much of your exposure sits with each one, what you asked them, what they answered, what you found, what you are doing about it, and what happens when the relationship ends.
+
+Open **Vendors** in the left navigation. The tabs along the top are **Overview**, **Register**, **Intake**, **Findings**, **Questionnaires**, **Roster** and **Policy**.
+
+<Screenshot name="vendors-register" alt="The vendor register listing each vendor with its tier, status, the blocker or next action, residual grade, business owner and next reassessment date" />
+
+The **Register** lists every vendor with its tier, status, residual grade, business owner and next reassessment. The **Blocker / next action** column says what each vendor needs from someone, and takes you to where you can act on it. When nothing is waiting, it reads **Nothing outstanding**.
+
+## Vendors and engagements
+
+- A **vendor** is the organisation.
+- An **engagement** is one thing you use them for. A vendor can have several, and each is assessed on its own, because hosting production is not the same risk as running a design project.
+- The **lifecycle** runs on the engagement, in twelve stages.
+
+To add another engagement, open the vendor and choose **Actions > Add engagement**. When a vendor has more than one, pick the engagement you are working on from the **Engagement** list on the Lifecycle and Assessments tabs.
+
+## The twelve stages
+
+<Lifecycle title="The twelve stages of a vendor engagement" stages={[{ name: "Intake", note: "Somebody asks for the vendor; the request is decided" }, { name: "Tiering", note: "Five questions set how much diligence it earns" }, { name: "Diligence", note: "Reviewers are assigned, paperwork is gathered" }, { name: "Questionnaire", note: "The vendor answers, usually through the portal" }, { name: "Scoring", note: "Answers become a residual score and a grade" }, { name: "Findings", note: "Gaps become findings with owners and due dates" }, { name: "Contracting", note: "The contract, the DPA, the renewal terms" }, { name: "Approval", note: "The gate: someone accountable says yes or no" }, { name: "Onboarding", note: "Access is granted and the relationship starts" }, { name: "Monitoring", note: "Signals, alerts and document expiry are watched" }, { name: "Reassessment", note: "It all comes round again on a cadence" }, { name: "Offboarding", note: "Access revoked, data returned or destroyed" }]} />
+
+Stages do not skip. The workspace can mark a stage not applicable through policy, and the record shows it was skipped by policy rather than forgotten. Intake, tiering and approval run for every vendor. See [Tiering and vendor policy](/docs/vendors/tiering/#set-the-vendor-policy).
+
+### Work the stages on the Lifecycle tab
+
+Open a vendor and go to **Lifecycle**. The stages are listed in three groups: **Assess** (intake to contracting), **Decide** (approval) and **Operate** (onboarding to offboarding). Each stage shows its checks. A check that is holding the stage up offers a button that takes you where you can clear it, and **Complete stage** becomes available once nothing is blocking. Verity names who the next stage goes to, and **Notify** tells them in the app and by email.
+
+If a stage needs earlier work redone, use **Send back** from the stage's menu and say what has to change. The stages in between reopen.
+
+<Screenshot name="vendor-lifecycle" alt="A vendor's Lifecycle tab with a progress bar across the twelve stages, the engagement's tier score on a Low to Critical scale, the stages grouped into Assess, Decide and Operate, and the current stage's checks with a Complete stage button" />
+
+## Read the portfolio on the Overview tab
+
+The **Overview** tab is the portfolio read: vendors by tier, what is awaiting a decision, open findings by severity, and what is due for reassessment.
+
+<Screenshot name="vendors-overview" alt="The vendors Overview tab with counts of untiered vendors, vendors with no business owner, overdue reassessments and critical findings, followed by portfolio by tier, assessment coverage, open findings, status and the intake queue" />
+
+The tiles across the top count vendors that are not tiered, vendors with no business owner, reassessments that are overdue and critical findings. Below them you will find what needs attention, the portfolio by tier, assessment coverage, open findings, vendors by status, the intake queue with possible duplicates marked, and the vendors with the highest residual risk.
+
+<Cards>
+<Card title="Requests and intake" href="/docs/vendors/requests-and-intake/" icon="clipboard">Get a vendor into Verity.</Card>
+<Card title="Tiering and vendor policy" href="/docs/vendors/tiering/" icon="target">Decide how much diligence an engagement earns.</Card>
+<Card title="Questionnaires and the portal" href="/docs/vendors/questionnaires/" icon="list">Ask the vendor the right questions.</Card>
+<Card title="Assessment and findings" href="/docs/vendors/assessment-and-findings/" icon="flag">Score answers, work gaps, clear the gate.</Card>
+<Card title="Contracts to offboarding" href="/docs/vendors/contracts-monitoring-offboarding/" icon="handshake">Paperwork, monitoring and a clean exit.</Card>
+</Cards>

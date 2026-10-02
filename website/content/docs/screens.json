@@ -1,0 +1,174 @@
+{
+  "asset-detail": {
+    "width": 1440,
+    "height": 900
+  },
+  "assets-overview": {
+    "width": 1440,
+    "height": 900
+  },
+  "assets-register": {
+    "width": 1440,
+    "height": 900
+  },
+  "assets-settings": {
+    "width": 1440,
+    "height": 900
+  },
+  "audit-log": {
+    "width": 1440,
+    "height": 900
+  },
+  "connections": {
+    "width": 1440,
+    "height": 900
+  },
+  "control-detail": {
+    "width": 1440,
+    "height": 900
+  },
+  "controls-register": {
+    "width": 1440,
+    "height": 900
+  },
+  "dialog-add-risk": {
+    "width": 1440,
+    "height": 900
+  },
+  "dialog-add-vendor": {
+    "width": 1440,
+    "height": 900
+  },
+  "dialog-custom-field": {
+    "width": 1440,
+    "height": 900
+  },
+  "dialog-request-vendor": {
+    "width": 1440,
+    "height": 900
+  },
+  "document-detail": {
+    "width": 1440,
+    "height": 900
+  },
+  "document-editor": {
+    "width": 1440,
+    "height": 900
+  },
+  "documents-register": {
+    "width": 1440,
+    "height": 900
+  },
+  "evidence-detail": {
+    "width": 1440,
+    "height": 900
+  },
+  "evidence-register": {
+    "width": 1440,
+    "height": 900
+  },
+  "frameworks-dashboard": {
+    "width": 1440,
+    "height": 900
+  },
+  "frameworks-list": {
+    "width": 1440,
+    "height": 900
+  },
+  "quick-start": {
+    "width": 1440,
+    "height": 900
+  },
+  "risk-detail": {
+    "width": 1440,
+    "height": 900
+  },
+  "risks-overview": {
+    "width": 1440,
+    "height": 900
+  },
+  "risks-register": {
+    "width": 1440,
+    "height": 900
+  },
+  "risks-settings": {
+    "width": 1440,
+    "height": 900
+  },
+  "settings-people": {
+    "width": 1440,
+    "height": 900
+  },
+  "settings-roles": {
+    "width": 1440,
+    "height": 900
+  },
+  "task-detail": {
+    "width": 1440,
+    "height": 900
+  },
+  "tasks-overview": {
+    "width": 1440,
+    "height": 900
+  },
+  "tasks-register": {
+    "width": 1440,
+    "height": 900
+  },
+  "tasks-settings": {
+    "width": 1440,
+    "height": 900
+  },
+  "vendor-assessments": {
+    "width": 1440,
+    "height": 900
+  },
+  "vendor-detail": {
+    "width": 1440,
+    "height": 900
+  },
+  "vendor-lifecycle": {
+    "width": 1440,
+    "height": 900
+  },
+  "vendors-findings": {
+    "width": 1440,
+    "height": 900
+  },
+  "vendors-intake": {
+    "width": 1440,
+    "height": 900
+  },
+  "vendors-overview": {
+    "width": 1440,
+    "height": 900
+  },
+  "vendors-policy": {
+    "width": 1440,
+    "height": 900
+  },
+  "vendors-questionnaires": {
+    "width": 1440,
+    "height": 900
+  },
+  "vendors-register": {
+    "width": 1440,
+    "height": 900
+  },
+  "vulnerabilities-overview": {
+    "width": 1440,
+    "height": 900
+  },
+  "vulnerabilities-register": {
+    "width": 1440,
+    "height": 900
+  },
+  "vulnerabilities-settings": {
+    "width": 1440,
+    "height": 900
+  },
+  "vulnerability-detail": {
+    "width": 1440,
+    "height": 900
+  }
+}

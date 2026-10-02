@@ -1,0 +1,131 @@
+---
+title: Controls
+description: Give every control an owner, work it from Not started to Implemented, add controls of your own, and retire one with a recorded reason.
+status: live
+updated: 2026-10-02
+---
+
+A control is something your organisation does to keep a promise: backups run and are tested, access is removed when someone leaves, changes are reviewed before release. This page shows you how to own, work, add and retire controls.
+
+## What a control is here
+
+A framework such as SOC 2 is a list of criteria an auditor will check, and each control you operate answers one or more of them. Verity gives every new workspace the whole SOC 2 control library already adopted, so you start by editing reality rather than building a list from nothing.
+
+## Read the controls library
+
+<Screenshot name="controls-register" alt="The controls library, listing each control's code and name, Trust Services categories, criteria, owner, evidence count and status" />
+
+Open **Controls**. The summary line under the title is the fastest read you have: how many controls exist, how many have no owner, how many have no evidence.
+
+Each row shows the control code and name, the Trust Services categories it serves, the criteria it maps to, its owner, how many pieces of evidence are attached, and its status.
+
+**Status** is what your team says about implementation:
+
+| Status | Use it when |
+|---|---|
+| Not started | Nobody has begun |
+| In progress | Work is under way but the control is not operating yet |
+| Implemented | The control operates and you can prove it |
+| Not applicable | The control genuinely does not apply |
+
+A retired control shows **Disabled** in place of its status.
+
+## Give a control an owner
+
+<Steps>
+<Step title="Open the controls library">
+
+Go to **Controls**.
+
+</Step>
+<Step title="Filter to controls with no owner">
+
+Set the **Owner** filter to **Unassigned**. What remains is every control nobody has claimed.
+
+</Step>
+<Step title="Open a control">
+
+Click the control you want to assign.
+
+</Step>
+<Step title="Choose the owner">
+
+On the **Overview** tab, use the **Owner** picker in the right-hand column and choose a person.
+
+</Step>
+</Steps>
+
+The owner is a member of this workspace, not an email address. A change of ownership is recorded in the control's history.
+
+<Callout type="tip" title="Assign several at once">
+
+Tick the controls in the register and choose **Assign owner** in the bar that appears.
+
+</Callout>
+
+## Work a control end to end
+
+<Steps>
+<Step title="Open the control">
+
+Open the control from the register.
+
+</Step>
+<Step title="Read what it has to achieve">
+
+Read the **Control statement**: what this control has to achieve. Under it, **Implementation guidance** gives a short recipe for what operating it usually involves.
+
+</Step>
+<Step title="Take it on">
+
+Set the owner, then choose **Edit** and move the status to **In progress**.
+
+</Step>
+<Step title="Attach the proof">
+
+Go to the **Evidence** tab and choose **Add evidence**, or **Link existing** for something already in the evidence library. See [Evidence](/docs/compliance/evidence/).
+
+</Step>
+<Step title="Mark it implemented">
+
+When the control genuinely operates and the proof is attached, choose **Edit** and set the status to **Implemented**.
+
+</Step>
+</Steps>
+
+<Screenshot name="control-detail" alt="A control's detail page with its statement and implementation guidance, an automation summary, linked evidence, and a right-hand column showing status, owner and framework mappings" />
+
+## The tabs on a control
+
+| Tab | What is there |
+|---|---|
+| Overview | The statement, guidance, owner and status |
+| Evidence | Everything attached as proof, and the buttons to attach more |
+| Automation | Checks that a connected system runs for this control on a schedule |
+| Requirements | The framework criteria this control answers |
+| Linked records | Risks, documents, assets and other records attached to it |
+| History | Every change, who made it and when |
+
+If your workspace has a connection to a system such as GitHub, some controls are checked automatically. The **Automation** tab shows what runs, when it last ran and what it found, and the output is attached to the control as evidence without anyone uploading anything. See [Automated checks](/docs/compliance/automated-checks/).
+
+## Add a control of your own
+
+Some controls are yours alone and answer no framework criterion. Use **New control** at the top of the register. It behaves like any other control. The register marks it **Internal**, and its own page shows **Custom**, so an auditor can see which controls came from the shipped library and which you wrote.
+
+## Retire a control
+
+Controls are never deleted. To retire one, open the row menu (⋯) in the register, choose **Disable**, give a reason and choose **Disable control**. The control stays in the library marked **Disabled**, with its whole history, evidence and mapping, so the record of what you operated last year survives.
+
+To bring a control back, choose **Re-enable** next to it on the **Disabled controls** card of the [compliance dashboard](/docs/compliance/frameworks/#read-the-compliance-dashboard).
+
+<Callout type="warning" title="Before you click">
+
+Disabling records your reason on the audit trail, and that record stays even if you re-enable the control later. The control is retired, never deleted.
+
+</Callout>
+
+<Callout type="note" title="Why not delete?">
+
+An audit asks what you were doing in the window under review. A deleted control cannot answer that. This is the same rule everywhere in Verity: compliance records close, they do not disappear.
+
+</Callout>

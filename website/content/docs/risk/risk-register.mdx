@@ -1,0 +1,115 @@
+---
+title: The risk register
+description: Keep scored registers of what could go wrong, add a risk with a clear consequence, and follow it through its states.
+status: live
+updated: 2026-10-02
+---
+
+A risk register is a list of things that could go wrong, scored so you can argue about the right ones. This page explains how registers and scores work, walks you through adding a risk, and shows the states a risk moves through.
+
+## How registers work
+
+Verity supports more than one register, because an operational risk register and a project register usually want different scales and different owners. Each register owns its own:
+
+- **Scoring matrix**: the likelihood and impact scales, and what counts as low, medium, high or critical.
+- **Taxonomy**: the categories and subcategories risks are filed under.
+- **Review cadence**: how often a risk in it must be revisited.
+
+Pick the register you are working in from the register menu at the top of **Risks**. The tabs underneath then work inside that register. An administrator creates registers and shapes them in [Risks > Settings](/docs/risk/library-and-settings/#set-up-a-register).
+
+<Screenshot name="risks-register" alt="The risk register listing each risk with its inherent and residual scores, status, business owner, linked controls and next review date" />
+
+To find work fast, use the **Needs attention** filter. It picks out risks with no linked control, owner or score, an overdue review or treatment, or an acceptance awaiting approval or about to expire.
+
+When you revisit a risk, open it and choose **Actions > Mark reviewed**. Verity records the review and schedules the next one from the register's cadence. When a review becomes overdue, the business owner is notified.
+
+## Score a risk: inherent and residual
+
+Every risk carries two scores.
+
+- **Inherent** is the risk before your controls do anything.
+- **Residual** is what is left once they do.
+
+Both are likelihood times impact on the register's scale, and the register's bands turn each score into low, medium, high or critical. The gap between them is the argument for the controls you operate, which is exactly what an auditor is looking for.
+
+On a risk's **Overview** tab, the **Score** card shows both numbers and **Where it sits** plots them on the register's matrix. When the residual score is lower, Verity shows how much your controls reduce it.
+
+<Screenshot name="risk-detail" alt="A risk's Overview tab with its narrative, a Score card with inherent and residual scores, and the matrix showing where the risk sits" />
+
+## Add a risk
+
+<Steps>
+<Step title="Open the Add risk dialog">
+
+Go to **Risks** and click **Add risk**. If you keep more than one register, choose the one this risk belongs to under **Register**.
+
+</Step>
+<Step title="Write the title as a consequence">
+
+Write the **title** as a sentence with a consequence: "Customer data exposed through a misconfigured storage bucket" rather than "S3".
+
+</Step>
+<Step title="Ask AI Assist for a draft, if you want one">
+
+Use **AI Assist** if you want a starting draft. It proposes a category, description, root cause, consequences, recommendations and an opening score. Nothing it suggests is applied until you click to use it, field by field with **Use** or all at once with **Use all**, and nothing is saved until you save the risk. If no AI draft is available, it offers the closest risk from the starter library instead and labels it that way.
+
+</Step>
+<Step title="Choose the category">
+
+Choose the **category** and subcategory. The subcategory list follows the category you pick.
+
+</Step>
+<Step title="Score it twice">
+
+Score the **inherent** risk, then the **residual** risk. For each one, pick a likelihood and an impact, and the score and band appear as you go.
+
+</Step>
+<Step title="Pick a treatment">
+
+Pick a **treatment**: mitigate, accept, avoid or transfer.
+
+</Step>
+<Step title="Name the owner and the deadline">
+
+Set the **business owner** and a **treatment due date**. Leave **Next review** empty and Verity sets it from the register's review cadence.
+
+</Step>
+<Step title="Save">
+
+Click **Add risk**. Verity gives the risk a code and opens it.
+
+</Step>
+</Steps>
+
+<Screenshot name="dialog-add-risk" alt="The Add risk dialog with the title and AI Assist button, narrative fields, classification and owner fields, and inherent and residual scoring" />
+
+## The states a risk moves through
+
+<Lifecycle title="The states a risk moves through" stages={[{ name: "Open", note: "Recorded, not being treated yet" }, { name: "In treatment", note: "Work is under way to reduce it" }, { name: "Mitigated", note: "Treated down to its residual level" }, { name: "Accepted", note: "Consciously tolerated, with an approval behind it" }, { name: "Closed", note: "No longer relevant" }]} />
+
+| State | How a risk gets there |
+|---|---|
+| Open | Where every risk starts, and where it returns when an acceptance lapses or is revoked |
+| In treatment | Set on the form, or automatically when you add the first treatment action |
+| Mitigated | Set on the form |
+| Accepted | Only through an approved acceptance |
+| Closed | **Actions > Close risk**, with the reason it no longer applies |
+
+A closed risk stays on record with its reason. If it applies again, use **Actions > Reopen risk** and say why. See [Treat or accept a risk](/docs/risk/treatment-and-acceptance/) for the work in between.
+
+## Keep watch from the Overview tab
+
+The **Overview** tab reads from the register you have selected. Tiles count open risks, high and critical ones, risks with no linked control, overdue reviews and expiring acceptances; click a tile to see those risks in the register. Below sit a heatmap you can switch between residual and inherent, your top risks, and breakdowns by severity, treatment and category.
+
+<Screenshot name="risks-overview" alt="The risks Overview tab with summary tiles, a heatmap of residual or inherent scores, the top risks, and charts by severity, treatment and category" />
+
+<Callout type="soon" title="Assessments and KRIs">
+
+Tabs marked **Soon**, such as Assessments and KRIs, are placeholders for later work and hold no data. See [Enterprise risk management](/docs/risk/enterprise-risk/) for what is planned.
+
+</Callout>
+
+<Cards>
+<Card title="Treat or accept a risk" href="/docs/risk/treatment-and-acceptance/" icon="scales">Plan the work, link controls, or accept a risk formally.</Card>
+<Card title="Library and settings" href="/docs/risk/library-and-settings/" icon="gear">Adopt ready-written risks and shape each register.</Card>
+</Cards>

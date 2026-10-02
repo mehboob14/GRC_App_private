@@ -1,0 +1,119 @@
+---
+title: Asset inventory
+description: Record what you run, who owns it and how important it is, with a criticality tier Verity derives from CIA ratings and exposure.
+status: live
+updated: 2026-10-02
+---
+
+The asset inventory is the record of what you run, how important each thing is, who owns it, and what depends on what. This page helps you add assets, understand how Verity works out each asset's criticality, and move an asset through its lifecycle.
+
+## What the inventory is for
+
+You cannot protect what you cannot list. Every other module leans on the inventory: a vulnerability is a weakness *on an asset*, a risk is usually about *an asset*, and an auditor's first question about scope is *which assets*.
+
+Open **Assets** in the left navigation. The **Register** tab lists every asset with its type, owner, criticality, CIA rating, lifecycle state and value. Filters for type, criticality, lifecycle, environment, classification, owner and exposure narrow the list, and they stack.
+
+<Screenshot name="assets-register" alt="The asset register, with summary counts above a filter row and a table of assets showing type, owner, criticality, CIA rating, lifecycle and value" caption="The register. Your own workspace shows your assets in the same places." />
+
+## What counts as an asset
+
+There are six types: application, infrastructure, data store, cloud resource, third party and business service. If it processes, stores or carries something you care about, it belongs here.
+
+## Add an asset
+
+<Steps>
+<Step title="Open the form">
+
+Go to **Assets** and click **Add asset**.
+
+</Step>
+<Step title="Name it the way your team does">
+
+Use the name people actually say: "Payments API Gateway", not "prod-01". Describe what it does in one sentence.
+
+</Step>
+<Step title="Choose the type">
+
+Pick the **Asset type**. The identity fields that follow adjust to the type you choose.
+
+</Step>
+<Step title="Fill in identity where you know it">
+
+Hostname, IP address, environment, vendor and location.
+
+</Step>
+<Step title="Record classification and exposure">
+
+Set the data classification, whether it is internet-facing, whether it is customer-facing, its network segment and its business function. Switch on **PCI DSS scope** or **HIPAA scope** if it applies.
+
+</Step>
+<Step title="Rate confidentiality, integrity and availability">
+
+Rate each from 1 to 5. See [how the tier is derived](#criticality-how-the-tier-is-derived) below.
+
+</Step>
+<Step title="Name the owners">
+
+Choose the **Owner**, and where you have them a secondary owner, business owner, custodian and escalation contact. Each is a member of your workspace.
+
+</Step>
+<Step title="Save">
+
+Click **Add asset**.
+
+</Step>
+</Steps>
+
+If your workspace has added questions of its own, they appear at the bottom of the form under "This workspace also asks". See [custom fields](/docs/assets/import-and-custom-fields/#custom-fields).
+
+## Criticality: how the tier is derived
+
+You do not type a criticality. You rate the asset on three axes and Verity derives the tier:
+
+- **Confidentiality**: how bad is disclosure.
+- **Integrity**: how bad is silent corruption.
+- **Availability**: how bad is downtime.
+
+The highest of the three ratings sets the starting point. Exposure raises it: an internet-facing asset scores higher, and so does one holding confidential or restricted data, or one supporting a high-impact business function such as payment processing or customer data. The result is a score out of 10 and a tier of low, medium, high or critical. The form shows the tier as you rate, before you save.
+
+<Callout type="note" title="Not rated is not medium">
+
+An asset with no CIA rating has no tier at all, and shows as **Not rated**. Verity will not invent a middle value for you.
+
+</Callout>
+
+<Screenshot name="asset-detail" alt="An asset detail page whose header shows a Critical tier with its score out of 10, the lifecycle state, owner, classification and value" caption="The header carries the tier and the score it came from." />
+
+### When the derived tier is wrong
+
+If the derived tier is wrong for a reason a formula cannot see, it can be overridden, with a reason, and the record keeps both. The asset's **Criticality** tab shows the computed score, the computed tier and the published tier, and an overridden asset carries an **Override** badge. An auditor can see what the system derived and what a human decided.
+
+Today you set an override when you [import assets](/docs/assets/import-and-custom-fields/): fill in the `criticality` column and give the reason in `criticality_override_reason`.
+
+## Lifecycle
+
+<Lifecycle title="The states an asset moves through" stages={[{ name: "Planned", note: "Recorded before it goes into service" }, { name: "Active", note: "In service" }, { name: "In maintenance", note: "Temporarily out of normal service" }, { name: "Decommissioned", note: "Disposal recorded, open findings closed" }, { name: "Retired", note: "Final; the record stays with its reason" }]} />
+
+The button in the asset's header offers the usual next step, and the **Actions** menu holds the others. Depending on where the asset is now, you will see **Activate**, **Start maintenance**, **Return to service**, **Decommission** or **Retire**. **Actions > Edit** reopens the form.
+
+Decommissioning is a guarded step. It records the disposal (the disposal method, whether media was sanitised, any replacement asset, a disposal evidence reference and a reason) and closes the asset's open findings, because a finding on a machine that no longer exists is noise.
+
+<Callout type="warning" title="Before you click">
+
+**Decommission** closes every open vulnerability on the asset automatically, and **Retire** is final. The record and its reason stay readable, but the asset does not return to service.
+
+</Callout>
+
+## The Overview tab
+
+The **Overview** tab is the read on the whole estate: assets by criticality, how complete the records are, what needs attention (assets missing a CIA rating or overdue for review), and the spread by lifecycle, type and environment.
+
+<Screenshot name="assets-overview" alt="The assets Overview tab with a criticality donut, an inventory hygiene gauge, a needs attention list and breakdowns by lifecycle, type and environment" />
+
+## Next steps
+
+<Cards>
+<Card title="Hygiene and dependencies" href="/docs/assets/hygiene-and-dependencies/" icon="check">Keep records complete and map what depends on what.</Card>
+<Card title="Import assets" href="/docs/assets/import-and-custom-fields/" icon="folder">Load your existing list from a spreadsheet.</Card>
+<Card title="Vulnerabilities" href="/docs/vulnerabilities/findings-and-priority/" icon="bug">See how asset criticality shapes finding priority.</Card>
+</Cards>
