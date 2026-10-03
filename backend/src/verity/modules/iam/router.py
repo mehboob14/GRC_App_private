@@ -18,9 +18,10 @@ from __future__ import annotations
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Header, status
+from fastapi import APIRouter, Depends, Header, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from verity.core import ratelimit
 from verity.core.deps import (
     PlatformAdminPrincipal,
     Principal,
@@ -191,6 +192,7 @@ def _invite_response(result: InviteResult) -> InviteMemberResponse:
 )
 async def signup(
     body: SignupRequest,
+    request: Request,
     idempotency_key: Annotated[
         str | None,
         Header(
@@ -199,6 +201,7 @@ async def signup(
         ),
     ] = None,
 ) -> LoginResponse:
+    await ratelimit.limit_mail(request, body.email)
     outcome = await iam_auth_service.signup(
         company_name=body.company_name,
         full_name=body.full_name,
@@ -225,7 +228,8 @@ async def verify_email(body: VerifyEmailRequest) -> LoginResponse:
     status_code=status.HTTP_202_ACCEPTED,
     summary="Re-mail the verification link (always the same response — no disclosure)",
 )
-async def resend_verification(body: ResendVerificationRequest) -> None:
+async def resend_verification(body: ResendVerificationRequest, request: Request) -> None:
+    await ratelimit.limit_mail(request, body.email)
     await iam_auth_service.resend_verification(email=body.email)
 
 
@@ -234,7 +238,8 @@ async def resend_verification(body: ResendVerificationRequest) -> None:
     status_code=status.HTTP_202_ACCEPTED,
     summary="Mail a password-reset link (always the same response — no disclosure)",
 )
-async def request_password_reset(body: PasswordResetRequest) -> None:
+async def request_password_reset(body: PasswordResetRequest, request: Request) -> None:
+    await ratelimit.limit_mail(request, body.email)
     await iam_auth_service.request_password_reset(email=body.email)
 
 
@@ -252,7 +257,8 @@ async def confirm_password_reset(body: PasswordResetConfirm) -> None:
     response_model=LoginResponse,
     summary="Password first; then a session, an MFA step, or a workspace choice",
 )
-async def login(body: LoginRequest) -> LoginResponse:
+async def login(body: LoginRequest, request: Request) -> LoginResponse:
+    await ratelimit.limit_sign_in(request, body.email)
     outcome = await iam_auth_service.login(email=body.email, password=body.password)
     return _login_response(outcome)
 
@@ -263,6 +269,7 @@ async def login(body: LoginRequest) -> LoginResponse:
     summary="Exchange a challenge plus a TOTP or recovery code for a session",
 )
 async def verify_mfa(body: MfaVerifyRequest) -> AuthenticatedResponse:
+    await ratelimit.limit_challenge(body.challenge_token)
     issued = await iam_auth_service.verify_mfa(
         challenge_token=body.challenge_token,
         code=body.code,
@@ -287,6 +294,7 @@ async def start_mfa_enrollment(body: MfaEnrollRequest) -> MfaEnrollStartResponse
     summary="Confirm enrollment with a valid code; receive the first session",
 )
 async def confirm_mfa_enrollment(body: MfaConfirmRequest) -> AuthenticatedResponse:
+    await ratelimit.limit_challenge(body.challenge_token)
     issued = await iam_auth_service.confirm_enrollment(
         challenge_token=body.challenge_token, code=body.code
     )

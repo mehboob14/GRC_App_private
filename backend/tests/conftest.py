@@ -18,6 +18,7 @@ import os
 from collections.abc import AsyncIterator, Iterator
 
 import pytest
+import redis
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import (
     AsyncConnection,
@@ -280,3 +281,23 @@ async def clean_audit_log(
                 await connection.execute(text("TRUNCATE audit_log"))
     finally:
         await owner_engine.dispose()
+
+
+def _clear_rate_limit_counters() -> None:
+    try:
+        client = redis.Redis.from_url(get_settings().redis.url, socket_connect_timeout=1)
+        try:
+            for key in client.scan_iter("verity:rl:*"):
+                client.delete(key)
+        finally:
+            client.close()
+    except redis.RedisError:
+        pass  # no Redis, no counters: a test that needs the limiter will say so
+
+
+@pytest.fixture(autouse=True)
+def _fresh_rate_limits(request: pytest.FixtureRequest) -> None:
+    """The limiter keeps its counters in Redis, which outlives a test and a run. A suite
+    that signs the same account in many times would otherwise lock out the next test."""
+    if "unit" not in request.node.path.parts:
+        _clear_rate_limit_counters()

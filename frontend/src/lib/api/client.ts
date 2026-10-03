@@ -1,5 +1,11 @@
 import type { ApiErrorBody } from "@/lib/api/types";
 import { clearSession, getAccessToken } from "@/lib/auth/session";
+import {
+  clearProviderSession,
+  getProviderToken,
+  isProviderAuthPath,
+  isProviderPath,
+} from "@/lib/provider/session";
 
 /** Mocks are a dev convenience and default OFF — opt in with VITE_USE_MOCKS=true. */
 const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === "true";
@@ -8,13 +14,20 @@ export class ApiError extends Error {
   readonly code: string;
   readonly status: number;
   readonly correlationId: string;
+  /** Seconds the server asked the caller to wait (a 429's Retry-After), when it said. */
+  readonly retryAfterSeconds: number | null;
 
-  constructor(status: number, body: ApiErrorBody) {
+  constructor(
+    status: number,
+    body: ApiErrorBody,
+    retryAfterSeconds: number | null = null,
+  ) {
     super(body.error.message);
     this.name = "ApiError";
     this.status = status;
     this.code = body.error.code;
     this.correlationId = body.error.correlation_id;
+    this.retryAfterSeconds = retryAfterSeconds;
   }
 
   /**
@@ -107,7 +120,11 @@ export async function apiFetch<T>(
   if (init.body && !isFormData && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
-  const token = getAccessToken();
+  // Which session a request belongs to is decided here and nowhere else: the
+  // platform admin's token goes to /provider/* and nowhere else, and the workspace
+  // token never goes there, so the two planes cannot be mixed by a caller.
+  const providerPlane = isProviderPath(path);
+  const token = providerPlane ? getProviderToken() : getAccessToken();
   if (token) {
     headers.set("Authorization", `Bearer ${token}`);
   }
@@ -147,11 +164,26 @@ export async function apiFetch<T>(
     // (12h TTL, disabled membership, non-active tenant). Clear it and return to
     // sign-in. Auth routes are exempt: a wrong password or expired challenge
     // must not cause a redirect loop.
-    if (response.status === 401 && token && !path.startsWith("/auth/")) {
-      clearSession();
-      window.location.assign("/sign-in");
+    if (
+      response.status === 401 &&
+      token &&
+      !path.startsWith("/auth/") &&
+      !isProviderAuthPath(path)
+    ) {
+      if (providerPlane) {
+        clearProviderSession();
+        window.location.assign("/provider/login");
+      } else {
+        clearSession();
+        window.location.assign("/sign-in");
+      }
     }
-    throw new ApiError(response.status, body);
+    const retryAfter = Number(response.headers.get("Retry-After"));
+    throw new ApiError(
+      response.status,
+      body,
+      Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter : null,
+    );
   }
 
   // 202 (verification resend — accepted, no body) and 204 carry no payload;

@@ -83,11 +83,16 @@ export function describeAuthFailure(
     };
   }
   if (error.status === 429) {
-    // No Retry After from the limiter, so no countdown: a timer that guesses is worse than none.
+    // The server says how long the window has left; without it, say nothing exact.
+    const minutes = error.retryAfterSeconds
+      ? Math.max(1, Math.ceil(error.retryAfterSeconds / 60))
+      : null;
     return {
       kind: "rateLimit",
       title: "Too many attempts",
-      body: "Wait a few minutes, then try again.",
+      body: minutes
+        ? `Try again in ${minutes} ${minutes === 1 ? "minute" : "minutes"}.`
+        : "Wait a while, then try again.",
       retryable: false,
     };
   }

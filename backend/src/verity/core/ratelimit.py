@@ -1,11 +1,10 @@
 """A fixed-window rate limiter, backed by the Redis this app already runs.
 
-Built for the vendor portal, which is the platform's only unauthenticated write
-path. ``docs/conventions/api.md`` promises *"rate limits on all authenticated
-routes, tighter on auth and portal-token routes"* and nothing in the codebase
-delivered any of it; ``RateLimited`` existed in ``core.errors`` and was never
-raised. This is the smallest thing that makes the promise true where it matters
-most, and the seam every other route can adopt later.
+Built for the vendor portal, then put in front of the sign-in routes: the places
+an unauthenticated caller can write. ``docs/conventions/api.md`` promises *"rate
+limits on all authenticated routes, tighter on auth and portal-token routes"*.
+This is the smallest thing that makes the promise true where it matters most,
+and the seam every other route can adopt later.
 
 No new dependency. ``redis`` is already pinned, and
 ``openspec/changes/add-backend-foundation/design.md`` justifies it as *"direct
@@ -22,6 +21,7 @@ Redis is a hard dependency of this deployment anyway — ``/readyz`` reports it.
 from __future__ import annotations
 
 import hashlib
+import ipaddress
 import secrets
 import time
 from dataclasses import dataclass
@@ -29,6 +29,7 @@ from typing import Final
 
 import redis.asyncio as aioredis
 import structlog
+from starlette.requests import Request
 
 from verity.core.config import get_settings
 from verity.core.errors import RateLimited, ServiceUnavailable
@@ -82,6 +83,32 @@ anything automating against a token it already holds."""
 
 PORTAL_UPLOADS: Final = Limit(requests=20, window_seconds=3600)
 """Per token. Uploads are the expensive path — they cost storage and a hash."""
+
+LOGIN_ACCOUNT: Final = Limit(requests=10, window_seconds=900)
+"""Per account, every attempt, successful or not. The wall against guessing one
+password: ten tries per quarter hour is under a thousand a day, which the password
+policy is written for. Counting successes too keeps it one counter, and nobody signs
+in ten times in fifteen minutes. The key is the account and not the caller, so a
+person locked out by their own typos does not lock anyone else out."""
+
+LOGIN_ADDRESS: Final = Limit(requests=100, window_seconds=900)
+"""Per client address, every attempt. The wall against credential stuffing, which
+makes one guess at many accounts and so never trips the per account limit. Generous
+because an office shares one address."""
+
+MFA_ATTEMPTS: Final = Limit(requests=10, window_seconds=900)
+"""Per challenge token. A six digit code is a million values and the same code is
+accepted for about ninety seconds, so ten tries per challenge is hopeless for a
+guesser; getting a fresh challenge needs the password, which the login limit bounds."""
+
+MAIL_ADDRESS: Final = Limit(requests=30, window_seconds=3600)
+"""Per client address, across every action that sends a mail (signup, password reset,
+verification resend). Generous enough for an office; the per recipient limit below is
+the tight one."""
+
+EMAIL_ACTIONS: Final = Limit(requests=5, window_seconds=3600)
+"""Per recipient. Signup, password reset and verification resend all send a mail to
+an address the caller names, so this is what stops the form being a mail bomb."""
 
 
 def _client() -> aioredis.Redis:
@@ -141,6 +168,7 @@ async def check(bucket: str, identity: str, limit: Limit) -> None:
         raise RateLimited(
             "Too many requests. Wait a few minutes and try again.",
             detail=f"{bucket} exceeded {limit.requests} per {limit.window_seconds}s",
+            retry_after_seconds=_seconds_left(limit),
         )
 
 
@@ -154,9 +182,69 @@ def client_identity(client_host: str | None) -> str:
     return client_host or "unattributed"
 
 
+async def limit_sign_in(request: Request, email: str) -> None:
+    """Count one password attempt against its account and against its address."""
+    await check("login_account", account_identity(email), LOGIN_ACCOUNT)
+    await check("login_address", client_address(request), LOGIN_ADDRESS)
+
+
+async def limit_challenge(challenge_token: str) -> None:
+    """Count one code attempt against the login challenge it answers."""
+    await check("mfa_challenge", challenge_identity(challenge_token), MFA_ATTEMPTS)
+
+
+async def limit_mail(request: Request, email: str) -> None:
+    """Count one request that sends a mail to ``email``, against the recipient and the caller."""
+    await check("mail_recipient", account_identity(email), EMAIL_ACTIONS)
+    await check("mail_address", client_address(request), MAIL_ADDRESS)
+
+
+def client_address(request: Request) -> str:
+    """The caller's address, seen through the reverse proxy.
+
+    Behind nginx every request arrives from the proxy's own address, which would put
+    every user of the platform into one bucket. nginx overwrites ``X-Real-IP`` with the
+    address it saw, so that header is believed only when the immediate peer is itself a
+    private or loopback address (a proxy on our network). A caller who reaches the API
+    directly from the internet cannot use the header to pick their own bucket.
+    """
+    peer = request.client.host if request.client else None
+    forwarded = request.headers.get("x-real-ip")
+    if forwarded and peer and _is_private(peer):
+        try:
+            return str(ipaddress.ip_address(forwarded.strip()))
+        except ValueError:
+            pass
+    return client_identity(peer)
+
+
+def _is_private(host: str) -> bool:
+    try:
+        address = ipaddress.ip_address(host)
+    except ValueError:
+        return False
+    return address.is_private or address.is_loopback
+
+
+def account_identity(email: str) -> str:
+    """Bucket an account by its email, hashed: the key reaches Redis and the logs, and
+    an email is personal data. Case and padding do not make a different account."""
+    return hashlib.sha256(email.strip().lower().encode("utf-8")).hexdigest()[:32]
+
+
+def challenge_identity(challenge_token: str) -> str:
+    """Bucket a login challenge by its hash, never by the token itself."""
+    return hash_token(challenge_token)[:32]
+
+
 def token_identity(token_hash: str) -> str:
     """Bucket a resolved token by its hash, never by the token itself."""
     return token_hash
+
+
+def _seconds_left(limit: Limit) -> int:
+    """Seconds until this window ends and the bucket starts again."""
+    return limit.window_seconds - int(_now() % limit.window_seconds)
 
 
 def _now() -> float:

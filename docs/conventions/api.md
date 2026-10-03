@@ -52,3 +52,17 @@ deduplicates on it. Ask of every mutating endpoint: what happens if this runs tw
 Rate limits on all authenticated routes, tighter on auth and portal-token routes. Security headers
 set globally: HSTS, `X-Content-Type-Options`, `Referrer-Policy`, and a CSP that does not permit
 inline script.
+
+What is limited today, all in `core/ratelimit.py`:
+
+| Route | Limit |
+|---|---|
+| Sign in (tenant and provider) | 10 attempts per account per 15 minutes, 100 per client address per 15 minutes; every attempt counts |
+| MFA code and enrolment confirm | 10 per login challenge per 15 minutes |
+| Signup, password reset, verification resend | 5 per recipient per hour, 30 per client address per hour |
+| Vendor portal | per token, see the limits in the module |
+
+A limited call is `429` with code `rate_limited` and a `Retry-After` in seconds. The limiter fails
+closed: with Redis down the call is a `503`, not a pass. The client address is read from `X-Real-IP`
+(nginx overwrites it) and only when the immediate peer is a private address, so a caller reaching the
+API directly cannot choose their own bucket. Keys never hold an email or a token, only a hash.

@@ -10,8 +10,9 @@ two factors to one.
 
 from __future__ import annotations
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 
+from verity.core import ratelimit
 from verity.modules.tenancy.schemas import (
     ChallengeResponse,
     LoginRequest,
@@ -32,7 +33,8 @@ router = APIRouter(prefix="/provider", tags=["provider auth"])
     response_model=ChallengeResponse,
     summary="Verify the password; answer with an MFA challenge, never a session",
 )
-async def login(body: LoginRequest) -> ChallengeResponse:
+async def login(body: LoginRequest, request: Request) -> ChallengeResponse:
+    await ratelimit.limit_sign_in(request, body.email)
     challenge = await provider_auth_service.login(email=body.email, password=body.password)
     return ChallengeResponse(
         next_step=challenge.next_step,
@@ -47,6 +49,7 @@ async def login(body: LoginRequest) -> ChallengeResponse:
     summary="Exchange a challenge plus a TOTP or recovery code for a session",
 )
 async def verify_mfa(body: MfaVerifyRequest) -> SessionResponse:
+    await ratelimit.limit_challenge(body.challenge_token)
     grant = await provider_auth_service.verify_mfa(
         challenge_token=body.challenge_token,
         code=body.code,
@@ -71,6 +74,7 @@ async def enroll_mfa(body: MfaEnrollRequest) -> MfaEnrollResponse:
     summary="Confirm enrollment with a code; receive the session and recovery codes",
 )
 async def confirm_mfa(body: MfaConfirmRequest) -> MfaConfirmResponse:
+    await ratelimit.limit_challenge(body.challenge_token)
     grant = await provider_auth_service.confirm_enrollment(
         challenge_token=body.challenge_token, code=body.code
     )

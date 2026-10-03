@@ -111,6 +111,18 @@ class RateLimited(VerityError):
     http_status = status.HTTP_429_TOO_MANY_REQUESTS
     message = "Too many requests. Try again shortly."
 
+    def __init__(
+        self,
+        message: str | None = None,
+        *,
+        code: str | None = None,
+        detail: str | None = None,
+        retry_after_seconds: int | None = None,
+    ) -> None:
+        super().__init__(message, code=code, detail=detail)
+        # Seconds until the bucket's window ends, sent as ``Retry-After``.
+        self.retry_after_seconds = retry_after_seconds
+
 
 class UpstreamUnavailable(VerityError):
     """A third party failed.
@@ -163,10 +175,17 @@ def error_body(code: str, message: str, correlation_id: str) -> dict[str, Any]:
     return {"error": {"code": code, "message": message, "correlation_id": correlation_id}}
 
 
-def _response(request: Request, http_status: int, code: str, message: str) -> JSONResponse:
+def _response(
+    request: Request,
+    http_status: int,
+    code: str,
+    message: str,
+    headers: dict[str, str] | None = None,
+) -> JSONResponse:
     return JSONResponse(
         status_code=http_status,
         content=error_body(code, message, correlation_id_of(request)),
+        headers=headers,
     )
 
 
@@ -184,7 +203,12 @@ async def _handle_verity_error(request: Request, exc: Exception) -> JSONResponse
         log.error("request.failed", exc_info=error)
     else:
         log.info("request.rejected")
-    return _response(request, error.http_status, error.code, error.message)
+    headers = (
+        {"Retry-After": str(error.retry_after_seconds)}
+        if isinstance(error, RateLimited) and error.retry_after_seconds
+        else None
+    )
+    return _response(request, error.http_status, error.code, error.message, headers)
 
 
 def _redact_validation_errors(exc: RequestValidationError) -> list[dict[str, Any]]:
