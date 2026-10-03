@@ -11,7 +11,13 @@ Scanners produce thousands of findings. The vulnerabilities module turns that pi
 
 Open **Vulnerabilities** in the left navigation. The **Register** tab lists every finding with its CVE, severity, CVSS, EPSS, the affected asset and its contextual priority. Tiles above it count what is open, overdue, known to be exploited and accepted. Filter by severity, asset, exploit or flags such as **Known exploited (KEV)** and **Overdue**, or search by title or CVE.
 
-<Screenshot name="vulnerabilities-register" alt="The vulnerability register with tiles for open, overdue, known exploited and accepted findings above a table of findings with CVE, severity, CVSS, EPSS, asset and contextual priority" />
+<Walkthrough name="vulnerabilities-register" alt="The vulnerability register with tiles for open, overdue, known exploited and accepted findings above a table of findings with CVE, severity, CVSS, EPSS, asset and contextual priority" steps={[
+  { target: "import", title: "Import", body: "Bring findings in from a scanner export." },
+  { target: "add", title: "Add finding", body: "Record a finding by hand." },
+  { target: "severity-filter", title: "Filter by severity", body: "Focus on the findings that matter most." },
+  { target: "severity-col", title: "Severity", body: "Each finding carries a severity." },
+  { target: "asset-col", title: "Asset", body: "The asset the finding was found on." },
+]} />
 
 Use **Columns** to choose what the table shows, and **Export** for a spreadsheet of the findings you are looking at.
 

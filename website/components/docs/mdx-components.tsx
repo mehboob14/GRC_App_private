@@ -86,7 +86,7 @@ export function Lifecycle({ title, stages }: { title?: string; stages: Stage[] }
     <figure data-animate className="my-7 rounded-xl border border-line bg-subtle p-5" style={{ ["--lc-step" as string]: `${Math.max(60, 1300 / items.length)}ms` } as CSSProperties}>
       {title && <figcaption className="mb-5 text-[14px] font-semibold text-ink">{title}</figcaption>}
       {long ? (
-        <ol className="grid list-none gap-2.5 !ps-0 sm:grid-cols-2 md:grid-cols-3">
+        <ol className="grid grid-cols-1 list-none gap-2.5 !ps-0 sm:grid-cols-2 md:grid-cols-3">
           {items.map((item, index) => (
             <li key={item.name} className="docs-lifecycle-dot relative !m-0 flex gap-3 rounded-lg border border-line bg-surface !p-3" style={{ ["--i" as string]: index } as CSSProperties}>
               <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-sky-300 bg-sky-50 font-mono text-[11.5px] font-semibold text-sky-700 [[data-docs-theme=dark]_&]:bg-sky-950/60 [[data-docs-theme=dark]_&]:text-sky-300">{index + 1}</span>
@@ -127,7 +127,7 @@ export function Lifecycle({ title, stages }: { title?: string; stages: Stage[] }
 }
 
 export function Cards({ children }: { children: ReactNode }) {
-  return <div className="my-6 grid gap-3 sm:grid-cols-2">{children}</div>;
+  return <div className="my-6 grid grid-cols-1 gap-3 sm:grid-cols-2">{children}</div>;
 }
 
 export function Card({ title, href, icon, children }: { title: string; href: string; icon?: string; children?: ReactNode }) {

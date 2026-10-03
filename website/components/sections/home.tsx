@@ -19,7 +19,7 @@ import { SectionShell } from "./pillar";
 export function HomeHero() {
   return (
     <section aria-labelledby="hero-title" className="relative overflow-hidden bg-gradient-to-b from-[#E6ECF2] via-[#EFF3F7] to-white">
-      <div className="frame grid items-center gap-8 pb-12 pt-14 lg:min-h-[620px] lg:grid-cols-[1.08fr_1fr] lg:gap-4 lg:pb-16 lg:pt-8">
+      <div className="frame grid grid-cols-1 items-center gap-8 pb-12 pt-14 lg:min-h-[620px] lg:grid-cols-[1.08fr_1fr] lg:gap-4 lg:pb-16 lg:pt-8">
         <div className="relative z-[1]">
           <p className="eyebrow">{hero.eyebrow}</p>
           <h1 id="hero-title" className="mt-6 max-w-[17ch] font-serif text-[clamp(2.6rem,1.4rem+3.9vw,4.1rem)] font-normal leading-[1.04] tracking-[-0.022em] text-ink">{hero.title}</h1>
@@ -60,12 +60,12 @@ export function FactStrip() {
 export function Problem() {
   return (
     <SectionShell id="problem" labelledBy="problem-title">
-      <div className="grid gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:gap-20">
+      <div className="grid grid-cols-1 gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:gap-20">
         <div>
           <SectionHeading eyebrow={problem.eyebrow} title={problem.title} id="problem-title" lead={problem.lead} />
         </div>
         <div>
-          <ul className="grid gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-2">
+          <ul className="grid grid-cols-1 gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-2">
             {problem.pains.map((pain, index) => (
               <li key={pain.title} className="bg-surface p-6" data-reveal style={{ ["--reveal-delay" as string]: `${index * 90}ms` } as CSSProperties}>
                 <span className="grid h-9 w-9 place-items-center rounded-lg border border-line text-ink"><Icon name={pain.icon} size={19} /></span>
@@ -88,7 +88,7 @@ export function HowItWorks() {
   return (
     <SectionShell id="how-it-works" labelledBy="how-title" tone="subtle">
       <SectionHeading eyebrow="How it works" title="From first login to audit-ready, in four steps." id="how-title" />
-      <ol data-animate className="relative mt-14 grid gap-8 md:grid-cols-4 md:gap-6">
+      <ol data-animate className="relative mt-14 grid grid-cols-1 gap-8 md:grid-cols-4 md:gap-6">
         <span className="pointer-events-none absolute left-0 right-0 top-[22px] hidden h-px bg-line md:block" aria-hidden="true">
           <span className="grow-x block h-full bg-sky-400" style={{ ["--base" as string]: "300ms" } as CSSProperties} />
         </span>
@@ -119,7 +119,7 @@ export function TraceSection() {
 export function FrameworksTeaser() {
   return (
     <SectionShell id="frameworks" labelledBy="frameworks-title" tone="subtle">
-      <div className="grid gap-14 lg:grid-cols-2 lg:gap-16">
+      <div className="grid grid-cols-1 gap-14 lg:grid-cols-2 lg:gap-16">
         <div className="min-w-0">
           <SectionHeading eyebrow={frameworksTeaser.eyebrow} title={frameworksTeaser.title} id="frameworks-title" lead={frameworksTeaser.lead} />
           <div className="mt-8">
@@ -148,7 +148,7 @@ export function IndustriesGrid() {
   return (
     <SectionShell id="industries" labelledBy="industries-title">
       <SectionHeading eyebrow={industriesTeaser.eyebrow} title={industriesTeaser.title} id="industries-title" lead={industriesTeaser.lead} />
-      <ul className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      <ul className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {industries.map((industry, index) => (
           <li key={industry.slug} data-reveal style={{ ["--reveal-delay" as string]: `${index * 70}ms` } as CSSProperties}>
             <Link href={`/solutions/${industry.slug}/`} className="group flex h-full flex-col rounded-2xl border border-line bg-surface p-5 shadow-card transition hover:-translate-y-0.5 hover:border-line-strong hover:shadow-float">
@@ -170,7 +170,7 @@ export function IndustriesGrid() {
 export function IntegrationsGrid() {
   return (
     <SectionShell id="integrations" labelledBy="integrations-title" tone="subtle">
-      <div className="grid gap-12 lg:grid-cols-[0.85fr_1.15fr] lg:gap-16">
+      <div className="grid grid-cols-1 gap-12 lg:grid-cols-[0.85fr_1.15fr] lg:gap-16">
         <div>
           <SectionHeading eyebrow={integrationsTeaser.eyebrow} title={integrationsTeaser.title} id="integrations-title" lead={integrationsTeaser.lead} />
           <div className="mt-8 rounded-xl border border-line bg-surface p-5 shadow-card" data-reveal>
@@ -184,7 +184,7 @@ export function IntegrationsGrid() {
           <p className="mt-5 flex gap-2 text-[13.5px] text-dim"><Icon name="info" size={16} className="mt-0.5 shrink-0" />{integrationsTeaser.note}</p>
           <ArrowLink href="/platform/integrations/" className="mt-5">See every integration</ArrowLink>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {integrationCapabilities.map((capability, index) => (
             <div key={capability.name} className="rounded-xl border border-line bg-surface p-5" data-reveal style={{ ["--reveal-delay" as string]: `${index * 70}ms` } as CSSProperties}>
               <p className="flex items-center gap-2 text-[14.5px] font-semibold text-ink"><Icon name={capability.icon} size={18} className="text-dim" />{capability.name}</p>
@@ -214,7 +214,7 @@ export function SecurityGrid() {
         <SectionHeading eyebrow={securityTeaser.eyebrow} title={securityTeaser.title} id="security-title" lead={securityTeaser.lead} />
         <ArrowLink href="/security/" className="shrink-0">How we protect your workspace</ArrowLink>
       </div>
-      <ul className="mt-12 grid gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-2 lg:grid-cols-3">
+      <ul className="mt-12 grid grid-cols-1 gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-2 lg:grid-cols-3">
         {securityTeaser.items.map((item, index) => (
           <li key={item.title} className="bg-surface p-6 lg:p-7" data-reveal style={{ ["--reveal-delay" as string]: `${index * 70}ms` } as CSSProperties}>
             <Icon name={item.icon} size={22} className="text-sky-600" />
@@ -230,7 +230,7 @@ export function SecurityGrid() {
 export function DocsTeaser() {
   return (
     <SectionShell id="docs" labelledBy="docs-title" tone="subtle">
-      <div className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
+      <div className="grid grid-cols-1 gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
         <div>
           <SectionHeading eyebrow={docsTeaser.eyebrow} title={docsTeaser.title} id="docs-title" lead={docsTeaser.lead} />
           <Link href="/docs/" className="mt-8 flex max-w-sm items-center gap-3 rounded-xl border border-line-strong bg-surface px-4 py-3 text-[15px] text-dim shadow-card transition hover:border-[#b6bdc9]">
@@ -239,7 +239,7 @@ export function DocsTeaser() {
             <span className="ms-auto flex gap-1 font-mono text-[11px]"><kbd className="rounded border border-line px-1.5 py-0.5">⌘</kbd><kbd className="rounded border border-line px-1.5 py-0.5">K</kbd></span>
           </Link>
         </div>
-        <ul className="grid gap-3 sm:grid-cols-2">
+        <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {docsTeaser.links.map((link, index) => (
             <li key={link.href} data-reveal style={{ ["--reveal-delay" as string]: `${index * 60}ms` } as CSSProperties}>
               <Link href={link.href} className="group flex h-full items-start gap-4 rounded-xl border border-line bg-surface p-5 transition hover:border-line-strong hover:shadow-card">

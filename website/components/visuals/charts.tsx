@@ -18,7 +18,7 @@ export function Donut({ segments, size = 156, thickness = 20, total, caption, cl
   const r = (size - thickness) / 2;
   const c = 2 * Math.PI * r;
   const gap = segments.length > 1 ? 2.5 : 0;
-  let offset = 0;
+  const starts = segments.map((_, index) => segments.slice(0, index).reduce((acc, s) => acc + (s.value / sum) * c, 0));
   return (
     <div className={cn("relative shrink-0", className)} style={{ width: size, height: size }}>
       <svg viewBox={`0 0 ${size} ${size}`} width={size} height={size} aria-hidden="true" className="-rotate-90">
@@ -27,11 +27,9 @@ export function Donut({ segments, size = 156, thickness = 20, total, caption, cl
         </mask>
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#EEF1F5" strokeWidth={thickness} />
         <g mask={`url(#${maskId})`}>
-          {segments.map((segment) => {
+          {segments.map((segment, index) => {
             const length = Math.max(0, (segment.value / sum) * c - gap);
-            const node = <circle key={segment.label} cx={size / 2} cy={size / 2} r={r} fill="none" stroke={segment.color} strokeWidth={thickness} strokeDasharray={`${length} ${c - length}`} strokeDashoffset={-offset} />;
-            offset += (segment.value / sum) * c;
-            return node;
+            return <circle key={segment.label} cx={size / 2} cy={size / 2} r={r} fill="none" stroke={segment.color} strokeWidth={thickness} strokeDasharray={`${length} ${c - length}`} strokeDashoffset={-starts[index]} />;
           })}
         </g>
       </svg>
@@ -62,7 +60,7 @@ export function StackedColumns({ columns, series, max, height = 170, className, 
   return (
     <div className={cn("flex gap-3", className)} aria-hidden="true">
       {yTicks && (
-        <div className="flex flex-col justify-between pb-5 text-right font-mono text-[10px] text-[#8A94A3]" style={{ height }}>
+        <div className="flex flex-col justify-between pb-5 text-right font-mono text-[10px] text-[#6E7787]" style={{ height }}>
           {[...yTicks].reverse().map((tick) => <span key={tick} className="leading-none">{tick}</span>)}
         </div>
       )}
@@ -81,7 +79,7 @@ export function StackedColumns({ columns, series, max, height = 170, className, 
                   <span key={series[si].label} style={{ height: `${(value / total) * 100}%`, background: series[si].color }} className="block w-full border-t border-white/70 first:border-t-0" />
                 ))}
               </div>
-              <span className={cn("font-mono text-[10px] leading-none", column.highlight ? "font-semibold text-[#0B0F17]" : "text-[#8A94A3]")}>{column.label}</span>
+              <span className={cn("font-mono text-[10px] leading-none", column.highlight ? "font-semibold text-[#0B0F17]" : "text-[#6E7787]")}>{column.label}</span>
             </div>
           );
         })}
@@ -98,7 +96,7 @@ export function Bars({ bars, max, height = 120, className }: { bars: { label: st
         <div key={bar.label} className="flex h-full flex-1 flex-col items-center justify-end gap-1.5">
           <span className="font-mono text-[10.5px] font-semibold text-[#0B0F17]">{bar.value}</span>
           <span className="grow-y block w-full rounded-t-[4px]" style={{ height: `calc(${(bar.value / max) * 100}% - 34px)`, background: bar.color, ["--i" as string]: index } as CSSProperties} />
-          <span className="font-mono text-[10px] text-[#8A94A3]">{bar.label}</span>
+          <span className="font-mono text-[10px] text-[#6E7787]">{bar.label}</span>
         </div>
       ))}
     </div>

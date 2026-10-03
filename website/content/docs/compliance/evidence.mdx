@@ -13,7 +13,13 @@ Evidence is the artefact that turns "we do reviews every quarter" into something
 
 ## Read the evidence register
 
-<Screenshot name="evidence-register" alt="The evidence register, with freshness, owner and coverage summaries above a table showing each item's type, controls, owner, renewal date, freshness and review state" />
+<Walkthrough name="evidence-register" alt="The evidence register, with freshness, owner and coverage summaries above a table showing each item's type, controls, owner, renewal date, freshness and review state" steps={[
+  { target: "add", title: "Add evidence", body: "Upload a file or link to proof held elsewhere." },
+  { target: "freshness", title: "Freshness", body: "How much of your evidence is current and how much is going stale." },
+  { target: "coverage", title: "Coverage", body: "How many controls have evidence behind them." },
+  { target: "freshness-col", title: "Freshness column", body: "Each item shows whether it is still current." },
+  { target: "review-col", title: "Review state", body: "Whether a reviewer has approved the item." },
+]} />
 
 Each row is one artefact: its title, its type, the controls it supports, who owns it, its renewal date, its freshness and its review state.
 
@@ -130,7 +136,12 @@ In the **Review** panel, choose **Approve**, or choose **Reject** and say what n
 
 A rejection is not a delete. The artefact stays with the reason attached, so the next person can see it was considered and why it was not good enough.
 
-<Screenshot name="evidence-detail" alt="An evidence record with its freshness and review badges, the linked artefact, a Review panel with Approve and Reject buttons, and its details" />
+<Walkthrough name="evidence-detail" alt="An evidence record with its freshness and review badges, the linked artefact, a Review panel with Approve and Reject buttons, and its details" steps={[
+  { target: "review", title: "Review", body: "A reviewer decides on the evidence here." },
+  { target: "approve", title: "Approve", body: "Marks the evidence as reviewed and accepted." },
+  { target: "reject", title: "Reject", body: "Sends the evidence back." },
+  { target: "controls-tab", title: "Controls", body: "See which controls this evidence supports." },
+]} />
 
 ## Keep evidence fresh
 

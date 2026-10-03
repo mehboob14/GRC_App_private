@@ -13,7 +13,14 @@ A framework such as SOC 2 is a list of criteria an auditor will check, and each 
 
 ## Read the controls library
 
-<Screenshot name="controls-register" alt="The controls library, listing each control's code and name, Trust Services categories, criteria, owner, evidence count and status" />
+<Walkthrough name="controls-register" alt="The controls library, listing each control's code and name, Trust Services categories, criteria, owner, evidence count and status" steps={[
+  { target: "summary", title: "The summary line", body: "Shows how many controls are listed, how many have no owner and how many have no evidence." },
+  { target: "search", title: "Search", body: "Find a control by name, code or criterion." },
+  { target: "owner-filter", title: "Filter by owner", body: "Narrow the list to one person's controls, or to the ones nobody owns yet." },
+  { target: "status-filter", title: "Filter by status", body: "Show only the controls at one status." },
+  { target: "columns", title: "Choose columns", body: "Show or hide columns to suit how you work." },
+  { target: "new", title: "New control", body: "Add a control of your own. It is marked apart from the shipped library." },
+]} />
 
 Open **Controls**. The summary line under the title is the fastest read you have: how many controls exist, how many have no owner, how many have no evidence.
 
@@ -93,7 +100,12 @@ When the control genuinely operates and the proof is attached, choose **Edit** a
 </Step>
 </Steps>
 
-<Screenshot name="control-detail" alt="A control's detail page with its statement and implementation guidance, an automation summary, linked evidence, and a right-hand column showing status, owner and framework mappings" />
+<Walkthrough name="control-detail" alt="A control's detail page with its statement and implementation guidance, an automation summary, linked evidence, and a right-hand column showing status, owner and framework mappings" steps={[
+  { target: "status", title: "Status", body: "Where the control stands." },
+  { target: "owner", title: "Owner", body: "The person accountable for the control." },
+  { target: "linked", title: "Linked records", body: "The evidence and other records tied to this control." },
+  { target: "automation-tab", title: "Automation", body: "Checks that can test the control automatically." },
+]} />
 
 ## The tabs on a control
 
