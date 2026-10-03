@@ -1,0 +1,65 @@
+---
+title: Automated checks
+description: Read automated check results on a control, see how they fill its evidence list, and why a broken connection shows Could not check, never Failing.
+status: live
+updated: 2026-10-02
+---
+
+When your workspace is connected to a system such as GitHub, Verity checks that system for you on a schedule and attaches what it finds to the controls the checks answer. This page explains where the results show on a control, how to read them, and what happens when a connection breaks.
+
+## What automated checks do
+
+Instead of somebody screenshotting a setting every quarter, the setting is read every day and the evidence appears on its own. Each check maps to the controls it can support.
+
+GitHub is the first live connector. Identity providers, cloud accounts, device management and ticketing are planned <Status value="soon" />. To connect a system, see [How connections work](/docs/integrations/overview/) and [GitHub](/docs/integrations/github/).
+
+## What the checks look at
+
+The GitHub connector answers questions a SOC 2 auditor asks about how software gets built and released, for example:
+
+- is two-factor authentication required for the organisation,
+- is the default branch protected,
+- are pull requests reviewed before merge,
+- are secret scanning and dependency alerts switched on.
+
+The [GitHub](/docs/integrations/github/) page lists every check.
+
+## Read the results on a control
+
+Open a control and go to its **Automation** tab. The panel at the top shows the control's overall result.
+
+| Result | What it means |
+|---|---|
+| **Passing** | The checks ran and found what the control claims. |
+| **Failing** | A check ran and found something else. The detail says what. |
+| **Could not check** | A check could not run or could not read what it needed, for example because a token expired. This is not a failure. |
+| **First run in progress** | Verity is collecting from the connected system now. |
+| **Not connected** | Checks are ready, but no system that can run them is connected yet. |
+| **Evidenced manually** | No connected system can prove this control yet, so people provide the evidence. |
+
+Below the result, each check has its own row. Open a row to see every repository or resource it looked at and, for a failure, what to fix. A strip of bars shows the last 30 days, one bar per day, so you can see how often the control was fully passing.
+
+The control's **Overview** tab shows the same result in its **Automation** card, and the right-hand column shows when the control was **Last tested**. If you manage connections, **Run now** runs the checks straight away. If the system you use is not supported, choose **Request integration** to record what you need.
+
+## Evidence that fills itself
+
+The output of each run is attached to the control as evidence, dated, so the control's evidence list fills without anybody uploading anything. Evidence is attached at most once a day unless the result changes, so a passing check does not bury the record in identical copies.
+
+## Error is not fail
+
+A broken connection must never look like a failed control. That distinction runs through the whole product:
+
+- **Failing** (red) means the check ran and your system did not meet the control.
+- **Could not check** (amber) means Verity could not find out. It never counts as a failure, and it never counts as a pass.
+
+<Callout type="note" title="Why the difference matters">
+
+If a broken connection showed as a failure, your team would chase problems that do not exist. If it showed as a pass, a real gap could hide behind an expired token. Keeping the two apart means a red result points at something real in your system.
+
+</Callout>
+
+## When a connection breaks
+
+A connection whose token has expired, or whose permissions were reduced, shows **Needs attention** on the Connections page, with the reason. The checks stop rather than quietly report a pass, and the checks it affects read **Could not check**. A token that is missing one permission affects only the checks that need that permission.
+
+Reconnect with a fresh token and the schedule resumes. See [How connections work](/docs/integrations/overview/).

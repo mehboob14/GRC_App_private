@@ -1,0 +1,100 @@
+---
+title: Connect GitHub
+description: Connect a GitHub organisation with a read-only token so seven daily checks test how your software is reviewed, protected and released.
+status: live
+updated: 2026-10-02
+---
+
+GitHub is the first live connection. Connect it once and Verity checks how your software gets built and released, every day, and attaches the results to the controls they support. This page walks you through connecting, lists the seven checks, and explains how to read the results.
+
+## Before you start
+
+You need a GitHub personal access token that can read the organisation you want checked. In the connect dialog, **Grant read access to** lists exactly what the token needs, all of it read only:
+
+- **Repository**: Metadata, Administration, Pull requests
+- **Organization**: Administration
+
+The dialog's **Create a token** link opens GitHub's page for making one. Read only is enough, and read only is what you should use. You also need permission to manage connections in Verity; admins have it.
+
+<Callout type="warning" title="Use a token that can only read">
+
+Nothing in Verity needs to write to your source control, and a read-only token limits what a mistake can cost.
+
+</Callout>
+
+## Connect GitHub
+
+<Steps>
+<Step title="Open the connector">
+
+Go to **Connections** and choose **Connect** on GitHub. You can also connect from a control's **Automation** tab.
+
+</Step>
+<Step title="Name the organisation">
+
+In **Organisation**, enter the GitHub organisation you want checked, for example your engineering organisation. Leave it empty to check the token owner's own repositories.
+
+</Step>
+<Step title="Paste the token">
+
+Paste the token into **Access token**.
+
+</Step>
+<Step title="Connect">
+
+Click **Connect**. Verity checks the token against GitHub, then encrypts it before it is stored. It never appears in a log or on a screen again; the connection card shows only its last four characters and, if it has one, its expiry date. If GitHub rejects the token, or the token cannot see the organisation, the dialog says so and nothing is stored.
+
+</Step>
+<Step title="Let the first run finish">
+
+The first run starts right away. After that it runs every day, and you can start one at any time with **Run now** on the connection card.
+
+</Step>
+</Steps>
+
+## What the checks look at
+
+The GitHub connector answers questions a SOC 2 auditor asks about how software gets built and released. Each check maps to the controls it can support, fully or partly, and runs daily.
+
+| Check | What it verifies | Controls it supports |
+|---|---|---|
+| Default branch is protected | Every active repository protects its default branch from direct and force pushes. | SD-06 Peer code review (branch protection); SD-01 Change authorization and approval |
+| Merges need an approving review | The default branch requires at least one approving review before a change merges. | SD-06 Peer code review (branch protection); SD-01 Change authorization and approval |
+| Merged changes were reviewed | Every change merged into the default branch in the last 30 days was approved by someone other than its author. | SD-01 Change authorization and approval; SD-06 Peer code review (branch protection) |
+| Checks must pass before merge | The default branch requires automated checks to pass before a change merges. | SD-02 Automated testing in CI |
+| Secret scanning is on | Every active repository scans new pushes and its history for committed credentials. | SD-11 Secret scanning |
+| Dependency alerts are on | Every active repository raises alerts for dependencies with known vulnerabilities. | SD-03 Dependency and image scanning; LM-11 Vulnerability management program |
+| Two factor is required for code access | The source control organisation requires every member to use two-factor authentication. | IAM-03 Enforce multi-factor authentication |
+
+When a check fails, its result says what to do about it, for example to protect the default branch or turn on secret scanning.
+
+## Read the results
+
+Open a control and go to its **Automation** tab.
+
+- **Passing** means the check ran and found what the control claims.
+- **Failing** means it ran and found something else. The detail says what, and on which repositories.
+- **Could not check** means the check could not read GitHub. That is an error, not a failure.
+
+The output is attached to the control as evidence, dated, so the control's evidence list fills without anybody uploading anything. Evidence is attached at most once a day unless the result changes, so a passing check does not bury the record in identical copies. See [Automated checks](/docs/compliance/automated-checks/).
+
+## Error is not fail
+
+A connection whose token has expired or whose permissions were reduced shows **Needs attention** on the Connections page, with the reason, for example that GitHub rejected the stored token. The checks stop rather than quietly report a pass, and their results read **Could not check**. A broken connector never looks like a failed control.
+
+To fix it, disconnect the connection and connect again with a fresh token. If GitHub could not be reached, or its hourly request allowance was used up, there is nothing to do: the next run tries again.
+
+## Disconnect GitHub
+
+Choose **Disconnect** on the connection card, give a reason, and confirm.
+
+<Callout type="warning" title="Before you click">
+
+Disconnecting destroys the stored token and stops the daily tests. To resume, you connect again with a token. Past results and evidence stay.
+
+</Callout>
+
+<Cards>
+<Card title="How connections work" href="/docs/integrations/overview/" icon="plug">Health, requests and the systems planned next.</Card>
+<Card title="Continuous monitoring" href="/docs/monitoring/continuous-monitoring/" icon="eye">What scheduled checks will add next.</Card>
+</Cards>

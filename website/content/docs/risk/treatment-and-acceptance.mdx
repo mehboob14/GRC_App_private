@@ -1,0 +1,109 @@
+---
+title: Treat or accept a risk
+description: Plan and track the work that reduces a risk, link the controls that answer it, or accept it formally with an approver and an expiry.
+status: live
+updated: 2026-10-02
+---
+
+Once a risk is in the register, you decide what to do about it. This page shows how to treat a risk with tracked actions and linked controls, how to accept one formally, and how risks arrive from other parts of Verity.
+
+## Treat a risk
+
+<Steps>
+<Step title="Open the Treatment tab">
+
+Open the risk and go to **Treatment**. It shows the treatment decision, the plan, the due date and the actions under way.
+
+</Step>
+<Step title="Write the plan">
+
+Click **Edit** and write the **Treatment plan**: the steps, who owns them and by when.
+
+</Step>
+<Step title="Raise the actions as tasks">
+
+On the **Treatment** tab, click **Add action** for each piece of work and give it an owner, a priority and a due date. Each action becomes a task, so the work is tracked where all other work lives, with its service level. Adding the first action moves an open risk to **In treatment**.
+
+</Step>
+<Step title="Link the controls that reduce the risk">
+
+On the **Controls** tab, click **Link controls** and pick the controls that reduce this risk. That link is what makes your control library an answer to your risk register rather than a separate exercise. A risk with no linked control is flagged until one is linked.
+
+</Step>
+<Step title="Update the residual score">
+
+As the work lands, click **Edit** and update the **residual** score.
+
+</Step>
+</Steps>
+
+<Screenshot name="risk-detail" alt="A risk record with tabs for Overview, Treatment, Controls, Links, Acceptance and History, and the Score and Details cards on the right" caption="Treatment, Controls, Links and Acceptance each have their own tab on the risk." />
+
+The **Treatment** tab shows how many actions are done, and each one opens the task behind it. Later, failing linked controls will also flag a risk for review <Status value="soon" />. Read more about [tasks and their service levels](/docs/tasks/overview/) and [controls](/docs/compliance/controls/).
+
+## Accept a risk
+
+Acceptance is the formal act of saying "we will live with this". It is separated from the rest of the record on purpose.
+
+<Steps>
+<Step title="Request acceptance">
+
+Open the risk, go to **Acceptance** and click **Request acceptance**.
+
+</Step>
+<Step title="Choose an approver">
+
+Pick the **Approver**. Somebody other than the requester decides: Verity refuses to let the same person both request and approve, so your own name is greyed out, as is anyone without permission to approve risks.
+
+</Step>
+<Step title="Justify it and set an expiry">
+
+Under **Why the remaining risk is acceptable**, state the justification and the compensating measures. Set when it **Expires**: 3 months, 6 months, 1 year, or a date you choose. Click **Send for approval**, and the approver is notified.
+
+</Step>
+<Step title="The approver decides">
+
+The approver opens the risk and clicks **Decide acceptance**, then chooses **Approve** or **Reject**. A rejection needs a reason. You are told the outcome either way.
+
+</Step>
+<Step title="The acceptance runs to its expiry">
+
+On approval the risk moves to **Accepted** and carries its expiry. When the expiry passes, the acceptance lapses and the risk reopens on its own, so a decision made two years ago does not quietly become permanent. The business owner is notified that it needs a treatment decision again.
+
+</Step>
+</Steps>
+
+<Callout type="note" title="Acceptance has an owner and an end date, always">
+
+That is the difference between an accepted risk and an ignored one. Every acceptance carries a justification, an approver who is not the requester, and an expiry date.
+
+</Callout>
+
+If nobody else can approve yet, the dialog says so. Give a colleague the approve permission for risks in [Roles and groups](/docs/admin/roles-and-groups/).
+
+### Change your mind
+
+- The requester can **Withdraw** a request while it is awaiting approval.
+- Someone who can approve risks can **Revoke** an acceptance that is in force. They give a reason, and the risk reopens immediately.
+
+Every request keeps its status on the **Acceptance** tab: awaiting approval, in force, rejected, withdrawn, expired or revoked. The **Acceptances expiring** tile on the Overview tab shows what is about to lapse. Multi-step approval workflows <Status value="soon" /> will add more sign-off steps later.
+
+## Risks raised from elsewhere
+
+A risk does not have to start on the Risks screen. It can arrive from another module:
+
+- From a **vendor finding**: a weakness in a third party that you decide to carry as your own risk. On the finding, click **Promote to risk**. The risk lands in the register you last worked in, or the default register, and the finding links to it. See [Assessment and findings](/docs/vendors/assessment-and-findings/).
+- From a **vulnerability finding**: open the finding, click **Raise risk** and confirm the title. Verity scores the new risk from the finding's severity and how exploitable it is, adds it to your default register, and links it to the finding and its asset. See [Findings and priority](/docs/vulnerabilities/findings-and-priority/).
+- From the **library** or an **import**: see [Library and settings](/docs/risk/library-and-settings/).
+- From an **assessment**: structured risk assessments are planned <Status value="soon" />, and every risk identified in one will land in a register. See [Enterprise risk management](/docs/risk/enterprise-risk/).
+
+The register records where each risk came from, so "who raised this and why" is always answerable. The **Source** line in the risk's details reads, for example, **Added by hand**, **Starter library**, **Imported** or **Vendor finding**, and the **History** tab records every change with who made it and when.
+
+### Link the records a risk is about
+
+A risk is usually about something you run. On the **Links** tab, connect it to the assets, vulnerabilities, evidence, tasks and issues, vendors, and policies and documents it concerns. You can also pick **Linked assets** when you add the risk. The asset then lists the risk among its linked records, so the trace from a weakness to the risk it feeds is one click either way. See [Asset inventory](/docs/assets/inventory/) and [Findings and priority](/docs/vulnerabilities/findings-and-priority/).
+
+<Cards>
+<Card title="The risk register" href="/docs/risk/risk-register/" icon="list">Registers, scoring and the states a risk moves through.</Card>
+<Card title="Assessment and findings" href="/docs/vendors/assessment-and-findings/" icon="handshake">Where vendor findings are worked and promoted.</Card>
+</Cards>

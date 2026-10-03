@@ -1,0 +1,97 @@
+---
+title: Questionnaires and the vendor portal
+description: Build tiering and due diligence questionnaires, send one to a vendor through a single-use portal link, and follow their progress.
+status: live
+updated: 2026-10-02
+---
+
+Your workspace builds its own questionnaires. This page explains the two kinds, how to build one, and how to send a due diligence questionnaire to a vendor, who answers it through the vendor portal.
+
+## Two kinds of questionnaire
+
+**Vendors > Questionnaires** holds them, with a library to start from. Switch between the two kinds at the top of the tab.
+
+- **Tiering questionnaires** are answered by your team, about the vendor. The answers set its tier.
+- **Due diligence questionnaires** are answered by the vendor, and drive the residual score and the findings.
+
+<Screenshot name="vendors-questionnaires" alt="The Questionnaires tab with Tiering and Due diligence switches, a Show archived option, a New questionnaire button, and the workspace's default tiering questionnaire" />
+
+These are the questionnaires you send to your own suppliers. Answering questionnaires that your customers send you is a separate, planned feature: see [Questionnaire automation](/docs/roadmap/questionnaire-automation/).
+
+## Build a questionnaire
+
+You need permission to manage vendors to build or change questionnaires.
+
+<Steps>
+<Step title="Start a questionnaire">
+
+Click **New questionnaire**, choose **Tiering** or **Due diligence**, and start from a library template or from **Blank**. Name it and click **Create**.
+
+</Step>
+<Step title="Add the questions">
+
+Add questions of your own, or pick them from the library with **From library**. For each question you set the wording and help text, the answer type, whether it is required, its weight, and whether evidence is needed. A question can be shown only when an earlier answer calls for it.
+
+</Step>
+<Step title="Flag the questions that matter most">
+
+On a due diligence question with set answers, mark it as a **Critical control** if a gap should hold the score at high or worse, or **Blocks approval** if a gap must be resolved before the vendor can be approved.
+
+</Step>
+</Steps>
+
+In the questionnaire's settings, a tiering questionnaire can be made the **Default for tiering**, and a due diligence questionnaire can be sent by default to chosen tiers. A tier has one default. Each questionnaire's menu also offers **Duplicate** and **Archive**.
+
+Editing a questionnaire never changes a tier, score or finding that is already recorded, because Verity keeps a copy of the questions each review used.
+
+## Send a questionnaire to a vendor
+
+<Steps>
+<Step title="Add a portal contact">
+
+Open the vendor and add a **portal contact** with an email address: choose **Actions > Add contact**, enter the name and email, and set **Kind** to **Portal**.
+
+</Step>
+<Step title="Check the engagement is tiered">
+
+The tier sets which questions apply, so tier the engagement first. See [Tiering and vendor policy](/docs/vendors/tiering/).
+
+</Step>
+<Step title="Send it">
+
+Go to the vendor's **Assessments** tab and click **Send questionnaire**. Lifecycle checks that wait on the questionnaire bring you here too, through **Open questionnaire**. Verity suggests the default questionnaire for the engagement's tier; choose the contact under **Send to**, and add an optional **Due date** to show the vendor. Then click **Send questionnaire**.
+
+</Step>
+<Step title="Pass on the link">
+
+Verity produces a single-use portal link, emails it to the contact, and shows it to you once. Copy it if the contact needs it another way.
+
+</Step>
+<Step title="The vendor answers">
+
+The vendor opens the link with no account and no password, answers the questions, attaches files, and saves as they go. **Send answers** submits them and closes the link.
+
+</Step>
+<Step title="Watch progress">
+
+You watch progress from the **Assessments** tab, which shows how many questions are answered. When the vendor sends their answers, Verity scores them straight away.
+
+</Step>
+</Steps>
+
+<Callout type="warning" title="The link is shown once">
+
+Verity keeps only a hash of the link, so it cannot be recovered later. If it is lost, issue a new one by sending the questionnaire again: the new link replaces the old one, which stops working. Anyone with the link can answer, so share it only with that contact. The link works for 30 days.
+
+</Callout>
+
+<Screenshot name="vendor-assessments" alt="A vendor's Assessments tab with Reassess and Send questionnaire buttons, and a warning that there is no contact to send to until a vendor contact with an email address is added" caption="With no vendor contact yet, Send questionnaire stays unavailable." />
+
+## What the vendor sees
+
+The portal shows a security review with the number of questions and the due date. The vendor never sees your scores or which answers count as gaps, and of your review comments they see only the ones you choose to share with them. Starting offboarding revokes any open portal links.
+
+<Cards>
+<Card title="Assessment and findings" href="/docs/vendors/assessment-and-findings/" icon="flag">What happens when the answers come back.</Card>
+<Card title="Requests and intake" href="/docs/vendors/requests-and-intake/" icon="clipboard">Get the vendor into Verity first.</Card>
+</Cards>

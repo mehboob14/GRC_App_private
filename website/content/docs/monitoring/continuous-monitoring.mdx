@@ -1,0 +1,33 @@
+---
+title: Continuous monitoring
+description: Planned. Checks will run on a schedule across your connected systems, open findings that resolve themselves, and alert the right people.
+status: soon
+updated: 2026-10-02
+---
+
+Continuous monitoring will turn your connected systems into a standing watch on your controls. This page describes what is planned, and what you can already use today.
+
+## What it will do
+
+Checks will run on a schedule across every system you connect, and every run will be kept, so each control shows its history across your audit window rather than a single snapshot.
+
+- **Findings for every failure.** A failing check will open a finding for the specific resource it failed on. A check that fails on three repositories will open three findings.
+- **Automatic resolution.** When the check passes again, its finding will resolve itself. Nobody has to remember to close it.
+- **Alerts.** A control that moves to failing will raise an alert, so the people responsible hear about it without waiting for the next review.
+- **Waivers.** When a failure is accepted for now, a waiver will record it. Waivers will be time-boxed, justified and approved by someone other than the person who asked. When a waiver expires, the finding will reopen.
+- **Scoping and exclusions.** You will be able to scope checks to the repositories, accounts or tags that matter. Excluding a resource will need a reason, will be recorded in the audit log, and will be printed on the evidence, so an auditor can see what was left out and why.
+
+## Error is never fail
+
+A check that cannot read a system, because a token expired or permissions were reduced, will record an error, not a failure. A broken connection will never look like a failed control. You will see that the check could not run, and why, rather than a red mark against a control that may be working perfectly well.
+
+## What you can use today
+
+GitHub checks already run daily. Connect GitHub and seven checks read your repositories every day and attach their results to the controls they support, as dated evidence. See [Connect GitHub](/docs/integrations/github/) and [Automated checks](/docs/compliance/automated-checks/).
+
+Until findings and alerts arrive, the latest run's failing results are your open issues. Read them on a control's **Automation** tab, and raise a [task](/docs/tasks/overview/) to track the fix. For systems Verity cannot connect to yet, keep your controls proven with [evidence](/docs/compliance/evidence/) collected by hand.
+
+<Cards>
+<Card title="How connections work" href="/docs/integrations/overview/" icon="plug">What a connection does and the systems planned next.</Card>
+<Card title="Connect GitHub" href="/docs/integrations/github/" icon="check">The checks that run every day today.</Card>
+</Cards>
