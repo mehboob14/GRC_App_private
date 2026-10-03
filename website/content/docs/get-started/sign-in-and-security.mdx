@@ -1,0 +1,91 @@
+---
+title: Sign in and two-factor authentication
+description: Accept your invitation, set a password, set up two-factor authentication, choose a workspace, sign out and reset a forgotten password.
+status: live
+updated: 2026-10-02
+---
+
+You arrive at Verity either from an invitation email or from a workspace your organisation already created. This page walks you through your first sign-in, two-factor authentication, choosing and switching workspace, signing out, and resetting a forgotten password.
+
+## Sign in for the first time
+
+<Steps>
+<Step title="Accept your invitation and set a password">
+
+Open the link in your invitation. On **Join your team**, choose **I'm new to Verity**, enter your full name, create a password and choose **Accept invitation**. If you already have a Verity account, choose **I have an account** instead: accepting adds this workspace to that account.
+
+Your password must be at least 12 characters and mix upper case, lower case, a number and a symbol. The rules tick off as you type. Your organisation's administrator can make the rule stricter.
+
+</Step>
+<Step title="Sign in">
+
+Sign in with your work email and that password.
+
+</Step>
+<Step title="Set up two-factor authentication if you are asked">
+
+If your workspace requires two-factor authentication for your role, you are asked to set it up now. Open an authenticator app such as 1Password, Authy or Google Authenticator and scan the QR code. Type the six-digit code the app shows, then choose **Turn on MFA**.
+
+If you cannot scan the QR code, choose **Can't scan? Enter a setup key instead** and type the key into your app.
+
+</Step>
+<Step title="Save your recovery codes">
+
+Save your recovery codes somewhere safe and offline. Each code works once. If you lose your phone, they are how you get back in. Choose **Copy all codes**, store them, then choose **I've saved them, continue**.
+
+</Step>
+</Steps>
+
+<Callout type="warning" title="Before you click">
+
+Recovery codes are shown once. After you choose **I've saved them, continue**, you cannot see them again, so store them before you move on.
+
+</Callout>
+
+## Sign in with two-factor authentication
+
+Once two-factor authentication is on, Verity asks for a code after your password. Enter the six-digit code from your authenticator app.
+
+If you do not have your phone, choose **Use a recovery code** and enter one of the codes you saved. Each recovery code works only once.
+
+## Choose a workspace
+
+If you belong to more than one organisation, Verity asks which workspace you want after you sign in. External auditors and consultants usually see this. You can switch later without signing out.
+
+### Switch workspace
+
+The workspace switcher sits at the bottom of the left navigation, showing the organisation name and your role in it. Click it and choose another workspace.
+
+Your session, your permissions and everything you can see change with it. Nothing you do in one workspace is visible from another. See [Audit log and isolation](/docs/admin/audit-log-and-isolation/) for how workspaces are kept apart.
+
+## Sign out and sessions
+
+Open the menu on your name, top right, and choose **Sign out**.
+
+Sessions also expire on their own, 12 hours after you sign in, so a shared machine does not stay signed in forever.
+
+## Reset a forgotten password
+
+<Steps>
+<Step title="Ask for a reset link">
+
+Choose **Forgot password?** on the sign-in screen. Enter your work email and choose **Send reset link**.
+
+</Step>
+<Step title="Set a new password">
+
+Open the link in the email, enter your new password twice and choose **Update password**. Verity signs out your other sessions.
+
+</Step>
+<Step title="Sign in again">
+
+Sign in with your new password.
+
+</Step>
+</Steps>
+
+If two-factor authentication is on for your account, you are still asked for a code after resetting, and your recovery codes still work.
+
+## For administrators
+
+Administrators decide how strict the password rule is and whether two-factor authentication is required. See [Security settings](/docs/admin/security-settings/).

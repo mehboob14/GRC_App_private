@@ -14,7 +14,7 @@ Two things share the module.
 
 - A **definition** is the weakness itself, for example CVE-2021-44228 (Log4Shell).
   It is the same weakness wherever it appears.
-- A **finding** is that weakness *on one of your assets*, at one location. Two
+- A **finding** is that weakness _on one of your assets_, at one location. Two
   servers with Log4Shell are two findings of one definition.
 
 That split is why you can fix a finding on one host without the register pretending
@@ -23,7 +23,7 @@ the whole CVE has gone away.
 ## Priority: why the order is not just CVSS
 
 A CVSS score describes the weakness in the abstract. Verity prioritises what it
-means *to you*, combining:
+means _to you_, combining:
 
 - the weakness: CVSS, whether an exploit exists, the EPSS probability that it will
   be exploited, and whether it is on the Known Exploited Vulnerabilities catalogue,
@@ -61,16 +61,16 @@ recurring failure is visible instead of looking like a new problem each time.
 
 ![A vulnerability detail page](images/vulnerability-detail.png)
 
-| State | Meaning |
-|---|---|
-| New | Just arrived, not triaged |
-| Active | Triaged and confirmed |
-| In progress | Being fixed |
-| Pending retest | Fixed in the team's view, waiting on proof |
-| Fixed | Verified as fixed |
-| Resurfaced | Was fixed, has come back |
-| Accepted | Tolerated on purpose, with an approval and an expiry |
-| False positive | Not real, with a reason recorded |
+| State          | Meaning                                              |
+| -------------- | ---------------------------------------------------- |
+| New            | Just arrived, not triaged                            |
+| Active         | Triaged and confirmed                                |
+| In progress    | Being fixed                                          |
+| Pending retest | Fixed in the team's view, waiting on proof           |
+| Fixed          | Verified as fixed                                    |
+| Resurfaced     | Was fixed, has come back                             |
+| Accepted       | Tolerated on purpose, with an approval and an expiry |
+| False positive | Not real, with a reason recorded                     |
 
 A finding is never closed on assertion alone. **Fixed** means a scanner confirmed it
 or an approval was recorded.

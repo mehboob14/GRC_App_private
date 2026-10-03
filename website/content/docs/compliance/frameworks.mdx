@@ -1,0 +1,78 @@
+---
+title: Frameworks and readiness
+description: Set the audit scope that readiness is measured against, read the compliance dashboard, and check which framework version you work to.
+status: live
+updated: 2026-10-02
+---
+
+A framework such as SOC 2 is a list of criteria an auditor will check, and each control you operate answers one or more of them. **Frameworks** is where you set what your audit covers, see how ready you are, and check which framework version you are working to.
+
+## The three sections of Frameworks
+
+- **Dashboard** is the posture read: how many controls are ready, which criteria are weak, and what is still in progress.
+- **Frameworks** lists the frameworks available and which version you are working to.
+- **Scope** is where you record what is in and out of the audit.
+
+## Set your audit scope
+
+The dashboard measures your workspace against the criteria your engagement covers, so it stays empty until you set your scope.
+
+<Screenshot name="frameworks-dashboard" alt="The Frameworks dashboard before any scope is set, asking you to set your audit scope first and linking to the Scope tab" />
+
+<Steps>
+<Step title="Open Scope">
+
+Go to **Frameworks** and choose the **Scope** tab, or choose **Go to Scope** on the dashboard.
+
+</Step>
+<Step title="Name the engagement">
+
+Enter an **Engagement name** that says which audit this is.
+
+</Step>
+<Step title="Choose the audit type">
+
+Choose **Type I** for the design of your controls at a single point in time, or **Type II** for how well they operate across an observation window. For Type II, set **Window starts** and **Window ends**: the period your auditor tests evidence across.
+
+</Step>
+<Step title="Choose the categories in scope">
+
+Security is always in scope. Add Availability, Confidentiality, Processing Integrity or Privacy if you are claiming them. Only criteria in scope are measured.
+
+</Step>
+<Step title="Save">
+
+Choose **Save scope**. The dashboard fills in.
+
+</Step>
+</Steps>
+
+## Read the compliance dashboard
+
+Once your scope is set, the **Dashboard** tab reads from your own data. Its cards include:
+
+- **Framework progress**: how many criteria are in scope, how many controls are ready, and how much evidence you hold.
+- **Controls by status**: how many controls are not started, in progress, implemented or not applicable.
+- **Coverage breakdown**: how many controls have evidence, have an owner and are ready for audit.
+- **Coverage by Trust Services Criteria**: for each category in scope, the criteria that are ready, in progress, or have no control at all. This is where weak criteria show up.
+- **Evidence**: how much is fresh, expiring in 30 days, or stale.
+- **Owners & assignment**, **Disabled controls**, **Progress over time** and **Recent activity**.
+
+## How readiness is measured
+
+Readiness counts only the criteria in your scope. Verity keeps two measures apart, because either one alone would mislead:
+
+- **Covered**: a criterion is covered when at least one control that is not disabled maps to it.
+- **Ready**: a control is ready for audit when its status is **Implemented** and it has evidence attached. A criterion is ready when at least one control mapped to it is ready.
+
+A library that is fully adopted but not yet worked reads high on coverage and close to zero on readiness. To move readiness, give controls owners, attach evidence, and set each control to Implemented when it genuinely operates. See [Controls](/docs/compliance/controls/) and [Evidence](/docs/compliance/evidence/).
+
+## Check which framework you work to
+
+<Screenshot name="frameworks-list" alt="The Frameworks tab listing the built-in SOC 2 framework with its version and number of criteria" />
+
+The **Frameworks** tab lists the frameworks available, the version you are working to, and how many criteria each holds. SOC 2 is built in. Open it to browse its criteria, filter them by category, and see how many of your controls answer each one.
+
+## More frameworks
+
+SOC 2 is the framework library that ships today. More framework libraries are coming <Status value="soon" />, built on the same control set so the work you map once counts for each of them. See [More frameworks](/docs/compliance/framework-library/).

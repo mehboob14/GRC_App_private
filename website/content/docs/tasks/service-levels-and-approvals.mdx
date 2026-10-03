@@ -1,0 +1,60 @@
+---
+title: Service levels and approvals
+description: Track tasks against service level targets, require approval before work closes, record corrective actions on an issue, and set the rules behind them.
+status: live
+updated: 2026-10-02
+---
+
+Tasks become evidence when you can show how quickly work got done, who signed it off, and what you did when something broke. This page covers service levels, approvals, corrective actions on an issue, and the settings behind them.
+
+## Service levels
+
+A service level is a promise about how quickly work of a given priority gets done. Tasks that breach one are visible, escalated and countable, which is what turns "we fix critical issues quickly" into something you can show.
+
+You choose a task's **SLA level** when you raise it. The task then shows where it stands:
+
+| Service level | Meaning |
+|---|---|
+| On track | Inside its deadline |
+| Due soon | The deadline is within two days |
+| Breached | Past its deadline |
+| Paused | The task is **Blocked**, so the clock is stopped |
+| No SLA | No service level applies |
+
+When a blocked task resumes, its deadline moves out by the time it spent blocked. The owner and assignees are notified once when a task is due soon and again if it breaches.
+
+The **Overview** tab shows how you are doing against your service levels: open work, what is breaching now, what is due soon and what closed this month, with charts for service level posture, open work by priority and by age, load by assignee, and mean time to resolve.
+
+<Screenshot name="tasks-overview" alt="The tasks Overview tab, with headline counts for open, breaching and due-soon work, a service level posture chart, open work by priority and age, and load by assignee" />
+
+## Approvals
+
+Some work should not be closed on the word of the person who did it. A task can require approval. When the work goes to **Under review**, the approver gets a notification and decides with **Approve** or **Reject** on the task, and their decision is recorded with their name and the time.
+
+The task's **Approval** panel shows where the approval stands and who the approver is.
+
+## Corrective actions on an issue
+
+Open an issue and use the **Actions** tab. Choose **Add action** for each step. Each action has its own type, owner and state:
+
+- **Containment**: stop the bleeding now.
+- **Corrective**: fix the thing that broke.
+- **Preventive**: stop it happening again.
+- **Verification**: check the fix actually worked.
+
+An action moves from **Planned** through **In progress** to **Completed**, and becomes **Verified** once someone confirms it worked. It can also be **Blocked** or **Cancelled**.
+
+An action can be promoted to a task of its own when it turns out to be a piece of work in its own right: choose **Promote to task**. The new task's **Related** tab shows that it came from a corrective action.
+
+## Settings
+
+**Tasks** > **Settings** is where an administrator sets the service level targets, the severity matrix and the automation rules that raise tasks on their own. You can view the settings without the Manage tasks permission, but you need it to change them.
+
+<Screenshot name="tasks-settings" alt="The tasks Settings tab, with automation rules that can be switched on or off and a severity matrix combining impact and urgency into a severity with response and resolution targets" />
+
+- **Automations** open a task or issue automatically when something happens in another module, for example when a piece of evidence passes its renewal date. For each rule you choose what it opens, who it is assigned to, its priority and how many days it is due in, and you switch it on or off. Rules marked **Soon** are not available yet and cannot be switched on.
+- **Severity matrix** sets how impact and urgency combine into a severity, with a time to respond and a time to resolve for each.
+- **SLA levels** are the named service levels you choose on a task. Each has **Respond within (hours)** and **Resolve within (hours)**. Use **Add SLA level** to create one.
+- **Templates** lists the task templates in your workspace, including recurring ones.
+
+To raise and work tasks, see [Tasks and issues](/docs/tasks/overview/).

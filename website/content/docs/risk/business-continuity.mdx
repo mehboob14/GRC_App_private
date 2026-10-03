@@ -1,0 +1,38 @@
+---
+title: Business continuity
+description: A planned module for business impact analysis, continuity and recovery plans and exercises, linked to the assets, vendors and processes you rely on.
+status: soon
+updated: 2026-10-02
+---
+
+Business continuity will help you plan for disruption: know which services matter most, write down how you keep them running and recover them, and show that the plans work. This page describes the planned direction in general terms, and what you can already use in Verity today.
+
+## What it is planned to cover
+
+- **Business impact analysis.** Identify the processes and services the business depends on, and what an outage of each would cost.
+- **Continuity and recovery plans.** Keep the plans that say how you keep running and how you restore systems and data, next to the records they depend on.
+- **Testing exercises.** Record exercises against those plans and what they found, so you can show the plans hold up.
+- **Links to what you rely on.** Connect plans to the critical assets, vendors and processes behind them.
+
+The detailed design is still to be settled, so the exact shape of the module may change before it arrives.
+
+## How it will fit with the rest of Verity
+
+Continuity work leans on records you may already keep in Verity: how critical each asset is and what depends on it, which vendors the business cannot do without, and the controls that answer the SOC 2 availability criteria. The module will link plans to those records, so a plan can point at the assets, vendors and processes it depends on.
+
+## What you can use today
+
+- **Assets.** Rate each asset's availability as part of its confidentiality, integrity and availability rating, and Verity derives its criticality. Record what depends on what on the **Relationships** tab, which answers "what else goes down with this".
+- **Vendors.** Business criticality, meaning what breaks if they stop, is one of the five tiering questions. Keep a vendor's BC/DR plan on its **Paperwork** tab.
+- **Risks.** Record continuity risks, such as losing a key supplier or a site, in the risk register, and treat them like any other risk.
+- **Controls.** In **Controls**, set the **Trust Services** filter to **Availability** to see the controls that answer the SOC 2 availability criteria, such as backups, restore testing, capacity management and a business continuity and disaster recovery plan.
+- **Policies.** Draft your plan from the **Business Continuity and Disaster Recovery (BC/DR)** template in the policy template library, then take it through approval.
+
+<Cards>
+<Card title="Asset inventory" href="/docs/assets/inventory/" icon="server">Criticality from the CIA rating.</Card>
+<Card title="Hygiene and dependencies" href="/docs/assets/hygiene-and-dependencies/" icon="tree">Record what depends on what.</Card>
+<Card title="Controls" href="/docs/compliance/controls/" icon="shield">Find the availability controls.</Card>
+<Card title="Draft a policy" href="/docs/policies/documents-and-policies/" icon="file">Start from the BC/DR template.</Card>
+<Card title="The risk register" href="/docs/risk/risk-register/" icon="list">Record and treat continuity risks.</Card>
+<Card title="Tiering" href="/docs/vendors/tiering/" icon="handshake">Business criticality for vendors.</Card>
+</Cards>

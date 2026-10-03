@@ -1,0 +1,39 @@
+---
+title: Device monitoring
+description: Planned. Daily checks that staff laptops are enrolled in device management, encrypted, locked when idle, patched, wipeable and protected.
+status: soon
+updated: 2026-10-02
+---
+
+Laptops carry your data out of the building. Device monitoring will check, every day, that each staff laptop is managed and protected, and attach the results to the endpoint controls in your library. This page describes the planned checks and what you can do today.
+
+## The checks it will run
+
+Each check will run daily and read from the system your company already uses to manage or protect its laptops.
+
+| Check | What it will verify | Control it supports |
+|---|---|---|
+| Laptops are managed | Every company laptop is enrolled in device management. | Device management (MDM) enrollment |
+| Laptop disks are encrypted | Every managed laptop has full disk encryption turned on. | Endpoint full-disk encryption |
+| Screens lock when idle | Every managed laptop locks its screen after the idle time your policy sets. | Screen lock policy |
+| Operating systems are patched | Every managed laptop runs a supported, patched operating system. | Patch management |
+| Lost laptops can be wiped | Every managed laptop can be locked and wiped remotely. | Remote wipe on offboarding / loss |
+| Endpoint protection is running | Every laptop and server runs a healthy, up to date protection agent. | Endpoint EDR / anti-malware |
+
+The first five will read from a **device management** system: what enrols, configures and can wipe company laptops. The last will read from an **endpoint protection** system: what detects and stops malware on laptops and servers.
+
+## How results will work
+
+- A failing check will name the laptops that need attention and what to do, such as enrolling them, pushing the screen lock setting or updating them.
+- Results will attach to the controls above as dated evidence, the same way [GitHub checks](/docs/integrations/github/) do today.
+- A laptop the check cannot read will show as could not check, never as a failure. Error is never fail.
+
+## What you can use today
+
+The endpoint controls listed above are already in your control library. Until device monitoring arrives, prove them by hand:
+
+- Give each of these controls an owner in **Controls**. See [Controls](/docs/compliance/controls/).
+- Attach an export from your device management or endpoint protection console that shows enrolment, encryption or agent status, as [evidence](/docs/compliance/evidence/). A configuration export is good for 90 days by default, and the evidence register shows when it needs refreshing.
+- To see laptops alongside the rest of your estate, record the laptop fleet in the [asset inventory](/docs/assets/inventory/).
+
+The **Connections** page already lists **Devices** under **Manage Accounts**, marked **Soon**. To record which device management system you use, so it can be prioritised, choose **Request integration** on that page. See [How connections work](/docs/integrations/overview/).

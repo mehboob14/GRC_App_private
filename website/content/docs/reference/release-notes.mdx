@@ -1,0 +1,56 @@
+---
+title: Release notes
+description: What is live in Verity today, what is shown as a preview, what is coming soon, and what changed in this documentation.
+status: live
+updated: 2026-10-02
+---
+
+This page tracks what you can use in Verity today and what changed in these docs. Planned features have their own pages under **Coming soon** in the sidebar, each marked so you can tell at a glance that it is not available yet.
+
+## October 2026
+
+### Live in Verity
+
+Everything below is available in every workspace.
+
+| Area | What you can do | Guide |
+|---|---|---|
+| Frameworks and controls | Work from the SOC 2 library (61 criteria, 114 control templates), give every control an owner, add controls of your own and retire them with a reason | [Controls](/docs/compliance/controls/) |
+| Evidence | Upload files or link to records, map them to controls, review them, and watch renewal dates | [Evidence](/docs/compliance/evidence/) |
+| Automated checks | Connect GitHub and let seven checks run every day against your repositories | [GitHub](/docs/integrations/github/) |
+| Policies and documents | Draft from 15 templates, route for approval, publish, and run acknowledgement campaigns | [Draft a policy](/docs/policies/documents-and-policies/) |
+| Tasks | Assign work with due dates and service levels, and follow it through review | [Tasks and issues](/docs/tasks/overview/) |
+| Risk register | Score inherent and residual risk, treat or accept it, and start from a 60-risk library | [The risk register](/docs/risk/risk-register/) |
+| Third-party risk | Run vendors through the twelve-stage lifecycle, from request to offboarding | [How vendor risk works](/docs/vendors/overview/) |
+| Assets | Keep an inventory with owners, criticality, dependencies and a review cadence; import a spreadsheet | [Asset inventory](/docs/assets/inventory/) |
+| Vulnerabilities | Import scanner exports, prioritise beyond CVSS, and remediate within windows | [Findings and priority](/docs/vulnerabilities/findings-and-priority/) |
+| Administration | Invite people, assign roles and groups, require two-factor for administrators, and read the append-only audit log | [People and invitations](/docs/admin/people/) |
+
+### Preview
+
+The **Dashboard** screen shows the shape of the executive view with illustrative figures rather than your workspace's own. Every live number lives on the module you are looking at: **Get Started** tracks your real setup progress, **Frameworks** has a compliance dashboard, and Risks, Vendors, Assets, Vulnerabilities and Tasks each have an **Overview** tab that reads from your data.
+
+### Coming soon
+
+Screens marked **Soon** in the product are not built yet. They appear so you can see where Verity is going, and nothing behind a Soon badge holds real data. These docs describe the planned features so you can plan for them:
+
+<Cards>
+<Card title="More frameworks" href="/docs/compliance/framework-library/" icon="stack">Further libraries on the same control set.</Card>
+<Card title="Continuous monitoring" href="/docs/monitoring/continuous-monitoring/" icon="eye">Scheduled checks with findings and alerts.</Card>
+<Card title="Enterprise risk" href="/docs/risk/enterprise-risk/" icon="chart">Self-assessments, KRIs, incidents and appetite.</Card>
+<Card title="AI assistant and drafting" href="/docs/roadmap/ai-assistant/" icon="sparkle">Drafts and answers that a person approves.</Card>
+<Card title="Trust Center" href="/docs/roadmap/trust-center/" icon="shield">Show customers your security posture.</Card>
+<Card title="Single sign-on" href="/docs/roadmap/single-sign-on/" icon="key">Sign in through your identity provider.</Card>
+</Cards>
+
+### Changes to the documentation
+
+The user guide is now a documentation site. The thirteen chapters were split into task-sized pages with search, step-by-step walkthroughs and screenshots you can enlarge. Links to the old chapter addresses still work and take you to the new pages.
+
+Where the old guide and the product disagreed, these pages follow the product. For example, an owner filter value reads **Unassigned**, automated check results read **Passing**, **Failing** or **Could not check**, and the only two-factor setting is **Require MFA for admins**.
+
+<Callout type="note" title="Screenshots use demonstration data">
+
+The names, numbers and people in screenshots are invented. Your workspace shows your own data in the same places.
+
+</Callout>

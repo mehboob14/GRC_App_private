@@ -1,0 +1,91 @@
+---
+title: Contracts, monitoring and offboarding
+description: Keep a vendor's contracts and assurance paperwork current, record signals and set alert rules, triage shadow IT, and offboard without deleting history.
+status: live
+updated: 2026-10-02
+---
+
+Once a vendor is approved, the work shifts to keeping the relationship healthy and, one day, ending it cleanly. This page covers the paperwork you hold, how you monitor a vendor, how to triage software that skipped intake, and how to offboard.
+
+<Screenshot name="vendor-detail" alt="A vendor record with the Overview, Lifecycle, Assessments, Findings, Paperwork and Monitoring tabs, the Edit and Actions buttons, and panels for ownership, key dates and contacts" caption="Paperwork and Monitoring are tabs on the vendor; offboarding starts from Actions." />
+
+## Keep paperwork current
+
+The **Paperwork** tab holds contracts, DPAs, SOC 2 reports, certificates and your service level agreements. Each document carries an expiry, and expiring paperwork appears in monitoring before it lapses rather than after.
+
+The tab has five sections:
+
+- **Documents**: what the vendor sent you, such as a SOC report, an ISO certificate, a penetration test or a BC/DR plan, with when it was issued and how long it is valid. Attach the file, and mark it reviewed once someone has read it. The owner is reminded before a document expires, and **Request renewal** drafts an email to the vendor asking for the current version.
+- **Assurance reports**: your review of a SOC report, recorded with **Record review**. The auditor's opinion and any material exceptions feed the lifecycle checks.
+- **Contracts**: the master agreement, DPA, service level agreement, security addendum or NDA. Tick only the clauses that are in the signed contract, such as right to audit, subprocessor terms, exit data return and the breach notification window. The Contracting stage waits until a contract is linked.
+- **Service levels**: what a contract promises, such as uptime and response times, with the measurements you record against it. Record the contract first, because a service level belongs to the contract that commits to it.
+- **Subprocessors**: the third parties your vendor relies on, your fourth parties. Ask the vendor for their list.
+
+## Monitor the vendor
+
+The **Monitoring** tab is the ongoing view: the signals you record about the vendor and the reassessment clock.
+
+- **Reassessment clock**: when the next review is due, set by the tier's cadence in your vendor policy.
+- **Signals**: things you learn about the vendor, such as an outage, a breach report or a news item. Click **Record signal** and say what happened, the kind of signal, its severity and how you know. Tick **Raise a finding with it** to give it an owner and a due date. A new signal waits until someone acknowledges or dismisses it.
+
+Alert rules decide what a signal sets off. An administrator sets them under **Alert rules** on **Vendors > Policy**: a minimum severity, the kinds of signal and tiers the rule covers, and what happens. An alert rule can notify someone (the owner and the TPRM lead), raise a task, or bring the reassessment forward to today.
+
+The **Security scorecard** panel shows that no scorecard provider is connected, so the residual grade uses questionnaire answers and recorded signals only.
+
+## Triage shadow IT
+
+Shadow IT is software that arrived without going through intake. Record a discovered app, then triage it.
+
+<Steps>
+<Step title="Find the Shadow IT list">
+
+Go to **Vendors > Intake** and find **Shadow IT**.
+
+</Step>
+<Step title="Record the app">
+
+Enter the app under **App in use**, and how many **People** use it if you know, then click **Record**.
+
+</Step>
+<Step title="Triage it">
+
+**Send to intake** raises an intake request for the app, so it goes through the same duplicate check as every other request. Otherwise, **Ignore** it.
+
+</Step>
+</Steps>
+
+Finding apps automatically from an identity provider is planned <Status value="soon" />. Until then you record them by hand.
+
+## Offboard a vendor
+
+Ending a relationship is a stage, not a delete.
+
+<Callout type="warning" title="Before you start offboarding">
+
+Portal links are revoked as soon as offboarding starts, so a vendor partway through a questionnaire can no longer answer it. Nothing is deleted: the vendor keeps its full history.
+
+</Callout>
+
+<Steps>
+<Step title="Start offboarding">
+
+Open the vendor and choose **Actions > Start offboarding**. If the vendor has several engagements, choose whether the whole relationship is ending or just one engagement, then say why.
+
+</Step>
+<Step title="Work the checklist">
+
+Tick each exit step as it is done: **Access revoked**, **Data returned or destroyed**, **Exit terms reviewed** and **Final payments settled**. Use **Notes** to record where the destruction certificate is filed, or who confirmed access removal.
+
+</Step>
+<Step title="Complete the exit">
+
+When every exit check is complete, click **Complete exit**. The vendor moves to archived, or just the engagement does if only one is ending, and the whole record stays readable.
+
+</Step>
+</Steps>
+
+<Cards>
+<Card title="Assessment and findings" href="/docs/vendors/assessment-and-findings/" icon="flag">Work the findings that signals and reviews raise.</Card>
+<Card title="Tiering and vendor policy" href="/docs/vendors/tiering/" icon="target">Set cadences, remediation windows and alert rules.</Card>
+<Card title="Requests and intake" href="/docs/vendors/requests-and-intake/" icon="clipboard">Where shadow IT requests land.</Card>
+</Cards>

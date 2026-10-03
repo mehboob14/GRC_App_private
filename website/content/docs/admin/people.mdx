@@ -1,0 +1,92 @@
+---
+title: People and invitations
+description: Invite people into your workspace, give an external auditor a time-boxed access window, and remove someone without losing their history.
+status: live
+updated: 2026-10-02
+---
+
+The administration pages are for whoever administers the workspace. Everything they cover sits under **Settings** at the bottom of the left navigation. This page shows you who has access, how to invite someone, how to give an external auditor a time-boxed window, and how to remove someone without breaking the audit trail.
+
+## The people list
+
+Go to **Settings > Access Management > People**. The list shows everyone with access to this workspace and what they can do: each member's role, groups, two-factor status (**MFA**) and when they were last active.
+
+<Screenshot name="settings-people" alt="The People tab under Access Management, listing members with their role, groups, MFA status, background and documents columns and last active time, with an Invite member button" />
+
+The **Background** and **Documents** columns read **Unknown** for now: background checks and per-person document sign-off are not tracked on this list yet. Use [acknowledgement campaigns](/docs/policies/acknowledgement-campaigns/) to see who has signed a policy.
+
+The menu at the end of each row (⋯) holds what you can change without leaving the list: **Edit name**, **Change role**, **Add to group** and **Disable member**. A person's name is theirs across every workspace they belong to, so **Edit name** changes it everywhere.
+
+## Invite someone
+
+<Steps>
+<Step title="Start the invitation">
+
+Go to **Settings > Access Management > People** and click **Invite member**.
+
+</Step>
+<Step title="Say who they are">
+
+Enter their **Full name** and **Work email**.
+
+</Step>
+<Step title="Choose how they join">
+
+Under **Invite as**, choose **Member** for someone in your organisation and pick the **Role** they should hold. If your workspace has groups, you can put them in a **Group** now too.
+
+</Step>
+<Step title="Set an access window for an external auditor">
+
+For an external auditor or consultant, choose **Guest auditor** and set an access window with **Access starts** and **Access ends**: the dates between which they can sign in. Outside those dates the account still exists but cannot get in.
+
+</Step>
+<Step title="Send the invitation">
+
+Click **Create invite**. They get an email with a one-time accept link, set their own password, and enrol in two-factor authentication if your policy requires it. The link works once and expires in 7 days.
+
+</Step>
+</Steps>
+
+<Callout type="note" title="If email is not set up">
+
+When your workspace cannot send email, nothing is sent. The dialog shows the accept link instead: use **Copy link** and pass it on yourself. It is shown only once. Outbound email is configured under [Organisation profile](/docs/admin/security-settings/#organisation-profile).
+
+</Callout>
+
+A guest auditor is not asked for a role in the invitation, so check the role they were given with **Change role** in the row menu, and make sure they hold only what the engagement needs. Roles are explained in [Roles and groups](/docs/admin/roles-and-groups/).
+
+Invited people show as **Invited** until they accept. What a new person sees when they first sign in is covered in [Sign in and two-factor](/docs/get-started/sign-in-and-security/).
+
+## Remove someone
+
+Disable the membership rather than deleting it. Their name stays on the approvals they gave and the evidence they collected, which is the point: an audit trail with holes in it is not an audit trail.
+
+<Steps>
+<Step title="Find the person">
+
+Go to **Settings > Access Management > People** and open the row menu (⋯) for the person.
+
+</Step>
+<Step title="Disable the membership">
+
+Choose **Disable member**, read the confirmation, and click **Disable membership**.
+
+</Step>
+</Steps>
+
+They lose access to this workspace immediately. Their history stays in the audit trail, and you can invite them again later. A disabled person shows as **Disabled** in the list.
+
+<Callout type="warning" title="Before you click">
+
+Disabling takes effect at once: the person loses access to this workspace straight away. To give it back, invite them again. There is no delete, by design.
+
+</Callout>
+
+## A person, and a membership
+
+A person has one sign-in, and a membership in each workspace they belong to. Every owner, approver and assignee in Verity points at a membership, so nobody can be attached to a workspace they do not belong to. Disabling a membership here affects only this workspace. See [Audit log and isolation](/docs/admin/audit-log-and-isolation/#data-isolation).
+
+<Cards>
+<Card title="Roles and groups" href="/docs/admin/roles-and-groups/" icon="users">Decide what people can do, and group them into teams.</Card>
+<Card title="Security settings" href="/docs/admin/security-settings/" icon="lock">Require two-factor for admins and set the password policy.</Card>
+</Cards>

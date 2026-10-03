@@ -1,0 +1,53 @@
+---
+title: Audit log and data isolation
+description: Every state-changing action lands in an append-only log the database enforces, and every workspace is sealed from every other.
+status: live
+updated: 2026-10-02
+---
+
+Two properties underpin everything Verity tells an auditor: records are never quietly rewritten, and nothing leaks between organisations. This page shows you how to read the audit log and explains how your workspace is kept apart from every other.
+
+## The audit log
+
+Go to **Settings > Audit Log**. You need permission to read the audit log; the Admin, Security Officer and Privacy Officer roles start with it.
+
+<Screenshot name="audit-log" alt="The audit log, with filters for user type, action and object type above rows showing the user, a Create or Update action, the object changed and a sentence describing the activity" />
+
+Every state changing action in the workspace writes a row here: who did it, when, what the record looked like before and what it looked like after.
+
+The log is append only. It cannot be edited or deleted by anyone, including an administrator, and that is enforced by the database rather than by convention. When an auditor asks how you know your records have not been quietly rewritten, this is the answer.
+
+### Find an event
+
+- **User type** separates actions by members of your workspace, by platform administrators and by the system itself.
+- **Action** narrows to creates, updates, transitions, approvals or deletions.
+- **Object type** narrows to one kind of record, such as controls or evidence.
+- Click a column heading to sort, for example by **When**. The newest events come first.
+- Sign-in and set-up events are hidden by default. Tick **Show system events** to include them.
+
+Filters stack, and **Clear filters** removes them all. They work on the events loaded so far: the footer shows how many of the loaded events match, and **Load older events** reaches further back.
+
+### Read an event
+
+Open a row to see the event in full: the user, the object, when it happened, and the record's **Before** and **After** state side by side. An event that created something has no before state, and one that removed something has no after state.
+
+Each record also carries its own trail on its **Activity** or **History** tab, so you can see what changed on one control or asset without searching the whole log. See [Finding your way around](/docs/get-started/navigating-verity/).
+
+## Data isolation
+
+Each workspace is sealed. A person who belongs to two organisations sees one at a time, and there is no screen, filter or export anywhere in the product that can show data from two workspaces together. This is enforced in the database itself, on every query, not in the interface.
+
+People switch between their workspaces with the workspace switcher at the bottom of the left navigation. Their session, their permissions and everything they can see change with it. See [Sign in and two-factor](/docs/get-started/sign-in-and-security/).
+
+Ownership follows the same rule. Every owner, approver and assignee in Verity points at a person's membership of this workspace, never at a global account, so nobody can be attached to a workspace they do not belong to. See [People and invitations](/docs/admin/people/).
+
+<Callout type="note" title="What to tell your auditor">
+
+The audit log answers "how do you know nothing was changed after the fact". Data isolation answers "how do you know another organisation cannot see this". Both are enforced in the database, not just by the screens you use.
+
+</Callout>
+
+<Cards>
+<Card title="Roles and groups" href="/docs/admin/roles-and-groups/" icon="users">Control who can read the audit log.</Card>
+<Card title="Key concepts" href="/docs/get-started/key-concepts/" icon="book">Workspaces, memberships and the rules Verity keeps.</Card>
+</Cards>

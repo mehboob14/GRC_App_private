@@ -1,0 +1,80 @@
+---
+title: Custom fields
+description: Add fields of your own to assets and vulnerability findings, guarded by each module's own permission and archived rather than deleted.
+status: live
+updated: 2026-10-02
+---
+
+Two modules let you add fields of your own: [Assets](/docs/assets/import-and-custom-fields/#custom-fields) and [Vulnerabilities](/docs/vulnerabilities/remediation/#custom-fields). This page explains how custom fields work in both, and points you to the specifics for each module.
+
+## Where custom fields live
+
+Each module's fields are configured on that module's own **Settings** tab, so the permission that guards the module guards its fields. People who can see the module can read its field list; only people who can manage the module can add or change fields.
+
+| Module | Where to configure | Where the field appears |
+|---|---|---|
+| Assets | **Assets > Settings**, under **Custom fields** | On the asset form under "This workspace also asks", and on the asset record under **Also recorded** |
+| Vulnerabilities | **Vulnerabilities > Settings**, under **Custom fields** | On every finding under "Also recorded", where anybody with manage rights can fill it in |
+
+Fields appear in the order they are listed in settings.
+
+## Add a field
+
+<Steps>
+<Step title="Open the module's settings">
+
+Go to the module's **Settings** tab. Under **Custom fields**, click **Add field**.
+
+</Step>
+<Step title="Name it and choose the type">
+
+Enter the **Field name** and choose the **Type**. For a choice field, list the **Choices** one per line. Add **Helper text** if people need a hint; it shows under the field on the form.
+
+</Step>
+<Step title="Decide whether it is required">
+
+Switch on **Required** if every record must have it. It applies the next time each record is saved, not to records already stored.
+
+</Step>
+<Step title="Add it">
+
+Click **Add field**. It appears on the form the next time somebody opens it.
+
+</Step>
+</Steps>
+
+<Screenshot name="dialog-custom-field" alt="The Add a field dialog with a Field name box, a Type menu set to Text with its hint, an optional Helper text box and a Required switch" />
+
+## Field types
+
+| Type | What it holds |
+|---|---|
+| Text | One line, up to 2000 characters. |
+| Long text | Several lines. |
+| Number | A whole number or a decimal. |
+| Date | A single date. |
+| Choice | One of a list you set. |
+| Yes or no | A tick box. |
+
+You cannot change a field's type once it exists, so pick it carefully.
+
+## Change or retire a field
+
+- **Edit** renames a field or changes its choices, helper text or whether it is required. Values already written stay attached to it.
+- **Archive** stops collecting a field. Fields are archived rather than deleted, so a value written last year stays readable after you stop collecting it.
+- **Restore** brings an archived field back.
+
+<Callout type="note" title="Why archive, not delete?">
+
+An auditor may ask what you recorded about an asset or a finding during the period under review. Archiving keeps that answer, the same way compliance records across Verity close rather than disappear.
+
+</Callout>
+
+## Custom fields and import
+
+The asset import fills Verity's own columns only. Set custom field values on each asset after you import it. See [Import assets](/docs/assets/import-and-custom-fields/).
+
+<Cards>
+<Card title="Asset custom fields" href="/docs/assets/import-and-custom-fields/#custom-fields" icon="server">Add fields to the asset inventory.</Card>
+<Card title="Finding custom fields" href="/docs/vulnerabilities/remediation/#custom-fields" icon="bug">Record change tickets, sign-off and maintenance windows on findings.</Card>
+</Cards>

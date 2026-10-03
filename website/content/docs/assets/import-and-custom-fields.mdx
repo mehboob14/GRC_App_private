@@ -1,0 +1,108 @@
+---
+title: Import assets and add custom fields
+description: Load your existing asset list from a spreadsheet, and add fields for anything your organisation tracks that the inventory does not ask for.
+status: live
+updated: 2026-10-02
+---
+
+Most teams arrive with a list already. This page shows you how to import a spreadsheet of assets, what each column expects, and how to add custom fields for anything else your organisation tracks.
+
+## Import a spreadsheet
+
+You need permission to bulk import assets. Admins have it.
+
+<Steps>
+<Step title="Open the import page">
+
+Go to **Assets** and choose **Import**.
+
+</Step>
+<Step title="Download the template">
+
+Click **Download template** so your columns match. The template has a header row and one worked example. You can also get it from **Export > Import template** on the register.
+
+</Step>
+<Step title="Fill it in">
+
+Only `name` and `asset_type` are required. The table below explains the columns that most often trip people up.
+
+</Step>
+<Step title="Upload your file">
+
+Click **Choose file** and pick your CSV or Excel file. Verity reads it and shows you what it understood, row by row, with errors called out before anything is created. Each row reads **Ready** or lists what is wrong with it.
+
+</Step>
+<Step title="Fix or commit">
+
+Fix anything wrong in the sheet and upload again, or commit what parsed. The button carries the count, for example **Import 12 assets**, and only the rows marked ready are created.
+
+</Step>
+</Steps>
+
+### What the columns expect
+
+| Column | What to put in it |
+|---|---|
+| `name` | Required. The name your team uses for the asset. |
+| `asset_type` | Required. One of `application`, `infrastructure`, `data`, `cloud`, `third_party` or `business_service`. |
+| `status` | `planned`, `active` or `in_maintenance`. Leave it empty for active. |
+| `confidentiality_rating`, `integrity_rating`, `availability_rating` | 1 to 5, or empty to leave the asset unassessed. |
+| `data_classification` | `public`, `internal`, `confidential` or `restricted`. |
+| `internet_facing`, `customer_facing` | `true`, `yes`, `y` or `1` for yes. Anything else reads as no. |
+| `compliance_scope` | Several values separated by semicolons, for example `SOC2;PCI`. |
+| `owner_name` and the other people columns | The person's name exactly as it appears in your workspace. A name that matches nobody is flagged on the row. |
+| `criticality`, `criticality_override_reason` | Leave both empty and Verity derives the tier from the CIA ratings. Fill them in only to override the derived tier, with the reason. |
+
+<Callout type="tip" title="Let Verity derive criticality">
+
+Criticality comes from the CIA ratings and exposure, as described in [Asset inventory](/docs/assets/inventory/#criticality-how-the-tier-is-derived). Filling in the `criticality` column overrides that, so use it only when you have a reason a formula cannot see.
+
+</Callout>
+
+Custom fields are not part of the import. Fill them in on each asset afterwards, where the field definitions are shown.
+
+Connecting a scanner to keep the inventory in step automatically is marked <Status value="soon" /> on the import page. Until then, import and edit by hand.
+
+## Custom fields
+
+If your organisation tracks something this inventory does not ask for, add it.
+
+<Steps>
+<Step title="Open the custom fields settings">
+
+Go to **Assets > Settings**. Under **Custom fields**, click **Add field**.
+
+</Step>
+<Step title="Name it and choose the type">
+
+Enter the **Field name** and choose the **Type**: text, long text, number, date, choice, or yes or no. For a choice field, list the **Choices** one per line. Add **Helper text** if people need a hint; it shows under the field on the form.
+
+</Step>
+<Step title="Decide whether it is required">
+
+Switch on **Required** if every asset must have it. It applies the next time each record is saved, not to records already stored.
+
+</Step>
+<Step title="Add it">
+
+Click **Add field**. It appears on the form the next time somebody opens it.
+
+</Step>
+</Steps>
+
+<Screenshot name="dialog-custom-field" alt="The Add a field dialog with Field name, Type set to Text, optional helper text and a Required switch, over the asset settings page" />
+
+The field then appears on the asset form under "This workspace also asks", and on the asset record in the **Also recorded** panel.
+
+You cannot change a field's type once it exists, so pick it carefully. You can still rename it, change its choices or helper text, or make it required, with **Edit**.
+
+Fields are archived rather than deleted, so a value written last year stays readable after you stop collecting it. Use **Archive** to stop collecting a field and **Restore** to collect it again.
+
+Findings have custom fields of their own. See [Remediation and exceptions](/docs/vulnerabilities/remediation/#custom-fields) and the overview in [Custom fields](/docs/admin/custom-fields/).
+
+## Related pages
+
+<Cards>
+<Card title="Asset inventory" href="/docs/assets/inventory/" icon="server">Add a single asset and see how the tier is derived.</Card>
+<Card title="Hygiene and dependencies" href="/docs/assets/hygiene-and-dependencies/" icon="check">Keep imported records complete and reviewed.</Card>
+</Cards>

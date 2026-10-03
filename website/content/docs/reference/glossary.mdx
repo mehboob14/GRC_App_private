@@ -1,0 +1,172 @@
+---
+title: Glossary
+description: The words Verity uses and what they mean here, from acceptance and CIA rating to tiering and workspace, with links to where each one is used.
+status: live
+updated: 2026-10-02
+---
+
+Words this platform uses, and what they mean here. Where a word has a general industry meaning and a narrower Verity meaning, both are given. For how these ideas fit together, see [Key concepts](/docs/get-started/key-concepts/).
+
+## A
+
+### Acceptance
+
+A recorded decision to tolerate a risk or a finding rather than fix it. Always has a justification, an approver who is not the requester, and an expiry date. When the expiry passes, the thing reopens on its own. See [Treat or accept a risk](/docs/risk/treatment-and-acceptance/) and [Remediation and exceptions](/docs/vulnerabilities/remediation/#exceptions-and-acceptance).
+
+### Acknowledgement campaign
+
+A targeted request for named people to read and sign a published document. The record of who signed, and when, is the evidence that a policy reached its audience. See [Acknowledgement campaigns](/docs/policies/acknowledgement-campaigns/).
+
+### Approval gate
+
+A lifecycle stage that will not clear until specific conditions are met. The vendor approval stage is one: open findings and unfinished earlier stages block it. See [Assessment and findings](/docs/vendors/assessment-and-findings/).
+
+### Asset
+
+Anything you run that processes, stores or carries something you care about: an application, a server, a dataset, a cloud resource, a business service. See [Asset inventory](/docs/assets/inventory/).
+
+### Audit log
+
+The append only record of every state changing action. Cannot be edited or deleted by anyone, including an administrator. See [Audit log and isolation](/docs/admin/audit-log-and-isolation/#the-audit-log).
+
+## C
+
+### CIA rating
+
+Confidentiality, integrity and availability, each rated 1 to 5. The three inputs from which an asset's criticality is derived. See [how the tier is derived](/docs/assets/inventory/#criticality-how-the-tier-is-derived).
+
+### Control
+
+Something your organisation does to keep a promise. A control answers one or more framework criteria and is proven by evidence. See [Controls](/docs/compliance/controls/).
+
+### Criterion
+
+A single requirement in a framework, for example SOC 2 CC6.1. See [Frameworks and readiness](/docs/compliance/frameworks/).
+
+### Criticality tier
+
+Low, medium, high or critical. Derived for assets from the CIA rating and exposure; derived for vendor engagements from the five tiering questions. See [Asset inventory](/docs/assets/inventory/) and [Tiering](/docs/vendors/tiering/).
+
+## D
+
+### Definition (vulnerability)
+
+The weakness itself, for example a CVE. Distinct from a finding, which is that weakness on one of your assets. See [Findings and priority](/docs/vulnerabilities/findings-and-priority/#definitions-and-findings).
+
+## E
+
+### Engagement
+
+One thing you use a vendor for. A vendor can have several, and each is tiered and assessed separately. See [How vendor risk works](/docs/vendors/overview/).
+
+### EPSS
+
+Exploit Prediction Scoring System: the probability that a given vulnerability will be exploited in the wild in the next 30 days. See [Findings and priority](/docs/vulnerabilities/findings-and-priority/#priority-why-the-order-is-not-just-cvss).
+
+### Evidence
+
+An artefact that proves a control operates: a file Verity holds, or a link to something that lives elsewhere. See [Evidence](/docs/compliance/evidence/).
+
+## F
+
+### Finding (vendor)
+
+A gap identified in a third party, with a severity, an owner and a due date. See [Assessment and findings](/docs/vendors/assessment-and-findings/).
+
+### Finding (vulnerability)
+
+A weakness on one of your assets at one location. See [Findings and priority](/docs/vulnerabilities/findings-and-priority/).
+
+### Framework
+
+A published set of criteria you are being measured against, for example SOC 2. See [Frameworks and readiness](/docs/compliance/frameworks/).
+
+### Freshness
+
+How current a piece of evidence is, against the renewal date its type implies. See [Evidence](/docs/compliance/evidence/).
+
+## G
+
+### Group
+
+A team of people in the workspace, usable as an assignee, an approver or a campaign target. See [Roles and groups](/docs/admin/roles-and-groups/#groups).
+
+## I
+
+### Inventory hygiene
+
+The completeness score on an asset: five checks on the record plus a freshness clock on when a person last reviewed it. See [Hygiene and dependencies](/docs/assets/hygiene-and-dependencies/#inventory-hygiene).
+
+## K
+
+### KEV
+
+The Known Exploited Vulnerabilities catalogue published by CISA. A vulnerability on it is being exploited now, and Verity floors its priority accordingly. See [Findings and priority](/docs/vulnerabilities/findings-and-priority/#priority-why-the-order-is-not-just-cvss).
+
+## M
+
+### Membership
+
+A person's place in one workspace. All ownership and assignment in Verity points at a membership, never at a global user, so nobody can be attached to a workspace they do not belong to. See [People and invitations](/docs/admin/people/).
+
+## P
+
+### Portal (vendor)
+
+The unauthenticated page where a vendor answers a questionnaire. Reached by a single use link that is shown once. See [Questionnaires and the portal](/docs/vendors/questionnaires/).
+
+## R
+
+### Register
+
+The list view of a module: controls, risks, vendors, assets, findings, tasks, documents. See [Finding your way around](/docs/get-started/navigating-verity/).
+
+### Residual risk
+
+What is left after your controls act. Contrast inherent risk, which is the level before they do. See [The risk register](/docs/risk/risk-register/).
+
+### Review cadence
+
+How often a record must be revisited. Set per criticality for assets, per tier for vendors, per document for policies. See [Hygiene and dependencies](/docs/assets/hygiene-and-dependencies/#set-your-own-review-cadence), [Tiering](/docs/vendors/tiering/) and [Draft a policy](/docs/policies/documents-and-policies/).
+
+## S
+
+### Scope
+
+What is in and out of an audit, and why. See [Frameworks and readiness](/docs/compliance/frameworks/).
+
+### Separation of duties
+
+The rule that the person who requests something cannot be the person who approves it. Enforced on risk acceptance and the vendor approval gate. See [Treat or accept a risk](/docs/risk/treatment-and-acceptance/) and [Assessment and findings](/docs/vendors/assessment-and-findings/).
+
+### Service level (SLA)
+
+A promise about how quickly work of a given priority or severity is completed. Breaches are visible and escalate. See [Service levels and approvals](/docs/tasks/service-levels-and-approvals/) and [remediation windows](/docs/vulnerabilities/remediation/#remediation-windows).
+
+### Shadow IT
+
+Software in use that never went through intake. Recorded as a discovered app and triaged into a vendor, a link to an existing vendor, or ignored with a reason. See [Contracts to offboarding](/docs/vendors/contracts-monitoring-offboarding/).
+
+### Soon
+
+A badge marking a screen that is not built yet. Nothing behind one holds real data. Pages in these docs marked as coming soon describe what is planned.
+
+### Subprocessor
+
+A third party your vendor relies on. Your fourth party. See [Tiering](/docs/vendors/tiering/).
+
+## T
+
+### Tiering
+
+The five question assessment that decides how much diligence a vendor engagement earns. See [Tiering](/docs/vendors/tiering/).
+
+### Trust Services Criteria
+
+The five SOC 2 categories: Security, Availability, Processing Integrity, Confidentiality and Privacy. See [Frameworks and readiness](/docs/compliance/frameworks/).
+
+## W
+
+### Workspace
+
+One organisation's sealed area of Verity. A person may belong to several and sees one at a time. See [Audit log and isolation](/docs/admin/audit-log-and-isolation/#data-isolation).

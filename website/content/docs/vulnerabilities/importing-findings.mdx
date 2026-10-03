@@ -1,0 +1,101 @@
+---
+title: Import findings
+description: Bring scanner exports into Verity or add a single finding by hand, and see how Verity matches, de-duplicates and enriches each one.
+status: live
+updated: 2026-10-02
+---
+
+Findings arrive two ways: a scanner export in bulk, or one finding typed in by hand. This page walks you through both and explains what Verity does with each row, so the register stays a list of real, distinct work.
+
+Both start from the buttons at the top of **Vulnerabilities**: **Import**, **Template** and **Add finding**.
+
+<Screenshot name="vulnerabilities-register" alt="The Vulnerabilities header with Export, Template, Import and Add finding buttons above the register of findings" caption="Import, Template and Add finding sit in the module header." />
+
+## Get findings in
+
+<Tabs labels={["Import a scanner export", "Add a finding by hand"]}>
+<Tab>
+
+You need permission to import scan results.
+
+<Steps>
+<Step title="Open the import page">
+
+Go to **Vulnerabilities** and choose **Import**.
+
+</Step>
+<Step title="Name the report">
+
+Give the report a **Report name**, for example "Quarterly external scan", and name the tool in **Scanner (optional)**.
+
+</Step>
+<Step title="Choose the file">
+
+Pick a CSV, Excel or XML file, including a Nessus `.nessus` export. The file can be up to 10 MB. New to the format? **Download template** gives you the columns Verity expects.
+
+</Step>
+<Step title="Import it">
+
+Click **Import**. Verity matches each row to an asset in your inventory, deduplicates against what is already open, and tells you what it created, what it updated, what resurfaced and what it could not match.
+
+</Step>
+</Steps>
+
+</Tab>
+<Tab>
+
+<Steps>
+<Step title="Open the form">
+
+Click **Add finding**, or open an asset and add it from the **Vulnerabilities** tab, which fills the asset in for you.
+
+</Step>
+<Step title="Enter the basics">
+
+Choose the affected **Asset**, then enter the **Title** and **Severity**.
+
+</Step>
+<Step title="Add the CVE if you have one">
+
+Enter it in **CVE (optional)**, or include it in the title. Verity looks it up and offers **Autofill** for the description, CVSS score and severity. Nothing is saved until you add the finding.
+
+</Step>
+<Step title="Add context and save">
+
+Add a **Description** and **Evidence** if you have them, then click **Add finding**.
+
+</Step>
+</Steps>
+
+</Tab>
+</Tabs>
+
+<Callout type="tip" title="A file larger than 10 MB">
+
+Split the scan export into smaller files and import each one. Open findings are updated rather than duplicated, so a finding that appears in two files is still one finding.
+
+</Callout>
+
+## What happens to each row
+
+- **Matching.** Each row is matched to an asset in your inventory, by asset ID or by name. Rows that match no asset are counted as unmatched rather than guessed at, so add the asset to the [inventory](/docs/assets/inventory/) and import again. A new finding is owned by its asset's primary owner.
+- **De-duplication.** A finding is one weakness on one asset at one location. Importing the same weakness for the same place again updates the existing finding instead of creating a second one.
+- **Enrichment.** Verity adds live EPSS, KEV and public exploit data, then prioritises the finding automatically. A finding added by hand is enriched the same way. See [Findings and priority](/docs/vulnerabilities/findings-and-priority/).
+- **Resurfacing.** Findings that resurface after being fixed are marked as such and carry a count, so a recurring failure is visible instead of looking like a new problem each time. A resurfaced finding gets a fresh remediation clock.
+
+When the import finishes, a summary reads how many findings are new, resurfaced, updated and unmatched, with a link to the register.
+
+## Keep track of uploaded reports
+
+The **Uploaded reports** list on the import page shows every report you have brought in: its name, the scanner, how many findings it held and how many were critical, who uploaded it, and its status (**Parsed**, **Parsing**, **Uploaded** or **Failed**, with the reason). You can download the original file, or use **Reparse** to read it again.
+
+## Live scanner connections
+
+Today findings arrive by file or by hand. Connecting a vulnerability scanner so findings flow in on their own is <Status value="soon" />. The scanners planned are listed in [How connections work](/docs/integrations/overview/#planned-connections).
+
+## Related pages
+
+<Cards>
+<Card title="Findings and priority" href="/docs/vulnerabilities/findings-and-priority/" icon="target">Why the register is ordered the way it is.</Card>
+<Card title="Remediation and exceptions" href="/docs/vulnerabilities/remediation/" icon="check">Work each finding to a verified fix.</Card>
+</Cards>

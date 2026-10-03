@@ -1,0 +1,101 @@
+---
+title: Tasks and issues
+description: Raise and assign tasks, work them through to closed, record issues that need corrective action, and break large work into sub-tasks.
+status: live
+updated: 2026-10-02
+---
+
+Everything in Verity eventually becomes work somebody has to do: collect this evidence, review that access list, fix the finding, update the policy. **Tasks** is where that work is assigned, tracked and closed. This page shows you how to raise, work and close a task.
+
+<Screenshot name="tasks-register" alt="The tasks and issues register, with filters for kind, status, priority, category and assignee, and a selected task's summary open beside the list" />
+
+## Tasks and issues
+
+Two kinds share one register. Use **All**, **Tasks** or **Issues** above the list to choose which you see.
+
+- A **task** is planned work. It has an owner and a due date.
+- An **issue** is something that went wrong. It carries a severity, and it can hold corrective and preventive actions underneath it.
+
+The difference matters for an auditor: issues show that when something broke, you noticed, acted, and can show the actions you took. See [Corrective actions on an issue](/docs/tasks/service-levels-and-approvals/#corrective-actions-on-an-issue).
+
+## States
+
+<Lifecycle title="The states a task moves through" stages={[{ name: "Open", note: "Raised, not started" }, { name: "In progress", note: "Being worked" }, { name: "Blocked", note: "Waiting on something outside the owner's control" }, { name: "Under review", note: "Done in the owner's view, waiting on a check" }, { name: "Closed", note: "Finished" }, { name: "Cancelled", note: "Dropped on purpose, with a reason" }]} />
+
+## Raise and assign a task
+
+<Steps>
+<Step title="Start a new task">
+
+Go to **Tasks**, choose **New task**, then choose **Task**. To record something that went wrong, choose **Issue** instead.
+
+</Step>
+<Step title="Say what done looks like">
+
+Give it a title that says what done looks like: "Collect the Q3 access review sign-off from IT" rather than "access review".
+
+</Step>
+<Step title="Choose a category and priority">
+
+Choose a **Category** (security, privacy, operations, data, regulatory, vendor or other) and a **Priority**.
+
+</Step>
+<Step title="Set the owner and assignees">
+
+Set the **Owner**, who is accountable, and the **Assignees**, who do the work. They are often the same person.
+
+</Step>
+<Step title="Set a due date">
+
+Set a **Due date**. If the work falls under a service level, choose its **SLA level** too. See [Service levels and approvals](/docs/tasks/service-levels-and-approvals/).
+
+</Step>
+<Step title="Create it">
+
+Choose **Create**. The assignees are notified.
+
+</Step>
+</Steps>
+
+## Work and close a task
+
+<Steps>
+<Step title="Open the task">
+
+Open the task from the register or from your notifications.
+
+</Step>
+<Step title="Start it">
+
+Choose **Start** in the header to move it to **In progress**. Other moves, such as **Block** and **Cancel**, are in the **Actions** menu.
+
+</Step>
+<Step title="Keep the conversation in one place">
+
+Use the **Comments** tab. Comments are part of the record.
+
+</Step>
+<Step title="Send it for review">
+
+When the work is done, choose **Send for review** to move it to **Under review**.
+
+</Step>
+<Step title="Close it">
+
+Once the work has been checked, choose **Close** and record how it was resolved. The note goes on the permanent history.
+
+</Step>
+</Steps>
+
+Every transition is recorded with the person and time on the **Activity** tab. Cancelling also asks for a reason, and the record is kept: nothing is deleted.
+
+If the work produced proof for a control, add it as [evidence](/docs/compliance/evidence/) and attach it to that control.
+
+<Screenshot name="task-detail" alt="A task's detail page showing its code, kind and category, its status, priority, service level, owner and due date, and tabs for sub-tasks, related records, comments and activity" />
+
+## Break work down and see what it relates to
+
+- **Sub-tasks** break a large task into steps that can be assigned separately. On the **Sub-tasks** tab, type a title and press <Kbd>Enter</Kbd>. Each sub-task opens as a task of its own.
+- **Related** shows what this task is attached to: the control, the finding, the vendor or the document that caused it. It also shows whether the task was raised by hand or promoted from a corrective action.
+
+For service levels, approvals and corrective actions, see [Service levels and approvals](/docs/tasks/service-levels-and-approvals/).

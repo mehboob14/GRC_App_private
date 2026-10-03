@@ -1,0 +1,121 @@
+---
+title: Requests and intake
+description: Ask for a new vendor, add one directly if you run third-party risk, and decide the requests waiting in the intake queue.
+status: live
+updated: 2026-10-02
+---
+
+There are two doors into the vendor register, and which one you use depends on who you are. Anyone who can see the register can request a vendor; the third-party risk team can add one directly and decides every request. This page covers all three tasks.
+
+## Request a vendor
+
+If you can see the vendor register you can ask for a new vendor. You are not creating one: the third-party risk team reviews every request.
+
+<Steps>
+<Step title="Open the request form">
+
+Click **Request vendor** in the header of **Vendors**.
+
+</Step>
+<Step title="Describe what you need">
+
+Give the vendor's name, your department, what you want them to do, and how urgent it is. Under **Intended use**, include any data they would see. **Urgency** is Low (no fixed date), Normal, or High (blocked without it).
+
+</Step>
+<Step title="Submit">
+
+Click **Submit request**. Verity checks the name against the register. If it looks like a vendor you already use, the dialog stays open and shows you which, before anyone reviews it. Your request is still submitted, so close the dialog with **Done**.
+
+</Step>
+</Steps>
+
+<Screenshot name="dialog-request-vendor" alt="The Request a vendor dialog with fields for the vendor name, your department, urgency and intended use" />
+
+The request lands in **Vendors > Intake**. Nothing is in the register yet.
+
+## Add a vendor directly
+
+If you run third-party risk and have permission to manage vendors, you can skip the request and add the vendor yourself.
+
+<Steps>
+<Step title="Open the form">
+
+Click **Add vendor**.
+
+</Step>
+<Step title="Describe the organisation">
+
+Fill in the name, type, industry, website and business unit. **Type** is Vendor, Supplier, Contractor or Partner. Add the **Services provided** if you know them.
+
+</Step>
+<Step title="Record the data they touch">
+
+Record what data they touch: whether they hold personal data, the classification, where it lives, and which systems are in scope.
+
+</Step>
+<Step title="Name the owners">
+
+Name the three owners: business, security and relationship.
+
+</Step>
+<Step title="Name the first engagement">
+
+Name the **first engagement**. This is what gets tiered. You can add it later, but tiering cannot start without one.
+
+</Step>
+<Step title="Save">
+
+Click **Add vendor**.
+
+</Step>
+</Steps>
+
+<Screenshot name="dialog-add-vendor" alt="The Add vendor dialog with the name, type, industry, website, business unit and services, a data section for personal data, classification, location and systems in scope, and the business, security and relationship owners with the first engagement" />
+
+## Decide an intake request
+
+<Steps>
+<Step title="Open the queue">
+
+Go to **Vendors > Intake**. Pending requests sort first, and the tab carries a count of what is waiting. Switch between **Pending**, **Approved**, **Declined** and **All** to see past decisions.
+
+</Step>
+<Step title="Read the request">
+
+Read the request: who asked, their urgency, what they want the vendor for and the data it would see. If screening flagged possible duplicates, the matching vendors are listed with links under **Already in the register**. Approving creates a duplicate unless they are different organisations.
+
+</Step>
+<Step title="Approve it">
+
+**Approve and create** creates the vendor and its first engagement and takes you to it.
+
+</Step>
+<Step title="Or decline it">
+
+**Decline** requires a reason. Nothing is created, the reason is kept, and the requester sees it.
+
+</Step>
+</Steps>
+
+<Callout type="warning" title="Before you click">
+
+You cannot decide the same request twice, and a decline cannot be undone. Declining keeps the reason forever. If circumstances change, raise a new request rather than trying to revive a declined one, so the history shows both decisions.
+
+</Callout>
+
+<Screenshot name="vendors-intake" alt="The Intake tab listing pending requests with their urgency and screening status, a warning that one request matches a vendor already in the register, and Approve and create and Decline buttons" />
+
+Deciding a request needs permission to manage vendors. Without it, you can read the queue but the buttons are replaced by a note saying who can decide.
+
+## After approval
+
+Approving takes you to the new vendor's record. Its **Overview** tab shows what the vendor does for you, the data you share, its engagements, and the owners, key dates and contacts. The next step is to tier the first engagement.
+
+<Screenshot name="vendor-detail" alt="A vendor record's Overview tab showing what the vendor does, the data shared, the engagements with their tier and status, and panels for ownership, key dates and contacts" />
+
+The Intake tab also holds the **Shadow IT** list of apps found in use that never came through a request. See [Triage shadow IT](/docs/vendors/contracts-monitoring-offboarding/#triage-shadow-it).
+
+<Cards>
+<Card title="Tiering and vendor policy" href="/docs/vendors/tiering/" icon="target">Tier the first engagement.</Card>
+<Card title="How vendor risk works" href="/docs/vendors/overview/" icon="compass">Vendors, engagements and the twelve stages.</Card>
+</Cards>
