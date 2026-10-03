@@ -8,8 +8,8 @@
  * they lived under one screen's folder; this avoids that from day one.
  */
 
-import type { StatusFamily } from "@/components/ui";
-import type { CapaStatus, CapaType, Priority, Severity, SlaState, TaskStatus } from "./types";
+import type { Severity as ChipSeverity, StatusFamily } from "@/components/ui";
+import type { CapaStatus, CapaType, Priority, Severity, SlaState, TaskAttachment, TaskStatus } from "./types";
 
 export const STATUS_META: Record<TaskStatus, { label: string; family: StatusFamily }> = {
   open: { label: "Open", family: "neutral" },
@@ -47,6 +47,20 @@ export const SEVERITY_LABEL: Record<Severity, string> = {
   informational: "Info",
 };
 
+/** What SeverityChip paints for a severity: `informational` has no colour of its own. */
+export const severityTone = (s: Severity): ChipSeverity => (s === "informational" ? "low" : s);
+
+/** How fresh an attached evidence item is. Only the states that need acting on are shown. */
+export const EVIDENCE_FRESHNESS: Record<
+  TaskAttachment["freshness"],
+  { label: string; family: StatusFamily; show: boolean }
+> = {
+  current: { label: "Current", family: "success", show: false },
+  aging: { label: "Aging", family: "warning", show: true },
+  stale: { label: "Stale", family: "danger", show: true },
+  no_expiry: { label: "No expiry", family: "neutral", show: false },
+};
+
 /** CAPA action lifecycle. `completed` is "done, awaiting verification" (pending);
  *  `verified` is the terminal success. */
 export const CAPA_STATUS_META: Record<CapaStatus, { label: string; family: StatusFamily }> = {
@@ -70,6 +84,13 @@ export const CAPA_TYPE_LABEL: Record<CapaType, string> = {
 export function fmtDate(value: string | null): string {
   if (!value) return "No date";
   return new Date(value).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "2-digit" });
+}
+
+export function fmtBytes(bytes: number | null): string {
+  if (bytes === null) return "Link";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
 /** "in 6h", "3d ago", "No date". Signed, for SLA/due proximity. */

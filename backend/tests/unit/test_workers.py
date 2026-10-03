@@ -41,3 +41,12 @@ def test_heartbeat_touches_nothing() -> None:
     result = heartbeat.apply().get()
     assert result["status"] == "ok"
     assert result["at"].endswith("+00:00")
+
+
+def test_the_task_jobs_run_daily_and_are_registered_under_the_names_the_scheduler_uses() -> None:
+    """A beat entry naming a task nothing registers fails at the first tick, on a schedule
+    nobody is watching, so the pair is checked here."""
+    for entry in ("spawn-recurring-tasks", "raise-evidence-renewals"):
+        scheduled = celery_app.conf.beat_schedule[entry]
+        assert scheduled["schedule"] == 24 * 3600.0
+        assert scheduled["task"] in celery_app.tasks

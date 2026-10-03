@@ -22,6 +22,7 @@ import {
   THead,
   Toolbar,
   TR,
+  severityTextClass,
   useColumnPrefs,
   useTableSort,
 } from "@/components/ui";
@@ -41,7 +42,7 @@ import {
   type TaskKind,
   type TaskStatus,
 } from "../types";
-import { PRIORITY_META, SLA_META, STATUS_META, fmtDate } from "../tokens";
+import { PRIORITY_META, SEVERITY_LABEL, SLA_META, STATUS_META, fmtDate, severityTone } from "../tokens";
 import { TaskBoard } from "./task-board";
 import { TaskDetail } from "./task-detail-page";
 import type { TasksOutlet } from "./tasks-outlet";
@@ -403,6 +404,11 @@ function TaskRow({
         <div className="min-w-0">
           <span className="block truncate text-body-sm font-medium text-text-primary">{task.title}</span>
           <span className="font-mono text-caption text-text-subtle">{task.code}</span>
+          {task.severity ? (
+            <span className={cn("ml-2 text-caption font-semibold", severityTextClass[severityTone(task.severity)])}>
+              {SEVERITY_LABEL[task.severity]}
+            </span>
+          ) : null}
         </div>
       </TD>
       {isVisible("status") ? (

@@ -122,14 +122,15 @@ class Task(UUIDPrimaryKey, TenantScoped, Timestamped, Integratable, Base):
     cancelled_reason: Mapped[str | None] = mapped_column(default=None)
 
     # Sub-tasks (one level, enforced in the service). recurrence_parent points a
-    # generated instance back at the one it recurred from.
+    # generated instance back at the one it recurred from; only that first task, the
+    # series head, carries the rule and the next date (see recurrence.py).
     parent_task_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("tasks.id", ondelete="CASCADE"), default=None
     )
     template_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("task_templates.id", ondelete="SET NULL"), default=None
     )
-    recurrence_rule: Mapped[str | None] = mapped_column(default=None)  # RFC 5545 RRULE
+    recurrence_rule: Mapped[str | None] = mapped_column(default=None)  # restricted RRULE
     recurrence_parent_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("tasks.id", ondelete="SET NULL"), default=None
     )
@@ -233,7 +234,15 @@ class TaskComment(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
 
 
 class TaskAttachment(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
-    """A file on a task, or on one of its transitions. Held in the object store."""
+    """A file on a task, or on one of its transitions. Held in the object store.
+
+    Not written today. An attachment is an evidence item linked to the task through the
+    links primitive (evidence to task, the pair the evidence page already draws), which
+    gives it a hash, a validity period, a review and control mappings with no second
+    copy of any of them. The task's history names the item, and the status change it came
+    with (``TaskService.attach``). This table predates that and is left in place, not
+    dropped inside a change that adds no schema.
+    """
 
     __tablename__ = "task_attachments"
 

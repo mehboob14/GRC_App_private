@@ -9,39 +9,42 @@
  */
 
 import { ApiError, apiFetch } from "@/lib/api/client";
+import { evidenceApi } from "@/lib/api/endpoints";
+import type { ApiErrorBody } from "@/lib/api/types";
+import { getAccessToken } from "@/lib/auth/session";
 import type {
   Automation,
   CapaStatus,
   CapaType,
+  Impact,
   LinkRelation,
   LinkTarget,
   Member,
   Priority,
   SavedView,
+  Severity,
   SeverityMatrixCell,
   SlaDefinition,
   Task,
   TaskApproval,
-  TaskAttachment,
   TaskComment,
   TaskDetail,
   TaskFilters,
   TaskLink,
   TaskPage,
+  TaskRepeat,
   TaskStatus,
   TaskSummary,
   TaskTemplate,
   TaskTransition,
+  Urgency,
 } from "./types";
 
 // -- detail mapping ----------------------------------------------------------
 
-/** The detail exactly as the API sends it: approval is flat, and links /
- *  attachments / recurrence-instance fields are not carried yet. */
-type RawDetail = Omit<
-  TaskDetail,
-  "approval" | "links" | "attachments" | "recurrence_parent_id" | "next_occurrence_at" | "template_id"
-> & {
+/** The detail exactly as the API sends it: approval is flat, and links and the
+ *  template are not carried yet. Attachments and the repeat fields are. */
+type RawDetail = Omit<TaskDetail, "approval" | "links" | "template_id"> & {
   approval_required: boolean;
   approval_status: TaskApproval["status"];
   approver: Member | null;
@@ -49,9 +52,6 @@ type RawDetail = Omit<
   comments: (Omit<TaskComment, "author"> & { author: string | null })[];
   transitions: (Omit<TaskTransition, "actor"> & { actor: string | null })[];
   links?: TaskLink[] | null;
-  attachments?: TaskAttachment[] | null;
-  recurrence_parent_id?: string | null;
-  next_occurrence_at?: string | null;
   template_id?: string | null;
 };
 
@@ -66,9 +66,6 @@ function mapDetail(raw: RawDetail): TaskDetail {
       decided_at: approved_at,
     },
     links: raw.links ?? [],
-    attachments: raw.attachments ?? [],
-    recurrence_parent_id: raw.recurrence_parent_id ?? null,
-    next_occurrence_at: raw.next_occurrence_at ?? null,
     template_id: raw.template_id ?? null,
     comments: raw.comments.map((c) => ({ ...c, author: c.author ?? "Unknown" })),
     transitions: raw.transitions.map((t) => ({ ...t, actor: t.actor ?? "System" })),
@@ -180,6 +177,16 @@ export function listTemplates(): Promise<TaskTemplate[]> {
 
 // -- writes ------------------------------------------------------------------
 
+/** The severity fields travel together: impact and urgency resolve through the
+ *  workspace's matrix, `severity` is the person's choice, and `reason` explains a
+ *  choice that differs from the matrix (an override). */
+export type SeverityInput = {
+  impact: Impact | null;
+  urgency: Urgency | null;
+  severity: Severity | null;
+  reason: string | null;
+};
+
 export type CreateTaskInput = {
   task_kind: Task["task_kind"];
   title: string;
@@ -190,6 +197,9 @@ export type CreateTaskInput = {
   owner_membership_id: string | null;
   assignee_ids: string[];
   due_at: string | null;
+  severity: SeverityInput;
+  repeat: TaskRepeat | null;
+  requires_approval: boolean;
 };
 
 export async function createTask(input: CreateTaskInput): Promise<Task> {
@@ -206,6 +216,12 @@ export async function createTask(input: CreateTaskInput): Promise<Task> {
         owner_membership_id: input.owner_membership_id,
         assignee_ids: input.assignee_ids,
         due_at: input.due_at,
+        impact: input.severity.impact,
+        urgency: input.severity.urgency,
+        severity: input.severity.severity,
+        severity_reason: input.severity.reason,
+        repeat: input.repeat,
+        requires_approval: input.requires_approval,
       }),
     }),
   );
@@ -219,6 +235,11 @@ export type UpdateTaskInput = {
   sla_level?: string | null;
   owner_membership_id?: string | null;
   due_at?: string | null;
+  /** Replaces impact, urgency, severity and the reason together; leave it out to keep them. */
+  severity?: SeverityInput;
+  /** A repeat sets or changes it; null clears it. Only the first task of a series carries one. */
+  repeat?: TaskRepeat | null;
+  requires_approval?: boolean;
 };
 
 export async function updateTask(id: string, patch: UpdateTaskInput): Promise<TaskDetail> {
@@ -233,6 +254,17 @@ export async function updateTask(id: string, patch: UpdateTaskInput): Promise<Ta
     else body.owner_membership_id = patch.owner_membership_id;
   }
   if (patch.due_at !== undefined) body.due_at = patch.due_at;
+  if (patch.severity !== undefined) {
+    body.impact = patch.severity.impact;
+    body.urgency = patch.severity.urgency;
+    body.severity = patch.severity.severity;
+    body.severity_reason = patch.severity.reason;
+  }
+  if (patch.repeat !== undefined) {
+    if (patch.repeat === null) body.clear_repeat = true;
+    else body.repeat = patch.repeat;
+  }
+  if (patch.requires_approval !== undefined) body.requires_approval = patch.requires_approval;
   return mapDetail(await apiFetch<RawDetail>(`/tasks/${id}`, { method: "PATCH", body: JSON.stringify(body) }));
 }
 
@@ -250,13 +282,89 @@ export async function decideApproval(
   );
 }
 
-export async function transitionTask(id: string, to: TaskStatus, note?: string): Promise<TaskDetail> {
+/** Evidence to attach: items already in the library by id, and files to add as new evidence. */
+export type AttachInput = { evidenceIds: string[]; files: File[] };
+
+function attachForm(input: AttachInput): FormData {
+  const form = new FormData();
+  for (const id of input.evidenceIds) form.append("evidence_ids", id);
+  for (const file of input.files) form.append("files", file);
+  return form;
+}
+
+/** A move can carry evidence. With files it is one multipart request, so a file the
+ *  server refuses stops the move instead of leaving it half done. */
+export async function transitionTask(
+  id: string,
+  to: TaskStatus,
+  note?: string,
+  attach?: AttachInput,
+): Promise<TaskDetail> {
+  if (attach && attach.files.length > 0) {
+    const form = attachForm(attach);
+    form.append("to_status", to);
+    if (note) form.append("note", note);
+    return mapDetail(
+      await apiFetch<RawDetail>(`/tasks/${id}/transition/files`, { method: "POST", body: form }),
+    );
+  }
   return mapDetail(
     await apiFetch<RawDetail>(`/tasks/${id}/transition`, {
       method: "POST",
-      body: JSON.stringify({ to_status: to, note: note ?? null }),
+      body: JSON.stringify({ to_status: to, note: note ?? null, evidence_ids: attach?.evidenceIds ?? [] }),
     }),
   );
+}
+
+/** Attach evidence to a task on its own, outside any move. Add only. */
+export async function attachToTask(id: string, input: AttachInput): Promise<TaskDetail> {
+  return mapDetail(
+    await apiFetch<RawDetail>(`/tasks/${id}/attachments`, { method: "POST", body: attachForm(input) }),
+  );
+}
+
+/** The evidence library as a picker needs it: enough to choose an item by. */
+export type EvidenceOption = {
+  id: string;
+  title: string;
+  evidence_type: string;
+  kind: "file" | "link";
+  freshness: "current" | "aging" | "stale" | "no_expiry";
+};
+
+export async function listEvidenceOptions(): Promise<EvidenceOption[]> {
+  const rows = await evidenceApi.list();
+  return rows.map((e) => ({
+    id: e.id,
+    title: e.title,
+    evidence_type: e.evidence_type,
+    kind: e.kind,
+    freshness: e.freshness,
+  }));
+}
+
+/** The download route is authenticated, so a bare link would 401: the file goes
+ *  through the bearer token into a blob, and a refusal reads as the API's own copy. */
+export function fetchAttachmentBlob(taskId: string, evidenceId: string): () => Promise<Blob> {
+  return async () => {
+    const response = await fetch(`/api/v1/tasks/${taskId}/attachments/${evidenceId}/download`, {
+      headers: { Authorization: `Bearer ${getAccessToken() ?? ""}` },
+    });
+    if (response.ok) return response.blob();
+    let body: ApiErrorBody;
+    try {
+      body = (await response.json()) as ApiErrorBody;
+    } catch {
+      body = {
+        error: {
+          code: "http_error",
+          message: "Something went wrong. Try again, or contact support if it continues.",
+          correlation_id: "unknown",
+        },
+      };
+    }
+    throw new ApiError(response.status, body);
+  };
 }
 
 export async function addComment(id: string, body: string): Promise<TaskDetail> {

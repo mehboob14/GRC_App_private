@@ -15,7 +15,7 @@ import uuid
 from collections.abc import Sequence
 from dataclasses import dataclass
 
-from sqlalchemy import delete, or_, select
+from sqlalchemy import delete, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from verity.core.errors import InvalidInput, NotFound
@@ -185,6 +185,31 @@ class LinkService:
         for from_id, to_id in rows:
             out.setdefault(from_id, []).append(to_id)
         return out
+
+    async def counts_into(
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        to_type: str,
+        to_ids: Sequence[uuid.UUID],
+        from_type: str,
+    ) -> dict[uuid.UUID, int]:
+        """The other direction of ``ids_of_type_linked_from``: for many target objects at
+        once, how many edges of ``from_type`` point at each. Badges a list in one query."""
+        if not to_ids:
+            return {}
+        rows = await session.execute(
+            select(Link.to_id, func.count())
+            .where(
+                Link.tenant_id == tenant_id,
+                Link.to_type == to_type,
+                Link.to_id.in_(list(to_ids)),
+                Link.from_type == from_type,
+            )
+            .group_by(Link.to_id)
+        )
+        return {to_id: n for to_id, n in rows}  # noqa: C416 — dict(rows) is rejected by mypy
 
 
 link_service = LinkService()

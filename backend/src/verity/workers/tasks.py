@@ -115,6 +115,53 @@ async def _scan_slas() -> dict[str, Any]:
     return {"notifications_written": written}
 
 
+@celery_app.task(name="verity.workers.tasks.spawn_recurring_tasks")
+def spawn_recurring_tasks() -> dict[str, Any]:
+    """Raise the next task of every repeating series whose date has come.
+
+    Writes, as the system: a repeat is the owner's standing instruction, so the task
+    exists on its date without anyone having to remember to create it. Idempotent: the
+    series head's next date moves on in the same transaction as the new task, a head
+    another run is working is skipped, and the database refuses a second task for the
+    same head and date, so a redelivered or doubled run makes nothing twice.
+    """
+    return asyncio.run(_spawn_recurring_tasks())
+
+
+async def _spawn_recurring_tasks() -> dict[str, Any]:
+    from verity.modules.tasks.service import task_service  # noqa: PLC0415
+
+    created = 0
+    for tenant_id in await _active_tenant_ids():
+        async with session_scope(tenant_id) as session:
+            created += await task_service.spawn_due_occurrences(session, tenant_id=tenant_id)
+    logger.info("worker.spawn_recurring_tasks", tasks_created=created)
+    return {"tasks_created": created}
+
+
+@celery_app.task(name="verity.workers.tasks.raise_evidence_renewals")
+def raise_evidence_renewals() -> dict[str, Any]:
+    """Raise a renewal task for each evidence item that has passed its validity.
+
+    Follows the ``evidence_stale`` automation of each workspace, so a workspace that has
+    switched it off gets nothing. Idempotent: an item has one renewal task per stale
+    spell, so running twice, or after someone closed the task without renewing the
+    evidence, raises nothing more for the same lapse.
+    """
+    return asyncio.run(_raise_evidence_renewals())
+
+
+async def _raise_evidence_renewals() -> dict[str, Any]:
+    from verity.modules.tasks.service import task_service  # noqa: PLC0415
+
+    created = 0
+    for tenant_id in await _active_tenant_ids():
+        async with session_scope(tenant_id) as session:
+            created += await task_service.raise_evidence_renewals(session, tenant_id=tenant_id)
+    logger.info("worker.raise_evidence_renewals", tasks_created=created)
+    return {"tasks_created": created}
+
+
 @celery_app.task(name="verity.workers.tasks.refresh_vulnerabilities")
 def refresh_vulnerabilities() -> dict[str, Any]:
     """Daily: re-enrich open vulnerability definitions from EPSS/KEV/public-exploit,

@@ -8,6 +8,7 @@ import {
   CodeChip,
   DetailHeader,
   Dialog,
+  DialogBody,
   DialogContent,
   DialogFooter,
   DialogHeader,
@@ -18,6 +19,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   ErrorState,
+  FileDownloadButton,
   Icon,
   PeopleSelect,
   PersonSelect,
@@ -26,6 +28,7 @@ import {
   SelectField,
   SelectItem,
   SelectTrigger,
+  SeverityChip,
   StatusPill,
   TabStrip,
   TextField,
@@ -33,11 +36,15 @@ import {
 } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { describeError, errorToast } from "@/lib/api/describe-error";
+import { useAuth } from "@/lib/auth/auth-context";
+import { hasPermission } from "@/lib/auth/session";
 import {
   addCapaAction,
   addComment,
   addSubtask,
+  attachToTask,
   decideApproval,
+  fetchAttachmentBlob,
   getTask,
   listMembers,
   promoteCapaToTask,
@@ -51,13 +58,18 @@ import type { CapaAction, CapaStatus, CapaType, LinkTarget, TaskDetail, TaskStat
 import {
   CAPA_STATUS_META,
   CAPA_TYPE_LABEL,
+  EVIDENCE_FRESHNESS,
   PRIORITY_META,
   SEVERITY_LABEL,
   SLA_META,
   STATUS_META,
+  fmtBytes,
   fmtDate,
   relativeTime,
+  severityTone,
 } from "../tokens";
+import { AttachPicker } from "./attach-picker";
+import { NO_ATTACHMENTS, hasAttachments, useAttachAccess, type AttachSelection } from "./attach-selection";
 import { TaskFormDialog } from "./task-form-dialog";
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -74,7 +86,11 @@ const PRIMARY_NEXT: Record<TaskStatus, TaskStatus> = {
 };
 
 function transitionLabel(from: TaskStatus, to: TaskStatus): string {
-  if (to === "in_progress") return from === "blocked" ? "Resume" : "Start";
+  if (to === "in_progress") {
+    if (from === "blocked") return "Resume";
+    if (from === "under_review") return "Return to work";
+    return from === "closed" ? "Reopen" : "Start";
+  }
   if (to === "blocked") return "Block";
   if (to === "under_review") return "Send for review";
   if (to === "closed") return "Close";
@@ -122,6 +138,10 @@ export function TaskDetail({
   const [transition, setTransition] = useState<TaskStatus | null>(null);
   const [editingAssignees, setEditingAssignees] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [deciding, setDeciding] = useState<"approved" | "rejected" | null>(null);
+  const [attaching, setAttaching] = useState(false);
+  const { principal } = useAuth();
+  const canApprove = hasPermission(principal, "tasks:approve");
 
   const query = useQuery({ queryKey: ["task", taskId], queryFn: () => getTask(taskId), enabled: taskId.length > 0 });
   const doc = query.data;
@@ -132,15 +152,6 @@ export function TaskDetail({
     void queryClient.invalidateQueries({ queryKey: ["task-summary"] });
     onChanged?.();
   };
-
-  const approve = useMutation({
-    mutationFn: (decision: "approved" | "rejected") => decideApproval(taskId, decision),
-    onSuccess: (_r, decision) => {
-      invalidate();
-      toast({ title: decision === "approved" ? "Approved" : "Rejected", tone: decision === "approved" ? "success" : "neutral" });
-    },
-    onError: (error) => toast({ title: errorToast(error, "task"), tone: "danger" }),
-  });
 
   if (query.isLoading) {
     return <p className="text-body-md text-text-subtle">Loading…</p>;
@@ -160,6 +171,8 @@ export function TaskDetail({
     return <p className="text-body-md text-text-secondary">Task not found.</p>;
   }
 
+  // A decision is about work sent for review, so the buttons wait for that.
+  const awaitingDecision = doc.approval.required && doc.approval.status === "pending" && doc.status === "under_review";
   const sla = SLA_META[doc.sla_state];
   const prio = PRIORITY_META[doc.priority];
   // The single obvious next move stays a button; the rest fold into the ⋯ menu.
@@ -185,14 +198,12 @@ export function TaskDetail({
         }
         actions={
           <>
-            {doc.approval.required && doc.approval.status === "pending" ? (
+            {awaitingDecision && canApprove ? (
               <>
-                <Button variant="secondary" loading={approve.isPending} onClick={() => approve.mutate("rejected")}>
+                <Button variant="secondary" onClick={() => setDeciding("rejected")}>
                   Reject
                 </Button>
-                <Button loading={approve.isPending} onClick={() => approve.mutate("approved")}>
-                  Approve
-                </Button>
+                <Button onClick={() => setDeciding("approved")}>Approve</Button>
               </>
             ) : null}
             {primaryTo ? (
@@ -234,9 +245,12 @@ export function TaskDetail({
             {prio.label}
           </span>
         </Field>
-        {doc.task_kind === "issue" && doc.severity ? (
+        {doc.severity ? (
           <Field label="Severity">
-            <span className="text-body-md text-text-primary">{SEVERITY_LABEL[doc.severity]}</span>
+            <span className="inline-flex items-center gap-2">
+              <SeverityChip severity={severityTone(doc.severity)} label={SEVERITY_LABEL[doc.severity]} />
+              {doc.severity_override ? <span className="text-caption text-text-subtle">Overridden</span> : null}
+            </span>
           </Field>
         ) : null}
         <Field label="SLA">
@@ -289,7 +303,12 @@ export function TaskDetail({
 
       <div>
         {tab === "overview" ? (
-          <OverviewTab doc={doc} onEditAssignees={() => setEditingAssignees(true)} />
+          <OverviewTab
+            doc={doc}
+            embedded={!backTo}
+            onEditAssignees={() => setEditingAssignees(true)}
+            onAttach={() => setAttaching(true)}
+          />
         ) : null}
         {tab === "capa" && doc.task_kind === "issue" ? <CapaTab doc={doc} onChange={invalidate} /> : null}
         {tab === "subtasks" ? <SubtasksTab doc={doc} onChange={invalidate} onOpen={(id) => navigate(`/tasks/${id}`)} /> : null}
@@ -311,6 +330,31 @@ export function TaskDetail({
         />
       ) : null}
 
+      {deciding ? (
+        <DecisionDialog
+          doc={doc}
+          decision={deciding}
+          onOpenChange={(o) => !o && setDeciding(null)}
+          onDone={() => {
+            const decision = deciding;
+            setDeciding(null);
+            invalidate();
+            toast({ title: decision === "approved" ? "Approved" : "Rejected", tone: decision === "approved" ? "success" : "neutral" });
+          }}
+        />
+      ) : null}
+      {attaching ? (
+        <AttachDialog
+          doc={doc}
+          onOpenChange={(o) => !o && setAttaching(false)}
+          onDone={() => {
+            setAttaching(false);
+            invalidate();
+            toast({ title: "Attached", tone: "success" });
+          }}
+        />
+      ) : null}
+
       <AssigneeDialog doc={doc} open={editingAssignees} onOpenChange={setEditingAssignees} onDone={invalidate} />
       <TaskFormDialog mode="edit" task={doc} open={editing} onOpenChange={setEditing} />
     </div>
@@ -319,9 +363,27 @@ export function TaskDetail({
 
 // -- tabs --------------------------------------------------------------------
 
-function OverviewTab({ doc, onEditAssignees }: { doc: TaskDetail; onEditAssignees: () => void }) {
+function OverviewTab({
+  doc,
+  embedded,
+  onEditAssignees,
+  onAttach,
+}: {
+  doc: TaskDetail;
+  /** In the register's split pane the width is the pane's, not the window's, so the
+   *  side column only sits beside the main one on a window wide enough to give the pane
+   *  room for both. */
+  embedded: boolean;
+  onEditAssignees: () => void;
+  onAttach: () => void;
+}) {
   return (
-    <div className="grid gap-4 lg:grid-cols-[1fr_20rem]">
+    <div
+      className={cn(
+        "grid gap-4",
+        embedded ? "min-[1700px]:grid-cols-[1fr_20rem]" : "lg:grid-cols-[1fr_20rem]",
+      )}
+    >
       <div className="space-y-4">
         <Panel title="Description">
           {doc.description ? (
@@ -347,14 +409,27 @@ function OverviewTab({ doc, onEditAssignees }: { doc: TaskDetail; onEditAssignee
             <div className="flex items-center justify-between">
               <StatusPill
                 status={doc.approval.status === "approved" ? "success" : doc.approval.status === "rejected" ? "danger" : "pending"}
-                label={cap(doc.approval.status.replace("_", " "))}
+                label={doc.approval.status === "pending" ? "Awaiting approval" : cap(doc.approval.status)}
               />
               {doc.approval.approver ? (
-                <span className="text-body-sm text-text-secondary">Approver · {doc.approval.approver.name}</span>
+                <span className="text-body-sm text-text-secondary">
+                  {cap(doc.approval.status)} by {doc.approval.approver.name}
+                </span>
               ) : null}
             </div>
+            <p className="mt-2 text-body-sm text-text-subtle">
+              {doc.approval.status === "approved"
+                ? "It can be closed."
+                : doc.approval.status === "rejected"
+                  ? "Send it back to work, then for review again."
+                  : doc.status === "under_review"
+                    ? "An approver decides it here."
+                    : "Decided once it is sent for review. It cannot be closed before then."}
+            </p>
           </Panel>
         ) : null}
+
+        <AttachmentsPanel doc={doc} onAttach={onAttach} />
       </div>
 
       <div className="space-y-4">
@@ -387,7 +462,26 @@ function OverviewTab({ doc, onEditAssignees }: { doc: TaskDetail; onEditAssignee
             <Meta label="Detected" value={fmtDate(doc.detected_at)} />
             <Meta label="Created" value={fmtDate(doc.created_at)} />
             <Meta label="SLA level" value={doc.sla_level ?? "Not set"} />
-            {doc.recurrence_rule ? <Meta label="Recurs" value={doc.recurrence_summary ?? doc.recurrence_rule} /> : null}
+            {doc.impact ? <Meta label="Impact" value={cap(doc.impact)} /> : null}
+            {doc.urgency ? <Meta label="Urgency" value={cap(doc.urgency)} /> : null}
+            {doc.severity_override_reason ? <Meta label="Severity reason" value={doc.severity_override_reason} /> : null}
+            {doc.recurrence_rule ? <Meta label="Repeats" value={doc.recurrence_summary ?? doc.recurrence_rule} /> : null}
+            {doc.recurrence_rule ? (
+              <Meta label="Next task" value={doc.next_occurrence_at ? fmtDate(doc.next_occurrence_at) : "None, the series has ended"} />
+            ) : null}
+            {doc.recurrence_parent_code ? (
+              <div className="flex items-baseline justify-between gap-3">
+                <dt className="text-text-subtle">Repeat of</dt>
+                <dd className="text-right">
+                  <Link
+                    to={`/tasks?search=${encodeURIComponent(doc.recurrence_parent_code)}`}
+                    className="text-text-link hover:underline"
+                  >
+                    {doc.recurrence_parent_code}
+                  </Link>
+                </dd>
+              </div>
+            ) : null}
           </dl>
         </Panel>
 
@@ -459,6 +553,7 @@ function SubtasksTab({ doc, onChange, onOpen }: { doc: TaskDetail; onChange: () 
 
 function RelatedTab({ doc }: { doc: TaskDetail }) {
   const provenance = doc.source !== "manual" && doc.source !== "capa" ? doc.source : null;
+  const provenanceWords = provenance ? provenance.replace(/_/g, " ") : "";
   const noun = doc.task_kind === "issue" ? "issue" : "task";
   const groups = new Map<LinkTarget, typeof doc.links>();
   for (const l of doc.links) groups.set(l.to_type, [...(groups.get(l.to_type) ?? []), l]);
@@ -470,7 +565,7 @@ function RelatedTab({ doc }: { doc: TaskDetail }) {
           <p className="type-overline text-text-subtle">Source</p>
           <p className="mt-0.5 text-body-md text-text-primary">
             {provenance
-              ? `Raised from a ${sourceLabel(provenance).toLowerCase()}`
+              ? `Raised from ${provenanceWords}`
               : doc.source === "capa"
                 ? "Promoted from a corrective action"
                 : "Raised manually"}
@@ -805,8 +900,13 @@ function CommentsTab({ doc, onChange }: { doc: TaskDetail; onChange: () => void 
   );
 }
 
-/** A plain, human sentence for one history entry — no field names or arrows. */
-function describeActivity(t: TaskDetail["transitions"][number], noun: string): string {
+/** A plain, human sentence for one history entry — no field names or arrows. `titles`
+ *  names an attached evidence item by its id, which is what the entry records. */
+function describeActivity(
+  t: TaskDetail["transitions"][number],
+  noun: string,
+  titles: ReadonlyMap<string, string>,
+): string {
   switch (t.field_changed) {
     case "created":
       return `created this ${noun}`;
@@ -820,6 +920,21 @@ function describeActivity(t: TaskDetail["transitions"][number], noun: string): s
       return "changed who's assigned";
     case "approval":
       return t.new_value === "approved" ? "approved it" : "rejected it";
+    case "approval_required":
+      return t.new_value === "true" ? "made it need approval" : "dropped the need for approval";
+    case "attachment":
+      return `attached ${titles.get(t.new_value ?? "") ?? "a file"}`;
+    case "severity":
+      return t.new_value ? `set the severity to ${t.new_value}` : "cleared the severity";
+    case "severity_override":
+      return t.new_value ? `overrode the matrix severity with ${t.new_value}` : "went back to the matrix severity";
+    case "impact":
+    case "urgency":
+      return t.new_value ? `set the ${t.field_changed} to ${t.new_value}` : `cleared the ${t.field_changed}`;
+    case "due":
+      return t.new_value ? `moved the due date to ${fmtDate(t.new_value)}` : "cleared the due date";
+    case "repeat":
+      return t.new_value ? `set it to repeat: ${t.new_value}` : "stopped it repeating";
     default:
       return t.new_value ? `changed the ${t.field_changed} to ${t.new_value}` : `updated the ${t.field_changed}`;
   }
@@ -836,17 +951,36 @@ function friendlyTime(iso: string): string {
 
 function HistoryTab({ doc }: { doc: TaskDetail }) {
   const noun = doc.task_kind === "issue" ? "issue" : "task";
+  const titles = new Map(doc.attachments.map((a) => [a.id, a.title]));
+  // An attachment that came with a status change reads under that change, not as an entry of
+  // its own: the history names the status change it came with in old_value.
+  const withStatus = new Set(doc.transitions.filter((t) => t.field_changed === "status").map((t) => t.id));
+  const cameWith = new Map<string, TaskDetail["transitions"]>();
+  for (const t of doc.transitions) {
+    if (t.field_changed === "attachment" && t.old_value && withStatus.has(t.old_value)) {
+      cameWith.set(t.old_value, [...(cameWith.get(t.old_value) ?? []), t]);
+    }
+  }
+  const entries = doc.transitions.filter(
+    (t) => !(t.field_changed === "attachment" && t.old_value && withStatus.has(t.old_value)),
+  );
   return (
     <Panel title="Activity">
       <ol className="relative space-y-4 border-l border-border pl-5">
-        {doc.transitions.map((t) => (
+        {entries.map((t) => (
           <li key={t.id} className="relative">
             <span className="absolute -left-[1.6rem] top-1.5 size-2 rounded-full bg-action-accent" />
             <p className="text-body-sm text-text-secondary">
-              <span className="font-semibold text-text-primary">{t.actor}</span> {describeActivity(t, noun)}
+              <span className="font-semibold text-text-primary">{t.actor}</span> {describeActivity(t, noun, titles)}
               <span className="text-text-subtle"> · {friendlyTime(t.occurred_at)}</span>
             </p>
             {t.note ? <p className="mt-1 rounded-sm bg-surface-sunken px-2.5 py-1.5 text-body-sm text-text-secondary">{t.note}</p> : null}
+            {(cameWith.get(t.id) ?? []).map((a) => (
+              <p key={a.id} className="mt-1 flex items-center gap-1.5 text-body-sm text-text-secondary">
+                <Icon name="paperclip" className="size-3.5 text-text-subtle" />
+                {titles.get(a.new_value ?? "") ?? "A file"}
+              </p>
+            ))}
           </li>
         ))}
       </ol>
@@ -868,16 +1002,18 @@ function TransitionDialog({
   onDone: () => void;
 }) {
   const [note, setNote] = useState("");
+  const [attach, setAttach] = useState<AttachSelection>(NO_ATTACHMENTS);
   const { toast } = useToast();
+  const { canAttach } = useAttachAccess();
   const noteRequired = to === "closed" || to === "cancelled";
   const run = useMutation({
-    mutationFn: () => transitionTask(doc.id, to, note.trim() || undefined),
+    mutationFn: () => transitionTask(doc.id, to, note.trim() || undefined, hasAttachments(attach) ? attach : undefined),
     onSuccess: onDone,
     onError: (error) => toast({ title: errorToast(error, "task"), tone: "danger" }),
   });
   return (
     <Dialog open onOpenChange={onOpenChange}>
-      <DialogContent size="md">
+      <DialogContent size="md" scrollBody className="max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>
             {transitionLabel(doc.status, to)} {doc.code}
@@ -890,13 +1026,29 @@ function TransitionDialog({
                 : "Add an optional note describing the change."}
           </p>
         </DialogHeader>
-        <TextField
-          label={to === "cancelled" ? "Reason" : "Note"}
-          optional={!noteRequired}
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          placeholder={to === "closed" ? "Bucket policy corrected; drift alert added." : ""}
-        />
+        <DialogBody>
+          <div className="space-y-4 pb-1">
+            <TextField
+              label={to === "cancelled" ? "Reason" : "Note"}
+              optional={!noteRequired}
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder={to === "closed" ? "Bucket policy corrected; drift alert added." : ""}
+            />
+            {canAttach && to !== "cancelled" ? (
+              <div>
+                <p className="mb-2 font-sans text-label-sm text-text-secondary">
+                  Attach evidence <span className="font-normal text-text-faint">(optional)</span>
+                </p>
+                <AttachPicker
+                  value={attach}
+                  onChange={setAttach}
+                  alreadyAttached={doc.attachments.map((a) => a.id)}
+                />
+              </div>
+            ) : null}
+          </div>
+        </DialogBody>
         <DialogFooter>
           <Button variant="secondary" onClick={() => onOpenChange(false)}>
             Cancel
@@ -908,6 +1060,168 @@ function TransitionDialog({
             onClick={() => run.mutate()}
           >
             {transitionLabel(doc.status, to)}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/** Evidence on the task: what was attached, by whom, and a way to take a copy. Add only. */
+function AttachmentsPanel({ doc, onAttach }: { doc: TaskDetail; onAttach: () => void }) {
+  const { principal } = useAuth();
+  const { toast } = useToast();
+  const { canAttach } = useAttachAccess();
+  // Evidence is the evidence library's: without its read key the API sends none.
+  if (!hasPermission(principal, "evidence:read")) return null;
+  return (
+    <Panel
+      title="Attachments"
+      action={
+        canAttach && hasPermission(principal, "tasks:manage") ? (
+          <Button variant="secondary" size="sm" onClick={onAttach}>
+            <Icon name="paperclip" className="size-3.5" />
+            Attach
+          </Button>
+        ) : null
+      }
+    >
+      {doc.attachments.length === 0 ? (
+        <p className="text-body-sm text-text-subtle">Nothing attached yet.</p>
+      ) : (
+        <ul className="divide-y divide-border">
+          {doc.attachments.map((a) => {
+            const freshness = EVIDENCE_FRESHNESS[a.freshness];
+            return (
+              <li key={a.id} className="flex items-center gap-3 py-2.5">
+                <Icon name={a.kind === "link" ? "globe" : "doc"} className="size-4 shrink-0 text-text-subtle" />
+                <div className="min-w-0 flex-1">
+                  <p className="flex items-center gap-2">
+                    <span className="truncate text-body-sm font-medium text-text-primary">{a.title}</span>
+                    {freshness.show ? <StatusPill kind="inline" status={freshness.family} label={freshness.label} /> : null}
+                  </p>
+                  <p className="truncate text-caption text-text-subtle">
+                    {a.evidence_type.replace(/_/g, " ")} · {a.kind === "link" ? "Link" : fmtBytes(a.size_bytes)}
+                    {a.attached_by ? ` · ${a.attached_by}` : ""}
+                    {a.attached_at ? ` · ${fmtDate(a.attached_at)}` : ""}
+                  </p>
+                </div>
+                {a.kind === "file" ? (
+                  <FileDownloadButton
+                    fetchBlob={fetchAttachmentBlob(doc.id, a.id)}
+                    filename={a.filename ?? a.title}
+                    onError={(error) => toast({ title: errorToast(error, "file"), tone: "danger" })}
+                  />
+                ) : a.link_url ? (
+                  <Button variant="secondary" size="sm" asChild>
+                    <a href={a.link_url} target="_blank" rel="noopener noreferrer">
+                      Open
+                    </a>
+                  </Button>
+                ) : null}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </Panel>
+  );
+}
+
+function AttachDialog({
+  doc,
+  onOpenChange,
+  onDone,
+}: {
+  doc: TaskDetail;
+  onOpenChange: (o: boolean) => void;
+  onDone: () => void;
+}) {
+  const [selection, setSelection] = useState<AttachSelection>(NO_ATTACHMENTS);
+  const { toast } = useToast();
+  const run = useMutation({
+    mutationFn: () => attachToTask(doc.id, selection),
+    onSuccess: onDone,
+    onError: (error) => toast({ title: errorToast(error, "attachment"), tone: "danger" }),
+  });
+  return (
+    <Dialog open onOpenChange={onOpenChange}>
+      <DialogContent size="md" scrollBody className="max-h-[90vh]">
+        <DialogHeader>
+          <DialogTitle>Attach to {doc.code}</DialogTitle>
+          <p className="text-body-md text-text-secondary">
+            Pick evidence from the library or add files. Attachments stay on the record.
+          </p>
+        </DialogHeader>
+        <DialogBody>
+          <div className="pb-1">
+            <AttachPicker value={selection} onChange={setSelection} alreadyAttached={doc.attachments.map((a) => a.id)} />
+          </div>
+        </DialogBody>
+        <DialogFooter>
+          <Button variant="secondary" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button loading={run.isPending} disabled={!hasAttachments(selection)} onClick={() => run.mutate()}>
+            Attach
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/** Approve or reject work sent for review. A rejection says why, so the owner knows what to fix. */
+function DecisionDialog({
+  doc,
+  decision,
+  onOpenChange,
+  onDone,
+}: {
+  doc: TaskDetail;
+  decision: "approved" | "rejected";
+  onOpenChange: (o: boolean) => void;
+  onDone: () => void;
+}) {
+  const [note, setNote] = useState("");
+  const { toast } = useToast();
+  const rejecting = decision === "rejected";
+  const run = useMutation({
+    mutationFn: () => decideApproval(doc.id, decision, note.trim() || undefined),
+    onSuccess: onDone,
+    onError: (error) => toast({ title: errorToast(error, "task"), tone: "danger" }),
+  });
+  return (
+    <Dialog open onOpenChange={onOpenChange}>
+      <DialogContent size="md">
+        <DialogHeader>
+          <DialogTitle>
+            {rejecting ? "Reject" : "Approve"} {doc.code}
+          </DialogTitle>
+          <p className="text-body-md text-text-secondary">
+            {rejecting
+              ? "The owner sees your reason, sends it back to work and for review again."
+              : "Once approved it can be closed. The note goes on the permanent history."}
+          </p>
+        </DialogHeader>
+        <TextField
+          label={rejecting ? "Reason" : "Note"}
+          optional={!rejecting}
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          placeholder={rejecting ? "The access export is missing the contractors." : ""}
+        />
+        <DialogFooter>
+          <Button variant="secondary" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button
+            loading={run.isPending}
+            disabled={rejecting && note.trim() === ""}
+            variant={rejecting ? "secondary" : "primary"}
+            onClick={() => run.mutate()}
+          >
+            {rejecting ? "Reject" : "Approve"}
           </Button>
         </DialogFooter>
       </DialogContent>

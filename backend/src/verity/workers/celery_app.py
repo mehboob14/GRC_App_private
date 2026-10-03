@@ -56,6 +56,17 @@ celery_app.conf.update(
             "task": "verity.workers.tasks.scan_slas",
             "schedule": 900.0,
         },
+        # Daily: raise the next task of every repeating series whose date has come.
+        "spawn-recurring-tasks": {
+            "task": "verity.workers.tasks.spawn_recurring_tasks",
+            "schedule": 24 * 3600.0,
+        },
+        # Daily: a renewal task for each evidence item past its validity, as the
+        # workspace's evidence_stale automation says.
+        "raise-evidence-renewals": {
+            "task": "verity.workers.tasks.raise_evidence_renewals",
+            "schedule": 24 * 3600.0,
+        },
         # Every 2 min: deliver the email copy of notifications that asked for one.
         "flush-notification-emails": {
             "task": "verity.workers.tasks.flush_notification_emails",

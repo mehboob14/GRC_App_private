@@ -2,7 +2,9 @@
 
 Reads need ``tasks:read``; creating, editing and transitioning need
 ``tasks:manage``; changing who is assigned needs ``tasks:assign``; approving a
-task needs ``tasks:approve`` (deny-by-default, rule 7). Static collection paths
+task needs ``tasks:approve`` (deny-by-default, rule 7). Evidence on a task is the
+evidence library's, so reading it needs ``evidence:read`` and uploading a file
+as new evidence needs ``evidence:manage`` as well. Static collection paths
 are declared before ``/{task_id}`` so they are not captured by it.
 """
 
@@ -11,7 +13,8 @@ from __future__ import annotations
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, File, Form, Query, UploadFile, status
+from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from verity.core.deps import (
@@ -21,7 +24,9 @@ from verity.core.deps import (
     get_tenant_session,
     require,
 )
+from verity.core.errors import InvalidInput, PermissionDenied
 from verity.modules.audit.service import Membership
+from verity.modules.tasks.recurrence import Repeat
 from verity.modules.tasks.schemas import (
     ApprovalDecision,
     AssignRequest,
@@ -32,6 +37,7 @@ from verity.modules.tasks.schemas import (
     CapaUpdate,
     CommentRequest,
     MatrixCellUpdate,
+    RepeatIn,
     SavedViewOut,
     SeverityMatrixCellOut,
     SlaDefinitionOut,
@@ -46,7 +52,13 @@ from verity.modules.tasks.schemas import (
     TaskUpdate,
     TransitionRequest,
 )
-from verity.modules.tasks.service import TaskFilters, task_service
+from verity.modules.tasks.service import (
+    SeverityInput,
+    TaskDetailView,
+    TaskFilters,
+    Upload,
+    task_service,
+)
 
 tasks_router = APIRouter(prefix="/tasks", tags=["tasks"])
 
@@ -54,14 +66,58 @@ require_read = require("tasks:read")
 require_manage = require("tasks:manage")
 require_assign = require("tasks:assign")
 require_approve = require("tasks:approve")
+require_evidence_read = require("evidence:read")
 
 _Ctx = Annotated[TenantContext, Depends(get_tenant_context)]
 _Db = Annotated[AsyncSession, Depends(get_tenant_session)]
+
+_SEVERITY_FIELDS = frozenset({"impact", "urgency", "severity", "severity_reason"})
 
 
 def _actor(context: TenantContext) -> Membership:
     assert context.membership_id is not None  # noqa: S101
     return Membership(context.membership_id)
+
+
+def _detail(view: TaskDetailView, principal: Principal) -> TaskDetailOut:
+    """The detail as this caller may see it. Evidence is read with the evidence key, so a
+    caller who can read tasks but not evidence sees the task and none of its attachments."""
+    out = TaskDetailOut.model_validate(view)
+    if not principal.has("evidence:read"):
+        out.attachments = []
+    return out
+
+
+def _repeat(body: RepeatIn | None) -> Repeat | None:
+    if body is None:
+        return None
+    if body.until is not None and body.count is not None:
+        raise InvalidInput(
+            "Choose an end date or a number of repeats, not both.",
+            detail="repeat with both until and count",
+        )
+    return Repeat(
+        frequency=body.frequency, interval=body.interval, until=body.until, count=body.count
+    )
+
+
+def _need_evidence(principal: Principal, *, files: bool, picked: bool) -> None:
+    """Attaching touches the evidence library, so it needs that module's keys on top of
+    ``tasks:manage``: read to attach an item already there, manage to add a new one."""
+    if files and not principal.has("evidence:manage"):
+        raise PermissionDenied(
+            "You need access to add evidence to attach a file here.",
+            detail=f"evidence:manage is not granted to membership {principal.membership_id}",
+        )
+    if picked and not principal.has("evidence:read"):
+        raise PermissionDenied(
+            "You need access to view evidence to attach an item from the library.",
+            detail=f"evidence:read is not granted to membership {principal.membership_id}",
+        )
+
+
+async def _uploads(files: list[UploadFile] | None) -> list[Upload]:
+    return [Upload(filename=f.filename or "upload", data=await f.read()) for f in files or []]
 
 
 # -- static collection paths first -------------------------------------------
@@ -235,7 +291,10 @@ async def update_automation(
     "", response_model=TaskDetailOut, status_code=status.HTTP_201_CREATED, summary="Create a task"
 )
 async def create_task(
-    _p: Annotated[Principal, Depends(require_manage)], context: _Ctx, session: _Db, body: TaskCreate
+    principal: Annotated[Principal, Depends(require_manage)],
+    context: _Ctx,
+    session: _Db,
+    body: TaskCreate,
 ) -> TaskDetailOut:
     view = await task_service.create_task(
         session,
@@ -250,8 +309,16 @@ async def create_task(
         owner_membership_id=body.owner_membership_id,
         assignee_ids=body.assignee_ids,
         due_at=body.due_at,
+        severity_input=SeverityInput(
+            impact=body.impact,
+            urgency=body.urgency,
+            severity=body.severity,
+            reason=body.severity_reason,
+        ),
+        repeat=_repeat(body.repeat),
+        requires_approval=body.requires_approval,
     )
-    return TaskDetailOut.model_validate(view)
+    return _detail(view, principal)
 
 
 # -- item paths --------------------------------------------------------------
@@ -259,16 +326,20 @@ async def create_task(
 
 @tasks_router.get("/{task_id}", response_model=TaskDetailOut, summary="Task detail")
 async def get_task(
-    _p: Annotated[Principal, Depends(require_read)], context: _Ctx, session: _Db, task_id: uuid.UUID
+    principal: Annotated[Principal, Depends(require_read)],
+    context: _Ctx,
+    session: _Db,
+    task_id: uuid.UUID,
 ) -> TaskDetailOut:
-    return TaskDetailOut.model_validate(
-        await task_service.get_task(session, tenant_id=context.tenant_id, task_id=task_id)
+    return _detail(
+        await task_service.get_task(session, tenant_id=context.tenant_id, task_id=task_id),
+        principal,
     )
 
 
 @tasks_router.patch("/{task_id}", response_model=TaskDetailOut, summary="Edit a task")
 async def update_task(
-    _p: Annotated[Principal, Depends(require_manage)],
+    principal: Annotated[Principal, Depends(require_manage)],
     context: _Ctx,
     session: _Db,
     task_id: uuid.UUID,
@@ -287,18 +358,32 @@ async def update_task(
         owner_membership_id=body.owner_membership_id,
         clear_owner=body.clear_owner,
         due_at=body.due_at,
+        severity_input=(
+            SeverityInput(
+                impact=body.impact,
+                urgency=body.urgency,
+                severity=body.severity,
+                reason=body.severity_reason,
+            )
+            if body.model_fields_set & _SEVERITY_FIELDS
+            else None
+        ),
+        repeat=_repeat(body.repeat),
+        clear_repeat=body.clear_repeat,
+        requires_approval=body.requires_approval,
     )
-    return TaskDetailOut.model_validate(view)
+    return _detail(view, principal)
 
 
 @tasks_router.post("/{task_id}/transition", response_model=TaskDetailOut, summary="Move a task")
 async def transition(
-    _p: Annotated[Principal, Depends(require_manage)],
+    principal: Annotated[Principal, Depends(require_manage)],
     context: _Ctx,
     session: _Db,
     task_id: uuid.UUID,
     body: TransitionRequest,
 ) -> TaskDetailOut:
+    _need_evidence(principal, files=False, picked=bool(body.evidence_ids))
     view = await task_service.transition(
         session,
         tenant_id=context.tenant_id,
@@ -306,13 +391,90 @@ async def transition(
         task_id=task_id,
         to_status=body.to_status,
         note=body.note,
+        evidence_ids=body.evidence_ids,
     )
-    return TaskDetailOut.model_validate(view)
+    return _detail(view, principal)
+
+
+@tasks_router.post(
+    "/{task_id}/transition/files",
+    response_model=TaskDetailOut,
+    summary="Move a task, attaching files and evidence",
+)
+async def transition_with_files(  # noqa: PLR0913, PLR0917 — multipart form fields
+    principal: Annotated[Principal, Depends(require_manage)],
+    context: _Ctx,
+    session: _Db,
+    task_id: uuid.UUID,
+    to_status: Annotated[str, Form()],
+    note: Annotated[str | None, Form()] = None,
+    evidence_ids: Annotated[list[uuid.UUID] | None, Form()] = None,
+    files: Annotated[list[UploadFile] | None, File()] = None,
+) -> TaskDetailOut:
+    _need_evidence(principal, files=bool(files), picked=bool(evidence_ids))
+    view = await task_service.transition(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(context),
+        task_id=task_id,
+        to_status=to_status,
+        note=note,
+        evidence_ids=evidence_ids or [],
+        uploads=await _uploads(files),
+    )
+    return _detail(view, principal)
+
+
+@tasks_router.post(
+    "/{task_id}/attachments", response_model=TaskDetailOut, summary="Attach evidence or files"
+)
+async def attach(  # noqa: PLR0913, PLR0917 — multipart form fields
+    principal: Annotated[Principal, Depends(require_manage)],
+    context: _Ctx,
+    session: _Db,
+    task_id: uuid.UUID,
+    evidence_ids: Annotated[list[uuid.UUID] | None, Form()] = None,
+    files: Annotated[list[UploadFile] | None, File()] = None,
+) -> TaskDetailOut:
+    _need_evidence(principal, files=bool(files), picked=bool(evidence_ids))
+    view = await task_service.attach(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(context),
+        task_id=task_id,
+        evidence_ids=evidence_ids or [],
+        uploads=await _uploads(files),
+    )
+    return _detail(view, principal)
+
+
+@tasks_router.get(
+    "/{task_id}/attachments/{evidence_id}/download",
+    summary="Download a file attached to a task; the sha256 on the record proves integrity",
+)
+async def download_attachment(
+    _p: Annotated[Principal, Depends(require_read)],
+    _e: Annotated[Principal, Depends(require_evidence_read)],
+    context: _Ctx,
+    session: _Db,
+    task_id: uuid.UUID,
+    evidence_id: uuid.UUID,
+) -> Response:
+    data, filename, content_type = await task_service.download_attachment(
+        session, tenant_id=context.tenant_id, task_id=task_id, evidence_id=evidence_id
+    )
+    return Response(
+        content=data,
+        media_type=content_type,
+        # attachment, not inline: an uploaded artefact is never rendered in the app's own
+        # origin, which is what keeps a malicious upload inert.
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @tasks_router.post("/{task_id}/assign", response_model=TaskDetailOut, summary="Set assignees")
 async def assign(
-    _p: Annotated[Principal, Depends(require_assign)],
+    principal: Annotated[Principal, Depends(require_assign)],
     context: _Ctx,
     session: _Db,
     task_id: uuid.UUID,
@@ -325,12 +487,12 @@ async def assign(
         task_id=task_id,
         membership_ids=body.membership_ids,
     )
-    return TaskDetailOut.model_validate(view)
+    return _detail(view, principal)
 
 
 @tasks_router.post("/{task_id}/comments", response_model=TaskDetailOut, summary="Add a comment")
 async def add_comment(
-    _p: Annotated[Principal, Depends(require_manage)],
+    principal: Annotated[Principal, Depends(require_manage)],
     context: _Ctx,
     session: _Db,
     task_id: uuid.UUID,
@@ -339,12 +501,12 @@ async def add_comment(
     view = await task_service.add_comment(
         session, tenant_id=context.tenant_id, actor=_actor(context), task_id=task_id, body=body.body
     )
-    return TaskDetailOut.model_validate(view)
+    return _detail(view, principal)
 
 
 @tasks_router.post("/{task_id}/subtasks", response_model=TaskDetailOut, summary="Add a sub-task")
 async def add_subtask(
-    _p: Annotated[Principal, Depends(require_manage)],
+    principal: Annotated[Principal, Depends(require_manage)],
     context: _Ctx,
     session: _Db,
     task_id: uuid.UUID,
@@ -357,12 +519,12 @@ async def add_subtask(
         parent_id=task_id,
         title=body.title,
     )
-    return TaskDetailOut.model_validate(view)
+    return _detail(view, principal)
 
 
 @tasks_router.post("/{task_id}/approve", response_model=TaskDetailOut, summary="Approve or reject")
 async def decide_approval(
-    _p: Annotated[Principal, Depends(require_approve)],
+    principal: Annotated[Principal, Depends(require_approve)],
     context: _Ctx,
     session: _Db,
     task_id: uuid.UUID,
@@ -376,7 +538,7 @@ async def decide_approval(
         decision=body.decision,
         note=body.note,
     )
-    return TaskDetailOut.model_validate(view)
+    return _detail(view, principal)
 
 
 # -- CAPA actions (issues only) ----------------------------------------------
@@ -384,7 +546,7 @@ async def decide_approval(
 
 @tasks_router.post("/{task_id}/actions", response_model=TaskDetailOut, summary="Add a CAPA action")
 async def add_capa_action(
-    _p: Annotated[Principal, Depends(require_manage)],
+    principal: Annotated[Principal, Depends(require_manage)],
     context: _Ctx,
     session: _Db,
     task_id: uuid.UUID,
@@ -401,14 +563,14 @@ async def add_capa_action(
         owner_membership_id=body.owner_membership_id,
         due_at=body.due_at,
     )
-    return TaskDetailOut.model_validate(view)
+    return _detail(view, principal)
 
 
 @tasks_router.patch(
     "/{task_id}/actions/{action_id}", response_model=TaskDetailOut, summary="Edit a CAPA action"
 )
-async def update_capa_action(
-    _p: Annotated[Principal, Depends(require_manage)],
+async def update_capa_action(  # noqa: PLR0913, PLR0917 — one path parameter per level
+    principal: Annotated[Principal, Depends(require_manage)],
     context: _Ctx,
     session: _Db,
     task_id: uuid.UUID,
@@ -428,7 +590,7 @@ async def update_capa_action(
         clear_owner=body.clear_owner,
         due_at=body.due_at,
     )
-    return TaskDetailOut.model_validate(view)
+    return _detail(view, principal)
 
 
 @tasks_router.post(
@@ -436,8 +598,8 @@ async def update_capa_action(
     response_model=TaskDetailOut,
     summary="Move a CAPA action",
 )
-async def transition_capa_action(
-    _p: Annotated[Principal, Depends(require_manage)],
+async def transition_capa_action(  # noqa: PLR0913, PLR0917 — one path parameter per level
+    principal: Annotated[Principal, Depends(require_manage)],
     context: _Ctx,
     session: _Db,
     task_id: uuid.UUID,
@@ -452,7 +614,7 @@ async def transition_capa_action(
         action_id=action_id,
         to_status=body.to_status,
     )
-    return TaskDetailOut.model_validate(view)
+    return _detail(view, principal)
 
 
 @tasks_router.post(
@@ -461,7 +623,7 @@ async def transition_capa_action(
     summary="Promote a CAPA action to a task",
 )
 async def promote_capa_action(
-    _p: Annotated[Principal, Depends(require_manage)],
+    principal: Annotated[Principal, Depends(require_manage)],
     context: _Ctx,
     session: _Db,
     task_id: uuid.UUID,
@@ -474,4 +636,4 @@ async def promote_capa_action(
         task_id=task_id,
         action_id=action_id,
     )
-    return TaskDetailOut.model_validate(view)
+    return _detail(view, principal)

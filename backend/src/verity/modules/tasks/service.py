@@ -16,18 +16,23 @@ control/evidence labels via their services, links via the links primitive.
 
 from __future__ import annotations
 
+import re
 import uuid
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, time, timedelta
+from pathlib import PurePosixPath
 from typing import Any, Final
 
-from sqlalchemy import Select, delete, func, select
+from sqlalchemy import BigInteger, Select, cast, delete, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from verity.core.errors import Conflict, InvalidInput, NotFound
-from verity.modules.audit.service import Actor, AuditService, Membership, audit_service
+from verity.core.logging import get_logger
+from verity.core.storage import sanitise_filename
+from verity.modules.audit.service import Actor, AuditService, Membership, System, audit_service
+from verity.modules.links.service import link_service
 from verity.modules.tasks.models import (
     AUTOMATION_OWNER_RULES,
     CAPA_STATUSES,
@@ -35,6 +40,7 @@ from verity.modules.tasks.models import (
     CATEGORIES,
     IMPACTS,
     PRIORITIES,
+    SEVERITIES,
     TASK_KINDS,
     TASK_STATUSES,
     URGENCIES,
@@ -50,7 +56,11 @@ from verity.modules.tasks.models import (
     TaskTransition,
     TaskWatcher,
 )
+from verity.modules.tasks.recurrence import Repeat, next_after, parse_rrule, summary, to_rrule
+from verity.modules.tasks.severity import SeverityDecision, decide_severity
 from verity.shared.ids import uuid7
+
+logger = get_logger(__name__)
 
 # -- shared rules (the client is served these; it never hardcodes them) ------
 
@@ -84,6 +94,43 @@ _ACTION_TYPE_ERROR: Final = (
     "Pick an action type from the list: corrective, preventive, containment or verification."
 )
 _ACTION_TITLE_ERROR: Final = "Give this action a title before saving it."
+_SEVERITY_ERROR: Final = (
+    "Pick a severity from the list: critical, high, medium, low or informational."
+)
+_IMPACT_ERROR: Final = "Pick an impact of high, medium or low."
+_URGENCY_ERROR: Final = "Pick an urgency of high, medium or low."
+_APPROVAL_TO_CLOSE_ERROR: Final = (
+    "This task needs approval before it can be closed. "
+    "Send it for review, then ask an approver to approve it."
+)
+_APPROVAL_NOT_IN_REVIEW_ERROR: Final = (
+    "Approval is given once the work has been sent for review. "
+    "Move this task to under review first."
+)
+_REPEAT_NOT_HEAD_ERROR: Final = (
+    "This task is one occurrence of a repeating task, so it cannot repeat on its own. "
+    "Change the repeat on the first task in the series instead."
+)
+_REPEAT_ON_SUBTASK_ERROR: Final = "A sub-task cannot repeat. Set the repeat on the parent task."
+_REPEAT_END_ERROR: Final = "Pick an end date after the first due date, or let the repeat go on."
+_ATTACH_LIMIT_ERROR: Final = "Attach up to 5 files and 25 evidence items at a time."
+
+_CODE_PREFIX: Final = "TSK-"
+_MAX_UPLOADS: Final = 5
+_MAX_PICKED_EVIDENCE: Final = 25
+
+# Work the platform raises for itself is keyed on (source, external_id), the pair the
+# schema makes unique per tenant (rule 9), so raising the same thing twice is refused by
+# the database and not only by a check that could race a second worker.
+_RECURRENCE_SOURCE: Final = "recurrence"
+_AUTOMATION_SOURCE: Final = "automation"
+_RENEWAL_AUTOMATION: Final = "evidence_stale"
+_RENEWAL_RAISED_FROM: Final = "evidence"
+
+# One run handles at most this many dates for one series. A scheduler that was down for a
+# day catches up in one run; one that was down for a year does not flood the register in a
+# single transaction, and finishes the job over the next runs.
+_SPAWN_CATCH_UP_LIMIT: Final = 12
 
 # The built-in automation catalogue. `available` follows which modules exist today;
 # a rule that watches an unbuilt module reads as "Soon" and cannot be enabled. Only
@@ -95,7 +142,7 @@ _AUTOMATION_CATALOGUE: Final[tuple[dict[str, Any], ...]] = (
         "name": "Evidence went stale",
         "trigger": "When a piece of evidence passes its renewal date without a fresh version.",
         "source": "evidence",
-        "owner_label": "the evidence's control owner",
+        "owner_label": "the evidence's owner, or its control's owner",
         "creates": "task",
         "enabled": True,
         "owner_rule": "source_owner",
@@ -281,6 +328,53 @@ class CapaActionView:
 
 
 @dataclass(frozen=True, slots=True)
+class AttachmentView:
+    """One piece of evidence on a task. The attachment *is* the evidence item and the
+    link that ties it to the task, so ``id`` is the evidence id and a file attached from
+    the evidence page reads the same as one attached from the task."""
+
+    id: uuid.UUID
+    title: str
+    evidence_type: str
+    kind: str
+    filename: str | None
+    content_type: str | None
+    size_bytes: int | None
+    sha256: str | None
+    link_url: str | None
+    renewal_date: date | None
+    freshness: str
+    review_status: str
+    # Who attached it and when, read from the task's own history. None for an item linked
+    # from the evidence page, which leaves no task history to read it from.
+    attached_by: str | None
+    attached_at: datetime | None
+    # The status change it was attached with, None when it was attached on its own.
+    transition_id: uuid.UUID | None
+
+
+@dataclass(frozen=True, slots=True)
+class Upload:
+    """A file that arrived with a request. The router has read the bytes; the store
+    sniffs, hashes and caps them (``core.storage``), so none of that is repeated here."""
+
+    filename: str
+    data: bytes
+
+
+@dataclass(frozen=True, slots=True)
+class SeverityInput:
+    """The severity fields of an edit, replaced together: impact and urgency resolve
+    through the matrix, ``severity`` is the person's choice and ``reason`` explains a
+    choice that differs from the matrix."""
+
+    impact: str | None = None
+    urgency: str | None = None
+    severity: str | None = None
+    reason: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class TaskDetailView(TaskView):
     description: str
     impact: str | None = None
@@ -304,6 +398,11 @@ class TaskDetailView(TaskView):
     watchers: list[Member] = field(default_factory=list)
     capa_actions: list[CapaActionView] = field(default_factory=list)
     allowed_transitions: list[str] = field(default_factory=list)
+    repeat: Repeat | None = None
+    next_occurrence_at: datetime | None = None
+    recurrence_parent_id: uuid.UUID | None = None
+    recurrence_parent_code: str | None = None
+    attachments: list[AttachmentView] = field(default_factory=list)
 
 
 @dataclass(frozen=True, slots=True)
@@ -334,6 +433,21 @@ def _member_of(mid: uuid.UUID | None, names: dict[uuid.UUID, str]) -> Member | N
     if mid is None:
         return None
     return Member(membership_id=mid, name=names.get(mid, "Unknown"))
+
+
+def _title_of(filename: str) -> str:
+    """A readable evidence title from a file's name: its stem, separators as spaces."""
+    stem = PurePosixPath(sanitise_filename(filename)).stem
+    return re.sub(r"[_\-\s]+", " ", stem).strip() or "Attachment"
+
+
+def _renewal_description(title: str, lapsed_on: date, control_codes: Sequence[str]) -> str:
+    text = (
+        f"{title} passed its renewal date on {lapsed_on.day} {lapsed_on:%b} {lapsed_on.year}. "
+        "Collect a fresh copy and upload it, or move the renewal date on the evidence if it "
+        "is still valid, then close this task."
+    )
+    return f"{text}\n\nSupports: {', '.join(control_codes)}." if control_codes else text
 
 
 # -- service -----------------------------------------------------------------
@@ -440,19 +554,23 @@ class TaskService:
         # dict(rows) is rejected by mypy on a Result; the comprehension is the idiom.
         return {task_id: n for task_id, n in rows}  # noqa: C416
 
+    @staticmethod
+    def _repeat_of(rule: str | None) -> Repeat | None:
+        """The structured repeat behind a stored rule, or None when there is none or it
+        is outside what this module writes (a hand-edited or imported rule)."""
+        if not rule:
+            return None
+        try:
+            return parse_rrule(rule)
+        except ValueError:
+            return None
+
     def _recurrence_summary(self, rule: str | None) -> str | None:
         if not rule:
             return None
-        # A human hint for the badge; the RRULE is the source of truth.
-        if "MONTHLY" in rule and "INTERVAL=3" in rule:
-            return "Every 3 months"
-        if "MONTHLY" in rule:
-            return "Monthly"
-        if "WEEKLY" in rule:
-            return "Weekly"
-        if "YEARLY" in rule:
-            return "Yearly"
-        return "Recurring"
+        # A human phrase for the badge; the RRULE is the source of truth.
+        repeat = self._repeat_of(rule)
+        return summary(repeat) if repeat else "Recurring"
 
     def _to_row(
         self,
@@ -536,13 +654,24 @@ class TaskService:
         names = await self._member_names(session, tenant_id)
         subc = await self._subtask_counts(session, tenant_id, [t.id for t in tasks])
         comc = await self._comment_counts(session, tenant_id, [t.id for t in tasks])
+        attc = await link_service.counts_into(
+            session,
+            tenant_id=tenant_id,
+            to_type="task",
+            to_ids=[t.id for t in tasks],
+            from_type="evidence",
+        )
 
         rows = [
             self._to_row(
                 t,
                 names,
                 assignees.get(t.id, []),
-                {"subtasks": subc.get(t.id, 0), "comments": comc.get(t.id, 0)},
+                {
+                    "subtasks": subc.get(t.id, 0),
+                    "comments": comc.get(t.id, 0),
+                    "attachments": attc.get(t.id, 0),
+                },
             )
             for t in tasks
         ]
@@ -634,7 +763,7 @@ class TaskService:
                 await session.execute(
                     select(TaskTransition)
                     .where(TaskTransition.tenant_id == tenant_id, TaskTransition.task_id == task.id)
-                    .order_by(TaskTransition.occurred_at.desc())
+                    .order_by(TaskTransition.occurred_at.desc(), TaskTransition.id.desc())
                 )
             ).scalars()
         )
@@ -648,9 +777,26 @@ class TaskService:
                 )
             )
         ]
+        attachments = await self._attachments_of(session, tenant_id, task.id, names, transitions)
+        parent_code: str | None = None
+        if task.recurrence_parent_id is not None:
+            parent_code = (
+                await session.execute(
+                    select(Task.code).where(
+                        Task.tenant_id == tenant_id, Task.id == task.recurrence_parent_id
+                    )
+                )
+            ).scalar_one_or_none()
 
         base = self._to_row(
-            task, names, assignees, {"subtasks": len(sub_rows), "comments": len(comments)}
+            task,
+            names,
+            assignees,
+            {
+                "subtasks": len(sub_rows),
+                "comments": len(comments),
+                "attachments": len(attachments),
+            },
         )
         return TaskDetailView(
             **{f.name: getattr(base, f.name) for f in base.__dataclass_fields__.values()},
@@ -694,8 +840,75 @@ class TaskService:
             ],
             watchers=[Member(mid, names.get(mid, "Unknown")) for mid in watcher_ids],
             capa_actions=await self._capa_actions_for(session, tenant_id, task.id, names),
-            allowed_transitions=list(ALLOWED_TRANSITIONS[task.status]),
+            allowed_transitions=self._allowed_for(task),
+            repeat=self._repeat_of(task.recurrence_rule),
+            next_occurrence_at=task.next_occurrence_at,
+            recurrence_parent_id=task.recurrence_parent_id,
+            recurrence_parent_code=parent_code,
+            attachments=attachments,
         )
+
+    @staticmethod
+    def _allowed_for(task: Task) -> list[str]:
+        """The legal moves from here. Closing is withheld until a required approval has
+        been given, so the client is never offered a move the service would refuse."""
+        moves = list(ALLOWED_TRANSITIONS[task.status])
+        if task.requires_approval and task.approval_status != "approved":
+            moves = [m for m in moves if m != "closed"]
+        return moves
+
+    async def _attachments_of(
+        self,
+        session: AsyncSession,
+        tenant_id: uuid.UUID,
+        task_id: uuid.UUID,
+        names: dict[uuid.UUID, str],
+        transitions: Sequence[TaskTransition],
+    ) -> list[AttachmentView]:
+        from verity.modules.evidence.service import evidence_service  # noqa: PLC0415
+
+        briefs = await evidence_service.briefs_for_task(
+            session, tenant_id=tenant_id, task_id=task_id
+        )
+        # Who attached an item, and when, is in the task's own history: the attach event
+        # names the evidence in new_value and the status change it came with in old_value.
+        # The history is newest first, so the first event seen for an item is its latest.
+        events: dict[str, TaskTransition] = {}
+        for t in transitions:
+            if t.field_changed == "attachment" and t.new_value:
+                events.setdefault(t.new_value, t)
+        out: list[AttachmentView] = []
+        for brief in briefs:
+            event = events.get(str(brief.id))
+            attached_by: str | None = None
+            if event is not None:
+                attached_by = (
+                    names.get(event.actor_membership_id, "Unknown")
+                    if event.actor_membership_id
+                    else "System"
+                )
+            out.append(
+                AttachmentView(
+                    id=brief.id,
+                    title=brief.title,
+                    evidence_type=brief.evidence_type,
+                    kind=brief.kind,
+                    filename=brief.filename,
+                    content_type=brief.content_type,
+                    size_bytes=brief.size_bytes,
+                    sha256=brief.sha256,
+                    link_url=brief.link_url,
+                    renewal_date=brief.renewal_date,
+                    freshness=brief.freshness,
+                    review_status=brief.review_status,
+                    attached_by=attached_by,
+                    attached_at=event.occurred_at if event else None,
+                    transition_id=(
+                        uuid.UUID(event.old_value) if event and event.old_value else None
+                    ),
+                )
+            )
+        return out
 
     # -- SLA / severity resolution -------------------------------------------
 
@@ -739,18 +952,61 @@ class TaskService:
         default = _DEFAULT_MATRIX.get((impact, urgency))
         return default[0] if default else None
 
-    # -- code allocation (with the retry documents lacks) --------------------
+    def _check_severity_inputs(
+        self, impact: str | None, urgency: str | None, severity: str | None
+    ) -> None:
+        if impact is not None and impact not in IMPACTS:
+            raise InvalidInput(_IMPACT_ERROR, detail=f"unknown impact {impact!r}")
+        if urgency is not None and urgency not in URGENCIES:
+            raise InvalidInput(_URGENCY_ERROR, detail=f"unknown urgency {urgency!r}")
+        if severity is not None and severity not in SEVERITIES:
+            raise InvalidInput(_SEVERITY_ERROR, detail=f"unknown severity {severity!r}")
+
+    async def _decide_severity(
+        self, session: AsyncSession, tenant_id: uuid.UUID, wanted: SeverityInput
+    ) -> SeverityDecision:
+        """What severity a set of inputs ends up with, against this tenant's matrix."""
+        self._check_severity_inputs(wanted.impact, wanted.urgency, wanted.severity)
+        resolved = await self._resolve_severity(session, tenant_id, wanted.impact, wanted.urgency)
+        return decide_severity(resolved=resolved, requested=wanted.severity, reason=wanted.reason)
+
+    # -- code allocation -----------------------------------------------------
 
     async def _allocate_code(self, session: AsyncSession, tenant_id: uuid.UUID) -> str:
+        # Numeric, not the string max: "TSK-9999" sorts after "TSK-10000", which would hand
+        # out a taken code once a workspace passes ten thousand tasks, and a daily repeat
+        # makes that a matter of years rather than never.
         highest = (
             await session.execute(
-                select(func.max(Task.code)).where(
-                    Task.tenant_id == tenant_id, Task.code.like("TSK-%")
+                select(
+                    func.max(cast(func.substr(Task.code, len(_CODE_PREFIX) + 1), BigInteger))
+                ).where(
+                    Task.tenant_id == tenant_id, Task.code.regexp_match(f"^{_CODE_PREFIX}[0-9]+$")
                 )
             )
         ).scalar_one_or_none()
-        n = int(highest.removeprefix("TSK-")) if highest else 0
-        return f"TSK-{n + 1:04d}"
+        return f"{_CODE_PREFIX}{(highest or 0) + 1:04d}"
+
+    async def _insert(
+        self, session: AsyncSession, tenant_id: uuid.UUID, build: Callable[[str], Task]
+    ) -> Task:
+        """Allocate the next code and insert the task ``build`` makes with it.
+
+        The code is max plus one, so two creates in one workspace can pick the same one;
+        the unique constraint refuses the second, and it retries with a fresh code. Each
+        attempt is a savepoint: a plain rollback would end the whole transaction, and with
+        it the tenant setting every later statement in the request depends on.
+        """
+        for _ in range(5):
+            task = build(await self._allocate_code(session, tenant_id))
+            try:
+                async with session.begin_nested():
+                    session.add(task)
+                    await session.flush([task])
+            except IntegrityError:
+                continue
+            return task
+        raise Conflict(_CODE_ERROR, detail="could not allocate a task code")
 
     # -- history + audit -----------------------------------------------------
 
@@ -770,10 +1026,11 @@ class TaskService:
         old: str | None,
         new: str | None,
         note: str | None,
-    ) -> None:
+    ) -> uuid.UUID:
+        row_id = uuid7()
         session.add(
             TaskTransition(
-                id=uuid7(),
+                id=row_id,
                 tenant_id=task.tenant_id,
                 task_id=task.id,
                 actor_membership_id=self._actor_membership(actor),
@@ -784,8 +1041,32 @@ class TaskService:
                 occurred_at=datetime.now(UTC),
             )
         )
+        return row_id
 
     # -- writes --------------------------------------------------------------
+
+    @staticmethod
+    def _anchor(due_at: datetime | None, created_at: datetime) -> date:
+        """The date a series is counted from: when its first task is due, or the day it was
+        made when it has no due date."""
+        return (due_at or created_at).astimezone(UTC).date()
+
+    @staticmethod
+    def _next_occurrence(anchor: date, repeat: Repeat | None, today: date) -> datetime | None:
+        """When the next task in a series is due: the first occurrence after the anchor and
+        no earlier than today, so a rule set on a task that was due last month does not
+        raise last month's tasks as well."""
+        if repeat is None:
+            return None
+        due = next_after(anchor, repeat, max(anchor, today - timedelta(days=1)))
+        return datetime.combine(due, time.min, tzinfo=UTC) if due else None
+
+    @staticmethod
+    def _check_repeat(repeat: Repeat, anchor: date) -> None:
+        if repeat.until is not None and repeat.until <= anchor:
+            raise InvalidInput(
+                _REPEAT_END_ERROR, detail=f"repeat ends {repeat.until}, not after {anchor}"
+            )
 
     async def create_task(  # noqa: PLR0913
         self,
@@ -803,7 +1084,69 @@ class TaskService:
         assignee_ids: Sequence[uuid.UUID] = (),
         due_at: datetime | None = None,
         raised_from_type: str | None = None,
+        severity_input: SeverityInput | None = None,
+        repeat: Repeat | None = None,
+        requires_approval: bool = False,
     ) -> TaskDetailView:
+        decision = await self._decide_severity(
+            session, tenant_id, severity_input or SeverityInput()
+        )
+        task = await self._create(
+            session,
+            tenant_id=tenant_id,
+            actor=actor,
+            task_kind=task_kind,
+            title=title,
+            description=description,
+            priority=priority,
+            category=category,
+            sla_level=sla_level,
+            owner_membership_id=owner_membership_id,
+            assignee_ids=assignee_ids,
+            due_at=due_at,
+            raised_from_type=raised_from_type,
+            impact=severity_input.impact if severity_input else None,
+            urgency=severity_input.urgency if severity_input else None,
+            decision=decision,
+            repeat=repeat,
+            requires_approval=requires_approval,
+        )
+        await session.flush()
+        return await self.get_task(session, tenant_id=tenant_id, task_id=task.id)
+
+    async def _create(  # noqa: PLR0913
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        task_kind: str,
+        title: str,
+        description: str | None,
+        priority: str,
+        category: str,
+        sla_level: str | None,
+        owner_membership_id: uuid.UUID | None,
+        assignee_ids: Sequence[uuid.UUID],
+        due_at: datetime | None,
+        raised_from_type: str | None,
+        impact: str | None = None,
+        urgency: str | None = None,
+        decision: SeverityDecision | None = None,
+        repeat: Repeat | None = None,
+        requires_approval: bool = False,
+        recurrence_parent_id: uuid.UUID | None = None,
+        source: str | None = None,
+        external_id: str | None = None,
+        audit_extra: dict[str, object] | None = None,
+    ) -> Task:
+        """Insert a task with its assignees, history and audit rows, and return the row.
+
+        The one place a task is made, whoever asks: a person through ``create_task``, the
+        recurrence job for the next occurrence of a series, the evidence job for a
+        renewal. ``source`` and ``external_id`` are the key a job raises its work under
+        (rule 9), refused by the database when the same work is raised twice.
+        """
         if task_kind not in TASK_KINDS:
             raise InvalidInput(
                 "Choose whether this is a task or an issue, then try again.",
@@ -816,10 +1159,13 @@ class TaskService:
 
         member = self._actor_membership(actor)
         now = datetime.now(UTC)
-        # Retry the max+1 code against the unique constraint, so two concurrent
-        # creates in one tenant both succeed with distinct codes.
-        for _ in range(5):
-            code = await self._allocate_code(session, tenant_id)
+        decided = decision or SeverityDecision(severity=None)
+        anchor = self._anchor(due_at, now)
+        if repeat is not None:
+            self._check_repeat(repeat, anchor)
+        sla_due_at = await self._resolve_sla_due(session, tenant_id, sla_level, now)
+
+        def build(code: str) -> Task:
             task = Task(
                 id=uuid7(),
                 tenant_id=tenant_id,
@@ -830,29 +1176,41 @@ class TaskService:
                 priority=priority,
                 category=category,
                 status="open",
+                impact=impact,
+                urgency=urgency,
+                severity=decided.severity,
+                severity_override=decided.override,
+                severity_override_reason=decided.override_reason,
                 sla_level=sla_level,
-                sla_due_at=await self._resolve_sla_due(session, tenant_id, sla_level, now),
+                sla_due_at=sla_due_at,
                 owner_membership_id=owner_membership_id,
                 reporter_membership_id=member,
                 created_by_membership_id=member,
                 due_at=due_at,
                 raised_from_type=raised_from_type,
+                recurrence_rule=to_rrule(repeat) if repeat else None,
+                recurrence_parent_id=recurrence_parent_id,
+                next_occurrence_at=self._next_occurrence(anchor, repeat, now.date()),
+                requires_approval=requires_approval,
+                approval_status="pending" if requires_approval else "not_required",
             )
-            session.add(task)
-            try:
-                await session.flush([task])
-                break
-            except IntegrityError:
-                await session.rollback()
-        else:
-            raise Conflict(_CODE_ERROR, detail="could not allocate a task code")
+            if source is not None:
+                task.source, task.external_id, task.synced_at = source, external_id, now
+            return task
+
+        task = await self._insert(session, tenant_id, build)
 
         for mid in dict.fromkeys(assignee_ids):
             session.add(
                 TaskAssignee(id=uuid7(), tenant_id=tenant_id, task_id=task.id, membership_id=mid)
             )
 
-        await self._transition_row(session, task, actor, "created", None, code, None)
+        await self._transition_row(session, task, actor, "created", None, task.code, None)
+        after: dict[str, object] = {"code": task.code, "title": task.title, "kind": task_kind}
+        if decided.severity is not None:
+            after["severity"] = decided.severity
+        if repeat is not None:
+            after["repeat"] = summary(repeat)
         await self._audit.record(
             session,
             action="create",
@@ -860,13 +1218,12 @@ class TaskService:
             object_id=task.id,
             actor=actor,
             tenant_id=tenant_id,
-            after={"code": code, "title": task.title, "kind": task_kind},
+            after={**after, **(audit_extra or {})},
         )
         # An issue raised from an event gets one corrective action to work from.
         if task_kind == "issue" and raised_from_type is not None:
             await self.ensure_initial_capa(session, tenant_id=tenant_id, actor=actor, task=task)
-        await session.flush()
-        return await self.get_task(session, tenant_id=tenant_id, task_id=task.id)
+        return task
 
     # -- CAPA actions (issues only) ------------------------------------------
 
@@ -1088,9 +1445,10 @@ class TaskService:
         member = self._actor_membership(actor)
         note = f"Promoted from {issue.code} · {issue.title}"
         body = f"{action.description}\n\n{note}" if action.description else note
-        for _ in range(5):
-            code = await self._allocate_code(session, tenant_id)
-            new_task = Task(
+        new_task = await self._insert(
+            session,
+            tenant_id,
+            lambda code: Task(
                 id=uuid7(),
                 tenant_id=tenant_id,
                 code=code,
@@ -1105,15 +1463,8 @@ class TaskService:
                 created_by_membership_id=member,
                 due_at=action.due_at,
                 raised_from_type="capa",
-            )
-            session.add(new_task)
-            try:
-                await session.flush([new_task])
-                break
-            except IntegrityError:
-                await session.rollback()
-        else:
-            raise Conflict(_CODE_ERROR, detail="could not allocate a task code")
+            ),
+        )
         if action.owner_membership_id is not None:
             session.add(
                 TaskAssignee(
@@ -1123,7 +1474,7 @@ class TaskService:
                     membership_id=action.owner_membership_id,
                 )
             )
-        await self._transition_row(session, new_task, actor, "created", None, code, None)
+        await self._transition_row(session, new_task, actor, "created", None, new_task.code, None)
         action.promoted_task_id = new_task.id
         await self._audit.record(
             session,
@@ -1132,7 +1483,7 @@ class TaskService:
             object_id=new_task.id,
             actor=actor,
             tenant_id=tenant_id,
-            after={"code": code, "promoted_from_action": str(action.id)},
+            after={"code": new_task.code, "promoted_from_action": str(action.id)},
         )
         await session.flush()
         return await self.get_task(session, tenant_id=tenant_id, task_id=task_id)
@@ -1237,7 +1588,7 @@ class TaskService:
         await session.flush()
         return self._merge_automation(default, row)
 
-    async def update_task(  # noqa: PLR0913
+    async def update_task(  # noqa: PLR0913, PLR0912, PLR0915
         self,
         session: AsyncSession,
         *,
@@ -1252,24 +1603,30 @@ class TaskService:
         owner_membership_id: uuid.UUID | None = None,
         clear_owner: bool = False,
         due_at: datetime | None = None,
+        severity_input: SeverityInput | None = None,
+        repeat: Repeat | None = None,
+        clear_repeat: bool = False,
+        requires_approval: bool | None = None,
     ) -> TaskDetailView:
         task = await self._load(session, tenant_id, task_id)
-        changed: list[tuple[str, str | None, str | None]] = []
+        # (field, old, new, note): the note is how an override says why.
+        changed: list[tuple[str, str | None, str | None, str | None]] = []
+        reschedule = False
 
         if title is not None and title.strip() != task.title:
-            changed.append(("title", task.title, title.strip()))
+            changed.append(("title", task.title, title.strip(), None))
             task.title = title.strip()
         if description is not None:
             task.description = description.strip() or None
         if priority is not None and priority != task.priority:
             if priority not in PRIORITIES:
                 raise InvalidInput(_PRIORITY_ERROR, detail=f"unknown priority {priority!r}")
-            changed.append(("priority", task.priority, priority))
+            changed.append(("priority", task.priority, priority, None))
             task.priority = priority
         if category is not None and category != task.category:
             if category not in CATEGORIES:
                 raise InvalidInput(_CATEGORY_ERROR, detail=f"unknown category {category!r}")
-            changed.append(("category", task.category, category))
+            changed.append(("category", task.category, category, None))
             task.category = category
         if sla_level is not None and sla_level != task.sla_level:
             task.sla_level = sla_level or None
@@ -1279,13 +1636,86 @@ class TaskService:
         if clear_owner:
             task.owner_membership_id = None
         elif owner_membership_id is not None and owner_membership_id != task.owner_membership_id:
-            changed.append(("owner", str(task.owner_membership_id), str(owner_membership_id)))
+            changed.append(("owner", str(task.owner_membership_id), str(owner_membership_id), None))
             task.owner_membership_id = owner_membership_id
-        if due_at is not None:
+        if due_at is not None and due_at != task.due_at:
+            changed.append(
+                ("due", task.due_at.isoformat() if task.due_at else None, due_at.isoformat(), None)
+            )
             task.due_at = due_at
+            reschedule = True
 
-        for fld, old, new in changed:
-            await self._transition_row(session, task, actor, fld, old, new, None)
+        if severity_input is not None:
+            decision = await self._decide_severity(session, tenant_id, severity_input)
+            was_override = (task.severity_override, task.severity_override_reason)
+            severity_moved = False
+            for fld, new in (
+                ("impact", severity_input.impact),
+                ("urgency", severity_input.urgency),
+                ("severity", decision.severity),
+            ):
+                old = getattr(task, fld)
+                if old != new:
+                    changed.append(
+                        (fld, old, new, decision.override_reason if fld == "severity" else None)
+                    )
+                    setattr(task, fld, new)
+                    severity_moved = fld == "severity" or severity_moved
+            task.severity_override = decision.override
+            task.severity_override_reason = decision.override_reason
+            if not severity_moved and was_override != (decision.override, decision.override_reason):
+                changed.append(
+                    (
+                        "severity_override",
+                        was_override[0],
+                        decision.override,
+                        decision.override_reason,
+                    )
+                )
+
+        if clear_repeat and repeat is not None:
+            raise InvalidInput(
+                "Choose a repeat or clear it, not both.", detail="repeat and clear_repeat together"
+            )
+        if clear_repeat or repeat is not None:
+            if task.recurrence_parent_id is not None:
+                raise InvalidInput(_REPEAT_NOT_HEAD_ERROR, detail="task is an occurrence")
+            if task.parent_task_id is not None:
+                raise InvalidInput(_REPEAT_ON_SUBTASK_ERROR, detail="task is a sub-task")
+            new_rule = to_rrule(repeat) if repeat is not None else None
+            if new_rule != task.recurrence_rule:
+                changed.append(
+                    (
+                        "repeat",
+                        self._recurrence_summary(task.recurrence_rule),
+                        summary(repeat) if repeat is not None else None,
+                        None,
+                    )
+                )
+                task.recurrence_rule = new_rule
+                reschedule = True
+
+        if requires_approval is not None and requires_approval != task.requires_approval:
+            changed.append(
+                (
+                    "approval_required",
+                    str(task.requires_approval).lower(),
+                    str(requires_approval).lower(),
+                    None,
+                )
+            )
+            task.requires_approval = requires_approval
+            task.approval_status = "pending" if requires_approval else "not_required"
+            task.approved_by_membership_id = None
+            task.approved_at = None
+
+        if reschedule:
+            if (rule := self._repeat_of(task.recurrence_rule)) is not None:
+                self._check_repeat(rule, self._anchor(task.due_at, task.created_at))
+            self._reschedule(task)
+
+        for fld, old, new, note in changed:
+            await self._transition_row(session, task, actor, fld, old, new, note)
         if changed:
             await self._audit.record(
                 session,
@@ -1294,12 +1724,25 @@ class TaskService:
                 object_id=task.id,
                 actor=actor,
                 tenant_id=tenant_id,
-                after={fld: new for fld, _old, new in changed},
+                before={fld: old for fld, old, _new, _note in changed},
+                after={fld: new for fld, _old, new, _note in changed},
             )
         await session.flush()
         return await self.get_task(session, tenant_id=tenant_id, task_id=task.id)
 
-    async def transition(  # noqa: PLR0913
+    def _reschedule(self, task: Task) -> None:
+        """Work out again when a series head next repeats, from its rule, its due date and
+        its status. A cancelled head ends its series, so it has no next occurrence; one
+        that is reinstated picks the series up from today and does not raise the tasks it
+        missed while it was cancelled."""
+        repeat = self._repeat_of(task.recurrence_rule)
+        if repeat is None or task.status == "cancelled":
+            task.next_occurrence_at = None
+            return
+        anchor = self._anchor(task.due_at, task.created_at)
+        task.next_occurrence_at = self._next_occurrence(anchor, repeat, datetime.now(UTC).date())
+
+    async def transition(  # noqa: PLR0913, PLR0912
         self,
         session: AsyncSession,
         *,
@@ -1308,6 +1751,8 @@ class TaskService:
         task_id: uuid.UUID,
         to_status: str,
         note: str | None = None,
+        evidence_ids: Sequence[uuid.UUID] = (),
+        uploads: Sequence[Upload] = (),
     ) -> TaskDetailView:
         task = await self._load(session, tenant_id, task_id)
         if to_status not in TASK_STATUSES:
@@ -1326,6 +1771,8 @@ class TaskService:
                 "Add a note explaining why, then close or cancel this task.",
                 detail="a note is required to close or cancel a task",
             )
+        if to_status == "closed" and task.requires_approval and task.approval_status != "approved":
+            raise Conflict(_APPROVAL_TO_CLOSE_ERROR, detail=f"approval is {task.approval_status}")
 
         now = datetime.now(UTC)
         old = task.status
@@ -1343,13 +1790,32 @@ class TaskService:
             task.sla_paused_at = None
         if to_status == "under_review":
             task.resolved_at = now
+            if task.requires_approval:
+                # Sending it for review is what asks for the decision, every time: a task
+                # that was approved or turned back and is sent again needs a fresh one.
+                task.approval_status = "pending"
+                task.approved_by_membership_id = None
+                task.approved_at = None
         elif to_status == "closed":
             task.closed_at = now
             task.closure_note = note
         elif to_status == "cancelled":
             task.cancelled_reason = note
+        if task.recurrence_rule is not None and "cancelled" in (old, to_status):
+            self._reschedule(task)
 
-        await self._transition_row(session, task, actor, "status", old, to_status, note)
+        status_row = await self._transition_row(
+            session, task, actor, "status", old, to_status, note
+        )
+        await self._attach(
+            session,
+            tenant_id=tenant_id,
+            actor=actor,
+            task=task,
+            evidence_ids=evidence_ids,
+            uploads=uploads,
+            status_row=status_row,
+        )
         await self._audit.record(
             session,
             action="transition",
@@ -1371,6 +1837,149 @@ class TaskService:
         )
         await session.flush()
         return await self.get_task(session, tenant_id=tenant_id, task_id=task.id)
+
+    # -- evidence on a task --------------------------------------------------
+
+    async def attach(  # noqa: PLR0913
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        task_id: uuid.UUID,
+        evidence_ids: Sequence[uuid.UUID] = (),
+        uploads: Sequence[Upload] = (),
+    ) -> TaskDetailView:
+        """Attach evidence to a task on its own, outside any status change: items already
+        in the library by id, and files as new evidence. Add only: nothing here removes an
+        attachment, so what a task was shown stays on its record."""
+        task = await self._load(session, tenant_id, task_id)
+        if not evidence_ids and not uploads:
+            raise InvalidInput(
+                "Choose an evidence item or a file to attach.",
+                detail="nothing to attach",
+            )
+        await self._attach(
+            session,
+            tenant_id=tenant_id,
+            actor=actor,
+            task=task,
+            evidence_ids=evidence_ids,
+            uploads=uploads,
+        )
+        await session.flush()
+        return await self.get_task(session, tenant_id=tenant_id, task_id=task.id)
+
+    async def _attach(  # noqa: PLR0913
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        task: Task,
+        evidence_ids: Sequence[uuid.UUID],
+        uploads: Sequence[Upload],
+        status_row: uuid.UUID | None = None,
+    ) -> list[uuid.UUID]:
+        """The shared half of ``attach`` and ``transition``. A file becomes an evidence
+        item through the evidence service (which stores, hashes and sniffs it) mapped to
+        the controls this task is linked to; every item is then linked to the task and
+        written to its history, naming the status change it came with when there is one.
+        Returns the evidence newly attached: one already on the task is left as it is."""
+        if len(uploads) > _MAX_UPLOADS or len(set(evidence_ids)) > _MAX_PICKED_EVIDENCE:
+            raise InvalidInput(_ATTACH_LIMIT_ERROR, detail="too many attachments in one request")
+        if not evidence_ids and not uploads:
+            return []
+        from verity.modules.evidence.service import evidence_service  # noqa: PLC0415
+
+        on_task = {
+            b.id
+            for b in await evidence_service.briefs_for_task(
+                session, tenant_id=tenant_id, task_id=task.id
+            )
+        }
+        fresh = [e for e in dict.fromkeys(evidence_ids) if e not in on_task]
+        if uploads:
+            controls = await self._linked_control_ids(session, tenant_id, task.id)
+            today = datetime.now(UTC).date()
+            for upload in uploads:
+                created = await evidence_service.add_file(
+                    session,
+                    tenant_id=tenant_id,
+                    actor=actor,
+                    title=_title_of(upload.filename),
+                    filename=upload.filename,
+                    data=upload.data,
+                    evidence_type="other",
+                    collected_at=today,
+                    owner_membership_id=self._actor_membership(actor),
+                    control_ids=controls,
+                )
+                fresh.append(created.id)
+        for evidence_id in fresh:
+            await evidence_service.link_to_task(
+                session,
+                tenant_id=tenant_id,
+                actor=actor,
+                evidence_id=evidence_id,
+                task_id=task.id,
+            )
+            await self._transition_row(
+                session,
+                task,
+                actor,
+                "attachment",
+                str(status_row) if status_row else None,
+                str(evidence_id),
+                None,
+            )
+        if fresh:
+            await self._audit.record(
+                session,
+                action="update",
+                object_type="task",
+                object_id=task.id,
+                actor=actor,
+                tenant_id=tenant_id,
+                after={"attached_evidence": [str(e) for e in fresh]},
+            )
+        return fresh
+
+    async def _linked_control_ids(
+        self, session: AsyncSession, tenant_id: uuid.UUID, task_id: uuid.UUID
+    ) -> list[uuid.UUID]:
+        edges = await link_service.for_object(
+            session, tenant_id=tenant_id, obj_type="task", obj_id=task_id
+        )
+        return list(dict.fromkeys(e.other_id for e in edges if e.other_type == "control"))
+
+    async def download_attachment(
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        task_id: uuid.UUID,
+        evidence_id: uuid.UUID,
+    ) -> tuple[bytes, str, str]:
+        """The bytes, filename and content type of a file attached to this task. Only what
+        is attached to it: the task's id does not open the rest of the evidence library."""
+        from verity.modules.evidence.service import evidence_service  # noqa: PLC0415
+
+        await self._load(session, tenant_id, task_id)
+        on_task = {
+            b.id
+            for b in await evidence_service.briefs_for_task(
+                session, tenant_id=tenant_id, task_id=task_id
+            )
+        }
+        if evidence_id not in on_task:
+            raise NotFound(
+                "That file is not attached to this task.",
+                detail=f"evidence {evidence_id} is not on task {task_id}",
+            )
+        return await evidence_service.download(
+            session, tenant_id=tenant_id, evidence_id=evidence_id
+        )
 
     async def set_assignees(
         self,
@@ -1484,9 +2093,10 @@ class TaskService:
                 detail="sub-tasks are one level deep",
             )
         member = self._actor_membership(actor)
-        for _ in range(5):
-            code = await self._allocate_code(session, tenant_id)
-            child = Task(
+        child = await self._insert(
+            session,
+            tenant_id,
+            lambda code: Task(
                 id=uuid7(),
                 tenant_id=tenant_id,
                 code=code,
@@ -1498,16 +2108,9 @@ class TaskService:
                 parent_task_id=parent.id,
                 reporter_membership_id=member,
                 created_by_membership_id=member,
-            )
-            session.add(child)
-            try:
-                await session.flush([child])
-                break
-            except IntegrityError:
-                await session.rollback()
-        else:
-            raise Conflict(_CODE_ERROR, detail="could not allocate a task code")
-        await self._transition_row(session, child, actor, "created", None, code, None)
+            ),
+        )
+        await self._transition_row(session, child, actor, "created", None, child.code, None)
         await session.flush()
         return await self.get_task(session, tenant_id=tenant_id, task_id=parent.id)
 
@@ -1532,6 +2135,11 @@ class TaskService:
                 "This task is not waiting for approval. "
                 "Someone may have already decided it, so reload the page to see where it stands.",
                 detail="this task is not awaiting approval",
+            )
+        if task.status != "under_review":
+            raise Conflict(
+                _APPROVAL_NOT_IN_REVIEW_ERROR,
+                detail=f"approval decided on a {task.status} task",
             )
         task.approval_status = decision
         task.approved_by_membership_id = self._actor_membership(actor)
@@ -1602,6 +2210,307 @@ class TaskService:
                 )
             )
         return alerts
+
+    async def spawn_due_occurrences(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, now: datetime | None = None
+    ) -> int:
+        """Raise the next task of every series whose date has come, as the system.
+
+        A series is its first task, the head, which alone carries the rule; each
+        occurrence is a fresh task pointing back at it. Idempotent three ways: the head's
+        ``next_occurrence_at`` moves on in the same transaction, a head another run holds
+        is skipped, and the database refuses a second task for the same head and date.
+        Returns how many tasks it made.
+        """
+        now = now or datetime.now(UTC)
+        heads = list(
+            (
+                await session.execute(
+                    select(Task)
+                    .where(
+                        Task.tenant_id == tenant_id,
+                        Task.recurrence_rule.is_not(None),
+                        Task.next_occurrence_at.is_not(None),
+                        Task.next_occurrence_at <= now,
+                        Task.status != "cancelled",
+                    )
+                    .order_by(Task.next_occurrence_at)
+                    .with_for_update(skip_locked=True)
+                )
+            ).scalars()
+        )
+        return sum([await self._spawn_series(session, tenant_id, head, now) for head in heads])
+
+    async def _spawn_series(
+        self, session: AsyncSession, tenant_id: uuid.UUID, head: Task, now: datetime
+    ) -> int:
+        repeat = self._repeat_of(head.recurrence_rule)
+        if repeat is None:
+            logger.warning("tasks.spawn_unreadable_rule", task=head.code)
+            return 0
+        anchor = self._anchor(head.due_at, head.created_at)
+        made = handled = 0
+        while (
+            head.next_occurrence_at is not None
+            and head.next_occurrence_at <= now
+            and handled < _SPAWN_CATCH_UP_LIMIT
+        ):
+            handled += 1
+            due = head.next_occurrence_at
+            key = f"{head.id}:{due.astimezone(UTC).date().isoformat()}"
+            child: Task | None = None
+            # A task already raised for this head and date (a run that stopped before it
+            # moved the head on) is not raised again; the head just moves on.
+            taken = await session.scalar(
+                select(Task.id).where(
+                    Task.tenant_id == tenant_id,
+                    Task.source == _RECURRENCE_SOURCE,
+                    Task.external_id == key,
+                )
+            )
+            if taken is None:
+                try:
+                    child = await self._spawn_occurrence(session, tenant_id, head, due, key)
+                except Conflict:
+                    # The code would not allocate, or another run raised it between the check
+                    # and the insert. Leave the head as it is; the next run looks again.
+                    logger.warning("tasks.spawn_conflict", task=head.code, due=due.isoformat())
+                    break
+                made += 1
+            following = next_after(anchor, repeat, due.astimezone(UTC).date())
+            head.next_occurrence_at = (
+                datetime.combine(following, time.min, tzinfo=UTC) if following else None
+            )
+            await self._audit.record(
+                session,
+                action="update",
+                object_type="task",
+                object_id=head.id,
+                actor=System(),
+                tenant_id=tenant_id,
+                before={"next_occurrence_at": due.isoformat()},
+                after={
+                    "next_occurrence_at": head.next_occurrence_at.isoformat()
+                    if head.next_occurrence_at
+                    else None,
+                    "occurrence": child.code if child else None,
+                },
+            )
+        await session.flush()
+        return made
+
+    async def _spawn_occurrence(
+        self, session: AsyncSession, tenant_id: uuid.UUID, head: Task, due: datetime, key: str
+    ) -> Task:
+        """A fresh copy of the head, due on its scheduled date. What carries over is what
+        describes the work: its words, priority, severity, SLA level, people and links. What
+        does not is what happened to the head: its status, history, comments, and the
+        evidence attached to it, since the next one starts with none."""
+        from verity.modules.notifications.service import notification_service  # noqa: PLC0415
+
+        assignees = (await self._assignees_by_task(session, tenant_id, [head.id])).get(head.id, [])
+        due_on = due.astimezone(UTC).date()
+        child = await self._create(
+            session,
+            tenant_id=tenant_id,
+            actor=System(),
+            task_kind=head.task_kind,
+            title=head.title,
+            description=head.description,
+            priority=head.priority,
+            category=head.category,
+            sla_level=head.sla_level,
+            owner_membership_id=head.owner_membership_id,
+            assignee_ids=assignees,
+            due_at=due,
+            raised_from_type=head.raised_from_type,
+            impact=head.impact,
+            urgency=head.urgency,
+            decision=SeverityDecision(
+                head.severity, head.severity_override, head.severity_override_reason
+            ),
+            requires_approval=head.requires_approval,
+            recurrence_parent_id=head.id,
+            source=_RECURRENCE_SOURCE,
+            external_id=key,
+            audit_extra={"repeats": head.code, "due": due_on.isoformat()},
+        )
+        for edge in await link_service.for_object(
+            session, tenant_id=tenant_id, obj_type="task", obj_id=head.id
+        ):
+            if edge.other_type == "evidence":
+                continue
+            outgoing = edge.direction == "outgoing"
+            await link_service.create(
+                session,
+                tenant_id=tenant_id,
+                from_type="task" if outgoing else edge.other_type,
+                from_id=child.id if outgoing else edge.other_id,
+                to_type=edge.other_type if outgoing else "task",
+                to_id=edge.other_id if outgoing else child.id,
+                relation=edge.relation,
+                note=edge.note,
+            )
+        await notification_service.notify_many(
+            session,
+            tenant_id=tenant_id,
+            recipients={head.owner_membership_id, *assignees},
+            kind="recurrence",
+            title=f"{child.code} was created from {head.code}",
+            body=f"{child.title}, due {due_on.day} {due_on:%b}",
+            object_type="task",
+            object_id=child.id,
+            email=True,
+        )
+        return child
+
+    async def raise_evidence_renewals(self, session: AsyncSession, *, tenant_id: uuid.UUID) -> int:
+        """Raise one renewal task for each evidence item past its validity, as the system.
+
+        Follows the ``evidence_stale`` automation: nothing when it is switched off, and
+        its owner rule, kind, priority and days to due otherwise. An item gets one task
+        per stale spell, keyed on its renewal date, so a task someone closed without
+        renewing the evidence is not raised again for the same lapse, while renewing the
+        evidence and letting it lapse a second time earns a new one. An item that already
+        has an open renewal task is left alone whatever its date. Returns how many tasks
+        it made.
+        """
+        from verity.modules.compliance.control_service import control_service  # noqa: PLC0415
+        from verity.modules.evidence.service import evidence_service  # noqa: PLC0415
+        from verity.modules.notifications.service import notification_service  # noqa: PLC0415
+
+        rule = next(
+            a
+            for a in await self.list_automations(session, tenant_id=tenant_id)
+            if a["id"] == _RENEWAL_AUTOMATION
+        )
+        if not rule["enabled"]:
+            return 0
+        stale = await evidence_service.list_evidence(
+            session, tenant_id=tenant_id, freshness_filter="stale"
+        )
+        if not stale:
+            return 0
+
+        keys = {
+            item.id: f"{_RENEWAL_AUTOMATION}:{item.id}:{item.renewal_date.isoformat()}"
+            for item in stale
+            if item.renewal_date is not None
+        }
+        raised = set(
+            (
+                await session.execute(
+                    select(Task.external_id).where(
+                        Task.tenant_id == tenant_id,
+                        Task.source == _AUTOMATION_SOURCE,
+                        Task.external_id.in_(list(keys.values())),
+                    )
+                )
+            ).scalars()
+        )
+        linked = await link_service.ids_of_type_linked_from(
+            session, tenant_id=tenant_id, from_type="evidence", from_ids=list(keys), to_type="task"
+        )
+        linked_tasks = {task_id for ids in linked.values() for task_id in ids}
+        open_renewals = (
+            set(
+                (
+                    await session.execute(
+                        select(Task.id).where(
+                            Task.tenant_id == tenant_id,
+                            Task.id.in_(list(linked_tasks)),
+                            Task.raised_from_type == _RENEWAL_RAISED_FROM,
+                            Task.status.in_(_ACTIVE),
+                        )
+                    )
+                ).scalars()
+            )
+            if linked_tasks
+            else set()
+        )
+        controls = await control_service.list_controls(
+            session, tenant_id=tenant_id, include_disabled=True
+        )
+        code_of = {c.id: c.code for c in controls}
+        owner_of = {c.id: c.owner_membership_id for c in controls}
+
+        system = System()
+        today = datetime.now(UTC).date()
+        due_at = datetime.combine(
+            today + timedelta(days=int(rule["due_in_days"])), time.min, tzinfo=UTC
+        )
+        made = 0
+        for item in stale:
+            key, lapsed_on = keys.get(item.id), item.renewal_date
+            if (
+                key is None
+                or lapsed_on is None
+                or key in raised
+                or open_renewals.intersection(linked.get(item.id, []))
+            ):
+                continue
+            # The item's own owner first; failing that, the owner of the first of its controls
+            # (by code) that has one.
+            owner = None
+            if rule["owner_rule"] != "unassigned":
+                owner = item.owner_membership_id
+                for control_id in sorted(item.control_ids, key=lambda c: code_of.get(c, "")):
+                    if owner is not None:
+                        break
+                    owner = owner_of.get(control_id)
+            codes = sorted(code_of[c] for c in item.control_ids if c in code_of)
+            try:
+                task = await self._create(
+                    session,
+                    tenant_id=tenant_id,
+                    actor=system,
+                    task_kind=str(rule["creates"]),
+                    title=f"Renew evidence: {item.title}"[:300],
+                    description=_renewal_description(item.title, lapsed_on, codes),
+                    priority=str(rule["priority"]),
+                    category="regulatory",
+                    sla_level=None,
+                    owner_membership_id=owner,
+                    assignee_ids=[owner] if owner else [],
+                    due_at=due_at,
+                    raised_from_type=_RENEWAL_RAISED_FROM,
+                    source=_AUTOMATION_SOURCE,
+                    external_id=key,
+                    audit_extra={"evidence_id": str(item.id), "renewal_date": str(lapsed_on)},
+                )
+            except Conflict:
+                logger.warning("tasks.renewal_conflict", evidence=str(item.id))
+                continue
+            await evidence_service.link_to_task(
+                session, tenant_id=tenant_id, actor=system, evidence_id=item.id, task_id=task.id
+            )
+            await self._transition_row(
+                session, task, system, "attachment", None, str(item.id), None
+            )
+            for control_id in item.control_ids:
+                await link_service.create(
+                    session,
+                    tenant_id=tenant_id,
+                    from_type="task",
+                    from_id=task.id,
+                    to_type="control",
+                    to_id=control_id,
+                )
+            if owner is not None:
+                await notification_service.notify(
+                    session,
+                    tenant_id=tenant_id,
+                    recipient_membership_id=owner,
+                    kind="assigned",
+                    title=f"You were assigned {task.code}",
+                    body=task.title,
+                    object_type="task",
+                    object_id=task.id,
+                    email=True,
+                )
+            made += 1
+        await session.flush()
+        return made
 
     # -- config --------------------------------------------------------------
 

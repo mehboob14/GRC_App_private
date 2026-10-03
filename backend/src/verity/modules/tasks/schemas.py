@@ -8,11 +8,12 @@ dataclasses (and, for config, ORM rows) via ``from_attributes``.
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from verity.modules.tasks.recurrence import MAX_COUNT, MAX_INTERVAL
 from verity.modules.tenancy.schemas import UtcDateTime
 
 
@@ -92,6 +93,34 @@ class CapaActionOut(_Response):
     created_at: UtcDateTime
 
 
+class RepeatOut(_Response):
+    frequency: str
+    interval: int
+    until: date | None
+    count: int | None
+
+
+class AttachmentOut(_Response):
+    """One piece of evidence on a task. ``id`` is the evidence item's own id, the one the
+    evidence library knows it by."""
+
+    id: uuid.UUID
+    title: str
+    evidence_type: str
+    kind: str
+    filename: str | None
+    content_type: str | None
+    size_bytes: int | None
+    sha256: str | None
+    link_url: str | None
+    renewal_date: date | None
+    freshness: str
+    review_status: str
+    attached_by: str | None
+    attached_at: UtcDateTime | None
+    transition_id: uuid.UUID | None
+
+
 class TaskDetailOut(TaskOut):
     description: str
     impact: str | None
@@ -109,11 +138,16 @@ class TaskDetailOut(TaskOut):
     approver: MemberOut | None
     approved_at: UtcDateTime | None
     recurrence_rule: str | None
+    repeat: RepeatOut | None
+    next_occurrence_at: UtcDateTime | None
+    recurrence_parent_id: uuid.UUID | None
+    recurrence_parent_code: str | None
     subtasks: list[TaskOut]
     comments: list[CommentOut]
     transitions: list[TransitionOut]
     watchers: list[MemberOut]
     capa_actions: list[CapaActionOut]
+    attachments: list[AttachmentOut]
     allowed_transitions: list[str]
 
 
@@ -202,6 +236,16 @@ class AutomationOut(_Response):
 # -- requests ----------------------------------------------------------------
 
 
+class RepeatIn(_Request):
+    """How a task repeats: every ``interval`` days, weeks, months, quarters or years, until
+    a date, for a number of tasks (the first included), or without end."""
+
+    frequency: str = Field(pattern="^(daily|weekly|monthly|quarterly|yearly)$")
+    interval: int = Field(default=1, ge=1, le=MAX_INTERVAL)
+    until: date | None = None
+    count: int | None = Field(default=None, ge=1, le=MAX_COUNT)
+
+
 class TaskCreate(_Request):
     task_kind: str = "task"
     title: str = Field(min_length=1, max_length=300)
@@ -212,9 +256,20 @@ class TaskCreate(_Request):
     owner_membership_id: uuid.UUID | None = None
     assignee_ids: list[uuid.UUID] = Field(default_factory=list)
     due_at: datetime | None = None
+    # Impact and urgency resolve to a severity through the workspace's matrix; a severity
+    # chosen against the matrix is an override and carries its reason.
+    impact: str | None = None
+    urgency: str | None = None
+    severity: str | None = None
+    severity_reason: str | None = Field(default=None, max_length=1000)
+    repeat: RepeatIn | None = None
+    requires_approval: bool = False
 
 
 class TaskUpdate(_Request):
+    """An edit. The severity fields (impact, urgency, severity, severity_reason) are
+    replaced together when any of them is sent, so send the whole set you want."""
+
     title: str | None = Field(default=None, min_length=1, max_length=300)
     description: str | None = Field(default=None, max_length=8000)
     priority: str | None = None
@@ -223,11 +278,20 @@ class TaskUpdate(_Request):
     owner_membership_id: uuid.UUID | None = None
     clear_owner: bool = False
     due_at: datetime | None = None
+    impact: str | None = None
+    urgency: str | None = None
+    severity: str | None = None
+    severity_reason: str | None = Field(default=None, max_length=1000)
+    repeat: RepeatIn | None = None
+    clear_repeat: bool = False
+    requires_approval: bool | None = None
 
 
 class TransitionRequest(_Request):
     to_status: str
     note: str | None = Field(default=None, max_length=2000)
+    # Evidence already in the library, attached to the task with this move.
+    evidence_ids: list[uuid.UUID] = Field(default_factory=list, max_length=25)
 
 
 class AssignRequest(_Request):

@@ -179,14 +179,39 @@ export type TaskLink = {
   note: string | null;
 };
 
+/** Evidence on a task. An attachment IS the evidence item and the link that ties
+ *  it to the task, so `id` is the evidence id and an item attached from the
+ *  evidence page reads the same as one attached here. Add and read only. */
 export type TaskAttachment = {
   id: string;
-  filename: string;
-  size_bytes: number;
-  uploaded_by: string;
-  uploaded_at: string;
-  /** Set when the file was attached as part of a transition, not standalone. */
+  title: string;
+  evidence_type: string;
+  kind: "file" | "link";
+  filename: string | null;
+  content_type: string | null;
+  size_bytes: number | null;
+  sha256: string | null;
+  link_url: string | null;
+  renewal_date: string | null;
+  freshness: "current" | "aging" | "stale" | "no_expiry";
+  review_status: "pending" | "approved" | "rejected";
+  /** From the task's own history. Null for an item linked from the evidence page. */
+  attached_by: string | null;
+  attached_at: string | null;
+  /** The status change it was attached with; null when attached on its own. */
   transition_id: string | null;
+};
+
+/** How a task repeats. Quarterly is a frequency here (every 3 months on the wire). */
+export const REPEAT_FREQUENCIES = ["daily", "weekly", "monthly", "quarterly", "yearly"] as const;
+export type RepeatFrequency = (typeof REPEAT_FREQUENCIES)[number];
+
+export type TaskRepeat = {
+  frequency: RepeatFrequency;
+  interval: number;
+  /** An end date (YYYY-MM-DD), or a count of tasks including the first; at most one. */
+  until: string | null;
+  count: number | null;
 };
 
 export type TaskApproval = {
@@ -254,7 +279,10 @@ export type TaskDetail = Task & {
   approval: TaskApproval;
 
   recurrence_rule: string | null;
+  /** The structured form of `recurrence_rule`, on a series head only. */
+  repeat: TaskRepeat | null;
   recurrence_parent_id: string | null;
+  recurrence_parent_code: string | null;
   next_occurrence_at: string | null;
   template_id: string | null;
 
