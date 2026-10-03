@@ -1,0 +1,85 @@
+---
+title: How connections work
+description: What a connection does, what you can connect today, what happens when a connection breaks, and the systems planned next.
+status: live
+updated: 2026-10-02
+---
+
+A connection lets Verity check a system for you, on a schedule, and attach what it finds to the controls those checks answer. This page explains how connections work, what you can connect today, what happens when one breaks, and which systems are planned.
+
+## What a connection does
+
+Instead of somebody screenshotting a setting every quarter, the setting is read every day and the evidence appears on its own.
+
+- **Checks answer controls.** Each check maps to the controls it can support. One connected system per kind of system is enough: a control's **Automation** tab says "Connect any one of these".
+- **Runs are daily.** Each connection runs once a day, and on demand with **Run now**. A run reads the system once, evaluates every check, and attaches the output to every mapped control as dated evidence, at most once a day unless the result changes.
+- **Access is read only.** A connection holds one account and a read-only token. Verity encrypts the token before it is stored, and it never appears in a log or on a screen again.
+
+Results show on each control's **Automation** tab. See [Automated checks](/docs/compliance/automated-checks/).
+
+<Screenshot name="connections" alt="The All connections page on its Available tab, with GitHub ready to connect and other systems such as Amazon Web Services, Okta and Jira not yet available, and Access Reviews, Devices and Infrastructure marked Soon in the side menu" />
+
+## What is available today
+
+**GitHub** is the first live connector. Later phases add identity providers, cloud accounts, device management and ticketing. Anything marked **Soon** on this page is not connected to real data yet.
+
+Go to **Connections** at the bottom of the left navigation. The page has two tabs:
+
+- **Available** lists every system in the catalogue, with search and a category filter. GitHub reads **Ready to connect**. Planned systems say when they are expected and cannot be connected yet, and systems marked **Not in plan yet** can still be requested.
+- **Active** lists your connections. Each card shows its health (**Healthy**, **Running**, **Waiting for first run** or **Needs attention**), when it last ran, and how many results passed, failed or could not be checked.
+
+To connect GitHub, see [Connect GitHub](/docs/integrations/github/).
+
+### Request a system that is not there yet
+
+You can register interest in a system that is not there yet using the request option. It records what you need so it can be prioritised.
+
+<Steps>
+<Step title="Open the request form">
+
+Choose **Request integration** at the top of the Connections page, or request one from a control's **Automation** tab.
+
+</Step>
+<Step title="Describe what you need">
+
+Name the **System**, choose the **Kind of system**, and say **What should it prove**, for example "Every laptop is encrypted and enrolled".
+
+</Step>
+<Step title="Send it">
+
+Click **Send request**. The control keeps its manual evidence path in the meantime.
+
+</Step>
+</Steps>
+
+## When a connection breaks
+
+A connection whose token has expired or whose permissions were reduced shows as **Needs attention** on the Connections page, with the reason. The checks stop rather than quietly report a pass: their results read **Could not check**, never **Fail**, because a broken connector must never look like a failed control.
+
+To fix it, disconnect the connection and connect again with a fresh token. The schedule resumes, and past results and evidence stay. If a token has an expiry date, the card shows it, so you can replace the token before it lapses.
+
+Some problems clear on their own. If the system could not be reached, or its request allowance was used up, the next run tries again.
+
+## Planned connections
+
+The table shows what you can connect now and what is planned, grouped by the kind of system. One connection per kind is enough for the checks that need it.
+
+| Capability | Available | Coming soon |
+|---|---|---|
+| Version control | GitHub | <Status value="soon" /> GitLab, Bitbucket |
+| Cloud infrastructure | None yet | <Status value="soon" /> Amazon Web Services, Microsoft Azure, Google Cloud, DigitalOcean, Heroku, Render, Vercel, Netlify, Supabase, Neon, Qovery |
+| Asset discovery | None yet | <Status value="soon" /> Amazon Web Services, Microsoft Azure, Google Cloud, BMC |
+| Identity provider | None yet | <Status value="soon" /> Okta, Google Workspace, Microsoft 365 and Entra ID |
+| Password manager | None yet | <Status value="soon" /> 1Password |
+| Ticketing | None yet | <Status value="soon" /> Jira, Linear, Asana, ClickUp, Monday, Notion |
+| On call and alerting | None yet | <Status value="soon" /> PagerDuty, Slack |
+| Network and edge | None yet | <Status value="soon" /> Cloudflare, Tailscale |
+| Observability | None yet | <Status value="soon" /> Datadog, Sentry, Grafana, SigNoz, Better Stack |
+| Vulnerability scanner | None yet | <Status value="soon" /> Tenable Nessus, Rapid7 Nexpose, Qualys |
+
+For what these connections will add, see [Continuous monitoring](/docs/monitoring/continuous-monitoring/), [Device monitoring](/docs/monitoring/device-monitoring/) and [Access reviews](/docs/monitoring/access-reviews/). If the system you use is not listed, request it.
+
+<Cards>
+<Card title="Connect GitHub" href="/docs/integrations/github/" icon="plug">Connect a GitHub organisation with a read-only token.</Card>
+<Card title="Automated checks" href="/docs/compliance/automated-checks/" icon="check">Read check results on a control.</Card>
+</Cards>

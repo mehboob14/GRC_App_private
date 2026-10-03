@@ -1,0 +1,38 @@
+---
+title: Access reviews
+description: Planned. Periodic user access reviews in which reviewers confirm or revoke each person's access, with every decision recorded in the audit log.
+status: soon
+updated: 2026-10-02
+---
+
+An access review asks one question on a schedule: should each of these people still have this access? Access reviews in Verity will run that question end to end, from the live user list to a recorded decision. This page describes what is planned and what you can do today.
+
+## What it will do
+
+- **Periodic reviews.** Reviews will come round periodically. Each will start from the current list of users and their groups, exported from your identity provider, so every review starts from the live user list rather than a stale spreadsheet.
+- **Confirm or revoke.** Reviewers will confirm each person's access or revoke it. Every decision will be recorded in the audit log: who decided, what they decided, and when.
+- **Group by group.** Groups in Verity are already designed as the join between identity provider groups, Verity roles and the scope of a review, so reviews will be able to move group by group.
+- **Evidence for the access controls.** A completed review will stand as evidence for the controls that expect one, such as periodic user access reviews, privileged access management, segregation of duties and timely access removal.
+
+## Identity provider checks that will feed it
+
+When you connect an identity provider, these checks will run alongside the reviews:
+
+| Check | What it will verify |
+|---|---|
+| Access lists export for review | Current users and their groups export for the periodic access review, weekly. |
+| Few administrators | Administrator roles are held only by named, approved people. |
+| Access comes from roles | Application access is granted through role groups rather than to individuals. |
+| Two factor is enforced | The sign-in policy requires two-factor for every user, and every active user has enrolled. |
+| Connected apps are known | Applications granted access through the identity provider are inventoried and approved. |
+| Access requests are approved | New access is granted against an approved request. This one also needs a ticketing system connected. |
+
+The identity providers planned are listed in [How connections work](/docs/integrations/overview/#planned-connections). As with every check, a connection that cannot be read will show an error, never a failure.
+
+## What you can use today
+
+- **Time-boxed access for auditors.** Invite an external auditor as a guest with an access window. Outside those dates the account still exists but cannot sign in. See [People and invitations](/docs/admin/people/).
+- **Disable, don't delete.** When someone leaves, disable their membership. They lose access at once, and their name stays on the approvals and evidence they left behind. See [People and invitations](/docs/admin/people/).
+- **Run a review by hand.** The people list shows each member's role, groups, two-factor status and when they were last active. Raise a [task](/docs/tasks/overview/) for the review, record the sign-off, and attach it to the access review control as [evidence](/docs/compliance/evidence/).
+
+The **Connections** page already lists **Access Reviews** under **Manage Accounts**, marked **Soon**.

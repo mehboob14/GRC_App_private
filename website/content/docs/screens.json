@@ -1,0 +1,1681 @@
+{
+  "acknowledgement-campaign": {
+    "width": 1440,
+    "height": 900,
+    "title": "An acknowledgement campaign in progress"
+  },
+  "asset-add": {
+    "width": 1440,
+    "height": 900,
+    "title": "Adding an asset"
+  },
+  "asset-detail": {
+    "width": 1440,
+    "height": 900,
+    "title": "An asset: identity, classification, inventory hygiene and the record",
+    "elements": [
+      {
+        "key": "maintenance",
+        "label": "Start maintenance",
+        "x": 1158,
+        "y": 113,
+        "w": 152,
+        "h": 36
+      },
+      {
+        "key": "tabs",
+        "label": "Overview",
+        "x": 260,
+        "y": 278,
+        "w": 136,
+        "h": 40
+      },
+      {
+        "key": "relationships",
+        "label": "Relationships",
+        "x": 940,
+        "y": 278,
+        "w": 136,
+        "h": 40
+      },
+      {
+        "key": "vulns",
+        "label": "Vulnerabilities",
+        "x": 804,
+        "y": 278,
+        "w": 136,
+        "h": 40
+      },
+      {
+        "key": "hygiene",
+        "label": "Inventory hygiene",
+        "x": 1100,
+        "y": 338,
+        "w": 320,
+        "h": 269
+      },
+      {
+        "key": "reviewed",
+        "label": "Mark reviewed",
+        "x": 1289,
+        "y": 359,
+        "w": 110,
+        "h": 28
+      }
+    ]
+  },
+  "asset-import": {
+    "width": 1440,
+    "height": 900,
+    "title": "Importing assets from a spreadsheet: preview before anything is created"
+  },
+  "assets-overview": {
+    "width": 1440,
+    "height": 900,
+    "title": "Assets overview: criticality, inventory hygiene and what needs attention",
+    "elements": [
+      {
+        "key": "tab",
+        "label": "Overview",
+        "x": 260,
+        "y": 57,
+        "w": 136,
+        "h": 43
+      }
+    ]
+  },
+  "assets-register": {
+    "width": 1440,
+    "height": 900,
+    "title": "Asset register: type, owner, criticality, CIA, lifecycle and value",
+    "elements": [
+      {
+        "key": "import",
+        "label": "Import",
+        "x": 933,
+        "y": 10,
+        "w": 98,
+        "h": 36
+      },
+      {
+        "key": "add",
+        "label": "Add asset",
+        "x": 1039,
+        "y": 10,
+        "w": 118,
+        "h": 36
+      },
+      {
+        "key": "tabs",
+        "label": "Register",
+        "x": 396,
+        "y": 57,
+        "w": 136,
+        "h": 43
+      },
+      {
+        "key": "criticality-filter",
+        "label": "Criticality: All",
+        "x": 716,
+        "y": 213,
+        "w": 130,
+        "h": 36
+      },
+      {
+        "key": "criticality-col",
+        "label": "Criticality",
+        "x": 782,
+        "y": 363,
+        "w": 127,
+        "h": 40
+      },
+      {
+        "key": "cia-col",
+        "label": "CIA",
+        "x": 909,
+        "y": 363,
+        "w": 73,
+        "h": 40
+      }
+    ]
+  },
+  "assets-settings": {
+    "width": 1440,
+    "height": 900,
+    "title": "Asset settings: review cadence per criticality, and custom fields",
+    "elements": [
+      {
+        "key": "tab",
+        "label": "Settings",
+        "x": 532,
+        "y": 57,
+        "w": 136,
+        "h": 43
+      },
+      {
+        "key": "add",
+        "label": "Add field",
+        "x": 987,
+        "y": 736,
+        "w": 112,
+        "h": 36
+      }
+    ]
+  },
+  "audit-log": {
+    "width": 1440,
+    "height": 900,
+    "title": "The audit log: every state-changing action, append only",
+    "elements": [
+      {
+        "key": "user-filter",
+        "label": "User type: All",
+        "x": 260,
+        "y": 89,
+        "w": 131,
+        "h": 36
+      },
+      {
+        "key": "action-filter",
+        "label": "Action: All",
+        "x": 399,
+        "y": 89,
+        "w": 112,
+        "h": 36
+      },
+      {
+        "key": "object-filter",
+        "label": "Object type: All",
+        "x": 519,
+        "y": 89,
+        "w": 140,
+        "h": 36
+      },
+      {
+        "key": "activity",
+        "label": "Activity",
+        "x": 1124,
+        "y": 191,
+        "w": 316,
+        "h": 36
+      }
+    ]
+  },
+  "connection-github": {
+    "width": 1440,
+    "height": 900,
+    "title": "Connecting GitHub"
+  },
+  "connections": {
+    "width": 1440,
+    "height": 900,
+    "title": "Connections: systems Verity can check on a schedule",
+    "elements": [
+      {
+        "key": "request",
+        "label": "Request integration",
+        "x": 978,
+        "y": 10,
+        "w": 179,
+        "h": 36
+      }
+    ]
+  },
+  "control-automation": {
+    "width": 1440,
+    "height": 900,
+    "title": "A control's Automation tab: the checks a connected system can run",
+    "elements": [
+      {
+        "key": "tab",
+        "label": "Automation",
+        "x": 532,
+        "y": 217,
+        "w": 136,
+        "h": 43
+      }
+    ]
+  },
+  "control-detail": {
+    "width": 1440,
+    "height": 900,
+    "title": "A control: statement, guidance, owner, status and linked evidence",
+    "elements": [
+      {
+        "key": "tabs",
+        "label": "Overview",
+        "x": 260,
+        "y": 217,
+        "w": 136,
+        "h": 43
+      },
+      {
+        "key": "evidence-tab",
+        "label": "Evidence",
+        "x": 396,
+        "y": 217,
+        "w": 136,
+        "h": 43
+      },
+      {
+        "key": "automation-tab",
+        "label": "Automation",
+        "x": 532,
+        "y": 217,
+        "w": 136,
+        "h": 43
+      },
+      {
+        "key": "status",
+        "label": "Status",
+        "x": 1100,
+        "y": 280,
+        "w": 320,
+        "h": 351
+      },
+      {
+        "key": "owner",
+        "label": "Owner",
+        "x": 1207,
+        "y": 374,
+        "w": 192,
+        "h": 36
+      },
+      {
+        "key": "linked",
+        "label": "Linked evidence",
+        "x": 260,
+        "y": 672,
+        "w": 824,
+        "h": 117
+      },
+      {
+        "key": "add",
+        "label": "Add evidence",
+        "x": 936,
+        "y": 693,
+        "w": 127,
+        "h": 28
+      }
+    ]
+  },
+  "controls-register": {
+    "width": 1440,
+    "height": 900,
+    "title": "Controls library: every control with owner, evidence and status",
+    "elements": [
+      {
+        "key": "summary",
+        "label": "Controls library",
+        "x": 308,
+        "y": 8,
+        "w": 275,
+        "h": 26
+      },
+      {
+        "key": "new",
+        "label": "New control",
+        "x": 1025,
+        "y": 10,
+        "w": 132,
+        "h": 36
+      },
+      {
+        "key": "search",
+        "label": "Search by name, code or criterion...",
+        "x": 297,
+        "y": 97,
+        "w": 309,
+        "h": 20
+      },
+      {
+        "key": "owner-filter",
+        "label": "Owner: All",
+        "x": 1052,
+        "y": 89,
+        "w": 113,
+        "h": 36
+      },
+      {
+        "key": "status-filter",
+        "label": "Status: All",
+        "x": 1173,
+        "y": 89,
+        "w": 112,
+        "h": 36
+      },
+      {
+        "key": "columns",
+        "label": "Columns",
+        "x": 1273,
+        "y": 177,
+        "w": 134,
+        "h": 36
+      },
+      {
+        "key": "owner-col",
+        "label": "Owner",
+        "x": 1061,
+        "y": 222,
+        "w": 157,
+        "h": 40
+      },
+      {
+        "key": "status-col",
+        "label": "Status",
+        "x": 1321,
+        "y": 222,
+        "w": 119,
+        "h": 40
+      }
+    ]
+  },
+  "dashboard": {
+    "width": 1440,
+    "height": 900,
+    "title": "Dashboard (preview): the executive view with illustrative figures"
+  },
+  "dialog-add-risk": {
+    "width": 1440,
+    "height": 900,
+    "title": "The Add risk dialog"
+  },
+  "dialog-add-vendor": {
+    "width": 1440,
+    "height": 900,
+    "title": "The Add vendor dialog"
+  },
+  "dialog-custom-field": {
+    "width": 1440,
+    "height": 900,
+    "title": "Adding a custom field"
+  },
+  "dialog-request-vendor": {
+    "width": 1440,
+    "height": 900,
+    "title": "The Request a vendor dialog"
+  },
+  "document-approval": {
+    "width": 1440,
+    "height": 900,
+    "title": "The reviewer's page for a policy sent for approval"
+  },
+  "document-detail": {
+    "width": 1440,
+    "height": 900,
+    "title": "A published policy: details, owner and its approval tiers",
+    "elements": [
+      {
+        "key": "status",
+        "label": "Published",
+        "x": 260,
+        "y": 203,
+        "w": 86,
+        "h": 23
+      },
+      {
+        "key": "tabs",
+        "label": "Overview",
+        "x": 260,
+        "y": 250,
+        "w": 136,
+        "h": 40
+      },
+      {
+        "key": "mappings",
+        "label": "Mappings",
+        "x": 532,
+        "y": 250,
+        "w": 136,
+        "h": 40
+      },
+      {
+        "key": "workflows",
+        "label": "Workflows",
+        "x": 940,
+        "y": 250,
+        "w": 136,
+        "h": 40
+      },
+      {
+        "key": "owner",
+        "label": "Owner",
+        "x": 1100,
+        "y": 310,
+        "w": 320,
+        "h": 106
+      },
+      {
+        "key": "tier1",
+        "label": "Tier 1: Reviewers",
+        "x": 1100,
+        "y": 432,
+        "w": 320,
+        "h": 154
+      },
+      {
+        "key": "tier2",
+        "label": "Tier 2: Approvers",
+        "x": 1100,
+        "y": 602,
+        "w": 320,
+        "h": 154
+      }
+    ]
+  },
+  "document-editor": {
+    "width": 1440,
+    "height": 900,
+    "title": "The full-screen policy editor, with the list of what is left to fill in",
+    "elements": [
+      {
+        "key": "close",
+        "label": "Close",
+        "x": 1178,
+        "y": 14,
+        "w": 92,
+        "h": 36
+      },
+      {
+        "key": "save",
+        "label": "Save version",
+        "x": 1282,
+        "y": 14,
+        "w": 138,
+        "h": 36
+      },
+      {
+        "key": "fill",
+        "label": "To fill in",
+        "x": 16,
+        "y": 136,
+        "w": 56,
+        "h": 14
+      }
+    ]
+  },
+  "documents-register": {
+    "width": 1440,
+    "height": 900,
+    "title": "Policies and documents register",
+    "elements": [
+      {
+        "key": "templates",
+        "label": "Templates",
+        "x": 876,
+        "y": 10,
+        "w": 122,
+        "h": 36
+      },
+      {
+        "key": "new",
+        "label": "New document",
+        "x": 1006,
+        "y": 10,
+        "w": 151,
+        "h": 36
+      },
+      {
+        "key": "active",
+        "label": "Active",
+        "x": 260,
+        "y": 57,
+        "w": 136,
+        "h": 43
+      },
+      {
+        "key": "archived",
+        "label": "Archived",
+        "x": 396,
+        "y": 57,
+        "w": 136,
+        "h": 43
+      },
+      {
+        "key": "status-filter",
+        "label": "Status: All",
+        "x": 799,
+        "y": 132,
+        "w": 112,
+        "h": 36
+      },
+      {
+        "key": "status-col",
+        "label": "Status",
+        "x": 922,
+        "y": 234,
+        "w": 157,
+        "h": 40
+      },
+      {
+        "key": "review-col",
+        "label": "Next review",
+        "x": 1079,
+        "y": 234,
+        "w": 131,
+        "h": 40
+      }
+    ]
+  },
+  "evidence-add": {
+    "width": 1440,
+    "height": 900,
+    "title": "Adding evidence: a file or a link, mapped to controls"
+  },
+  "evidence-detail": {
+    "width": 1440,
+    "height": 900,
+    "title": "An evidence record awaiting review",
+    "elements": [
+      {
+        "key": "open",
+        "label": "Open link",
+        "x": 1195,
+        "y": 113,
+        "w": 115,
+        "h": 36
+      },
+      {
+        "key": "actions",
+        "label": "Actions",
+        "x": 1318,
+        "y": 113,
+        "w": 102,
+        "h": 36
+      },
+      {
+        "key": "controls-tab",
+        "label": "Controls",
+        "x": 396,
+        "y": 250,
+        "w": 136,
+        "h": 43
+      },
+      {
+        "key": "review",
+        "label": "Review",
+        "x": 1100,
+        "y": 313,
+        "w": 320,
+        "h": 134
+      },
+      {
+        "key": "approve",
+        "label": "Approve",
+        "x": 1121,
+        "y": 398,
+        "w": 97,
+        "h": 28
+      },
+      {
+        "key": "reject",
+        "label": "Reject",
+        "x": 1226,
+        "y": 398,
+        "w": 62,
+        "h": 28
+      },
+      {
+        "key": "details",
+        "label": "Details",
+        "x": 1100,
+        "y": 463,
+        "w": 320,
+        "h": 356
+      }
+    ]
+  },
+  "evidence-mapping-suggestions": {
+    "width": 1440,
+    "height": 900,
+    "title": "Suggested control mappings for a piece of evidence (drafts until approved)"
+  },
+  "evidence-register": {
+    "width": 1440,
+    "height": 900,
+    "title": "Evidence register: freshness, owners, coverage and review state",
+    "elements": [
+      {
+        "key": "add",
+        "label": "Add evidence",
+        "x": 1014,
+        "y": 10,
+        "w": 143,
+        "h": 36
+      },
+      {
+        "key": "freshness",
+        "label": "Evidence freshness",
+        "x": 260,
+        "y": 93,
+        "w": 379,
+        "h": 295
+      },
+      {
+        "key": "owners",
+        "label": "Evidence by owner",
+        "x": 651,
+        "y": 93,
+        "w": 379,
+        "h": 295
+      },
+      {
+        "key": "coverage",
+        "label": "Coverage snapshot",
+        "x": 1041,
+        "y": 93,
+        "w": 379,
+        "h": 295
+      },
+      {
+        "key": "review-filter",
+        "label": "Review: All",
+        "x": 688,
+        "y": 404,
+        "w": 117,
+        "h": 36
+      },
+      {
+        "key": "freshness-filter",
+        "label": "Freshness: All",
+        "x": 813,
+        "y": 404,
+        "w": 136,
+        "h": 36
+      },
+      {
+        "key": "freshness-col",
+        "label": "Freshness",
+        "x": 1135,
+        "y": 506,
+        "w": 115,
+        "h": 40
+      },
+      {
+        "key": "review-col",
+        "label": "Review",
+        "x": 1249,
+        "y": 506,
+        "w": 110,
+        "h": 40
+      }
+    ]
+  },
+  "frameworks-dashboard": {
+    "width": 1440,
+    "height": 900,
+    "title": "Frameworks dashboard: readiness against the SOC 2 audit scope",
+    "elements": [
+      {
+        "key": "tabs",
+        "label": "Dashboard",
+        "x": 260,
+        "y": 57,
+        "w": 136,
+        "h": 40
+      },
+      {
+        "key": "progress",
+        "label": "Framework progress",
+        "x": 260,
+        "y": 113,
+        "w": 1160,
+        "h": 214
+      },
+      {
+        "key": "status",
+        "label": "Controls by status",
+        "x": 260,
+        "y": 343,
+        "w": 572,
+        "h": 356
+      },
+      {
+        "key": "coverage",
+        "label": "Coverage breakdown",
+        "x": 848,
+        "y": 343,
+        "w": 572,
+        "h": 356
+      }
+    ]
+  },
+  "frameworks-list": {
+    "width": 1440,
+    "height": 900,
+    "title": "Frameworks: the frameworks available and the version in use",
+    "elements": [
+      {
+        "key": "tab",
+        "label": "Frameworks",
+        "x": 396,
+        "y": 57,
+        "w": 136,
+        "h": 40
+      },
+      {
+        "key": "card",
+        "label": "SOC 2",
+        "x": 260,
+        "y": 113,
+        "w": 379,
+        "h": 174
+      },
+      {
+        "key": "scope",
+        "label": "Scope",
+        "x": 532,
+        "y": 57,
+        "w": 136,
+        "h": 40
+      }
+    ]
+  },
+  "mfa-setup": {
+    "width": 1440,
+    "height": 900,
+    "title": "Setting up two-factor authentication on first sign-in"
+  },
+  "notifications": {
+    "width": 1440,
+    "height": 900,
+    "title": "The notification panel"
+  },
+  "quick-start": {
+    "width": 1440,
+    "height": 900,
+    "title": "Get Started: the setup checklist that tracks real progress",
+    "elements": [
+      {
+        "key": "progress",
+        "label": "Progress",
+        "x": 1283,
+        "y": 93,
+        "w": 21,
+        "h": 15
+      },
+      {
+        "key": "workspace",
+        "label": "Set up your workspace",
+        "x": 377,
+        "y": 133,
+        "w": 926,
+        "h": 98
+      },
+      {
+        "key": "access",
+        "label": "Secure access to your workspace",
+        "x": 377,
+        "y": 245,
+        "w": 926,
+        "h": 98
+      },
+      {
+        "key": "scope",
+        "label": "Scope your audit",
+        "x": 377,
+        "y": 357,
+        "w": 926,
+        "h": 98
+      },
+      {
+        "key": "controls",
+        "label": "Work your controls",
+        "x": 377,
+        "y": 469,
+        "w": 926,
+        "h": 98
+      },
+      {
+        "key": "connections",
+        "label": "View connections",
+        "x": 1136,
+        "y": 597,
+        "w": 147,
+        "h": 36
+      }
+    ]
+  },
+  "risk-accept": {
+    "width": 1440,
+    "height": 900,
+    "title": "Requesting acceptance of a risk"
+  },
+  "risk-detail": {
+    "width": 1440,
+    "height": 900,
+    "title": "A risk in treatment: description, score and where it sits on the matrix",
+    "elements": [
+      {
+        "key": "edit",
+        "label": "Edit",
+        "x": 1230,
+        "y": 113,
+        "w": 80,
+        "h": 36
+      },
+      {
+        "key": "treatment",
+        "label": "Treatment",
+        "x": 396,
+        "y": 218,
+        "w": 136,
+        "h": 44
+      },
+      {
+        "key": "controls",
+        "label": "Controls",
+        "x": 532,
+        "y": 218,
+        "w": 136,
+        "h": 44
+      },
+      {
+        "key": "acceptance",
+        "label": "Acceptance",
+        "x": 804,
+        "y": 218,
+        "w": 136,
+        "h": 44
+      },
+      {
+        "key": "score",
+        "label": "Score",
+        "x": 1100,
+        "y": 282,
+        "w": 320,
+        "h": 199
+      },
+      {
+        "key": "details",
+        "label": "Details",
+        "x": 1100,
+        "y": 497,
+        "w": 320,
+        "h": 403
+      }
+    ]
+  },
+  "risk-library": {
+    "width": 1440,
+    "height": 900,
+    "title": "The risk library: common risks, written and scored, ready to adopt",
+    "elements": [
+      {
+        "key": "tab",
+        "label": "Library",
+        "x": 532,
+        "y": 57,
+        "w": 136,
+        "h": 44
+      }
+    ]
+  },
+  "risks-overview": {
+    "width": 1440,
+    "height": 900,
+    "title": "Risks overview: the heatmap, top risks, severity, treatment and category",
+    "elements": [
+      {
+        "key": "tab",
+        "label": "Overview",
+        "x": 260,
+        "y": 57,
+        "w": 136,
+        "h": 44
+      },
+      {
+        "key": "heatmap",
+        "label": "Heatmap",
+        "x": 260,
+        "y": 229,
+        "w": 768,
+        "h": 407
+      },
+      {
+        "key": "toggle",
+        "label": "Residual",
+        "x": 872,
+        "y": 251,
+        "w": 66,
+        "h": 23
+      },
+      {
+        "key": "top",
+        "label": "Top risks",
+        "x": 1044,
+        "y": 229,
+        "w": 376,
+        "h": 407
+      }
+    ]
+  },
+  "risks-register": {
+    "width": 1440,
+    "height": 900,
+    "title": "Risk register: inherent and residual scores, status, owners and controls",
+    "elements": [
+      {
+        "key": "register",
+        "label": "Choose register",
+        "x": 593,
+        "y": 10,
+        "w": 218,
+        "h": 36
+      },
+      {
+        "key": "add",
+        "label": "Add risk",
+        "x": 1050,
+        "y": 10,
+        "w": 107,
+        "h": 36
+      },
+      {
+        "key": "import",
+        "label": "Import",
+        "x": 944,
+        "y": 10,
+        "w": 98,
+        "h": 36
+      },
+      {
+        "key": "tabs",
+        "label": "Register",
+        "x": 396,
+        "y": 57,
+        "w": 136,
+        "h": 44
+      },
+      {
+        "key": "severity",
+        "label": "Severity: All",
+        "x": 777,
+        "y": 133,
+        "w": 123,
+        "h": 36
+      },
+      {
+        "key": "inherent",
+        "label": "Inherent",
+        "x": 709,
+        "y": 283,
+        "w": 105,
+        "h": 40
+      },
+      {
+        "key": "residual",
+        "label": "Residual",
+        "x": 814,
+        "y": 283,
+        "w": 103,
+        "h": 40
+      },
+      {
+        "key": "status-col",
+        "label": "Status",
+        "x": 917,
+        "y": 283,
+        "w": 110,
+        "h": 40
+      }
+    ]
+  },
+  "risks-settings": {
+    "width": 1440,
+    "height": 900,
+    "title": "Risk settings: registers, their matrices and categories",
+    "elements": [
+      {
+        "key": "tab",
+        "label": "Settings",
+        "x": 981,
+        "y": 57,
+        "w": 136,
+        "h": 44
+      },
+      {
+        "key": "new",
+        "label": "New register",
+        "x": 1284,
+        "y": 118,
+        "w": 136,
+        "h": 36
+      }
+    ]
+  },
+  "settings-groups": {
+    "width": 1440,
+    "height": 900,
+    "title": "Groups: teams used for ownership, approvals and campaigns"
+  },
+  "settings-organisation": {
+    "width": 1440,
+    "height": 900,
+    "title": "Organisation profile"
+  },
+  "settings-people": {
+    "width": 1440,
+    "height": 900,
+    "title": "People: everyone with access, their roles, groups and two-factor status",
+    "elements": [
+      {
+        "key": "invite",
+        "label": "Invite member",
+        "x": 1273,
+        "y": 183,
+        "w": 147,
+        "h": 36
+      }
+    ]
+  },
+  "settings-roles": {
+    "width": 1440,
+    "height": 900,
+    "title": "Roles and permissions",
+    "elements": [
+      {
+        "key": "new",
+        "label": "New custom role",
+        "x": 1258,
+        "y": 183,
+        "w": 162,
+        "h": 36
+      }
+    ]
+  },
+  "settings-security": {
+    "width": 1440,
+    "height": 900,
+    "title": "Security settings: two-factor authentication"
+  },
+  "sign-in": {
+    "width": 1440,
+    "height": 900,
+    "title": "Signing in"
+  },
+  "task-create": {
+    "width": 1440,
+    "height": 900,
+    "title": "Raising a new task"
+  },
+  "task-detail": {
+    "width": 1440,
+    "height": 900,
+    "title": "A task: status, priority, due date, assignees and conversation",
+    "elements": [
+      {
+        "key": "review",
+        "label": "Send for review",
+        "x": 1177,
+        "y": 113,
+        "w": 133,
+        "h": 36
+      },
+      {
+        "key": "actions",
+        "label": "Actions",
+        "x": 1318,
+        "y": 113,
+        "w": 102,
+        "h": 36
+      },
+      {
+        "key": "tabs",
+        "label": "Overview",
+        "x": 260,
+        "y": 249,
+        "w": 136,
+        "h": 43
+      },
+      {
+        "key": "comments",
+        "label": "Comments",
+        "x": 668,
+        "y": 249,
+        "w": 137,
+        "h": 43
+      },
+      {
+        "key": "activity",
+        "label": "Activity",
+        "x": 805,
+        "y": 249,
+        "w": 136,
+        "h": 43
+      },
+      {
+        "key": "assignees",
+        "label": "Assignees",
+        "x": 1100,
+        "y": 312,
+        "w": 320,
+        "h": 106
+      },
+      {
+        "key": "details",
+        "label": "Details",
+        "x": 1100,
+        "y": 434,
+        "w": 320,
+        "h": 197
+      }
+    ]
+  },
+  "tasks-overview": {
+    "width": 1440,
+    "height": 900,
+    "title": "Tasks overview: service levels, priority, age and load",
+    "elements": [
+      {
+        "key": "tab",
+        "label": "Overview",
+        "x": 260,
+        "y": 57,
+        "w": 136,
+        "h": 43
+      },
+      {
+        "key": "sla",
+        "label": "SLA posture",
+        "x": 260,
+        "y": 213,
+        "w": 572,
+        "h": 281
+      },
+      {
+        "key": "priority",
+        "label": "Open by priority",
+        "x": 848,
+        "y": 213,
+        "w": 572,
+        "h": 281
+      },
+      {
+        "key": "age",
+        "label": "Open work by age",
+        "x": 260,
+        "y": 510,
+        "w": 572,
+        "h": 334
+      },
+      {
+        "key": "load",
+        "label": "Load by assignee",
+        "x": 848,
+        "y": 510,
+        "w": 572,
+        "h": 334
+      }
+    ]
+  },
+  "tasks-register": {
+    "width": 1440,
+    "height": 900,
+    "title": "Tasks and issues register, with a task open in the side panel",
+    "elements": [
+      {
+        "key": "new",
+        "label": "New task",
+        "x": 1043,
+        "y": 10,
+        "w": 114,
+        "h": 36
+      },
+      {
+        "key": "tabs",
+        "label": "Register",
+        "x": 396,
+        "y": 57,
+        "w": 136,
+        "h": 43
+      },
+      {
+        "key": "kind",
+        "label": "All",
+        "x": 672,
+        "y": 139,
+        "w": 34,
+        "h": 23
+      },
+      {
+        "key": "status-filter",
+        "label": "Status: All",
+        "x": 822,
+        "y": 132,
+        "w": 112,
+        "h": 36
+      },
+      {
+        "key": "assignee-filter",
+        "label": "Assignee: All",
+        "x": 1204,
+        "y": 132,
+        "w": 130,
+        "h": 36
+      }
+    ]
+  },
+  "tasks-settings": {
+    "width": 1440,
+    "height": 900,
+    "title": "Task settings: automations, severity matrix and service levels",
+    "elements": [
+      {
+        "key": "tab",
+        "label": "Settings",
+        "x": 532,
+        "y": 57,
+        "w": 136,
+        "h": 43
+      },
+      {
+        "key": "automations",
+        "label": "Automations",
+        "x": 260,
+        "y": 116,
+        "w": 1160,
+        "h": 412
+      },
+      {
+        "key": "matrix",
+        "label": "Severity matrix",
+        "x": 260,
+        "y": 544,
+        "w": 1160,
+        "h": 295
+      }
+    ]
+  },
+  "vendor-assessments": {
+    "width": 1440,
+    "height": 900,
+    "title": "A vendor's assessments: the questionnaire, its residual score and grade",
+    "elements": [
+      {
+        "key": "tab",
+        "label": "Assessments",
+        "x": 532,
+        "y": 215,
+        "w": 136,
+        "h": 40
+      }
+    ]
+  },
+  "vendor-detail": {
+    "width": 1440,
+    "height": 900,
+    "title": "A vendor record: what they do, engagements, ownership, dates and contacts",
+    "elements": [
+      {
+        "key": "edit",
+        "label": "Edit",
+        "x": 1230,
+        "y": 113,
+        "w": 80,
+        "h": 36
+      },
+      {
+        "key": "lifecycle",
+        "label": "Lifecycle",
+        "x": 396,
+        "y": 215,
+        "w": 136,
+        "h": 40
+      },
+      {
+        "key": "assessments",
+        "label": "Assessments",
+        "x": 532,
+        "y": 215,
+        "w": 136,
+        "h": 40
+      },
+      {
+        "key": "paperwork",
+        "label": "Paperwork",
+        "x": 804,
+        "y": 215,
+        "w": 136,
+        "h": 40
+      },
+      {
+        "key": "ownership",
+        "label": "Ownership",
+        "x": 1100,
+        "y": 275,
+        "w": 320,
+        "h": 227
+      },
+      {
+        "key": "engagements",
+        "label": "Engagements",
+        "x": 260,
+        "y": 540,
+        "w": 824,
+        "h": 135
+      }
+    ]
+  },
+  "vendor-lifecycle": {
+    "width": 1440,
+    "height": 900,
+    "title": "The lifecycle workspace: twelve stages, the tier, and what the current stage needs",
+    "elements": [
+      {
+        "key": "tab",
+        "label": "Lifecycle",
+        "x": 396,
+        "y": 215,
+        "w": 136,
+        "h": 40
+      }
+    ]
+  },
+  "vendor-questionnaire-send": {
+    "width": 1440,
+    "height": 900,
+    "title": "Sending the due diligence questionnaire to a vendor's portal contact"
+  },
+  "vendors-findings": {
+    "width": 1440,
+    "height": 900,
+    "title": "Vendor findings across the portfolio",
+    "elements": [
+      {
+        "key": "tab",
+        "label": "Findings",
+        "x": 668,
+        "y": 57,
+        "w": 136,
+        "h": 43
+      }
+    ]
+  },
+  "vendors-intake": {
+    "width": 1440,
+    "height": 900,
+    "title": "The intake queue: requests waiting for a decision",
+    "elements": [
+      {
+        "key": "tab",
+        "label": "Intake",
+        "x": 532,
+        "y": 57,
+        "w": 136,
+        "h": 43
+      }
+    ]
+  },
+  "vendors-overview": {
+    "width": 1440,
+    "height": 900,
+    "title": "Vendors overview: the portfolio read",
+    "elements": [
+      {
+        "key": "tab",
+        "label": "Overview",
+        "x": 260,
+        "y": 57,
+        "w": 136,
+        "h": 43
+      }
+    ]
+  },
+  "vendors-policy": {
+    "width": 1440,
+    "height": 900,
+    "title": "Vendor policy: tier bands, cadence, remediation windows and skipped stages",
+    "elements": [
+      {
+        "key": "tab",
+        "label": "Policy",
+        "x": 1076,
+        "y": 57,
+        "w": 136,
+        "h": 43
+      },
+      {
+        "key": "save",
+        "label": "Save policy",
+        "x": 1048,
+        "y": 132,
+        "w": 108,
+        "h": 36
+      }
+    ]
+  },
+  "vendors-questionnaires": {
+    "width": 1440,
+    "height": 900,
+    "title": "Questionnaires: tiering and due diligence questionnaires this workspace uses",
+    "elements": [
+      {
+        "key": "tab",
+        "label": "Questionnaires",
+        "x": 804,
+        "y": 57,
+        "w": 136,
+        "h": 43
+      }
+    ]
+  },
+  "vendors-register": {
+    "width": 1440,
+    "height": 900,
+    "title": "Vendor register: tier, status, next action, grade and owners",
+    "elements": [
+      {
+        "key": "request",
+        "label": "Request vendor",
+        "x": 865,
+        "y": 10,
+        "w": 156,
+        "h": 36
+      },
+      {
+        "key": "add",
+        "label": "Add vendor",
+        "x": 1029,
+        "y": 10,
+        "w": 128,
+        "h": 36
+      },
+      {
+        "key": "tabs",
+        "label": "Register",
+        "x": 396,
+        "y": 57,
+        "w": 136,
+        "h": 43
+      },
+      {
+        "key": "tier-filter",
+        "label": "Tier: All",
+        "x": 806,
+        "y": 132,
+        "w": 98,
+        "h": 36
+      },
+      {
+        "key": "tier-col",
+        "label": "Tier",
+        "x": 534,
+        "y": 282,
+        "w": 102,
+        "h": 40
+      },
+      {
+        "key": "next-col",
+        "label": "Blocker / next action",
+        "x": 753,
+        "y": 282,
+        "w": 186,
+        "h": 40
+      },
+      {
+        "key": "grade-col",
+        "label": "Grade",
+        "x": 938,
+        "y": 282,
+        "w": 90,
+        "h": 40
+      }
+    ]
+  },
+  "vulnerabilities-overview": {
+    "width": 1440,
+    "height": 900,
+    "title": "Vulnerabilities overview: severity, SLA compliance, priority and status",
+    "elements": [
+      {
+        "key": "tab",
+        "label": "Overview",
+        "x": 260,
+        "y": 57,
+        "w": 136,
+        "h": 43
+      }
+    ]
+  },
+  "vulnerabilities-register": {
+    "width": 1440,
+    "height": 900,
+    "title": "Vulnerability register: findings in priority order",
+    "elements": [
+      {
+        "key": "import",
+        "label": "Import",
+        "x": 923,
+        "y": 10,
+        "w": 98,
+        "h": 36
+      },
+      {
+        "key": "add",
+        "label": "Add finding",
+        "x": 1029,
+        "y": 10,
+        "w": 128,
+        "h": 36
+      },
+      {
+        "key": "tabs",
+        "label": "Register",
+        "x": 396,
+        "y": 57,
+        "w": 136,
+        "h": 43
+      },
+      {
+        "key": "severity-filter",
+        "label": "Severity: All",
+        "x": 688,
+        "y": 213,
+        "w": 123,
+        "h": 36
+      },
+      {
+        "key": "severity-col",
+        "label": "Severity",
+        "x": 814,
+        "y": 315,
+        "w": 103,
+        "h": 40
+      },
+      {
+        "key": "asset-col",
+        "label": "Asset",
+        "x": 1167,
+        "y": 315,
+        "w": 108,
+        "h": 40
+      }
+    ]
+  },
+  "vulnerabilities-settings": {
+    "width": 1440,
+    "height": 900,
+    "title": "Vulnerability settings: remediation windows and custom fields",
+    "elements": [
+      {
+        "key": "tab",
+        "label": "Settings",
+        "x": 532,
+        "y": 57,
+        "w": 136,
+        "h": 43
+      },
+      {
+        "key": "add",
+        "label": "Add field",
+        "x": 987,
+        "y": 714,
+        "w": 112,
+        "h": 36
+      }
+    ]
+  },
+  "vulnerability-detail": {
+    "width": 1440,
+    "height": 900,
+    "title": "A vulnerability finding: priority, how it was calculated, assignment and detection",
+    "elements": [
+      {
+        "key": "status",
+        "label": "Change status",
+        "x": 1181,
+        "y": 117,
+        "w": 125,
+        "h": 36
+      },
+      {
+        "key": "actions",
+        "label": "Actions",
+        "x": 1318,
+        "y": 117,
+        "w": 102,
+        "h": 36
+      },
+      {
+        "key": "remediation",
+        "label": "Remediation",
+        "x": 532,
+        "y": 217,
+        "w": 136,
+        "h": 40
+      },
+      {
+        "key": "assignment",
+        "label": "Assignment",
+        "x": 1100,
+        "y": 277,
+        "w": 320,
+        "h": 155
+      },
+      {
+        "key": "detection",
+        "label": "Detection",
+        "x": 1100,
+        "y": 668,
+        "w": 320,
+        "h": 232
+      }
+    ]
+  },
+  "vulnerability-exception": {
+    "width": 1440,
+    "height": 900,
+    "title": "A risk exception requested on a finding, waiting for an approver"
+  },
+  "vulnerability-import": {
+    "width": 1440,
+    "height": 900,
+    "title": "Importing a scanner export"
+  },
+  "workspace-switcher": {
+    "width": 1440,
+    "height": 900,
+    "title": "The workspace switcher, open"
+  }
+}

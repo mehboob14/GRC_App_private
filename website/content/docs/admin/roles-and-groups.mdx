@@ -1,0 +1,118 @@
+---
+title: Roles and groups
+description: The six built-in roles, how to create a role of your own, how permissions and object scope work together, and where groups are used.
+status: live
+updated: 2026-10-02
+---
+
+Roles decide what people can do in Verity, and groups are the teams you assign work to. This page covers the built-in roles, creating a role of your own, how access is decided, and how to set up groups.
+
+## The built-in roles
+
+Go to **Settings > Access Management > Roles & Permissions**. The list shows each role, what it is for, how many permissions it carries and how many people hold it.
+
+<Screenshot name="settings-roles" alt="The Roles and permissions tab listing six built-in roles, Admin, Business Operations/Finance Lead, Chief Executive Officer, Engineering Lead, Privacy Officer and Security Officer, with their descriptions, permission counts and assignments" />
+
+Verity ships six roles. Five of them are about accountability rather than access: they name who is answerable for an area, and they start with read access.
+
+| Role | Starts with |
+|---|---|
+| Admin | Everything |
+| Chief Executive Officer | Workspace read |
+| Security Officer | Workspace, audit log, frameworks, evidence, vendors |
+| Privacy Officer | Workspace, audit log, frameworks, vendors |
+| Engineering Lead | Workspace, frameworks, evidence |
+| Business Operations/Finance Lead | Workspace, frameworks, vendors |
+
+## Create a role of your own
+
+You can create roles of your own and choose exactly which permissions they carry.
+
+<Steps>
+<Step title="Start a new role">
+
+Click **New custom role**.
+
+</Step>
+<Step title="Name it and say what it is for">
+
+Enter a **Role name** and, optionally, a **Description**, so whoever assigns it knows what it is for.
+
+</Step>
+<Step title="Pick what it can do">
+
+Permissions are grouped by area: Workspace, People, Access, Compliance, Documents & Policies, Tasks & Issues, Assets, Vulnerabilities and Vendors. Tick the ones the role needs.
+
+</Step>
+<Step title="Create and assign it">
+
+Click **Create role**. Then use **Assign to…** in the role's row menu to pick everyone who should hold it.
+
+</Step>
+</Steps>
+
+Every permission has a key that reads as `module:action`, for example `vendors:manage` or `evidence:review`. The role editor shows each one by name, such as **Review & approve evidence**.
+
+<Callout type="note" title="Deny by default">
+
+A permission nobody has been granted is denied. If somebody cannot see a module, add the permission to a role rather than making them an admin.
+
+</Callout>
+
+**Edit role** in the row menu renames a role or changes what it can do, and the change applies to everyone who holds it.
+
+<Callout type="warning" title="Before you click">
+
+**Delete role** removes the role and every assignment to it, and cannot be undone. Members keep their other roles. Verity refuses any change that would leave the workspace with no one able to manage roles.
+
+</Callout>
+
+## Roles and what they allow
+
+Access has two layers.
+
+1. **The permission** decides whether you can reach a screen at all.
+2. **Object scope** decides which rows you see once you are there. A control owner sees the controls assigned to them; an auditor sees the engagement window they were invited for.
+
+If a module is missing from someone's navigation, their roles do not include it. See [Finding your way around](/docs/get-started/navigating-verity/).
+
+## Groups
+
+Groups are teams: Engineering, Finance, the Security Council. They are useful in three places:
+
+- assigning a control or task to a team,
+- targeting an [acknowledgement campaign](/docs/policies/acknowledgement-campaigns/) at everyone in a department,
+- naming a group as an approver, where any one member can decide. See [Approve and publish](/docs/policies/approval-and-publishing/).
+
+### Create a group
+
+<Steps>
+<Step title="Open the groups list">
+
+Go to **Settings > Access Management > Groups** and click **New group**.
+
+</Step>
+<Step title="Name it">
+
+Enter a **Group name** and, optionally, a **Description** of what the group is for. Click **Create group**.
+
+</Step>
+<Step title="Add people">
+
+Open the group's row menu and choose **Manage members**. Tick everyone who belongs and click **Save members**. Unticking someone removes them from the group only; their roles are untouched.
+
+</Step>
+</Steps>
+
+You can also add one person at a time from the people list with **Add to group**. See [People and invitations](/docs/admin/people/).
+
+<Callout type="warning" title="Before you click">
+
+**Delete group** removes the group and any role assigned to the group, and cannot be undone. Its members keep every role they hold directly.
+
+</Callout>
+
+<Cards>
+<Card title="People and invitations" href="/docs/admin/people/" icon="user">Invite someone and give them a role.</Card>
+<Card title="Audit log and isolation" href="/docs/admin/audit-log-and-isolation/" icon="list">See every change to roles and access.</Card>
+</Cards>

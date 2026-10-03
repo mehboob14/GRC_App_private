@@ -1,0 +1,104 @@
+---
+title: Hygiene and dependencies
+description: Keep each asset record complete and reviewed, set your own review cadence, and map what depends on what.
+status: live
+updated: 2026-10-02
+---
+
+An inventory is only useful while it stays true. This page covers the completeness score and review clock on every asset, how to set your own review cadence, and the tabs that connect an asset to its dependencies, its vulnerabilities and the rest of your programme.
+
+## Inventory hygiene
+
+The **Inventory hygiene** panel on the right of every asset is the completeness score. It runs five checks, each worth twenty points:
+
+1. Primary owner
+2. Type
+3. Criticality
+4. Data classification
+5. CIA rating
+
+Each check is listed with a tick or a warning and what it found, so a score of 100 per cent is checkable rather than asserted. Under the checks is the freshness line: when the asset was last reviewed and when it is due again.
+
+<Screenshot name="asset-detail" alt="An asset's Overview tab with the Inventory hygiene panel on the right, showing five ticked checks with what each found and a line saying when the asset is due for review again" caption="Every check shows what it found, not just a tick." />
+
+To fix a check that shows a warning, use **Actions > Edit** on the asset and fill in what is missing. The register's summary tiles and the **Overview** tab count the assets that need attention across the whole inventory.
+
+### Mark an asset reviewed
+
+**Mark reviewed** does one thing: it records that a person looked at this record today and restarts the clock. It does not change the score, because the score is about fields and the clock is about attention.
+
+## Set your own review cadence
+
+The default is 90 days for everything. Most teams want longer for low criticality assets.
+
+<Steps>
+<Step title="Open the asset settings">
+
+Go to **Assets > Settings**.
+
+</Step>
+<Step title="Set the days for each tier">
+
+Under **Review cadence**, set the number of days for each criticality tier: **Critical**, **High**, **Medium**, **Low** and **Not yet rated**. Anything from 7 to 1095 days.
+
+</Step>
+<Step title="Save the row">
+
+Click **Save** on the row you changed. The change applies immediately: an asset already past its new window reads as stale on the next load, and each asset's hygiene panel then reports the window it was judged against.
+
+</Step>
+</Steps>
+
+Anyone who can see assets can read these settings. Changing them needs permission to manage assets.
+
+<Screenshot name="assets-settings" alt="The Assets Settings tab with a Review cadence card listing Critical, High, Medium, Low and Not yet rated, each with a days field and its own Save button" />
+
+## Dependencies
+
+The **Relationships** tab records what depends on what: this application runs on that cluster, this service connects to that database.
+
+<Steps>
+<Step title="Open the asset">
+
+Open the asset and go to **Relationships**.
+
+</Step>
+<Step title="Add a dependency">
+
+In the **Dependencies** panel, click **Add**.
+
+</Step>
+<Step title="Describe the relationship">
+
+Pick the **Direction** (this asset to the other, or the other to this asset), the kind of **Relationship** (depends on, runs on, contains, connects to, or processes data for) and the **Other asset**. Click **Add**.
+
+</Step>
+</Steps>
+
+One edge is stored once and read from both ends, so the same dependency reads "runs on" the cluster from the application and "hosts" the application from the cluster. They can never disagree.
+
+This is what answers "what else goes down with this" when you are triaging.
+
+## Vulnerabilities on an asset
+
+The **Vulnerabilities** tab lists the open findings on this asset, with each one's score and priority.
+
+- **Add finding** adds one from here with the asset already filled in.
+- **Link finding** records a finding that already exists elsewhere on this asset too. It gets its own status and remediation clock here.
+- **View in register** opens the vulnerability register filtered to this asset.
+
+See [Findings and priority](/docs/vulnerabilities/findings-and-priority/) and [Import findings](/docs/vulnerabilities/importing-findings/).
+
+## Linked records
+
+The **Linked records** tab shows the controls, risks, evidence, documents and vendors attached to this asset, in one place. Use **Link record** to link more.
+
+The **Activity** tab is the asset's own trail: who changed what, and when. Every change also lands in the workspace [audit log](/docs/admin/audit-log-and-isolation/).
+
+## Related pages
+
+<Cards>
+<Card title="Asset inventory" href="/docs/assets/inventory/" icon="server">Add assets and see how criticality is derived.</Card>
+<Card title="Import assets" href="/docs/assets/import-and-custom-fields/" icon="folder">Load a spreadsheet and add your own fields.</Card>
+<Card title="Remediation and exceptions" href="/docs/vulnerabilities/remediation/" icon="bug">Work the findings on your assets to closure.</Card>
+</Cards>

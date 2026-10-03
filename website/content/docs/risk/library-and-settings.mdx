@@ -1,0 +1,98 @@
+---
+title: Risk library and settings
+description: Adopt ready-written risks from the library, import a spreadsheet, and set up registers with their own matrix, bands, categories and review cadence.
+status: live
+updated: 2026-10-02
+---
+
+You rarely need to start a register from an empty page. This page covers adopting risks from the library, importing a spreadsheet, and the settings an administrator uses to shape each register. Adding risks either way needs permission to manage risks.
+
+## Adopt risks from the library
+
+The **Library** is a catalogue of common risks, already written and scored, that you can adopt into a register. It is faster than staring at an empty page, and you can edit anything you adopt.
+
+<Steps>
+<Step title="Open the library">
+
+Go to **Risks > Library**. Library risks are grouped by category. Search, or filter by **Category** or **Framework**. Set **Show** to **Hide added** to hide the risks already in this register.
+
+</Step>
+<Step title="Read before you adopt">
+
+Click a risk to read its description, root cause, consequences, recommendations, suggested treatment and suggested controls.
+
+</Step>
+<Step title="Add what applies">
+
+Tick the risks you want, then click **Add to** followed by the register's name. From an open risk, click **Add to register**.
+
+</Step>
+</Steps>
+
+An adopted risk copies the library text and links the suggested controls your workspace has. Its score is rescaled to the register's matrix, and the card shows **In register** from then on. Library updates never rewrite a risk you have already adopted, so a risk you reviewed stays as you left it.
+
+## Import risks from a spreadsheet
+
+**Import** takes a spreadsheet. Download the template, fill it in, preview what Verity read, then commit. The preview is where you catch a column that mapped to the wrong field.
+
+<Steps>
+<Step title="Open the import">
+
+On **Risks**, check the register menu shows the register you want, then click **Import**.
+
+</Step>
+<Step title="Download the template">
+
+Click **Download template**. The Excel template has drop-down lists for this register, and the subcategories follow the category.
+
+</Step>
+<Step title="Fill it in and upload it">
+
+Fill in the template, then drop the file on the dialog or choose it. Excel and CSV files both work.
+
+</Step>
+<Step title="Check the preview">
+
+Verity shows every row as it read it, with how many are ready and how many have errors. Rows with errors say what is wrong and are skipped. Tick **Only rows with issues** to see just those.
+
+</Step>
+<Step title="Commit">
+
+Click the **Import** button, which shows how many risks are ready, to add them. Nothing is saved until you do.
+
+</Step>
+</Steps>
+
+## Set up a register
+
+**Risks > Settings** is where an administrator manages registers: the scales, the bands, the categories and the review cadence. You need permission to configure risks to change them.
+
+<Screenshot name="risks-settings" alt="Risk settings showing a register card with its type, number of risks, matrix size and review cadence, buttons for Matrix and settings and for Categories, and further configuration marked Soon" />
+
+Each register card shows its type, how many risks it holds, its matrix size and how often its risks are reviewed. **Open** switches the rest of the Risks screens to that register.
+
+### Create or change a register
+
+Click **New register**, or **Matrix and settings** on an existing register, and set:
+
+- **Name**, **Register type** (for example Enterprise, Project or Third party), an optional **Description** and the **Owner**.
+- **Review every (days)**: the review cadence for risks in this register.
+- **Matrix size**: from 3 to 6 levels each for likelihood and impact.
+- **Level labels**: a name for each level, and what it means, so people score consistently.
+- **Severity bands**: the score at which medium, high and critical begin. A preview shows the matrix as you change it.
+- **Default register**, and for any other register, **Archived** once you no longer use it.
+
+Then click **Create register** or **Save register**.
+
+### Edit categories
+
+Click **Categories** on a register to add, rename or reorder categories and their subcategories. Categories still used by risks are archived instead of deleted, so nothing already filed under them loses its place.
+
+## What is coming
+
+Tabs marked **Soon**, such as Assessments and KRIs, are placeholders for later work. Under **More configuration** on the Settings tab you will also see custom fields, a scoring formula, risk appetite, approval workflows and register permissions, each marked Soon. Nothing behind a Soon badge holds real data. See [Enterprise risk management](/docs/risk/enterprise-risk/) for the plans.
+
+<Cards>
+<Card title="The risk register" href="/docs/risk/risk-register/" icon="list">Add risks and follow them through their states.</Card>
+<Card title="Roles and groups" href="/docs/admin/roles-and-groups/" icon="users">Give people permission to manage, approve or configure risks.</Card>
+</Cards>

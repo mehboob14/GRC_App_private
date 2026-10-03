@@ -1,0 +1,97 @@
+---
+title: Assessment and findings
+description: Read a vendor's residual score and grade, share the review with colleagues, work findings to a decision, and clear the approval gate.
+status: live
+updated: 2026-10-02
+---
+
+When a vendor's answers come back, Verity scores them and turns the gaps into findings. This page covers reading the assessment, sharing the review, working findings, and the approval gate that decides whether an engagement goes ahead.
+
+## Read the assessment
+
+When answers come back, the assessment produces a **residual score** and a letter **grade** from A to F. Scoring runs as soon as the vendor sends their answers, so the score and its findings are waiting when you open the record. A control the vendor does not have caps the score, and a missing critical control puts a floor under the risk no matter how well they answer everything else.
+
+Open the vendor's **Assessments** tab. Each review shows how many questions are answered, its due date, its status and, once scored, its grade. Open a review to read the answers section by section, see the score breakdown and spot answers still missing evidence. A reassessment shows what changed since the previous cycle.
+
+<Screenshot name="vendor-assessments" alt="A vendor's Assessments tab with Reassess and Send questionnaire buttons above the list of reviews, here showing a warning that the vendor has no contact to send to yet" />
+
+**Reassess** opens a new review once the engagement has passed the approval gate. Re-tier the engagement afterwards to set how deep the new review goes.
+
+## Share the review
+
+Reviews can be shared. Inside an open review, assign a domain of the questionnaire, or the whole review, to a colleague under **Who is reading what**. Each assignment has its own state (waiting, reading or done), so you can see who has finished their part.
+
+Comments can be internal or shared with the vendor: tick **Send it to the vendor** to share one. The vendor sees only shared comments.
+
+## Work findings
+
+A gap becomes a finding: a severity, an owner, a due date driven by your policy, and a state. Findings can also be raised by hand, because not everything you learn comes from a questionnaire. On the vendor's **Findings** tab, click **Raise finding**, say what is wrong, set the severity and owner, and tick **Holds the approval gate** if the vendor cannot be approved until it is dealt with.
+
+**Vendors > Findings** lists findings across every vendor. Filter by **Open**, **Accepted**, **Closed** or **All**, and sort by severity, vendor, remediation due date or owner.
+
+<Screenshot name="vendors-findings" alt="The Findings tab listing open vendor findings with their severity, a description and the vendor, with filters for Open, Accepted, Closed and All" />
+
+You have three options on a finding.
+
+<Tabs labels={["Remediate", "Accept", "Raise a risk"]}>
+<Tab>
+
+The vendor fixes it, you verify and close. Assign an owner and click **Start remediation**, which opens a task to track the work. When the fix is verified, click **Close** and say what was done. That note is required for a critical or blocking finding.
+
+</Tab>
+<Tab>
+
+You tolerate it, with a justification and an expiry date. Click **Accept risk**, set **Accepted until** and write the **Rationale**: the compensating controls and what would make you revisit it. When the expiry passes, the finding reopens on its own. Accepting needs the Approve vendors permission.
+
+</Tab>
+<Tab>
+
+Promote it to your own risk register with **Promote to risk**. The finding then links to the new risk, which you treat like any other. See [risks raised from elsewhere](/docs/risk/treatment-and-acceptance/#risks-raised-from-elsewhere).
+
+</Tab>
+</Tabs>
+
+A closed or accepted finding can be reopened with a reason if it turns out not to be settled.
+
+## Clear the approval gate
+
+Approval is the one stage that is a gate. Verity refuses to let it clear while:
+
+- any earlier stage is still open,
+- any critical or blocking finding is open, on this engagement or vendor wide,
+- the required reviewers have not been assigned.
+
+Separation of duties applies: the person who requests approval cannot be the person who grants it. Verity also keeps the vendor's business owner out of the decision, and shows who cannot decide and why. The gate clears itself as soon as the thing blocking it is resolved, so you do not have to remember to come back and unstick it.
+
+<Steps>
+<Step title="Open the Approval stage">
+
+Open the vendor, go to **Lifecycle** and select **Approval**. Its checks show anything still holding the gate.
+
+</Step>
+<Step title="Record the decision">
+
+Click **Record decision**. You need the Approve vendors permission.
+
+</Step>
+<Step title="Choose the outcome">
+
+Choose **Approved**, **Approved with conditions**, **Deferred** or **Rejected**. The two approvals wait until the stage's checks clear; deferring or rejecting does not.
+
+</Step>
+<Step title="Write the rationale">
+
+Write the **Rationale**: it is what an auditor reads later. For **Approved with conditions**, add at least one condition, with a due date if it has one.
+
+</Step>
+<Step title="Confirm">
+
+Click the button that names your decision. Conditions stay on the record until someone marks them met.
+
+</Step>
+</Steps>
+
+<Cards>
+<Card title="Questionnaires and the portal" href="/docs/vendors/questionnaires/" icon="list">Send the questionnaire that produces the score.</Card>
+<Card title="Contracts to offboarding" href="/docs/vendors/contracts-monitoring-offboarding/" icon="handshake">What happens after approval.</Card>
+</Cards>
