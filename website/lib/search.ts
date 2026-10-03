@@ -83,7 +83,8 @@ export function search(index: IndexDoc[], query: string, limit = 12): SearchResu
       const body = section.text.toLowerCase();
       let score = 0;
       for (const term of terms) {
-        score += wordHit(heading, term) * 6;
+        // The intro section's "heading" is the page title, which is scored once at page level.
+        if (section.id) score += wordHit(heading, term) * 6;
         score += Math.min(3, wordHit(body, term));
       }
       if (score > best.score) best = { section, score };

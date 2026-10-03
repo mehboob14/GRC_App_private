@@ -24,7 +24,7 @@ function Step({ index, outcome, icon, title, note, noteTitle, children }: { inde
         </div>
       </div>
       <div className="seq hidden pt-1 sm:block" style={{ ...style, ["--base" as string]: "350ms" } as CSSProperties}>
-        <p className="flex items-center gap-1.5 text-[13px] text-[#8A94A3]"><Icon name="caret-down" size={12} weight="bold" />{noteTitle}</p>
+        <p className="flex items-center gap-1.5 text-[13px] text-[#6E7787]"><Icon name="caret-down" size={12} weight="bold" />{noteTitle}</p>
         <p className="mt-2 text-[14px] leading-relaxed text-[#363F4E]">{note}</p>
       </div>
     </div>
@@ -56,7 +56,7 @@ export function ProofFlow() {
         <div className="rounded-lg border border-[#E3E7EC]">
           <div className="flex items-center justify-between gap-3 px-3 py-2.5">
             <span className="min-w-0">
-              <span className="block font-mono text-[10.5px] text-[#8A94A3]">IAM-02</span>
+              <span className="block font-mono text-[10.5px] text-[#6E7787]">IAM-02</span>
               <span className="block text-[13.5px] font-medium leading-snug text-[#0B0F17]">Periodic user access reviews</span>
             </span>
             <Pill tone="success">Implemented</Pill>

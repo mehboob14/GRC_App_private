@@ -8,7 +8,7 @@ export function SiteFooter() {
   const { trialUrl, signInUrl, privacyUrl, termsUrl } = getSiteConfig();
   return (
     <footer className="relative overflow-hidden border-t border-line bg-subtle">
-      <div className="frame grid gap-12 pb-10 pt-16 lg:grid-cols-[1.25fr_3fr] lg:gap-16">
+      <div className="frame grid grid-cols-1 gap-12 pb-10 pt-16 lg:grid-cols-[1.25fr_3fr] lg:gap-16">
         <div className="max-w-sm">
           <Brand />
           <p className="mt-5 text-[15px] leading-relaxed text-dim">The compliance and security platform for organisations that have to prove it: frameworks, evidence, policies, risk, vendors, assets and vulnerabilities in one place.</p>
@@ -39,9 +39,7 @@ export function SiteFooter() {
           {termsUrl && <li><a href={termsUrl} className="hover:text-ink">Terms</a></li>}
         </ul>
       </div>
-      <div aria-hidden="true" className="pointer-events-none select-none overflow-hidden">
-        <p className="frame -mb-[0.22em] font-serif text-[clamp(5rem,19vw,17rem)] leading-[0.8] tracking-[-0.04em] text-ink/[0.045]">verity</p>
-      </div>
+      <div aria-hidden="true" className="footer-wordmark pointer-events-none select-none overflow-hidden" />
     </footer>
   );
 }

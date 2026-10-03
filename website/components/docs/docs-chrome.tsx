@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { cn } from "@/lib/cn";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -19,16 +19,18 @@ export interface SidebarGroup {
 
 /* ---------------------------------------------------------------- theme */
 
+function subscribeTheme(callback: () => void) {
+  const observer = new MutationObserver(callback);
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-docs-theme"] });
+  return () => observer.disconnect();
+}
+
 export function ThemeToggle() {
-  const [theme, setTheme] = useState<"light" | "dark">("light");
-  useEffect(() => {
-    setTheme(document.documentElement.dataset.docsTheme === "dark" ? "dark" : "light");
-  }, []);
+  const theme = useSyncExternalStore(subscribeTheme, () => (document.documentElement.dataset.docsTheme === "dark" ? "dark" : "light"), () => "light");
   const toggle = () => {
     const next = theme === "dark" ? "light" : "dark";
     document.documentElement.dataset.docsTheme = next;
     try { localStorage.setItem("verity-docs-theme", next); } catch { /* storage may be unavailable; the choice still applies to this visit */ }
-    setTheme(next);
   };
   return (
     <button type="button" onClick={toggle} className="grid h-9 w-9 place-items-center rounded-lg text-dim transition hover:bg-muted hover:text-ink" aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"} title={theme === "dark" ? "Light theme" : "Dark theme"}>
@@ -43,9 +45,13 @@ export function DocsHeader({ groups, trialUrl }: { groups: SidebarGroup[]; trial
   const [drawer, setDrawer] = useState(false);
   const [progress, setProgress] = useState(0);
   const pathname = usePathname();
+  const [lastPath, setLastPath] = useState(pathname);
   const isArticle = pathname !== "/docs/" && pathname !== "/docs";
-
-  useEffect(() => setDrawer(false), [pathname]);
+  if (pathname !== lastPath) {
+    // Close the drawer when navigation completes (adjusting state on a prop change, not in an effect).
+    setLastPath(pathname);
+    setDrawer(false);
+  }
   useEffect(() => {
     if (!isArticle) return;
     const onScroll = () => {
@@ -65,6 +71,7 @@ export function DocsHeader({ groups, trialUrl }: { groups: SidebarGroup[]; trial
   }, [drawer]);
 
   return (
+    <>
     <header className="sticky top-0 z-50 border-b border-line bg-surface/95 backdrop-blur supports-[backdrop-filter]:bg-surface/85">
       <div className="mx-auto flex h-[var(--header-h)] max-w-[1600px] items-center gap-4 px-4 sm:px-6">
         <button type="button" className="grid h-9 w-9 place-items-center rounded-lg text-ink hover:bg-muted lg:hidden" aria-label="Open documentation menu" aria-expanded={drawer} aria-controls="docs-drawer" onClick={() => setDrawer(true)}>
@@ -85,19 +92,20 @@ export function DocsHeader({ groups, trialUrl }: { groups: SidebarGroup[]; trial
         </div>
       </div>
       {isArticle && <span className="docs-progress" style={{ transform: `scaleX(${progress})` }} aria-hidden="true" />}
-      {drawer && (
-        <div className="fixed inset-0 z-[70] lg:hidden" role="dialog" aria-modal="true" aria-label="Documentation menu" id="docs-drawer">
-          <button type="button" className="absolute inset-0 animate-fade-in bg-ink/30" aria-label="Close menu" tabIndex={-1} onClick={() => setDrawer(false)} />
-          <div className="absolute inset-y-0 start-0 flex w-[min(340px,88vw)] animate-slide-in-start flex-col bg-surface shadow-menu">
-            <div className="flex h-[var(--header-h)] shrink-0 items-center justify-between border-b border-line px-4">
-              <Brand suffix="Docs" href="/docs/" />
-              <button type="button" className="grid h-9 w-9 place-items-center rounded-lg hover:bg-muted" aria-label="Close menu" onClick={() => setDrawer(false)}><Icon name="x" size={20} /></button>
-            </div>
-            <div className="flex-1 overflow-y-auto px-3 py-4"><SidebarNav groups={groups} /></div>
-          </div>
-        </div>
-      )}
     </header>
+      {drawer && (
+      <div className="fixed inset-0 z-[70] lg:hidden" role="dialog" aria-modal="true" aria-label="Documentation menu" id="docs-drawer">
+        <button type="button" className="absolute inset-0 animate-fade-in bg-ink/30" aria-label="Close menu" tabIndex={-1} onClick={() => setDrawer(false)} />
+        <div className="absolute inset-y-0 start-0 flex w-[min(340px,88vw)] animate-slide-in-start flex-col bg-surface shadow-menu">
+          <div className="flex h-[var(--header-h)] shrink-0 items-center justify-between border-b border-line px-4">
+            <Brand suffix="Docs" href="/docs/" />
+            <button type="button" className="grid h-9 w-9 place-items-center rounded-lg hover:bg-muted" aria-label="Close menu" onClick={() => setDrawer(false)}><Icon name="x" size={20} /></button>
+          </div>
+          <div className="flex-1 overflow-y-auto px-3 py-4"><SidebarNav groups={groups} /></div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }
 

@@ -76,3 +76,9 @@
 [data-docs-theme="dark"] .docs-root .btn-dark { background: rgb(238 241 245); color: rgb(12 15 21); }
 [data-docs-theme="dark"] .docs-root .btn-dark:hover { background: rgb(255 255 255); }
 [data-docs-theme="dark"] .docs-root .btn-outline { box-shadow: none; }
+[data-docs-theme="dark"] .docs-root .btn-light { color: rgb(12 15 21); }
+
+/* Dark theme: status badges keep their meaning with dark tints (marketing pages are always light). */
+[data-docs-theme="dark"] .docs-root .status-soon { border-color: rgb(99 102 241 / 0.55); background: rgb(30 27 75 / 0.6); color: rgb(165 180 252); }
+[data-docs-theme="dark"] .docs-root .status-preview { border-color: rgb(14 165 233 / 0.45); background: rgb(8 47 73 / 0.6); color: rgb(125 211 252); }
+[data-docs-theme="dark"] .docs-root .status-live { border-color: rgb(16 185 129 / 0.45); background: rgb(2 44 34 / 0.6); color: rgb(110 231 183); }

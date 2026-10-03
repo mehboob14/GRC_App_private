@@ -12,7 +12,7 @@ export function AssistantDraft() {
       </div>
       <div className="seq mt-4 rounded-2xl border border-[#E3E7EC] bg-white p-5 shadow-float" style={{ ["--i" as string]: 1 } as CSSProperties}>
         <div className="flex items-center justify-between gap-3">
-          <p className="flex items-center gap-1.5 text-[13px] text-[#8A94A3]"><Icon name="caret-down" size={12} weight="bold" className="rotate-180" />Thought for 6 seconds</p>
+          <p className="flex items-center gap-1.5 text-[13px] text-[#6E7787]"><Icon name="caret-down" size={12} weight="bold" className="rotate-180" />Thought for 6 seconds</p>
           <StatusBadge status="soon" size="xs" />
         </div>
         <p className="mt-3 text-[14px] leading-relaxed text-[#363F4E]">Here is a first draft from your template library. It is marked as an <strong className="font-semibold text-[#0B0F17]">AI draft</strong> and cannot be approved or published until a reviewer signs it off.</p>
@@ -26,7 +26,7 @@ export function AssistantDraft() {
           </div>
           <ol className="space-y-1.5 px-4 py-3 text-[13px] text-[#363F4E]">
             {["Purpose and scope", "Joiners, movers and leavers", "Privileged access", "Quarterly access reviews", "Exceptions and approvals"].map((item, index) => (
-              <li key={item} className="flex gap-2"><span className="font-mono text-[11px] leading-5 text-[#8A94A3]">{String(index + 1).padStart(2, "0")}</span>{item}</li>
+              <li key={item} className="flex gap-2"><span className="font-mono text-[11px] leading-5 text-[#6E7787]">{String(index + 1).padStart(2, "0")}</span>{item}</li>
             ))}
           </ol>
           <div className="flex flex-wrap items-center gap-1.5 border-t border-[#EDF0F3] px-4 py-3">

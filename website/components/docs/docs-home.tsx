@@ -40,7 +40,7 @@ export function DocsHome() {
         <section aria-labelledby="roles-title">
           <h2 id="roles-title" className="font-serif text-display-sm font-normal">Start where you are</h2>
           <p className="mt-2 text-[16px] text-dim">Pick the job you are here to do.</p>
-          <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {roles.map((role, index) => (
               <li key={role.role} data-reveal style={{ ["--reveal-delay" as string]: `${index * 50}ms` } as CSSProperties} className="flex flex-col rounded-2xl border border-line bg-surface p-5 shadow-card">
                 <span className="grid h-10 w-10 place-items-center rounded-lg bg-sky-50 text-sky-700 [[data-docs-theme=dark]_&]:bg-sky-950/60 [[data-docs-theme=dark]_&]:text-sky-300"><Icon name={role.icon} size={20} /></span>
@@ -66,7 +66,7 @@ export function DocsHome() {
 
         <section aria-labelledby="browse-title" className="mt-20">
           <h2 id="browse-title" className="font-serif text-display-sm font-normal">Browse by area</h2>
-          <div className="mt-8 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-8 grid grid-cols-1 gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
             {groups.map((group) => (
               <div key={group.id}>
                 <h3 className="flex items-center gap-2 text-[15px] font-semibold text-ink"><Icon name={group.icon} size={18} className="text-dim" />{group.title}</h3>
@@ -85,7 +85,7 @@ export function DocsHome() {
           </div>
         </section>
 
-        <section aria-labelledby="notes-title" className="mt-20 grid gap-5 lg:grid-cols-2">
+        <section aria-labelledby="notes-title" className="mt-20 grid grid-cols-1 gap-5 lg:grid-cols-2">
           <div className="rounded-2xl border border-line bg-subtle p-6">
             <h2 id="notes-title" className="flex items-center gap-2 text-[17px] font-semibold text-ink"><Icon name="list" size={19} />Two notes on this release</h2>
             <p className="mt-3 text-[15px] leading-relaxed text-body"><strong className="text-ink">The Dashboard screen is a preview.</strong> It shows the shape of the executive view with illustrative figures. Every live number lives on the module you are looking at.</p>

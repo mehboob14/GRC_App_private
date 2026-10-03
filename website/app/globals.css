@@ -13,7 +13,7 @@
   --ink: 11 15 23;
   --body: 54 63 78;
   --dim: 93 104 120;
-  --faint: 138 148 163;
+  --faint: 104 113 131;
   --line: 227 231 236;
   --line-strong: 208 213 221;
   --accent: 10 108 203;
@@ -32,7 +32,7 @@
   --ink: 238 241 245;
   --body: 196 203 213;
   --dim: 152 161 175;
-  --faint: 114 123 138;
+  --faint: 128 137 152;
   --line: 40 47 59;
   --line-strong: 58 67 82;
   --accent: 96 170 245;
@@ -68,6 +68,9 @@
   @media (max-width: 1320px) { .frame-ruled::before, .frame-ruled::after { display: none; } }
 
   .eyebrow { @apply font-mono text-eyebrow font-medium uppercase text-dim; }
+
+  /* Decorative giant wordmark at the foot of every page (generated content, so it is not read out). */
+  .footer-wordmark::before { content: "verity"; display: block; max-width: 80rem; margin: 0 auto -0.22em; padding-inline: 2.5rem; font-family: theme("fontFamily.serif"); font-size: clamp(5rem, 19vw, 17rem); line-height: 0.8; letter-spacing: -0.04em; color: rgb(var(--ink) / 0.045); }
 
   .btn { @apply inline-flex min-h-[44px] select-none items-center justify-center gap-2 whitespace-nowrap rounded-lg px-[18px] text-[15px] font-semibold leading-none transition-[background-color,border-color,color,box-shadow,transform] duration-150 ease-out; }
   .btn:active { transform: translateY(1px); }

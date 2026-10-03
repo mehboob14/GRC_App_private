@@ -1,6 +1,6 @@
 "use client";
 
-import { Children, useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { Children, useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import { Icon } from "@/components/ui/icon";
 
@@ -97,10 +97,6 @@ export function WalkthroughView({ src, alt, width, height, steps }: { src: strin
   const [active, setActive] = useState(0);
   const root = useRef<HTMLDivElement>(null);
   const step = steps[active];
-
-  useEffect(() => {
-    setActive((current) => Math.min(current, steps.length - 1));
-  }, [steps.length]);
 
   const go = (index: number) => setActive((index + steps.length) % steps.length);
   const pct = (value: number, total: number) => `${(value / total) * 100}%`;

@@ -37,7 +37,7 @@ export function VendorRegister() {
         <div className="flex items-center gap-2.5 px-5 pb-3 pt-4">
           <Icon name="handshake" size={20} className="text-[#0B0F17]" />
           <span className="text-[15px] font-semibold text-[#0B0F17]">Vendors</span>
-          <span className="ms-auto font-mono text-[11px] text-[#8A94A3]">38 vendors · 6 under review</span>
+          <span className="ms-auto font-mono text-[11px] text-[#6E7787]">38 vendors · 6 under review</span>
         </div>
         <div className="flex gap-6 border-b border-[#EDF0F3] px-5 text-[13.5px]" role="presentation">
           {["Overview", "Register", "Intake", "Findings"].map((tab) => (
@@ -45,18 +45,18 @@ export function VendorRegister() {
           ))}
         </div>
         <div className="px-5 pt-4">
-          <div className="flex h-9 items-center gap-2 rounded-lg border border-[#D0D5DD] px-3 text-[13px] text-[#8A94A3] sm:max-w-[60%]">
+          <div className="flex h-9 items-center gap-2 rounded-lg border border-[#D0D5DD] px-3 text-[13px] text-[#6E7787] sm:max-w-[60%]">
             <Icon name="search" size={15} />Search vendors
           </div>
         </div>
         <div className="fade-bottom mt-4 overflow-hidden px-5 pb-2">
-          <table className="w-full table-fixed text-left text-[13px]">
+          <table className="w-full text-left text-[13px] sm:table-fixed">
             <thead>
               <tr className="border-y border-[#EDF0F3] bg-[#F9FAFB] text-[11.5px] text-[#5D6878]">
-                <th className="w-[42%] py-2.5 pl-3 font-medium">Vendor</th>
-                <th className="w-[18%] py-2.5 font-medium">Tier</th>
+                <th className="py-2.5 pl-3 font-medium sm:w-[42%]">Vendor</th>
+                <th className="py-2.5 pr-2 font-medium sm:w-[18%]">Tier</th>
                 <th className="hidden w-[20%] py-2.5 font-medium sm:table-cell">Stage</th>
-                <th className="w-[20%] py-2.5 pr-3 font-medium">Status</th>
+                <th className="py-2.5 pr-3 font-medium sm:w-[20%]">Status</th>
               </tr>
             </thead>
             <tbody>
@@ -64,9 +64,9 @@ export function VendorRegister() {
                 <tr key={row.vendor} className="seq border-b border-[#EDF0F3]" style={{ ["--i" as string]: index, ["--step" as string]: "110ms", ["--base" as string]: "200ms" } as CSSProperties}>
                   <td className="py-3 pl-3">
                     <span className="block truncate font-medium text-[#0B0F17]">{row.vendor}</span>
-                    <span className="block truncate text-[11.5px] text-[#8A94A3]">{row.category}</span>
+                    <span className="block truncate text-[11.5px] text-[#6E7787]">{row.category}</span>
                   </td>
-                  <td className="py-3"><Pill tone={row.tierTone}>{row.tier}</Pill></td>
+                  <td className="py-3 pr-2"><Pill tone={row.tierTone}>{row.tier}</Pill></td>
                   <td className="hidden py-3 text-[#363F4E] sm:table-cell">{row.stage}{row.findings > 0 && <span className="ms-1.5 rounded bg-[#FDEEF1] px-1 font-mono text-[10px] text-[#C01741]">{row.findings}</span>}</td>
                   <td className="py-3 pr-3"><Pill tone={row.tone}>{row.status}</Pill></td>
                 </tr>
@@ -78,7 +78,7 @@ export function VendorRegister() {
 
       <div className="seq absolute -bottom-14 -right-2 hidden w-[210px] rounded-xl border border-[#E3E7EC] bg-white p-4 shadow-float sm:block lg:-right-16" style={{ ["--i" as string]: 3, ["--base" as string]: "500ms" } as CSSProperties} aria-hidden="true">
         <p className="text-[12.5px] font-semibold text-[#0B0F17]">Residual risk</p>
-        <p className="text-[11px] text-[#8A94A3]">Likelihood × impact</p>
+        <p className="text-[11px] text-[#6E7787]">Likelihood × impact</p>
         <div className="mt-3 grid grid-cols-5 gap-1">
           {matrix.map((row, li) =>
             row.map((count, ii) => (

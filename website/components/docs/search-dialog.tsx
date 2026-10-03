@@ -44,7 +44,7 @@ export function SearchProvider({ children }: { children: ReactNode }) {
 
   const open = useCallback((initial?: string) => {
     opener.current = document.activeElement as HTMLElement | null;
-    if (typeof initial === "string") setQuery(initial);
+    if (typeof initial === "string") { setQuery(initial); setActive(0); }
     dialog.current?.showModal();
     window.requestAnimationFrame(() => input.current?.select());
     loadIndex().then(setIndex).catch(() => setFailed(true));
@@ -66,7 +66,6 @@ export function SearchProvider({ children }: { children: ReactNode }) {
 
   const results: SearchResult[] = useMemo(() => (index ? search(index, query) : []), [index, query]);
   const terms = useMemo(() => tokenize(query), [query]);
-  useEffect(() => setActive(0), [query]);
 
   const go = (href: string) => {
     dialog.current?.close();
@@ -88,7 +87,7 @@ export function SearchProvider({ children }: { children: ReactNode }) {
           <input
             ref={input}
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={(event) => { setQuery(event.target.value); setActive(0); }}
             onKeyDown={(event) => {
               if (event.key === "ArrowDown") { event.preventDefault(); setActive((value) => Math.min(value + 1, results.length - 1)); }
               if (event.key === "ArrowUp") { event.preventDefault(); setActive((value) => Math.max(value - 1, 0)); }
@@ -111,7 +110,7 @@ export function SearchProvider({ children }: { children: ReactNode }) {
               <p className="eyebrow mb-3">Try</p>
               <div className="flex flex-wrap gap-2">
                 {suggestions.map((suggestion) => (
-                  <button key={suggestion} type="button" onClick={() => setQuery(suggestion)} className="chip hover:border-line-strong hover:text-ink">{suggestion}</button>
+                  <button key={suggestion} type="button" onClick={() => { setQuery(suggestion); setActive(0); }} className="chip hover:border-line-strong hover:text-ink">{suggestion}</button>
                 ))}
               </div>
             </div>

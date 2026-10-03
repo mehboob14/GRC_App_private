@@ -55,7 +55,7 @@ export function TraceGraph() {
 
   return (
     <div ref={root} className="w-full">
-      <div role="tablist" aria-label="Linked records" className="relative grid gap-3 lg:grid-cols-5 lg:gap-4">
+      <div role="tablist" aria-label="Linked records" className="relative grid grid-cols-1 gap-3 lg:grid-cols-5 lg:gap-4">
         <div className="pointer-events-none absolute inset-x-[10%] top-[52px] hidden h-px lg:block" aria-hidden="true">
           <svg width="100%" height="2" preserveAspectRatio="none" className="overflow-visible"><line x1="0" y1="1" x2="100%" y2="1" stroke="#BAE6FD" strokeWidth="2" strokeDasharray="6 6" className="flow-dash" /></svg>
         </div>
