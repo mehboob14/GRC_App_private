@@ -22,7 +22,7 @@ export function ControlMapping() {
   const height = targets.length * rowHeight;
   return (
     <figure data-animate className="w-full">
-      <div className="grid items-center gap-6 md:grid-cols-[minmax(0,0.9fr)_88px_minmax(0,1.1fr)] md:gap-0">
+      <div className="grid grid-cols-1 items-center gap-6 md:grid-cols-[minmax(0,0.9fr)_88px_minmax(0,1.1fr)] md:gap-0">
         <div className="seq rounded-xl border border-line bg-white p-4 shadow-float" style={{ ["--i" as string]: 0 } as CSSProperties}>
           <p className="font-mono text-[10.5px] text-faint">IAM-02 · Hybrid</p>
           <p className="mt-1 text-[15px] font-semibold text-ink">Periodic user access reviews</p>

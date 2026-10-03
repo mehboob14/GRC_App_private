@@ -38,19 +38,21 @@ export function RegionTabs({ regions, frameworks, limit = 8 }: { regions: { id: 
           </button>
         ))}
       </div>
-      <ul id="region-panel" role="tabpanel" aria-labelledby={`region-tab-${active}`} className="mt-5 grid gap-2 sm:grid-cols-2">
-        {shown.map((framework) => (
-          <li key={framework.id}>
-            <Link href={`/frameworks/?f=${framework.id}`} className="flex h-full items-center justify-between gap-3 rounded-lg border border-line bg-surface px-3.5 py-2.5 transition-colors hover:border-line-strong">
-              <span className="min-w-0">
-                <span className="block truncate text-[14px] font-medium text-ink">{framework.shortName}</span>
-                <span className="block truncate text-[12px] text-dim">{framework.issuer.split("(")[0].trim()}</span>
-              </span>
-              <StatusBadge status={framework.status} size="xs" hideLive={false} />
-            </Link>
-          </li>
-        ))}
-      </ul>
+      <div id="region-panel" role="tabpanel" aria-labelledby={`region-tab-${active}`}>
+        <ul className="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {shown.map((framework) => (
+            <li key={framework.id}>
+              <Link href={`/frameworks/?f=${framework.id}`} className="flex h-full items-center justify-between gap-3 rounded-lg border border-line bg-surface px-3.5 py-2.5 transition-colors hover:border-line-strong">
+                <span className="min-w-0">
+                  <span className="block truncate text-[14px] font-medium text-ink">{framework.shortName}</span>
+                  <span className="block truncate text-[12px] text-dim">{framework.issuer.split("(")[0].trim()}</span>
+                </span>
+                <StatusBadge status={framework.status} size="xs" hideLive={false} />
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
       {inRegion.length > shown.length && (
         <Link href={`/frameworks/?region=${active}`} className="mt-3 inline-block text-[13.5px] font-medium text-accent hover:text-accent-strong">+{inRegion.length - shown.length} more in this region</Link>
       )}

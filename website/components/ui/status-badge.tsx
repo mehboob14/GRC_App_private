@@ -14,6 +14,7 @@ export function StatusBadge({ status, size = "sm", className, hideLive = true }:
       className={cn(
         "inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border font-sans font-medium normal-case leading-none tracking-normal",
         size === "xs" ? "px-1.5 py-[3px] text-[10.5px]" : "px-2 py-1 text-[11.5px]",
+        `status-badge status-${status}`,
         status === "soon" && "border-dashed border-indigo-300 bg-indigo-50/70 text-indigo-700",
         status === "preview" && "border-sky-200 bg-sky-50 text-sky-800",
         status === "live" && "border-emerald-200 bg-emerald-50 text-emerald-700",

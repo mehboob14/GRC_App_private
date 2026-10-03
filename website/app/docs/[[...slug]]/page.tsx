@@ -95,7 +95,7 @@ export default async function DocPage({ params }: Params) {
             <Content components={mdxComponents} />
           </div>
           {feedbackEndpoint && <Feedback endpoint={feedbackEndpoint} slug={page.slug} />}
-          <nav aria-label="Previous and next" className="mt-14 grid gap-3 border-t border-line pt-8 sm:grid-cols-2">
+          <nav aria-label="Previous and next" className="mt-14 grid grid-cols-1 gap-3 border-t border-line pt-8 sm:grid-cols-2">
             {prev ? (
               <Link href={`/docs/${prev.slug}/`} className="group rounded-xl border border-line p-4 transition hover:border-line-strong hover:shadow-card">
                 <span className="flex items-center gap-1 text-[12.5px] text-dim"><Icon name="arrow-right" size={13} className="rotate-180" />Previous</span>

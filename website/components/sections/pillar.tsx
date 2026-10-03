@@ -50,7 +50,7 @@ export function Pillar({ id, eyebrow, title, titleAddon, lead, link, features, c
   return (
     <section id={id} aria-labelledby={`${id}-title`} className={cn("border-t border-line", className)}>
       <div className="frame-ruled">
-        <div className="frame grid items-center gap-14 py-20 lg:grid-cols-2 lg:gap-20 lg:py-28">
+        <div className="frame grid grid-cols-1 items-center gap-14 py-20 lg:grid-cols-2 lg:gap-20 lg:py-28">
           <div className={cn("min-w-0", reverse && "lg:order-2")}>
             <p className="eyebrow" data-reveal>{eyebrow}</p>
             <h2 id={`${id}-title`} className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 font-serif text-display-lg font-normal" data-reveal>

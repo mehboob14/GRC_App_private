@@ -53,7 +53,7 @@ export function SiteNavigation({ platform, solutions, resources, signInUrl, tria
   const [open, setOpen] = useState<MenuId | null>(null);
   const [drawer, setDrawer] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const root = useRef<HTMLDivElement>(null);
+  const root = useRef<HTMLElement>(null);
   const closeTimer = useRef<number | undefined>(undefined);
   const triggers = useRef<Partial<Record<MenuId, HTMLButtonElement | null>>>({});
   const drawerRef = useRef<HTMLDivElement>(null);
@@ -64,10 +64,13 @@ export function SiteNavigation({ platform, solutions, resources, signInUrl, tria
     setDrawer(false);
   }, []);
 
-  // Close menus on route change.
-  useEffect(() => {
-    closeAll();
-  }, [pathname, closeAll]);
+  // Close menus when the route changes (adjusting state on a prop change, not in an effect).
+  const [lastPath, setLastPath] = useState(pathname);
+  if (pathname !== lastPath) {
+    setLastPath(pathname);
+    setOpen(null);
+    setDrawer(false);
+  }
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 4);
@@ -148,7 +151,7 @@ export function SiteNavigation({ platform, solutions, resources, signInUrl, tria
   );
 
   return (
-    <div ref={root} className="sticky top-0 z-50" onPointerLeave={hoverClose} onPointerEnter={() => window.clearTimeout(closeTimer.current)}>
+    <header ref={root} className="sticky top-0 z-50" onPointerLeave={hoverClose} onPointerEnter={() => window.clearTimeout(closeTimer.current)}>
       <div className={cn("border-b bg-surface/95 backdrop-blur supports-[backdrop-filter]:bg-surface/85", scrolled || open ? "border-line" : "border-transparent")}>
         <div className="relative">
           <div className="frame flex h-[var(--header-h)] items-center gap-6">
@@ -278,7 +281,7 @@ export function SiteNavigation({ platform, solutions, resources, signInUrl, tria
           </div>
         </div>
       )}
-    </div>
+    </header>
   );
 }
 

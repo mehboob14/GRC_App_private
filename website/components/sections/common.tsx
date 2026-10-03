@@ -41,7 +41,7 @@ export function FaqSection({ items, title = "Questions, answered.", lead, id = "
   return (
     <section id={id} aria-labelledby={`${id}-title`} className="border-t border-line">
       <div className="frame-ruled">
-        <div className="frame grid gap-10 py-20 lg:grid-cols-[0.8fr_1.2fr] lg:gap-20 lg:py-28">
+        <div className="frame grid grid-cols-1 gap-10 py-20 lg:grid-cols-[0.8fr_1.2fr] lg:gap-20 lg:py-28">
           <div>
             <p className="eyebrow">Common questions</p>
             <h2 id={`${id}-title`} className="mt-4 font-serif text-display-md">{title}</h2>
@@ -57,7 +57,7 @@ export function FaqSection({ items, title = "Questions, answered.", lead, id = "
 export function FinalCta({ title, lead, source, interest }: { title: string; lead: string; source: string; interest?: string }) {
   return (
     <section aria-labelledby="final-cta-title" className="relative overflow-hidden border-t border-line bg-gradient-to-b from-white via-[#F2F5F8] to-[#E8EDF2]">
-      <div className="frame relative grid items-center gap-10 py-20 lg:grid-cols-[1.2fr_0.8fr] lg:py-24">
+      <div className="frame relative grid grid-cols-1 items-center gap-10 py-20 lg:grid-cols-[1.2fr_0.8fr] lg:py-24">
         <div>
           <h2 id="final-cta-title" className="max-w-[18ch] font-serif text-display-lg" data-reveal>{title}</h2>
           <p className="mt-5 max-w-xl text-lg leading-relaxed text-dim" data-reveal>{lead}</p>

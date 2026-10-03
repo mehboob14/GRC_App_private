@@ -17,7 +17,14 @@ Verity supports more than one register, because an operational risk register and
 
 Pick the register you are working in from the register menu at the top of **Risks**. The tabs underneath then work inside that register. An administrator creates registers and shapes them in [Risks > Settings](/docs/risk/library-and-settings/#set-up-a-register).
 
-<Screenshot name="risks-register" alt="The risk register listing each risk with its inherent and residual scores, status, business owner, linked controls and next review date" />
+<Walkthrough name="risks-register" alt="The risk register listing each risk with its inherent and residual scores, status, business owner, linked controls and next review date" steps={[
+  { target: "register", title: "Choose a register", body: "Switch between the risk registers in your workspace." },
+  { target: "add", title: "Add risk", body: "Opens the Add risk form." },
+  { target: "import", title: "Import", body: "Bring risks in in bulk." },
+  { target: "inherent", title: "Inherent score", body: "The risk before your controls act." },
+  { target: "residual", title: "Residual score", body: "The risk after your controls act. It reads Not assessed until you score it." },
+  { target: "status-col", title: "Status", body: "Where each risk is in its life, such as Open, In treatment or Accepted." },
+]} />
 
 To find work fast, use the **Needs attention** filter. It picks out risks with no linked control, owner or score, an overdue review or treatment, or an acceptance awaiting approval or about to expire.
 

@@ -45,16 +45,14 @@ export function DemoForm({ endpoint, interest, source, onDone, compact = false }
   const id = useId();
   const started = useRef<number>(0);
   const preset = useMemo(() => parseInterest(interest), [interest]);
-  const [selected, setSelected] = useState<string[]>(preset.interests);
+  // The form mounts fresh each time the popup opens, so the preset only seeds the first render.
+  const [selected, setSelected] = useState<string[]>(() => preset.interests);
   const [state, setState] = useState<State>({ kind: "idle" });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     started.current = Date.now();
   }, []);
-  useEffect(() => {
-    setSelected(preset.interests);
-  }, [preset]);
 
   const disabled = !endpoint;
 

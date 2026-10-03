@@ -93,8 +93,11 @@ headers and no-tracking posture. Archive `add-public-website` first, then this c
   MDX content pipeline.
 - New website dependencies, each with its reason in `design.md`: `@mdx-js/mdx` and `yaml` for
   documentation, `@fontsource-variable/source-serif-4` and `@fontsource-variable/jetbrains-mono`
-  for the type system. `react-markdown` and its plugins, `@fontsource/sora`, `github-slugger` and
-  `mdast-util-to-string` go once nothing uses them.
+  for the type system, and `@phosphor-icons/react` for the icon set the product already uses.
+  `react-markdown`, `remark-parse`, `unified`, `mdast-util-to-string` and `@fontsource/sora` are
+  removed because nothing uses them. `github-slugger` stays: the contents rail and search index
+  use it to produce the same heading anchors as `rehype-slug`. The `postcss` dev dependency moves
+  from 8.5.6 to 8.5.28 to clear published advisories.
 - Hosting: the same static export. If a demo endpoint is configured, the host's CSP `connect-src`
   must include its origin.
 - Review flags: none of tenant isolation, authentication, authorization, audit trail, database

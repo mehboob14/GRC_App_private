@@ -243,9 +243,15 @@ translated content module and a right-to-left review. No redesign is needed.
 | `yaml` | Parses front matter. No dependencies of its own, widely used. | — |
 | `@fontsource-variable/source-serif-4` | Self-hosted display serif for the reference's editorial typography. | `@fontsource/sora` |
 | `@fontsource-variable/jetbrains-mono` | Self-hosted monospace for eyebrows, labels and figures. | — |
+| `@phosphor-icons/react` | The icon set the product itself uses (`frontend/` depends on it), so the site and the screenshots speak one visual language. Icons are imported individually from its server-safe entry, so only the glyphs used are shipped. | Hand-drawn inline SVG icons |
 
-No animation, chart, icon or search library is added. Those are built in-house with SVG, CSS and
-small hooks.
+Removed because nothing uses them: `react-markdown`, `remark-parse`, `unified`,
+`mdast-util-to-string`, `@fontsource/sora`. `github-slugger` stays so the contents rail and search
+index produce the same anchors as `rehype-slug`. The `postcss` dev dependency moves from 8.5.6 to
+8.5.28 to clear published advisories (`npm audit` reports none afterwards).
+
+No animation, chart or search library is added. Those are built in-house with SVG, CSS and small
+hooks.
 
 ## 13. Security and privacy
 

@@ -35,7 +35,7 @@ export function PolicyCampaign() {
         <ul className="mt-3 space-y-2.5">
           {policies.map((policy) => (
             <li key={policy.name} className="flex items-center justify-between gap-3 text-[13px]">
-              <span className="min-w-0 truncate text-[#0B0F17]">{policy.name} <span className="font-mono text-[10.5px] text-[#8A94A3]">{policy.version}</span></span>
+              <span className="min-w-0 truncate text-[#0B0F17]">{policy.name} <span className="font-mono text-[10.5px] text-[#6E7787]">{policy.version}</span></span>
               <span className="flex shrink-0 items-center gap-2">
                 {policy.ack && <span className="font-mono text-[11px] text-[#5D6878]">{policy.ack} signed</span>}
                 <Pill tone={policy.tone}>{policy.state}</Pill>
@@ -46,7 +46,7 @@ export function PolicyCampaign() {
       </div>
       <div className="seq relative mt-4 rounded-xl border border-[#E3E7EC] bg-white p-5 shadow-float sm:-mt-2 sm:ms-[16%]" style={{ ["--i" as string]: 1 } as CSSProperties}>
         <p className="text-[14px] font-semibold text-[#0B0F17]">Acknowledgements, information security policy v4</p>
-        <p className="text-[12px] text-[#8A94A3]">Campaign to 340 people · signatures by week</p>
+        <p className="text-[12px] text-[#6E7787]">Campaign to 340 people · signatures by week</p>
         <StackedColumns className="mt-4" columns={weeks} series={series} max={340} height={180} yTicks={[0, 100, 200, 300]} />
         <Legend className="mt-4 border-t border-[#EDF0F3] pt-3" items={series} />
       </div>
