@@ -1,376 +1,446 @@
-import { useState } from "react";
+import { Link } from "react-router-dom";
 import {
-  BarList,
   Button,
   Card,
-  ChartCard,
   ChartLegend,
-  Donut,
   FAMILY_CHART,
   Icon,
   PageHeader,
-  SegmentedControl,
+  Skeleton,
   StatTile,
-  StatusPill,
-  statusFamilyFor,
-  type ChartSegment,
+  type IconName,
 } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { FrameworkLogo } from "@/features/iam/components/framework-logo";
-import { Donut as Ring } from "./donut";
+import {
+  AssetsCard,
+  EvidenceCard,
+  PoliciesCard,
+  RiskCard,
+  TasksCard,
+  TopRisksCard,
+  VendorsCard,
+  VulnerabilitiesCard,
+} from "./admin-cards";
+import { ProgressRing } from "./donut";
+import {
+  isForbidden,
+  useAccess,
+  useEngagement,
+  useFrameworks,
+  usePosture,
+  useRisks,
+  useVulnerabilities,
+} from "./hooks";
+import { dayDelta, localDay, pct, ringToneFor, type RingTone } from "./model";
+import { Empty, Panel, Settled, Tile, ViewAll } from "./section";
+import type { FrameworkSummary, Posture } from "./types";
 
-// A single-value progress ring, which the shared `Donut` (a distribution chart
-// with its own legend) does not cover. `Ring` paints an SVG stroke, so its
-// colour arrives as `currentColor` from a literal Tailwind `text-*` class on
-// the wrapper. Tailwind's JIT scans source text, so a class assembled at
-// runtime would be purged from the build.
-const ring = (pct: number) => [
-  { value: pct, color: "currentColor" },
-  { value: 100 - pct, color: "transparent" },
-];
+/**
+ * The admin posture view. Every number comes from the workspace's own data:
+ * readiness and per category coverage from the engagement dashboard, the
+ * frameworks from the controls the workspace has actually adopted, and a card
+ * per module from that module's summary. A tile with no source is not here
+ * (there is no trend, no score and no estimate), and a role that cannot read a
+ * module does not see its tile.
+ */
 
-// Admin posture dashboard: framework rings, TSC coverage and the posture
-// tiles. Mock data until each module's backend lands.
+const CATEGORY_ICON: Record<string, IconName> = {
+  Security: "shield",
+  Availability: "activity",
+  Confidentiality: "book",
+  "Processing Integrity": "controls",
+  Privacy: "users",
+};
 
-/** Ring colours, as literal classes for the same JIT reason. */
-const RING = {
-  accent: "text-action-accent",
-  success: "text-status-success-base",
-  warning: "text-status-warning-base",
-  danger: "text-status-danger-base",
-} as const;
-
-// ── Data ─────────────────────────────────────────────────────────────────
-const FRAMEWORKS = [
-  { name: "SOC 2 Type II", phase: "Type II window", status: "On track", pct: 91, pass: 124, fail: 3, review: 4, ring: RING.success },
-  { name: "ISO 27001", phase: "Stage 2 · Nov", status: "At risk", pct: 78, pass: 74, fail: 6, review: 7, ring: RING.warning },
-  { name: "HIPAA Security", phase: "Readiness Q1", status: "Behind", pct: 64, pass: 59, fail: 9, review: 11, ring: RING.danger },
-];
-
-// have = passing; the remainder splits into needs-review then failing.
-const TSC = [
-  { name: "Security (Common Criteria)", have: 88, total: 95, review: 5, fail: 2, pct: 93 },
-  { name: "Availability", have: 7, total: 10, review: 2, fail: 1, pct: 70 },
-  { name: "Confidentiality", have: 8, total: 8, review: 0, fail: 0, pct: 100 },
-  { name: "Processing Integrity", have: 4, total: 6, review: 2, fail: 0, pct: 67 },
-  { name: "Privacy", have: 5, total: 9, review: 2, fail: 2, pct: 56 },
-];
-
-// The severity axis (F12), not the status axis: "how bad", not "where in the
-// lifecycle".
-const VULN_SEGMENTS: ChartSegment[] = [
-  { key: "critical", label: "Critical", value: 4, strokeClass: "stroke-severity-critical", dotClass: "bg-severity-critical" },
-  { key: "high", label: "High", value: 5, strokeClass: "stroke-severity-high", dotClass: "bg-severity-high" },
-  { key: "medium", label: "Medium", value: 4, strokeClass: "stroke-severity-medium", dotClass: "bg-severity-medium" },
-  { key: "low", label: "Low", value: 1, strokeClass: "stroke-severity-low", dotClass: "bg-severity-low" },
-];
-
-// Likelihood (row, top = highest) × impact (col, right = highest). Counts sum
-// to the 12 active risks; colour follows the severity diagonal.
-const HEAT: number[][] = [
-  [0, 0, 1, 1, 1],
-  [0, 1, 3, 2, 0],
-  [0, 1, 1, 0, 0],
-  [1, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0],
-];
-
-const TOP_RISKS = [
-  { score: 16, title: "Unpatched critical vulnerability in prod", ref: "R-052 · Security" },
-  { score: 15, title: "Ransomware / malware outbreak", ref: "R-001 · Security" },
-  { score: 12, title: "Sub-processor data breach", ref: "R-029 · Vendor" },
-  { score: 12, title: "Phishing → credential theft", ref: "R-058 · Security" },
-  { score: 9, title: "Vendor concentration risk", ref: "R-041 · Vendor" },
-];
-
-const ASSETS = [
-  { key: "restricted", label: "Restricted", value: 24, barClass: "bg-severity-critical" },
-  { key: "confidential", label: "Confidential", value: 162, barClass: "bg-severity-high" },
-  { key: "internal", label: "Internal / Public", value: 1098, barClass: "bg-action-accent" },
-];
-
-function riskScoreTone(score: number): string {
-  if (score >= 15) return "bg-status-danger-bg text-status-danger-text";
-  if (score >= 10) return "bg-status-warning-bg text-status-warning-text";
-  return "bg-status-progress-bg text-status-progress-text";
-}
-
-// Heatmap cell tone by severity rank (likelihood + impact). Solid bg/text
-// token pairs rather than opacity: a translucent fill has no fixed contrast
-// ratio, and the count sitting on it has to stay legible.
-function heatTone(rowFromTop: number, col: number): string {
-  const sev = (4 - rowFromTop) + col; // 0..8
-  if (sev >= 6) return "bg-status-danger-bg text-status-danger-text";
-  if (sev >= 4) return "bg-status-warning-bg text-status-warning-text";
-  if (sev >= 2) return "bg-status-success-bg text-status-success-text";
-  return "bg-surface-sunken text-text-subtle";
-}
+const TONE_TEXT: Record<RingTone, string> = {
+  success: "text-status-success-text",
+  warning: "text-status-warning-text",
+  danger: "text-status-danger-text",
+};
 
 export function AdminDashboard() {
-  const [range, setRange] = useState<"Live" | "Weekly">("Live");
+  const access = useAccess();
+  const posture = usePosture(access.compliance);
+  const subtitle = posture.data
+    ? `${posture.data.controls_ready} of ${posture.data.controls_total} controls ready`
+    : undefined;
 
   return (
     <div className="w-full">
-      <PageHeader title="Compliance posture" />
+      <PageHeader title="Compliance posture" subtitle={subtitle} />
 
-      {/* The range switch governs the whole page, so it leads the page rather
-          than sitting over one section of it. */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <SegmentedControl
-          label="Posture range"
-          value={range}
-          onChange={setRange}
-          items={[
-            { id: "Live", label: "Live" },
-            { id: "Weekly", label: "Weekly" },
-          ]}
-        />
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 rounded-md border border-status-success-border bg-status-success-bg px-3 py-1.5">
-            <span className="text-body-sm text-text-subtle">Overall trust score</span>
-            <span className="font-display text-title-sm font-bold text-status-success-text">A · Strong</span>
-          </div>
-          <Button variant="secondary" size="sm">
-            <Icon name="doc" className="size-4" />
-            Export brief
-          </Button>
-        </div>
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {access.compliance ? <ControlsTile /> : null}
+        {access.compliance && access.evidence ? <EvidenceTile /> : null}
+        {access.risks ? <RisksTile /> : null}
+        {access.vulnerabilities ? <VulnerabilitiesTile /> : null}
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatTile icon="controls" label="Controls" value={124} tone="progress" />
-        <StatTile icon="doc" label="Evidence" value={842} tone="progress" />
-        <StatTile icon="risk" label="Risks" value={12} tone="warning" />
-        <StatTile icon="bug" label="Vulnerabilities" value={64} tone="danger" />
-      </div>
+      {access.compliance ? (
+        <>
+          <ReadinessCard />
+          <FrameworkCards />
+          <CoverageCard />
+        </>
+      ) : null}
 
-      {/* SOC 2 readiness: the headline number, so it leads the page. */}
-      <Card className="mt-4 p-5">
-        <div className="flex flex-wrap items-center gap-6">
-          <div className={cn("shrink-0", RING.accent)}>
-            <Ring size={132} stroke={14} segments={ring(91)}>
-              <span className="font-display text-numeral-lg tabular text-text-primary">91%</span>
-              <span className="mt-1 text-caption text-action-accent">124 / 136 controls</span>
-            </Ring>
-          </div>
-          <div className="min-w-[240px] flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <p className="font-display text-title-md text-text-primary">SOC 2 Type II readiness</p>
-              <span className="inline-flex items-center gap-0.5 rounded-full bg-status-success-bg px-2.5 py-1 text-caption font-bold text-status-success-text">
-                <Icon name="arrowup" className="size-3.5" />
-                +4%
-              </span>
-            </div>
-            <p className="mt-1 text-body-sm text-text-secondary">
-              On track for the Sep 15 window. 2 critical exceptions in remediation.
-            </p>
-            <div className="mt-3 flex flex-wrap gap-6">
-              <MiniStat value="3" label="Failing" tone="text-status-danger-text" />
-              <MiniStat value="6" label="Review" tone="text-status-warning-text" />
-              <MiniStat value="55d" label="To audit" />
-            </div>
-          </div>
-        </div>
-      </Card>
-
-      {/* Framework compliance cards: donut rings */}
-      <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
-        {FRAMEWORKS.map((fw) => (
-          <Card key={fw.name} className="p-4">
-            <div className="flex items-center gap-2.5">
-              {/* The framework's own mark, in the same contained treatment as
-                  the sign-in marquee and the controls table. */}
-              <span className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface-primary ring-1 ring-border">
-                <FrameworkLogo name={fw.name} size={24} eager />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-body-md font-semibold text-text-primary">{fw.name}</p>
-                <p className="text-caption text-text-subtle">{fw.phase}</p>
-              </div>
-              <StatusPill kind="inline" status={statusFamilyFor(fw.status) ?? "unknown"} label={fw.status} />
-            </div>
-            <div className="mt-3 flex items-center gap-4">
-              <div className={cn("shrink-0", fw.ring)}>
-                <Ring size={92} stroke={11} segments={ring(fw.pct)}>
-                  <span className="font-display text-numeral-md tabular text-text-primary">{fw.pct}%</span>
-                </Ring>
-              </div>
-              <div className="flex-1 space-y-1.5 text-body-sm">
-                <div className="flex justify-between">
-                  <span className="text-text-secondary">Passing</span>
-                  <span className="tabular font-semibold text-status-success-text">{fw.pass}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-text-secondary">Failing</span>
-                  <span className="tabular font-semibold text-status-danger-text">{fw.fail}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-text-secondary">Review</span>
-                  <span className="tabular font-semibold text-status-warning-text">{fw.review}</span>
-                </div>
-              </div>
-            </div>
-          </Card>
-        ))}
-      </div>
-
-      {/* Coverage by SOC 2 Trust Services Criteria: stacked bars */}
-      <ChartCard
-        className="mt-4"
-        title="Coverage by SOC 2 Trust Services Criteria"
-        action={
-          <Button variant="link" size="sm">
-            View controls
-            <Icon name="arrowr" className="size-4" />
-          </Button>
-        }
-      >
-        <ChartLegend
-          className="mb-4"
-          items={[
-            { key: "passing", label: "Passing", swatchClass: FAMILY_CHART.success.dot },
-            { key: "review", label: "Needs review", swatchClass: FAMILY_CHART.warning.dot },
-            { key: "failing", label: "Failing", swatchClass: FAMILY_CHART.danger.dot },
-          ]}
-        />
-        <div className="space-y-3">
-          {TSC.map((row) => (
-            <div key={row.name} className="flex items-center gap-3">
-              <span className="w-56 shrink-0 truncate text-body-md text-text-secondary">{row.name}</span>
-              <div className="flex h-2.5 flex-1 gap-0.5 overflow-hidden rounded-full bg-surface-sunken">
-                <div className={FAMILY_CHART.success.bar} style={{ width: `${(row.have / row.total) * 100}%` }} />
-                <div className={FAMILY_CHART.warning.bar} style={{ width: `${(row.review / row.total) * 100}%` }} />
-                <div className={FAMILY_CHART.danger.bar} style={{ width: `${(row.fail / row.total) * 100}%` }} />
-              </div>
-              <span className="tabular w-14 shrink-0 text-right text-body-sm text-text-subtle">
-                {row.have}/{row.total}
-              </span>
-              <span className="tabular w-10 shrink-0 text-right text-body-md font-semibold text-text-primary">
-                {row.pct}%
-              </span>
-            </div>
-          ))}
-        </div>
-      </ChartCard>
-
-      {/* Supporting tiles. Every card spans one column so the grid closes into
-          even rows. */}
+      {/* Supporting cards. Each spans one column except Top risks, which takes
+          two, so the grid closes into even rows. */}
       <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <ChartCard title="Vulnerabilities">
-          <Donut segments={VULN_SEGMENTS} size={150} thickness={16} centerValue={64} />
-          <p className="mt-3 text-center text-body-sm text-status-danger-text">2 on CISA KEV · 3 past SLA</p>
-        </ChartCard>
-
-        <ChartCard title="Evidence">
-          <div className="flex flex-col items-center gap-3">
-            <div className={cn("shrink-0", RING.success)}>
-              <Ring size={132} stroke={16} segments={ring(78)}>
-                <span className="font-display text-numeral-md tabular text-text-primary">78%</span>
-                <span className="text-caption text-text-subtle">current</span>
-              </Ring>
-            </div>
-            <p className="text-center text-body-sm text-text-secondary">
-              <span className="tabular font-semibold text-text-primary">842</span> items, 73% auto-collected
-            </p>
-            <p className="text-center text-body-sm text-status-warning-text">19 expiring · 6 expired</p>
-          </div>
-        </ChartCard>
-
-        <ChartCard title="Risk register">
-          <div className="flex items-center justify-center gap-5">
-            <div className="grid grid-cols-5 gap-1">
-              {HEAT.map((rowArr, r) =>
-                rowArr.map((count, c) => (
-                  <span
-                    key={`${r}-${c}`}
-                    className={cn(
-                      "flex size-7 items-center justify-center rounded-xs text-caption font-semibold",
-                      heatTone(r, c),
-                    )}
-                  >
-                    {count > 0 ? count : ""}
-                  </span>
-                )),
-              )}
-            </div>
-            <div>
-              <p className="font-display text-numeral-lg tabular text-text-primary">12</p>
-              <p className="mb-2 text-caption text-text-subtle">active risks</p>
-              <div className="space-y-1 text-body-sm">
-                <div className="flex items-center gap-1.5"><span className="h-2.5 w-4 rounded-2xs bg-status-danger-base" />High residual <span className="tabular ml-auto font-medium">3</span></div>
-                <div className="flex items-center gap-1.5"><span className="h-2.5 w-4 rounded-2xs bg-status-warning-base" />Medium <span className="tabular ml-auto font-medium">7</span></div>
-                <div className="flex items-center gap-1.5"><span className="h-2.5 w-4 rounded-2xs bg-status-success-base" />Low · treated <span className="tabular ml-auto font-medium">2</span></div>
-              </div>
-            </div>
-          </div>
-          <p className="mt-3 text-center text-caption text-text-subtle">Likelihood × impact</p>
-        </ChartCard>
-
-        <ChartCard title="Assets">
-          <p className="text-center">
-            <span className="font-display text-numeral-lg tabular text-text-primary">1,284</span>
-            <span className="ml-1.5 text-body-sm text-text-subtle">auto-discovered</span>
-          </p>
-          <div className="mt-4">
-            <BarList items={ASSETS} />
-          </div>
-        </ChartCard>
-
-        <ChartCard
-          title="Top risks"
-          action={
-            <Button variant="link" size="sm">
-              All
-              <Icon name="arrowr" className="size-4" />
-            </Button>
-          }
-        >
-          <ul className="divide-y divide-border">
-            {TOP_RISKS.map((risk) => (
-              <li key={risk.title} className="flex items-center gap-2.5 py-2">
-                <span
-                  className={cn(
-                    "flex size-8 shrink-0 items-center justify-center rounded-md font-display text-body-md font-bold",
-                    riskScoreTone(risk.score),
-                  )}
-                >
-                  {risk.score}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-body-sm font-medium text-text-primary">
-                    {risk.title}
-                  </p>
-                  <p className="text-caption text-text-subtle">{risk.ref}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </ChartCard>
-
-        <ChartCard title="Policies">
-          <p className="text-center">
-            <span className="font-display text-numeral-lg tabular text-text-primary">11/12</span>
-            <span className="ml-1.5 text-body-sm text-text-subtle">current</span>
-          </p>
-          <p className="text-center text-body-sm text-status-warning-text">1 renewal overdue</p>
-          <div className="mt-5 flex items-center justify-between text-body-sm">
-            <span className="text-text-secondary">Acknowledged</span>
-            <span className="tabular font-semibold text-status-success-text">93%</span>
-          </div>
-          <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-surface-sunken">
-            <div className="h-full rounded-full bg-status-success-base" style={{ width: "93%" }} />
-          </div>
-        </ChartCard>
+        {access.vulnerabilities ? <VulnerabilitiesCard /> : null}
+        {access.compliance && access.evidence ? <EvidenceCard /> : null}
+        {access.risks ? <RiskCard /> : null}
+        {access.assets ? <AssetsCard /> : null}
+        {access.tasks ? <TasksCard /> : null}
+        {access.vendors ? <VendorsCard /> : null}
+        {access.risks ? <TopRisksCard /> : null}
+        {access.documents ? <PoliciesCard /> : null}
       </div>
     </div>
   );
 }
 
-function MiniStat({ value, label, tone }: { value: string; label: string; tone?: string }) {
+// -- headline tiles -----------------------------------------------------------
+
+function ControlsTile() {
+  const query = usePosture();
   return (
-    <div>
+    <Tile label="Controls" subject="posture" query={query}>
+      {(p) => (
+        <StatTile
+          icon="controls"
+          label="Controls"
+          value={p.controls_total}
+          tone="progress"
+          caption={p.controls_total > 0 ? `${p.controls_ready} ready` : undefined}
+          to="/controls"
+        />
+      )}
+    </Tile>
+  );
+}
+
+function EvidenceTile() {
+  const query = usePosture();
+  return (
+    <Tile label="Evidence" subject="posture" query={query}>
+      {(p) => (
+        <StatTile
+          icon="doc"
+          label="Evidence"
+          value={p.evidence_total}
+          tone="progress"
+          caption={p.evidence_stale > 0 ? `${p.evidence_stale} expired` : undefined}
+          to="/evidence"
+        />
+      )}
+    </Tile>
+  );
+}
+
+function RisksTile() {
+  const query = useRisks();
+  return (
+    <Tile label="Risks" subject="risk summary" query={query}>
+      {(picture) => {
+        const total = picture?.summary.total ?? 0;
+        const high = (picture?.summary.by_band.critical ?? 0) + (picture?.summary.by_band.high ?? 0);
+        return (
+          <StatTile
+            icon="risk"
+            label="Risks"
+            value={total}
+            tone="warning"
+            caption={high > 0 ? `${high} high or critical` : undefined}
+            to="/risks"
+          />
+        );
+      }}
+    </Tile>
+  );
+}
+
+function VulnerabilitiesTile() {
+  const query = useVulnerabilities();
+  return (
+    <Tile label="Vulnerabilities" subject="vulnerability summary" query={query}>
+      {(kpis) => (
+        <StatTile
+          icon="bug"
+          label="Vulnerabilities"
+          value={kpis.open_total}
+          tone="danger"
+          caption={kpis.overdue > 0 ? `${kpis.overdue} past SLA` : undefined}
+          to="/vulnerabilities"
+        />
+      )}
+    </Tile>
+  );
+}
+
+// -- readiness ----------------------------------------------------------------
+
+function MiniStat({ value, label, tone, to }: { value: string | number; label: string; tone?: string; to?: string }) {
+  const body = (
+    <>
       <p className={cn("font-display text-numeral-sm tabular", tone ?? "text-text-primary")}>{value}</p>
       <p className="text-caption text-text-subtle">{label}</p>
+    </>
+  );
+  return to ? (
+    <Link
+      to={to}
+      className="rounded-sm hover:bg-surface-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-accent"
+    >
+      {body}
+    </Link>
+  ) : (
+    <div>{body}</div>
+  );
+}
+
+function ReadinessBody({ posture: p }: { posture: Posture }) {
+  // The observation window belongs to the engagement, not the posture. It is
+  // extra context, so its absence or failure just leaves that figure out.
+  const engagement = useEngagement();
+  const frameworks = useFrameworks();
+  // The framework this readiness is for: the engagement's, or else the only one
+  // the workspace has adopted. With several and no engagement it is just "Audit".
+  const framework = p.framework_name ?? (frameworks.data?.length === 1 ? frameworks.data[0].name : null);
+  const ready = pct(p.controls_ready, p.controls_total);
+  const auditType = p.audit_type === "type_2" ? "Type II" : p.audit_type === "type_1" ? "Type I" : "";
+  const title = [framework ?? "Audit", auditType, "readiness"].filter(Boolean).join(" ");
+  const windowEnd = engagement.data?.window_end;
+  const daysToWindowClose = windowEnd ? dayDelta(windowEnd, localDay(new Date())) : null;
+
+  const noControls = p.controls_total === 0;
+  const cta = noControls
+    ? { to: "/controls", label: "Open controls" }
+    : !p.has_engagement
+      ? { to: "/frameworks/scope", label: "Set audit scope" }
+      : null;
+  const note = noControls
+    ? "No controls yet. Adopt the control library to start."
+    : p.has_engagement
+      ? "A control is ready when it is implemented and backed by current evidence."
+      : "Set your audit scope to measure readiness against your criteria. A control is ready when it is implemented and backed by current evidence.";
+
+  return (
+    <div className="flex flex-wrap items-center gap-6">
+      <ProgressRing
+        percent={ready}
+        tone={ringToneFor(ready)}
+        size={132}
+        stroke={14}
+        label={`${p.controls_ready} of ${p.controls_total} controls ready, ${ready} percent`}
+      >
+        <span className="font-display text-numeral-lg tabular text-text-primary">{ready}%</span>
+        <span className="mt-1 text-caption text-text-subtle">
+          {p.controls_ready} / {p.controls_total} controls
+        </span>
+      </ProgressRing>
+      <div className="min-w-[240px] flex-1">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-2.5">
+            {framework ? <FrameworkMark name={framework} /> : null}
+            <p className="font-display text-title-md text-text-primary">{title}</p>
+          </div>
+          <ViewAll to="/frameworks/dashboard" label="Full posture" />
+        </div>
+        <p className="mt-1 text-body-sm text-text-secondary">{note}</p>
+        {cta ? (
+          <Button asChild size="sm" className="mt-3">
+            <Link to={cta.to}>{cta.label}</Link>
+          </Button>
+        ) : null}
+        {noControls ? null : (
+          <div className="mt-3 flex flex-wrap gap-6">
+            <MiniStat value={p.controls_in_progress} label="In progress" to="/controls?status=in_progress" />
+            <MiniStat
+              value={p.controls_no_evidence}
+              label="No evidence"
+              tone={p.controls_no_evidence > 0 ? "text-status-warning-text" : undefined}
+              to="/controls?evidence=none"
+            />
+            {p.checks_available ? (
+              <MiniStat
+                value={p.automation_failing}
+                label="Failing tests"
+                tone={p.automation_failing > 0 ? "text-status-danger-text" : undefined}
+              />
+            ) : null}
+            {daysToWindowClose !== null && daysToWindowClose >= 0 ? (
+              <MiniStat value={`${daysToWindowClose}d`} label="To window close" />
+            ) : null}
+          </div>
+        )}
+      </div>
     </div>
+  );
+}
+
+function ReadinessCard() {
+  const query = usePosture();
+  if (isForbidden(query.error)) return null;
+  return (
+    <Card className="mt-4 p-5">
+      <Settled query={query} subject="posture" skeleton={<Skeleton className="h-32 w-full" />}>
+        {(p) => <ReadinessBody posture={p} />}
+      </Settled>
+    </Card>
+  );
+}
+
+// -- frameworks ---------------------------------------------------------------
+
+/** The framework's own mark, in the same contained treatment as the sign-in
+ *  marquee and the controls table. */
+function FrameworkMark({ name }: { name: string }) {
+  return (
+    <span className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface-primary ring-1 ring-border">
+      <FrameworkLogo name={name} size={24} eager />
+    </span>
+  );
+}
+
+function FrameworkCard({ framework: fw }: { framework: FrameworkSummary }) {
+  const implemented = pct(fw.implemented, fw.controls);
+  const rows = [
+    { label: "Implemented", value: fw.implemented, tone: "text-status-success-text" },
+    { label: "In progress", value: fw.inProgress, tone: "text-text-primary" },
+    { label: "Remaining", value: fw.controls - fw.implemented - fw.inProgress, tone: "text-text-primary" },
+  ];
+  return (
+    <Card
+      asChild
+      className="transition-colors duration-80 ease-state hover:border-action-accent-border hover:bg-surface-hover"
+    >
+      <Link
+        to={`/controls?framework=${encodeURIComponent(fw.name)}`}
+        className="block p-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-accent"
+      >
+        <div className="flex items-center gap-2.5">
+          <FrameworkMark name={fw.name} />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-body-md font-semibold text-text-primary">{fw.name}</p>
+            <p className="text-caption text-text-subtle">
+              {fw.controls} {fw.controls === 1 ? "control" : "controls"}
+            </p>
+          </div>
+        </div>
+        <div className="mt-3 flex items-center gap-4">
+          <ProgressRing
+            percent={implemented}
+            tone={ringToneFor(implemented)}
+            size={92}
+            stroke={11}
+            label={`${fw.name}: ${fw.implemented} of ${fw.controls} controls implemented, ${implemented} percent`}
+          >
+            <span className="font-display text-numeral-md tabular text-text-primary">{implemented}%</span>
+          </ProgressRing>
+          <div className="flex-1 space-y-1.5 text-body-sm">
+            {rows.map((row) => (
+              <div key={row.label} className="flex justify-between">
+                <span className="text-text-secondary">{row.label}</span>
+                <span className={cn("tabular font-semibold", row.tone)}>{row.value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </Link>
+    </Card>
+  );
+}
+
+/**
+ * One card per framework the workspace has adopted, and no others. A workspace
+ * with a single framework (every new one starts with SOC 2 only) has it in the
+ * readiness card above, so the row appears once there are several to compare.
+ * It is a refinement of that card, so while it loads or if it fails it simply
+ * is not drawn.
+ */
+function FrameworkCards() {
+  const query = useFrameworks();
+  if (!query.isSuccess || query.data.length < 2) return null;
+  return (
+    <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+      {query.data.map((framework) => (
+        <FrameworkCard key={framework.name} framework={framework} />
+      ))}
+    </div>
+  );
+}
+
+// -- coverage -----------------------------------------------------------------
+
+function CoverageCard() {
+  const query = usePosture();
+  return (
+    <Panel
+      className="mt-4"
+      title="Coverage by Trust Services Criteria"
+      subject="coverage"
+      query={query}
+      action={<ViewAll to="/controls" label="View controls" />}
+      skeleton={<Skeleton className="h-56 w-full" />}
+    >
+      {(p) =>
+        p.by_category.length === 0 ? (
+          <Empty to="/frameworks/scope" cta="Set audit scope">
+            No audit scope yet.
+          </Empty>
+        ) : (
+          <>
+            <ChartLegend
+              className="mb-4"
+              items={[
+                { key: "ready", label: "Ready", swatchClass: FAMILY_CHART.success.dot },
+                { key: "partial", label: "Covered, not ready", swatchClass: FAMILY_CHART.warning.dot },
+                { key: "gap", label: "No control", swatchClass: FAMILY_CHART.danger.dot },
+              ]}
+            />
+            <ul className="space-y-1">
+              {p.by_category.map((row) => {
+                const partial = Math.max(row.covered - row.ready, 0);
+                const gap = Math.max(row.in_scope - row.covered, 0);
+                const coverage = pct(row.covered, row.in_scope);
+                const width = (value: number) => `${(value / Math.max(row.in_scope, 1)) * 100}%`;
+                return (
+                  <li key={row.category}>
+                    <Link
+                      to={`/controls?trust=${encodeURIComponent(row.category)}`}
+                      className="flex items-center gap-3 rounded-sm px-1 py-1.5 transition-colors hover:bg-surface-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-action-accent"
+                    >
+                      <Icon name={CATEGORY_ICON[row.category] ?? "shield"} className="size-4 shrink-0 text-text-subtle" />
+                      <span className="w-56 shrink-0 truncate text-body-md text-text-secondary">
+                        {row.category}
+                        {row.category === "Security" ? " (Common Criteria)" : ""}
+                      </span>
+                      <span className="flex h-2.5 flex-1 gap-0.5 overflow-hidden rounded-full bg-surface-sunken" aria-hidden>
+                        <span className={FAMILY_CHART.success.bar} style={{ width: width(row.ready) }} />
+                        <span className={FAMILY_CHART.warning.bar} style={{ width: width(partial) }} />
+                        <span className={FAMILY_CHART.danger.bar} style={{ width: width(gap) }} />
+                      </span>
+                      <span className="tabular w-14 shrink-0 text-right text-body-sm text-text-subtle">
+                        {row.covered}/{row.in_scope}
+                      </span>
+                      <span
+                        className={cn(
+                          "tabular w-10 shrink-0 text-right text-body-md font-semibold",
+                          TONE_TEXT[ringToneFor(coverage)],
+                        )}
+                      >
+                        {coverage}%
+                      </span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </>
+        )
+      }
+    </Panel>
   );
 }
