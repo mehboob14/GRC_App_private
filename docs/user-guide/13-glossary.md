@@ -21,6 +21,11 @@ about: an application, a server, a dataset, a cloud resource, a business service
 **Audit log.** The append only record of every state changing action. Cannot be
 edited or deleted by anyone, including an administrator.
 
+**Check.** One automatic test a connected system or a Verity module runs against a control,
+for example "the default branch requires a review". Each check names what it collects, which
+systems can run it, and how much of the control it proves. A control can have several, and
+some of them can need different systems.
+
 **CIA rating.** Confidentiality, integrity and availability, each rated 1 to 5. The
 three inputs from which an asset's criticality is derived.
 
@@ -68,6 +73,10 @@ accordingly.
 **Membership.** A person's place in one workspace. All ownership and assignment in
 Verity points at a membership, never at a global user, so nobody can be attached to
 a workspace they do not belong to.
+
+**Out of date (check result).** A check result more than two days old. It replaces Passing
+and Failing, because nothing known is current, and it blocks readiness until the checks run
+again.
 
 **Portal (vendor).** The unauthenticated page where a vendor answers a
 questionnaire. Reached by a single use link that is shown once.

@@ -170,7 +170,16 @@ dc build                                   # rebuild api + web images
 dc up -d                                   # recreate changed containers
 dc run --rm api alembic upgrade head       # apply any new migrations — ALWAYS
 dc run --rm api python -m verity.manage seed-content   # pick up new shipped content
+dc run --rm api python -m scripts.backfill_adopt_soc2  # only when the release adds controls
 ```
+
+- **A release that adds control templates** (2026-10-04 adds SD-13 and SD-14) needs the last line
+  after `seed-content`, so existing workspaces adopt them. It is idempotent: a workspace that
+  already holds a control gets nothing new. New workspaces adopt the whole library at signup.
+- **Content is sealed.** `seed-content` refuses a pack whose files do not match the hashes in its
+  `MANIFEST.json`. If it does, the release was built without running
+  `python scripts/seal_content.py` after a content edit; fix that in the repository, never by
+  editing the manifest on the server.
 
 - **Always run `alembic upgrade head` after a pull**, even when you don't think the schema
   changed — it is a no-op when there's nothing to apply, and forgetting it is the usual cause

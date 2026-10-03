@@ -26,8 +26,8 @@ Every module opens on the same pattern: an icon, the module name, a live one lin
 summary underneath, the buttons for the things you can start here, and a strip of
 tabs for the sections inside.
 
-The summary line is real. On Controls it reads like "114 controls, 96 without
-owner, 112 without evidence", which is usually the fastest read on where you stand.
+The summary line is real. On Controls it reads like "116 controls, 98 without
+owner, 107 without evidence", which is usually the fastest read on where you stand.
 
 Most modules have an **Overview** tab (charts and counts), a **Register** tab (the
 list) and, where there is something to configure, a **Settings** tab.

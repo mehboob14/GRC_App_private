@@ -75,3 +75,20 @@ Detail: `openspec/changes/common-control-framework/design.md`; requirements
 - The engine takes on mapping governance: two person review, content CI and pack provenance.
 - Revisit if a customer needs a tenant defined control set that cannot map to the library, or if
   auditors start accepting OSCAL mapping collections as evidence of crosswalk quality.
+
+## Update 2026-10-04: composition is part of the decision
+
+The decision stood and was built further. A control page now answers the question an auditor asks
+of it, "what proves this, and where does that come from", from content: every test says which
+capability it needs, which systems supply it, what it collects and why it belongs to the control;
+every control lists the evidence people and Verity modules provide; and every criterion can be read
+top down as the chain of its controls, tests and evidence. The same content serves a second
+framework unchanged, because tests and evidence attach to controls and never to a requirement.
+Details: design section 4.5, requirements section 3A.
+
+What the review of the shipped content found and this fixed: every mapping loaded as full cover
+with no rationale, test to control links that claimed to verify whole controls from one setting,
+manifests whose hashes no longer matched their files, and a loader that would have deleted SOC 2
+when a second framework was loaded. What it did not fix and remains open: mapping review by a
+qualified second person (task A5), the AICPA text decision (A4), and platform tests running
+(C2).

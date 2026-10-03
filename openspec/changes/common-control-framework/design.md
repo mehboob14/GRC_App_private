@@ -180,7 +180,83 @@ Simplifications against 4.1 to 4.3, each reversible without a data migration of 
 - `check_results` monthly partitions are pre-created to December 2028 with a default partition;
   `tests/unit/test_check_result_partitions.py` fails six months before the range ends.
 - Evidence: one JSON snapshot per connection per day, sooner when results change, attached to every
-  control whose checks produced a pass or fail, valid seven days.
+  control whose checks produced a pass or fail, valid seven days. It carries a `scope` block: how
+  many repositories were listed and checked, and each exclusion with its reason and who decided it
+  (AU-9). Evidence a reviewer rejected, or past its renewal date, no longer counts towards readiness.
+
+Accuracy corrections after the first end to end run against realistic accounts (2026-10-03):
+
+- **Scope.** `connection_resources` is the inventory a run discovers (`source`, `external_id`,
+  `synced_at` from the start, rule 9) with the scope decision beside each repository. Archived
+  repositories and forks are out by default with a system reason that is re-derived each run; a
+  person's decision is sticky; archived stays out whatever anyone decides. An exclusion needs a
+  reason, enforced by a CHECK constraint as well as the service. One reason covers every
+  exclusion in a request, so forty sandbox repositories do not need forty sentences.
+- **Not applicable is not a pass.** A control whose every result is not applicable reads
+  `not_applicable`, never `passing` (AU-5, AU-6). A personal account cannot require two factor
+  for others, so IAM-03 says "Nothing to verify" rather than claiming a verification nothing made.
+- **Protected means direct pushes are blocked.** A branch that only stops deletion or force
+  pushes still takes direct pushes, so it no longer passes. A pull request requirement, a push
+  restriction or a locked branch does, from a classic rule or a ruleset.
+- **A plan limit is a finding with its own remedy, not a permission gap.** GitHub Free refuses
+  branch protection on private repositories (403 "Upgrade to GitHub Pro") and omits
+  `security_and_analysis` where a feature is not offered. With admin on the repository the
+  setting being absent means the plan, so the result is `fail` with "upgrade the plan, or exclude
+  the repository with a reason"; without admin it stays `error` (rule 7).
+- **An empty repository has nothing to check** (`not_applicable`), detected from the protection
+  probe's "Branch not found", with no extra request.
+- **Readiness.** `compliance/readiness.py` is the one definition, used by the dashboard and the
+  exported report: a control is ready when it is implemented, has evidence that still counts, and
+  no automated test says failing or error (AU-6); a requirement is met only when every control
+  that applies to it is ready (CF-4). Automation can take readiness away, never grant it.
+
+### 4.5 Evidence composition on the control (2026-10-04)
+
+The user reading is Vanta's and Drata's: a requirement is answered by controls, a control is
+evidenced by tests and by documents, and one control can need several systems and some people.
+Written the way an auditor follows it, the chain is requirement, control, test, system, evidence,
+and each link now has a home:
+
+| Link | Where it lives | What it carries |
+|---|---|---|
+| requirement to control | `template_requirement_map` | `coverage` (full or partial), `rationale` |
+| control to test | `control_template_checks` | `coverage`, `rationale` (what it proves here, what it does not) |
+| test to system | `checks.capabilities`, `integration_capabilities.providers`, `checks.implementations` | which capability, which providers, which have a collector |
+| test to evidence | `checks.evidence_kinds` | the artifacts it collects |
+| control to evidence | `control_templates.evidence` | what a person or a Verity module provides, design or operating, cadence, and which tests collect the same thing (`automated_by`) |
+
+Decisions:
+
+- **Coverage is a claim about the control, not the criterion.** On a test link, `full` means passing
+  that test alone verifies the whole control, so a control with several tests has no full link. On a
+  criterion link, `full` means the control is a primary route for the criterion's central obligation.
+  Most links are `partial` and say what else is needed (Codex review F08, F09).
+- **The mode is by design.** `composition.py` derives automated, hybrid or manual from the control's
+  tests and expected evidence, ignoring what is connected today. Today's state is a separate set of
+  counts (running, ready to connect, planned) and a separate state per evidence item, so a page can
+  say "designed to be automated, nothing can run yet, provide it for now" without the word
+  "automated" overclaiming. The declared `control_sub_type` on a template is the prototype's
+  opinion and disagrees with the derived mode for 49 of the 116 controls; it is left as content and not shown
+  as the answer.
+- **Evidence items are not slots yet.** The list says what an auditor expects. It does not bind an
+  uploaded file to the item it satisfies, so readiness does not require each item. Slots are the
+  next step and change readiness, so they are a separate decision.
+- **Platform tests are catalogue only.** Appendix C's 18 tests exist as checks on capabilities
+  `verity_*` with provider `verity` planned, mapped to their controls. They need a runner that reads
+  module services and a place for results that is not a connection; neither is built.
+- **A pack owns what it ships.** `control_templates.pack` records the pack, the loader prunes templates
+  and mappings per pack and per framework, and a pack whose files do not match the hashes in its
+  manifest is refused (hashes over content with line endings normalised, sealed by
+  `backend/scripts/seal_content.py`). Loading ISO 27001 leaves SOC 2 untouched, which
+  `tests/integration/test_content_loader.py` proves with a probe pack.
+- **Out of date is a state.** A result older than two days is `stale`, shown instead of pass or fail
+  and blocking readiness (AU-5), so a stopped scheduler cannot leave a control green.
+
+API, all behind `frameworks:read`: `GET /controls/{id}/automation` (adds `composition`, `evidence`,
+`mappings`, and per test `rationale`, `evidence_kinds`, `source`, `availability`, `needs`),
+`GET /control-composition` (the register, one pass for every control) and
+`GET /requirements/{id}/chain` (a criterion, its controls, checks and evidence, and whether it is
+met by the dashboard's rule).
 
 ## 5. Verity modules as evidence (platform provider)
 

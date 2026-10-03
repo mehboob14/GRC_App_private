@@ -71,6 +71,21 @@ already curated means the library ships filterable on day one with zero invented
 **What the client needs to tell us.** Either (a) confirm Type = the 11 categories and supply the
 Sub-type list, or (b) supply both lists, in which case the 114 rows are re-tagged by `UPDATE`.
 
+**What shipped (2026-10-05, still PROPOSED).** The client never answered, and the register showed
+neither column, so both are now populated from our own taxonomy (`phase1-completion`, section 3).
+Type is the category as proposed above and is labelled **Type**. Sub-type is `sub_category`:
+Verity authored one per control for all 116 shipped controls, 43 areas, 2 to 6 per Type (Physical
+and Environmental Security has two controls, so two), derived from each control's name,
+description and code and using the spec's own words where they fit (CI/CD, Cloud, Security
+Tooling, XDR). It is not a `CHECK` constraint and not a table. The vocabulary lives in one place,
+the `sub_category` of each entry in `backend/src/verity/seed/content/soc2/control_templates.json`,
+so a vocabulary from the client is a content edit, a reseal (`scripts/seal_content.py`) and
+`seed-content`, plus a data migration if existing workspaces should follow (CF-6: a workspace's
+own value is never overwritten). The per-Type list reaches the control form through
+`GET /controls/vocabulary`. Preventive / Detective (`control_type`) and Manual / Automated / Hybrid
+(`control_sub_type`) keep their columns and data and are labelled **Design** and **Automation**,
+so the spec's two words mean the spec's thing.
+
 ---
 
 ## D2 — The readiness formula
@@ -448,7 +463,8 @@ concrete for the eleven tables Week 2 creates, so that no one has to re-derive i
 
 Listed so it is visible that these are unanswered rather than forgotten:
 
-1. **D1** — the Sub-type vocabulary. Blocks nothing; the column ships empty and filterable.
+1. **D1** — the Sub-type vocabulary. Blocks nothing; it ships with a proposed vocabulary that is
+   one content file away from changing (see D1, "What shipped").
 2. **D3** — the object storage target and any data-residency constraint. Blocks nothing until
    deployment; the driver seam absorbs the answer.
 3. **D5** — whether the readiness report must be emailed or scheduled. Blocks nothing in Week 2;

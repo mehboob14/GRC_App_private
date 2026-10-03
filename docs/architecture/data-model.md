@@ -175,7 +175,22 @@ requirements carry a reviewed relationship and rationale. Tables and columns:
 `openspec/changes/common-control-framework/design.md` (ADR-0014). Built: global
 `integration_capabilities`, `checks`, `control_template_checks`; tenant `connections`,
 `check_runs`, `check_results` (partitioned by month, pre-created to December 2028 plus a
-default partition), `integration_requests`.
+default partition), `integration_requests`, `connection_resources`.
+
+Each check lists the artifacts it collects (`checks.evidence_kinds`), each link from a check to
+a control says how much of the control it verifies and why (`control_template_checks.coverage`,
+`rationale`), and each control template lists the evidence a person or a Verity module provides
+beyond its checks (`control_templates.evidence`: name, design or operating, cadence, upload or
+platform module, and which checks collect the same thing). `control_templates.pack` names the
+content pack that ships a template, so a second framework prunes only what it owns. The crosswalk
+(`template_requirement_map`) carries `coverage` and a written `rationale` on every row.
+
+`connection_resources` is the inventory a run discovers (repositories today) with the scope
+decision beside each item: `scope` (`in_scope`, `excluded`), `decided_by` (`system`, re-derived on
+every run, or `person`, sticky), and a mandatory `scope_reason` for an exclusion, by CHECK
+constraint as well as in the service. It carries `source`, `external_id` and `synced_at` (rule 9),
+so it is also the natural feed for the asset inventory. Only in-scope resources are read, and
+every exclusion is printed on the evidence (AU-9).
 
 ## Conventions
 

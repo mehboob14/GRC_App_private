@@ -18,8 +18,9 @@ Drata DCF and test documentation; Vanta and Secureframe control and test documen
 flowchart LR
   R["Framework requirement<br/>SOC2:CC8.1, ISO 8.32"] -- "mapping: relationship, rationale, reviewer" --> C["Verity control<br/>SD-06 Peer code review"]
   C --> T["Tests"] --> K["Capability<br/>Version control"] --> P["GitHub, GitLab, Bitbucket"]
+  T --> A["Evidence they collect<br/>branch protection, pull requests, CI runs"]
   C --> M["Verity module reports and tests"]
-  C --> E["Manual evidence"]
+  C --> E["Evidence people provide<br/>policy, sample, review"]
 ```
 
 A company works one set of Verity controls. Frameworks are views over those controls: each
@@ -33,7 +34,7 @@ counts for every framework the control maps to.
 |---|---|---|
 | CF-1 | One framework neutral library of Verity controls. Each control has a stable public code (`IAM-03`) and canonical key; codes are never reused. A workspace holds one control per canonical key however many frameworks point at it. | Activating a framework that maps to IAM-03 adds no second MFA control; the existing control lists both frameworks' requirements. |
 | CF-2 | Each control carries objective, statement, implementation guidance, test procedure (how an auditor tests it), evidence guidance, frequency, applicability conditions, type and sub type. | Content CI fails a published control missing objective, test procedure or evidence guidance. |
-| CF-3 | Every mapping records relationship (equal, subset of, superset of, intersects with), rationale type (syntactic, semantic, functional), strength 0 to 10, coverage (full or partial), a written rationale, source, author and reviewer. | The loader rejects a published mapping without rationale or reviewer. |
+| CF-3 | Every mapping records relationship (equal, subset of, superset of, intersects with), rationale type (syntactic, semantic, functional), strength 0 to 10, coverage (full or partial), a written rationale, source, author and reviewer. Built: coverage and rationale on every SOC 2 mapping, and the loader refuses a mapping without them. Open: relationship, rationale type, strength, author and reviewer. | The loader rejects a published mapping without rationale or reviewer. |
 | CF-4 | A requirement is met only when every published control mapped to it is in scope, implemented and passing. Partial coverage never shows as met. | A requirement with one full and one partial control shows partly met until both pass. |
 | CF-5 | No cross framework inference. An ISO requirement's status never derives from a SOC 2 criterion; it comes from the shared controls and their evidence. Anything the platform suggests from a crosswalk is a draft a person confirms (rule 11). | Unmapping IAM-08 from ISO 5.15 changes ISO 5.15 only; no SOC 2 state changes. |
 | CF-6 | A workspace can add or remove mappings on its own controls, with a reason. Library updates never overwrite tenant edits; changed library wording is offered, not applied. | Adopted controls show "Library wording changed"; accepting it writes an audit row. |
@@ -69,8 +70,32 @@ counts for every framework the control maps to.
 | ME-4 | Reports generate on the control's frequency and on demand, are stored as evidence, attach to every mapped control and renew through the evidence renewal queue. | A quarterly report appears as new evidence each quarter without anyone uploading it. |
 | ME-5 | A report is information produced by the entity. The cover states the filters and that every record matching them at that moment is included, so an auditor can reperform it. | Rerunning with the cover's parameters reproduces the population. |
 | ME-6 | Reports and platform tests read module data through module services only (rule 4), inside RLS, and never include secrets. | import-linter keeps the automation module off other modules' models. |
-| ME-7 | The control page lists evidence sources in one panel: manual evidence types, platform reports and connector tests. | LM-01 shows the asset inventory report, cloud inventory tests and manual upload. |
+| ME-7 | The control page lists evidence sources in one panel: manual evidence types, platform reports and connector tests. Built as the Checks tab (section 3A). | LM-01 shows the asset inventory report, cloud inventory tests and manual upload. |
 | ME-8 | A module that is not built shows its capability as Soon; its controls stay on manual evidence. | IAM-02 shows Access reviews as Soon until Phase 3.2. |
+
+## 3A. Evidence composition on the control (EC)
+
+The four links an auditor follows, read top down: requirement, control, test, evidence. Built
+2026-10-04 on the SOC 2 library; every row applies unchanged to a second framework, because tests
+and evidence attach to controls and never to a requirement.
+
+| ID | Requirement | Acceptance |
+|---|---|---|
+| EC-1 | Every control states how it is evidenced: its tests, each with the capability it needs, the providers that supply it and its state for this workspace; the evidence Verity modules hold; and the evidence people provide. | SD-06 lists its tests with GitHub marked connected and its policy marked kept in Policies and documents. |
+| EC-2 | Every test names the artifacts it collects (a branch protection setting, a pull request, a CI run, a ticket). | Content CI fails a test with no evidence kinds. |
+| EC-3 | Every link from a test to a control carries coverage and a rationale. Full only when that test alone verifies the whole control; the rationale says what it does not prove. | A control with several tests has no full link, and every link has a rationale. |
+| EC-4 | Every control lists the evidence an auditor expects, each marked design (it exists) or operating (it was followed), with its renewal cadence and its route: collected by a test, held in a Verity module, or provided by a person. | Content CI fails a control with no expected evidence, or an automated route naming a test the control does not have. |
+| EC-5 | A control's mode is by design, not by what is connected today: manual when no test can evidence it, hybrid when a person still supplies operating evidence no test collects, automated otherwise. What runs today is stated beside it, never folded into the word. | SD-14 reads "Systems" by design and "none of the checks can run yet" in the same breath. The words differ from the control's own Automation field (manual, automated, hybrid), which says how the team operates it, not how it is evidenced. |
+| EC-6 | Evidence a planned test will collect reads "provide it for now", never "collected". Evidence only partly collected by running tests says so. | SD-14 shows two planned tests and its evidence as provided by people. |
+| EC-7 | A criterion page shows the chain top down: its controls, why each answers it (coverage and rationale), the tests and evidence behind each, and whether it is met by the dashboard's own rule (CF-4), not a second opinion. | CC8.1 lists its eight controls, SD-01 to SD-14. |
+| EC-8 | The register shows, for every control, what evidences it and what the tests last found. | Every row of Controls has an "Evidenced by" cell. |
+| EC-9 | A result older than two days is out of date, shown in place of pass or fail, and blocks readiness (AU-5). | A control whose connection stopped a week ago reads "Out of date", not "Passing". |
+| EC-10 | Library content is sealed: every pack's files match the hashes in its manifest (line endings normalised), every mapping has coverage and a rationale, and a pack prunes only what it owns. | Loading a second pack leaves SOC 2 content, adopted controls and the crosswalk unchanged. |
+
+Not built: platform tests run on module data (ME-2), per evidence item slots that bind a file to the
+requirement it satisfies, the mapping relationship, strength and reviewer (CF-3), and the
+test procedure an auditor follows (CF-2). The catalogue lists the 18 platform tests of appendix C
+against their controls with provider Verity marked planned, so the page says so honestly.
 
 ## 4. Adding frameworks (FW)
 
@@ -264,3 +289,25 @@ needed. Test: every person terminated in the HR system has no active identity pr
 hours after the termination date. Evidence: leavers in the period with termination time, account
 disable time and the difference. Until an HR source is agreed (question 1) the roster import is the
 HR system and the control stays hybrid.
+
+**CC8.1 change management, read top down (built).** The criterion is answered by eight controls:
+SD-10 the process exists, SD-01 changes are authorized and approved, SD-06 peer review, SD-02
+automated testing, SD-12 separate environments, SD-04 emergency changes, SD-13 production
+deployments are controlled, SD-14 changes are traceable from request to release. Their tests:
+GitHub branch protection, required reviews, required checks and merged change review (running);
+pipeline checks for required checks passed, controlled deployments and deployment history, and a
+ticket check for change to ticket linkage (planned, Jira and CI collectors); the policy held in
+Policies and documents (Verity); and a sample of emergency changes a person provides. Each test
+names what it collects: branch protection settings, pull requests with reviewers, CI run results,
+deployment history, tickets, the policy. The criterion page shows exactly this chain.
+
+**ISO/IEC 27001:2022 A.8.32 change management, on the same model (draft, unreviewed, FW-5).** An ISO
+pack ships the requirement and its mapping rows, each with coverage and a rationale, onto the same
+controls: SD-10 (also A.5.1 and A.8.25), SD-01, SD-06, SD-02, SD-12, SD-04, SD-13 and SD-14. Nothing
+new is automated: the GitHub checks, the evidence and the monitoring already attach to those
+controls, so activating ISO shows A.8.32 with its tests running the day it is activated (CF-5: its
+status comes from the shared controls, never from the SOC 2 criterion). A pack adds controls only
+where the library has none, such as the scope of the management system (clause 4.3). Loading it
+leaves SOC 2 untouched, which `tests/integration/test_content_loader.py` proves. Other reuse in the
+draft: A.8.28 secure coding from SD-05, SD-03 and SD-11; A.8.5 secure authentication from IAM-03,
+IAM-04 and IAM-06; A.5.15 access control from IAM-08 and IAM-01.

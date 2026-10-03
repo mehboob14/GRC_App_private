@@ -52,6 +52,15 @@ Checks are global content mapped to the stable control template identity, so a c
 mapped to controls in every tenant. A check activates only when its provider is connected and reads
 `not_applicable` otherwise.
 
+A check says which capability it needs, which providers can supply it, which of them have a
+collector today (`implementations`), and which artifacts it collects. One provider per capability is
+enough; a check that needs two (version control and ticketing) says so. A check that reads only
+Verity's own modules (provider `verity`, capabilities `verity_*`) is a platform check: listed and
+mapped, planned until its runner ships. The control page derives from this, per workspace, whether
+each check is running, ready to connect, planned, or needs a system outside the plan, and says
+what evidences the control as a whole (spec section 3A). The full map, criterion by criterion and
+connector by connector, is generated into `check-catalogue.md` from the same content the product loads.
+
 ## Phase 2 — the first fifteen
 
 AWS (core cloud), GitHub, GitLab, Bitbucket, Okta, Google Workspace, Microsoft 365 / Entra ID,
