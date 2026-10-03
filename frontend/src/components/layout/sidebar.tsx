@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { Badge, BrandMark, Icon, Tooltip } from "@/components/ui";
+import { Badge, Icon, Tooltip } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import {
   FOOTER_ITEMS,
@@ -7,6 +7,7 @@ import {
   type NavItem,
 } from "@/components/layout/nav-config";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { WorkspaceBrand } from "@/components/layout/workspace-brand";
 import { WorkspaceSwitcher } from "@/components/layout/workspace-switcher";
 import { DARK_MODE_ENABLED } from "@/lib/theme";
 
@@ -78,12 +79,7 @@ export function Sidebar() {
       className="flex h-full w-sidebar shrink-0 flex-col border-r border-border bg-surface-primary px-3 pb-3 pt-4"
       aria-label="Primary"
     >
-      <div className="mb-4 flex items-center gap-2.5 px-2 pt-1">
-        <BrandMark size={32} />
-        <span className="font-display text-heading-sm text-text-primary">
-          Verity
-        </span>
-      </div>
+      <WorkspaceBrand />
 
       <nav className="min-h-0 flex-1 overflow-y-auto" aria-label="Modules">
         {NAV_SECTIONS.map((section) => (

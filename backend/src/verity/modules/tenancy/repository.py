@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from verity.modules.tenancy.models import (
@@ -101,17 +101,30 @@ class TenantRepository:
         limit: int,
         before_id: uuid.UUID | None = None,
         status: str | None = None,
+        search: str | None = None,
     ) -> list[Tenant]:
         """Newest first, keyed on the UUIDv7 ``id`` — time-ordered by construction.
 
         Keyset rather than offset (docs/conventions/api.md): tenants registered while
-        a client pages must not shift or repeat what it sees.
+        a client pages must not shift or repeat what it sees. ``search`` is a
+        case-insensitive substring over the names and the slug.
         """
         statement = select(Tenant).order_by(Tenant.id.desc()).limit(limit)
         if before_id is not None:
             statement = statement.where(Tenant.id < before_id)
         if status is not None:
             statement = statement.where(Tenant.status == status)
+        if search:
+            # The wildcards the reader typed are literal text, not pattern syntax.
+            escaped = search.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+            pattern = f"%{escaped}%"
+            statement = statement.where(
+                or_(
+                    Tenant.legal_name.ilike(pattern, escape="\\"),
+                    Tenant.trading_name.ilike(pattern, escape="\\"),
+                    Tenant.slug.ilike(pattern, escape="\\"),
+                )
+            )
         result = await session.execute(statement)
         return list(result.scalars())
 

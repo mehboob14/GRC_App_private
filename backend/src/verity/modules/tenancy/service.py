@@ -46,6 +46,13 @@ from verity.core.security import (
     verify_password,
     verify_totp,
 )
+from verity.core.storage import (
+    FILE_TOO_LARGE_CODE,
+    UNSUPPORTED_FILE_TYPE_CODE,
+    ObjectStore,
+    get_object_store,
+    sniff_content_type,
+)
 from verity.modules.audit.service import Actor, AuditService, System, audit_service
 from verity.modules.audit.service import Membership as MembershipActor
 from verity.modules.audit.service import PlatformAdmin as PlatformAdminActor
@@ -90,6 +97,7 @@ from verity.modules.tenancy.schemas import (
 from verity.shared.ids import uuid7
 
 __all__ = [
+    "LOGO_MAX_BYTES",
     "AllProvisioningGates",
     "EnrollmentGrant",
     "EnrollmentStart",
@@ -566,6 +574,30 @@ _BRANDING_REPLACE_FIELDS: Final = (
     "document_footer",
 )
 
+LOGO_MAX_BYTES: Final = 512 * 1024
+"""A logo is a small mark in a sidebar and a report header; anything larger is the wrong file."""
+
+LOGO_CONTENT_TYPES: Final[frozenset[str]] = frozenset({"image/png", "image/jpeg", "image/webp"})
+"""Raster formats only. SVG is refused on purpose: it is markup a browser can run script
+from, and the logo is rendered inside the app's own origin."""
+
+_LOGO_SNIFF_BYTES: Final = 64 * 1024
+_LOGO_TYPE_MESSAGE: Final = "Use a PNG, JPEG or WebP image. SVG files are not accepted."
+_NO_LOGO_MESSAGE: Final = "This workspace has no logo."
+
+
+def _logo_content_type(data: bytes) -> str | None:
+    """The logo's content type, or ``None`` when the bytes are not an allowed image.
+
+    Read from the leading bytes, never from the upload's header or filename: the
+    client chooses both of those.
+    """
+    try:
+        content_type = sniff_content_type(data[:_LOGO_SNIFF_BYTES])
+    except InvalidInput:
+        return None
+    return content_type if content_type in LOGO_CONTENT_TYPES else None
+
 
 def _branding_aad(tenant_id: uuid.UUID) -> str:
     return f"tenant_branding:{tenant_id}"
@@ -674,12 +706,20 @@ class TenancyService:
         audit: AuditService | None = None,
         gates: MembershipGates | None = None,
         profiles: CompanyProfileRepository | None = None,
+        store: ObjectStore | None = None,
     ) -> None:
         self._tenants = tenants or TenantRepository()
         self._audit = audit or audit_service
         self._gates: MembershipGates = gates or NoMembershipsYet()
         self._profiles = profiles or CompanyProfileRepository()
         self._smtp = TenantSmtpRepository()
+        self._injected_store = store
+
+    @property
+    def _store(self) -> ObjectStore:
+        # Resolved per use, not captured at import: this service is a module-level
+        # singleton, and the store is a deployment setting that tests re-point.
+        return self._injected_store or get_object_store()
 
     def use_gates(self, gates: MembershipGates) -> MembershipGates:
         """Swap in the real membership checks. Called once by the IAM module's wiring.
@@ -822,6 +862,7 @@ class TenancyService:
         limit: int,
         cursor: str | None = None,
         status: str | None = None,
+        search: str | None = None,
     ) -> tuple[list[Tenant], str | None]:
         """One page, newest first, plus the keyset cursor for the next or ``None``."""
         if limit < 1:
@@ -829,7 +870,7 @@ class TenancyService:
         before_id = None if cursor is None else decode_tenant_cursor(cursor)
         # One row beyond the page answers "is there a next page" without a count.
         tenants = await self._tenants.list_page(
-            session, limit=limit + 1, before_id=before_id, status=status
+            session, limit=limit + 1, before_id=before_id, status=status, search=search
         )
         if len(tenants) <= limit:
             return tenants, None
@@ -898,8 +939,113 @@ class TenancyService:
 
         The SMTP credential is encrypted before it touches the session, AAD-bound to
         this tenant, and excluded from the response schema and both snapshots. An
-        omitted field clears its column; that is what "full replace" means.
+        omitted field clears its column; that is what "full replace" means. The
+        write-only credential is the exception (see ``BrandingPut``): omitted keeps
+        it, because no client can read it back to resend it.
         """
+        branding = await self._branding_for_update(session, tenant_id)
+
+        before = AuditService.snapshot(branding, fields=BRANDING_SNAPSHOT_FIELDS)
+        smtp_changed = "smtp_config_ref" in body.model_fields_set and self._replace_smtp(
+            branding, tenant_id, body.smtp_config_ref
+        )
+        for name in _BRANDING_REPLACE_FIELDS:
+            setattr(branding, name, getattr(body, name))
+        after = AuditService.snapshot(branding, fields=BRANDING_SNAPSHOT_FIELDS)
+        if after == before and not smtp_changed:
+            return branding
+
+        await self._save_branding(
+            session, branding, actor_admin_id=actor_admin_id, before=before, after=after
+        )
+        return branding
+
+    async def set_logo(
+        self,
+        session: AsyncSession,
+        *,
+        actor_admin_id: uuid.UUID,
+        tenant_id: uuid.UUID,
+        filename: str,
+        data: bytes,
+    ) -> TenantBranding:
+        """Store an uploaded logo and point the branding row at it.
+
+        Everything the client says about the file is a claim: the type comes from the
+        bytes and the size from what arrived. A refused upload writes nothing, not
+        even an object. Uploading twice replaces the logo twice; the earlier object
+        is left in the store (the store has no delete), unreferenced.
+        """
+        if not data:
+            raise InvalidInput(
+                "That file is empty.",
+                code=UNSUPPORTED_FILE_TYPE_CODE,
+                detail="the logo upload contained no bytes",
+            )
+        if len(data) > LOGO_MAX_BYTES:
+            raise InvalidInput(
+                f"That logo is larger than {LOGO_MAX_BYTES // 1024} KB. "
+                "Resize it and upload it again.",
+                code=FILE_TOO_LARGE_CODE,
+                detail=f"logo upload reached {len(data)} bytes",
+            )
+        if _logo_content_type(data) is None:
+            raise InvalidInput(
+                _LOGO_TYPE_MESSAGE,
+                code=UNSUPPORTED_FILE_TYPE_CODE,
+                detail=f"logo bytes matched no allowed image type: {data[:8]!r}",
+            )
+        branding = await self._branding_for_update(session, tenant_id)
+        before = AuditService.snapshot(branding, fields=BRANDING_SNAPSHOT_FIELDS)
+        branding.logo_ref = self._store.put(tenant_id, filename, data).key
+        after = AuditService.snapshot(branding, fields=BRANDING_SNAPSHOT_FIELDS)
+        await self._save_branding(
+            session, branding, actor_admin_id=actor_admin_id, before=before, after=after
+        )
+        return branding
+
+    async def clear_logo(
+        self, session: AsyncSession, *, actor_admin_id: uuid.UUID, tenant_id: uuid.UUID
+    ) -> TenantBranding:
+        """Drop the logo reference so the workspace falls back to the Verity mark."""
+        branding = await self._branding_for_update(session, tenant_id)
+        if branding.logo_ref is None:
+            return branding
+        before = AuditService.snapshot(branding, fields=BRANDING_SNAPSHOT_FIELDS)
+        branding.logo_ref = None
+        after = AuditService.snapshot(branding, fields=BRANDING_SNAPSHOT_FIELDS)
+        await self._save_branding(
+            session, branding, actor_admin_id=actor_admin_id, before=before, after=after
+        )
+        return branding
+
+    async def read_logo(self, session: AsyncSession, tenant_id: uuid.UUID) -> tuple[bytes, str]:
+        """The logo's bytes and content type, for the workspace shell and the console.
+
+        Reads through the tenant-scoped store, so a ``logo_ref`` that names another
+        tenant's object resolves to nothing. The type is sniffed again here: a ref
+        written through the full-replace PUT could name any object of the tenant's
+        own, and only an image is ever handed back.
+        """
+        branding = await self.get_branding(session, tenant_id)
+        if branding.logo_ref is None:
+            raise NotFound(_NO_LOGO_MESSAGE, detail=f"tenant {tenant_id} has no logo")
+        try:
+            data = self._store.open(tenant_id, branding.logo_ref)
+        except NotFound as exc:
+            raise NotFound(
+                _NO_LOGO_MESSAGE, detail=f"logo_ref of tenant {tenant_id} does not resolve"
+            ) from exc
+        content_type = _logo_content_type(data)
+        if content_type is None:
+            raise NotFound(
+                _NO_LOGO_MESSAGE, detail=f"logo_ref of tenant {tenant_id} is not an image"
+            )
+        return data, content_type
+
+    async def _branding_for_update(
+        self, session: AsyncSession, tenant_id: uuid.UUID
+    ) -> TenantBranding:
         if await self._tenants.get(session, tenant_id) is None:
             raise NotFound(_TENANT_GONE_MESSAGE, detail=f"tenant {tenant_id} not found")
         branding = await self._tenants.get_branding(session, tenant_id)
@@ -908,21 +1054,24 @@ class TenancyService:
             # that missed the empty row cannot make branding un-settable.
             branding = TenantBranding(tenant_id=tenant_id)
             await self._tenants.add_branding(session, branding)
+        return branding
 
-        before = AuditService.snapshot(branding, fields=BRANDING_SNAPSHOT_FIELDS)
-        smtp_changed = self._replace_smtp(branding, tenant_id, body.smtp_config_ref)
-        for name in _BRANDING_REPLACE_FIELDS:
-            setattr(branding, name, getattr(body, name))
-        after = AuditService.snapshot(branding, fields=BRANDING_SNAPSHOT_FIELDS)
-        if after == before and not smtp_changed:
-            return branding
-
+    async def _save_branding(
+        self,
+        session: AsyncSession,
+        branding: TenantBranding,
+        *,
+        actor_admin_id: uuid.UUID,
+        before: dict[str, object],
+        after: dict[str, object],
+    ) -> None:
+        """Flush a changed branding row and write its audit row, in this transaction."""
         try:
             await session.flush([branding])
         except IntegrityError as exc:
             if _violates(exc, "uq_tenant_branding__custom_domain"):
                 raise CustomDomainConflict(
-                    detail=f"custom domain taken; tenant {tenant_id}"
+                    detail=f"custom domain taken; tenant {branding.tenant_id}"
                 ) from exc
             raise
         # See update_tenant: reload the expired updated_at on the async session.
@@ -931,13 +1080,12 @@ class TenancyService:
             session,
             action="update",
             object_type="tenant_branding",
-            object_id=tenant_id,
+            object_id=branding.tenant_id,
             actor=PlatformAdminActor(actor_admin_id),
-            tenant_id=tenant_id,
+            tenant_id=branding.tenant_id,
             before=before,
             after=after,
         )
-        return branding
 
     @staticmethod
     def _replace_smtp(

@@ -16,7 +16,8 @@ from __future__ import annotations
 import uuid
 from typing import Annotated, Final
 
-from fastapi import APIRouter, Depends, Header, Query, status
+from fastapi import APIRouter, Depends, File, Header, Query, UploadFile, status
+from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from verity.core.deps import (
@@ -53,7 +54,7 @@ from verity.modules.tenancy.schemas import (
     TenantStatusFilter,
     TenantUpdate,
 )
-from verity.modules.tenancy.service import tenancy_service
+from verity.modules.tenancy.service import LOGO_MAX_BYTES, tenancy_service
 
 DEFAULT_PAGE_SIZE: Final = 50
 MAX_PAGE_SIZE: Final = 200
@@ -75,6 +76,10 @@ changes when the real implementation arrives (the audit module set the pattern).
 
 require_tenant_manage = require("tenant:manage")
 """Editing the company profile is an Admin action (holds every key at check time)."""
+
+
+_LOGO_HEADERS: Final = {"Cache-Control": "private, max-age=300"}
+"""The image answers to a bearer token, so only the browser that asked may keep it."""
 
 
 def _provisioning_response(
@@ -133,9 +138,13 @@ async def list_tenants(
     tenant_status: Annotated[
         TenantStatusFilter | None, Query(alias="status", description="Filter by lifecycle state.")
     ] = None,
+    search: Annotated[
+        str | None,
+        Query(max_length=100, description="Substring of the legal name, trading name or slug."),
+    ] = None,
 ) -> TenantPage:
     tenants, next_cursor = await tenancy_service.list_tenants(
-        session, limit=limit, cursor=cursor, status=tenant_status
+        session, limit=limit, cursor=cursor, status=tenant_status, search=search
     )
     return TenantPage(
         items=[TenantResponse.model_validate(tenant) for tenant in tenants],
@@ -206,6 +215,59 @@ async def put_branding(
 
 
 @provider_tenants_router.post(
+    "/{tenant_id}/branding/logo",
+    response_model=BrandingResponse,
+    summary="Upload a tenant's logo: PNG, JPEG or WebP, 512 KB at most; SVG is refused",
+)
+async def upload_logo(
+    tenant_id: uuid.UUID,
+    file: Annotated[UploadFile, File()],
+    admin: Annotated[PlatformAdminPrincipal, Depends(require_tenants_brand)],
+    session: Annotated[AsyncSession, Depends(get_provider_session)],
+) -> BrandingResponse:
+    # One byte past the limit is enough for the service to refuse without
+    # buffering whatever else was sent.
+    data = await file.read(LOGO_MAX_BYTES + 1)
+    branding = await tenancy_service.set_logo(
+        session,
+        actor_admin_id=admin.id,
+        tenant_id=tenant_id,
+        filename=file.filename or "logo",
+        data=data,
+    )
+    return BrandingResponse.model_validate(branding)
+
+
+@provider_tenants_router.delete(
+    "/{tenant_id}/branding/logo",
+    response_model=BrandingResponse,
+    summary="Remove a tenant's logo so the workspace shows the Verity mark again",
+)
+async def remove_logo(
+    tenant_id: uuid.UUID,
+    admin: Annotated[PlatformAdminPrincipal, Depends(require_tenants_brand)],
+    session: Annotated[AsyncSession, Depends(get_provider_session)],
+) -> BrandingResponse:
+    branding = await tenancy_service.clear_logo(
+        session, actor_admin_id=admin.id, tenant_id=tenant_id
+    )
+    return BrandingResponse.model_validate(branding)
+
+
+@provider_tenants_router.get(
+    "/{tenant_id}/branding/logo",
+    summary="A tenant's logo image, for the console preview",
+)
+async def get_logo(
+    tenant_id: uuid.UUID,
+    _admin: Annotated[PlatformAdminPrincipal, Depends(require_tenants_read)],
+    session: Annotated[AsyncSession, Depends(get_provider_session)],
+) -> Response:
+    data, content_type = await tenancy_service.read_logo(session, tenant_id)
+    return Response(content=data, media_type=content_type, headers=_LOGO_HEADERS)
+
+
+@provider_tenants_router.post(
     "/{tenant_id}/provision",
     response_model=ProvisioningResponse,
     summary="Run provisioning: complete what can complete, idempotently",
@@ -268,6 +330,21 @@ async def read_own_branding(
 ) -> BrandingResponse:
     branding = await tenancy_service.get_own_branding(session, context.tenant_id)
     return BrandingResponse.model_validate(branding)
+
+
+@tenant_router.get(
+    "/branding/logo",
+    summary="The calling tenant's own logo image",
+    dependencies=[Depends(require_tenant_read)],
+)
+async def read_own_logo(
+    context: Annotated[TenantContext, Depends(get_tenant_context)],
+    session: Annotated[AsyncSession, Depends(get_tenant_session)],
+) -> Response:
+    # The tenant comes from the session and the store only opens that tenant's
+    # objects: no parameter on this route can name another workspace's logo.
+    data, content_type = await tenancy_service.read_logo(session, context.tenant_id)
+    return Response(content=data, media_type=content_type, headers=_LOGO_HEADERS)
 
 
 @tenant_router.get(

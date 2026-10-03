@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { AppLayout } from "@/components/layout/app-layout";
 import { ComingSoonPage } from "@/app/coming-soon-page";
 import { PublicOnly, RequireAuth } from "@/app/auth-gates";
+import { ProviderPublicOnly, RequireProvider } from "@/app/provider-gates";
 import { SignInPage } from "@/features/iam/components/sign-in-page";
 import { SignUpPage } from "@/features/iam/components/sign-up-page";
 import { MfaEnrollPage } from "@/features/iam/components/mfa-enroll-page";
@@ -74,6 +75,13 @@ import { RiskAssessmentsPage, RiskIndicatorsPage } from "@/features/risk/compone
 import { RiskDetailPage } from "@/features/risk/components/risk-detail-page";
 import { ConnectionsLayout } from "@/features/connectors/components/connections-layout";
 import { ConnectionsPage } from "@/features/connectors/components/connections-page";
+import { ProviderLayout } from "@/features/provider/components/provider-layout";
+import { ProviderSignInPage } from "@/features/provider/components/provider-sign-in-page";
+import { ProviderTenantsPage } from "@/features/provider/components/provider-tenants-page";
+import { ProviderTenantLayout } from "@/features/provider/components/provider-tenant-layout";
+import { TenantProfileTab } from "@/features/provider/components/tenant-profile-tab";
+import { TenantBrandingTab } from "@/features/provider/components/tenant-branding-tab";
+import { TenantProvisioningTab } from "@/features/provider/components/tenant-provisioning-tab";
 
 export function AppRoutes() {
   return (
@@ -105,6 +113,26 @@ export function AppRoutes() {
       {/* Reset link is reachable whether or not signed in — a signed-in user's
           reset revokes their current session by construction. */}
       <Route path="/reset-password" element={<ResetPasswordPage />} />
+
+      {/* The platform console: its own gates, its own shell, its own session. A
+          workspace session means nothing here and the reverse. Deliberately not
+          linked from anywhere in the workspace UI. */}
+      <Route element={<ProviderPublicOnly />}>
+        <Route path="/provider/login" element={<ProviderSignInPage />} />
+      </Route>
+      <Route path="/provider" element={<RequireProvider />}>
+        <Route element={<ProviderLayout />}>
+          <Route index element={<Navigate to="tenants" replace />} />
+          <Route path="tenants" element={<ProviderTenantsPage />} />
+          <Route path="tenants/:tenantId" element={<ProviderTenantLayout />}>
+            <Route index element={<Navigate to="profile" replace />} />
+            <Route path="profile" element={<TenantProfileTab />} />
+            <Route path="branding" element={<TenantBrandingTab />} />
+            <Route path="provisioning" element={<TenantProvisioningTab />} />
+          </Route>
+          <Route path="*" element={<Navigate to="/provider/tenants" replace />} />
+        </Route>
+      </Route>
 
       <Route element={<RequireAuth />}>
         {/* Full-screen policy editor — its own tab, no app shell (ADR-0012). */}

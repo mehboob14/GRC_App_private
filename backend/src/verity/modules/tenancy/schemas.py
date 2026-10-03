@@ -22,6 +22,7 @@ from pydantic import (
     Field,
     PlainSerializer,
     computed_field,
+    field_validator,
     model_validator,
 )
 
@@ -34,6 +35,10 @@ UtcDateTime = Annotated[datetime, PlainSerializer(_iso_utc_z, return_type=str, w
 
 SLUG_PATTERN = r"^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$"
 """A DNS label: the slug is the tenant's subdomain."""
+
+HEX_COLOR_PATTERN = r"^#[0-9a-fA-F]{6}$"
+"""The only colour shape branding stores. The tenant UI turns it into CSS custom
+properties at runtime, so what is stored must never be anything but six hex digits."""
 
 
 class _Request(BaseModel):
@@ -143,6 +148,15 @@ class TenantUpdate(_TenantProfileFields):
 
     legal_name: str | None = Field(default=None, min_length=1)
     plan: str | None = Field(default=None, min_length=1)
+
+    @field_validator("legal_name", "plan")
+    @classmethod
+    def _required_columns_are_not_cleared(cls, value: str | None) -> str | None:
+        # Omitted means "leave alone" and never reaches this validator; an explicit
+        # null would try to NULL a NOT NULL column and surface as a 500.
+        if value is None:
+            raise ValueError("legal_name and plan cannot be cleared")
+        return value
 
 
 class TenantResponse(_Response):
@@ -307,18 +321,20 @@ class SmtpTestResponse(_Response):
 class BrandingPut(_Request):
     """A full replace: an omitted field clears its column.
 
-    ``smtp_config_ref`` arrives as the secret value and is envelope-encrypted,
-    AAD-bound to the tenant, before it reaches the database. It never comes back.
+    The one exception is ``smtp_config_ref``. It arrives as the secret value and is
+    envelope-encrypted, AAD-bound to the tenant, before it reaches the database, and
+    it never comes back, so a client round-tripping the record cannot resend it.
+    Omitting it therefore keeps the stored credential; an explicit ``null`` clears it.
     """
 
     logo_ref: str | None = None
-    primary_color: str | None = None
-    secondary_color: str | None = None
+    primary_color: str | None = Field(default=None, pattern=HEX_COLOR_PATTERN)
+    secondary_color: str | None = Field(default=None, pattern=HEX_COLOR_PATTERN)
     custom_domain: str | None = None
-    email_from_name: str | None = None
-    email_from_address: str | None = None
+    email_from_name: str | None = Field(default=None, max_length=200)
+    email_from_address: str | None = Field(default=None, max_length=320)
     smtp_config_ref: str | None = None
-    document_footer: str | None = None
+    document_footer: str | None = Field(default=None, max_length=1000)
 
 
 class BrandingResponse(_Response):
