@@ -19,7 +19,7 @@ from dataclasses import dataclass, field, replace
 from datetime import UTC, date, datetime, timedelta
 from typing import Final
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from verity.core.errors import InvalidInput, NotFound
@@ -167,6 +167,25 @@ class LinkedRecordView:
     title: str
     status: str
     detail: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class EvidenceBrief:
+    """An evidence item as a record that carries it shows it: what it is and how fresh,
+    without the control mappings, which cost a pass over the whole library to build."""
+
+    id: uuid.UUID
+    title: str
+    evidence_type: str
+    kind: str
+    filename: str | None
+    content_type: str | None
+    size_bytes: int | None
+    sha256: str | None
+    link_url: str | None
+    renewal_date: date | None
+    freshness: str
+    review_status: str
 
 
 class EvidenceService:
@@ -331,6 +350,30 @@ class EvidenceService:
         rows = await session.execute(
             select(EvidenceControl.control_id)
             .where(EvidenceControl.tenant_id == tenant_id)
+            .distinct()
+        )
+        return set(rows.scalars())
+
+    async def control_ids_with_current_evidence(
+        self, session: AsyncSession, tenant_id: uuid.UUID, *, today: date | None = None
+    ) -> set[uuid.UUID]:
+        """Which controls have evidence that still counts as evidence.
+
+        ``control_ids_with_evidence`` answers "is anything attached", which is the
+        right question for the gap list. Readiness asks a harder one: a rejected
+        item was reviewed and found wanting, and one past its renewal date proves
+        the control worked once, not that it works now. Neither makes a control
+        ready, so neither is counted here.
+        """
+        now = today or datetime.now(UTC).date()
+        rows = await session.execute(
+            select(EvidenceControl.control_id)
+            .join(Evidence, Evidence.id == EvidenceControl.evidence_id)
+            .where(
+                EvidenceControl.tenant_id == tenant_id,
+                Evidence.review_status != "rejected",
+                or_(Evidence.renewal_date.is_(None), Evidence.renewal_date >= now),
+            )
             .distinct()
         )
         return set(rows.scalars())
@@ -1011,6 +1054,85 @@ class EvidenceService:
             after=None,
         )
         return await self.linked_records(session, tenant_id=tenant_id, evidence_id=evidence_id)
+
+    # -- tasks that carry evidence ---------------------------------------------
+    #
+    # A task attaches evidence through the same edge ``link_record`` draws from the
+    # evidence page (evidence to task), so an item attached from either end reads from
+    # both. These two are the task side's reads and writes of that pair: they skip what
+    # ``link_record`` does for a page of links (resolving every record the evidence
+    # touches), which a task attaching several items in one call cannot afford.
+
+    async def briefs_for_task(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, task_id: uuid.UUID
+    ) -> list[EvidenceBrief]:
+        """The evidence linked to one task, most recently collected first."""
+        from verity.modules.links.service import link_service  # noqa: PLC0415
+
+        edges = await link_service.for_object(
+            session, tenant_id=tenant_id, obj_type="task", obj_id=task_id
+        )
+        ids = list(dict.fromkeys(e.other_id for e in edges if e.other_type == "evidence"))
+        if not ids:
+            return []
+        rows = (
+            await session.execute(
+                select(Evidence)
+                .where(Evidence.tenant_id == tenant_id, Evidence.id.in_(ids))
+                .order_by(Evidence.collected_at.desc(), Evidence.created_at.desc())
+            )
+        ).scalars()
+        return [
+            EvidenceBrief(
+                id=row.id,
+                title=row.title,
+                evidence_type=row.evidence_type,
+                kind=row.kind,
+                filename=row.filename,
+                content_type=row.content_type,
+                size_bytes=row.size_bytes,
+                sha256=row.sha256,
+                link_url=row.link_url,
+                renewal_date=row.renewal_date,
+                freshness=freshness(row.renewal_date),
+                review_status=row.review_status,
+            )
+            for row in rows
+        ]
+
+    async def link_to_task(
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        evidence_id: uuid.UUID,
+        task_id: uuid.UUID,
+    ) -> None:
+        """Link an evidence item to a task the caller has already resolved. Idempotent;
+        audited on the evidence in the caller's transaction, like ``link_record`` (rule 5)."""
+        from verity.modules.links.service import link_service  # noqa: PLC0415
+
+        await self._load(session, tenant_id, evidence_id)  # 404 if the evidence is gone
+        await link_service.create(
+            session,
+            tenant_id=tenant_id,
+            from_type="evidence",
+            from_id=evidence_id,
+            to_type="task",
+            to_id=task_id,
+            created_by_membership_id=actor.id if isinstance(actor, Membership) else None,
+        )
+        await self._audit.record(
+            session,
+            action="update",
+            object_type="evidence",
+            object_id=evidence_id,
+            actor=actor,
+            tenant_id=tenant_id,
+            before=None,
+            after={"linked": f"task:{task_id}"},
+        )
 
 
 evidence_service = EvidenceService()

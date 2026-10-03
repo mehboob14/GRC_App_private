@@ -24,10 +24,13 @@ from verity.modules.connectors.schemas import (
     AutomationOut,
     ConnectionOut,
     ConnectWrite,
+    ControlCompositionOut,
     DisconnectWrite,
     IntegrationRequestOut,
     IntegrationRequestWrite,
     ProviderOut,
+    ResourceOut,
+    ScopeWrite,
 )
 from verity.modules.connectors.service import connector_service
 
@@ -103,6 +106,41 @@ async def disconnect(
     return ConnectionOut.model_validate(view)
 
 
+@connectors_router.get(
+    "/connections/{connection_id}/resources",
+    response_model=list[ResourceOut],
+    dependencies=[Depends(require("connectors:read"))],
+    summary="Every repository this connection can see, and whether it is checked",
+)
+async def list_resources(
+    connection_id: uuid.UUID, context: _Ctx, session: _Db
+) -> list[ResourceOut]:
+    views = await connector_service.resources(
+        session, tenant_id=context.tenant_id, connection_id=connection_id
+    )
+    return [ResourceOut.model_validate(view) for view in views]
+
+
+@connectors_router.put(
+    "/connections/{connection_id}/scope",
+    response_model=list[ResourceOut],
+    dependencies=[Depends(require("connectors:manage"))],
+    summary="Choose which repositories the checks look at",
+)
+async def set_scope(
+    connection_id: uuid.UUID, body: ScopeWrite, context: _Ctx, session: _Db
+) -> list[ResourceOut]:
+    views = await connector_service.set_scope(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(context),
+        connection_id=connection_id,
+        decisions=[(d.external_id, d.scope) for d in body.decisions],
+        reason=body.reason,
+    )
+    return [ResourceOut.model_validate(view) for view in views]
+
+
 @connectors_router.post(
     "/connections/{connection_id}/runs",
     status_code=status.HTTP_202_ACCEPTED,
@@ -136,6 +174,17 @@ async def control_automation(control_id: uuid.UUID, context: _Ctx, session: _Db)
         session, tenant_id=context.tenant_id, control_id=control_id
     )
     return AutomationOut.model_validate(view)
+
+
+@connectors_router.get(
+    "/control-composition",
+    response_model=list[ControlCompositionOut],
+    dependencies=[Depends(require("frameworks:read"))],
+    summary="What evidences each control: systems, Verity modules and people",
+)
+async def control_composition(context: _Ctx, session: _Db) -> list[ControlCompositionOut]:
+    views = await connector_service.compositions(session, tenant_id=context.tenant_id)
+    return [ControlCompositionOut.model_validate(view) for view in views]
 
 
 @connectors_router.get(

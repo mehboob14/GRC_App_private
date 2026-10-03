@@ -24,6 +24,8 @@ from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from verity.modules.compliance.readiness import control_ready
+
 _FRAMEWORK_LABEL = {"SOC2": "SOC 2"}
 
 _STATUS_LABEL = {
@@ -40,6 +42,7 @@ class ReportRow:
     code: str
     name: str
     category: str
+    sub_category: str | None
     control_type: str | None
     status: str
     status_label: str
@@ -59,6 +62,7 @@ class ReportKpis:
     controls_ready: int
     criteria_mapped: int
     by_status: dict[str, int] = field(default_factory=dict)
+    controls_failing_automation: int = 0
 
 
 @dataclass(frozen=True, slots=True)
@@ -92,12 +96,15 @@ class ReportService:
         self, session: AsyncSession, *, tenant_id: uuid.UUID
     ) -> ControlGapReport:
         from verity.modules.compliance.control_service import control_service  # noqa: PLC0415
+        from verity.modules.connectors.service import connector_service  # noqa: PLC0415
         from verity.modules.evidence.service import evidence_service  # noqa: PLC0415
 
         controls = await control_service.list_controls(
             session, tenant_id=tenant_id, include_disabled=True
         )
         counts = await evidence_service.evidence_counts_by_control(session, tenant_id)
+        with_current = await evidence_service.control_ids_with_current_evidence(session, tenant_id)
+        automation = await connector_service.automation_statuses(session, tenant_id=tenant_id)
 
         rows: list[ReportRow] = []
         for control in controls:
@@ -108,6 +115,7 @@ class ReportService:
                     code=control.code,
                     name=control.name,
                     category=control.category,
+                    sub_category=control.sub_category,
                     control_type=control.control_type,
                     status=status,
                     status_label=_STATUS_LABEL.get(status, status),
@@ -125,7 +133,16 @@ class ReportService:
         for control in live:
             by_status[control.status] = by_status.get(control.status, 0) + 1
         evidenced = sum(1 for c in live if counts.get(c.id, 0) > 0)
-        ready = sum(1 for c in live if c.status == "implemented" and counts.get(c.id, 0) > 0)
+        ready = sum(
+            1
+            for c in live
+            if control_ready(
+                status=c.status,
+                has_current_evidence=c.id in with_current,
+                automation=automation.get(c.id),
+            )
+        )
+        failing = sum(1 for c in live if automation.get(c.id) == "failing")
         criteria_mapped = len(
             {key for c in controls if c.disabled_at is None for key in c.requirement_keys}
         )
@@ -140,6 +157,7 @@ class ReportService:
                 controls_evidenced=evidenced,
                 controls_owned=sum(1 for c in live if c.owner_membership_id is not None),
                 controls_ready=ready,
+                controls_failing_automation=failing,
                 criteria_mapped=criteria_mapped,
                 by_status=by_status,
             ),
@@ -158,6 +176,7 @@ class ReportService:
             ("Controls with evidence", k.controls_evidenced),
             ("Controls with an owner", k.controls_owned),
             ("Ready for audit", k.controls_ready),
+            ("Controls with a failing automated test", k.controls_failing_automation),
             ("Criteria mapped", k.criteria_mapped),
             ("Disabled controls", k.controls_disabled),
         ]
@@ -167,11 +186,14 @@ class ReportService:
             pairs.append((f"  {label}", k.by_status.get(status, 0)))
         return pairs
 
+    # Type and Sub-type are the domain and the area inside it (spec 1.1); Design is
+    # the Preventive / Detective axis this column used to be called Type.
     _HEADERS = (
         "Code",
         "Control",
-        "Category",
         "Type",
+        "Sub-type",
+        "Design",
         "Status",
         "Owner",
         "Framework",
@@ -186,6 +208,7 @@ class ReportService:
             row.code,
             row.name,
             row.category,
+            row.sub_category or "",
             row.control_type or "",
             row.status_label,
             row.owner_name or "Unassigned",
@@ -241,7 +264,7 @@ class ReportService:
             cell.alignment = Alignment(vertical="center")
         for row in report.rows:
             sheet.append(self._row_cells(row))
-        widths = (12, 40, 26, 14, 14, 22, 12, 24, 10, 32)
+        widths = (12, 40, 26, 24, 14, 14, 22, 12, 24, 10, 32)
         for index, width in enumerate(widths, start=1):
             sheet.column_dimensions[get_column_letter(index)].width = width
         sheet.freeze_panes = "A2"

@@ -1,6 +1,7 @@
 import { controlsApi } from "@/lib/api/endpoints";
 import { getAccessToken } from "@/lib/auth/session";
 import type { ControlReport } from "@/lib/api/types";
+import { withReportBranding } from "@/features/tenancy/report-branding";
 
 /**
  * The gap-assessment export. CSV and XLSX are rendered server-side (one dataset,
@@ -83,6 +84,8 @@ export function printControlReport(
       <tr>
         <td class="code">${escapeHtml(row.code)}</td>
         <td>${escapeHtml(row.name)}</td>
+        <td>${escapeHtml(row.category)}</td>
+        <td>${escapeHtml(row.sub_category ?? "")}</td>
         <td>${escapeHtml(row.control_type ?? "")}</td>
         <td>${escapeHtml(row.status_label)}</td>
         <td>${escapeHtml(row.owner_name ?? "Unassigned")}</td>
@@ -113,6 +116,7 @@ export function printControlReport(
   td.code { font-weight: 700; white-space: nowrap; }
   .status-table { width: auto; margin-bottom: 8px; }
   .status-table td { border: 0; padding: 2px 16px 2px 0; }
+  @page { size: landscape; }
   @media print { body { margin: 12mm; } thead { display: table-header-group; } tr { break-inside: avoid; } }
 </style></head>
 <body>
@@ -124,6 +128,7 @@ export function printControlReport(
     ${kpiCard("With evidence", `${k.controls_evidenced} (${pctOf(k.controls_evidenced)}%)`)}
     ${kpiCard("With an owner", `${k.controls_owned} (${pctOf(k.controls_owned)}%)`)}
     ${kpiCard("Ready for audit", `${k.controls_ready} (${pctOf(k.controls_ready)}%)`)}
+    ${kpiCard("Failing an automated test", k.controls_failing_automation)}
     ${kpiCard("Criteria mapped", k.criteria_mapped)}
     ${kpiCard("Disabled", k.controls_disabled)}
   </div>
@@ -134,8 +139,8 @@ export function printControlReport(
   <h2>Controls (${report.rows.length})</h2>
   <table>
     <thead><tr>
-      <th>Code</th><th>Control</th><th>Type</th><th>Status</th>
-      <th>Owner</th><th>Framework</th><th>Criteria</th><th>Evidence</th>
+      <th>Code</th><th>Control</th><th>Type</th><th>Sub-type</th><th>Design</th>
+      <th>Status</th><th>Owner</th><th>Framework</th><th>Criteria</th><th>Evidence</th>
     </tr></thead>
     <tbody>${bodyRows}</tbody>
   </table>
@@ -143,7 +148,7 @@ export function printControlReport(
 
   const win = window.open("", "_blank");
   if (!win) throw new Error("popup blocked");
-  win.document.write(html);
+  win.document.write(withReportBranding(html));
   win.document.close();
   win.focus();
   // Give the new document a tick to lay out before the print dialog opens.

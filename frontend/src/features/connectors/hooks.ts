@@ -10,6 +10,8 @@ import { errorToast } from "@/lib/api/describe-error";
 import {
   connectorKeys,
   getAutomation,
+  getControlComposition,
+  getRequirementChain,
   listConnections,
   runConnection,
 } from "./api";
@@ -22,7 +24,28 @@ const GRACE_MS = 15_000;
 export function refreshAutomation(queryClient: QueryClient) {
   void queryClient.invalidateQueries({ queryKey: connectorKeys.connections });
   void queryClient.invalidateQueries({ queryKey: ["control-automation"] });
+  void queryClient.invalidateQueries({ queryKey: connectorKeys.composition });
+  void queryClient.invalidateQueries({ queryKey: ["requirement-chain"] });
   void queryClient.invalidateQueries({ queryKey: ["evidence"] });
+}
+
+/** What evidences every control: the register's "Evidenced by" column. */
+export function useControlComposition(enabled = true) {
+  return useQuery({
+    queryKey: connectorKeys.composition,
+    queryFn: getControlComposition,
+    enabled,
+    staleTime: 60_000,
+  });
+}
+
+/** A criterion, its controls, and what evidences each. */
+export function useRequirementChain(requirementId: string | null) {
+  return useQuery({
+    queryKey: connectorKeys.chain(requirementId ?? ""),
+    queryFn: () => getRequirementChain(requirementId!),
+    enabled: requirementId !== null,
+  });
 }
 
 export function useAutomation(controlId: string) {

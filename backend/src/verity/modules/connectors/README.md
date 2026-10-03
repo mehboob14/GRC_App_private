@@ -22,24 +22,127 @@ A missing permission turns only the checks that need it into `error` ("could not
 check"), never `fail`. A classic token also works but cannot be read only; prefer fine
 grained.
 
-What Verity reads, per active (non archived) repository: the default branch, classic
-branch protection, rulesets that apply to the default branch, the Dependabot alerts
-setting, the secret scanning setting, and pull requests merged into the default branch in
-the last 30 days with their reviews (up to 20 per repository per run). Nothing is
+What Verity reads, per repository **in scope**: the default branch, classic branch
+protection, rulesets that apply to the default branch, the Dependabot alerts setting, the
+secret scanning setting, and pull requests merged into the default branch in the last 30
+days with every review of each (who decided what, when, and on which commit), up to 100 per
+repository per run, reading as many as 500 closed pull requests to find them. Nothing is
 written to GitHub.
+
+### Scope
+
+A token reaches every repository its owner can read, which for a personal account is every
+fork and every piece of coursework. A SOC 2 engagement covers named systems, so each run
+lists everything the token can see into `connection_resources` and checks only what is in
+scope (AU-9).
+
+- Archived repositories and forks are out by default, with a system reason that is
+  re-derived on every run. Archived stays out whatever anyone decides.
+- A person's decision (Connections, **Choose repositories**) is kept until a person changes
+  it. A run never overwrites it.
+- Leaving a repository out needs a reason. It is stored on the repository (and refused by a
+  database CHECK without one), written to the audit log, and printed on the evidence's
+  `verity.scope.excluded`, so an auditor reading a clean result knows what it was clean over.
+
+### Outcomes
+
+| Outcome | Means |
+|---|---|
+| `pass` / `fail` | The setting was read and does / does not meet the check |
+| `error` | Verity could not tell (token, permission, rate limit, outage). Never a failure (rule 7) |
+| `not_applicable` | Nothing to check: a repository with no commits, a personal account and two factor. Counts neither as a pass nor a fail |
+
+| `stale` | Not a result but a reading of one: the last run is older than two days (one missed run is tolerated, two are not). Shown instead of pass or fail, and blocks readiness |
+
+A plan that does not offer a setting is a `fail` with its own remedy ("upgrade the plan, or
+exclude the repository with a reason"), not an `error`: with admin on the repository, the
+setting being absent means the plan, not the token. A control whose every result is not
+applicable reads "Nothing to verify", never "Passing".
 
 | Check | Passes when |
 |---|---|
-| `vcs.default_branch_protected` | The default branch is protected (or a ruleset requires pull requests) and force pushes are blocked |
+| `vcs.default_branch_protected` | Direct pushes are blocked (a pull request is required, pushes are restricted or the branch is locked, by a classic rule or a ruleset) and force pushes are blocked. Protection that only stops deletion does not count |
 | `vcs.review_required` | At least one approving review is required to merge |
 | `vcs.status_checks_required` | Required status checks must pass before merge |
-| `vcs.merged_changes_reviewed` | Every change merged in the last 30 days was approved by someone other than its author |
+| `vcs.merged_changes_reviewed` | Every change merged in the last 30 days had an approving review before it merged, from someone other than its author |
 | `vcs.secret_scanning_enabled` | Secret scanning is on |
 | `vcs.dependency_alerts_enabled` | Dependabot alerts are on |
 | `vcs.org_two_factor_required` | The organisation requires two factor (not applicable to a personal account) |
 
+### Checks, controls, criteria and evidence
+
+Each check supports controls (full or partial), and each control answers SOC 2 criteria.
+Generated from the shipped content, not written by hand:
+
+| Check | Controls it supports | SOC 2 criteria | What the evidence file holds |
+|---|---|---|---|
+| `vcs.default_branch_protected` | SD-06 (partial), SD-01 (partial) | CC8.1 | per repository: `protection` (including whether administrators can bypass it), `rules` |
+| `vcs.review_required` | SD-06 (partial), SD-01 (partial) | CC8.1 | `protection.required_pull_request_reviews`, ruleset `pull_request` |
+| `vcs.merged_changes_reviewed` | SD-01 (partial), SD-06 (partial) | CC8.1 | `merged_changes`: PR, author, head commit, every review with reviewer, decision, time and commit, last 30 days, up to 100 per repository |
+| `vcs.status_checks_required` | SD-02 (partial) | CC8.1, PI1.3 | `protection.required_status_checks`, ruleset `required_status_checks` |
+| `vcs.secret_scanning_enabled` | SD-11 (partial) | CC6.1, CC7.1 | `security_and_analysis.secret_scanning` |
+| `vcs.dependency_alerts_enabled` | SD-03 (partial), LM-11 (partial) | CC6.8, CC7.1 | `vulnerability_alerts` |
+| `vcs.org_two_factor_required` | IAM-03 (partial) | CC6.1 | `account.two_factor_required` |
+
+The evidence file also carries the account, `verity.scope` (what was checked and every
+exclusion with its reason) and every result. It is attached to each control whose checks
+produced a pass or fail.
+
+**What GitHub can and cannot prove.** It speaks for part of five criteria, not all of them:
+
+| Criterion | Controls mapped | GitHub tests | Still needs other evidence |
+|---|---|---|---|
+| CC8.1 changes | 8 | SD-01, SD-02, SD-06 (partial) | SD-04 emergency change, SD-10 secure SDLC policy, SD-12 separate environments, SD-13 controlled deployments and SD-14 change traceability (pipeline and ticket checks, planned) |
+| CC7.1 detection | 7 | SD-03, SD-11, LM-11 (partial) | scanning of infrastructure, configuration drift, penetration test |
+| CC6.1 logical access | 16 | IAM-03, SD-11 (partial) | SSO, password policy, encryption, network controls, and the rest |
+| CC6.8 malicious software | 5 | SD-03 (partial) | endpoint protection, threat detection |
+| PI1.3 processing | 2 | SD-02 (partial) | reconciliation |
+
+A requirement is met only when every control that applies to it is ready (CF-4), so no
+criterion can read "met" from GitHub alone. That is the intended behaviour, not a gap in the
+connector: a source control system cannot show that laptops are encrypted.
+
 Runs: daily from the worker (`run_connector_checks`, due after 20 hours), and on demand
 from the control page or the Connections page. Evidence: one JSON snapshot per day per
-connection, or sooner when results change, valid for 7 days.
+connection, or sooner when anything it found changes (a reviewer, a setting, a population,
+not only a pass or a fail), valid for 7 days. Every result names the rules that judged it
+(`rule`, currently `github.2026-10`), so a later rewording of a check never reinterprets an
+old result.
+
+### What a review proves
+
+A review is a person's decision at a moment, so the moment and the commit are part of what it
+proves. For each merged change only each reviewer's **last decision before the merge**
+counts. An approval given after the merge reviewed nothing that was merged, an approval
+withdrawn by a later "changes requested" no longer stands, a dismissed approval is gone,
+comments are not approval, and the author cannot approve their own change. An approval of an
+earlier commit than the one that merged still counts (GitHub does not require otherwise
+unless the repository turns on "require approval of the most recent push"), but the evidence
+lists those changes and the summary says so.
+
+### What could not be read, and what was not read
+
+- **Policy.** A branch can be protected by classic protection, by a ruleset, or both. When
+  either source cannot be read, a repository that looks unprotected from the other may be
+  protected by the one nobody could see, so the result is `error`, not `fail`. A setting
+  that was read and found absent is still a `fail`. Protection that was read is never undone
+  by a ruleset that was not.
+- **Administrators.** Classic protection says whether administrators can bypass the rule;
+  the result carries it and the summary says so. A ruleset's bypass list is not read yet.
+- **Population.** More than 100 merged changes in a repository, more closed pull requests
+  than 500 to page through, or the provider's request allowance running low part way through
+  (the remaining changes are skipped, never failed) is stated: "None of the 100 merged changes read lacked an
+  approving review. More were merged than could be read." An unreviewed change found is
+  always a `fail`. More than 300 in-scope repositories is an `error` on every per
+  repository check until the scope is narrowed, never a clean result over the part that
+  was read.
+
+### How a control is evidenced
+
+The control page's **Checks** tab shows, for each control, every check that evidences it,
+which software runs each one (and whether it is connected, ready to connect, or still
+planned), what each collects, and the evidence people or Verity modules provide.
+`composition.py` holds the rules and is covered by `tests/unit/test_composition.py`; the
+design is in `openspec/changes/common-control-framework/design.md` section 4.5.
 
 GitHub Enterprise Server: set `CONNECTORS_GITHUB_API_URL` to its API base.

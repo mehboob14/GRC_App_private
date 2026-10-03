@@ -17,6 +17,7 @@ import hashlib
 import json
 import uuid
 from collections import defaultdict
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime, timedelta
 from typing import Any, Final
@@ -31,7 +32,8 @@ from verity.core.db import session_scope
 from verity.core.errors import Conflict, InvalidInput, NotFound, UpstreamUnavailable
 from verity.core.logging import get_logger
 from verity.modules.audit.service import Actor, AuditService, Membership, audit_service
-from verity.modules.compliance.control_service import control_service
+from verity.modules.compliance.control_service import MappingView, control_service
+from verity.modules.connectors import composition as comp
 from verity.modules.connectors import github
 from verity.modules.connectors.http import (
     AccessDenied,
@@ -43,15 +45,18 @@ from verity.modules.connectors.http import (
 )
 from verity.modules.connectors.models import (
     PROVIDERS,
+    SCOPE_STATES,
     Check,
     CheckResult,
     CheckRun,
     Connection,
+    ConnectionResource,
     ControlTemplateCheck,
     IntegrationCapability,
     IntegrationRequest,
 )
 from verity.modules.evidence.service import evidence_service
+from verity.modules.iam.service import iam_service
 from verity.shared.ids import uuid7
 
 logger = get_logger(__name__)
@@ -61,6 +66,10 @@ STALE_RUN: Final = timedelta(minutes=30)
 SCHEDULE_INTERVAL: Final = timedelta(hours=20)
 """A daily check is due once its connection's last run is older than this."""
 EVIDENCE_REFRESH: Final = timedelta(hours=20)
+STALE_AFTER: Final = timedelta(hours=48)
+"""A result older than this says nothing about now. The schedule runs about
+daily, so one missed run is tolerated and two are not: a passing control whose
+last check was last week is out of date, not passing (AU-5)."""
 EVIDENCE_VALIDITY_DAYS: Final = 7
 HISTORY_DAYS: Final = 30
 
@@ -123,6 +132,42 @@ class RunView:
 
 
 @dataclass(frozen=True, slots=True)
+class ScopeView:
+    """How much of a connection's inventory the checks actually look at."""
+
+    listed: int
+    in_scope: int
+    excluded: int
+
+
+@dataclass(frozen=True, slots=True)
+class ConnectionScopeView:
+    connection_id: uuid.UUID
+    account: str
+    listed: int
+    in_scope: int
+    excluded: int
+
+
+@dataclass(frozen=True, slots=True)
+class ResourceView:
+    """One repository a connection can see, and whether it is checked."""
+
+    external_id: str
+    name: str
+    url: str | None
+    private: bool
+    fork: bool
+    archived: bool
+    empty: bool
+    scope: str
+    reason: str | None
+    decided_by: str
+    decided_by_name: str | None
+    decided_at: datetime | None
+
+
+@dataclass(frozen=True, slots=True)
 class ConnectionView:
     id: uuid.UUID
     provider: str
@@ -140,6 +185,7 @@ class ConnectionView:
     created_at: datetime
     disconnected_at: datetime | None
     latest_run: RunView | None
+    scope: ScopeView | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -196,6 +242,72 @@ class TestView:
     results: list[ResultView]
     counts: dict[str, int]
     last_run_at: datetime | None
+    rationale: str | None = None
+    """Why this check is evidence for this control, and what it does not prove."""
+    evidence_kinds: list[str] = field(default_factory=list)
+    source: str = "connector"
+    """``connector`` (a system the workspace connects) or ``platform`` (Verity modules)."""
+    availability: str = "planned"
+    """running, ready, planned or not_planned: whether this workspace can have it run."""
+    needs: list[CapabilityView] = field(default_factory=list)
+    """The capabilities this check needs, each with the providers that can supply it."""
+
+
+@dataclass(frozen=True, slots=True)
+class CheckRef:
+    key: str
+    name: str
+    availability: str
+
+
+@dataclass(frozen=True, slots=True)
+class ExpectedEvidenceView:
+    """Something an auditor expects to see for a control, and how it gets there."""
+
+    key: str
+    name: str
+    assurance: str
+    """``design`` (it exists) or ``operating`` (it was followed)."""
+    cadence: str
+    source: str
+    """``upload`` (a person provides it) or ``platform`` (a Verity module holds it)."""
+    module: str | None
+    state: str
+    """automatic, when_connected, planned, platform or manual."""
+    automated_by: list[CheckRef] = field(default_factory=list)
+
+
+@dataclass(frozen=True, slots=True)
+class ControlComposition:
+    """One control's evidence composition and monitoring status, for the register."""
+
+    control_id: uuid.UUID
+    composition: comp.Composition
+    automation_status: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class ChainCheck:
+    key: str
+    name: str
+    source: str
+    availability: str
+    status: str
+    coverage: str
+    rationale: str | None
+    evidence_kinds: list[str]
+    capabilities: list[str]
+
+
+@dataclass(frozen=True, slots=True)
+class ControlChain:
+    """Everything that evidences one control: checks, systems, and what people provide."""
+
+    control_id: uuid.UUID
+    composition: comp.Composition
+    automation_status: str | None
+    checks: list[ChainCheck]
+    evidence: list[ExpectedEvidenceView]
 
 
 @dataclass(frozen=True, slots=True)
@@ -220,7 +332,7 @@ class AutomationView:
     control_id: uuid.UUID
     mode: str
     status: str
-    """passing, failing, error, pending, not_connected, or manual."""
+    """passing, failing, error, not_applicable, pending, not_connected, or manual."""
     tests_total: int
     tests_running: int
     last_run_at: datetime | None
@@ -230,6 +342,10 @@ class AutomationView:
     tests: list[TestView]
     history: list[DayView]
     requests: list[RequestView] = field(default_factory=list)
+    scopes: list[ConnectionScopeView] = field(default_factory=list)
+    composition: comp.Composition | None = None
+    evidence: list[ExpectedEvidenceView] = field(default_factory=list)
+    mappings: list[MappingView] = field(default_factory=list)
 
 
 def _run_view(run: CheckRun | None, now: datetime) -> RunView | None:
@@ -253,7 +369,9 @@ def _run_view(run: CheckRun | None, now: datetime) -> RunView | None:
     )
 
 
-def _connection_view(row: Connection, run: CheckRun | None, now: datetime) -> ConnectionView:
+def _connection_view(
+    row: Connection, run: CheckRun | None, now: datetime, scope: ScopeView | None = None
+) -> ConnectionView:
     return ConnectionView(
         id=row.id,
         provider=row.provider,
@@ -271,6 +389,7 @@ def _connection_view(row: Connection, run: CheckRun | None, now: datetime) -> Co
         created_at=row.created_at,
         disconnected_at=row.disconnected_at,
         latest_run=_run_view(run, now),
+        scope=scope,
     )
 
 
@@ -282,9 +401,93 @@ def _worst(outcomes: list[str]) -> str:
     return "not_applicable"
 
 
+def _test_status(
+    *,
+    implemented: bool,
+    runners: bool,
+    outcomes: list[str],
+    stale: bool = False,
+    ran: bool = False,
+) -> str:
+    """One test, from what can run it and what it last found.
+
+    ``stale`` when what it last found is too old to say anything about now. ``ran``
+    when a system that can run it has finished a run: a run that left no result for
+    this test (a personal account with no repositories) found nothing to check, which
+    is "not applicable", not "still waiting for the first run".
+    """
+    if not implemented:
+        return "not_available"
+    if not runners:
+        return "not_connected"
+    if not outcomes:
+        return "not_applicable" if ran else "pending"
+    if stale:
+        return "stale"
+    return _worst(outcomes)
+
+
+def _control_status(states: list[str]) -> str:
+    """A control's automated status (AU-6).
+
+    Failing if any test fails, else error if any could not be read, else out of
+    date if any result is too old to count, else passing only if at least one test
+    actually passed. A test that found nothing to check
+    (not applicable) is not a pass: a control whose every result is "not
+    applicable" has been verified by nothing, and says so (AU-5).
+    """
+    if not states:
+        return "manual"
+    for state, label in (
+        ("fail", "failing"),
+        ("error", "error"),
+        ("stale", "stale"),
+        ("pass", "passing"),
+    ):
+        if state in states:
+            return label
+    if "not_applicable" in states:
+        return "not_applicable"
+    if "pending" in states:
+        return "pending"
+    return "not_connected"
+
+
 def _digest(results: list[github.Result]) -> str:
-    rows = sorted((r.check_key, r.resource_type, r.resource_id, r.outcome) for r in results)
+    """What this run found, for deciding whether it is worth a new evidence file.
+
+    The detail is part of it: a reviewer, a setting or a population that changed
+    under an unchanged pass or fail is still a different observation, and an
+    auditor must be able to retrieve the one that was true on the day.
+    """
+    rows = sorted(
+        (
+            r.check_key,
+            r.resource_type,
+            r.resource_id,
+            r.outcome,
+            json.dumps(r.detail, sort_keys=True, default=str),
+        )
+        for r in results
+    )
     return hashlib.sha256(json.dumps(rows).encode()).hexdigest()
+
+
+@dataclass(frozen=True, slots=True)
+class _Outcomes:
+    """What the latest finished runs found, and which providers have gone quiet."""
+
+    by_check: dict[uuid.UUID, list[str]] = field(default_factory=dict)
+    stale_providers: set[str] = field(default_factory=set)
+    ran_providers: set[str] = field(default_factory=set)
+
+    def stale(self, implementations: Sequence[str]) -> bool:
+        """Whether a check's results come from a provider whose last run is too old."""
+        return bool(self.stale_providers & set(implementations))
+
+    def ran(self, implementations: Sequence[str]) -> bool:
+        """Whether a provider that can run a check has finished a run."""
+        return bool(self.ran_providers & set(implementations))
 
 
 class ConnectorService:
@@ -358,8 +561,9 @@ class ConnectorService:
             ).scalars()
         )
         runs = await self._latest_runs(session, tenant_id, [row.id for row in rows])
+        scopes = await self._scope_summaries(session, tenant_id, [row.id for row in rows])
         now = datetime.now(UTC)
-        return [_connection_view(row, runs.get(row.id), now) for row in rows]
+        return [_connection_view(row, runs.get(row.id), now, scopes.get(row.id)) for row in rows]
 
     async def _load(
         self, session: AsyncSession, tenant_id: uuid.UUID, connection_id: uuid.UUID
@@ -494,6 +698,257 @@ class ConnectorService:
         runs = await self._latest_runs(session, tenant_id, [row.id])
         return _connection_view(row, runs.get(row.id), datetime.now(UTC))
 
+    # -- scope (AU-9) ---------------------------------------------------------------
+
+    async def _scope_decisions(
+        self, tenant_id: uuid.UUID, connection_id: uuid.UUID
+    ) -> dict[str, github.ScopeDecision]:
+        """What people have decided, for the collector. System decisions are not
+        carried: the collector derives those fresh on every run."""
+        async with session_scope(tenant_id) as session:
+            rows = await session.execute(
+                select(ConnectionResource).where(
+                    ConnectionResource.tenant_id == tenant_id,
+                    ConnectionResource.connection_id == connection_id,
+                    ConnectionResource.decided_by == "person",
+                )
+            )
+            return {
+                row.external_id: github.ScopeDecision(row.scope, row.scope_reason)
+                for row in rows.scalars()
+            }
+
+    async def _sync_inventory(
+        self,
+        session: AsyncSession,
+        tenant_id: uuid.UUID,
+        connection: Connection,
+        snapshot: dict[str, Any],
+        now: datetime,
+    ) -> None:
+        """Keep the inventory in step with what the run listed.
+
+        A person's decision is never overwritten by a run. A system decision is,
+        so a repository that is no longer a fork, or is un-archived, comes back
+        into scope on its own. An archived repository is out whatever anyone said.
+        """
+        inventory = snapshot.get("inventory")
+        if inventory is None:
+            return
+        existing = {
+            row.external_id: row
+            for row in (
+                await session.execute(
+                    select(ConnectionResource).where(
+                        ConnectionResource.tenant_id == tenant_id,
+                        ConnectionResource.connection_id == connection.id,
+                    )
+                )
+            ).scalars()
+        }
+        collected = {repo["id"]: repo for repo in snapshot.get("repositories", [])}
+        for entry in inventory:
+            row = existing.get(entry["id"])
+            # Emptiness is only learnt by reading the repository, so an excluded
+            # one keeps what was last known about it.
+            if entry["id"] in collected:
+                empty = collected[entry["id"]]["protection"].get("reason") == "no_branch"
+            else:
+                empty = bool(row.attributes.get("empty")) if row is not None else False
+            attributes = {
+                "private": entry["private"],
+                "fork": entry["fork"],
+                "archived": entry["archived"],
+                "default_branch": entry["default_branch"],
+                "empty": empty,
+            }
+            if row is None:
+                session.add(
+                    ConnectionResource(
+                        id=uuid7(),
+                        tenant_id=tenant_id,
+                        connection_id=connection.id,
+                        source=connection.provider,
+                        external_id=entry["id"],
+                        name=entry["full_name"],
+                        url=entry["url"],
+                        attributes=attributes,
+                        scope=entry["scope"],
+                        scope_reason=entry["reason"],
+                        decided_by="system",
+                        first_seen_at=now,
+                        synced_at=now,
+                    )
+                )
+                continue
+            row.name, row.url, row.attributes, row.synced_at = (
+                entry["full_name"],
+                entry["url"],
+                attributes,
+                now,
+            )
+            if row.decided_by == "system" or entry["archived"]:
+                row.scope, row.scope_reason, row.decided_by = (
+                    entry["scope"],
+                    entry["reason"],
+                    "system",
+                )
+        await session.flush()
+
+    async def _scope_summaries(
+        self, session: AsyncSession, tenant_id: uuid.UUID, connection_ids: list[uuid.UUID]
+    ) -> dict[uuid.UUID, ScopeView]:
+        if not connection_ids:
+            return {}
+        counts: dict[uuid.UUID, dict[str, int]] = defaultdict(dict)
+        rows = await session.execute(
+            select(ConnectionResource.connection_id, ConnectionResource.scope, func.count())
+            .where(
+                ConnectionResource.tenant_id == tenant_id,
+                ConnectionResource.connection_id.in_(connection_ids),
+            )
+            .group_by(ConnectionResource.connection_id, ConnectionResource.scope)
+        )
+        for connection_id, scope, number in rows.tuples():
+            counts[connection_id][scope] = number
+        return {
+            connection_id: ScopeView(
+                listed=sum(by_scope.values()),
+                in_scope=by_scope.get("in_scope", 0),
+                excluded=by_scope.get("excluded", 0),
+            )
+            for connection_id, by_scope in counts.items()
+        }
+
+    async def resources(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, connection_id: uuid.UUID
+    ) -> list[ResourceView]:
+        """Everything this connection can see, in scope or not, with the reason."""
+        await self._load(session, tenant_id, connection_id)
+        rows = list(
+            (
+                await session.execute(
+                    select(ConnectionResource)
+                    .where(
+                        ConnectionResource.tenant_id == tenant_id,
+                        ConnectionResource.connection_id == connection_id,
+                    )
+                    .order_by(func.lower(ConnectionResource.name))
+                )
+            ).scalars()
+        )
+        names = {
+            member.membership_id: member.full_name
+            for member in await iam_service.list_members(session, tenant_id=tenant_id)
+        }
+        return [
+            ResourceView(
+                external_id=row.external_id,
+                name=row.name,
+                url=row.url,
+                private=bool(row.attributes.get("private")),
+                fork=bool(row.attributes.get("fork")),
+                archived=bool(row.attributes.get("archived")),
+                empty=bool(row.attributes.get("empty")),
+                scope=row.scope,
+                reason=row.scope_reason,
+                decided_by=row.decided_by,
+                decided_by_name=names.get(row.decided_by_membership_id)
+                if row.decided_by_membership_id
+                else None,
+                decided_at=row.decided_at,
+            )
+            for row in rows
+        ]
+
+    async def set_scope(  # noqa: PLR0913 — the connection, who, what, and why
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Membership,
+        connection_id: uuid.UUID,
+        decisions: Sequence[tuple[str, str]],
+        reason: str | None,
+    ) -> list[ResourceView]:
+        """Put repositories in or out of scope. An exclusion needs a reason.
+
+        The reason is shared by every exclusion in one request, which is how a
+        person drops forty sandbox repositories at once without typing it forty
+        times. It is recorded on each row, audited, and printed on the evidence.
+        """
+        connection = await self._load(session, tenant_id, connection_id)
+        if connection.status != "active":
+            raise Conflict("Reconnect this account before changing what it checks.", detail="gone")
+        wanted = dict(decisions)
+        bad = {scope for scope in wanted.values() if scope not in SCOPE_STATES}
+        if bad:
+            raise InvalidInput("Each repository is either checked or excluded.", detail=str(bad))
+        clean_reason = (reason or "").strip() or None
+        rows = {
+            row.external_id: row
+            for row in (
+                await session.execute(
+                    select(ConnectionResource).where(
+                        ConnectionResource.tenant_id == tenant_id,
+                        ConnectionResource.connection_id == connection_id,
+                        ConnectionResource.external_id.in_(list(wanted)),
+                    )
+                )
+            ).scalars()
+        }
+        unknown = set(wanted) - set(rows)
+        if unknown:
+            raise NotFound(
+                "One of those repositories is no longer part of this connection. "
+                "Run the checks again and choose from the refreshed list.",
+                detail=f"{len(unknown)} unknown resources on {connection_id}",
+            )
+        now = datetime.now(UTC)
+        for external_id, scope in wanted.items():
+            row = rows[external_id]
+            if row.attributes.get("archived"):
+                continue
+            if scope == "excluded" and clean_reason is None:
+                raise InvalidInput(
+                    "Say why these repositories are left out of the audit. The reason is "
+                    "kept on the record and printed on the evidence.",
+                    detail="exclusion without a reason",
+                )
+            new_reason = clean_reason if scope == "excluded" else None
+            # Putting back what the system would check anyway is not a decision
+            # worth remembering: hand it back to the system.
+            default = "excluded" if row.attributes.get("fork") else "in_scope"
+            decided_by = "system" if scope == default == "in_scope" else "person"
+            unchanged = (
+                row.scope == scope
+                and row.scope_reason == new_reason
+                and row.decided_by == decided_by
+            )
+            if unchanged:
+                continue
+            before = {"scope": row.scope, "reason": row.scope_reason, "decided_by": row.decided_by}
+            row.scope, row.scope_reason, row.decided_by = scope, new_reason, decided_by
+            row.decided_by_membership_id = actor.id if decided_by == "person" else None
+            row.decided_at = now if decided_by == "person" else None
+            await self._audit.record(
+                session,
+                action="update",
+                object_type="connection_resource",
+                object_id=row.id,
+                actor=actor,
+                tenant_id=tenant_id,
+                before=before,
+                after={
+                    "resource": row.name,
+                    "scope": row.scope,
+                    "reason": row.scope_reason,
+                    "decided_by": row.decided_by,
+                },
+            )
+        await session.flush()
+        return await self.resources(session, tenant_id=tenant_id, connection_id=connection_id)
+
     async def ensure_runnable(
         self, session: AsyncSession, *, tenant_id: uuid.UUID, connection_id: uuid.UUID
     ) -> None:
@@ -536,10 +991,15 @@ class ConnectorService:
         name = _PROVIDER_NAMES["github"]
         snapshot: dict[str, Any] | None = None
         failure: str | None = None
+        decisions = await self._scope_decisions(tenant_id, connection_id)
         try:
             async with self._client(token) as http:
                 snapshot = await github.collect(
-                    http, login=login, account_type=account_type, now=datetime.now(UTC)
+                    http,
+                    login=login,
+                    account_type=account_type,
+                    now=datetime.now(UTC),
+                    decisions=decisions,
                 )
             results = github.evaluate(snapshot)
         except ProviderError as exc:
@@ -674,6 +1134,7 @@ class ConnectorService:
             run.error = failure
             run.results_digest = digest
             if snapshot is not None:
+                await self._sync_inventory(session, tenant_id, connection, snapshot, now)
                 run.evidence_id = await self._evidence(
                     session, tenant_id, run, connection, snapshot, rows, actor, now
                 )
@@ -755,6 +1216,7 @@ class ConnectorService:
         )
         name = _PROVIDER_NAMES.get(connection.provider, connection.provider)
         keys = {row.id: row.key for row in (await session.execute(select(Check))).scalars()}
+        inventory = snapshot.get("inventory") or []
         document = {
             "verity": {
                 "run_id": str(run.id),
@@ -765,6 +1227,21 @@ class ConnectorService:
                 },
                 "collected_at": now.isoformat(),
                 "access": "read only",
+                # What the checks did not look at, and why. An auditor reading a
+                # clean result needs to know the population it was clean over.
+                "scope": {
+                    "listed": len(inventory),
+                    "checked": sum(1 for entry in inventory if entry["scope"] == "in_scope"),
+                    "excluded": [
+                        {
+                            "resource": entry["full_name"],
+                            "reason": entry["reason"],
+                            "decided_by": entry["decided_by"],
+                        }
+                        for entry in inventory
+                        if entry["scope"] == "excluded"
+                    ],
+                },
                 "results": [
                     {
                         "check": keys.get(row.check_id),
@@ -815,38 +1292,22 @@ class ConnectorService:
 
     # -- the control page -------------------------------------------------------------
 
-    async def control_automation(  # noqa: PLR0912 — one read that assembles the page
-        self, session: AsyncSession, *, tenant_id: uuid.UUID, control_id: uuid.UUID
-    ) -> AutomationView:
-        control = await control_service.get_control(
-            session, tenant_id=tenant_id, control_id=control_id
-        )
-        mode = {"Automated": "automated", "Hybrid": "hybrid"}.get(
-            control.control_sub_type or "", "manual"
-        )
-        mapped: list[tuple[Check, str]] = []
-        if control.template_id is not None:
-            mapped = [
-                (check, coverage)
-                for check, coverage in (
-                    await session.execute(
-                        select(Check, ControlTemplateCheck.coverage)
-                        .join(ControlTemplateCheck, ControlTemplateCheck.check_id == Check.id)
-                        .where(ControlTemplateCheck.template_id == control.template_id)
-                        .order_by(Check.name)
-                    )
-                ).tuples()
-            ]
-        needed = {key for check, _ in mapped for key in check.capabilities}
-        capabilities = {
-            row.key: row
-            for row in (
-                await session.execute(
-                    select(IntegrationCapability).where(IntegrationCapability.key.in_(needed))
-                )
-            ).scalars()
+    async def _capability_facts(
+        self, session: AsyncSession
+    ) -> tuple[dict[str, IntegrationCapability], dict[str, comp.CapabilityFacts]]:
+        rows = {
+            row.key: row for row in (await session.execute(select(IntegrationCapability))).scalars()
         }
-        connections = list(
+        facts = {
+            key: comp.CapabilityFacts(key=key, name=row.name, providers=row.providers)
+            for key, row in rows.items()
+        }
+        return rows, facts
+
+    async def _active_connections(
+        self, session: AsyncSession, tenant_id: uuid.UUID
+    ) -> list[Connection]:
+        return list(
             (
                 await session.execute(
                     select(Connection).where(
@@ -855,13 +1316,95 @@ class ConnectorService:
                 )
             ).scalars()
         )
+
+    @staticmethod
+    def _needs(
+        check: Check,
+        rows: dict[str, IntegrationCapability],
+        connected: set[str],
+    ) -> list[CapabilityView]:
+        """The capabilities one check needs, each with who can supply it."""
+        return [
+            CapabilityView(
+                key=key,
+                name=rows[key].name,
+                description=rows[key].description,
+                providers=[
+                    ProviderOption(
+                        key=option["key"],
+                        name=option["name"],
+                        status=option["status"],
+                        phase=option["phase"],
+                        connected=comp.provider_state(option, connected) == "connected",
+                        runs_check=option["key"] in check.implementations,
+                    )
+                    for option in rows[key].providers
+                ],
+            )
+            for key in check.capabilities
+            if key in rows
+        ]
+
+    @staticmethod
+    def _evidence_views(
+        items: list[dict[str, Any]], checks: dict[str, tuple[str, str]]
+    ) -> list[ExpectedEvidenceView]:
+        """Expected evidence with how each item reaches the control right now.
+
+        ``checks`` maps a check key to ``(name, availability)``.
+        """
+        availability = {key: state for key, (_name, state) in checks.items()}
+        return [
+            ExpectedEvidenceView(
+                key=str(item["key"]),
+                name=str(item["name"]),
+                assurance=str(item["assurance"]),
+                cadence=str(item["cadence"]),
+                source=str(item["source"]),
+                module=item.get("module"),
+                state=comp.item_state(item, availability),
+                automated_by=[
+                    CheckRef(key=k, name=checks[k][0], availability=checks[k][1])
+                    for k in item.get("automated_by", [])
+                    if k in checks
+                ],
+            )
+            for item in items
+        ]
+
+    async def control_automation(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, control_id: uuid.UUID
+    ) -> AutomationView:
+        control = await control_service.get_control(
+            session, tenant_id=tenant_id, control_id=control_id
+        )
+        mode = {"Automated": "automated", "Hybrid": "hybrid"}.get(
+            control.control_sub_type or "", "manual"
+        )
+        mapped: list[tuple[Check, str, str | None]] = []
+        if control.template_id is not None:
+            mapped = [
+                (check, coverage, rationale)
+                for check, coverage, rationale in (
+                    await session.execute(
+                        select(Check, ControlTemplateCheck.coverage, ControlTemplateCheck.rationale)
+                        .join(ControlTemplateCheck, ControlTemplateCheck.check_id == Check.id)
+                        .where(ControlTemplateCheck.template_id == control.template_id)
+                        .order_by(Check.name)
+                    )
+                ).tuples()
+            ]
+        capability_rows, facts = await self._capability_facts(session)
+        needed = {key for check, _, _ in mapped for key in check.capabilities}
+        capabilities = {key: row for key, row in capability_rows.items() if key in needed}
+        connections = await self._active_connections(session, tenant_id)
         connected = {connection.provider for connection in connections}
         # Only connections that can run one of this control's checks speak for it:
         # a GitHub run says nothing about when laptops were last checked.
         by_id = {
             connection.id: connection
             for connection in connections
-            if any(connection.provider in check.implementations for check, _ in mapped)
+            if any(connection.provider in check.implementations for check, _, _ in mapped)
         }
         now = datetime.now(UTC)
         latest = await self._latest_runs(session, tenant_id, list(by_id))
@@ -869,9 +1412,14 @@ class ConnectorService:
             run.status == "running" and run.started_at > now - STALE_RUN for run in latest.values()
         )
         finished = await self._latest_finished(session, tenant_id, list(by_id))
+        stale_providers = {
+            by_id[connection_id].provider
+            for connection_id, run in finished.items()
+            if run.started_at < now - STALE_AFTER
+        }
 
         results_by_check: dict[uuid.UUID, list[CheckResult]] = defaultdict(list)
-        check_ids = [check.id for check, _ in mapped]
+        check_ids = [check.id for check, _, _ in mapped]
         if finished and check_ids:
             earliest = min(run.started_at for run in finished.values())
             for row in (
@@ -886,18 +1434,26 @@ class ConnectorService:
             ).scalars():
                 results_by_check[row.check_id].append(row)
 
+        check_facts = [
+            comp.CheckFacts(
+                key=check.key,
+                capabilities=list(check.capabilities),
+                implementations=list(check.implementations),
+            )
+            for check, _, _ in mapped
+        ]
+        availability = {fact.key: comp.availability(fact, facts, connected) for fact in check_facts}
         tests: list[TestView] = []
-        for check, coverage in mapped:
+        for check, coverage, rationale in mapped:
             runners = [c for c in connections if c.provider in check.implementations]
             rows = results_by_check.get(check.id, [])
-            if not check.implementations:
-                status = "not_available"
-            elif not runners:
-                status = "not_connected"
-            elif not rows:
-                status = "pending"
-            else:
-                status = _worst([row.outcome for row in rows])
+            status = _test_status(
+                implemented=bool(check.implementations),
+                runners=bool(runners),
+                outcomes=[row.outcome for row in rows],
+                stale=bool(stale_providers & set(check.implementations)),
+                ran=any(c.id in finished for c in runners),
+            )
             order = {"fail": 0, "error": 1, "pass": 2, "not_applicable": 3}
             tests.append(
                 TestView(
@@ -927,6 +1483,11 @@ class ConnectorService:
                     ],
                     counts={o: sum(1 for row in rows if row.outcome == o) for o in order},
                     last_run_at=max((row.observed_at for row in rows), default=None),
+                    rationale=rationale,
+                    evidence_kinds=list(check.evidence_kinds),
+                    source="platform" if comp.is_platform(check.capabilities) else "connector",
+                    availability=availability[check.key],
+                    needs=self._needs(check, capability_rows, connected),
                 )
             )
 
@@ -944,7 +1505,7 @@ class ConnectorService:
                         connected=option["key"] in connected,
                         runs_check=any(
                             option["key"] in check.implementations
-                            for check, _ in mapped
+                            for check, _, _ in mapped
                             if key in check.capabilities
                         ),
                     )
@@ -959,18 +1520,14 @@ class ConnectorService:
 
         states = [test.status for test in tests]
         ran = [s for s in states if s in ("pass", "fail", "error", "not_applicable")]
-        if not tests:
-            overall = "manual"
-        elif "fail" in states:
-            overall = "failing"
-        elif "error" in states:
-            overall = "error"
-        elif "pass" in states or ran:
-            overall = "passing"
-        elif "pending" in states:
-            overall = "pending"
-        else:
-            overall = "not_connected"
+        overall = _control_status(states)
+        scope_counts = await self._scope_summaries(session, tenant_id, list(by_id))
+        expected: list[dict[str, Any]] = []
+        if control.template_id is not None:
+            expected = (
+                await control_service.template_evidence(session, template_ids={control.template_id})
+            ).get(control.template_id, [])
+        check_names = {check.key: (check.name, availability[check.key]) for check, _, _ in mapped}
 
         return AutomationView(
             control_id=control.id,
@@ -987,7 +1544,251 @@ class ConnectorService:
             tests=tests,
             history=await self._history(session, tenant_id, check_ids, now),
             requests=await self.list_requests(session, tenant_id=tenant_id, control_id=control.id),
+            # Scope is about repositories, so only a control that has a repository
+            # level test shows it. An organisation setting has no scope to choose.
+            scopes=[
+                ConnectionScopeView(
+                    connection_id=connection_id,
+                    account=by_id[connection_id].account_login,
+                    listed=summary.listed,
+                    in_scope=summary.in_scope,
+                    excluded=summary.excluded,
+                )
+                for connection_id, summary in scope_counts.items()
+                if connection_id in by_id
+                and any(c.resource_type == "repository" for c, _, _ in mapped)
+            ],
+            composition=comp.compose(check_facts, facts, connected, expected),
+            evidence=self._evidence_views(expected, check_names),
+            mappings=await control_service.control_mappings(
+                session, tenant_id=tenant_id, control_id=control.id
+            ),
         )
+
+    async def _chain_inputs(
+        self,
+        session: AsyncSession,
+        tenant_id: uuid.UUID,
+        template_ids: set[uuid.UUID],
+        *,
+        with_outcomes: bool = False,
+    ) -> tuple[
+        dict[uuid.UUID, list[tuple[Check, str, str | None]]],
+        dict[uuid.UUID, list[dict[str, Any]]],
+        dict[str, comp.CapabilityFacts],
+        set[str],
+        _Outcomes,
+    ]:
+        """Everything the register and the criterion view need about many controls at once."""
+        mapped: dict[uuid.UUID, list[tuple[Check, str, str | None]]] = defaultdict(list)
+        if template_ids:
+            for template_id, check, coverage, rationale in (
+                await session.execute(
+                    select(
+                        ControlTemplateCheck.template_id,
+                        Check,
+                        ControlTemplateCheck.coverage,
+                        ControlTemplateCheck.rationale,
+                    )
+                    .join(Check, Check.id == ControlTemplateCheck.check_id)
+                    .where(ControlTemplateCheck.template_id.in_(template_ids))
+                    .order_by(Check.name)
+                )
+            ).tuples():
+                mapped[template_id].append((check, coverage, rationale))
+        evidence = await control_service.template_evidence(session, template_ids=template_ids)
+        _rows, facts = await self._capability_facts(session)
+        connections = await self._active_connections(session, tenant_id)
+        connected = {connection.provider for connection in connections}
+        outcomes = (
+            await self._outcomes_by_check(session, tenant_id, connections)
+            if with_outcomes
+            else _Outcomes()
+        )
+        return mapped, evidence, facts, connected, outcomes
+
+    async def compositions(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID
+    ) -> list[ControlComposition]:
+        """What evidences each live control, for the register, in one pass."""
+        links = await control_service.control_template_ids(session, tenant_id=tenant_id)
+        mapped, evidence, facts, connected, _outcomes = await self._chain_inputs(
+            session, tenant_id, set(links.values())
+        )
+        statuses = await self.automation_statuses(session, tenant_id=tenant_id)
+        out: list[ControlComposition] = []
+        for control_id, template_id in links.items():
+            check_facts = [
+                comp.CheckFacts(
+                    key=check.key,
+                    capabilities=list(check.capabilities),
+                    implementations=list(check.implementations),
+                )
+                for check, _, _ in mapped.get(template_id, [])
+            ]
+            out.append(
+                ControlComposition(
+                    control_id=control_id,
+                    composition=comp.compose(
+                        check_facts, facts, connected, evidence.get(template_id, [])
+                    ),
+                    automation_status=statuses.get(control_id),
+                )
+            )
+        return out
+
+    async def control_chains(
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        controls: list[tuple[uuid.UUID, uuid.UUID | None]],
+    ) -> dict[uuid.UUID, ControlChain]:
+        """The full chain behind each of these controls: checks, systems, expected evidence."""
+        template_ids = {t for _, t in controls if t is not None}
+        mapped, evidence, facts, connected, outcomes = await self._chain_inputs(
+            session, tenant_id, template_ids, with_outcomes=True
+        )
+        statuses = await self.automation_statuses(session, tenant_id=tenant_id)
+        chains: dict[uuid.UUID, ControlChain] = {}
+        for control_id, template_id in controls:
+            rows = mapped.get(template_id, []) if template_id is not None else []
+            check_facts = [
+                comp.CheckFacts(
+                    key=check.key,
+                    capabilities=list(check.capabilities),
+                    implementations=list(check.implementations),
+                )
+                for check, _, _ in rows
+            ]
+            availability = {
+                fact.key: comp.availability(fact, facts, connected) for fact in check_facts
+            }
+            items = evidence.get(template_id, []) if template_id is not None else []
+            chains[control_id] = ControlChain(
+                control_id=control_id,
+                composition=comp.compose(check_facts, facts, connected, items),
+                automation_status=statuses.get(control_id),
+                checks=[
+                    ChainCheck(
+                        key=check.key,
+                        name=check.name,
+                        source="platform" if comp.is_platform(check.capabilities) else "connector",
+                        availability=availability[check.key],
+                        status=_test_status(
+                            implemented=bool(check.implementations),
+                            runners=availability[check.key] == "running",
+                            outcomes=outcomes.by_check.get(check.id, []),
+                            stale=outcomes.stale(check.implementations),
+                            ran=outcomes.ran(check.implementations),
+                        ),
+                        coverage=coverage,
+                        rationale=rationale,
+                        evidence_kinds=list(check.evidence_kinds),
+                        capabilities=list(check.capabilities),
+                    )
+                    for check, coverage, rationale in rows
+                ],
+                evidence=self._evidence_views(
+                    items, {c.key: (c.name, availability[c.key]) for c, _, _ in rows}
+                ),
+            )
+        return chains
+
+    async def _outcomes_by_check(
+        self, session: AsyncSession, tenant_id: uuid.UUID, connections: list[Connection]
+    ) -> _Outcomes:
+        """Each check's distinct outcomes in every connection's latest finished run, and
+        which providers have not run recently enough for those outcomes to count."""
+        if not connections:
+            return _Outcomes()
+        finished = await self._latest_finished(session, tenant_id, [c.id for c in connections])
+        if not finished:
+            return _Outcomes()
+        now = datetime.now(UTC)
+        stale_providers = {
+            connection.provider
+            for connection in connections
+            if (run := finished.get(connection.id)) is not None
+            and run.started_at < now - STALE_AFTER
+        }
+        earliest = min(run.started_at for run in finished.values())
+        outcomes: dict[uuid.UUID, list[str]] = defaultdict(list)
+        for check_id, outcome in (
+            await session.execute(
+                select(CheckResult.check_id, CheckResult.outcome)
+                .where(
+                    CheckResult.tenant_id == tenant_id,
+                    CheckResult.run_id.in_([run.id for run in finished.values()]),
+                    CheckResult.observed_at >= earliest,
+                )
+                .group_by(CheckResult.check_id, CheckResult.outcome)
+            )
+        ).tuples():
+            outcomes[check_id].append(outcome)
+        return _Outcomes(
+            by_check=dict(outcomes),
+            stale_providers=stale_providers,
+            ran_providers={c.provider for c in connections if c.id in finished},
+        )
+
+    async def automation_statuses(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID
+    ) -> dict[uuid.UUID, str]:
+        """Each live control's automated status (AU-6), for every control at once.
+
+        The dashboard asks this instead of opening each control's page. Only
+        controls with real results appear. No test, no connection or no run yet
+        is "not configured", which counts neither as passing nor as failing
+        (AU-5): the caller falls back to the manual evidence path for those.
+        """
+        links = await control_service.control_template_ids(session, tenant_id=tenant_id)
+        if not links:
+            return {}
+        connections = list(
+            (
+                await session.execute(
+                    select(Connection).where(
+                        Connection.tenant_id == tenant_id, Connection.status == "active"
+                    )
+                )
+            ).scalars()
+        )
+        if not connections:
+            return {}
+        outcomes = await self._outcomes_by_check(session, tenant_id, connections)
+        if not outcomes.by_check and not await self._latest_finished(
+            session, tenant_id, [c.id for c in connections]
+        ):
+            return {}
+        providers = {c.provider for c in connections}
+        mapped = (
+            await session.execute(
+                select(ControlTemplateCheck.template_id, Check.id, Check.implementations).join(
+                    Check, Check.id == ControlTemplateCheck.check_id
+                )
+            )
+        ).all()
+        checks_by_template: dict[uuid.UUID, list[tuple[uuid.UUID, list[str]]]] = defaultdict(list)
+        for template_id, check_id, implementations in mapped:
+            checks_by_template[template_id].append((check_id, list(implementations)))
+
+        statuses: dict[uuid.UUID, str] = {}
+        for control_id, template_id in links.items():
+            states = [
+                _test_status(
+                    implemented=bool(implementations),
+                    runners=bool(providers & set(implementations)),
+                    outcomes=outcomes.by_check.get(check_id, []),
+                    stale=outcomes.stale(implementations),
+                    ran=outcomes.ran(implementations),
+                )
+                for check_id, implementations in checks_by_template.get(template_id, [])
+            ]
+            status = _control_status(states)
+            if status in ("passing", "failing", "error", "stale", "not_applicable"):
+                statuses[control_id] = status
+        return statuses
 
     async def _latest_finished(
         self, session: AsyncSession, tenant_id: uuid.UUID, connection_ids: list[uuid.UUID]

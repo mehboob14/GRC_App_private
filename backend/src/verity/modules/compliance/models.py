@@ -33,7 +33,7 @@ from __future__ import annotations
 import uuid
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Final
+from typing import Any, Final
 
 from sqlalchemy import (
     ARRAY,
@@ -45,6 +45,7 @@ from sqlalchemy import (
     UniqueConstraint,
     text,
 )
+from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql.elements import conv
 
@@ -70,7 +71,14 @@ CONTROL_CATEGORIES: Final[tuple[str, ...]] = (
     "Communications & Collaboration Security",
     "Physical & Environmental Security",
 )
-"""The library's domain taxonomy — which part of the estate a control lives in."""
+"""The library's domain taxonomy — which part of the estate a control lives in.
+
+This is the **Type** the signed spec asks every control to carry (decision D1).
+One list, used verbatim on ``control_templates`` **and** on ``controls``: a
+template whose category a control could not legally hold cannot be instantiated.
+The **Sub-type** is ``sub_category``, a finer area inside it, authored per control
+in the content pack and deliberately not CHECK constrained (D1 proposed it, and
+the client has not confirmed the vocabulary)."""
 
 CONTROL_TYPES: Final[tuple[str, ...]] = (
     "Preventive",
@@ -81,19 +89,12 @@ CONTROL_TYPES: Final[tuple[str, ...]] = (
     "Directive",
 )
 """What a control does about a risk: stop it, surface it, or restore after it.
-
-Supersedes D1, which seeded Type equal to Category while no vocabulary existed.
-Category answers *where*, Type answers *what it does*, Sub-type answers *how it
-is operated* — three columns that each carry information the other two do not."""
+Shown in the product as **Design**, so the spec's word Type means the domain."""
 
 CONTROL_SUB_TYPES: Final[tuple[str, ...]] = ("Manual", "Automated", "Hybrid")
 """How a control is operated. Hybrid is the honest middle: a system produces the
-signal and a person acts on it, which is most of a real SOC 2 estate."""
-"""The Type vocabulary (D1), derived from the 11 categories the shipped library
-already carries on all 114 rows. One list, used verbatim on ``control_templates``
-**and** on ``controls``: a template whose type a control could not legally hold is a
-template that cannot be instantiated. If the client supplies its own axis, this is a
-``DROP CONSTRAINT`` / ``ADD CONSTRAINT`` plus an ``UPDATE`` of the seeded rows."""
+signal and a person acts on it, which is most of a real SOC 2 estate. Shown in the
+product as **Automation**."""
 
 TEMPLATE_IMPORTANCE: Final[tuple[str, ...]] = ("mandatory", "preferred")
 """92 of the 114 shipped templates are mandatory, 22 preferred. The source JSON
@@ -221,10 +222,12 @@ class FrameworkVersionRequirement(Timestamped, Base):
 class ControlTemplate(UUIDPrimaryKey, Timestamped, Base):
     """A shipped control the platform instantiates into a tenant. The compliance IP.
 
-    Three axes that each say something the others do not: ``category`` is where in
-    the estate the control lives, and ``control_sub_type`` is how it is operated
-    (Manual / Automated / Hybrid). ``control_type`` (Preventive / Detective /
-    Corrective) is available but NULL on shipped content — see the column.
+    Four axes that each say something the others do not: ``category`` is where in
+    the estate the control lives (the Type), ``sub_category`` the area inside it
+    (the Sub-type), and ``control_sub_type`` is how it is operated (Manual /
+    Automated / Hybrid, shown as Automation). ``control_type`` (Preventive /
+    Detective / Corrective, shown as Design) is available but NULL on shipped
+    content — see the column.
     """
 
     __tablename__ = "control_templates"
@@ -240,9 +243,19 @@ class ControlTemplate(UUIDPrimaryKey, Timestamped, Base):
     # own internal or custom controls.
     control_type: Mapped[str | None] = mapped_column(default=None)
     control_sub_type: Mapped[str | None] = mapped_column(default=None)
+    # The Sub-type the signed spec asks for: a finer area inside the Type (category).
+    sub_category: Mapped[str | None] = mapped_column(default=None)
     importance: Mapped[str]
     description: Mapped[str]
     implementation_guidance: Mapped[str | None] = mapped_column(default=None)
+    # What a person or a Verity module provides beyond what the control's checks
+    # collect. Each item: ``key``, ``name``, ``assurance`` (design or operating),
+    # ``cadence``, ``source`` (upload or platform) and, for platform, ``module``.
+    evidence: Mapped[list[dict[str, Any]]] = mapped_column(
+        postgresql.JSONB, default=list, server_default=text("'[]'::jsonb")
+    )
+    # The content pack that ships this template. A pack prunes only its own.
+    pack: Mapped[str] = mapped_column(default="soc2", server_default=text("'soc2'"))
     built_in: Mapped[bool] = mapped_column(server_default=text("true"), default=True)
 
     __table_args__ = (
@@ -260,7 +273,12 @@ class ControlTemplate(UUIDPrimaryKey, Timestamped, Base):
 
 
 class TemplateRequirementMap(UUIDPrimaryKey, Timestamped, Base):
-    """The shipped crosswalk: which template satisfies which requirement. 150 rows.
+    """The shipped crosswalk: which template satisfies which requirement.
+
+    ``coverage`` is ``full`` when the control is a primary route for the criterion's
+    central obligation and ``partial`` when it supports part of it; ``rationale``
+    says which part and what else the criterion needs. A mapping with no rationale
+    is a claim nobody can check, so the loader writes both from the content pack.
 
     Traversed in both directions — requirement→template for coverage, template→
     requirement for the detail view — so it carries two covering indexes rather than
@@ -358,8 +376,9 @@ class Control(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
     description: Mapped[str]
     implementation_guidance: Mapped[str | None] = mapped_column(default=None)
     category: Mapped[str]
-    # Optional finer grouping under ``category``; taxonomy is app-defined and may
-    # vary per register type, so it is deliberately not CHECK-constrained.
+    # The Sub-type: a finer grouping under ``category`` (the Type). Copied from the
+    # template at adoption and free text on a custom control, so it is
+    # deliberately not CHECK-constrained.
     sub_category: Mapped[str | None] = mapped_column(default=None)
     # NULL for anything instantiated from a template — see ControlTemplate.
     control_type: Mapped[str | None] = mapped_column(default=None)

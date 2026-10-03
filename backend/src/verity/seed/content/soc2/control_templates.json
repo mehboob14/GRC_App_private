@@ -2,1141 +2,2054 @@
   {
     "canonical_key": "code-of-conduct",
     "category": "Governance, Risk & Compliance",
+    "sub_category": "Policies & Ethics",
     "code": "GOV-04",
     "control_sub_type": "Manual",
     "description": "The control environment criteria begin with demonstrated commitment to integrity and ethical values. A documented, acknowledged code of conduct is the artifact auditors look for as evidence that expectations were set and accepted rather than assumed.",
     "implementation_guidance": "Publish a code of conduct covering ethical behaviour, acceptable use, conflicts of interest and confidentiality.\nRequire every employee and contractor to acknowledge it at hire and annually thereafter.\nTrack acknowledgement centrally so completion can be evidenced per person.\nRoute non-completion through the disciplinary process rather than leaving it open.",
     "importance": "mandatory",
-    "name": "Code of conduct and ethics policy"
+    "name": "Code of conduct and ethics policy",
+    "evidence": [
+      {"key": "approved-code-of-conduct", "name": "Approved code of conduct", "assurance": "design", "cadence": "annual", "source": "platform", "module": "documents"},
+      {
+        "key": "acknowledgement-from-every-member-of-staff",
+        "name": "Acknowledgement from every member of staff",
+        "assurance": "operating",
+        "cadence": "annual",
+        "source": "platform",
+        "module": "documents",
+        "automated_by": ["verity.policies.acknowledged"]
+      },
+      {"key": "record-of-breaches-and-the-action", "name": "Record of breaches and the action taken", "assurance": "operating", "cadence": "per_event", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "disciplinary-process",
     "category": "Governance, Risk & Compliance",
+    "sub_category": "Policies & Ethics",
     "code": "GOV-11",
     "control_sub_type": "Manual",
     "description": "The criteria require that individuals are held accountable for their control responsibilities. A documented and consistently applied disciplinary process is what makes policy enforceable rather than advisory.",
     "implementation_guidance": "Define the disciplinary process in policy, including the range of sanctions and who decides them.\nReference it in the code of conduct that staff acknowledge, so the consequence is known in advance.\nApply it consistently when violations occur, as inconsistent enforcement undermines the control.\nRetain records of the decision and its basis, handled confidentially through HR.",
     "importance": "mandatory",
-    "name": "Documented disciplinary process"
+    "name": "Documented disciplinary process",
+    "evidence": [
+      {"key": "disciplinary-procedure", "name": "Disciplinary procedure", "assurance": "design", "cadence": "annual", "source": "platform", "module": "documents"},
+      {"key": "sample-of-cases-showing-the-procedure", "name": "Sample of cases showing the procedure was applied", "assurance": "operating", "cadence": "per_event", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "security-org-structure",
     "category": "Governance, Risk & Compliance",
+    "sub_category": "Governance & Accountability",
     "code": "GOV-21",
     "control_sub_type": "Manual",
     "description": "The criteria require that reporting lines and authorities are established. An accurate structure shows that security duties sit with real roles holding the standing to carry them out, rather than being distributed informally.",
     "implementation_guidance": "Maintain a current organizational chart showing reporting lines.\nMaintain role descriptions that state the security responsibilities attached to each role.\nReview both at least annually and after any reorganization.\nConfirm security roles retain a reporting line independent enough to raise issues without conflict of interest.",
     "importance": "mandatory",
-    "name": "Organizational structure and reporting lines"
+    "name": "Organizational structure and reporting lines",
+    "evidence": [
+      {"key": "current-organization-chart-with-reporting-lines", "name": "Current organization chart with reporting lines", "assurance": "design", "cadence": "annual", "source": "upload"},
+      {"key": "role-descriptions-for-security-and-compliance", "name": "Role descriptions for security and compliance roles", "assurance": "design", "cadence": "annual", "source": "upload"},
+      {"key": "minutes-where-the-board-or-leadership", "name": "Minutes where the board or leadership reviewed the structure", "assurance": "operating", "cadence": "annual", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "designate-security-officer",
     "category": "Governance, Risk & Compliance",
+    "sub_category": "Governance & Accountability",
     "code": "GOV-10",
     "control_sub_type": "Manual",
     "description": "A security programme without a single accountable owner fragments across teams and stalls at decisions nobody is empowered to make. A formally designated officer gives the programme an escalation point and gives the auditor a name.",
     "implementation_guidance": "Formally designate a security officer or equivalent lead in policy or by board resolution.\nDocument the role's authority, budget and escalation path, and its reporting line to the oversight body.\nName a deputy so accountability survives absence and turnover.\nReview the designation whenever the role changes hands.",
     "importance": "mandatory",
-    "name": "Designated security officer"
+    "name": "Designated security officer",
+    "evidence": [
+      {"key": "appointment-or-role-charter-naming-the", "name": "Appointment or role charter naming the security officer", "assurance": "design", "cadence": "on_change", "source": "upload"},
+      {"key": "report-or-briefing-from-the-security", "name": "Report or briefing from the security officer to leadership", "assurance": "operating", "cadence": "quarterly", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "board-security-oversight",
     "category": "Governance, Risk & Compliance",
+    "sub_category": "Governance & Accountability",
     "code": "GOV-02",
     "control_sub_type": "Manual",
     "description": "SOC 2 expects a governing body independent of management to oversee the security programme. Without a documented record of that oversight there is no evidence that leadership exercised the accountability the criteria require.",
     "implementation_guidance": "Put security posture, material incidents, risk assessment results and remediation progress on the board or oversight-body agenda at least annually, and quarterly where practical.\nProvide a written pack rather than a verbal update, so the information given to the body is itself evidence.\nRetain agendas, packs and minutes recording what was discussed and decided.\nRecord any resourcing or risk-acceptance decisions the body makes.",
     "importance": "mandatory",
-    "name": "Board / executive security oversight"
+    "name": "Board / executive security oversight",
+    "evidence": [
+      {"key": "charter-of-the-board-or-executive", "name": "Charter of the board or executive committee covering security oversight", "assurance": "design", "cadence": "annual", "source": "upload"},
+      {"key": "minutes-showing-security-was-discussed-and", "name": "Minutes showing security was discussed and challenged", "assurance": "operating", "cadence": "quarterly", "source": "upload"},
+      {"key": "record-of-who-sits-on-the", "name": "Record of who sits on the body and their independence", "assurance": "design", "cadence": "annual", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "management-review",
     "category": "Governance, Risk & Compliance",
+    "sub_category": "Governance & Accountability",
     "code": "GOV-15",
     "control_sub_type": "Manual",
     "description": "Monitoring only closes the loop when results reach people who can allocate resources. A recurring management review is where control health, findings and risk are considered together, and where remediation is prioritized against everything else competing for effort.",
     "implementation_guidance": "Hold a management review at least quarterly, covering control health, open findings, incidents, risk register changes and remediation progress.\nRecord attendees, decisions, resource commitments and actions with named owners.\nCarry unresolved actions forward to the next review rather than closing them silently.\nEscalate items that have missed two consecutive reviews to the oversight body.",
     "importance": "mandatory",
-    "name": "Periodic management review of security"
+    "name": "Periodic management review of security",
+    "evidence": [
+      {"key": "management-review-agenda-and-minutes", "name": "Management review agenda and minutes", "assurance": "operating", "cadence": "quarterly", "source": "upload"},
+      {"key": "actions-raised-in-the-review-and", "name": "Actions raised in the review and their closure", "assurance": "operating", "cadence": "quarterly", "source": "platform", "module": "tasks"}
+    ]
   },
   {
     "canonical_key": "define-roles-responsibilities",
     "category": "Governance, Risk & Compliance",
+    "sub_category": "Governance & Accountability",
     "code": "GOV-09",
     "control_sub_type": "Manual",
     "description": "Accountability that is not assigned is not accountability. The criteria require authorities and responsibilities to be defined so individuals know what they own, and so a failing control has a name attached to it.",
     "implementation_guidance": "Map every control to a named owner, and record the authority that owner holds to act.\nReview the mapping at least annually and whenever someone changes role or leaves.\nReassign ownership as part of offboarding so no control is left orphaned.\nKeep ownership at the level of a person, not a team inbox, for controls that require judgement.",
     "importance": "mandatory",
-    "name": "Assigned control ownership (RACI)"
+    "name": "Assigned control ownership (RACI)",
+    "evidence": [
+      {
+        "key": "control-ownership-register",
+        "name": "Control ownership register",
+        "assurance": "design",
+        "cadence": "ongoing",
+        "source": "platform",
+        "module": "controls",
+        "automated_by": ["verity.controls.owned"]
+      },
+      {"key": "updated-ownership-when-roles-change", "name": "Updated ownership when roles change", "assurance": "operating", "cadence": "on_change", "source": "platform", "module": "controls"}
+    ]
   },
   {
     "canonical_key": "system-description",
     "category": "Governance, Risk & Compliance",
+    "sub_category": "Compliance Management",
     "code": "GOV-22",
     "control_sub_type": "Manual",
     "description": "Risks can only be identified against objectives that have been stated. The system description defines the boundary, the commitments made to customers and the requirements that follow, and it anchors both the risk assessment and the audit scope.",
     "implementation_guidance": "Document the system boundary, covering infrastructure, software, people, procedures and data.\nState the service commitments and system requirements made to customers, as those are what the audit tests against.\nDescribe subservice organizations and state clearly which controls are carved out.\nReview annually and on material change, and reconcile the description against what is actually deployed.",
     "importance": "mandatory",
-    "name": "System description and service commitments"
+    "name": "System description and service commitments",
+    "evidence": [
+      {"key": "system-description-covering-boundary-services-infrastructure", "name": "System description covering boundary, services, infrastructure, people and data", "assurance": "design", "cadence": "annual", "source": "upload"},
+      {"key": "service-commitments-and-system-requirements-shared", "name": "Service commitments and system requirements shared with customers", "assurance": "design", "cadence": "annual", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "risk-assessment",
     "category": "Governance, Risk & Compliance",
+    "sub_category": "Risk Management",
     "code": "GOV-18",
     "control_sub_type": "Manual",
     "description": "The risk assessment is the foundation the rest of the programme rests on: it determines which controls are needed and where effort is justified. Controls selected without one are difficult to defend as sufficient.",
     "implementation_guidance": "Perform a formal risk assessment at least annually, and on significant change to the business or environment.\nIdentify threats to defined objectives, including fraud and third-party risk.\nScore likelihood and impact against a documented scale, and record both inherent and residual risk.\nRetain the methodology so results are reproducible and comparable year over year.",
     "importance": "mandatory",
-    "name": "Annual risk assessment"
+    "name": "Annual risk assessment",
+    "evidence": [
+      {"key": "risk-assessment-report-with-method-and", "name": "Risk assessment report with method and scope", "assurance": "operating", "cadence": "annual", "source": "platform", "module": "risks"},
+      {"key": "management-sign-off-on-the-assessment", "name": "Management sign off on the assessment", "assurance": "operating", "cadence": "annual", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "risk-register",
     "category": "Governance, Risk & Compliance",
+    "sub_category": "Risk Management",
     "code": "GOV-19",
     "control_sub_type": "Manual",
     "description": "A risk that is identified but not tracked is not managed. The register is the operational record showing each risk has an owner, a rating and a decision, and it is what an auditor traces from assessment through to control.",
     "implementation_guidance": "Capture risk description, category, owner, inherent rating, mitigating controls, residual rating and treatment decision of accept, mitigate, transfer or avoid.\nReview the register at each management review and record rating changes with dates.\nRequire named sign-off at an appropriate level for any accepted risk.\nLink each risk to the controls that mitigate it so coverage can be verified.",
     "importance": "mandatory",
-    "name": "Risk register with treatment decisions"
+    "name": "Risk register with treatment decisions",
+    "evidence": [
+      {
+        "key": "risk-register-with-owners-ratings-and",
+        "name": "Risk register with owners, ratings and treatment decisions",
+        "assurance": "operating",
+        "cadence": "ongoing",
+        "source": "platform",
+        "module": "risks",
+        "automated_by": ["verity.risks.treated"]
+      },
+      {"key": "approval-of-each-accepted-risk", "name": "Approval of each accepted risk", "assurance": "operating", "cadence": "per_event", "source": "platform", "module": "risks"}
+    ]
   },
   {
     "canonical_key": "risk-treatment-plan",
     "category": "Governance, Risk & Compliance",
+    "sub_category": "Risk Management",
     "code": "GOV-20",
     "control_sub_type": "Manual",
     "description": "A treatment decision only reduces risk once it is executed. The treatment plan turns intent into scheduled, owned work, and it is the evidence that residual risk ratings reflect reality rather than aspiration.",
     "implementation_guidance": "For each risk being mitigated, record the specific treatment actions, the accountable owner, the target date and the expected residual rating.\nTrack actions to closure with evidence rather than status updates alone.\nRe-rate the risk only once the treatment is demonstrably in place.\nReport overdue treatment actions at management review.",
     "importance": "mandatory",
-    "name": "Risk treatment plan"
+    "name": "Risk treatment plan",
+    "evidence": [
+      {"key": "treatment-plan-with-owners-and-due", "name": "Treatment plan with owners and due dates", "assurance": "operating", "cadence": "quarterly", "source": "platform", "module": "risks"},
+      {"key": "evidence-that-treatments-were-completed", "name": "Evidence that treatments were completed", "assurance": "operating", "cadence": "quarterly", "source": "platform", "module": "tasks"}
+    ]
   },
   {
     "canonical_key": "fraud-risk",
     "category": "Governance, Risk & Compliance",
+    "sub_category": "Risk Management",
     "code": "GOV-12",
     "control_sub_type": "Manual",
     "description": "SOC 2 requires fraud risk, including insider misuse and management override, to be considered explicitly in the risk assessment. Teams routinely assess external threats and omit this, which is a recurring exception.",
     "implementation_guidance": "Include a fraud and insider-threat section in the annual risk assessment, covering incentive, opportunity and rationalization.\nConsider management override of controls specifically, as it is the scenario most often left out.\nMap identified fraud risks to mitigations such as least privilege, segregation of duties, logging and independent review.\nRecord the conclusion even where the assessed risk is low.",
     "importance": "mandatory",
-    "name": "Fraud and insider-threat consideration"
+    "name": "Fraud and insider-threat consideration",
+    "evidence": [
+      {"key": "fraud-risk-assessment-covering-insider-misuse", "name": "Fraud risk assessment covering insider misuse and management override", "assurance": "operating", "cadence": "annual", "source": "platform", "module": "risks"},
+      {"key": "actions-taken-on-the-fraud-risks", "name": "Actions taken on the fraud risks found", "assurance": "operating", "cadence": "annual", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "change-risk-review",
     "category": "Governance, Risk & Compliance",
+    "sub_category": "Risk Management",
     "code": "GOV-03",
     "control_sub_type": "Manual",
     "description": "Risk assessed once a year goes stale as soon as the environment changes. A new subprocessor, a new data type or a major architectural shift can introduce risk that the annual cycle will not surface for months.",
     "implementation_guidance": "Define the triggers that force an out-of-cycle risk review: onboarding a subprocessor that touches customer data, a major architecture or hosting change, a new data type or jurisdiction, or significant organizational change.\nRequire the triggered review before the change goes live, not after.\nDocument each review, its conclusion and any new risks added to the register.\nReview the trigger list annually so it keeps pace with the business.",
     "importance": "mandatory",
-    "name": "Change-triggered risk review"
+    "name": "Change-triggered risk review",
+    "evidence": [
+      {"key": "procedure-listing-what-triggers-a-risk", "name": "Procedure listing what triggers a risk review", "assurance": "design", "cadence": "annual", "source": "platform", "module": "documents"},
+      {"key": "risk-reviews-done-after-significant-changes", "name": "Risk reviews done after significant changes", "assurance": "operating", "cadence": "per_event", "source": "platform", "module": "risks"}
+    ]
   },
   {
     "canonical_key": "control-risk-mapping",
     "category": "Governance, Risk & Compliance",
+    "sub_category": "Risk Management",
     "code": "GOV-07",
     "control_sub_type": "Manual",
     "description": "Controls exist to mitigate identified risks. Without an explicit mapping it cannot be shown that every material risk is addressed, nor can it be known which risks a failing control leaves exposed.",
     "implementation_guidance": "Maintain a mapping from each risk in the register to the controls that mitigate it.\nFlag any risk with no mitigating control, and any control that maps to no risk.\nRequire a documented acceptance decision, signed by the risk owner, for risks deliberately left unmitigated.\nRevisit the mapping whenever a control is disabled or a new risk is added.",
     "importance": "mandatory",
-    "name": "Risk-to-control mapping"
+    "name": "Risk-to-control mapping",
+    "evidence": [
+      {
+        "key": "risks-linked-to-the-controls-that",
+        "name": "Risks linked to the controls that mitigate them",
+        "assurance": "operating",
+        "cadence": "quarterly",
+        "source": "platform",
+        "module": "risks",
+        "automated_by": ["verity.risks.controls_linked"]
+      }
+    ]
   },
   {
     "canonical_key": "it-general-controls",
     "category": "Governance, Risk & Compliance",
+    "sub_category": "Compliance Management",
     "code": "GOV-14",
     "control_sub_type": "Manual",
     "description": "Application controls rest on general technology controls. Where access, change management or operations are weak on any system in the footprint, every control depending on that system inherits the weakness.",
     "implementation_guidance": "Inventory the full technology footprint, including systems introduced through acquisition or adopted informally.\nConfirm each system is covered by access control, change management and operations controls.\nDocument any system deliberately out of scope, with the rationale and any compensating controls.\nReconcile the inventory against billing and identity-provider records to find systems nobody registered.",
     "importance": "mandatory",
-    "name": "IT general controls coverage"
+    "name": "IT general controls coverage",
+    "evidence": [
+      {"key": "inventory-of-in-scope-systems-and", "name": "Inventory of in scope systems and the general controls over each", "assurance": "design", "cadence": "annual", "source": "upload"},
+      {"key": "review-that-every-system-is-covered", "name": "Review that every system is covered by access, change and operations controls", "assurance": "operating", "cadence": "annual", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "policy-suite",
     "category": "Governance, Risk & Compliance",
+    "sub_category": "Policies & Ethics",
     "code": "GOV-17",
     "control_sub_type": "Manual",
     "description": "Policies are how control expectations are deployed consistently across the organization. A gap in the policy set marks an area where practice is undefined and therefore cannot be shown to operate consistently.",
     "implementation_guidance": "Maintain the core policy set: information security, access control, change management, incident response, business continuity and disaster recovery, vendor management, data handling, acceptable use and secure development.\nEnsure each policy is formally approved, versioned and dated.\nMap each policy to the criteria it supports so coverage gaps are visible.\nMake the current set available to all staff at a known location.",
     "importance": "mandatory",
-    "name": "Security policy suite"
+    "name": "Security policy suite",
+    "evidence": [
+      {
+        "key": "published-security-policies-covering-each-required",
+        "name": "Published security policies covering each required topic",
+        "assurance": "design",
+        "cadence": "annual",
+        "source": "platform",
+        "module": "documents",
+        "automated_by": ["verity.policies.reviewed"]
+      },
+      {"key": "approval-record-for-each-policy", "name": "Approval record for each policy", "assurance": "design", "cadence": "annual", "source": "platform", "module": "documents"}
+    ]
   },
   {
     "canonical_key": "annual-policy-review",
     "category": "Governance, Risk & Compliance",
+    "sub_category": "Policies & Ethics",
     "code": "GOV-01",
     "control_sub_type": "Manual",
     "description": "Policies that no longer describe how the organization actually operates are among the most common audit exceptions. An annual review forces each policy to be read against current practice, re-approved by an accountable owner, and corrected where the two have drifted apart.",
     "implementation_guidance": "Review every policy at least annually, and sooner after a material change to the business or environment.\nRecord the reviewer, the review date and the outcome, even where the outcome is no change.\nRe-approve through the documented approval path rather than editing in place.\nRetain superseded versions so the version history can be traced at audit.",
     "importance": "mandatory",
-    "name": "Annual policy review"
+    "name": "Annual policy review",
+    "evidence": [
+      {
+        "key": "review-and-re-approval-record-for",
+        "name": "Review and re approval record for each policy",
+        "assurance": "operating",
+        "cadence": "annual",
+        "source": "platform",
+        "module": "documents",
+        "automated_by": ["verity.policies.reviewed"]
+      }
+    ]
   },
   {
     "canonical_key": "continuous-monitoring",
     "category": "Governance, Risk & Compliance",
+    "sub_category": "Audit & Assurance",
     "code": "GOV-06",
     "control_sub_type": "Automated",
     "description": "A Type II opinion covers a period, not a date. Controls must therefore be shown to operate throughout that period, which point-in-time checks cannot demonstrate. Ongoing evaluation is what moves a control from designed to operating effectively.",
     "implementation_guidance": "Run automated checks continuously against connected systems and retain each result with its timestamp, so the operating history is preserved.\nRoute failures to the named control owner with a remediation SLA.\nReview recurring failures for design weakness instead of closing each occurrence individually.\nRecord periods where monitoring itself was unavailable, as that is a gap in the operating evidence.",
     "importance": "mandatory",
-    "name": "Continuous control monitoring"
+    "name": "Continuous control monitoring",
+    "evidence": [
+      {"key": "control-test-results-across-the-observation", "name": "Control test results across the observation period", "assurance": "operating", "cadence": "ongoing", "source": "platform", "module": "controls"},
+      {"key": "exceptions-found-by-monitoring-and-how", "name": "Exceptions found by monitoring and how they were resolved", "assurance": "operating", "cadence": "per_event", "source": "platform", "module": "tasks"}
+    ]
   },
   {
     "canonical_key": "penetration-test",
     "category": "Governance, Risk & Compliance",
+    "sub_category": "Audit & Assurance",
     "code": "GOV-16",
     "control_sub_type": "Hybrid",
     "description": "A penetration test is an adversarial evaluation of controls as they actually run rather than as they are documented. It surfaces exploitable weaknesses that scanning and self-assessment consistently miss.",
     "implementation_guidance": "Commission an independent penetration test at least annually, and after major architectural change.\nScope it to cover internet-facing applications and infrastructure, and state any exclusions in the report.\nTrack findings to remediation against a severity-based SLA.\nObtain retest confirmation for high and critical findings, and retain the report and attestation letter.",
     "importance": "mandatory",
-    "name": "Annual penetration test"
+    "name": "Annual penetration test",
+    "evidence": [
+      {"key": "penetration-test-report-from-an-independent", "name": "Penetration test report from an independent tester", "assurance": "operating", "cadence": "annual", "source": "upload"},
+      {"key": "remediation-of-findings-with-retest-evidence", "name": "Remediation of findings, with retest evidence", "assurance": "operating", "cadence": "annual", "source": "platform", "module": "vulnerabilities"}
+    ]
   },
   {
     "canonical_key": "internal-audit",
     "category": "Governance, Risk & Compliance",
+    "sub_category": "Audit & Assurance",
     "code": "GOV-13",
     "control_sub_type": "Manual",
     "description": "An internal assessment before the audit window converts surprises into planned work. It provides the independent evaluation the monitoring criteria expect and gives management time to remediate before an exception reaches the opinion.",
     "implementation_guidance": "Perform an internal control review or readiness assessment at least annually and ahead of the audit window.\nUse a reviewer independent of the controls being reviewed wherever the team is large enough to allow it.\nDocument scope, method, evidence examined and findings, not just a conclusion.\nRoute findings into deficiency tracking so remediation is managed like any other finding.",
     "importance": "preferred",
-    "name": "Internal audit / readiness assessment"
+    "name": "Internal audit / readiness assessment",
+    "evidence": [
+      {"key": "internal-audit-or-readiness-assessment-report", "name": "Internal audit or readiness assessment report", "assurance": "operating", "cadence": "annual", "source": "upload"},
+      {"key": "remediation-plan-for-the-gaps-found", "name": "Remediation plan for the gaps found", "assurance": "operating", "cadence": "annual", "source": "platform", "module": "tasks"}
+    ]
   },
   {
     "canonical_key": "deficiency-tracking",
     "category": "Governance, Risk & Compliance",
+    "sub_category": "Audit & Assurance",
     "code": "GOV-08",
     "control_sub_type": "Hybrid",
     "description": "Identifying a deficiency is only half the control; the criteria require that deficiencies are communicated to those responsible and corrected. Untracked findings recur, and a pattern of repeat findings is itself an audit exception.",
     "implementation_guidance": "Record every finding from audits, tests, monitoring and incidents in one tracker with an owner, severity, root cause and due date.\nDrive due dates from a severity-based SLA rather than negotiating each one.\nRequire closure evidence rather than self-attestation before a finding is closed.\nEscalate items that age past their SLA to management review.",
     "importance": "mandatory",
-    "name": "Deficiency remediation tracking"
+    "name": "Deficiency remediation tracking",
+    "evidence": [
+      {
+        "key": "log-of-control-deficiencies-with-owner",
+        "name": "Log of control deficiencies with owner, due date and closure",
+        "assurance": "operating",
+        "cadence": "ongoing",
+        "source": "platform",
+        "module": "tasks",
+        "automated_by": ["tickets.remediation_tracked", "verity.tasks.remediation_in_sla"]
+      },
+      {"key": "communication-of-deficiencies-to-the-people", "name": "Communication of deficiencies to the people responsible", "assurance": "operating", "cadence": "quarterly", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "compliance-register",
     "category": "Governance, Risk & Compliance",
+    "sub_category": "Compliance Management",
     "code": "GOV-05",
     "control_sub_type": "Manual",
     "description": "Obligations arrive from contracts, regulation and certification commitments, and each changes independently of the others. A single register turns a scattered set of promises into a managed list, so an obligation is not discovered only when it has been breached.",
     "implementation_guidance": "Maintain a register of every applicable legal, regulatory and contractual obligation with its source, owner and review date.\nMap each obligation to the controls that satisfy it, so coverage gaps are visible.\nReview the register at least annually and whenever entering a new market or signing commitments with new requirements.\nAssign a named owner to each obligation rather than to the register as a whole.",
     "importance": "preferred",
-    "name": "Compliance obligations register"
+    "name": "Compliance obligations register",
+    "evidence": [
+      {"key": "register-of-contractual-regulatory-and-certification", "name": "Register of contractual, regulatory and certification obligations", "assurance": "design", "cadence": "annual", "source": "upload"},
+      {"key": "review-of-the-register-for-new", "name": "Review of the register for new obligations", "assurance": "operating", "cadence": "annual", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "publish-policies",
     "category": "Communications & Collaboration Security",
+    "sub_category": "Internal Communication",
     "code": "CS-04",
     "control_sub_type": "Manual",
     "description": "Policies only influence behaviour if staff can find them and know they apply. Acknowledgement is the evidence that expectations were communicated, which the communication criteria require.",
     "implementation_guidance": "Publish the current policy set where all staff can access it without needing to ask.\nTrack acknowledgement at hire and on material change, per person and per policy.\nCommunicate changes actively rather than relying on staff to notice a new version.\nFollow up outstanding acknowledgements, escalating persistent non-completion.",
     "importance": "mandatory",
-    "name": "Internal policy portal"
+    "name": "Internal policy portal",
+    "evidence": [
+      {"key": "policy-portal-showing-current-policies-available", "name": "Policy portal showing current policies available to staff", "assurance": "design", "cadence": "ongoing", "source": "platform", "module": "documents"},
+      {
+        "key": "staff-acknowledgement-of-current-policies",
+        "name": "Staff acknowledgement of current policies",
+        "assurance": "operating",
+        "cadence": "annual",
+        "source": "platform",
+        "module": "documents",
+        "automated_by": ["verity.policies.acknowledged"]
+      }
+    ]
   },
   {
     "canonical_key": "incident-reporting-channel",
     "category": "Communications & Collaboration Security",
+    "sub_category": "Reporting Channels",
     "code": "CS-03",
     "control_sub_type": "Manual",
     "description": "Staff and customers often notice incidents before monitoring does. A known, low-friction reporting channel is what converts that observation into an alert instead of a private concern.",
     "implementation_guidance": "Operate a dedicated reporting channel, such as a security alias or a monitored chat channel.\nCommunicate it at onboarding, in training and in the incident-response plan.\nMonitor it during defined hours and route reports into the triage process.\nEncourage reporting of suspicion rather than certainty, and respond without blame so people keep reporting.",
     "importance": "mandatory",
-    "name": "Security incident reporting channel"
+    "name": "Security incident reporting channel",
+    "evidence": [
+      {"key": "published-reporting-channel-for-staff-and", "name": "Published reporting channel for staff and customers", "assurance": "design", "cadence": "ongoing", "source": "upload"},
+      {"key": "sample-of-reports-received-and-how", "name": "Sample of reports received and how they were handled", "assurance": "operating", "cadence": "per_event", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "whistleblower",
     "category": "Communications & Collaboration Security",
+    "sub_category": "Reporting Channels",
     "code": "CS-05",
     "control_sub_type": "Manual",
     "description": "A confidential reporting path allows misconduct to be raised where the normal management line is part of the concern. Its existence supports the integrity and accountability criteria directly.",
     "implementation_guidance": "Provide a confidential and, where practical, anonymous reporting mechanism.\nDocument how reports are received, investigated and escalated, and who is excluded from handling a report about themselves.\nCommunicate the mechanism to all staff and state the prohibition on retaliation.\nRecord reports and their handling confidentially, and report volume to the oversight body.",
     "importance": "preferred",
-    "name": "Whistleblower / ethics reporting mechanism"
+    "name": "Whistleblower / ethics reporting mechanism",
+    "evidence": [
+      {"key": "description-of-the-confidential-reporting-mechanism", "name": "Description of the confidential reporting mechanism", "assurance": "design", "cadence": "annual", "source": "upload"},
+      {"key": "anonymized-log-of-reports-received-and", "name": "Anonymized log of reports received and outcomes", "assurance": "operating", "cadence": "annual", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "external-commitments",
     "category": "Communications & Collaboration Security",
+    "sub_category": "Customer Commitments",
     "code": "CS-02",
     "control_sub_type": "Manual",
     "description": "Customers are entitled to know the security, availability and privacy commitments being made to them. Those published commitments are also what the audit tests the system against, so they must match reality.",
     "implementation_guidance": "Publish terms of service, service level commitments, a security or trust page and a privacy notice.\nEnsure published commitments match what the controls actually deliver, as an overstated commitment creates an exception.\nReview published material at least annually and after material change to the service.\nRecord approval of changes to committed terms.",
     "importance": "mandatory",
-    "name": "External security commitments"
+    "name": "External security commitments",
+    "evidence": [
+      {"key": "published-security-availability-and-privacy-commitments", "name": "Published security, availability and privacy commitments", "assurance": "design", "cadence": "annual", "source": "upload"},
+      {"key": "check-that-the-commitments-match-actual", "name": "Check that the commitments match actual practice", "assurance": "operating", "cadence": "annual", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "breach-notification-commitment",
     "category": "Communications & Collaboration Security",
+    "sub_category": "Customer Commitments",
     "code": "CS-01",
     "control_sub_type": "Manual",
     "description": "Breach-notification commitments made in customer contracts are binding and time-bound. If those timeframes are not known to the people running an incident, they will be missed.",
     "implementation_guidance": "Document the breach-notification timeframes committed to customers, including any variation by contract.\nMake the shortest applicable commitment the operating standard for the incident process.\nBuild the customer notification decision into the incident-response plan as an explicit step with an owner.\nMaintain current notification contacts for each customer and verify them periodically.",
     "importance": "mandatory",
-    "name": "Customer breach-notification commitment"
+    "name": "Customer breach-notification commitment",
+    "evidence": [
+      {"key": "customer-contract-terms-on-breach-notification", "name": "Customer contract terms on breach notification", "assurance": "design", "cadence": "annual", "source": "upload"},
+      {"key": "incident-procedure-showing-the-notification-timeframes", "name": "Incident procedure showing the notification timeframes", "assurance": "design", "cadence": "annual", "source": "platform", "module": "documents"}
+    ]
   },
   {
     "canonical_key": "background-checks",
     "category": "Human Resources & Personnel Security",
+    "sub_category": "Hiring & Screening",
     "code": "HR-01",
     "control_sub_type": "Manual",
     "description": "Background screening is the control that applies before trust is extended. Once someone holds production access, the opportunity to verify suitability has already passed.",
     "implementation_guidance": "Run background checks, where legally permitted, before granting access to production or customer data.\nDefine the check scope by role, applying deeper screening to privileged and finance-facing positions.\nApply the same standard to contractors who receive equivalent access.\nRetain evidence that the check was completed and cleared, without retaining unnecessary personal detail.",
     "importance": "mandatory",
-    "name": "Pre-hire background checks"
+    "name": "Pre-hire background checks",
+    "evidence": [
+      {"key": "background-check-policy", "name": "Background check policy", "assurance": "design", "cadence": "annual", "source": "platform", "module": "documents"},
+      {"key": "completed-background-checks-for-a-sample", "name": "Completed background checks for a sample of hires", "assurance": "operating", "cadence": "per_event", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "security-training",
     "category": "Human Resources & Personnel Security",
+    "sub_category": "Training & Competence",
     "code": "HR-08",
     "control_sub_type": "Manual",
     "description": "Staff are the most frequently targeted attack surface, primarily through phishing and social engineering. Training is the control that turns the workforce from the weakest link into a detection layer.",
     "implementation_guidance": "Deliver security awareness training at onboarding and at least annually thereafter.\nCover phishing, social engineering, credential handling, data classification and incident reporting.\nTrack completion to 100 percent and escalate non-completion rather than letting it lapse.\nSupplement with periodic phishing simulation, using results to target training rather than to penalize.",
     "importance": "mandatory",
-    "name": "Security awareness training"
+    "name": "Security awareness training",
+    "evidence": [
+      {"key": "training-content-and-schedule", "name": "Training content and schedule", "assurance": "design", "cadence": "annual", "source": "upload"},
+      {"key": "completion-records-for-all-staff", "name": "Completion records for all staff", "assurance": "operating", "cadence": "annual", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "job-descriptions",
     "category": "Human Resources & Personnel Security",
+    "sub_category": "Training & Competence",
     "code": "HR-04",
     "control_sub_type": "Manual",
     "description": "Competence is a control-environment criterion, and it starts with defining what a role requires. Where security duties are not written into the role, they are nobody's job in particular.",
     "implementation_guidance": "Maintain role descriptions stating required qualifications, experience and responsibilities.\nState the security responsibilities attached to each role explicitly.\nUse the description as the basis for the access the role receives.\nReview descriptions when roles change materially, and align them with the control ownership map.",
     "importance": "preferred",
-    "name": "Job descriptions with security responsibilities"
+    "name": "Job descriptions with security responsibilities",
+    "evidence": [{
+  "key": "job-descriptions-that-state-security-responsibilities",
+  "name": "Job descriptions that state security responsibilities",
+  "assurance": "design",
+  "cadence": "annual",
+  "source": "upload"
+}]
   },
   {
     "canonical_key": "onboarding-checklist",
     "category": "Human Resources & Personnel Security",
+    "sub_category": "Onboarding & Offboarding",
     "code": "HR-06",
     "control_sub_type": "Hybrid",
     "description": "Onboarding is the one moment when a new joiner will reliably complete required steps. Agreements, policy acknowledgement, training and correctly scoped access are far harder to collect afterwards.",
     "implementation_guidance": "Use a per-hire checklist covering signed agreements, policy acknowledgement, security training assignment and access request and approval.\nProvision access from the role definition rather than by copying another user.\nComplete security training within a defined period from the start date.\nRecord completion per item so onboarding can be evidenced for any individual.",
     "importance": "mandatory",
-    "name": "Onboarding checklist"
+    "name": "Onboarding checklist",
+    "evidence": [
+      {"key": "onboarding-checklist", "name": "Onboarding checklist", "assurance": "design", "cadence": "annual", "source": "upload"},
+      {"key": "completed-checklists-for-a-sample-of", "name": "Completed checklists for a sample of new joiners", "assurance": "operating", "cadence": "per_event", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "offboarding-checklist",
     "category": "Human Resources & Personnel Security",
+    "sub_category": "Onboarding & Offboarding",
     "code": "HR-05",
     "control_sub_type": "Hybrid",
     "description": "Departures are the highest-risk transition in the access lifecycle. Retained access after departure is both a common audit exception and a common breach vector, and ownership of documents and accounts is easily lost with the person.",
     "implementation_guidance": "Use a documented offboarding checklist covering access revocation, device return, credential rotation and transfer of document and account ownership.\nTrigger it from the HR system on termination so it cannot be forgotten.\nRevoke access within a defined SLA, measured in hours for involuntary departures.\nVerify and record completion per item rather than marking the checklist done as a whole.",
     "importance": "mandatory",
-    "name": "Offboarding and deprovisioning"
+    "name": "Offboarding and deprovisioning",
+    "evidence": [
+      {"key": "offboarding-checklist", "name": "Offboarding checklist", "assurance": "design", "cadence": "annual", "source": "upload"},
+      {"key": "completed-offboarding-records-for-leavers-in", "name": "Completed offboarding records for leavers in the period", "assurance": "operating", "cadence": "per_event", "source": "upload"},
+      {
+        "key": "roster-of-joiners-and-leavers-with",
+        "name": "Roster of joiners and leavers with dates",
+        "assurance": "operating",
+        "cadence": "quarterly",
+        "source": "upload",
+        "automated_by": ["people.leavers_deprovisioned"]
+      }
+    ]
   },
   {
     "canonical_key": "confidentiality-agreements",
     "category": "Human Resources & Personnel Security",
+    "sub_category": "Hiring & Screening",
     "code": "HR-02",
     "control_sub_type": "Manual",
     "description": "Confidentiality agreements make the obligation to protect customer and company information legally binding and enforceable, rather than a matter of expectation.",
     "implementation_guidance": "Require a signed confidentiality and intellectual property agreement from every employee and contractor before access is granted.\nEnsure obligations survive termination of the engagement.\nTrack signature status centrally so completeness can be evidenced per person.\nRefresh agreements when scope of access or applicable law changes materially.",
     "importance": "mandatory",
-    "name": "Confidentiality / IP agreements"
+    "name": "Confidentiality / IP agreements",
+    "evidence": [
+      {"key": "confidentiality-and-ip-agreement-template", "name": "Confidentiality and IP agreement template", "assurance": "design", "cadence": "annual", "source": "platform", "module": "documents"},
+      {"key": "signed-agreements-for-a-sample-of", "name": "Signed agreements for a sample of staff and contractors", "assurance": "operating", "cadence": "per_event", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "performance-reviews",
     "category": "Human Resources & Personnel Security",
+    "sub_category": "Training & Competence",
     "code": "HR-07",
     "control_sub_type": "Manual",
     "description": "Performance management is how competence is maintained rather than assumed. It is where skills gaps, including security-relevant ones, are identified and where accountability for control responsibilities is reinforced.",
     "implementation_guidance": "Run a documented performance evaluation for every employee at least annually.\nAssess against clear expectations for the role, including its security responsibilities.\nIdentify skills gaps and record the resulting training or development actions.\nRetain the record of the review, handled confidentially through HR.",
     "importance": "preferred",
-    "name": "Performance management"
+    "name": "Performance management",
+    "evidence": [
+      {"key": "performance-review-process", "name": "Performance review process", "assurance": "design", "cadence": "annual", "source": "upload"},
+      {"key": "completed-reviews-showing-control-responsibilities-were", "name": "Completed reviews showing control responsibilities were assessed", "assurance": "operating", "cadence": "annual", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "contractor-management",
     "category": "Human Resources & Personnel Security",
+    "sub_category": "Onboarding & Offboarding",
     "code": "HR-03",
     "control_sub_type": "Manual",
     "description": "Contractors carry the same access risk as employees but sit outside the HR lifecycle that normally triggers onboarding and offboarding. That gap is where forgotten access accumulates.",
     "implementation_guidance": "Track every contractor in a register with sponsor, scope of access and a mandatory end date.\nApply the same onboarding requirements: agreements, policy acknowledgement, training and approved access.\nTrigger deprovisioning automatically from the end date, and require positive action to extend.\nInclude contractors in access reviews rather than reviewing employees alone.",
     "importance": "preferred",
-    "name": "Contractor lifecycle management"
+    "name": "Contractor lifecycle management",
+    "evidence": [
+      {"key": "contractor-onboarding-and-offboarding-procedure", "name": "Contractor onboarding and offboarding procedure", "assurance": "design", "cadence": "annual", "source": "upload"},
+      {"key": "contractor-register-with-start-and-end", "name": "Contractor register with start and end dates and access", "assurance": "operating", "cadence": "quarterly", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "enforce-sso",
     "category": "Identity & Access Management",
+    "sub_category": "Authentication",
     "code": "IAM-04",
     "control_sub_type": "Automated",
     "description": "Centralizing authentication through one identity provider makes access consistently governed: policy is enforced in one place, and revocation on departure actually reaches every application rather than the ones somebody remembered.",
     "implementation_guidance": "Route access to every system that supports SAML or OIDC through the identity provider.\nEnforce MFA, session and password policy centrally at the provider so applications inherit them.\nMaintain a documented list of systems that cannot support SSO, with compensating controls for each.\nVerify that deprovisioning at the provider removes application access, and check the exceptions explicitly.",
     "importance": "mandatory",
-    "name": "Enforce single sign-on"
+    "name": "Enforce single sign-on",
+    "evidence": [{
+  "key": "approved-exceptions-for-applications-outside-single",
+  "name": "Approved exceptions for applications outside single sign on",
+  "assurance": "operating",
+  "cadence": "annual",
+  "source": "upload"
+}]
   },
   {
     "canonical_key": "enforce-mfa",
     "category": "Identity & Access Management",
+    "sub_category": "Authentication",
     "code": "IAM-03",
     "control_sub_type": "Automated",
     "description": "Passwords alone fail against phishing, reuse and credential-stuffing, and stolen credentials remain the most common initial access vector. Multi-factor authentication is the single highest-value access control available.",
     "implementation_guidance": "Require MFA for all users on all systems that support it, with no standing exclusions.\nRequire phishing-resistant factors such as WebAuthn or hardware keys for administrators and for access to production.\nPrioritize systems holding sensitive data and systems controlling network, infrastructure or production if a phased rollout is unavoidable.\nMonitor for accounts that bypass or disable MFA, and treat enrolment gaps as findings.",
     "importance": "mandatory",
-    "name": "Enforce multi-factor authentication"
+    "name": "Enforce multi-factor authentication",
+    "evidence": [
+      {"key": "access-policy-requiring-multi-factor-authentication", "name": "Access policy requiring multi factor authentication", "assurance": "design", "cadence": "annual", "source": "platform", "module": "documents"},
+      {"key": "approved-exceptions-to-multi-factor-authentication", "name": "Approved exceptions to multi factor authentication", "assurance": "operating", "cadence": "annual", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "password-policy",
     "category": "Identity & Access Management",
+    "sub_category": "Authentication",
     "code": "IAM-06",
     "control_sub_type": "Automated",
     "description": "Password policy is the baseline that protects accounts where stronger factors are unavailable. Modern guidance favours length and breach-checking over forced rotation and complexity rules, which drive predictable, weaker passwords.",
     "implementation_guidance": "Enforce the policy centrally at the identity provider rather than per application.\nSet a minimum length of at least 12 characters and screen new passwords against known breach corpora.\nAvoid mandatory periodic rotation unless a credential is known or suspected to be compromised.\nEnforce lockout or rate limiting on repeated failed authentication attempts.",
     "importance": "mandatory",
-    "name": "Password policy"
+    "name": "Password policy",
+    "evidence": [{
+  "key": "password-policy",
+  "name": "Password policy",
+  "assurance": "design",
+  "cadence": "annual",
+  "source": "platform",
+  "module": "documents"
+}]
   },
   {
     "canonical_key": "password-manager",
     "category": "Identity & Access Management",
+    "sub_category": "Authentication",
     "code": "IAM-05",
     "control_sub_type": "Automated",
     "description": "Some credentials cannot be replaced by single sign-on, and those are exactly the ones that end up in spreadsheets, chat messages and browser profiles. A managed password manager gives them a controlled home with auditable sharing.",
     "implementation_guidance": "Provide a company password manager and require its use for all shared and non-SSO credentials.\nOrganize secrets into vaults scoped by team and role rather than one shared vault.\nProhibit credential sharing over chat or email in the acceptable use policy.\nRevoke vault access at offboarding, and rotate any shared credential the departing person could read.",
     "importance": "preferred",
-    "name": "Company password manager"
+    "name": "Company password manager",
+    "evidence": [{
+  "key": "policy-requiring-a-password-manager-for",
+  "name": "Policy requiring a password manager for shared credentials",
+  "assurance": "design",
+  "cadence": "annual",
+  "source": "platform",
+  "module": "documents"
+}]
   },
   {
     "canonical_key": "rbac-least-privilege",
     "category": "Identity & Access Management",
+    "sub_category": "Authorization",
     "code": "IAM-08",
     "control_sub_type": "Hybrid",
     "description": "Granting access per person produces entitlements nobody can reason about. Defining access by role makes least privilege reviewable, repeatable, and correct by default when someone joins or changes job.",
     "implementation_guidance": "Define roles or groups that map to job functions, and grant access to roles rather than to individuals.\nBase each role on the minimum access the function requires, and document what that is.\nProvision new joiners from the role definition instead of copying an existing user's access.\nReview role definitions periodically, as roles accumulate permissions the same way individuals do.",
     "importance": "mandatory",
-    "name": "Role-based access and least privilege"
+    "name": "Role-based access and least privilege",
+    "evidence": [
+      {"key": "role-and-access-matrix", "name": "Role and access matrix", "assurance": "design", "cadence": "annual", "source": "upload"},
+      {"key": "role-definitions-approved-by-their-owners", "name": "Role definitions approved by their owners", "assurance": "design", "cadence": "annual", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "access-approval",
     "category": "Identity & Access Management",
+    "sub_category": "Access Lifecycle",
     "code": "IAM-01",
     "control_sub_type": "Hybrid",
     "description": "Access granted without a recorded authorization cannot be shown to be appropriate, and it is the point at which least privilege is either enforced or quietly abandoned. The approval record is what an auditor samples to test the control.",
     "implementation_guidance": "Require a documented request and approval before any account or entitlement is created.\nRoute approval to the system or data owner rather than to the requester's manager alone for privileged access.\nCapture the business justification, so the grant can be re-evaluated at the next access review.\nProvision only after approval is recorded, and reject retrospective approvals as a matter of process.",
     "importance": "mandatory",
-    "name": "Access provisioning approval"
+    "name": "Access provisioning approval",
+    "evidence": [
+      {"key": "access-request-and-approval-procedure", "name": "Access request and approval procedure", "assurance": "design", "cadence": "annual", "source": "platform", "module": "documents"},
+      {
+        "key": "approved-requests-for-a-sample-of",
+        "name": "Approved requests for a sample of new access",
+        "assurance": "operating",
+        "cadence": "per_event",
+        "source": "upload",
+        "automated_by": ["tickets.access_requests_approved"]
+      }
+    ]
   },
   {
     "canonical_key": "timely-deprovisioning",
     "category": "Identity & Access Management",
+    "sub_category": "Access Lifecycle",
     "code": "IAM-12",
     "control_sub_type": "Hybrid",
     "description": "The window between someone losing authorization and losing access is a window of unmonitored risk. Departures are also when access is most likely to be used inappropriately.",
     "implementation_guidance": "Trigger deprovisioning automatically from the HR or identity system on termination or role change.\nDefine an SLA measured in hours for revoking access on involuntary termination.\nCover systems outside SSO, shared credentials, VPN, code repositories and physical access.\nReconcile active accounts against active staff periodically, and investigate every account without a current owner.",
     "importance": "mandatory",
-    "name": "Timely access removal"
+    "name": "Timely access removal",
+    "evidence": [
+      {"key": "access-removal-procedure-with-the-timeframe", "name": "Access removal procedure with the timeframe", "assurance": "design", "cadence": "annual", "source": "upload"},
+      {
+        "key": "removal-records-for-a-sample-of",
+        "name": "Removal records for a sample of leavers",
+        "assurance": "operating",
+        "cadence": "per_event",
+        "source": "upload",
+        "automated_by": ["people.leavers_deprovisioned"]
+      }
+    ]
   },
   {
     "canonical_key": "access-reviews",
     "category": "Identity & Access Management",
+    "sub_category": "Access Lifecycle",
     "code": "IAM-02",
     "control_sub_type": "Hybrid",
     "description": "Access accumulates. People change roles, projects end and temporary grants become permanent, so entitlements that were appropriate when issued drift out of alignment with duties. Periodic recertification is what corrects that drift.",
     "implementation_guidance": "Run access reviews at least annually, and quarterly for production, financial and administrative systems.\nHave the system or data owner certify each user individually rather than approving a list in bulk.\nRevoke access that is not affirmatively certified, and verify the revocation actually executed.\nRetain the review record, the decisions and the evidence of resulting changes.",
     "importance": "mandatory",
-    "name": "Periodic user access reviews"
+    "name": "Periodic user access reviews",
+    "evidence": [
+      {"key": "access-review-procedure", "name": "Access review procedure", "assurance": "design", "cadence": "annual", "source": "upload"},
+      {"key": "completed-access-reviews-with-reviewer-sign", "name": "Completed access reviews with reviewer sign off", "assurance": "operating", "cadence": "quarterly", "source": "upload"},
+      {"key": "access-changes-made-as-a-result", "name": "Access changes made as a result of the review", "assurance": "operating", "cadence": "quarterly", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "privileged-access",
     "category": "Identity & Access Management",
+    "sub_category": "Privileged & Service Accounts",
     "code": "IAM-07",
     "control_sub_type": "Hybrid",
     "description": "Administrative and root access can disable controls, read all data and erase its own traces. It therefore warrants tighter provisioning, shorter tenure and closer review than standard access.",
     "implementation_guidance": "Maintain an inventory of privileged accounts across every system, including cloud root and break-glass accounts.\nRequire explicit, separately recorded approval for privileged grants.\nPrefer just-in-time elevation over standing administrative rights, and log every elevation.\nReview privileged access quarterly, and secure break-glass credentials with monitored, alerting access.",
     "importance": "mandatory",
-    "name": "Privileged access management"
+    "name": "Privileged access management",
+    "evidence": [
+      {
+        "key": "list-of-privileged-accounts-with-approval",
+        "name": "List of privileged accounts with approval and need",
+        "assurance": "operating",
+        "cadence": "quarterly",
+        "source": "upload",
+        "automated_by": ["idp.admins_limited", "cloud.least_privilege"]
+      },
+      {"key": "review-of-privileged-access", "name": "Review of privileged access", "assurance": "operating", "cadence": "quarterly", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "segregation-of-duties",
     "category": "Identity & Access Management",
+    "sub_category": "Authorization",
     "code": "IAM-09",
     "control_sub_type": "Hybrid",
     "description": "Where one person can initiate, approve and execute the same sensitive action, both fraud and simple error go undetected. Separating those duties introduces a second pair of eyes at the point where it matters.",
     "implementation_guidance": "Identify conflicting duty pairs, such as deploying to production and approving that deployment, or creating a vendor and approving its payment.\nSeparate them in system permissions rather than by convention.\nWhere team size makes separation impractical, document a compensating control such as independent after-the-fact review of a logged action.\nRe-examine separation whenever the team grows or restructures.",
     "importance": "preferred",
-    "name": "Segregation of duties"
+    "name": "Segregation of duties",
+    "evidence": [
+      {"key": "matrix-of-conflicting-duties", "name": "Matrix of conflicting duties", "assurance": "design", "cadence": "annual", "source": "upload"},
+      {"key": "review-of-people-who-hold-conflicting", "name": "Review of people who hold conflicting access", "assurance": "operating", "cadence": "annual", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "service-account-inventory",
     "category": "Identity & Access Management",
+    "sub_category": "Privileged & Service Accounts",
     "code": "IAM-10",
     "control_sub_type": "Hybrid",
     "description": "Service accounts, API keys and tokens authenticate without a human present. They are rarely reviewed, frequently over-permissioned, and often outlive the integration that created them.",
     "implementation_guidance": "Inventory every service account, API key and integration token with its owner, purpose and permissions.\nScope each to least privilege, and never use a provider's default or highly privileged service account.\nRotate credentials on a defined schedule and immediately on suspected exposure.\nReview the inventory at least annually and disable accounts with no recent authentication activity.",
     "importance": "preferred",
-    "name": "Service and machine account governance"
+    "name": "Service and machine account governance",
+    "evidence": [
+      {
+        "key": "inventory-of-service-accounts-and-keys",
+        "name": "Inventory of service accounts and keys with owners",
+        "assurance": "operating",
+        "cadence": "quarterly",
+        "source": "upload",
+        "automated_by": ["cloud.machine_credentials_rotated"]
+      },
+      {
+        "key": "records-of-rotation-or-review",
+        "name": "Records of rotation or review",
+        "assurance": "operating",
+        "cadence": "quarterly",
+        "source": "upload",
+        "automated_by": ["cloud.machine_credentials_rotated"]
+      }
+    ]
   },
   {
     "canonical_key": "session-management",
     "category": "Identity & Access Management",
+    "sub_category": "Authentication",
     "code": "IAM-11",
     "control_sub_type": "Automated",
     "description": "Sessions that never expire turn a single stolen laptop or hijacked token into indefinite access. Session limits bound how long a compromised session remains useful.",
     "implementation_guidance": "Configure idle and absolute session timeouts centrally at the identity provider.\nSet shorter timeouts for administrative interfaces and systems holding sensitive data.\nRequire re-authentication for high-risk actions such as changing MFA settings or granting access.\nEnsure logout and deprovisioning invalidate active sessions and refresh tokens, not only future logins.",
     "importance": "preferred",
-    "name": "Session timeout and management"
+    "name": "Session timeout and management",
+    "evidence": [{
+  "key": "session-timeout-standard",
+  "name": "Session timeout standard",
+  "assurance": "design",
+  "cadence": "annual",
+  "source": "platform",
+  "module": "documents"
+}]
   },
   {
     "canonical_key": "encryption-at-rest",
     "category": "Infrastructure & Network Security",
+    "sub_category": "Encryption & Secrets",
     "code": "NS-01",
     "control_sub_type": "Automated",
     "description": "Encryption at rest protects data when the storage layer is exposed through a lost device, a misconfigured snapshot, a decommissioned disk or direct access to the underlying store. It is a baseline expectation for confidential and personal data.",
     "implementation_guidance": "Enable encryption at rest on every data store, including databases, object storage, snapshots, backups and disks.\nUse platform-managed keys as the minimum, and customer-managed keys where required by commitment or regulation.\nVerify encryption is actually enabled rather than assumed, and monitor for unencrypted resources being created.\nEnsure new resources inherit encryption by default through policy or infrastructure as code.",
     "importance": "mandatory",
-    "name": "Encryption at rest"
+    "name": "Encryption at rest",
+    "evidence": [{
+  "key": "encryption-standard-stating-what-is-encrypted",
+  "name": "Encryption standard stating what is encrypted and how",
+  "assurance": "design",
+  "cadence": "annual",
+  "source": "platform",
+  "module": "documents"
+}]
   },
   {
     "canonical_key": "encryption-in-transit",
     "category": "Infrastructure & Network Security",
+    "sub_category": "Encryption & Secrets",
     "code": "NS-02",
     "control_sub_type": "Automated",
     "description": "Data crossing a network can be intercepted or modified in transit. Transport encryption makes intercepted traffic unusable and authenticates the endpoint being connected to.",
     "implementation_guidance": "Enforce TLS 1.2 or higher on all external endpoints, and disable legacy protocols and weak cipher suites.\nRedirect HTTP to HTTPS and enable HSTS so downgrade is not possible.\nRequire TLS for internal service-to-service traffic and for database connections, not only at the edge.\nMonitor certificate expiry and automate renewal so an outage does not create pressure to disable TLS.",
     "importance": "mandatory",
-    "name": "Encryption in transit (TLS)"
+    "name": "Encryption in transit (TLS)",
+    "evidence": [{
+  "key": "encryption-in-transit-standard",
+  "name": "Encryption in transit standard",
+  "assurance": "design",
+  "cadence": "annual",
+  "source": "platform",
+  "module": "documents"
+}]
   },
   {
     "canonical_key": "key-management",
     "category": "Infrastructure & Network Security",
+    "sub_category": "Encryption & Secrets",
     "code": "NS-06",
     "control_sub_type": "Hybrid",
     "description": "Encryption reduces to key management. If keys are unprotected, over-shared or never rotated, the encryption they support provides far less assurance than it appears to.",
     "implementation_guidance": "Manage keys in a dedicated KMS or HSM, held separately from the data they protect.\nRestrict key use and administration through policy, and separate those two permissions.\nEnable rotation on a defined schedule, and define a rotation procedure for compromise.\nLog and monitor key use, particularly decrypt operations at unusual volume.",
     "importance": "mandatory",
-    "name": "Encryption key management"
+    "name": "Encryption key management",
+    "evidence": [
+      {"key": "key-management-policy", "name": "Key management policy", "assurance": "design", "cadence": "annual", "source": "platform", "module": "documents"},
+      {"key": "review-of-who-can-use-and", "name": "Review of who can use and manage keys", "assurance": "operating", "cadence": "annual", "source": "upload"},
+      {
+        "key": "key-rotation-records",
+        "name": "Key rotation records",
+        "assurance": "operating",
+        "cadence": "annual",
+        "source": "upload",
+        "automated_by": ["cloud.key_rotation"]
+      }
+    ]
   },
   {
     "canonical_key": "secrets-management",
     "category": "Infrastructure & Network Security",
+    "sub_category": "Encryption & Secrets",
     "code": "NS-09",
     "control_sub_type": "Automated",
     "description": "Credentials committed to source code, images or configuration are harvested at scale, and they remain valid long after the commit is reverted. Secrets need a managed store with access control and an audit trail.",
     "implementation_guidance": "Store secrets in a dedicated secrets manager or vault, and never in source control, images or environment files in a repository.\nInject secrets at runtime rather than baking them into build artifacts.\nRestrict and log access to each secret, and scope access per service.\nRotate any secret on exposure and on a defined schedule, and treat exposure as an incident.",
     "importance": "mandatory",
-    "name": "Secrets management"
+    "name": "Secrets management",
+    "evidence": [{
+  "key": "secrets-management-standard",
+  "name": "Secrets management standard",
+  "assurance": "design",
+  "cadence": "annual",
+  "source": "platform",
+  "module": "documents"
+}]
   },
   {
     "canonical_key": "network-segmentation",
     "category": "Infrastructure & Network Security",
+    "sub_category": "Network & Perimeter",
     "code": "NS-07",
     "control_sub_type": "Automated",
     "description": "Flat networks let one compromised host reach everything. Segmentation limits blast radius and keeps data stores off paths that never needed to reach them.",
     "implementation_guidance": "Place databases and internal services in private subnets with no route from the internet.\nDefine trust zones and control traffic between them with default-deny rules.\nSeparate production from development and corporate networks.\nVerify segmentation by testing reachability rather than by reading the intended design.",
     "importance": "mandatory",
-    "name": "Network segmentation"
+    "name": "Network segmentation",
+    "evidence": [
+      {"key": "network-diagram-showing-segments-and-allowed", "name": "Network diagram showing segments and allowed paths", "assurance": "design", "cadence": "annual", "source": "upload"},
+      {"key": "review-of-the-rules-between-segments", "name": "Review of the rules between segments", "assurance": "operating", "cadence": "quarterly", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "firewall-default-deny",
     "category": "Infrastructure & Network Security",
+    "sub_category": "Network & Perimeter",
     "code": "NS-03",
     "control_sub_type": "Automated",
     "description": "A default-allow network is an inventory problem disguised as a security problem: nobody can enumerate what is reachable. Default-deny inverts that, so exposure is deliberate and documented.",
     "implementation_guidance": "Configure firewalls and security groups to deny inbound traffic by default and allow only what is explicitly required.\nReview rules for 0.0.0.0/0 on sensitive ports, and justify or remove each occurrence.\nAttach an owner and a purpose to every allow rule so stale rules can be identified.\nReview rule sets periodically and remove rules for decommissioned services.",
     "importance": "mandatory",
-    "name": "Default-deny firewall rules"
+    "name": "Default-deny firewall rules",
+    "evidence": [
+      {"key": "firewall-rule-register-with-owner-and", "name": "Firewall rule register with owner and purpose for each rule", "assurance": "operating", "cadence": "quarterly", "source": "upload"},
+      {"key": "periodic-review-of-firewall-rules", "name": "Periodic review of firewall rules", "assurance": "operating", "cadence": "quarterly", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "no-public-admin-ports",
     "category": "Infrastructure & Network Security",
+    "sub_category": "Network & Perimeter",
     "code": "NS-08",
     "control_sub_type": "Automated",
     "description": "Internet-exposed SSH and RDP are scanned continuously and are a recurring high-severity finding. Management interfaces should never be directly reachable from the public internet.",
     "implementation_guidance": "Block SSH, RDP and database ports from the internet at the security group and firewall level.\nProvide access through a VPN, zero-trust proxy, bastion host or a session manager service instead.\nScan the external surface regularly to detect newly exposed management ports.\nAlert on any change that opens a management port to a public range.",
     "importance": "mandatory",
-    "name": "No management ports exposed to the internet"
+    "name": "No management ports exposed to the internet",
+    "evidence": [{
+  "key": "approved-exceptions-for-exposed-management-access",
+  "name": "Approved exceptions for exposed management access",
+  "assurance": "operating",
+  "cadence": "annual",
+  "source": "upload"
+}]
   },
   {
     "canonical_key": "waf-ddos",
     "category": "Infrastructure & Network Security",
+    "sub_category": "Network & Perimeter",
     "code": "NS-10",
     "control_sub_type": "Automated",
     "description": "Public services face automated attack traffic continuously. A web application firewall filters common injection and scripting attacks, and upstream DDoS protection absorbs volumetric traffic that would otherwise exhaust capacity.",
     "implementation_guidance": "Front public services with a WAF and DDoS protection such as Cloudflare or AWS WAF and Shield.\nStart rules in detection mode, tune out false positives, then enforce.\nEnsure the origin cannot be reached directly, bypassing the WAF.\nMonitor blocked traffic for genuine attack patterns and feed them into detection.",
     "importance": "preferred",
-    "name": "WAF and DDoS protection"
+    "name": "WAF and DDoS protection",
+    "evidence": [{
+  "key": "review-of-web-application-firewall-rules",
+  "name": "Review of web application firewall rules and alerts",
+  "assurance": "operating",
+  "cadence": "quarterly",
+  "source": "upload"
+}]
   },
   {
     "canonical_key": "zero-trust-access",
     "category": "Infrastructure & Network Security",
+    "sub_category": "Network & Perimeter",
     "code": "NS-11",
     "control_sub_type": "Automated",
     "description": "Trusting a device because it sits on the corporate network fails the moment that network includes home offices, contractors and personal devices. Access decisions should rest on verified identity and device posture, not location.",
     "implementation_guidance": "Require a VPN or zero-trust access solution with MFA for administrative access to infrastructure.\nBase access decisions on user identity and device posture rather than source network alone.\nGrant access per application rather than issuing broad network access.\nLog access sessions and review them alongside privileged access.",
     "importance": "preferred",
-    "name": "VPN / zero-trust remote access"
+    "name": "VPN / zero-trust remote access",
+    "evidence": [{
+  "key": "remote-access-standard",
+  "name": "Remote access standard",
+  "assurance": "design",
+  "cadence": "annual",
+  "source": "platform",
+  "module": "documents"
+}]
   },
   {
     "canonical_key": "infra-malware-detection",
     "category": "Infrastructure & Network Security",
+    "sub_category": "Cloud",
     "code": "NS-05",
     "control_sub_type": "Automated",
     "description": "Cloud workloads are attacked through the control plane as well as the host: credential misuse, cryptomining, anomalous API calls and public exposure. Detection has to cover that plane, not just the operating system.",
     "implementation_guidance": "Enable a managed threat-detection service such as GuardDuty, Defender for Cloud or Security Command Center across all accounts and regions.\nRoute findings into the on-call and incident process rather than a dashboard nobody watches.\nTune out known-benign findings deliberately, and record the tuning decisions.\nAlert on detection being disabled or on an account being created without it.",
     "importance": "mandatory",
-    "name": "Infrastructure threat detection"
+    "name": "Infrastructure threat detection",
+    "evidence": [
+      {"key": "procedure-for-responding-to-threat-detection", "name": "Procedure for responding to threat detection alerts", "assurance": "design", "cadence": "annual", "source": "upload"},
+      {"key": "sample-of-alerts-that-were-investigated", "name": "Sample of alerts that were investigated", "assurance": "operating", "cadence": "quarterly", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "hardening-baselines",
     "category": "Infrastructure & Network Security",
+    "sub_category": "Cloud",
     "code": "NS-04",
     "control_sub_type": "Automated",
     "description": "Default configurations are built for compatibility, not security. A hardening baseline replaces those defaults with a known-good standard and gives drift something measurable to be measured against.",
     "implementation_guidance": "Apply CIS Benchmarks or an equivalent hardening standard to operating systems, containers and cloud services.\nBuild baselines into images and infrastructure as code so new systems start hardened.\nDocument and approve any deviation from the baseline, with the reason.\nCheck for drift on a schedule and remediate regressions.",
     "importance": "preferred",
-    "name": "Hardening baselines (CIS)"
+    "name": "Hardening baselines (CIS)",
+    "evidence": [
+      {"key": "hardening-standard-such-as-cis-or", "name": "Hardening standard such as CIS or equivalent", "assurance": "design", "cadence": "annual", "source": "platform", "module": "documents"},
+      {"key": "approved-exceptions-to-the-standard", "name": "Approved exceptions to the standard", "assurance": "operating", "cadence": "quarterly", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "endpoint-encryption",
     "category": "Endpoint Security",
+    "sub_category": "Device Hardening",
     "code": "EP-02",
     "control_sub_type": "Automated",
     "description": "Full-disk encryption is what makes a lost or stolen laptop a hardware loss rather than a data breach, and it is what allows devices to be disposed of without forensic erasure.",
     "implementation_guidance": "Enforce full-disk encryption on all endpoints through MDM policy.\nEscrow recovery keys centrally so encrypted devices remain recoverable.\nReport compliance from MDM and remediate devices found unencrypted.\nVerify encryption before issuing a device and again during periodic compliance checks.",
     "importance": "mandatory",
-    "name": "Endpoint full-disk encryption"
+    "name": "Endpoint full-disk encryption",
+    "evidence": [
+      {"key": "endpoint-encryption-policy", "name": "Endpoint encryption policy", "assurance": "design", "cadence": "annual", "source": "platform", "module": "documents"},
+      {"key": "approved-exceptions", "name": "Approved exceptions", "assurance": "operating", "cadence": "annual", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "endpoint-edr",
     "category": "Endpoint Security",
+    "sub_category": "Anti-Malware & XDR",
     "code": "EP-01",
     "control_sub_type": "Automated",
     "description": "Endpoints are the most common entry point for malware and the device where credentials and data are most exposed. Detection needs to run on the endpoint itself, where the behaviour occurs.",
     "implementation_guidance": "Deploy endpoint detection and response or anti-malware to every managed endpoint and server.\nEnable automatic signature and agent updates.\nMonitor agent health and coverage, and treat a device without a healthy agent as an exception to be resolved.\nRoute detections into the incident process rather than leaving them in a product console.",
     "importance": "mandatory",
-    "name": "Endpoint EDR / anti-malware"
+    "name": "Endpoint EDR / anti-malware",
+    "evidence": [
+      {"key": "endpoint-protection-standard", "name": "Endpoint protection standard", "assurance": "design", "cadence": "annual", "source": "platform", "module": "documents"},
+      {"key": "alerts-that-were-reviewed-and-acted", "name": "Alerts that were reviewed and acted on", "assurance": "operating", "cadence": "quarterly", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "mdm-enrollment",
     "category": "Endpoint Security",
+    "sub_category": "Device Management",
     "code": "EP-03",
     "control_sub_type": "Automated",
     "description": "Device management is what makes endpoint controls verifiable rather than advisory. It enforces encryption, patching and screen lock consistently, and provides the remote lock and wipe capability that limits the impact of a lost device.",
     "implementation_guidance": "Enrol all company endpoints in MDM before issuing them to staff.\nEnforce baseline policy centrally: encryption, screen lock, patch level and permitted software.\nReconcile enrolled devices against the employee roster to find unmanaged devices.\nDefine how personally owned devices are handled, either enrolled or denied access to company data.",
     "importance": "mandatory",
-    "name": "Device management (MDM) enrollment"
+    "name": "Device management (MDM) enrollment",
+    "evidence": [
+      {"key": "device-management-policy", "name": "Device management policy", "assurance": "design", "cadence": "annual", "source": "platform", "module": "documents"},
+      {
+        "key": "inventory-of-company-devices",
+        "name": "Inventory of company devices",
+        "assurance": "operating",
+        "cadence": "quarterly",
+        "source": "platform",
+        "module": "assets",
+        "automated_by": ["devices.enrolled"]
+      }
+    ]
   },
   {
     "canonical_key": "patch-management",
     "category": "Endpoint Security",
+    "sub_category": "Patch Management",
     "code": "EP-04",
     "control_sub_type": "Hybrid",
     "description": "Most successful attacks exploit vulnerabilities for which a patch already exists. Timely patching is therefore among the highest-value controls, and it is one of the easiest to let slip.",
     "implementation_guidance": "Define patch SLAs by severity for operating systems, browsers and installed software.\nAutomate deployment through MDM or a patch management tool rather than relying on user action.\nReport compliance against the SLA and follow up devices that fall behind.\nHandle critical out-of-band patches through the emergency change path.",
     "importance": "mandatory",
-    "name": "Patch management"
+    "name": "Patch management",
+    "evidence": [
+      {"key": "patch-management-policy-with-timeframes", "name": "Patch management policy with timeframes", "assurance": "design", "cadence": "annual", "source": "platform", "module": "documents"},
+      {
+        "key": "patch-compliance-report",
+        "name": "Patch compliance report",
+        "assurance": "operating",
+        "cadence": "monthly",
+        "source": "upload",
+        "automated_by": ["devices.os_current", "scanner.scans_current"]
+      }
+    ]
   },
   {
     "canonical_key": "remote-wipe",
     "category": "Endpoint Security",
+    "sub_category": "Device Management",
     "code": "EP-05",
     "control_sub_type": "Hybrid",
     "description": "A device that leaves the organization with a departing employee, or is lost, still holds company data and cached credentials. Remote wipe is what closes that exposure when the device cannot be recovered.",
     "implementation_guidance": "Maintain remote wipe capability through MDM on all managed devices.\nIssue a wipe for lost or stolen devices and for departing employees who do not return hardware.\nConfirm the wipe executed rather than assuming the command succeeded, and retain the confirmation.\nCover the case of a device that never reconnects, by rotating credentials it held.",
     "importance": "mandatory",
-    "name": "Remote wipe on offboarding / loss"
+    "name": "Remote wipe on offboarding / loss",
+    "evidence": [
+      {"key": "procedure-for-lost-devices-and-offboarding", "name": "Procedure for lost devices and offboarding", "assurance": "design", "cadence": "annual", "source": "upload"},
+      {"key": "wipe-confirmations-for-recovered-or-lost", "name": "Wipe confirmations for recovered or lost devices", "assurance": "operating", "cadence": "per_event", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "screen-lock",
     "category": "Endpoint Security",
+    "sub_category": "Device Hardening",
     "code": "EP-06",
     "control_sub_type": "Automated",
     "description": "An unlocked, unattended device grants full access to whoever is nearby, bypassing every authentication control behind it. Automatic locking is what makes physical proximity insufficient.",
     "implementation_guidance": "Enforce automatic screen lock through MDM policy rather than user preference.\nSet a short idle timeout, typically no more than 15 minutes, and require authentication to unlock.\nApply the policy to all device types that access company data.\nReport compliance and remediate devices that fall out of policy.",
     "importance": "preferred",
-    "name": "Screen lock policy"
+    "name": "Screen lock policy",
+    "evidence": [{
+  "key": "screen-lock-standard",
+  "name": "Screen lock standard",
+  "assurance": "design",
+  "cadence": "annual",
+  "source": "platform",
+  "module": "documents"
+}]
   },
   {
     "canonical_key": "data-classification",
     "category": "Data Management & Privacy",
+    "sub_category": "Data Lifecycle",
     "code": "DM-04",
     "control_sub_type": "Manual",
     "description": "Confidential data cannot be protected consistently until it has been identified and labelled. Classification is what lets handling rules, access decisions and retention be applied by rule rather than by individual judgement.",
     "implementation_guidance": "Adopt a classification scheme such as public, internal, confidential and restricted.\nDefine handling rules per level covering storage, transmission, sharing and disposal.\nClassify data stores and repositories, not only individual documents.\nTrain staff on the scheme and reference it in the acceptable use policy.",
     "importance": "mandatory",
-    "name": "Data classification policy"
+    "name": "Data classification policy",
+    "evidence": [
+      {"key": "data-classification-policy", "name": "Data classification policy", "assurance": "design", "cadence": "annual", "source": "platform", "module": "documents"},
+      {
+        "key": "classification-applied-to-systems-and-data",
+        "name": "Classification applied to systems and data stores",
+        "assurance": "operating",
+        "cadence": "annual",
+        "source": "platform",
+        "module": "assets",
+        "automated_by": ["verity.assets.classified"]
+      }
+    ]
   },
   {
     "canonical_key": "data-inventory",
     "category": "Data Management & Privacy",
+    "sub_category": "Data Lifecycle",
     "code": "DM-06",
     "control_sub_type": "Manual",
     "description": "Data protection begins with knowing what data exists and where it lives. An inventory that is incomplete guarantees that some data is protected by nobody, because nobody knows it is there.",
     "implementation_guidance": "Maintain a data map covering databases, object storage, file shares, analytics platforms and vendor systems.\nRecord for each store the data categories held, classification, owner, location and retention period.\nNote the protections applied to each store, such as encryption, access model and backup treatment.\nRefresh the map at least annually and when new systems or vendors are introduced.",
     "importance": "mandatory",
-    "name": "Data inventory and data map"
+    "name": "Data inventory and data map",
+    "evidence": [
+      {"key": "data-inventory-and-data-map", "name": "Data inventory and data map", "assurance": "operating", "cadence": "annual", "source": "platform", "module": "assets"},
+      {"key": "review-that-the-inventory-is-complete", "name": "Review that the inventory is complete", "assurance": "operating", "cadence": "annual", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "data-retention",
     "category": "Data Management & Privacy",
+    "sub_category": "Data Lifecycle",
     "code": "DM-08",
     "control_sub_type": "Manual",
     "description": "Data kept beyond its purpose is pure liability: it expands breach impact, deletion obligations and storage cost without serving the business. Retention that is defined but not enforced technically is retention in name only.",
     "implementation_guidance": "Define a retention period for each data type, based on purpose and legal requirement.\nEnforce retention technically through lifecycle rules, TTLs or scheduled purge jobs rather than by manual review.\nApply retention to backups, archives and analytics copies, not only primary stores.\nDocument any legal hold that suspends normal retention, and lift it when the hold ends.",
     "importance": "mandatory",
-    "name": "Data retention schedule"
+    "name": "Data retention schedule",
+    "evidence": [
+      {"key": "data-retention-schedule", "name": "Data retention schedule", "assurance": "design", "cadence": "annual", "source": "platform", "module": "documents"},
+      {"key": "evidence-data-was-deleted-when-retention", "name": "Evidence data was deleted when retention ended", "assurance": "operating", "cadence": "quarterly", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "secure-disposal",
     "category": "Data Management & Privacy",
+    "sub_category": "Data Lifecycle",
     "code": "DM-16",
     "control_sub_type": "Hybrid",
     "description": "Deletion is only meaningful if the data is actually unrecoverable. Data routinely survives in search indexes, caches, analytics warehouses, vendor systems and backups long after it was deleted from the primary store.",
     "implementation_guidance": "Define a disposal procedure covering primary stores, replicas, search indexes, caches, analytics copies and vendor systems.\nUse the data map as the checklist so no store is missed.\nAge deleted data out of backups within the documented backup retention window, and state that window in the response to the subject.\nRetain a record of what was disposed of, when, and by which method.",
     "importance": "mandatory",
-    "name": "Secure data disposal"
+    "name": "Secure data disposal",
+    "evidence": [
+      {"key": "secure-disposal-procedure", "name": "Secure disposal procedure", "assurance": "design", "cadence": "annual", "source": "platform", "module": "documents"},
+      {
+        "key": "disposal-records-or-certificates",
+        "name": "Disposal records or certificates",
+        "assurance": "operating",
+        "cadence": "per_event",
+        "source": "platform",
+        "module": "assets",
+        "automated_by": ["verity.assets.disposal_recorded"]
+      }
+    ]
   },
   {
     "canonical_key": "no-prod-in-lower-envs",
     "category": "Data Management & Privacy",
+    "sub_category": "Data Handling",
     "code": "DM-13",
     "control_sub_type": "Hybrid",
     "description": "Copying production data into development or staging silently extends the confidentiality boundary to environments with weaker access control, less monitoring and broader developer access. It is a frequent and avoidable exception.",
     "implementation_guidance": "Populate lower environments with masked, synthetic or subset data rather than production copies.\nProhibit production data in lower environments in policy, and make the approved seeding path the easy one.\nScan lower environments periodically for data that looks like production personal information.\nWhere a production restore is genuinely required, require approval, time-box it and record the justification.",
     "importance": "preferred",
-    "name": "No production data in lower environments"
+    "name": "No production data in lower environments",
+    "evidence": [
+      {"key": "policy-against-production-data-in-lower", "name": "Policy against production data in lower environments", "assurance": "design", "cadence": "annual", "source": "platform", "module": "documents"},
+      {"key": "evidence-test-data-is-masked-or", "name": "Evidence test data is masked or synthetic", "assurance": "operating", "cadence": "annual", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "privacy-notice",
     "category": "Data Management & Privacy",
+    "sub_category": "Notice & Consent",
     "code": "DM-15",
     "control_sub_type": "Manual",
     "description": "The privacy notice is the commitment against which every other privacy control is judged. Where it describes practices that differ from what the systems actually do, the gap is a finding regardless of how strong the controls are.",
     "implementation_guidance": "Publish a privacy notice covering what is collected, why, the legal basis, who it is shared with, how long it is kept and what rights subjects hold.\nWrite it to match actual data flows, verified against the data map rather than drafted from a template.\nVersion and date the notice, and retain prior versions.\nNotify subjects of material changes through the channel the notice commits to.",
     "importance": "mandatory",
-    "name": "Privacy notice"
+    "name": "Privacy notice",
+    "evidence": [
+      {"key": "current-privacy-notice", "name": "Current privacy notice", "assurance": "design", "cadence": "annual", "source": "upload"},
+      {"key": "notice-change-history-and-how-data", "name": "Notice change history and how data subjects were told", "assurance": "operating", "cadence": "per_event", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "consent-management",
     "category": "Data Management & Privacy",
+    "sub_category": "Notice & Consent",
     "code": "DM-03",
     "control_sub_type": "Hybrid",
     "description": "Where processing relies on consent, that consent must be freely given, recorded, and as easy to withdraw as it was to give. Consent that cannot be evidenced is equivalent to no consent at all.",
     "implementation_guidance": "Capture consent granularly per purpose rather than as a single blanket agreement.\nStore a consent record with timestamp, version of the notice shown, and the method of capture.\nObtain explicit consent where sensitive categories of data are involved.\nHonour withdrawal promptly and propagate it to downstream systems and processors.",
     "importance": "mandatory",
-    "name": "Consent and choice management"
+    "name": "Consent and choice management",
+    "evidence": [
+      {"key": "consent-records-showing-when-what-and", "name": "Consent records showing when, what and which notice version", "assurance": "operating", "cadence": "ongoing", "source": "upload"},
+      {"key": "consent-withdrawal-process-and-records", "name": "Consent withdrawal process and records", "assurance": "operating", "cadence": "per_event", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "data-minimization",
     "category": "Data Management & Privacy",
+    "sub_category": "Data Handling",
     "code": "DM-07",
     "control_sub_type": "Manual",
     "description": "Data that is never collected cannot be breached, misused or subject to a deletion request. Minimization is the cheapest privacy control available and the one most often skipped.",
     "implementation_guidance": "Map each collection point to the stated purpose it serves, and remove fields that serve none.\nChallenge new fields at design review rather than after they are in production.\nKeep personal information out of logs, error trackers and analytics events.\nReview collected fields periodically and retire those no longer used.",
     "importance": "mandatory",
-    "name": "Data minimization"
+    "name": "Data minimization",
+    "evidence": [{
+  "key": "review-of-each-collection-point-against",
+  "name": "Review of each collection point against what is needed",
+  "assurance": "operating",
+  "cadence": "annual",
+  "source": "upload"
+}]
   },
   {
     "canonical_key": "limit-pi-use",
     "category": "Data Management & Privacy",
+    "sub_category": "Data Handling",
     "code": "DM-12",
     "control_sub_type": "Manual",
     "description": "Personal information collected for one purpose being used for another is one of the most common privacy failures, and it now arises most often when data is repurposed for analytics or model training.",
     "implementation_guidance": "Restrict access to personal information to roles whose purpose requires it.\nRequire documented approval before any secondary use, and check it against the purposes disclosed in the notice.\nState the position on using customer or personal data for AI and model training explicitly, and enforce it technically.\nReview actual data flows against stated purposes at least annually.",
     "importance": "mandatory",
-    "name": "Limit personal-information use to purpose"
+    "name": "Limit personal-information use to purpose",
+    "evidence": [
+      {"key": "register-of-the-purposes-personal-information", "name": "Register of the purposes personal information is used for", "assurance": "design", "cadence": "annual", "source": "upload"},
+      {"key": "review-of-new-uses-against-the", "name": "Review of new uses against the stated purposes", "assurance": "operating", "cadence": "annual", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "dsar-process",
     "category": "Data Management & Privacy",
+    "sub_category": "Individual Rights",
     "code": "DM-11",
     "control_sub_type": "Manual",
     "description": "Data subjects have the right to access their personal information and, in many regimes, an accounting of who it was disclosed to. These requests carry statutory deadlines and are answered from systems that were rarely designed to answer them.",
     "implementation_guidance": "Operate a documented process with a single intake point and a defined SLA aligned to the applicable regime.\nVerify the requester's identity proportionately before disclosing anything.\nCompile the response across all systems holding the subject's data, using the data map as the checklist.\nLog every request, the response given and the date, so timeliness can be evidenced.",
     "importance": "mandatory",
-    "name": "Data-subject access request process"
+    "name": "Data-subject access request process",
+    "evidence": [
+      {"key": "access-request-procedure", "name": "Access request procedure", "assurance": "design", "cadence": "annual", "source": "upload"},
+      {"key": "log-of-requests-with-dates-and", "name": "Log of requests with dates and outcomes", "assurance": "operating", "cadence": "per_event", "source": "upload"},
+      {"key": "sample-responses-that-include-disclosure-accounting", "name": "Sample responses that include disclosure accounting", "assurance": "operating", "cadence": "per_event", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "data-correction",
     "category": "Data Management & Privacy",
+    "sub_category": "Individual Rights",
     "code": "DM-05",
     "control_sub_type": "Manual",
     "description": "Data subjects have the right to have inaccurate personal information corrected, and the privacy criteria also require that personal information is maintained accurately for its purpose. A correction that does not propagate leaves the error in place downstream.",
     "implementation_guidance": "Provide a documented path for subjects to request correction of their personal information.\nVerify identity before acting on a correction request.\nPropagate corrections to downstream systems, processors and backups within a defined window.\nReconcile personal information across systems periodically to detect divergence.",
     "importance": "mandatory",
-    "name": "Personal-information correction"
+    "name": "Personal-information correction",
+    "evidence": [
+      {"key": "correction-procedure", "name": "Correction procedure", "assurance": "design", "cadence": "annual", "source": "upload"},
+      {"key": "log-of-corrections-and-how-third", "name": "Log of corrections and how third parties were told", "assurance": "operating", "cadence": "per_event", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "disclosure-controls",
     "category": "Data Management & Privacy",
+    "sub_category": "Breach & Disclosure",
     "code": "DM-09",
     "control_sub_type": "Manual",
     "description": "Personal information may only be disclosed to third parties consistently with the notice given and the consent obtained. Without a record of disclosures, neither commitment can be demonstrated, and subject requests for an accounting of disclosures cannot be answered.",
     "implementation_guidance": "Route every new third-party data flow through the vendor review and approval process.\nMaintain a disclosure register recording the recipient, data categories, purpose and legal basis.\nVerify that each disclosure is consistent with the privacy notice and any consent obtained.\nReview the register at least annually against systems actually sending data.",
     "importance": "mandatory",
-    "name": "Authorized-disclosure governance"
+    "name": "Authorized-disclosure governance",
+    "evidence": [
+      {"key": "register-of-authorized-disclosures-to-third", "name": "Register of authorized disclosures to third parties", "assurance": "operating", "cadence": "ongoing", "source": "platform", "module": "vendors"},
+      {"key": "consent-or-lawful-basis-for-each", "name": "Consent or lawful basis for each disclosure", "assurance": "operating", "cadence": "per_event", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "breach-record",
     "category": "Data Management & Privacy",
+    "sub_category": "Breach & Disclosure",
     "code": "DM-02",
     "control_sub_type": "Manual",
     "description": "The privacy criteria require a record of unauthorized disclosures, not only of incidents that met a notification threshold. Near misses and contained events carry the analysis that prevents the next one.",
     "implementation_guidance": "Record every privacy incident and near miss in the incident register, including those judged not notifiable.\nCapture the data categories affected, the number of subjects, the root cause and the containment action.\nRecord the notification decision and its rationale, including decisions not to notify.\nReview the register periodically for patterns rather than treating entries as closed items.",
     "importance": "mandatory",
-    "name": "Unauthorized-disclosure recordkeeping"
+    "name": "Unauthorized-disclosure recordkeeping",
+    "evidence": [{
+  "key": "register-of-unauthorized-disclosures-including-near",
+  "name": "Register of unauthorized disclosures including near misses",
+  "assurance": "operating",
+  "cadence": "per_event",
+  "source": "upload"
+}]
   },
   {
     "canonical_key": "dpa-with-vendors",
     "category": "Data Management & Privacy",
+    "sub_category": "Vendor Agreements",
     "code": "DM-10",
     "control_sub_type": "Manual",
     "description": "Privacy commitments do not stop at the organizational boundary. Where a vendor processes personal information on your behalf, a data processing agreement is what makes your obligations binding on them.",
     "implementation_guidance": "Execute a data processing agreement with every vendor that processes personal information.\nEnsure the agreement covers permitted purposes, security obligations, subprocessing, breach notification, deletion and audit rights.\nTrack DPA coverage as a completeness metric against the vendor register.\nRe-paper agreements when the vendor relationship or applicable regime changes.",
     "importance": "mandatory",
-    "name": "Data processing agreements with vendors"
+    "name": "Data processing agreements with vendors",
+    "evidence": [
+      {
+        "key": "executed-data-processing-agreements-for-vendors",
+        "name": "Executed data processing agreements for vendors that handle personal information",
+        "assurance": "operating",
+        "cadence": "ongoing",
+        "source": "platform",
+        "module": "vendors",
+        "automated_by": ["verity.vendors.dpa_on_file"]
+      }
+    ]
   },
   {
     "canonical_key": "vendor-breach-terms",
     "category": "Data Management & Privacy",
+    "sub_category": "Vendor Agreements",
     "code": "DM-17",
     "control_sub_type": "Manual",
     "description": "Your own breach-notification deadlines start when you become aware of an incident. If a vendor is not contractually obliged to tell you promptly, their delay consumes your statutory window.",
     "implementation_guidance": "Require a breach-notification clause with a specific timeframe, expressed in hours, in every data processing agreement.\nSpecify what the notification must contain, so the first message is actionable rather than a holding statement.\nRecord the notification terms per vendor in the vendor register.\nTest the contact path for critical vendors, and confirm the notification route is current at review.",
     "importance": "mandatory",
-    "name": "Vendor breach-notification terms"
+    "name": "Vendor breach-notification terms",
+    "evidence": [
+      {"key": "vendor-contract-terms-with-the-breach", "name": "Vendor contract terms with the breach notification timeframe", "assurance": "design", "cadence": "ongoing", "source": "platform", "module": "vendors"},
+      {"key": "record-of-vendor-notifications-received-and", "name": "Record of vendor notifications received and acted on", "assurance": "operating", "cadence": "per_event", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "breach-notification-process",
     "category": "Data Management & Privacy",
+    "sub_category": "Breach & Disclosure",
     "code": "DM-01",
     "control_sub_type": "Manual",
     "description": "Breach notification is time-bound by law and by contract, often within 72 hours. Those deadlines cannot be met if the criteria, recipients and templates are decided while an incident is running.",
     "implementation_guidance": "Define the criteria that make an incident notifiable, separately for regulators, customers and data subjects.\nMaintain a jurisdiction matrix covering each applicable regime and its deadline.\nPre-approve notification templates with legal so drafting is not on the critical path.\nBuild the notification decision into the incident-response plan as an explicit step with an owner.",
     "importance": "mandatory",
-    "name": "Breach notification process"
+    "name": "Breach notification process",
+    "evidence": [
+      {"key": "breach-notification-procedure-and-templates", "name": "Breach notification procedure and templates", "assurance": "design", "cadence": "annual", "source": "platform", "module": "documents"},
+      {"key": "notification-decisions-for-each-incident-including", "name": "Notification decisions for each incident, including decisions not to notify", "assurance": "operating", "cadence": "per_event", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "privacy-complaints",
     "category": "Data Management & Privacy",
+    "sub_category": "Individual Rights",
     "code": "DM-14",
     "control_sub_type": "Manual",
     "description": "The privacy criteria require a defined channel for inquiries, complaints and disputes, and evidence that they are addressed. An unmonitored privacy inbox fails the control even where no complaint is ever missed.",
     "implementation_guidance": "Publish a privacy contact point in the privacy notice and on the website.\nRoute it into a tracked queue with an owner and a response SLA rather than an individual's mailbox.\nRecord each inquiry, the resolution and the date closed.\nReview privacy complaints periodically for systemic causes.",
     "importance": "mandatory",
-    "name": "Privacy inquiry and complaint handling"
+    "name": "Privacy inquiry and complaint handling",
+    "evidence": [
+      {"key": "privacy-inquiry-and-complaint-procedure", "name": "Privacy inquiry and complaint procedure", "assurance": "design", "cadence": "annual", "source": "upload"},
+      {"key": "log-of-inquiries-with-resolution-times", "name": "Log of inquiries with resolution times", "assurance": "operating", "cadence": "quarterly", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "peer-code-review",
     "category": "Secure Development & Code Management",
+    "sub_category": "Code Review",
     "code": "SD-06",
     "control_sub_type": "Hybrid",
     "description": "Peer review catches defects and security weaknesses before they reach production and spreads knowledge across the team. Enforced through branch protection, it also produces the authorization trail the change criterion expects.",
     "implementation_guidance": "Require a pull request with at least one approving review from someone other than the author.\nEnforce it through branch protection, and disable direct pushes to protected branches.\nRequire status checks to pass before merge, and prohibit self-approval.\nRecord any use of an administrator override and review those occurrences.",
     "importance": "mandatory",
-    "name": "Peer code review (branch protection)"
+    "name": "Peer code review (branch protection)",
+    "evidence": [
+      {"key": "peer-review-standard-in-the-development", "name": "Peer review standard in the development policy", "assurance": "design", "cadence": "annual", "source": "platform", "module": "documents"},
+      {
+        "key": "sample-of-reviewed-changes",
+        "name": "Sample of reviewed changes",
+        "assurance": "operating",
+        "cadence": "quarterly",
+        "source": "upload",
+        "automated_by": ["vcs.merged_changes_reviewed"]
+      }
+    ]
   },
   {
     "canonical_key": "ci-testing",
     "category": "Secure Development & Code Management",
+    "sub_category": "CI/CD",
     "code": "SD-02",
     "control_sub_type": "Automated",
     "description": "Automated tests running as a merge gate catch defects while they are cheap and provide repeatable evidence that processing logic behaves as specified. Tests that can be skipped provide neither.",
     "implementation_guidance": "Run the automated test suite on every pull request and require it to pass before merge.\nEnforce the gate through branch protection so it cannot be bypassed by individual choice.\nInclude tests that validate processing accuracy and completeness where the system processes customer data.\nRetain build results, as they are the operating evidence that the gate ran.",
     "importance": "mandatory",
-    "name": "Automated testing in CI"
+    "name": "Automated testing in CI",
+    "evidence": [
+      {"key": "testing-standard-stating-what-must-pass", "name": "Testing standard stating what must pass before merge", "assurance": "design", "cadence": "annual", "source": "platform", "module": "documents"},
+      {
+        "key": "test-run-results-for-a-sample",
+        "name": "Test run results for a sample of changes",
+        "assurance": "operating",
+        "cadence": "quarterly",
+        "source": "upload",
+        "automated_by": ["ci.required_checks_passed"]
+      }
+    ]
   },
   {
     "canonical_key": "separate-environments",
     "category": "Secure Development & Code Management",
+    "sub_category": "Secure SDLC",
     "code": "SD-12",
     "control_sub_type": "Automated",
     "description": "Testing in production exposes customer data to unreleased code and makes it impossible to distinguish deliberate change from experiment. Separate environments give changes somewhere to be validated before they carry real consequences.",
     "implementation_guidance": "Maintain distinct development, staging and production environments with separate credentials and accounts.\nPromote changes through environments in a controlled sequence rather than deploying directly to production.\nRestrict production access to those who require it, and grant lower-environment access more freely.\nKeep production data out of lower environments, using masked or synthetic data instead.",
     "importance": "mandatory",
-    "name": "Separate dev/staging/production"
+    "name": "Separate dev/staging/production",
+    "evidence": [{
+  "key": "environment-architecture-showing-separation",
+  "name": "Environment architecture showing separation",
+  "assurance": "design",
+  "cadence": "annual",
+  "source": "upload"
+}]
   },
   {
     "canonical_key": "change-approval",
     "category": "Secure Development & Code Management",
+    "sub_category": "Change Management",
     "code": "SD-01",
     "control_sub_type": "Hybrid",
     "description": "Unauthorized change is the most common cause of both outages and security regressions. Requiring changes to be authorized, tested and approved before they reach production is the core of the change-management criterion.",
     "implementation_guidance": "Require every production change to carry a recorded authorization and approval before deployment.\nApply the same requirement to database migrations, configuration and infrastructure changes, not only application code.\nLink the deployment to the approved change record so the two can be reconciled at audit.\nDetect and investigate deployments that reach production without a corresponding approval.",
     "importance": "mandatory",
-    "name": "Change authorization and approval"
+    "name": "Change authorization and approval",
+    "evidence": [
+      {"key": "change-management-policy", "name": "Change management policy", "assurance": "design", "cadence": "annual", "source": "platform", "module": "documents"},
+      {
+        "key": "change-requests-with-approval-for-a",
+        "name": "Change requests with approval for a sample of changes",
+        "assurance": "operating",
+        "cadence": "quarterly",
+        "source": "upload",
+        "automated_by": ["tickets.changes_linked", "vcs.merged_changes_reviewed"]
+      }
+    ]
   },
   {
     "canonical_key": "emergency-change",
     "category": "Secure Development & Code Management",
+    "sub_category": "Change Management",
     "code": "SD-04",
     "control_sub_type": "Manual",
     "description": "Emergencies will bypass the normal path, and a process that pretends otherwise simply goes unfollowed. A defined emergency route keeps the control intact by making the bypass explicit, bounded and reviewed.",
     "implementation_guidance": "Define who may authorize an emergency change and under what circumstances.\nRequire the reason and the actions taken to be recorded at the time, even if briefly.\nRequire retrospective review and approval within a defined window, normally the next business day.\nReview emergency changes at management review, as a rising rate signals a problem with the normal path.",
     "importance": "preferred",
-    "name": "Emergency change procedure"
+    "name": "Emergency change procedure",
+    "evidence": [
+      {"key": "emergency-change-procedure", "name": "Emergency change procedure", "assurance": "design", "cadence": "annual", "source": "platform", "module": "documents"},
+      {
+        "key": "emergency-changes-with-their-after-the",
+        "name": "Emergency changes with their after the fact review",
+        "assurance": "operating",
+        "cadence": "per_event",
+        "source": "upload",
+        "automated_by": ["vcs.unreviewed_merges_recorded"]
+      }
+    ]
   },
   {
     "canonical_key": "sdlc-policy",
     "category": "Secure Development & Code Management",
+    "sub_category": "Secure SDLC",
     "code": "SD-10",
     "control_sub_type": "Manual",
     "description": "A documented development lifecycle is how security requirements become routine engineering practice rather than individual habit. It also gives new engineers a defined standard to work to, which is what keeps quality stable as a team grows.",
     "implementation_guidance": "Maintain a secure development policy covering design review, code review, testing, environment use and deployment.\nInclude security requirements such as secure coding standards, dependency management and secrets handling.\nDefine how changes are approved and released, and how emergency changes are handled.\nReview the policy annually and align it with the tooling actually in use.",
     "importance": "mandatory",
-    "name": "Secure SDLC policy"
+    "name": "Secure SDLC policy",
+    "evidence": [
+      {
+        "key": "secure-development-lifecycle-policy",
+        "name": "Secure development lifecycle policy",
+        "assurance": "design",
+        "cadence": "annual",
+        "source": "platform",
+        "module": "documents",
+        "automated_by": ["verity.policies.reviewed"]
+      },
+      {"key": "evidence-security-was-considered-in-the", "name": "Evidence security was considered in the lifecycle such as design reviews", "assurance": "operating", "cadence": "annual", "source": "upload"}
+    ]
+  },
+  {
+    "canonical_key": "controlled-production-deployments",
+    "category": "Secure Development & Code Management",
+    "sub_category": "CI/CD",
+    "code": "SD-13",
+    "control_sub_type": "Hybrid",
+    "description": "Code that passed review and testing still has to reach production by a path someone controls. A deployment that runs from an unreviewed branch, a laptop or a shared credential bypasses every control upstream, and leaves no record of who released what.",
+    "implementation_guidance": "Deploy to production only from the protected default branch or from a release the pipeline built.\nRequire an approval, or a protected environment with named reviewers, before a production deployment runs.\nLimit who and what can deploy to production, and keep deployment credentials in the pipeline rather than on laptops.\nKeep the deployment history: what was released, from which commit, when and by whom.",
+    "importance": "mandatory",
+    "name": "Controlled production deployments",
+    "evidence": [
+      {"key": "deployment-procedure-stating-who-may-release", "name": "Deployment procedure stating who may release to production", "assurance": "design", "cadence": "annual", "source": "platform", "module": "documents"},
+      {
+        "key": "deployment-history-for-a-sample-of",
+        "name": "Deployment history for a sample of releases showing commit, approver and time",
+        "assurance": "operating",
+        "cadence": "quarterly",
+        "source": "upload",
+        "automated_by": ["ci.deployment_history_recorded"]
+      }
+    ]
+  },
+  {
+    "canonical_key": "change-traceability",
+    "category": "Secure Development & Code Management",
+    "sub_category": "Change Management",
+    "code": "SD-14",
+    "control_sub_type": "Hybrid",
+    "description": "An auditor samples changes and asks to see the request, the approval, the review, the test result and the release for each. Where those live in different tools with no link between them, every sample becomes a manual hunt, and a gap in the trail looks like an unauthorized change.",
+    "implementation_guidance": "Require every production change to reference a ticket, issue or change request.\nLink pull requests to that ticket, and the deployment to the pull request or commit.\nRecord the approver on the ticket or the pull request, and keep both for the audit window.\nSample changes each quarter and confirm each can be followed from request to release.",
+    "importance": "mandatory",
+    "name": "Change traceability",
+    "evidence": [
+      {
+        "key": "change-records-linking-request-review-and",
+        "name": "Change records linking request, review and release for a sample of changes",
+        "assurance": "operating",
+        "cadence": "quarterly",
+        "source": "upload",
+        "automated_by": ["tickets.changes_linked", "ci.deployment_history_recorded"]
+      }
+    ]
   },
   {
     "canonical_key": "dependency-scanning",
     "category": "Secure Development & Code Management",
+    "sub_category": "Application Security",
     "code": "SD-03",
     "control_sub_type": "Automated",
     "description": "Most application code is third-party dependency code, and vulnerabilities in it are disclosed continuously. Without automated scanning the first notice of an exposed dependency is usually an external report.",
     "implementation_guidance": "Enable dependency and container image scanning on every repository and registry.\nFail builds on newly introduced critical vulnerabilities rather than only reporting them.\nTriage alerts to a severity-based SLA and track remediation to closure.\nMaintain a software bill of materials so exposure to a new disclosure can be assessed quickly.",
     "importance": "mandatory",
-    "name": "Dependency and image scanning"
+    "name": "Dependency and image scanning",
+    "evidence": [
+      {"key": "dependency-vulnerability-triage-standard-with-timeframes", "name": "Dependency vulnerability triage standard with timeframes", "assurance": "design", "cadence": "annual", "source": "platform", "module": "documents"},
+      {"key": "open-alerts-triaged-within-the-timeframe", "name": "Open alerts triaged within the timeframe", "assurance": "operating", "cadence": "monthly", "source": "platform", "module": "vulnerabilities"}
+    ]
   },
   {
     "canonical_key": "secret-scanning",
     "category": "Secure Development & Code Management",
+    "sub_category": "Application Security",
     "code": "SD-11",
     "control_sub_type": "Automated",
     "description": "A secret committed to a repository should be treated as public from that moment: history is cloned, forked and mirrored, and reverting the commit does not invalidate the credential.",
     "implementation_guidance": "Enable secret scanning on all repositories, including full commit history.\nAdd pre-commit hooks so secrets are caught before they are pushed.\nRotate any exposed secret immediately, and treat the exposure as an incident.\nInvestigate whether the exposed credential was used before rotation, rather than assuming it was not.",
     "importance": "mandatory",
-    "name": "Secret scanning"
+    "name": "Secret scanning",
+    "evidence": [
+      {"key": "procedure-for-rotating-exposed-secrets", "name": "Procedure for rotating exposed secrets", "assurance": "design", "cadence": "annual", "source": "platform", "module": "documents"},
+      {"key": "records-of-exposed-secrets-that-were", "name": "Records of exposed secrets that were rotated", "assurance": "operating", "cadence": "per_event", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "input-validation",
     "category": "Secure Development & Code Management",
+    "sub_category": "Data Processing",
     "code": "SD-05",
     "control_sub_type": "Automated",
     "description": "Processing integrity depends on what is allowed into the system. Validating at ingestion keeps malformed, duplicate and out-of-range data from propagating into stores and reports where it is far more expensive to correct.",
     "implementation_guidance": "Validate inputs at the boundary against schema, type, range and required fields.\nDetect and handle duplicate submissions explicitly rather than relying on downstream deduplication.\nReject invalid records to a monitored queue rather than discarding them silently.\nAlert on rejection rates that exceed expected thresholds, as they indicate an upstream defect.",
     "importance": "mandatory",
-    "name": "Input validation controls"
+    "name": "Input validation controls",
+    "evidence": [
+      {"key": "input-validation-standard", "name": "Input validation standard", "assurance": "design", "cadence": "annual", "source": "platform", "module": "documents"},
+      {"key": "evidence-validation-was-tested", "name": "Evidence validation was tested", "assurance": "operating", "cadence": "annual", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "processing-specs",
     "category": "Secure Development & Code Management",
+    "sub_category": "Data Processing",
     "code": "SD-09",
     "control_sub_type": "Manual",
     "description": "Processing can only be tested for correctness against a stated specification. Where behaviour is defined only by the code, there is no independent standard to test against and no basis for an accuracy commitment.",
     "implementation_guidance": "Document data definitions, field-level semantics, calculation logic and processing SLAs.\nVersion the specification alongside the system so the two do not diverge.\nReference the specification in test cases so tests verify the spec rather than current behaviour.\nReview it when processing logic changes, and record the approval of the change.",
     "importance": "mandatory",
-    "name": "Processing specifications"
+    "name": "Processing specifications",
+    "evidence": [
+      {"key": "processing-specifications-covering-inputs-outputs-and", "name": "Processing specifications covering inputs, outputs and accuracy", "assurance": "design", "cadence": "annual", "source": "upload"},
+      {"key": "review-of-specifications-after-change", "name": "Review of specifications after change", "assurance": "operating", "cadence": "on_change", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "processing-reconciliation",
     "category": "Secure Development & Code Management",
+    "sub_category": "Data Processing",
     "code": "SD-08",
     "control_sub_type": "Automated",
     "description": "Reconciling outputs against inputs is what demonstrates that processing was complete and accurate. A job that reports success while dropping records is invisible without it.",
     "implementation_guidance": "Monitor job execution for success, failure and non-execution, including jobs that silently do not start.\nReconcile record counts and control totals between source and destination for each run.\nAlert on breaks and investigate them rather than reprocessing blindly.\nRetain reconciliation results, as they are the primary evidence for the processing integrity criteria.",
     "importance": "preferred",
-    "name": "Processing reconciliation and monitoring"
+    "name": "Processing reconciliation and monitoring",
+    "evidence": [
+      {"key": "reconciliation-procedure", "name": "Reconciliation procedure", "assurance": "design", "cadence": "annual", "source": "upload"},
+      {"key": "reconciliation-results-and-how-exceptions-were", "name": "Reconciliation results and how exceptions were resolved", "assurance": "operating", "cadence": "monthly", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "pipeline-storage-integrity",
     "category": "Secure Development & Code Management",
+    "sub_category": "Data Processing",
     "code": "SD-07",
     "control_sub_type": "Automated",
     "description": "Where data passes through a multi-stage pipeline, the intermediate stores are part of the processing path. Data lost or silently truncated between stages produces output that is incomplete without any error being raised.",
     "implementation_guidance": "Use durable, versioned storage for intermediate pipeline stages rather than ephemeral local disk.\nApply integrity checks such as checksums or record counts between stages.\nMake stages idempotent so a retry cannot duplicate or lose records.\nAlign retention of intermediate data with the processing specification and the retention schedule.",
     "importance": "preferred",
-    "name": "Pipeline storage integrity"
+    "name": "Pipeline storage integrity",
+    "evidence": [
+      {"key": "pipeline-storage-design-showing-stages-and", "name": "Pipeline storage design showing stages and integrity checks", "assurance": "design", "cadence": "annual", "source": "upload"},
+      {"key": "integrity-check-results", "name": "Integrity check results", "assurance": "operating", "cadence": "monthly", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "centralized-logging",
     "category": "Logging, Monitoring & Incident Management",
+    "sub_category": "Security Tooling",
     "code": "LM-02",
     "control_sub_type": "Automated",
     "description": "Logs are the raw material for detection, investigation and evidence. If they are scattered, short-lived or absent, an incident cannot be reconstructed and the operating history cannot be shown.",
     "implementation_guidance": "Centralize security-relevant logs, including authentication, authorization, administrative action, and application audit events.\nRetain at least twelve months, with recent data immediately searchable.\nProtect logs against modification and restrict who can delete them.\nMonitor for logging gaps, as a source that stops sending is itself a signal.",
     "importance": "mandatory",
-    "name": "Centralized logging and retention"
+    "name": "Centralized logging and retention",
+    "evidence": [
+      {"key": "logging-and-retention-standard", "name": "Logging and retention standard", "assurance": "design", "cadence": "annual", "source": "platform", "module": "documents"},
+      {"key": "evidence-logs-are-reviewed", "name": "Evidence logs are reviewed", "assurance": "operating", "cadence": "monthly", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "asset-inventory",
     "category": "Logging, Monitoring & Incident Management",
+    "sub_category": "Assets & Vulnerabilities",
     "code": "LM-01",
     "control_sub_type": "Automated",
     "description": "Controls apply to systems that are known. An incomplete inventory means some portion of the estate is unpatched, unmonitored and unreviewed, and nobody can say which portion.",
     "implementation_guidance": "Maintain an inventory of systems, cloud resources, endpoints and applications with owner and classification.\nCollect it automatically from cloud and identity APIs where possible, as manual inventories decay quickly.\nReconcile it against billing, DNS and identity records to find unregistered systems.\nReview the inventory periodically and remove decommissioned assets.",
     "importance": "mandatory",
-    "name": "Asset and system inventory"
+    "name": "Asset and system inventory",
+    "evidence": [
+      {
+        "key": "asset-inventory",
+        "name": "Asset inventory",
+        "assurance": "operating",
+        "cadence": "ongoing",
+        "source": "platform",
+        "module": "assets",
+        "automated_by": ["verity.assets.owner_assigned", "assets.resources_registered"]
+      },
+      {
+        "key": "review-that-the-inventory-is-complete",
+        "name": "Review that the inventory is complete",
+        "assurance": "operating",
+        "cadence": "quarterly",
+        "source": "platform",
+        "module": "assets",
+        "automated_by": ["verity.assets.reviewed"]
+      }
+    ]
   },
   {
     "canonical_key": "security-alerting",
     "category": "Logging, Monitoring & Incident Management",
+    "sub_category": "Security Tooling",
     "code": "LM-09",
     "control_sub_type": "Automated",
     "description": "Alerting on everything trains responders to ignore alerts. A small set of high-signal alerts that are consistently acted on detects more than an exhaustive set that is muted.",
     "implementation_guidance": "Alert on a deliberately limited set of high-signal conditions rather than on every anomaly.\nPrioritize unauthorized access attempts, unusual authentication patterns, privilege escalation, service unavailability and resource exhaustion.\nRoute each alert to an owner with a defined response, and remove alerts nobody acts on.\nReview alert volume and false-positive rate periodically, and tune deliberately.",
     "importance": "mandatory",
-    "name": "Security anomaly alerting"
+    "name": "Security anomaly alerting",
+    "evidence": [
+      {"key": "alerting-standard", "name": "Alerting standard", "assurance": "design", "cadence": "annual", "source": "upload"},
+      {"key": "review-of-alert-tuning", "name": "Review of alert tuning", "assurance": "operating", "cadence": "quarterly", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "on-call",
     "category": "Logging, Monitoring & Incident Management",
+    "sub_category": "Incident Response",
     "code": "LM-08",
     "control_sub_type": "Manual",
     "description": "Alerts only reduce risk if someone receives them. An unstaffed alerting pipeline produces the appearance of monitoring without the substance, particularly outside working hours.",
     "implementation_guidance": "Operate an on-call rotation with defined coverage, including nights and weekends where commitments require it.\nRoute security and availability alerts to the rotation through a system that escalates unacknowledged pages.\nDefine acknowledgement and response time expectations per severity.\nTrack missed and unacknowledged pages, and review them as a reliability signal.",
     "importance": "mandatory",
-    "name": "On-call rotation"
+    "name": "On-call rotation",
+    "evidence": [
+      {"key": "on-call-schedule", "name": "On call schedule", "assurance": "operating", "cadence": "ongoing", "source": "upload"},
+      {"key": "escalation-policy", "name": "Escalation policy", "assurance": "design", "cadence": "annual", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "vulnerability-management",
     "category": "Logging, Monitoring & Incident Management",
+    "sub_category": "Assets & Vulnerabilities",
     "code": "LM-11",
     "control_sub_type": "Hybrid",
     "description": "New vulnerabilities are disclosed continuously against systems that were secure when deployed. A defined cadence of discovery and remediation is what keeps a hardened estate from drifting into exposure.",
     "implementation_guidance": "Scan infrastructure, containers, dependencies and external surface on a defined schedule.\nDefine remediation SLAs by severity, and measure performance against them.\nTrack findings to closure with evidence, and require a documented risk acceptance for anything not remediated.\nFeed penetration test and bug report findings into the same tracker so all vulnerabilities are managed in one place.",
     "importance": "mandatory",
-    "name": "Vulnerability management program"
+    "name": "Vulnerability management program",
+    "evidence": [
+      {"key": "vulnerability-management-policy-with-timeframes", "name": "Vulnerability management policy with timeframes", "assurance": "design", "cadence": "annual", "source": "platform", "module": "documents"},
+      {
+        "key": "scan-reports",
+        "name": "Scan reports",
+        "assurance": "operating",
+        "cadence": "monthly",
+        "source": "upload",
+        "automated_by": ["scanner.scans_current"]
+      },
+      {
+        "key": "vulnerability-register-with-remediation-and-accepted",
+        "name": "Vulnerability register with remediation and accepted risks",
+        "assurance": "operating",
+        "cadence": "ongoing",
+        "source": "platform",
+        "module": "vulnerabilities",
+        "automated_by": ["verity.vulns.within_sla"]
+      }
+    ]
   },
   {
     "canonical_key": "config-drift-detection",
     "category": "Logging, Monitoring & Incident Management",
+    "sub_category": "Security Tooling",
     "code": "LM-03",
     "control_sub_type": "Automated",
     "description": "Cloud configuration changes take effect immediately and can remove a control silently. Detecting drift from the approved baseline is what turns a one-time hardening exercise into a sustained control.",
     "implementation_guidance": "Monitor cloud configuration continuously against a secure baseline.\nAlert on high-risk regressions such as public storage exposure, disabled logging or opened management ports.\nDefine the remediation path for each alert type, and automate reversion where it is safe to do so.\nReview recurring drift for a root cause in the provisioning process.",
     "importance": "mandatory",
-    "name": "Configuration-change detection"
+    "name": "Configuration-change detection",
+    "evidence": [
+      {"key": "approved-configuration-baseline", "name": "Approved configuration baseline", "assurance": "design", "cadence": "annual", "source": "upload"},
+      {"key": "alerts-on-drift-that-were-investigated", "name": "Alerts on drift that were investigated", "assurance": "operating", "cadence": "quarterly", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "event-triage",
     "category": "Logging, Monitoring & Incident Management",
+    "sub_category": "Incident Response",
     "code": "LM-04",
     "control_sub_type": "Hybrid",
     "description": "Not every alert is an incident, and the decision between the two is itself a control. Recording that evaluation is what shows events were assessed rather than ignored.",
     "implementation_guidance": "Define severity levels and the criteria that place an event in each.\nTriage every security event and record the assessment, including events determined to be benign.\nDefine escalation paths and response expectations per severity.\nReview triage decisions periodically for consistency and for events that were misclassified.",
     "importance": "mandatory",
-    "name": "Security event evaluation"
+    "name": "Security event evaluation",
+    "evidence": [
+      {"key": "event-triage-procedure", "name": "Event triage procedure", "assurance": "design", "cadence": "annual", "source": "upload"},
+      {"key": "sample-of-evaluated-events-with-the", "name": "Sample of evaluated events with the decision", "assurance": "operating", "cadence": "quarterly", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "incident-response-plan",
     "category": "Logging, Monitoring & Incident Management",
+    "sub_category": "Incident Response",
     "code": "LM-07",
     "control_sub_type": "Manual",
     "description": "Incidents are handled under time pressure with incomplete information. A plan written in advance is what makes the response consistent rather than dependent on who happens to be available.",
     "implementation_guidance": "Maintain an incident response plan defining roles, severity levels and the phases of detection, containment, eradication, recovery and lessons learned.\nInclude internal and external communication steps, with the notification decision as an explicit gate.\nKeep contact details, escalation paths and vendor support routes current.\nReview the plan annually and after every significant incident.",
     "importance": "mandatory",
-    "name": "Incident response plan"
+    "name": "Incident response plan",
+    "evidence": [
+      {"key": "incident-response-plan", "name": "Incident response plan", "assurance": "design", "cadence": "annual", "source": "platform", "module": "documents"},
+      {"key": "roles-and-contact-list", "name": "Roles and contact list", "assurance": "design", "cadence": "annual", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "incident-postmortems",
     "category": "Logging, Monitoring & Incident Management",
+    "sub_category": "Incident Recovery",
     "code": "LM-05",
     "control_sub_type": "Manual",
     "description": "The value of an incident is the learning, and that is only realized if the analysis is written down and the corrective actions are tracked. Postmortem records are also the audit trail for how an incident was handled.",
     "implementation_guidance": "Run a postmortem for every significant incident, focused on contributing causes rather than individual blame.\nRecord the timeline, impact, root cause and detection gap.\nRaise corrective actions with named owners and due dates, and track them to closure.\nRetain the record, and review recurring themes across incidents.",
     "importance": "mandatory",
-    "name": "Incident postmortems with actions"
+    "name": "Incident postmortems with actions",
+    "evidence": [
+      {"key": "postmortem-for-each-significant-incident", "name": "Postmortem for each significant incident", "assurance": "operating", "cadence": "per_event", "source": "upload"},
+      {"key": "corrective-actions-tracked-to-closure", "name": "Corrective actions tracked to closure", "assurance": "operating", "cadence": "per_event", "source": "platform", "module": "tasks"}
+    ]
   },
   {
     "canonical_key": "tabletop-exercise",
     "category": "Logging, Monitoring & Incident Management",
+    "sub_category": "Incident Response",
     "code": "LM-10",
     "control_sub_type": "Manual",
     "description": "In a period with no incidents, a tabletop exercise is the only operating evidence that the response plan works. It also surfaces the gaps that are otherwise found during a real incident.",
     "implementation_guidance": "Run at least one tabletop exercise annually against a realistic scenario.\nInclude the people who would actually respond, including engineering, leadership and communications.\nCapture what the exercise revealed, particularly gaps in contacts, access and decision authority.\nTrack resulting actions to closure and retain the record as evidence the plan was exercised.",
     "importance": "preferred",
-    "name": "Incident tabletop exercise"
+    "name": "Incident tabletop exercise",
+    "evidence": [
+      {"key": "tabletop-exercise-plan-and-report", "name": "Tabletop exercise plan and report", "assurance": "operating", "cadence": "annual", "source": "upload"},
+      {"key": "actions-from-the-exercise", "name": "Actions from the exercise", "assurance": "operating", "cadence": "annual", "source": "platform", "module": "tasks"}
+    ]
   },
   {
     "canonical_key": "incident-recovery",
     "category": "Logging, Monitoring & Incident Management",
+    "sub_category": "Incident Recovery",
     "code": "LM-06",
     "control_sub_type": "Hybrid",
     "description": "Recovery is the part of incident response most often left undefined, and it is where improvisation causes the most damage: partial restores, missed credential rotation and reinfection from an unclean backup.",
     "implementation_guidance": "Define recovery procedures covering restoring from backup, rebuilding compromised systems and rotating affected credentials.\nEstablish criteria for declaring recovery complete and returning to normal operation.\nVerify system integrity before restoring service, so a compromise is not reintroduced.\nRecord the recovery steps performed in each incident record.",
     "importance": "mandatory",
-    "name": "Incident recovery procedures"
+    "name": "Incident recovery procedures",
+    "evidence": [
+      {"key": "recovery-procedures", "name": "Recovery procedures", "assurance": "design", "cadence": "annual", "source": "platform", "module": "documents"},
+      {
+        "key": "recovery-records-for-incidents",
+        "name": "Recovery records for incidents",
+        "assurance": "operating",
+        "cadence": "per_event",
+        "source": "upload",
+        "automated_by": ["alerts.incidents_resolved"]
+      }
+    ]
   },
   {
     "canonical_key": "bcdr-plan",
     "category": "Business Continuity & Third-Party Management",
+    "sub_category": "Continuity & Capacity",
     "code": "BC-03",
     "control_sub_type": "Manual",
     "description": "Outages, regional failures and destructive incidents will occur. A plan prepared in advance is what allows recovery within committed timeframes instead of improvising while customers are down.",
     "implementation_guidance": "Maintain a business continuity and disaster recovery plan with defined RTO and RPO per critical service.\nIdentify critical dependencies, including third parties, and document workarounds for each.\nDefine activation criteria, roles and communication procedures for customers and staff.\nReview the plan annually, test it, and update it after significant architectural change.",
     "importance": "mandatory",
-    "name": "Business continuity / disaster recovery plan"
+    "name": "Business continuity / disaster recovery plan",
+    "evidence": [
+      {"key": "business-continuity-and-disaster-recovery-plan", "name": "Business continuity and disaster recovery plan", "assurance": "design", "cadence": "annual", "source": "platform", "module": "documents"},
+      {"key": "exercise-or-test-report", "name": "Exercise or test report", "assurance": "operating", "cadence": "annual", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "capacity-monitoring",
     "category": "Business Continuity & Third-Party Management",
+    "sub_category": "Continuity & Capacity",
     "code": "BC-04",
     "control_sub_type": "Automated",
     "description": "Availability commitments are broken by capacity limits reached without warning. Monitoring demand against capacity is what turns a future outage into a planned expansion.",
     "implementation_guidance": "Monitor utilization of compute, storage, database connections, quotas and rate limits.\nSet alert thresholds below the point of failure, leaving time to act.\nUse autoscaling where the workload supports it, and test that it engages under load.\nReview capacity trends and provider quotas periodically against forecast growth.",
     "importance": "mandatory",
-    "name": "Capacity management"
+    "name": "Capacity management",
+    "evidence": [
+      {"key": "capacity-review", "name": "Capacity review", "assurance": "operating", "cadence": "quarterly", "source": "upload"},
+      {"key": "capacity-actions-that-were-taken", "name": "Capacity actions that were taken", "assurance": "operating", "cadence": "quarterly", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "automated-backups",
     "category": "Business Continuity & Third-Party Management",
+    "sub_category": "Backup & Recovery",
     "code": "BC-01",
     "control_sub_type": "Automated",
     "description": "Backups are the last defence against ransomware, accidental deletion and regional failure. Automation removes reliance on anyone remembering to run them, and monitoring ensures a silent failure is not discovered during an incident.",
     "implementation_guidance": "Enable automated backups on every production data store, with frequency and retention aligned to the documented RPO.\nEncrypt backups at rest and restrict restore permissions to a small, reviewed group.\nAlert on backup failure and on jobs that have not completed within the expected window.\nKeep at least one copy in a separate region or account, so a single compromise cannot destroy both data and backups.",
     "importance": "mandatory",
-    "name": "Automated, monitored backups"
+    "name": "Automated, monitored backups",
+    "evidence": [
+      {"key": "backup-policy-covering-scope-frequency-and", "name": "Backup policy covering scope, frequency and retention", "assurance": "design", "cadence": "annual", "source": "platform", "module": "documents"},
+      {"key": "backup-failure-alerts-and-follow-up", "name": "Backup failure alerts and follow up", "assurance": "operating", "cadence": "monthly", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "backup-restore-test",
     "category": "Business Continuity & Third-Party Management",
+    "sub_category": "Backup & Recovery",
     "code": "BC-02",
     "control_sub_type": "Manual",
     "description": "A backup that has never been restored is an assumption, not a control. Restore testing is what converts it into a demonstrated recovery capability and surfaces the gaps before they matter.",
     "implementation_guidance": "Perform a full restore test at least annually, and after significant changes to the data platform.\nRestore into an isolated environment and validate data completeness and integrity, not just job success.\nMeasure actual restore time against the documented RTO and RPO.\nRecord the test date, scope, result and any corrective actions.",
     "importance": "mandatory",
-    "name": "Backup restore testing"
+    "name": "Backup restore testing",
+    "evidence": [
+      {"key": "restore-test-plan-and-results", "name": "Restore test plan and results", "assurance": "operating", "cadence": "annual", "source": "upload"},
+      {"key": "measured-recovery-time-against-the-target", "name": "Measured recovery time against the target", "assurance": "operating", "cadence": "annual", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "vendor-inventory",
     "category": "Business Continuity & Third-Party Management",
+    "sub_category": "Vendor Management",
     "code": "BC-07",
     "control_sub_type": "Manual",
     "description": "Third-party risk cannot be managed against an unknown population. The vendor register is the base list that due diligence, agreements and access reviews all work from.",
     "implementation_guidance": "Maintain a vendor register with owner, service provided, criticality and the data each vendor can access.\nReconcile it against accounts payable and identity-provider records to find unregistered vendors.\nRecord contract dates and renewal points so review happens before commitments auto-renew.\nReview the register at least annually and remove vendors no longer in use, confirming their access is revoked.",
     "importance": "mandatory",
-    "name": "Vendor inventory"
+    "name": "Vendor inventory",
+    "evidence": [
+      {
+        "key": "vendor-inventory-with-owner-data-and",
+        "name": "Vendor inventory with owner, data and criticality",
+        "assurance": "operating",
+        "cadence": "ongoing",
+        "source": "platform",
+        "module": "vendors",
+        "automated_by": ["verity.vendors.owner_and_tier"]
+      }
+    ]
   },
   {
     "canonical_key": "vendor-security-review",
     "category": "Business Continuity & Third-Party Management",
+    "sub_category": "Vendor Management",
     "code": "BC-08",
     "control_sub_type": "Manual",
     "description": "Vendors inherit the data entrusted to you, and their weaknesses become yours. Diligence scaled to risk is what makes that inheritance a decision rather than an accident.",
     "implementation_guidance": "Assess vendor security before granting access to systems or data, with depth scaled to criticality.\nObtain and review a SOC 2 report or equivalent for critical vendors, reading the exceptions and complementary user entity controls rather than filing the report unread.\nRe-review critical vendors at least annually and on material change.\nRecord the assessment, the decision and any accepted risk.",
     "importance": "mandatory",
-    "name": "Vendor security due diligence"
+    "name": "Vendor security due diligence",
+    "evidence": [
+      {
+        "key": "security-assessment-for-each-critical-vendor",
+        "name": "Security assessment for each critical vendor",
+        "assurance": "operating",
+        "cadence": "annual",
+        "source": "platform",
+        "module": "vendors",
+        "automated_by": ["verity.vendors.assessed_in_cadence"]
+      },
+      {"key": "vendor-assurance-reports-that-were-reviewed", "name": "Vendor assurance reports that were reviewed such as SOC 2 or ISO 27001", "assurance": "operating", "cadence": "annual", "source": "platform", "module": "vendors"}
+    ]
   },
   {
     "canonical_key": "shadow-it-detection",
     "category": "Business Continuity & Third-Party Management",
+    "sub_category": "Vendor Management",
     "code": "BC-05",
     "control_sub_type": "Automated",
     "description": "Software adopted outside procurement still processes company data, but without a vendor review, a data processing agreement or an offboarding path. Detection is what brings it back under management.",
     "implementation_guidance": "Monitor identity-provider sign-ins and OAuth grants to detect newly adopted applications.\nReview expense and card data for software purchases made outside procurement.\nRoute detected applications into the vendor onboarding process, or remove access.\nMake the approved request path easy enough that informal adoption is not the path of least resistance.",
     "importance": "preferred",
-    "name": "Shadow-IT detection"
+    "name": "Shadow-IT detection",
+    "evidence": [
+      {"key": "review-of-newly-discovered-applications", "name": "Review of newly discovered applications", "assurance": "operating", "cadence": "quarterly", "source": "upload"},
+      {"key": "decision-to-approve-or-remove-each", "name": "Decision to approve or remove each one", "assurance": "operating", "cadence": "quarterly", "source": "platform", "module": "vendors"}
+    ]
   },
   {
     "canonical_key": "subprocessor-list",
     "category": "Business Continuity & Third-Party Management",
+    "sub_category": "Vendor Management",
     "code": "BC-06",
     "control_sub_type": "Manual",
     "description": "Subprocessors receiving customer or personal data extend the trust boundary. Customer contracts and privacy regimes commonly require that they are disclosed and, in many cases, that customers are notified before new ones are added.",
     "implementation_guidance": "Maintain a subprocessor list recording the entity, purpose, data categories and location.\nPublish it where customer commitments require, and keep the published version current.\nReconcile the list against vendors that actually receive data, using the data map.\nFollow the contractual notice process before adding a subprocessor.",
     "importance": "preferred",
-    "name": "Subprocessor management"
+    "name": "Subprocessor management",
+    "evidence": [
+      {"key": "subprocessor-list-shared-with-customers", "name": "Subprocessor list shared with customers", "assurance": "design", "cadence": "ongoing", "source": "platform", "module": "vendors"},
+      {"key": "notices-to-customers-of-subprocessor-changes", "name": "Notices to customers of subprocessor changes", "assurance": "operating", "cadence": "per_event", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "cloud-physical-inherited",
     "category": "Physical & Environmental Security",
+    "sub_category": "Cloud Providers",
     "code": "PE-01",
     "control_sub_type": "Manual",
     "description": "Where infrastructure runs in a cloud provider, physical security is performed by that provider and carved out of your audit. Reviewing their report is what makes that reliance a verified control rather than an assumption.",
     "implementation_guidance": "Obtain the provider's current SOC 2 or ISO 27001 report at least annually.\nReview the exceptions and the complementary user entity controls, and confirm you operate the controls the provider expects of you.\nDisclose the subservice organization and the carve-out in the system description.\nRecord the review, the reviewer and any issues identified.",
     "importance": "mandatory",
-    "name": "Cloud physical security (subservice review)"
+    "name": "Cloud physical security (subservice review)",
+    "evidence": [
+      {"key": "cloud-provider-assurance-report-that-was", "name": "Cloud provider assurance report that was reviewed such as SOC 2 or ISO 27001", "assurance": "operating", "cadence": "annual", "source": "platform", "module": "vendors"},
+      {"key": "review-of-the-carve-out-and", "name": "Review of the carve out and the controls the entity must add", "assurance": "operating", "cadence": "annual", "source": "upload"}
+    ]
   },
   {
     "canonical_key": "office-physical-access",
     "category": "Physical & Environmental Security",
+    "sub_category": "Offices",
     "code": "PE-02",
     "control_sub_type": "Hybrid",
     "description": "Offices still hold laptops, printed material and network access. Where an office is in scope, physical access control is what stops digital controls from being bypassed by simply walking in.",
     "implementation_guidance": "Control office entry with badge or equivalent access, and restrict server or network areas further.\nMaintain a visitor log and require visitors to be escorted in sensitive areas.\nRevoke badges as part of offboarding, and reconcile active badges against active staff periodically.\nRetain access records for a defined period, and secure printed confidential material and disposal.",
     "importance": "preferred",
-    "name": "Office physical access controls"
+    "name": "Office physical access controls",
+    "evidence": [
+      {"key": "physical-access-policy-for-offices", "name": "Physical access policy for offices", "assurance": "design", "cadence": "annual", "source": "platform", "module": "documents"},
+      {"key": "access-list-and-badge-records", "name": "Access list and badge records", "assurance": "operating", "cadence": "quarterly", "source": "upload"},
+      {"key": "visitor-log", "name": "Visitor log", "assurance": "operating", "cadence": "ongoing", "source": "upload"}
+    ]
   }
 ]

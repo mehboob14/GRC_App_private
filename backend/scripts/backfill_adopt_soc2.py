@@ -2,7 +2,7 @@
 
 One-off and idempotent. New tenants now adopt at signup / provider provisioning
 (see ``iam.service._adopt_control_library``); this brings tenants created before
-that wiring up to the same baseline — all 114 controls instantiated, so there is
+that wiring up to the same baseline: the whole library instantiated, so there is
 something to scope, own and evidence. Safe to re-run: ``instantiate_library`` is
 idempotent on ``(tenant_id, template_id)``.
 

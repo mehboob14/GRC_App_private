@@ -17,6 +17,7 @@ from datetime import date
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from verity.modules.connectors.schemas import ControlChainOut
 from verity.modules.tenancy.schemas import UtcDateTime
 
 
@@ -68,6 +69,7 @@ class ControlTemplateOut(_Response):
     description: str
     implementation_guidance: str | None
     category: str
+    sub_category: str | None
     control_type: str | None
     control_sub_type: str | None
     importance: str
@@ -183,6 +185,9 @@ class ControlVocabularyOut(_Response):
     duplicated in the frontend, so the two cannot drift out of step."""
 
     categories: list[str]
+    # The Sub-types the shipped library uses, per Type (category). Suggestions for
+    # the control form, not a closed list: a custom control may carry its own.
+    sub_categories: dict[str, list[str]]
     control_types: list[str]
     control_sub_types: list[str]
     statuses: list[str]
@@ -293,9 +298,9 @@ class RecentEvidenceOut(_Response):
 
 class DashboardOut(_Response):
     """The compliance dashboard payload. Point-in-time figures plus one timeline
-    and a recent-activity feed. ``checks_available`` is false until a connector
-    can run automated checks — the client greys that panel rather than showing a
-    zero that reads as a finding."""
+    and a recent-activity feed. ``checks_available`` is false until a connection
+    has produced results; the automation counts are controls, rolled up from their
+    tests (passing, failing, or could not be checked)."""
 
     has_engagement: bool
     framework_name: str | None
@@ -327,6 +332,9 @@ class DashboardOut(_Response):
     timeline_to: date
     timeline: list[TimelinePointOut]
     checks_available: bool
+    automation_passing: int
+    automation_failing: int
+    automation_error: int
     recent_activity: list[ActivityItemOut]
 
 
@@ -338,12 +346,14 @@ class ReportKpisOut(_Response):
     controls_ready: int
     criteria_mapped: int
     by_status: dict[str, int]
+    controls_failing_automation: int = 0
 
 
 class ReportRowOut(_Response):
     code: str
     name: str
     category: str
+    sub_category: str | None
     control_type: str | None
     status: str
     status_label: str
@@ -368,3 +378,34 @@ class ScopeCriterionOut(_Response):
     name: str
     trust_services_category: str
     is_always_in_scope: bool
+
+
+class ChainRequirementOut(_Response):
+    id: uuid.UUID
+    requirement_key: str
+    code: str
+    name: str
+    description: str | None
+    category: str
+    trust_services_category: str
+
+
+class ChainControlOut(BaseModel):
+    control_id: uuid.UUID
+    code: str
+    name: str
+    status: str
+    owner_name: str | None
+    coverage: str | None
+    rationale: str | None
+    origin: str
+    ready: bool
+    chain: ControlChainOut | None
+
+
+class RequirementChainOut(BaseModel):
+    """A criterion, the controls that answer it, and what evidences each."""
+
+    requirement: ChainRequirementOut
+    state: str
+    controls: list[ChainControlOut]

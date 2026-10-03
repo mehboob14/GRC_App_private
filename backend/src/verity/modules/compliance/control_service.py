@@ -14,9 +14,9 @@ from __future__ import annotations
 import uuid
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from typing import Final
+from typing import Any, Final
 
-from sqlalchemy import func, select
+from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from verity.core.errors import Conflict, InvalidInput, NotFound
@@ -83,6 +83,46 @@ class ControlView:
 
 
 @dataclass(frozen=True, slots=True)
+class MappingView:
+    """One criterion a control answers, and why.
+
+    ``coverage`` and ``rationale`` come from the shipped crosswalk. A mapping a
+    workspace added itself has neither: ``origin`` is ``workspace`` and nobody has
+    written down why, which the page says rather than inventing a reason.
+    """
+
+    requirement_id: uuid.UUID
+    requirement_key: str
+    code: str
+    name: str
+    trust_services_category: str
+    coverage: str | None
+    rationale: str | None
+    origin: str
+
+
+@dataclass(frozen=True, slots=True)
+class RequirementView:
+    id: uuid.UUID
+    requirement_key: str
+    code: str
+    name: str
+    description: str | None
+    category: str
+    trust_services_category: str
+
+
+@dataclass(frozen=True, slots=True)
+class RequirementControl:
+    """A live control that answers a criterion, with the mapping that says how."""
+
+    control: ControlView
+    coverage: str | None
+    rationale: str | None
+    origin: str
+
+
+@dataclass(frozen=True, slots=True)
 class AdoptionResult:
     """What ``instantiate_library`` did. ``created`` counts controls actually
     inserted — a second run reports zero rather than duplicating the library."""
@@ -139,6 +179,7 @@ class ControlService:
                 description=template.description,
                 implementation_guidance=template.implementation_guidance,
                 category=template.category,
+                sub_category=template.sub_category,
                 control_type=template.control_type,
                 control_sub_type=template.control_sub_type,
                 status="not_started",
@@ -216,6 +257,7 @@ class ControlService:
         tenant_id: uuid.UUID,
         status: str | None = None,
         category: str | None = None,
+        sub_category: str | None = None,
         control_type: str | None = None,
         control_sub_type: str | None = None,
         owner_membership_id: uuid.UUID | None = None,
@@ -229,6 +271,8 @@ class ControlService:
             statement = statement.where(Control.status == status)
         if category is not None:
             statement = statement.where(Control.category == category)
+        if sub_category is not None:
+            statement = statement.where(Control.sub_category == sub_category)
         if control_type is not None:
             statement = statement.where(Control.control_type == control_type)
         if control_sub_type is not None:
@@ -244,6 +288,24 @@ class ControlService:
         keys = await self._requirement_keys(session, tenant_id)
         owners = await self._owner_names(session, tenant_id)
         return [self._view(control, keys, owners) for control in controls]
+
+    async def sub_category_vocabulary(self, session: AsyncSession) -> dict[str, list[str]]:
+        """The Sub-types the shipped library uses, per Type, in name order.
+
+        Read from the templates, which the content pack writes, so the pack stays
+        the one place the vocabulary changes. A Type no template gives a Sub-type
+        is absent, and the form falls back to free text for it.
+        """
+        rows = await session.execute(
+            select(ControlTemplate.category, ControlTemplate.sub_category)
+            .distinct()
+            .order_by(ControlTemplate.category, ControlTemplate.sub_category)
+        )
+        vocabulary: dict[str, list[str]] = {}
+        for category, sub_category in rows.tuples():
+            if sub_category:
+                vocabulary.setdefault(category, []).append(sub_category)
+        return vocabulary
 
     async def active_control_ids(
         self, session: AsyncSession, *, tenant_id: uuid.UUID
@@ -293,6 +355,126 @@ class ControlService:
             )
         )
         return list(rows.scalars())
+
+    async def control_template_ids(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID
+    ) -> dict[uuid.UUID, uuid.UUID]:
+        """Each live control's template, for the controls that came from one.
+
+        Checks are mapped to templates, so anything that rolls test results up to
+        controls (the dashboard) needs this link and nothing else about a control.
+        """
+        rows = await session.execute(
+            select(Control.id, Control.template_id).where(
+                Control.tenant_id == tenant_id,
+                Control.disabled_at.is_(None),
+                Control.template_id.is_not(None),
+            )
+        )
+        return {
+            control_id: template_id
+            for control_id, template_id in rows.tuples()
+            if template_id is not None
+        }
+
+    async def control_mappings(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, control_id: uuid.UUID
+    ) -> list[MappingView]:
+        """The criteria a control answers, each with the shipped coverage and rationale."""
+        control = await self._load(session, tenant_id, control_id)
+        rows = await session.execute(
+            select(Requirement, TemplateRequirementMap.coverage, TemplateRequirementMap.rationale)
+            .join(ControlRequirement, ControlRequirement.requirement_id == Requirement.id)
+            .outerjoin(
+                TemplateRequirementMap,
+                and_(
+                    TemplateRequirementMap.requirement_id == Requirement.id,
+                    TemplateRequirementMap.template_id == control.template_id,
+                ),
+            )
+            .where(
+                ControlRequirement.tenant_id == tenant_id,
+                ControlRequirement.control_id == control.id,
+            )
+            .order_by(Requirement.code)
+        )
+        return [
+            MappingView(
+                requirement_id=requirement.id,
+                requirement_key=requirement.requirement_key,
+                code=requirement.code,
+                name=requirement.name,
+                trust_services_category=requirement.trust_services_category,
+                coverage=coverage,
+                rationale=rationale,
+                origin="library" if coverage is not None else "workspace",
+            )
+            for requirement, coverage, rationale in rows.tuples()
+        ]
+
+    async def template_evidence(
+        self, session: AsyncSession, *, template_ids: set[uuid.UUID]
+    ) -> dict[uuid.UUID, list[dict[str, Any]]]:
+        """What each template says a person or a module provides, beyond its checks."""
+        if not template_ids:
+            return {}
+        rows = await session.execute(
+            select(ControlTemplate.id, ControlTemplate.evidence).where(
+                ControlTemplate.id.in_(template_ids)
+            )
+        )
+        return {template_id: list(evidence or []) for template_id, evidence in rows.tuples()}
+
+    async def get_requirement(
+        self, session: AsyncSession, *, requirement_id: uuid.UUID
+    ) -> RequirementView:
+        row = await session.get(Requirement, requirement_id)
+        if row is None:
+            raise NotFound("That criterion does not exist.", detail=str(requirement_id))
+        return RequirementView(
+            id=row.id,
+            requirement_key=row.requirement_key,
+            code=row.code,
+            name=row.name,
+            description=row.description,
+            category=row.category,
+            trust_services_category=row.trust_services_category,
+        )
+
+    async def controls_for_requirement(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, requirement_id: uuid.UUID
+    ) -> list[RequirementControl]:
+        """The workspace's live controls that answer a criterion, in control order."""
+        rows = await session.execute(
+            select(Control, TemplateRequirementMap.coverage, TemplateRequirementMap.rationale)
+            .join(ControlRequirement, ControlRequirement.control_id == Control.id)
+            .outerjoin(
+                TemplateRequirementMap,
+                and_(
+                    TemplateRequirementMap.requirement_id == ControlRequirement.requirement_id,
+                    TemplateRequirementMap.template_id == Control.template_id,
+                ),
+            )
+            .where(
+                Control.tenant_id == tenant_id,
+                Control.disabled_at.is_(None),
+                ControlRequirement.tenant_id == tenant_id,
+                ControlRequirement.requirement_id == requirement_id,
+            )
+            .order_by(Control.code)
+        )
+        found = list(rows.tuples())
+        keys = await self._requirement_keys(session, tenant_id)
+        owners = await self._owner_names(session, tenant_id)
+        return [
+            RequirementControl(
+                control=self._view(control, keys, owners),
+                coverage=coverage,
+                rationale=rationale,
+                origin="library" if coverage is not None else "workspace",
+            )
+            for control, coverage, rationale in found
+        ]
 
     async def get_control(
         self, session: AsyncSession, *, tenant_id: uuid.UUID, control_id: uuid.UUID
@@ -456,7 +638,8 @@ class ControlService:
             description=description.strip(),
             implementation_guidance=implementation_guidance,
             category=category,
-            sub_category=sub_category,
+            # Free text: stray spaces would split one area into two facet entries.
+            sub_category=(sub_category or "").strip() or None,
             control_type=control_type,
             control_sub_type=control_sub_type,
             status="not_started",
@@ -522,7 +705,8 @@ class ControlService:
             ("description", description),
             ("implementation_guidance", implementation_guidance),
             ("category", category),
-            ("sub_category", sub_category),
+            # An empty string clears it; a patch cannot say null for "no value".
+            ("sub_category", None if sub_category is None else sub_category.strip()),
             ("control_type", control_type),
             ("control_sub_type", control_sub_type),
             ("status", status),

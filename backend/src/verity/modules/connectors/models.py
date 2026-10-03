@@ -51,6 +51,11 @@ OUTCOMES: Final[tuple[str, ...]] = ("pass", "fail", "error", "not_applicable")
 COVERAGE: Final[tuple[str, ...]] = ("full", "partial")
 FREQUENCIES: Final[tuple[str, ...]] = ("daily", "weekly")
 REQUEST_STATUSES: Final[tuple[str, ...]] = ("open", "planned", "available", "declined")
+SCOPE_STATES: Final[tuple[str, ...]] = ("in_scope", "excluded")
+SCOPE_DECIDERS: Final[tuple[str, ...]] = ("system", "person")
+"""Who put a resource in or out of scope. A system decision (an archived repository,
+a fork) is re-derived on every run; a person's decision is sticky until a person
+changes it, which is what makes an exclusion something an auditor can rely on."""
 
 _MEMBERSHIP_FK: Final = "tenant_memberships.id"
 
@@ -100,12 +105,22 @@ class Check(UUIDPrimaryKey, Timestamped, Base):
     resource_type: Mapped[str]
     frequency: Mapped[str] = mapped_column(default="daily", server_default=text("'daily'"))
     remediation: Mapped[str]
+    # The artifacts this check collects (a branch protection setting, a pull
+    # request, a CI run), by name. What an auditor is shown, not what it is called.
+    evidence_kinds: Mapped[list[str]] = mapped_column(
+        postgresql.JSONB, default=list, server_default=text("'[]'::jsonb")
+    )
 
     __table_args__ = (status_check("checks", "frequency", FREQUENCIES),)
 
 
 class ControlTemplateCheck(UUIDPrimaryKey, Timestamped, Base):
-    """Which checks automate which control template, fully or in part."""
+    """Which checks evidence which control template, and how much of it.
+
+    ``coverage`` is ``full`` only when passing this check alone verifies the whole
+    control, and ``partial`` when it verifies part of it. ``rationale`` says which
+    part, and what the check does not prove.
+    """
 
     __tablename__ = "control_template_checks"
 
@@ -114,6 +129,7 @@ class ControlTemplateCheck(UUIDPrimaryKey, Timestamped, Base):
     )
     check_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("checks.id", ondelete="CASCADE"))
     coverage: Mapped[str] = mapped_column(default="partial")
+    rationale: Mapped[str | None] = mapped_column(default=None)
 
     __table_args__ = (
         UniqueConstraint("template_id", "check_id", name="uq_control_template_checks__pair"),
@@ -170,6 +186,61 @@ class Connection(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
         # Never the ciphertext: it is not secret on its own, but it has no business
         # in a log line either.
         return f"Connection(id={self.id!r}, provider={self.provider!r}, status={self.status!r})"
+
+
+class ConnectionResource(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
+    """Something a connection can see, and whether its checks look at it (AU-9).
+
+    The inventory a run discovers, and the scope decision beside each item. A
+    SOC 2 engagement covers named systems, not everything a token can reach: a
+    personal account holds forks, coursework and empty repositories that no
+    auditor will ask about, and judging them fills the control page with noise
+    nobody can act on.
+
+    ``source``, ``external_id`` and ``synced_at`` are here from the start because
+    this is exactly what a discovery connector fills (rule 9), and it is the
+    natural feed for the asset inventory later.
+    """
+
+    __tablename__ = "connection_resources"
+
+    connection_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("connections.id", ondelete="CASCADE")
+    )
+    resource_type: Mapped[str] = mapped_column(
+        default="repository", server_default=text("'repository'")
+    )
+    source: Mapped[str]
+    external_id: Mapped[str]
+    name: Mapped[str]
+    url: Mapped[str | None] = mapped_column(default=None)
+    attributes: Mapped[dict[str, Any]] = mapped_column(
+        postgresql.JSONB, default=dict, server_default=text("'{}'::jsonb")
+    )
+    scope: Mapped[str] = mapped_column(default="in_scope", server_default=text("'in_scope'"))
+    scope_reason: Mapped[str | None] = mapped_column(default=None)
+    decided_by: Mapped[str] = mapped_column(default="system", server_default=text("'system'"))
+    decided_by_membership_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey(_MEMBERSHIP_FK, ondelete="SET NULL"), default=None
+    )
+    decided_at: Mapped[datetime | None] = mapped_column(default=None)
+    first_seen_at: Mapped[datetime] = mapped_column(server_default=func.now())
+    synced_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+    __table_args__ = (
+        status_check("connection_resources", "scope", SCOPE_STATES),
+        status_check("connection_resources", "decided_by", SCOPE_DECIDERS),
+        # An exclusion with no stated reason is a repository quietly dropped from
+        # the audit, which is the thing this table exists to prevent.
+        CheckConstraint(
+            "(scope <> 'excluded') OR (scope_reason IS NOT NULL)",
+            name=conv("ck_connection_resources__exclusion_has_reason"),
+        ),
+        UniqueConstraint(
+            "tenant_id", "connection_id", "external_id", name="uq_connection_resources__external_id"
+        ),
+        tenant_index("connection_resources", "connection_id", "scope"),
+    )
 
 
 class CheckRun(UUIDPrimaryKey, TenantScoped, Timestamped, Base):

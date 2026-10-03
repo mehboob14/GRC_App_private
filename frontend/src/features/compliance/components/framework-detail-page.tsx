@@ -22,11 +22,13 @@ import {
 import { complianceApi } from "@/lib/api/endpoints";
 import { describeError } from "@/lib/api/describe-error";
 import type { Requirement } from "@/lib/api/types";
+import { RequirementChainDialog } from "@/features/compliance/components/requirement-chain-dialog";
 
 export function FrameworkDetailPage() {
   const { frameworkId = "" } = useParams();
   const [search, setSearch] = useState("");
   const [categories, setCategories] = useState<string[]>([]);
+  const [chainFor, setChainFor] = useState<string | null>(null);
 
   const frameworksQuery = useQuery({
     queryKey: ["frameworks"],
@@ -158,6 +160,9 @@ export function FrameworkDetailPage() {
               <TH>Category</TH>
               <TH>Trust services</TH>
               <TH numeric>Controls</TH>
+              <TH className="w-40">
+                <span className="sr-only">How it is met</span>
+              </TH>
             </TR>
           </THead>
           <TBody>
@@ -201,11 +206,25 @@ export function FrameworkDetailPage() {
                     {requirement.template_count}
                   </span>
                 </TD>
+                <TD className="text-right">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setChainFor(requirement.id)}
+                    aria-label={`How ${requirement.code} is met`}
+                  >
+                    How it is met
+                  </Button>
+                </TD>
               </TR>
             ))}
           </TBody>
         </Table>
       )}
+      <RequirementChainDialog
+        requirementId={chainFor}
+        onClose={() => setChainFor(null)}
+      />
     </div>
   );
 }

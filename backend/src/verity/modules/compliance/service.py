@@ -100,6 +100,7 @@ class TemplateDetailView:
             "description",
             "implementation_guidance",
             "category",
+            "sub_category",
             "control_type",
             "control_sub_type",
             "importance",

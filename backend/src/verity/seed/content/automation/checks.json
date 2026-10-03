@@ -8,7 +8,11 @@
     "resource_type": "repository",
     "frequency": "daily",
     "remediation": "Protect the default branch, or add a ruleset, so changes arrive through a pull request and force pushes are blocked.",
-    "controls": [{"code": "SD-06", "coverage": "partial"}, {"code": "SD-01", "coverage": "partial"}]
+    "controls": [
+      {"code": "SD-06", "coverage": "partial", "rationale": "Shows changes reach the default branch only through review. It does not show who reviewed them or that nobody can bypass the rule."},
+      {"code": "SD-01", "coverage": "partial", "rationale": "Shows unreviewed changes cannot be pushed straight to production code. The approval itself is checked by the review checks."}
+    ],
+    "evidence_kinds": ["Branch protection settings", "Branch rulesets"]
   },
   {
     "key": "vcs.review_required",
@@ -19,7 +23,11 @@
     "resource_type": "repository",
     "frequency": "daily",
     "remediation": "Require one or more approving reviews in branch protection or the pull request ruleset.",
-    "controls": [{"code": "SD-06", "coverage": "full"}, {"code": "SD-01", "coverage": "partial"}]
+    "controls": [
+      {"code": "SD-06", "coverage": "partial", "rationale": "Shows a pull request needs an approving review before it merges. Whether each merged change was reviewed is checked separately."},
+      {"code": "SD-01", "coverage": "partial", "rationale": "Shows approval is required before a change merges."}
+    ],
+    "evidence_kinds": ["Required review settings"]
   },
   {
     "key": "vcs.merged_changes_reviewed",
@@ -30,7 +38,11 @@
     "resource_type": "repository",
     "frequency": "daily",
     "remediation": "Review the listed changes now and record it, then require reviews so a change cannot merge unreviewed again.",
-    "controls": [{"code": "SD-01", "coverage": "partial"}, {"code": "SD-06", "coverage": "partial"}]
+    "controls": [
+      {"code": "SD-01", "coverage": "partial", "rationale": "Shows recent merged changes were approved by someone other than the author, which is the approval step of a change."},
+      {"code": "SD-06", "coverage": "partial", "rationale": "Shows peer review actually happened on recent merged changes, not only that it is required."}
+    ],
+    "evidence_kinds": ["Merged pull requests", "Pull request reviews and reviewers"]
   },
   {
     "key": "vcs.status_checks_required",
@@ -41,7 +53,12 @@
     "resource_type": "repository",
     "frequency": "daily",
     "remediation": "Add the test job as a required status check on the default branch.",
-    "controls": [{"code": "SD-02", "coverage": "partial"}]
+    "controls": [{
+  "code": "SD-02",
+  "coverage": "partial",
+  "rationale": "Shows tests must pass before a change merges. It does not show the tests are meaningful or that they passed on each change."
+}],
+    "evidence_kinds": ["Required status check settings"]
   },
   {
     "key": "vcs.secret_scanning_enabled",
@@ -52,7 +69,12 @@
     "resource_type": "repository",
     "frequency": "daily",
     "remediation": "Turn on secret scanning in the repository's security settings.",
-    "controls": [{"code": "SD-11", "coverage": "full"}]
+    "controls": [{
+  "code": "SD-11",
+  "coverage": "partial",
+  "rationale": "Shows scanning is switched on for each repository. Rotating an exposed secret is a separate step."
+}],
+    "evidence_kinds": ["Repository security settings"]
   },
   {
     "key": "vcs.dependency_alerts_enabled",
@@ -63,7 +85,11 @@
     "resource_type": "repository",
     "frequency": "daily",
     "remediation": "Turn on Dependabot alerts in the repository's security settings.",
-    "controls": [{"code": "SD-03", "coverage": "partial"}, {"code": "LM-11", "coverage": "partial"}]
+    "controls": [
+      {"code": "SD-03", "coverage": "partial", "rationale": "Shows dependency alerts are on. Container image scanning and fixing the alerts are separate."},
+      {"code": "LM-11", "coverage": "partial", "rationale": "Shows one source of vulnerability findings is switched on. The program also needs timeframes and tracking to closure."}
+    ],
+    "evidence_kinds": ["Dependency alert settings"]
   },
   {
     "key": "vcs.org_two_factor_required",
@@ -74,7 +100,12 @@
     "resource_type": "organization",
     "frequency": "daily",
     "remediation": "In the organisation's authentication security settings, require two factor authentication for everyone.",
-    "controls": [{"code": "IAM-03", "coverage": "partial"}]
+    "controls": [{
+  "code": "IAM-03",
+  "coverage": "partial",
+  "rationale": "Shows two factor is required in the source control organization. Other systems need their own checks."
+}],
+    "evidence_kinds": ["Organization security settings"]
   },
   {
     "key": "vcs.code_scanning_enabled",
@@ -85,18 +116,28 @@
     "resource_type": "repository",
     "frequency": "daily",
     "remediation": "Turn on code scanning for each repository.",
-    "controls": [{"code": "SD-05", "coverage": "partial"}]
+    "controls": [{
+  "code": "SD-05",
+  "coverage": "partial",
+  "rationale": "Static analysis catches some input validation flaws. It does not show inputs are complete and accurate."
+}],
+    "evidence_kinds": ["Code scanning configuration", "Code scanning alerts"]
   },
   {
     "key": "cloud.encryption_at_rest",
     "name": "Stored data is encrypted",
-    "description": "Every storage bucket, database and volume in scope is encrypted at rest.",
+    "description": "Every storage bucket, database, volume and snapshot in scope is encrypted at rest.",
     "capabilities": ["cloud_infrastructure"],
     "implementations": [],
     "resource_type": "cloud_resource",
     "frequency": "daily",
     "remediation": "Turn on default encryption with a managed key for each resource.",
-    "controls": [{"code": "NS-01", "coverage": "full"}]
+    "controls": [{
+  "code": "NS-01",
+  "coverage": "full",
+  "rationale": "Shows every storage bucket, database, volume and snapshot in scope is encrypted, which is what the control states."
+}],
+    "evidence_kinds": ["Encryption settings per storage resource"]
   },
   {
     "key": "cloud.tls_in_transit",
@@ -107,7 +148,12 @@
     "resource_type": "cloud_resource",
     "frequency": "daily",
     "remediation": "Set a TLS 1.2 minimum security policy on every listener and endpoint.",
-    "controls": [{"code": "NS-02", "coverage": "partial"}]
+    "controls": [{
+  "code": "NS-02",
+  "coverage": "partial",
+  "rationale": "Shows public endpoints accept only current TLS. Internal service traffic needs its own evidence."
+}],
+    "evidence_kinds": ["Load balancer and endpoint TLS settings"]
   },
   {
     "key": "cloud.default_deny_ingress",
@@ -118,7 +164,12 @@
     "resource_type": "cloud_resource",
     "frequency": "daily",
     "remediation": "Remove open inbound rules and allow only named sources and ports.",
-    "controls": [{"code": "NS-03", "coverage": "full"}]
+    "controls": [{
+  "code": "NS-03",
+  "coverage": "partial",
+  "rationale": "Shows inbound rules are limited to what a service needs. The owner and purpose of each rule are reviewed by people."
+}],
+    "evidence_kinds": ["Security group and firewall rules"]
   },
   {
     "key": "cloud.admin_ports_closed",
@@ -129,7 +180,11 @@
     "resource_type": "cloud_resource",
     "frequency": "daily",
     "remediation": "Close the port to the internet and reach it through a bastion or zero trust access.",
-    "controls": [{"code": "NS-08", "coverage": "full"}, {"code": "NS-03", "coverage": "partial"}]
+    "controls": [
+      {"code": "NS-08", "coverage": "full", "rationale": "Shows SSH, RDP and database ports are not reachable from the internet, which is what the control states."},
+      {"code": "NS-03", "coverage": "partial", "rationale": "Shows the most dangerous inbound rules are absent. Other rules need review."}
+    ],
+    "evidence_kinds": ["Security group and firewall rules"]
   },
   {
     "key": "cloud.hardening_baseline",
@@ -140,7 +195,12 @@
     "resource_type": "cloud_account",
     "frequency": "daily",
     "remediation": "Fix the benchmark items listed on the result.",
-    "controls": [{"code": "NS-04", "coverage": "full"}]
+    "controls": [{
+  "code": "NS-04",
+  "coverage": "partial",
+  "rationale": "Shows cloud configuration meets a benchmark. Operating system and container hardening need their own evidence."
+}],
+    "evidence_kinds": ["CIS benchmark results"]
   },
   {
     "key": "cloud.threat_detection",
@@ -151,7 +211,12 @@
     "resource_type": "cloud_account",
     "frequency": "daily",
     "remediation": "Turn on the provider's threat detection service in every region in use.",
-    "controls": [{"code": "NS-05", "coverage": "full"}]
+    "controls": [{
+  "code": "NS-05",
+  "coverage": "partial",
+  "rationale": "Shows the detection service is on in every account and region. Routing and response are separate."
+}],
+    "evidence_kinds": ["Threat detection service settings per account and region"]
   },
   {
     "key": "cloud.key_rotation",
@@ -162,7 +227,12 @@
     "resource_type": "cloud_resource",
     "frequency": "daily",
     "remediation": "Turn on automatic yearly rotation for each customer managed key.",
-    "controls": [{"code": "NS-06", "coverage": "partial"}]
+    "controls": [{
+  "code": "NS-06",
+  "coverage": "partial",
+  "rationale": "Shows keys rotate. Who can use the keys and what happens on compromise need review."
+}],
+    "evidence_kinds": ["Key rotation settings and dates"]
   },
   {
     "key": "cloud.network_segmented",
@@ -173,7 +243,12 @@
     "resource_type": "cloud_resource",
     "frequency": "daily",
     "remediation": "Move production into its own network and restrict traffic between tiers.",
-    "controls": [{"code": "NS-07", "coverage": "full"}]
+    "controls": [{
+  "code": "NS-07",
+  "coverage": "partial",
+  "rationale": "Shows production sits in its own network. The rules between tiers are reviewed by people."
+}],
+    "evidence_kinds": ["Network and routing configuration"]
   },
   {
     "key": "cloud.secrets_managed",
@@ -184,7 +259,12 @@
     "resource_type": "cloud_resource",
     "frequency": "daily",
     "remediation": "Move the secret into the secrets manager and read it at runtime.",
-    "controls": [{"code": "NS-09", "coverage": "full"}]
+    "controls": [{
+  "code": "NS-09",
+  "coverage": "partial",
+  "rationale": "Shows secrets live in a secrets manager. Access to them and their rotation need their own evidence."
+}],
+    "evidence_kinds": ["Secrets manager inventory"]
   },
   {
     "key": "cloud.backups_enabled",
@@ -195,7 +275,12 @@
     "resource_type": "cloud_resource",
     "frequency": "daily",
     "remediation": "Turn on automated backups and set retention to the policy period.",
-    "controls": [{"code": "BC-01", "coverage": "full"}]
+    "controls": [{
+  "code": "BC-01",
+  "coverage": "partial",
+  "rationale": "Shows automated backups with retention exist. Whether they succeed and are monitored is separate."
+}],
+    "evidence_kinds": ["Backup settings and retention per database"]
   },
   {
     "key": "cloud.capacity_alarms",
@@ -206,7 +291,12 @@
     "resource_type": "cloud_resource",
     "frequency": "daily",
     "remediation": "Add utilisation alarms that notify the on call rotation.",
-    "controls": [{"code": "BC-04", "coverage": "partial"}]
+    "controls": [{
+  "code": "BC-04",
+  "coverage": "partial",
+  "rationale": "Shows alarms fire before capacity runs out. Forecasting and the actions taken are reviewed by people."
+}],
+    "evidence_kinds": ["Alarm configuration"]
   },
   {
     "key": "cloud.audit_logging",
@@ -217,7 +307,12 @@
     "resource_type": "cloud_account",
     "frequency": "daily",
     "remediation": "Turn on the audit trail in every region and store it where it cannot be altered.",
-    "controls": [{"code": "LM-02", "coverage": "full"}]
+    "controls": [{
+  "code": "LM-02",
+  "coverage": "partial",
+  "rationale": "Shows administrative activity is logged and kept. Application and sign in logs need their own check."
+}],
+    "evidence_kinds": ["Audit log settings per account"]
   },
   {
     "key": "cloud.config_changes_recorded",
@@ -228,7 +323,12 @@
     "resource_type": "cloud_account",
     "frequency": "daily",
     "remediation": "Turn on configuration recording and alert on changes to sensitive settings.",
-    "controls": [{"code": "LM-03", "coverage": "full"}]
+    "controls": [{
+  "code": "LM-03",
+  "coverage": "full",
+  "rationale": "Shows configuration changes are recorded and raise alerts, which is what the control states."
+}],
+    "evidence_kinds": ["Configuration change recorder settings and alerts"]
   },
   {
     "key": "cloud.root_account_mfa",
@@ -239,7 +339,12 @@
     "resource_type": "cloud_account",
     "frequency": "daily",
     "remediation": "Add a hardware or app based second factor to the root account and delete its keys.",
-    "controls": [{"code": "IAM-03", "coverage": "partial"}]
+    "controls": [{
+  "code": "IAM-03",
+  "coverage": "partial",
+  "rationale": "Shows the most powerful cloud accounts have two factor."
+}],
+    "evidence_kinds": ["Root and break glass account settings"]
   },
   {
     "key": "cloud.least_privilege",
@@ -250,7 +355,11 @@
     "resource_type": "cloud_identity",
     "frequency": "daily",
     "remediation": "Replace the wildcard policy with the permissions the role uses.",
-    "controls": [{"code": "IAM-08", "coverage": "partial"}, {"code": "IAM-07", "coverage": "partial"}]
+    "controls": [
+      {"code": "IAM-08", "coverage": "partial", "rationale": "Shows no one holds wildcard administrator rights without a recorded need."},
+      {"code": "IAM-07", "coverage": "partial", "rationale": "Shows administrator rights are limited and justified in the cloud."}
+    ],
+    "evidence_kinds": ["Identity and permission listing"]
   },
   {
     "key": "cloud.machine_credentials_rotated",
@@ -261,7 +370,12 @@
     "resource_type": "cloud_identity",
     "frequency": "daily",
     "remediation": "Rotate the key, or replace it with a short lived role.",
-    "controls": [{"code": "IAM-10", "coverage": "full"}]
+    "controls": [{
+  "code": "IAM-10",
+  "coverage": "partial",
+  "rationale": "Shows machine credentials are rotated. Ownership and the inventory of accounts are separate."
+}],
+    "evidence_kinds": ["Access key and service account key ages"]
   },
   {
     "key": "cloud.environments_separated",
@@ -272,7 +386,11 @@
     "resource_type": "cloud_account",
     "frequency": "weekly",
     "remediation": "Move production into a dedicated account or project.",
-    "controls": [{"code": "SD-12", "coverage": "full"}, {"code": "DM-13", "coverage": "partial"}]
+    "controls": [
+      {"code": "SD-12", "coverage": "full", "rationale": "Shows production is separate from development and staging, which is what the control states."},
+      {"code": "DM-13", "coverage": "partial", "rationale": "Shows production data is in a separate environment. Whether production data is copied out is not checked."}
+    ],
+    "evidence_kinds": ["Account or project structure"]
   },
   {
     "key": "cloud.storage_versioned",
@@ -283,7 +401,12 @@
     "resource_type": "cloud_resource",
     "frequency": "daily",
     "remediation": "Turn on versioning or immutable tags for the store.",
-    "controls": [{"code": "SD-07", "coverage": "full"}]
+    "controls": [{
+  "code": "SD-07",
+  "coverage": "partial",
+  "rationale": "Shows build and pipeline storage keeps versions. Integrity checks between stages are separate."
+}],
+    "evidence_kinds": ["Storage versioning settings"]
   },
   {
     "key": "cloud.storage_lifecycle",
@@ -294,7 +417,12 @@
     "resource_type": "cloud_resource",
     "frequency": "weekly",
     "remediation": "Add a lifecycle rule that matches the retention schedule.",
-    "controls": [{"code": "DM-16", "coverage": "partial"}]
+    "controls": [{
+  "code": "DM-16",
+  "coverage": "partial",
+  "rationale": "Shows storage deletes data when retention ends. Deletion from copies and vendors is separate."
+}],
+    "evidence_kinds": ["Storage lifecycle rules"]
   },
   {
     "key": "assets.resources_registered",
@@ -305,7 +433,12 @@
     "resource_type": "cloud_resource",
     "frequency": "daily",
     "remediation": "Add the resource to the asset register, or record why it is out of scope.",
-    "controls": [{"code": "LM-01", "coverage": "partial"}]
+    "controls": [{
+  "code": "LM-01",
+  "coverage": "partial",
+  "rationale": "Shows discovered cloud resources are in the asset register. People, devices and SaaS need their own sources."
+}],
+    "evidence_kinds": ["Discovered resources compared with the asset register"]
   },
   {
     "key": "idp.mfa_enforced",
@@ -316,7 +449,10 @@
     "resource_type": "user",
     "frequency": "daily",
     "remediation": "Require two factor in the sign in policy and follow up with users who have not enrolled.",
-    "controls": [{"code": "IAM-03", "coverage": "full"}]
+    "controls": [
+      {"code": "IAM-03", "coverage": "partial", "rationale": "Shows the sign in policy requires two factor and every active user is enrolled in the identity provider. Source control and cloud root accounts are checked separately."}
+    ],
+    "evidence_kinds": ["Sign in policy", "User enrollment list"]
   },
   {
     "key": "idp.sso_enforced",
@@ -327,7 +463,12 @@
     "resource_type": "application",
     "frequency": "daily",
     "remediation": "Connect the application to single sign on and turn off local passwords.",
-    "controls": [{"code": "IAM-04", "coverage": "full"}]
+    "controls": [{
+  "code": "IAM-04",
+  "coverage": "full",
+  "rationale": "Shows applications authenticate through the identity provider, which is what the control states."
+}],
+    "evidence_kinds": ["Application authentication settings"]
   },
   {
     "key": "idp.password_policy",
@@ -338,7 +479,12 @@
     "resource_type": "policy",
     "frequency": "daily",
     "remediation": "Update the identity provider's password policy to the company standard.",
-    "controls": [{"code": "IAM-06", "coverage": "full"}]
+    "controls": [{
+  "code": "IAM-06",
+  "coverage": "full",
+  "rationale": "Shows the identity provider enforces the password policy, which is what the control states."
+}],
+    "evidence_kinds": ["Password policy settings"]
   },
   {
     "key": "idp.session_timeout",
@@ -349,7 +495,12 @@
     "resource_type": "policy",
     "frequency": "daily",
     "remediation": "Set idle and maximum session lengths in the identity provider.",
-    "controls": [{"code": "IAM-11", "coverage": "full"}]
+    "controls": [{
+  "code": "IAM-11",
+  "coverage": "full",
+  "rationale": "Shows session lengths are set within policy, which is what the control states."
+}],
+    "evidence_kinds": ["Session policy settings"]
   },
   {
     "key": "idp.admins_limited",
@@ -360,7 +511,12 @@
     "resource_type": "user",
     "frequency": "daily",
     "remediation": "Remove administrator roles that have no recorded approval.",
-    "controls": [{"code": "IAM-07", "coverage": "partial"}]
+    "controls": [{
+  "code": "IAM-07",
+  "coverage": "partial",
+  "rationale": "Shows administrator roles are held by named, approved people. Reviewing that approval is separate."
+}],
+    "evidence_kinds": ["Administrator role assignments"]
   },
   {
     "key": "idp.access_list_exported",
@@ -371,7 +527,11 @@
     "resource_type": "user",
     "frequency": "weekly",
     "remediation": "Connect the identity provider so each review starts from the live user list.",
-    "controls": [{"code": "IAM-02", "coverage": "partial"}, {"code": "IAM-09", "coverage": "partial"}]
+    "controls": [
+      {"code": "IAM-02", "coverage": "partial", "rationale": "Gives the list a reviewer certifies. The review and its sign off are done by people."},
+      {"code": "IAM-09", "coverage": "partial", "rationale": "Gives the list used to find conflicting access. Judging the conflicts is done by people."}
+    ],
+    "evidence_kinds": ["User and group listing"]
   },
   {
     "key": "idp.groups_drive_access",
@@ -382,7 +542,12 @@
     "resource_type": "application",
     "frequency": "weekly",
     "remediation": "Move direct assignments into the role group that should hold them.",
-    "controls": [{"code": "IAM-08", "coverage": "partial"}]
+    "controls": [{
+  "code": "IAM-08",
+  "coverage": "partial",
+  "rationale": "Shows access comes from role groups. Whether the roles themselves are right is separate."
+}],
+    "evidence_kinds": ["Application access assignments"]
   },
   {
     "key": "idp.connected_apps_known",
@@ -393,7 +558,12 @@
     "resource_type": "application",
     "frequency": "daily",
     "remediation": "Approve the application, or revoke its access.",
-    "controls": [{"code": "BC-05", "coverage": "full"}]
+    "controls": [{
+  "code": "BC-05",
+  "coverage": "partial",
+  "rationale": "Finds applications connected through the identity provider. Purchases made outside it need another source."
+}],
+    "evidence_kinds": ["Connected application listing"]
   },
   {
     "key": "people.leavers_deprovisioned",
@@ -404,7 +574,11 @@
     "resource_type": "person",
     "frequency": "daily",
     "remediation": "Suspend the account now and find out why offboarding missed it.",
-    "controls": [{"code": "HR-05", "coverage": "full"}, {"code": "IAM-12", "coverage": "full"}]
+    "controls": [
+      {"code": "HR-05", "coverage": "partial", "rationale": "Shows accounts are removed for leavers on time. Returning equipment and handing over work are separate."},
+      {"code": "IAM-12", "coverage": "full", "rationale": "Shows no one who left still has an account after the allowed time, which is what the control states."}
+    ],
+    "evidence_kinds": ["Leavers from the HR source", "Account status in the identity provider"]
   },
   {
     "key": "people.joiners_onboarded",
@@ -415,7 +589,12 @@
     "resource_type": "person",
     "frequency": "daily",
     "remediation": "Start the onboarding checklist for the listed people.",
-    "controls": [{"code": "HR-06", "coverage": "partial"}]
+    "controls": [{
+  "code": "HR-06",
+  "coverage": "partial",
+  "rationale": "Shows accounts follow the onboarding checklist. Whether each step was completed is checked by people."
+}],
+    "evidence_kinds": ["Joiners from the HR source", "Account creation dates"]
   },
   {
     "key": "vault.everyone_enrolled",
@@ -426,7 +605,12 @@
     "resource_type": "person",
     "frequency": "daily",
     "remediation": "Invite the listed people to the company password manager.",
-    "controls": [{"code": "IAM-05", "coverage": "full"}]
+    "controls": [{
+  "code": "IAM-05",
+  "coverage": "full",
+  "rationale": "Shows every active employee has a company password manager account, which is what the control states."
+}],
+    "evidence_kinds": ["Password manager member list"]
   },
   {
     "key": "tickets.changes_linked",
@@ -437,7 +621,11 @@
     "resource_type": "change",
     "frequency": "daily",
     "remediation": "Link the change to its ticket and record the approval.",
-    "controls": [{"code": "SD-01", "coverage": "partial"}]
+    "controls": [
+      {"code": "SD-01", "coverage": "partial", "rationale": "Shows each production change links to an approval made before release."},
+      {"code": "SD-14", "coverage": "partial", "rationale": "Shows each production change links to a request that was approved, the first half of the trace from request to release."}
+    ],
+    "evidence_kinds": ["Production changes", "Linked tickets and their approval"]
   },
   {
     "key": "tickets.access_requests_approved",
@@ -448,7 +636,12 @@
     "resource_type": "user",
     "frequency": "daily",
     "remediation": "Record the approval for the listed grants, or remove the access.",
-    "controls": [{"code": "IAM-01", "coverage": "full"}]
+    "controls": [{
+  "code": "IAM-01",
+  "coverage": "full",
+  "rationale": "Shows new access matches an approved request, which is what the control states."
+}],
+    "evidence_kinds": ["Access requests and approvals", "Access grants"]
   },
   {
     "key": "tickets.remediation_tracked",
@@ -459,7 +652,12 @@
     "resource_type": "ticket",
     "frequency": "daily",
     "remediation": "Open or update the ticket and agree a date to close it.",
-    "controls": [{"code": "GOV-08", "coverage": "partial"}]
+    "controls": [{
+  "code": "GOV-08",
+  "coverage": "partial",
+  "rationale": "Shows failures open a ticket that closes in time. Telling the right people is separate."
+}],
+    "evidence_kinds": ["Remediation tickets and their closure dates"]
   },
   {
     "key": "alerts.security_routed",
@@ -470,7 +668,12 @@
     "resource_type": "service",
     "frequency": "daily",
     "remediation": "Route the security alert source to an escalation policy.",
-    "controls": [{"code": "LM-09", "coverage": "full"}]
+    "controls": [{
+  "code": "LM-09",
+  "coverage": "partial",
+  "rationale": "Shows alerts go to an on call rotation. Tuning and acting on alerts are separate."
+}],
+    "evidence_kinds": ["Alert routing and on call schedule"]
   },
   {
     "key": "alerts.acknowledged_in_time",
@@ -481,7 +684,12 @@
     "resource_type": "incident",
     "frequency": "daily",
     "remediation": "Review the missed alerts and adjust the rotation or escalation.",
-    "controls": [{"code": "LM-04", "coverage": "partial"}]
+    "controls": [{
+  "code": "LM-04",
+  "coverage": "partial",
+  "rationale": "Shows alerts are picked up in time. The evaluation decision is recorded by people."
+}],
+    "evidence_kinds": ["Alert acknowledgement times"]
   },
   {
     "key": "alerts.incidents_resolved",
@@ -492,7 +700,12 @@
     "resource_type": "incident",
     "frequency": "daily",
     "remediation": "Add the owner and timeline to the listed incidents.",
-    "controls": [{"code": "LM-06", "coverage": "partial"}]
+    "controls": [{
+  "code": "LM-06",
+  "coverage": "partial",
+  "rationale": "Shows incidents end with an owner and a timeline. The recovery steps themselves are separate."
+}],
+    "evidence_kinds": ["Incident timelines and owners"]
   },
   {
     "key": "edge.waf_enabled",
@@ -503,7 +716,11 @@
     "resource_type": "zone",
     "frequency": "daily",
     "remediation": "Turn on the managed firewall rules for the zone.",
-    "controls": [{"code": "NS-10", "coverage": "full"}, {"code": "SD-05", "coverage": "partial"}]
+    "controls": [
+      {"code": "NS-10", "coverage": "full", "rationale": "Shows a web application firewall and DDoS protection sit in front of public applications, which is what the control states."},
+      {"code": "SD-05", "coverage": "partial", "rationale": "A firewall filters some malformed input. It is not validation inside the application."}
+    ],
+    "evidence_kinds": ["Web application firewall and DDoS settings"]
   },
   {
     "key": "edge.zero_trust_access",
@@ -514,7 +731,12 @@
     "resource_type": "device",
     "frequency": "daily",
     "remediation": "Put the system behind the zero trust network and remove public access.",
-    "controls": [{"code": "NS-11", "coverage": "full"}]
+    "controls": [{
+  "code": "NS-11",
+  "coverage": "full",
+  "rationale": "Shows internal systems are reachable only through the VPN or zero trust network, which is what the control states."
+}],
+    "evidence_kinds": ["Access policy and device posture settings"]
   },
   {
     "key": "edge.minimum_tls",
@@ -525,7 +747,12 @@
     "resource_type": "zone",
     "frequency": "daily",
     "remediation": "Raise the zone's minimum TLS version and turn on HTTPS redirects.",
-    "controls": [{"code": "NS-02", "coverage": "partial"}]
+    "controls": [{
+  "code": "NS-02",
+  "coverage": "partial",
+  "rationale": "Shows the edge refuses old TLS and redirects plain HTTP. Internal traffic is separate."
+}],
+    "evidence_kinds": ["Edge TLS settings"]
   },
   {
     "key": "observability.logs_retained",
@@ -536,7 +763,12 @@
     "resource_type": "log_index",
     "frequency": "daily",
     "remediation": "Raise retention to the policy period.",
-    "controls": [{"code": "LM-02", "coverage": "partial"}]
+    "controls": [{
+  "code": "LM-02",
+  "coverage": "partial",
+  "rationale": "Shows logs are kept as long as policy says. Completeness of what is logged is separate."
+}],
+    "evidence_kinds": ["Log retention settings"]
   },
   {
     "key": "observability.anomaly_monitors",
@@ -547,7 +779,12 @@
     "resource_type": "monitor",
     "frequency": "daily",
     "remediation": "Add monitors for the missing signals and route them to on call.",
-    "controls": [{"code": "LM-09", "coverage": "partial"}]
+    "controls": [{
+  "code": "LM-09",
+  "coverage": "partial",
+  "rationale": "Shows monitors exist for the main anomaly types. Responding to them is separate."
+}],
+    "evidence_kinds": ["Monitor definitions"]
   },
   {
     "key": "observability.processing_monitored",
@@ -558,7 +795,12 @@
     "resource_type": "monitor",
     "frequency": "daily",
     "remediation": "Add failure and lag alerts to the listed jobs.",
-    "controls": [{"code": "SD-08", "coverage": "full"}]
+    "controls": [{
+  "code": "SD-08",
+  "coverage": "partial",
+  "rationale": "Shows failed or late jobs raise alerts. Reconciling outputs to inputs is separate."
+}],
+    "evidence_kinds": ["Job and pipeline monitors"]
   },
   {
     "key": "observability.capacity_trends",
@@ -569,7 +811,12 @@
     "resource_type": "monitor",
     "frequency": "weekly",
     "remediation": "Add utilisation monitors for the listed services.",
-    "controls": [{"code": "BC-04", "coverage": "partial"}]
+    "controls": [{
+  "code": "BC-04",
+  "coverage": "partial",
+  "rationale": "Shows utilization is tracked. Acting before capacity runs out is reviewed by people."
+}],
+    "evidence_kinds": ["Utilization monitors and dashboards"]
   },
   {
     "key": "scanner.scans_current",
@@ -580,7 +827,11 @@
     "resource_type": "asset",
     "frequency": "daily",
     "remediation": "Add the asset to the scan schedule.",
-    "controls": [{"code": "LM-11", "coverage": "partial"}, {"code": "EP-04", "coverage": "partial"}]
+    "controls": [
+      {"code": "LM-11", "coverage": "partial", "rationale": "Shows assets are scanned on schedule. Fixing what the scans find is separate."},
+      {"code": "EP-04", "coverage": "partial", "rationale": "Shows assets are scanned for missing patches. Applying patches is separate."}
+    ],
+    "evidence_kinds": ["Scan history per asset"]
   },
   {
     "key": "devices.enrolled",
@@ -591,7 +842,12 @@
     "resource_type": "device",
     "frequency": "daily",
     "remediation": "Enrol the listed laptops.",
-    "controls": [{"code": "EP-03", "coverage": "full"}]
+    "controls": [{
+  "code": "EP-03",
+  "coverage": "full",
+  "rationale": "Shows every company laptop is enrolled in device management, which is what the control states."
+}],
+    "evidence_kinds": ["Managed device list"]
   },
   {
     "key": "devices.disk_encrypted",
@@ -602,7 +858,12 @@
     "resource_type": "device",
     "frequency": "daily",
     "remediation": "Turn on FileVault or BitLocker through device management.",
-    "controls": [{"code": "EP-02", "coverage": "full"}]
+    "controls": [{
+  "code": "EP-02",
+  "coverage": "full",
+  "rationale": "Shows every managed laptop has disk encryption on, which is what the control states."
+}],
+    "evidence_kinds": ["Device encryption status"]
   },
   {
     "key": "devices.screen_lock",
@@ -613,7 +874,12 @@
     "resource_type": "device",
     "frequency": "daily",
     "remediation": "Push the screen lock profile to the listed laptops.",
-    "controls": [{"code": "EP-06", "coverage": "full"}]
+    "controls": [{
+  "code": "EP-06",
+  "coverage": "full",
+  "rationale": "Shows every managed laptop locks its screen after the set idle time, which is what the control states."
+}],
+    "evidence_kinds": ["Device screen lock settings"]
   },
   {
     "key": "devices.os_current",
@@ -624,7 +890,12 @@
     "resource_type": "device",
     "frequency": "daily",
     "remediation": "Update the listed laptops.",
-    "controls": [{"code": "EP-04", "coverage": "partial"}]
+    "controls": [{
+  "code": "EP-04",
+  "coverage": "partial",
+  "rationale": "Shows laptops run a supported operating system. Servers and applications need their own source."
+}],
+    "evidence_kinds": ["Operating system versions per device"]
   },
   {
     "key": "devices.remote_wipe",
@@ -635,7 +906,12 @@
     "resource_type": "device",
     "frequency": "daily",
     "remediation": "Re-enrol the listed laptops with remote wipe allowed.",
-    "controls": [{"code": "EP-05", "coverage": "full"}]
+    "controls": [{
+  "code": "EP-05",
+  "coverage": "partial",
+  "rationale": "Shows devices can be wiped. It does not show a wipe was done when a device was lost or a person left."
+}],
+    "evidence_kinds": ["Device remote lock and wipe capability"]
   },
   {
     "key": "endpoint.protection_active",
@@ -646,6 +922,367 @@
     "resource_type": "device",
     "frequency": "daily",
     "remediation": "Install or repair the agent on the listed devices.",
-    "controls": [{"code": "EP-01", "coverage": "full"}]
+    "controls": [{
+  "code": "EP-01",
+  "coverage": "full",
+  "rationale": "Shows every laptop and server runs a healthy, current protection agent, which is what the control states."
+}],
+    "evidence_kinds": ["Protection agent status per device"]
+  },
+  {
+    "key": "ci.production_deploys_controlled",
+    "name": "Production deployments are controlled",
+    "description": "Production deployments run only from the default branch or a tagged release, and protected environments need a named approver.",
+    "capabilities": ["ci_cd"],
+    "implementations": [],
+    "resource_type": "environment",
+    "frequency": "daily",
+    "remediation": "Deploy to production from the protected branch only, and require approval on the production environment.",
+    "controls": [{
+  "code": "SD-13",
+  "coverage": "partial",
+  "rationale": "Shows production releases follow a controlled path and need approval. Who is allowed to approve is reviewed by people."
+}],
+    "evidence_kinds": ["Environment protection rules", "Deployment history"]
+  },
+  {
+    "key": "ci.deployment_history_recorded",
+    "name": "Deployments are recorded",
+    "description": "Each production deployment records the commit, the person or system that ran it, and the time.",
+    "capabilities": ["ci_cd"],
+    "implementations": [],
+    "resource_type": "deployment",
+    "frequency": "daily",
+    "remediation": "Release through a pipeline or tool that records each deployment against its commit.",
+    "controls": [
+      {"code": "SD-13", "coverage": "partial", "rationale": "Gives the release record an auditor samples."},
+      {"code": "SD-14", "coverage": "partial", "rationale": "Ties each release to the commit and change that produced it."}
+    ],
+    "evidence_kinds": ["Deployment history"]
+  },
+  {
+    "key": "ci.required_checks_passed",
+    "name": "Required checks passed before merge",
+    "description": "Every change merged into the default branch passed the required CI checks first.",
+    "capabilities": ["ci_cd"],
+    "implementations": [],
+    "resource_type": "repository",
+    "frequency": "daily",
+    "remediation": "Make the checks required, and stop merging while they fail.",
+    "controls": [{
+  "code": "SD-02",
+  "coverage": "partial",
+  "rationale": "Shows tests passed on each merged change, not only that they are required."
+}],
+    "evidence_kinds": ["CI run results", "Merged pull requests"]
+  },
+  {
+    "key": "vcs.unreviewed_merges_recorded",
+    "name": "Changes merged without review are reviewed afterward",
+    "description": "Any change merged without the normal approval is listed, and each has a recorded review after the fact.",
+    "capabilities": ["version_control"],
+    "implementations": [],
+    "resource_type": "repository",
+    "frequency": "daily",
+    "remediation": "Review each emergency change after it ships, and record who reviewed it.",
+    "controls": [
+      {"code": "SD-04", "coverage": "partial", "rationale": "Shows emergency changes are bounded and reviewed afterward."},
+      {"code": "SD-06", "coverage": "partial", "rationale": "Shows bypasses of peer review are visible and followed up."}
+    ],
+    "evidence_kinds": ["Merged pull requests", "Emergency change reviews"]
+  },
+  {
+    "key": "verity.assets.owner_assigned",
+    "name": "Every active asset has an owner",
+    "description": "Every active asset in the Verity inventory has a primary owner.",
+    "capabilities": ["verity_assets"],
+    "implementations": [],
+    "resource_type": "asset",
+    "frequency": "daily",
+    "remediation": "Give each asset a primary owner in Assets.",
+    "controls": [{
+  "code": "LM-01",
+  "coverage": "partial",
+  "rationale": "Shows each asset has someone accountable for it."
+}],
+    "evidence_kinds": ["Asset inventory report"]
+  },
+  {
+    "key": "verity.assets.classified",
+    "name": "Assets that hold data are classified",
+    "description": "Every active asset that stores or processes data has a data classification.",
+    "capabilities": ["verity_assets"],
+    "implementations": [],
+    "resource_type": "asset",
+    "frequency": "daily",
+    "remediation": "Set a classification on each asset that holds data.",
+    "controls": [
+      {"code": "LM-01", "coverage": "partial", "rationale": "Shows the inventory records what each asset holds."},
+      {"code": "DM-04", "coverage": "partial", "rationale": "Shows classification is applied to the systems that hold data."}
+    ],
+    "evidence_kinds": ["Asset inventory report"]
+  },
+  {
+    "key": "verity.assets.reviewed",
+    "name": "Assets were reviewed on schedule",
+    "description": "Every active asset was reviewed within the review cadence set in the asset settings.",
+    "capabilities": ["verity_assets"],
+    "implementations": [],
+    "resource_type": "asset",
+    "frequency": "daily",
+    "remediation": "Review each overdue asset and mark it reviewed.",
+    "controls": [{
+  "code": "LM-01",
+  "coverage": "partial",
+  "rationale": "Shows the inventory is kept current."
+}],
+    "evidence_kinds": ["Asset inventory report"]
+  },
+  {
+    "key": "verity.assets.disposal_recorded",
+    "name": "Retired assets have a disposal record",
+    "description": "Every retired asset has a decommission record with the method and sanitization.",
+    "capabilities": ["verity_assets"],
+    "implementations": [],
+    "resource_type": "asset",
+    "frequency": "daily",
+    "remediation": "Record how each retired asset was wiped or destroyed.",
+    "controls": [{
+  "code": "DM-16",
+  "coverage": "partial",
+  "rationale": "Shows retired assets were disposed of with a recorded method."
+}],
+    "evidence_kinds": ["Decommissioned assets report"]
+  },
+  {
+    "key": "verity.vulns.within_sla",
+    "name": "Vulnerabilities are fixed within the SLA",
+    "description": "No open critical or high finding is past its SLA without an unexpired risk acceptance.",
+    "capabilities": ["verity_vulnerabilities"],
+    "implementations": [],
+    "resource_type": "finding",
+    "frequency": "daily",
+    "remediation": "Fix the overdue findings, or accept the risk with a reason and an expiry.",
+    "controls": [{
+  "code": "LM-11",
+  "coverage": "partial",
+  "rationale": "Shows findings are remediated on time."
+}, {
+  "code": "EP-04",
+  "coverage": "partial",
+  "rationale": "Shows missing patches are closed within the SLA."
+}],
+    "evidence_kinds": ["Vulnerability SLA report"]
+  },
+  {
+    "key": "verity.vulns.kev_owned",
+    "name": "Known exploited vulnerabilities have an owner",
+    "description": "Every open finding on a vulnerability listed as known exploited has an owner.",
+    "capabilities": ["verity_vulnerabilities"],
+    "implementations": [],
+    "resource_type": "finding",
+    "frequency": "daily",
+    "remediation": "Assign an owner to each known exploited finding.",
+    "controls": [{
+  "code": "LM-11",
+  "coverage": "partial",
+  "rationale": "Shows the most urgent findings are not unowned."
+}],
+    "evidence_kinds": ["Vulnerability SLA report"]
+  },
+  {
+    "key": "verity.risks.reviewed",
+    "name": "Open risks are reviewed on schedule",
+    "description": "Every open risk was reviewed within its register's cadence.",
+    "capabilities": ["verity_risks"],
+    "implementations": [],
+    "resource_type": "risk",
+    "frequency": "daily",
+    "remediation": "Review each overdue risk and record the outcome.",
+    "controls": [{
+  "code": "GOV-18",
+  "coverage": "partial",
+  "rationale": "Shows risks are reassessed through the year, not only at the annual assessment."
+}],
+    "evidence_kinds": ["Risk register report"]
+  },
+  {
+    "key": "verity.risks.treated",
+    "name": "Risks above the acceptance band are treated",
+    "description": "Every risk above the register's acceptance band has an owner and a treatment decision.",
+    "capabilities": ["verity_risks"],
+    "implementations": [],
+    "resource_type": "risk",
+    "frequency": "daily",
+    "remediation": "Assign an owner and record a treatment decision for each risk above the band.",
+    "controls": [
+      {"code": "GOV-19", "coverage": "partial", "rationale": "Shows each significant risk has an owner and a decision."},
+      {"code": "GOV-20", "coverage": "partial", "rationale": "Shows significant risks have a treatment chosen."}
+    ],
+    "evidence_kinds": ["Risk register report"]
+  },
+  {
+    "key": "verity.risks.controls_linked",
+    "name": "Mitigated risks link to controls",
+    "description": "Every risk treated by mitigation has at least one linked control.",
+    "capabilities": ["verity_risks"],
+    "implementations": [],
+    "resource_type": "risk",
+    "frequency": "daily",
+    "remediation": "Link each mitigated risk to the control that reduces it.",
+    "controls": [{
+  "code": "GOV-07",
+  "coverage": "partial",
+  "rationale": "Shows risks are mapped to the controls that mitigate them."
+}],
+    "evidence_kinds": ["Risk register report"]
+  },
+  {
+    "key": "verity.risks.acceptance_current",
+    "name": "Risk acceptances are current",
+    "description": "No accepted risk has an expired acceptance.",
+    "capabilities": ["verity_risks"],
+    "implementations": [],
+    "resource_type": "risk",
+    "frequency": "daily",
+    "remediation": "Renew or reopen each expired acceptance.",
+    "controls": [{
+  "code": "GOV-19",
+  "coverage": "partial",
+  "rationale": "Shows accepted risks are still accepted by someone with authority."
+}],
+    "evidence_kinds": ["Risk register report"]
+  },
+  {
+    "key": "verity.vendors.owner_and_tier",
+    "name": "Vendors have an owner and a tier",
+    "description": "Every active vendor has a business owner and a tier.",
+    "capabilities": ["verity_vendors"],
+    "implementations": [],
+    "resource_type": "vendor",
+    "frequency": "daily",
+    "remediation": "Set an owner and a tier for each vendor.",
+    "controls": [{
+  "code": "BC-07",
+  "coverage": "partial",
+  "rationale": "Shows the vendor inventory records who owns each relationship and how critical it is."
+}],
+    "evidence_kinds": ["Vendor register report"]
+  },
+  {
+    "key": "verity.vendors.assessed_in_cadence",
+    "name": "Critical vendors are assessed on schedule",
+    "description": "Every active critical or high tier vendor was assessed within its tier's cadence.",
+    "capabilities": ["verity_vendors"],
+    "implementations": [],
+    "resource_type": "vendor",
+    "frequency": "daily",
+    "remediation": "Run the overdue vendor assessments.",
+    "controls": [{
+  "code": "BC-08",
+  "coverage": "partial",
+  "rationale": "Shows due diligence is repeated at the cadence the tier sets."
+}],
+    "evidence_kinds": ["Vendor register report"]
+  },
+  {
+    "key": "verity.vendors.dpa_on_file",
+    "name": "Vendors that hold personal data have a DPA",
+    "description": "Every active vendor that stores personal data has a linked data processing agreement.",
+    "capabilities": ["verity_vendors"],
+    "implementations": [],
+    "resource_type": "vendor",
+    "frequency": "daily",
+    "remediation": "Attach the signed data processing agreement to each vendor.",
+    "controls": [{
+  "code": "DM-10",
+  "coverage": "partial",
+  "rationale": "Shows agreements are in place where personal data is shared."
+}],
+    "evidence_kinds": ["Vendor register report"]
+  },
+  {
+    "key": "verity.policies.reviewed",
+    "name": "Required policies are published and current",
+    "description": "Every required policy is published and was approved in the last 12 months.",
+    "capabilities": ["verity_policies"],
+    "implementations": [],
+    "resource_type": "document",
+    "frequency": "daily",
+    "remediation": "Review and re approve the overdue policies.",
+    "controls": [
+      {"code": "GOV-01", "coverage": "partial", "rationale": "Shows policies are reviewed each year."},
+      {"code": "GOV-17", "coverage": "partial", "rationale": "Shows the required policies exist and are in force."},
+      {"code": "SD-10", "coverage": "partial", "rationale": "Shows the secure development policy is published and current."}
+    ],
+    "evidence_kinds": ["Policy register report"]
+  },
+  {
+    "key": "verity.policies.acknowledged",
+    "name": "Staff acknowledged current policies",
+    "description": "The target share of members acknowledged the current version of each required policy.",
+    "capabilities": ["verity_policies"],
+    "implementations": [],
+    "resource_type": "document",
+    "frequency": "daily",
+    "remediation": "Send the acknowledgement campaign to the people who have not signed.",
+    "controls": [{
+  "code": "CS-04",
+  "coverage": "partial",
+  "rationale": "Shows policies reached staff and were acknowledged."
+}, {
+  "code": "GOV-04",
+  "coverage": "partial",
+  "rationale": "Shows staff acknowledged the code of conduct."
+}],
+    "evidence_kinds": ["Policy acknowledgements report"]
+  },
+  {
+    "key": "verity.tasks.remediation_in_sla",
+    "name": "Remediation tasks are within SLA",
+    "description": "No remediation task linked to a control, finding or risk is past its SLA.",
+    "capabilities": ["verity_tasks"],
+    "implementations": [],
+    "resource_type": "task",
+    "frequency": "daily",
+    "remediation": "Close or re plan the overdue tasks.",
+    "controls": [{
+  "code": "GOV-08",
+  "coverage": "partial",
+  "rationale": "Shows deficiencies are corrected on time."
+}],
+    "evidence_kinds": ["Remediation tasks report"]
+  },
+  {
+    "key": "verity.controls.owned",
+    "name": "Every control has an owner",
+    "description": "Every in scope control has an owner.",
+    "capabilities": ["verity_controls"],
+    "implementations": [],
+    "resource_type": "control",
+    "frequency": "daily",
+    "remediation": "Assign an owner to each control without one.",
+    "controls": [{
+  "code": "GOV-09",
+  "coverage": "partial",
+  "rationale": "Shows each control has a named person accountable."
+}],
+    "evidence_kinds": ["Control register"]
+  },
+  {
+    "key": "verity.evidence.current",
+    "name": "Controls rely on current evidence",
+    "description": "No in scope control relies only on expired evidence.",
+    "capabilities": ["verity_controls"],
+    "implementations": [],
+    "resource_type": "control",
+    "frequency": "daily",
+    "remediation": "Replace the expired evidence with current evidence.",
+    "controls": [{
+  "code": "GOV-06",
+  "coverage": "partial",
+  "rationale": "Shows controls are backed by evidence from the period, not from last year."
+}],
+    "evidence_kinds": ["Evidence register"]
   }
 ]

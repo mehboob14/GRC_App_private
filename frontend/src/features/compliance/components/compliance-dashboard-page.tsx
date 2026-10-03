@@ -667,48 +667,63 @@ export function ComplianceDashboardPage() {
       <div className="grid gap-4 lg:grid-cols-2">
         <Card
           title="Automated checks & monitoring"
-          action={<Badge variant="neutral">Not enabled</Badge>}
+          action={
+            <Badge variant={data.checks_available ? "statusPass" : "neutral"}>
+              {data.checks_available ? "Enabled" : "Not enabled"}
+            </Badge>
+          }
         >
-          <p className="flex items-baseline gap-2">
-            <span className="font-display text-numeral-md tabular text-text-primary">
-              0<span className="text-body-md text-text-subtle"> / {total}</span>
-            </span>
-            <span className="text-body-sm text-text-subtle">
-              controls continuously monitored
-            </span>
-          </p>
-          <div className="mt-3">
-            <Meter value={0} total={total} fill="rgb(var(--color-status-neutral-base))" />
-          </div>
-          <ul className="mt-4 space-y-2">
-            {[
-              ["Passing", 0, "bg-status-success-base"],
-              ["Failing", 0, "bg-status-danger-base"],
-              ["Not monitored", total, "bg-status-neutral-base"],
-            ].map(([label, value, dot]) => (
-              <li
-                key={label as string}
-                className="flex items-center gap-2 text-body-sm"
-              >
-                <span className={cn("size-2.5 rounded-full", dot as string)} />
-                <span className="flex-1 text-text-secondary">{label}</span>
-                <span className="tabular font-semibold text-text-primary">
-                  {value}
-                </span>
-              </li>
-            ))}
-          </ul>
+          {(() => {
+            // Controls, rolled up from their tests. "Could not check" is not a
+            // failure (rule 7), and a control no test has verified is "not monitored".
+            const monitored =
+              data.automation_passing + data.automation_failing + data.automation_error;
+            return (
+              <>
+                <p className="flex items-baseline gap-2">
+                  <span className="font-display text-numeral-md tabular text-text-primary">
+                    {monitored}
+                    <span className="text-body-md text-text-subtle"> / {total}</span>
+                  </span>
+                  <span className="text-body-sm text-text-subtle">
+                    controls continuously monitored
+                  </span>
+                </p>
+                <div className="mt-3">
+                  <Meter
+                    value={monitored}
+                    total={total}
+                    fill="rgb(var(--color-status-neutral-base))"
+                  />
+                </div>
+                <ul className="mt-4 space-y-2">
+                  {[
+                    ["Passing", data.automation_passing, "bg-status-success-base"],
+                    ["Failing", data.automation_failing, "bg-status-danger-base"],
+                    ["Could not check", data.automation_error, "bg-status-warning-base"],
+                    ["Not monitored", Math.max(0, total - monitored), "bg-status-neutral-base"],
+                  ].map(([label, value, dot]) => (
+                    <li key={label as string} className="flex items-center gap-2 text-body-sm">
+                      <span className={cn("size-2.5 rounded-full", dot as string)} />
+                      <span className="flex-1 text-text-secondary">{label}</span>
+                      <span className="tabular font-semibold text-text-primary">{value}</span>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            );
+          })()}
           <div className="mt-4 rounded-md border border-border bg-surface-sunken p-3">
             <p className="flex items-start gap-2 text-body-sm text-text-secondary">
               <Icon name="plug" className="mt-0.5 size-4 shrink-0 text-text-subtle" />
-              Connect an integration such as AWS, GitHub or Okta to test these
-              controls automatically. Until then, controls are verified manually
-              from uploaded evidence.
+              {data.checks_available
+                ? "A control with a failing test is not counted as ready, whatever its status says. Controls no test covers are verified manually from uploaded evidence."
+                : "Connect an integration such as AWS, GitHub or Okta to test these controls automatically. Until then, controls are verified manually from uploaded evidence."}
             </p>
             <Button asChild size="sm" className="mt-3">
               <Link to="/connectors">
                 <Icon name="plus" className="size-4" />
-                Connect an integration
+                {data.checks_available ? "Manage connections" : "Connect an integration"}
               </Link>
             </Button>
           </div>

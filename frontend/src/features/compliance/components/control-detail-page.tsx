@@ -35,10 +35,11 @@ import { OwnerSelect } from "@/features/iam/components/owner-select";
 import { LinkedRecordsPanel } from "@/features/linkage/components/linked-records-panel";
 import {
   AutomationHeaderButton,
-  AutomationPanel,
   AutomationSummary,
 } from "@/features/connectors/components/automation-panel";
-import { ago } from "@/features/connectors/api";
+import { ChecksPanel } from "@/features/connectors/components/checks-panel";
+import { RequirementChainDialog } from "@/features/compliance/components/requirement-chain-dialog";
+import { ago, type CriterionMapping } from "@/features/connectors/api";
 import { useAutomation } from "@/features/connectors/hooks";
 import { useLinkedRecords } from "@/features/linkage/hooks";
 import type { Control, Evidence, EvidenceFreshness } from "@/lib/api/types";
@@ -153,9 +154,10 @@ const FIELD_LABEL: Record<string, string> = {
   name: "Name",
   description: "Statement",
   implementation_guidance: "Guidance",
-  category: "Category",
-  control_type: "Type",
-  control_sub_type: "Sub-type",
+  category: "Type",
+  sub_category: "Sub-type",
+  control_type: "Design",
+  control_sub_type: "Automation",
   status: "Status",
   owner_membership_id: "Owner",
   disabled_at: "Disabled",
@@ -233,6 +235,41 @@ function ChangeSummary({
   );
 }
 
+/** Why a control answers a criterion, and how much of it: the shipped mapping's own words. */
+function MappingNote({
+  mapping,
+  onOpen,
+}: {
+  mapping: CriterionMapping | undefined;
+  onOpen: () => void;
+}) {
+  if (!mapping) return null;
+  const label =
+    mapping.coverage === "full"
+      ? "Primary route"
+      : mapping.coverage === "partial"
+        ? "Supports"
+        : "Added by your workspace";
+  return (
+    <div className="mt-2.5 rounded-md bg-surface-sunken px-3 py-2.5">
+      <div className="flex flex-wrap items-center gap-2">
+        <Badge variant="neutral">{label}</Badge>
+        <button
+          type="button"
+          onClick={onOpen}
+          className="text-body-sm font-semibold text-action-accent hover:underline"
+        >
+          See how this criterion is met
+        </button>
+      </div>
+      <p className="mt-1.5 text-body-sm text-text-secondary">
+        {mapping.rationale ??
+          "Your workspace linked this control to the criterion. No reason is recorded."}
+      </p>
+    </div>
+  );
+}
+
 type TabId = "overview" | "evidence" | "tests" | "requirements" | "linked" | "history";
 
 export function ControlDetailPage() {
@@ -242,11 +279,12 @@ export function ControlDetailPage() {
   const canReadAudit = Boolean(principal?.permissions.includes("audit:read"));
   const [tab, setTab] = useState<TabId>("overview");
   const linksQuery = useLinkedRecords("control", controlId);
-  // Same query key as the Automation tab, so the rail and the tab share one fetch.
+  // Same query key as the Checks tab, so the rail and the tab share one fetch.
   const automation = useAutomation(controlId).data;
   const [editing, setEditing] = useState(false);
   const [linking, setLinking] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [chainFor, setChainFor] = useState<string | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -402,7 +440,7 @@ export function ControlDetailPage() {
   const tabs: { id: TabId; label: string; count?: number }[] = [
     { id: "overview", label: "Overview" },
     { id: "evidence", label: "Evidence", count: evidence.length },
-    { id: "tests", label: "Automation" },
+    { id: "tests", label: "Checks" },
     { id: "requirements", label: "Requirements", count: criteria.length },
     { id: "linked", label: "Linked records", count: linksQuery.data?.records.length },
     { id: "history", label: "History", count: history.length },
@@ -435,13 +473,19 @@ export function ControlDetailPage() {
             {/* Framework controls carry no Preventive/Detective classification,
                 so the chip is absent rather than empty. */}
             {control.control_type ? (
-              <span className="inline-flex items-center gap-1.5">
+              <span
+                className="inline-flex items-center gap-1.5"
+                title="Design"
+              >
                 <span className="size-1.5 rounded-full bg-action-accent" />
                 {control.control_type}
               </span>
             ) : null}
             {control.control_sub_type ? (
-              <span className="inline-flex items-center gap-1.5">
+              <span
+                className="inline-flex items-center gap-1.5"
+                title="Automation"
+              >
                 <Icon
                   name="activity"
                   className="size-3.5 text-text-subtle"
@@ -459,6 +503,9 @@ export function ControlDetailPage() {
               {control.owner_name ?? "Unassigned"}
             </span>
             <Badge variant="neutral">{control.category}</Badge>
+            {control.sub_category ? (
+              <Badge variant="neutral">{control.sub_category}</Badge>
+            ) : null}
           </div>
         }
         actions={
@@ -609,7 +656,12 @@ export function ControlDetailPage() {
             </Panel>
           ) : null}
 
-          {tab === "tests" ? <AutomationPanel controlId={controlId} /> : null}
+          {tab === "tests" ? (
+            <ChecksPanel
+              controlId={controlId}
+              onOpenEvidence={() => setTab("evidence")}
+            />
+          ) : null}
 
           {tab === "linked" ? <LinkedRecordsPanel anchorType="control" anchorId={controlId} /> : null}
 
@@ -724,6 +776,12 @@ export function ControlDetailPage() {
                           {requirement.description}
                         </p>
                       ) : null}
+                      <MappingNote
+                        mapping={automation?.mappings.find(
+                          (m) => m.code === requirement.code,
+                        )}
+                        onOpen={() => setChainFor(requirement.id)}
+                      />
                     </li>
                   ))}
                 </ul>
@@ -767,10 +825,20 @@ export function ControlDetailPage() {
                 )
               }
             />
+            <Fact label="Type" value={control.category} />
+            <Fact
+              label="Sub-type"
+              value={control.sub_category || "Not set"}
+              muted={!control.sub_category}
+            />
             {control.control_type ? (
-              <Fact label="Type" value={control.control_type} />
+              <Fact label="Design" value={control.control_type} />
             ) : null}
-            <Fact label="Sub-type" value={control.control_sub_type ?? "Not set"} />
+            <Fact
+              label="Automation"
+              value={control.control_sub_type ?? "Not set"}
+              muted={!control.control_sub_type}
+            />
             <Fact
               label="Source"
               value={control.origin === "custom" ? "Custom" : "Template"}
@@ -861,6 +929,10 @@ export function ControlDetailPage() {
         </aside>
       </div>
 
+      <RequirementChainDialog
+        requirementId={chainFor}
+        onClose={() => setChainFor(null)}
+      />
       <EditControlDialog
         control={control}
         open={editing}

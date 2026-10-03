@@ -47,6 +47,7 @@ import {
 import { refreshAutomation, useConnections, useRunConnections } from "../hooks";
 import { ConnectGitHubDialog } from "./connect-github-dialog";
 import { RequestIntegrationDialog } from "./request-integration-dialog";
+import { ScopeDialog } from "./scope-dialog";
 
 const CATEGORY_OPTIONS = CONNECTOR_CATEGORIES.map((category) => ({
   value: category,
@@ -167,12 +168,14 @@ function ConnectionCard({
   onRun,
   running,
   onDisconnect,
+  onChooseScope,
 }: {
   connection: Connection;
   canManage: boolean;
   onRun: () => void;
   running: boolean;
   onDisconnect: () => void;
+  onChooseScope: () => void;
 }) {
   const state = health(connection);
   const run = connection.latest_run;
@@ -241,6 +244,24 @@ function ConnectionCard({
           </div>
         ))}
       </dl>
+
+      {connection.scope ? (
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-md border border-border px-3 py-2">
+          <p className="text-body-sm text-text-secondary">
+            <span className="font-semibold text-text-primary">{connection.scope.in_scope}</span> of{" "}
+            {connection.scope.listed} repositories are checked
+            {connection.scope.excluded > 0
+              ? `, ${connection.scope.excluded} left out`
+              : ""}
+            .
+          </p>
+          {canManage ? (
+            <Button size="sm" variant="secondary" onClick={onChooseScope}>
+              Choose repositories
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
 
       {connection.last_error ? (
         <p className="mt-3 flex items-start gap-2 rounded-md border border-status-warning-border bg-status-warning-bg px-3 py-2 text-body-sm text-status-warning-text">
@@ -395,6 +416,7 @@ export function ConnectionsPage() {
   const [connecting, setConnecting] = useState(false);
   const [requesting, setRequesting] = useState(false);
   const [leaving, setLeaving] = useState<Connection | null>(null);
+  const [choosing, setChoosing] = useState<Connection | null>(null);
 
   // What can be connected leads; then by phase; catalogue order breaks ties.
   const visible = useMemo(() => {
@@ -502,6 +524,7 @@ export function ConnectionsPage() {
                   }
                   onRun={() => run.mutate([connection.id])}
                   onDisconnect={() => setLeaving(connection)}
+                  onChooseScope={() => setChoosing(connection)}
                 />
               </li>
             ))}
@@ -664,6 +687,7 @@ export function ConnectionsPage() {
         onOpenChange={setRequesting}
       />
       <DisconnectDialog connection={leaving} onClose={() => setLeaving(null)} />
+      <ScopeDialog connection={choosing} onClose={() => setChoosing(null)} />
     </div>
   );
 }

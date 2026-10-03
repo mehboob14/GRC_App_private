@@ -17,20 +17,32 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from verity.core.deps import Principal, get_tenant_session, require
+from verity.core.deps import (
+    Principal,
+    TenantContext,
+    get_tenant_context,
+    get_tenant_session,
+    require,
+)
+from verity.modules.compliance.chain_service import chain_service
 from verity.modules.compliance.schemas import (
+    ChainControlOut,
+    ChainRequirementOut,
     ControlTemplateDetailOut,
     ControlTemplateOut,
     ControlTemplatePage,
     FrameworkOut,
+    RequirementChainOut,
     RequirementOut,
 )
 from verity.modules.compliance.service import compliance_service
+from verity.modules.connectors.schemas import ControlChainOut
 
 MAX_PAGE_SIZE = 200
 
 frameworks_router = APIRouter(prefix="/frameworks", tags=["compliance"])
 templates_router = APIRouter(prefix="/control-templates", tags=["compliance"])
+requirements_router = APIRouter(prefix="/requirements", tags=["compliance"])
 
 require_frameworks_read = require("frameworks:read")
 
@@ -108,3 +120,38 @@ async def get_control_template(
 ) -> ControlTemplateDetailOut:
     view = await compliance_service.get_template(session, template_id)
     return ControlTemplateDetailOut.model_validate(view)
+
+
+@requirements_router.get(
+    "/{requirement_id}/chain",
+    response_model=RequirementChainOut,
+    summary="A criterion, the controls that answer it, and what evidences each",
+)
+async def get_requirement_chain(
+    requirement_id: uuid.UUID,
+    _principal: Annotated[Principal, Depends(require_frameworks_read)],
+    context: Annotated[TenantContext, Depends(get_tenant_context)],
+    session: Annotated[AsyncSession, Depends(get_tenant_session)],
+) -> RequirementChainOut:
+    view = await chain_service.requirement_chain(
+        session, tenant_id=context.tenant_id, requirement_id=requirement_id
+    )
+    return RequirementChainOut(
+        requirement=ChainRequirementOut.model_validate(view.requirement),
+        state=view.state,
+        controls=[
+            ChainControlOut(
+                control_id=item.control.id,
+                code=item.control.code,
+                name=item.control.name,
+                status=item.control.status,
+                owner_name=item.control.owner_name,
+                coverage=item.coverage,
+                rationale=item.rationale,
+                origin=item.origin,
+                ready=item.ready,
+                chain=ControlChainOut.model_validate(item.chain) if item.chain else None,
+            )
+            for item in view.controls
+        ],
+    )

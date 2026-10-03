@@ -33,6 +33,7 @@ from verity.modules.compliance.models import (
     FrameworkVersionRequirement,
     Requirement,
 )
+from verity.modules.compliance.readiness import control_ready, requirement_ready
 from verity.shared.ids import uuid7
 
 _ENGAGEMENT_SNAPSHOT = (
@@ -158,7 +159,8 @@ class DashboardReport:
 
     Two headline figures are deliberately kept apart. ``criteria_covered`` asks
     only whether a control *exists* for a criterion; ``controls_ready`` asks
-    whether a control is implemented *and* currently evidenced. A library that
+    whether a control is implemented, evidenced with something that still counts,
+    and not contradicted by an automated test (``readiness.py``). A library that
     is fully adopted but unworked reads high on the first and near-zero on the
     second, and showing either alone would mislead.
     """
@@ -194,6 +196,9 @@ class DashboardReport:
     evidence_aging: int = 0
     evidence_stale: int = 0
     evidence_recent: list[RecentEvidence] = field(default_factory=list)
+    automation_passing: int = 0
+    automation_failing: int = 0
+    automation_error: int = 0
 
 
 class EngagementService:
@@ -444,22 +449,29 @@ class EngagementService:
             mapped_control_ids.add(control_id)
         mapped_requirement_ids = set(controls_by_requirement)
 
+        from verity.modules.connectors.service import connector_service  # noqa: PLC0415
         from verity.modules.evidence.service import evidence_service  # noqa: PLC0415
 
         with_evidence = await evidence_service.control_ids_with_evidence(session, tenant_id)
+        # Readiness asks for evidence that still counts (not rejected, not past its
+        # renewal date) and for no automated test saying otherwise.
+        with_current = await evidence_service.control_ids_with_current_evidence(session, tenant_id)
+        automation = await connector_service.automation_statuses(session, tenant_id=tenant_id)
+
+        def _ready(control: Control) -> bool:
+            return control_ready(
+                status=control.status,
+                has_current_evidence=control.id in with_current,
+                automation=automation.get(control.id),
+            )
 
         def _requirement_ready(requirement_id: uuid.UUID) -> bool:
-            # Ready means the same thing here as for a control: at least one
-            # mapped control is implemented and currently evidenced.
-            for control_id in controls_by_requirement.get(requirement_id, ()):
-                control = by_control.get(control_id)
-                if (
-                    control is not None
-                    and control.status == "implemented"
-                    and control_id in with_evidence
-                ):
-                    return True
-            return False
+            # CF-4: met only when every control that applies to it is ready.
+            return requirement_ready(
+                (by_control[control_id].status, _ready(by_control[control_id]))
+                for control_id in controls_by_requirement.get(requirement_id, ())
+                if control_id in by_control
+            )
 
         # Scope and criteria coverage, per Trust Services category. Each category
         # splits three ways: ready, covered-but-not-ready, and no control at all.
@@ -485,7 +497,18 @@ class EngagementService:
         by_status = [StatusCount(status=s, count=status_counts[s]) for s in CONTROL_STATUSES]
 
         controls_evidenced = sum(1 for c in live if c.id in with_evidence)
-        controls_ready = sum(1 for c in live if c.status == "implemented" and c.id in with_evidence)
+        controls_ready = sum(1 for c in live if _ready(c))
+        live_ids = {c.id for c in live}
+        # A control whose last check is too old to count is one nobody can currently
+        # verify, so it is counted with the ones that could not be checked.
+        automation_counts = {
+            label: sum(
+                1
+                for cid, state in automation.items()
+                if cid in live_ids and state in ((label, "stale") if label == "error" else (label,))
+            )
+            for label in ("passing", "failing", "error")
+        }
 
         # Timeline bounds. The earliest control adoption stands in for tenant
         # creation: the library is instantiated when the tenant is, and it keeps
@@ -621,7 +644,10 @@ class EngagementService:
             timeline_from=eff_from,
             timeline_to=eff_to,
             timeline=timeline,
-            checks_available=False,
+            checks_available=bool(automation),
+            automation_passing=automation_counts["passing"],
+            automation_failing=automation_counts["failing"],
+            automation_error=automation_counts["error"],
             recent_activity=recent_activity,
             criteria_uncovered=criteria_total - criteria_covered,
             controls_unmapped=sum(1 for c in live if c.id not in mapped_control_ids),

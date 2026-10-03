@@ -1,9 +1,9 @@
 {
   "counts": {
-    "control_templates": 114,
+    "control_templates": 116,
     "frameworks": 1,
     "requirements": 61,
-    "template_requirements": 150
+    "template_requirements": 167
   },
   "criterion_text_source": {
     "criteria": 61,
@@ -17,18 +17,18 @@
     },
     {
       "path": "requirements.json",
-      "sha256": "48f80daccf9ebd86b1ad2a666297cd0db6743c3c83c6a73932e347b86828630d"
+      "sha256": "50560636a40e4960e3f44fe998b4972a4a83e13838635e247b5ad538ebefc8d0"
     },
     {
       "path": "control_templates.json",
-      "sha256": "2931fcc51c9de8a53b6c1e9e422a04dcd3983269eddcc08d2fda0bb4ee601bb0"
+      "sha256": "baaeec8c9f3c28204a500365ace0725fd66cef29be7388d0fb3d0e4699ba5d63"
     },
     {
       "path": "template_requirements.json",
-      "sha256": "7e25175de24b2444a684bc8dfdadbfe9b73f7d92d2f241402e21ccb37dfcb99f"
+      "sha256": "ea6001dc2a9a6d4a708283ec5e441a0094b182bc1a4c77bed5ccfd48c9aa5263"
     }
   ],
-  "note": "Control templates and mappings vendored from the grc-s prototype on 2026-08-15 by backend/scripts/vendor_soc2_content.py. Criterion TEXT was replaced on 2026-08-18 with the verbatim wording from the AICPA Trust Services Criteria PDF — re-running the vendor script would overwrite it with the prototype's paraphrases, so re-apply the exact text afterwards.",
+  "note": "Control templates and mappings vendored from the grc-s prototype on 2026-08-15 by backend/scripts/vendor_soc2_content.py, then corrected and extended by hand (see 'corrections'). Criterion TEXT was replaced on 2026-08-18 with the verbatim wording from the AICPA Trust Services Criteria PDF. Re-running the vendor script would overwrite the criterion text, the guidance and every later correction, so do not re-run it. Hashes are sealed with scripts/seal_content.py and checked by the loader.",
   "sources": [
     {
       "path": "C:\\Users\\HP\\OneDrive\\Desktop\\Platform\\grc-s\\backend\\app\\control_library.json",
@@ -44,5 +44,22 @@
       "sha256": "23a099dd1dc273b7a45fda2351f376344c33fcb2911d586036c0e0d631b8ad69"
     }
   ],
-  "vendored_on": "2026-08-15"
+  "vendored_on": "2026-08-15",
+  "corrections": [
+    {
+      "date": "2026-10-03",
+      "file": "template_requirements.json",
+      "summary": "Fourteen control mappings corrected against the AICPA points of focus. SD-11 Secret scanning leaves CC6.8 (unauthorized or malicious software) for CC6.1 (credentials) and CC7.1 (detecting vulnerabilities introduced by a change). Added: LM-01 CC6.1 (inventory of information assets); NS-05 CC7.2; HR-01 CC1.4 (considers the background of individuals); HR-07 CC1.5; LM-08 CC7.4; EP-02 CC6.1; BC-06 P6.4; CS-03 CC2.3; PE-01 CC9.2; IAM-01, IAM-12, HR-05 CC6.3; IAM-02 CC6.2."
+    },
+    {
+      "date": "2026-10-04",
+      "file": "template_requirements.json, control_templates.json",
+      "summary": "Every mapping now carries coverage (full or partial) and a written rationale, so a criterion's controls can be explained and a supporting control no longer reads as full cover. Every control template now lists the evidence a person or a Verity module provides, marked design or operating. Two controls added for CC8.1: SD-13 Controlled production deployments and SD-14 Change traceability. BC-08 now also maps to P6.4. Rationale, coverage and evidence are Verity authored and unreviewed by a second reviewer (spec CF-3, task A5)."
+    },
+    {
+      "date": "2026-10-05",
+      "file": "control_templates.json",
+      "summary": "Every control template now carries a Sub-type (sub_category), the finer area inside its Type (category) that the signed spec asks for: 43 areas, 2 to 6 per Type, one per control, derived from each control's name, description and code. This is the one place the vocabulary lives; edit it here, reseal, and run seed-content. PROPOSED: week2-decisions D1 left the Sub-type vocabulary to the client, who has not answered, so these values are Verity authored and unconfirmed."
+    }
+  ]
 }

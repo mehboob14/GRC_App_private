@@ -52,9 +52,12 @@
     "key": "password_manager",
     "name": "Password manager",
     "description": "The company vault staff use for shared and personal credentials.",
-    "providers": [
-      {"key": "onepassword", "name": "1Password", "status": "planned", "phase": "Phase 2"}
-    ]
+    "providers": [{
+  "key": "onepassword",
+  "name": "1Password",
+  "status": "planned",
+  "phase": "Phase 2"
+}]
   },
   {
     "key": "ticketing",
@@ -73,19 +76,33 @@
     "key": "alerting",
     "name": "On call and alerting",
     "description": "Where alerts page the person on call and incidents are run.",
-    "providers": [
-      {"key": "pagerduty", "name": "PagerDuty", "status": "planned", "phase": "Phase 2"},
-      {"key": "slack", "name": "Slack", "status": "planned", "phase": "Phase 2"}
-    ]
+    "providers": [{
+  "key": "pagerduty",
+  "name": "PagerDuty",
+  "status": "planned",
+  "phase": "Phase 2"
+}, {
+  "key": "slack",
+  "name": "Slack",
+  "status": "planned",
+  "phase": "Phase 2"
+}]
   },
   {
     "key": "network_edge",
     "name": "Network and edge",
     "description": "What sits in front of applications and private systems.",
-    "providers": [
-      {"key": "cloudflare", "name": "Cloudflare", "status": "planned", "phase": "Phase 2"},
-      {"key": "tailscale", "name": "Tailscale", "status": "planned", "phase": "Phase 2"}
-    ]
+    "providers": [{
+  "key": "cloudflare",
+  "name": "Cloudflare",
+  "status": "planned",
+  "phase": "Phase 2"
+}, {
+  "key": "tailscale",
+  "name": "Tailscale",
+  "status": "planned",
+  "phase": "Phase 2"
+}]
   },
   {
     "key": "observability",
@@ -134,9 +151,103 @@
     "key": "endpoint_protection",
     "name": "Endpoint protection",
     "description": "The agent that detects and stops malware on laptops and servers.",
+    "providers": [{
+  "key": "crowdstrike",
+  "name": "CrowdStrike",
+  "status": "not_planned",
+  "phase": null
+}, {
+  "key": "sentinelone",
+  "name": "SentinelOne",
+  "status": "not_planned",
+  "phase": null
+}]
+  },
+  {
+    "key": "ci_cd",
+    "name": "CI and CD",
+    "description": "The pipelines that test and release your software.",
     "providers": [
-      {"key": "crowdstrike", "name": "CrowdStrike", "status": "not_planned", "phase": null},
-      {"key": "sentinelone", "name": "SentinelOne", "status": "not_planned", "phase": null}
+      {"key": "github", "name": "GitHub", "status": "planned", "phase": "Phase 2"},
+      {"key": "gitlab", "name": "GitLab", "status": "planned", "phase": "Phase 2"},
+      {"key": "bitbucket", "name": "Bitbucket", "status": "planned", "phase": "Phase 2"}
     ]
+  },
+  {
+    "key": "verity_assets",
+    "name": "Verity assets",
+    "description": "The asset inventory kept in Verity.",
+    "providers": [{
+  "key": "verity",
+  "name": "Verity (built in)",
+  "status": "planned",
+  "phase": "Phase 2"
+}]
+  },
+  {
+    "key": "verity_vulnerabilities",
+    "name": "Verity vulnerabilities",
+    "description": "The vulnerability register kept in Verity.",
+    "providers": [{
+  "key": "verity",
+  "name": "Verity (built in)",
+  "status": "planned",
+  "phase": "Phase 2"
+}]
+  },
+  {
+    "key": "verity_risks",
+    "name": "Verity risk register",
+    "description": "The risk registers kept in Verity.",
+    "providers": [{
+  "key": "verity",
+  "name": "Verity (built in)",
+  "status": "planned",
+  "phase": "Phase 2"
+}]
+  },
+  {
+    "key": "verity_vendors",
+    "name": "Verity vendors",
+    "description": "The vendor register and assessments kept in Verity.",
+    "providers": [{
+  "key": "verity",
+  "name": "Verity (built in)",
+  "status": "planned",
+  "phase": "Phase 2"
+}]
+  },
+  {
+    "key": "verity_policies",
+    "name": "Verity policies",
+    "description": "The policies and acknowledgements kept in Verity.",
+    "providers": [{
+  "key": "verity",
+  "name": "Verity (built in)",
+  "status": "planned",
+  "phase": "Phase 2"
+}]
+  },
+  {
+    "key": "verity_tasks",
+    "name": "Verity tasks",
+    "description": "The tasks and remediation work kept in Verity.",
+    "providers": [{
+  "key": "verity",
+  "name": "Verity (built in)",
+  "status": "planned",
+  "phase": "Phase 2"
+}]
+  },
+  {
+    "key": "verity_controls",
+    "name": "Verity controls and evidence",
+    "description": "The controls and evidence kept in Verity.",
+    "providers": [{
+  "key": "verity",
+  "name": "Verity (built in)",
+  "status": "planned",
+  "phase": "Phase 2"
+}]
   }
 ]

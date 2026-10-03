@@ -16,10 +16,21 @@ place, rows no longer in the pack are deleted. Deletion is safe here precisely
 because these tables are content — a requirement a framework no longer has should
 not linger — and the FKs into them are ``ON DELETE RESTRICT``, so a prune that
 would orphan tenant data fails loudly instead of silently cascading.
+
+Pruning is **per pack**. A framework pack owns its requirements, the control
+templates it ships and the mappings from its own requirements; it never deletes
+what another pack owns. That is what lets a second framework (ISO 27001) load
+beside SOC 2: its mappings point at control templates the SOC 2 pack ships, and
+loading it leaves the SOC 2 library, adopted controls and crosswalk untouched.
+
+A pack whose files no longer match the hashes sealed in its ``MANIFEST.json`` is
+refused. Hashes are taken over the content with line endings normalised, so a
+checkout that converts them still matches.
 """
 
 from __future__ import annotations
 
+import hashlib
 import json
 import uuid
 from collections.abc import Sequence
@@ -50,6 +61,39 @@ from verity.shared.ids import uuid7
 logger = get_logger(__name__)
 
 CONTENT_ROOT = Path(__file__).parent / "content"
+
+COVERAGE_VALUES = ("full", "partial")
+
+
+class ContentError(ValueError):
+    """A content pack that must not be loaded: it does not match what was reviewed."""
+
+
+def content_digest(path: Path) -> str:
+    """SHA256 of a content file with line endings normalised to LF."""
+    return hashlib.sha256(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
+
+
+def sealed_hashes(pack: Path) -> dict[str, str]:
+    """The file hashes a pack's manifest vouches for: ``{file name: sha256}``."""
+    manifest_path = pack / "MANIFEST.json"
+    if not manifest_path.exists():
+        return {}
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    sealed = {item["path"]: item["sha256"] for item in manifest.get("generated", [])}
+    sealed.update(manifest.get("sha256", {}))
+    return sealed
+
+
+def verify_pack(pack: Path) -> None:
+    """Refuse a pack whose files differ from the bytes its manifest sealed."""
+    for name, expected in sealed_hashes(pack).items():
+        if not (pack / name).exists() or content_digest(pack / name) != expected:
+            raise ContentError(
+                f"{pack.name}/{name} does not match its MANIFEST.json hash. "
+                "Content changes are sealed in the same reviewed change "
+                "(python scripts/seal_content.py)."
+            )
 
 
 @dataclass
@@ -222,7 +266,7 @@ async def _load_version_membership(
 
 
 async def _load_templates(
-    session: AsyncSession, docs: Sequence[dict[str, Any]], result: LoadResult
+    session: AsyncSession, docs: Sequence[dict[str, Any]], pack: str, result: LoadResult
 ) -> tuple[dict[str, ControlTemplate], dict[str, ControlTemplate]]:
     """Upsert control templates keyed on ``canonical_key``.
 
@@ -232,13 +276,19 @@ async def _load_templates(
     would read a re-coded template as "new one, old one dropped" and try to
     delete a row that adopted tenant controls still reference.
 
+    Only this pack's templates are considered: a template another pack ships is
+    neither updated nor pruned here, even when it shares a canonical key.
+
     Returns ``(current, stale)`` — keyed by the pack's *code* for the crosswalk,
     which names templates by code. Stale templates are handed back rather than
     deleted here: the crosswalk rows pointing at them must go first, or the
     ``RESTRICT`` foreign key refuses the delete.
     """
     existing = {
-        row.canonical_key: row for row in (await session.execute(select(ControlTemplate))).scalars()
+        row.canonical_key: row
+        for row in (
+            await session.execute(select(ControlTemplate).where(ControlTemplate.pack == pack))
+        ).scalars()
     }
     by_code: dict[str, ControlTemplate] = {}
     for doc in docs:
@@ -250,9 +300,14 @@ async def _load_templates(
             # Preventive/Detective/Corrective classification.
             "control_type": doc.get("control_type"),
             "control_sub_type": doc.get("control_sub_type"),
+            # The Sub-type (spec 1.1): authored per control in the pack, and the
+            # source of the per-Type list the control form suggests from.
+            "sub_category": doc.get("sub_category"),
             "importance": doc["importance"],
             "description": doc["description"],
             "implementation_guidance": doc.get("implementation_guidance"),
+            "evidence": doc.get("evidence") or [],
+            "pack": pack,
             "built_in": True,
         }
         row = existing.pop(doc["canonical_key"], None)
@@ -270,27 +325,56 @@ async def _load_templates(
 async def _load_crosswalk(
     session: AsyncSession,
     docs: Sequence[dict[str, Any]],
-    templates: dict[str, ControlTemplate],
     requirements: dict[str, Requirement],
     result: LoadResult,
 ) -> None:
-    """Upsert the shipped template->requirement crosswalk."""
-    wanted = {
-        (templates[d["template_code"]].id, requirements[d["requirement_key"]].id) for d in docs
-    }
+    """Upsert the template to requirement crosswalk for one framework.
+
+    A mapping names a template by code, and the template may belong to any pack:
+    the control library is shared, so an ISO requirement maps to a control the SOC 2
+    pack ships. Only mappings from *this* framework's requirements are pruned.
+
+    Every mapping carries its coverage and a written rationale. A link nobody can
+    explain is a claim nobody can check, so a mapping without them is refused
+    (CF-3). A mapping already loaded is updated in place, because a reviewed
+    rationale or a corrected coverage must reach the library on the next load.
+    """
+    codes = {row.code: row.id for row in (await session.execute(select(ControlTemplate))).scalars()}
+    wanted: dict[tuple[uuid.UUID, uuid.UUID], dict[str, Any]] = {}
+    for doc in docs:
+        label = f"{doc['requirement_key']} <- {doc['template_code']}"
+        if doc.get("coverage") not in COVERAGE_VALUES or not (doc.get("rationale") or "").strip():
+            raise ContentError(f"mapping {label} needs a coverage and a rationale")
+        if doc["template_code"] not in codes or doc["requirement_key"] not in requirements:
+            raise ContentError(f"mapping {label} names a control or criterion that is not there")
+        wanted[(codes[doc["template_code"]], requirements[doc["requirement_key"]].id)] = {
+            "coverage": doc["coverage"],
+            "rationale": doc["rationale"].strip(),
+        }
+    ours = {requirement.id for requirement in requirements.values()}
     existing = {
         (row.template_id, row.requirement_id): row
-        for row in (await session.execute(select(TemplateRequirementMap))).scalars()
-    }
-    for template_id, requirement_id in wanted - set(existing):
-        session.add(
-            TemplateRequirementMap(
-                id=uuid7(), template_id=template_id, requirement_id=requirement_id
+        for row in (
+            await session.execute(
+                select(TemplateRequirementMap).where(
+                    TemplateRequirementMap.requirement_id.in_(ours)
+                )
             )
-        )
-        result.table("template_requirement_map").inserted += 1
-    for pair in set(existing) - wanted:
-        await session.delete(existing[pair])
+        ).scalars()
+    }
+    for (template_id, requirement_id), values in wanted.items():
+        row = existing.pop((template_id, requirement_id), None)
+        if row is None:
+            session.add(
+                TemplateRequirementMap(
+                    id=uuid7(), template_id=template_id, requirement_id=requirement_id, **values
+                )
+            )
+            result.table("template_requirement_map").inserted += 1
+        elif _apply(row, values):
+            result.table("template_requirement_map").updated += 1
+    for stale in existing.values():
+        await session.delete(stale)
         result.table("template_requirement_map").pruned += 1
 
 
@@ -485,7 +569,7 @@ async def _load_automation(
         row.code: row.id for row in (await session.execute(select(ControlTemplate))).scalars()
     }
     existing_checks = {row.key: row for row in (await session.execute(select(Check))).scalars()}
-    wanted: dict[tuple[uuid.UUID, uuid.UUID], str] = {}
+    wanted: dict[tuple[uuid.UUID, uuid.UUID], dict[str, str]] = {}
     for doc in checks:
         unknown = set(doc["capabilities"]) - capability_keys
         missing = [m["code"] for m in doc["controls"] if m["code"] not in templates]
@@ -501,6 +585,7 @@ async def _load_automation(
             "resource_type": doc["resource_type"],
             "frequency": doc["frequency"],
             "remediation": doc["remediation"],
+            "evidence_kinds": doc.get("evidence_kinds") or [],
         }
         check = existing_checks.pop(doc["key"], None)
         if check is None:
@@ -510,23 +595,28 @@ async def _load_automation(
         elif _apply(check, values):
             result.table("checks").updated += 1
         for mapping in doc["controls"]:
-            wanted[(templates[mapping["code"]], check.id)] = mapping["coverage"]
+            if not (mapping.get("rationale") or "").strip():
+                raise ContentError(f"check {doc['key']} to {mapping['code']} needs a rationale")
+            wanted[(templates[mapping["code"]], check.id)] = {
+                "coverage": mapping["coverage"],
+                "rationale": mapping["rationale"].strip(),
+            }
     await session.flush()
 
     existing_map = {
         (row.template_id, row.check_id): row
         for row in (await session.execute(select(ControlTemplateCheck))).scalars()
     }
-    for (template_id, check_id), coverage in wanted.items():
+    for (template_id, check_id), values in wanted.items():
         row = existing_map.pop((template_id, check_id), None)
         if row is None:
             session.add(
                 ControlTemplateCheck(
-                    id=uuid7(), template_id=template_id, check_id=check_id, coverage=coverage
+                    id=uuid7(), template_id=template_id, check_id=check_id, **values
                 )
             )
             result.table("control_template_checks").inserted += 1
-        elif _apply(row, {"coverage": coverage}):
+        elif _apply(row, values):
             result.table("control_template_checks").updated += 1
     for stale in [*existing_map.values(), *existing_checks.values(), *stale_capabilities.values()]:
         await session.delete(stale)
@@ -536,6 +626,7 @@ async def _load_automation(
 
 async def load_pack(session: AsyncSession, pack: Path) -> LoadResult:
     """Load one content pack directory. Idempotent: a second run changes nothing."""
+    verify_pack(pack)
     result = LoadResult()
     # Packs are not all the same shape: the policy library ships templates and
     # no framework, so each section loads only if its file is present.
@@ -556,12 +647,11 @@ async def load_pack(session: AsyncSession, pack: Path) -> LoadResult:
         session, framework, _read(pack, "requirements.json"), result
     )
     await _load_version_membership(session, version, requirements, result)
-    templates, stale_templates = await _load_templates(
-        session, _read(pack, "control_templates.json"), result
+    _templates, stale_templates = await _load_templates(
+        session, _read(pack, "control_templates.json"), pack.name, result
     )
-    await _load_crosswalk(
-        session, _read(pack, "template_requirements.json"), templates, requirements, result
-    )
+    await session.flush()
+    await _load_crosswalk(session, _read(pack, "template_requirements.json"), requirements, result)
     # Only now can a dropped template go: its crosswalk rows are deleted above.
     await session.flush()
     for stale in stale_templates.values():

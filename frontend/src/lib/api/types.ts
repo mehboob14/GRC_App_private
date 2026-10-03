@@ -410,10 +410,15 @@ export type ControlTemplate = {
   name: string;
   description: string;
   implementation_guidance: string | null;
+  /** The Type: which domain of the estate the control lives in. */
   category: string;
-  /** Preventive / Detective / Corrective. NULL on framework content — the
-   *  classification is authored on a tenant's own internal/custom controls. */
+  /** The Sub-type: the area inside the Type, authored per control in the pack. */
+  sub_category: string | null;
+  /** Preventive / Detective / Corrective, shown as Design. NULL on framework
+   *  content — the classification is authored on a tenant's own internal/custom
+   *  controls. */
   control_type: string | null;
+  /** Manual / Automated / Hybrid, shown as Automation. */
   control_sub_type: string | null;
   importance: string;
   built_in: boolean;
@@ -452,11 +457,16 @@ export type Control = {
   name: string;
   description: string;
   implementation_guidance: string | null;
+  /** The Type: which domain of the estate the control lives in. */
   category: string;
+  /** The Sub-type: the area inside the Type. Copied from the template, free text
+   *  on a custom control; empty when nobody set one. */
   sub_category: string | null;
-  /** Preventive / Detective / Corrective / Deterrent / Compensating / Directive.
-   *  NULL on framework content — authored on a tenant's own controls. */
+  /** Preventive / Detective / Corrective / Deterrent / Compensating / Directive,
+   *  shown as Design. NULL on framework content — authored on a tenant's own
+   *  controls. */
   control_type: string | null;
+  /** Manual / Automated / Hybrid, shown as Automation. */
   control_sub_type: string | null;
   status: ControlStatus;
   origin: "template" | "custom";
@@ -470,8 +480,14 @@ export type Control = {
 };
 
 export type ControlVocabulary = {
+  /** The Types. */
   categories: string[];
+  /** The Sub-types the shipped library uses, per Type: suggestions, not a closed
+   *  list. A Type none of the shipped controls refines is absent. */
+  sub_categories: Record<string, string[]>;
+  /** The Design values. */
   control_types: string[];
+  /** The Automation values. */
   control_sub_types: string[];
   statuses: ControlStatus[];
 };
@@ -479,6 +495,7 @@ export type ControlVocabulary = {
 export type ControlQuery = {
   status?: string;
   category?: string;
+  sub_category?: string;
   control_type?: string;
   control_sub_type?: string;
   owner_membership_id?: string;
@@ -633,11 +650,14 @@ export type ReportKpis = {
   controls_ready: number;
   criteria_mapped: number;
   by_status: Record<string, number>;
+  /** Controls whose automated tests fail. They are not counted as ready. */
+  controls_failing_automation: number;
 };
 export type ReportRow = {
   code: string;
   name: string;
   category: string;
+  sub_category: string | null;
   control_type: string | null;
   status: string;
   status_label: string;
@@ -687,9 +707,14 @@ export type ComplianceDashboard = {
   timeline_from: string;
   timeline_to: string;
   timeline: TimelinePoint[];
-  /** False until a connector can run automated checks. The UI greys that panel
+  /** False until a connection has produced results. The UI greys that panel
       rather than showing a zero that would read as "everything failing". */
   checks_available: boolean;
+  /** Controls, rolled up from their tests (AU-6). A control whose tests could
+      not be read is "error", never "failing" (rule 7). */
+  automation_passing: number;
+  automation_failing: number;
+  automation_error: number;
   recent_activity: ActivityItem[];
 };
 

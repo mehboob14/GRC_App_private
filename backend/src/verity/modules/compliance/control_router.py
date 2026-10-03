@@ -61,11 +61,14 @@ def _actor(principal: Principal) -> Membership:
 )
 async def get_vocabulary(
     _principal: Annotated[Principal, Depends(require_controls_read)],
+    session: Annotated[AsyncSession, Depends(get_tenant_session)],
 ) -> ControlVocabularyOut:
     # Served from the same constants the CHECK constraints are built from, so
-    # the UI cannot offer a value the database would reject.
+    # the UI cannot offer a value the database would reject. The Sub-types are the
+    # exception: they come from the shipped templates, and are suggestions only.
     return ControlVocabularyOut(
         categories=list(CONTROL_CATEGORIES),
+        sub_categories=await control_service.sub_category_vocabulary(session),
         control_types=list(CONTROL_TYPES),
         control_sub_types=list(CONTROL_SUB_TYPES),
         statuses=list(CONTROL_STATUSES),
@@ -83,6 +86,7 @@ async def list_controls(  # noqa: PLR0913, PLR0917 — one parameter per filter
     session: Annotated[AsyncSession, Depends(get_tenant_session)],
     control_status: Annotated[str | None, Query(alias="status")] = None,
     category: str | None = None,
+    sub_category: str | None = None,
     control_type: str | None = None,
     control_sub_type: str | None = None,
     owner_membership_id: uuid.UUID | None = None,
@@ -94,6 +98,7 @@ async def list_controls(  # noqa: PLR0913, PLR0917 — one parameter per filter
         tenant_id=context.tenant_id,
         status=control_status,
         category=category,
+        sub_category=sub_category,
         control_type=control_type,
         control_sub_type=control_sub_type,
         owner_membership_id=owner_membership_id,

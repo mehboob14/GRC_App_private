@@ -23,90 +23,6 @@ import { describeError, errorToast } from "@/lib/api/describe-error";
 import { useAuth } from "@/lib/auth/auth-context";
 import type { Control } from "@/lib/api/types";
 
-/**
- * Sub-categories under each control category. A starter taxonomy kept on the
- * client, not a server CHECK: the grouping is presentational and varies by
- * register type, so it can evolve without a migration. The dependent dropdown
- * reads this map; the selected value is stored verbatim on the control.
- */
-const SUB_CATEGORIES: Record<string, string[]> = {
-  "Governance, Risk & Compliance": [
-    "Policies & Standards",
-    "Risk Management",
-    "Compliance Management",
-    "Internal Audit",
-    "Governance Structure",
-  ],
-  "Data Management & Privacy": [
-    "Data Classification",
-    "Data Retention & Disposal",
-    "Encryption & Key Management",
-    "Privacy & Consent",
-    "Data Loss Prevention",
-  ],
-  "Identity & Access Management": [
-    "Authentication",
-    "Authorization & Least Privilege",
-    "Access Reviews",
-    "Privileged Access",
-    "Provisioning & Deprovisioning",
-  ],
-  "Secure Development & Code Management": [
-    "Secure SDLC",
-    "Code Review",
-    "Change Management",
-    "Dependency & Supply Chain",
-    "Secrets Management",
-  ],
-  "Infrastructure & Network Security": [
-    "Network Segmentation",
-    "Firewall & Perimeter",
-    "Configuration Hardening",
-    "Cloud Security",
-    "Patch Management",
-  ],
-  "Logging, Monitoring & Incident Management": [
-    "Logging & Audit Trails",
-    "Security Monitoring",
-    "Alerting",
-    "Incident Response",
-    "Threat Detection",
-  ],
-  "Human Resources & Personnel Security": [
-    "Onboarding",
-    "Offboarding",
-    "Background Checks",
-    "Security Awareness Training",
-    "Acceptable Use",
-  ],
-  "Business Continuity & Third-Party Management": [
-    "Business Continuity",
-    "Disaster Recovery",
-    "Backups",
-    "Vendor Risk Management",
-    "Third-Party Agreements",
-  ],
-  "Endpoint Security": [
-    "Endpoint Protection",
-    "Mobile Device Management",
-    "Anti-Malware",
-    "Disk Encryption",
-    "Endpoint Configuration",
-  ],
-  "Communications & Collaboration Security": [
-    "Email Security",
-    "Messaging & Collaboration",
-    "Web Filtering",
-    "Data Sharing",
-  ],
-  "Physical & Environmental Security": [
-    "Facility Access",
-    "Environmental Controls",
-    "Media Handling",
-    "Asset Physical Security",
-  ],
-};
-
 type Option = { value: string; label: string; hint?: string };
 
 /**
@@ -312,8 +228,8 @@ export function ControlFormDialog({
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
   const [subCategory, setSubCategory] = useState("");
-  const [controlType, setControlType] = useState("Preventive");
-  const [subType, setSubType] = useState("");
+  const [design, setDesign] = useState("Preventive");
+  const [automation, setAutomation] = useState("");
   const [ownerId, setOwnerId] = useState("");
   const [evidenceIds, setEvidenceIds] = useState<string[]>([]);
   const [evidencePrefilled, setEvidencePrefilled] = useState(false);
@@ -353,7 +269,8 @@ export function ControlFormDialog({
       })),
     [evidenceQuery.data],
   );
-  const subCategoryOptions = SUB_CATEGORIES[category] ?? [];
+  // Suggestions for the chosen Type, from the shipped library. Not a closed list.
+  const subCategoryOptions = vocab?.sub_categories[category] ?? [];
 
   // (Re)seed the form each time it opens, from the control on edit or blank on
   // create. Evidence links prefill separately once the list resolves.
@@ -366,8 +283,8 @@ export function ControlFormDialog({
       setDescription(control.description);
       setCategory(control.category);
       setSubCategory(control.sub_category ?? "");
-      setControlType(control.control_type ?? "");
-      setSubType(control.control_sub_type ?? "");
+      setDesign(control.control_type ?? "");
+      setAutomation(control.control_sub_type ?? "");
       setOwnerId(control.owner_membership_id ?? "");
       setEvidenceIds([]);
     } else {
@@ -376,8 +293,8 @@ export function ControlFormDialog({
       setDescription("");
       setCategory("");
       setSubCategory("");
-      setControlType("Preventive");
-      setSubType("");
+      setDesign("Preventive");
+      setAutomation("");
       setOwnerId(principal?.membership_id ?? "");
       setEvidenceIds([]);
     }
@@ -412,8 +329,8 @@ export function ControlFormDialog({
           description: description.trim(),
           category: category.trim(),
           sub_category: subCategory || null,
-          control_type: controlType,
-          control_sub_type: subType || null,
+          control_type: design,
+          control_sub_type: automation || null,
           owner_membership_id: ownerId || null,
           evidence_ids: evidenceIds,
         });
@@ -424,8 +341,8 @@ export function ControlFormDialog({
         category: category.trim(),
         sub_category: subCategory,
         // Mechanism type is authored only on internal controls (spec).
-        control_type: isInternal ? controlType : undefined,
-        control_sub_type: subType || null,
+        control_type: isInternal ? design : undefined,
+        control_sub_type: automation || null,
         owner_membership_id: ownerId || null,
         clear_owner: ownerId === "",
         // Omitted until the link set has prefilled, so a quick save cannot wipe
@@ -480,10 +397,11 @@ export function ControlFormDialog({
           {mode === "edit" ? (
             <TextField label="Code" value={code} disabled onChange={() => {}} />
           ) : null}
-          {/* The vocabulary feeds Category, Type and Automation, so one line
-              covers all three rather than repeating the same failure. */}
+          {/* The vocabulary feeds Type, Design and Automation, so one line covers
+              all three rather than repeating the same failure. Type is the
+              domain (the category); Sub-type the area inside it. */}
           <div>
-            <SelectField label="Category">
+            <SelectField label="Type">
               <Select
                 value={category}
                 onValueChange={(value) => {
@@ -491,7 +409,7 @@ export function ControlFormDialog({
                   setSubCategory("");
                 }}
               >
-                <SelectTrigger aria-label="Category" />
+                <SelectTrigger aria-label="Type" />
                 <SelectContent>
                   {(vocab?.categories ?? []).map((cat) => (
                     <SelectItem key={cat} value={cat}>
@@ -508,28 +426,29 @@ export function ControlFormDialog({
             ) : null}
           </div>
 
-          <SelectField label="Sub-category" optional>
-            <Select
-              value={subCategory || "none"}
-              onValueChange={(value) => setSubCategory(value === "none" ? "" : value)}
-              disabled={subCategoryOptions.length === 0}
-            >
-              <SelectTrigger aria-label="Sub-category" />
-              <SelectContent>
-                <SelectItem value="none">None</SelectItem>
-                {subCategoryOptions.map((sub) => (
-                  <SelectItem key={sub} value={sub}>
-                    {sub}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </SelectField>
+          {/* Suggestions from the shipped library for the chosen Type; free text
+              is allowed, so a workspace can name an area of its own. */}
+          <div>
+            <TextField
+              label="Sub-type"
+              optional
+              list="control-sub-types"
+              maxLength={100}
+              value={subCategory}
+              onChange={(event) => setSubCategory(event.target.value)}
+              placeholder={subCategoryOptions[0] ?? ""}
+            />
+            <datalist id="control-sub-types">
+              {subCategoryOptions.map((sub) => (
+                <option key={sub} value={sub} />
+              ))}
+            </datalist>
+          </div>
 
           {isInternal ? (
-            <SelectField label="Type">
-              <Select value={controlType} onValueChange={setControlType}>
-                <SelectTrigger aria-label="Type" />
+            <SelectField label="Design">
+              <Select value={design} onValueChange={setDesign}>
+                <SelectTrigger aria-label="Design" />
                 <SelectContent>
                   {(vocab?.control_types ?? []).map((type) => (
                     <SelectItem key={type} value={type}>
@@ -540,14 +459,13 @@ export function ControlFormDialog({
               </Select>
             </SelectField>
           ) : (
-            <TextField label="Type" value={controlType} disabled onChange={() => {}} />
+            <TextField label="Design" value={design} disabled onChange={() => {}} />
           )}
 
-          {/* Renamed from "Sub-type": this axis is how the control is operated. */}
           <SelectField label="Automation" optional>
             <Select
-              value={subType || "none"}
-              onValueChange={(value) => setSubType(value === "none" ? "" : value)}
+              value={automation || "none"}
+              onValueChange={(value) => setAutomation(value === "none" ? "" : value)}
             >
               <SelectTrigger aria-label="Automation" />
               <SelectContent>

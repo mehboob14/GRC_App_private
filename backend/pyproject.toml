@@ -419,6 +419,11 @@ ignore_imports = [
     "verity.modules.evidence.service -> verity.modules.documents.service",
     "verity.modules.evidence.service -> verity.modules.assets.service",
     "verity.modules.evidence.service -> verity.modules.vulnerabilities.service",
+    # Readiness asks which controls have a passing, failing or unreadable
+    # automated status, through ConnectorService.automation_statuses, never by
+    # reading check_results from here (AU-6). What the service does with its own
+    # models is the connectors module's private business.
+    "verity.modules.connectors.service -> verity.modules.connectors.models",
 ]
 forbidden_modules = [
     "verity.modules.ai.repository", "verity.modules.ai.models",
@@ -779,6 +784,17 @@ ignore_imports = [
     "verity.modules.iam.service -> verity.modules.tenancy.service",
     "verity.modules.tenancy.service -> verity.modules.tenancy.repository",
     "verity.modules.tenancy.service -> verity.modules.tenancy.models",
+    # tasks attaches evidence, and raises renewal tasks for stale evidence, through
+    # EvidenceService (service to service, rule 4); evidence resolves the records it
+    # links to through their own services. Each service's use of its own models is its
+    # private business, so those legs are exempted (the set vendors needs, for the same
+    # reason).
+    "verity.modules.evidence.service -> verity.modules.assets.service",
+    "verity.modules.evidence.service -> verity.modules.documents.service",
+    "verity.modules.evidence.service -> verity.modules.vulnerabilities.service",
+    "verity.modules.assets.service -> verity.modules.assets.models",
+    "verity.modules.documents.service -> verity.modules.documents.models",
+    "verity.modules.vulnerabilities.service -> verity.modules.vulnerabilities.models",
 ]
 forbidden_modules = [
     "verity.modules.ai.repository", "verity.modules.ai.models",

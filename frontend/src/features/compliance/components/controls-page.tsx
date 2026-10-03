@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -25,6 +25,7 @@ import {
   PageHeader,
   Pagination,
   SearchInput,
+  SegmentedControl,
   Select,
   SelectContent,
   SelectField,
@@ -44,6 +45,7 @@ import {
   useTableSort,
   useToast,
   type ColumnDef,
+  type SegmentedItem,
 } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { complianceApi, controlsApi, evidenceApi } from "@/lib/api/endpoints";
@@ -51,6 +53,11 @@ import { describeError, errorToast } from "@/lib/api/describe-error";
 import { useAuth } from "@/lib/auth/auth-context";
 import type { Control, ControlStatus } from "@/lib/api/types";
 import { OwnerSelect } from "@/features/iam/components/owner-select";
+import { useControlComposition } from "@/features/connectors/hooks";
+import {
+  EvidencedBy,
+  MonitoringWord,
+} from "@/features/connectors/components/composition-ui";
 import { ControlFormDialog } from "./control-form-dialog";
 import { ControlsBulkBar } from "./controls-bulk-bar";
 import { FrameworkChip, TrustServiceChip } from "./trust-services";
@@ -124,13 +131,44 @@ function ComingSoonField({ label }: { label: string }) {
   );
 }
 
-/** Type is a taxonomy, not a status — neutral chips (DS §1, F12). */
-function TypeChip({ label }: { label: string }) {
+/** Design (Preventive, Detective…) is a taxonomy, not a status — neutral chips
+ *  (DS §1, F12). The spec's Type and Sub-type are the domain columns, so this
+ *  axis took the word Design. */
+function DesignChip({ label }: { label: string }) {
   return <Badge variant="neutral">{label}</Badge>;
 }
 
 const DEFAULT_PAGE_SIZE = 20;
 const PAGE_SIZES = [10, 20, 50, 100];
+
+type GroupBy = "none" | "type" | "subtype";
+
+const GROUP_ITEMS: readonly SegmentedItem<GroupBy>[] = [
+  { id: "none", label: "None" },
+  { id: "type", label: "Type" },
+  { id: "subtype", label: "Sub-type" },
+];
+
+/** Where a control with no Sub-type sits when grouping by Sub-type. */
+const NO_SUB_TYPE = "No sub-type";
+
+/** The Sub-types in use under the chosen Types (all of them when none is
+ *  chosen), so the facet never offers one that would return nothing. */
+function subTypesWithin(
+  controls: readonly Control[],
+  types: readonly string[],
+): string[] {
+  const found = new Set<string>();
+  for (const control of controls) {
+    if (
+      control.sub_category &&
+      (types.length === 0 || types.includes(control.category))
+    ) {
+      found.add(control.sub_category);
+    }
+  }
+  return [...found].sort((a, b) => a.localeCompare(b));
+}
 
 function ControlDetailDialog({
   control,
@@ -287,18 +325,24 @@ function ControlDetailDialog({
                     <span className="text-body-sm text-text-subtle">None</span>
                   )}
                 </div>
-                {control.origin === "custom" && control.control_type ? (
-                  <div>
-                    <p className="type-overline mb-1.5">Type</p>
-                    <TypeChip label={control.control_type} />
-                  </div>
-                ) : null}
                 <div>
-                  <p className="type-overline mb-1.5">Category</p>
+                  <p className="type-overline mb-1.5">Type</p>
                   <p className="text-body-sm text-text-secondary">
                     {control.category}
                   </p>
                 </div>
+                <div>
+                  <p className="type-overline mb-1.5">Sub-type</p>
+                  <p className="text-body-sm text-text-secondary">
+                    {control.sub_category || "Not set"}
+                  </p>
+                </div>
+                {control.origin === "custom" && control.control_type ? (
+                  <div>
+                    <p className="type-overline mb-1.5">Design</p>
+                    <DesignChip label={control.control_type} />
+                  </div>
+                ) : null}
               </div>
 
               {/* Owner is assignable in place — a control without a named owner
@@ -510,18 +554,23 @@ function ControlDetailDialog({
 /** Columns the reader can hide. "Control" (identity) and the action/selection
  *  columns are structural and always shown. Choice persists per browser. */
 const TOGGLEABLE_COLUMNS = [
+  { key: "type", label: "Type" },
+  { key: "subtype", label: "Sub-type" },
   { key: "description", label: "Description" },
   { key: "trust", label: "Trust services" },
   { key: "criteria", label: "Criteria" },
   { key: "frameworks", label: "Frameworks" },
   { key: "owner", label: "Owner" },
+  { key: "evidencedBy", label: "Evidenced by" },
   { key: "evidence", label: "Evidence" },
   { key: "status", label: "Status" },
 ] as const satisfies readonly ColumnDef<string>[];
 
 /** Controls — the tenant's working library, instantiated from the shipped
- *  templates. Code, description, Trust Services, mapped criteria, owner and
- *  status per row; Type shows on internal controls only, Sub-type is hidden. */
+ *  templates. Code, Type and Sub-type (the spec's two domain columns),
+ *  description, Trust Services, mapped criteria, owner and status per row, with
+ *  a facet for each and Group by Type or Sub-type. Design (Preventive,
+ *  Detective…) is a facet and shows on internal controls only. */
 export function ControlsPage() {
   const { principal } = useAuth();
   const queryClient = useQueryClient();
@@ -532,7 +581,18 @@ export function ControlsPage() {
     null,
   );
 
-  const cols = useColumnPrefs("verity.controls.columns", TOGGLEABLE_COLUMNS);
+  // Description starts hidden: with Type and Sub-type on, the table is as wide as
+  // a 1440px screen allows with it off, and it is the one column whose full text
+  // sits a click away on the detail page. The key carries a version so a browser
+  // that saved the old layout (every column on) moves to this one.
+  const cols = useColumnPrefs("verity.controls.columns.v2", TOGGLEABLE_COLUMNS, [
+    "description",
+  ]);
+  const composition = useControlComposition();
+  const compositionById = useMemo(
+    () => new Map((composition.data ?? []).map((item) => [item.control_id, item])),
+    [composition.data],
+  );
 
   async function handleExport(format: "csv" | "xlsx" | "pdf") {
     if (exporting) return;
@@ -560,7 +620,15 @@ export function ControlsPage() {
   // stay the owner of the filter afterwards, and Clear still clears it.
   const [params] = useSearchParams();
   const [search, setSearch] = useState("");
+  /** Type is the domain (`category`); Design is Preventive, Detective… */
   const [types, setTypes] = useState<string[]>(() => params.getAll("type"));
+  const [subTypes, setSubTypes] = useState<string[]>(() =>
+    params.getAll("subtype"),
+  );
+  const [designs, setDesigns] = useState<string[]>(() =>
+    params.getAll("design"),
+  );
+  const [groupBy, setGroupBy] = useState<GroupBy>("none");
   const [trustServices, setTrustServices] = useState<string[]>(() =>
     params.getAll("trust"),
   );
@@ -698,9 +766,13 @@ export function ControlsPage() {
     const query = search.trim().toLowerCase();
     return controls.filter(
       (control) =>
-        (types.length === 0 ||
+        (types.length === 0 || types.includes(control.category)) &&
+        (subTypes.length === 0 ||
+          (control.sub_category != null &&
+            subTypes.includes(control.sub_category))) &&
+        (designs.length === 0 ||
           (control.control_type !== null &&
-            types.includes(control.control_type))) &&
+            designs.includes(control.control_type))) &&
         (trustServices.length === 0 ||
           tscFor(control).some((tsc) => trustServices.includes(tsc))) &&
         (frameworkFilter.length === 0 ||
@@ -740,6 +812,8 @@ export function ControlsPage() {
     controls,
     search,
     types,
+    subTypes,
+    designs,
     trustServices,
     frameworkFilter,
     owners,
@@ -764,14 +838,65 @@ export function ControlsPage() {
   // of page 1 rather than its own little ordering.
   const { thProps, sortRows } = useTableSort<
     Control,
-    "control" | "owner" | "evidence" | "status"
+    "control" | "type" | "subtype" | "owner" | "evidence" | "status"
   >(null, {
     control: (control) => control.code,
+    type: (control) => control.category,
+    subtype: (control) => control.sub_category,
     owner: (control) => control.owner_name,
     evidence: (control) => evidenceCounts.get(control.id) ?? 0,
     status: (control) => displayStatus(control).label,
   });
-  const ordered = useMemo(() => sortRows(visible), [sortRows, visible]);
+  const sorted = useMemo(() => sortRows(visible), [sortRows, visible]);
+
+  // --- Grouping -------------------------------------------------------------
+  // Group first, then the chosen sort inside each group: Array.sort is stable, so
+  // re-sorting by group rank leaves the chosen order within a group alone. Done
+  // on the whole filtered set, before paging, so a group a page boundary splits
+  // carries on at the top of the next page.
+  const groupOf = useCallback(
+    (control: Control) =>
+      groupBy === "type"
+        ? control.category
+        : groupBy === "subtype"
+          ? control.sub_category || NO_SUB_TYPE
+          : "",
+    [groupBy],
+  );
+  const ordered = useMemo(() => {
+    if (groupBy === "none") return sorted;
+    const domains = vocabulary?.categories ?? [];
+    const domainRank = (label: string) => {
+      const index = domains.indexOf(label);
+      return index < 0 ? domains.length : index;
+    };
+    const labels = [...new Set(sorted.map(groupOf))].sort((a, b) => {
+      // Controls with no Sub-type close the list. Types keep the library's own
+      // domain order; Sub-types read alphabetically.
+      if (a === NO_SUB_TYPE || b === NO_SUB_TYPE) {
+        return a === NO_SUB_TYPE ? 1 : -1;
+      }
+      return groupBy === "type"
+        ? domainRank(a) - domainRank(b) || a.localeCompare(b)
+        : a.localeCompare(b);
+    });
+    const position = new Map(labels.map((label, index) => [label, index]));
+    return [...sorted].sort(
+      (a, b) =>
+        (position.get(groupOf(a)) ?? 0) - (position.get(groupOf(b)) ?? 0),
+    );
+  }, [sorted, groupBy, groupOf, vocabulary]);
+  /** How many controls each group holds across every page, for its header. */
+  const groupCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    if (groupBy !== "none") {
+      for (const control of ordered) {
+        const label = groupOf(control);
+        counts.set(label, (counts.get(label) ?? 0) + 1);
+      }
+    }
+    return counts;
+  }, [ordered, groupBy, groupOf]);
 
   // --- Paging ---------------------------------------------------------------
   const pageCount = Math.max(1, Math.ceil(visible.length / pageSize));
@@ -819,6 +944,23 @@ export function ControlsPage() {
       ? "Assigned"
       : (ownerOptions.find((option) => option.value === value)?.label ?? value);
 
+  /** Sub-type options cascade from the chosen Types. */
+  const subTypeOptions = useMemo(
+    () =>
+      subTypesWithin(controls, types).map((value) => ({ value, label: value })),
+    [controls, types],
+  );
+
+  /** Choosing other Types drops any Sub-type they no longer contain, so the
+   *  active filter never names one the facet cannot show. */
+  function changeTypes(next: string[]) {
+    setTypes(next);
+    const stillOffered = new Set(subTypesWithin(controls, next));
+    setSubTypes((previous) =>
+      previous.filter((subType) => stillOffered.has(subType)),
+    );
+  }
+
   /** Every framework the library actually maps to — the facet never offers one
    *  that would return nothing. */
   const frameworkOptions = useMemo(() => {
@@ -850,8 +992,20 @@ export function ControlsPage() {
         .join(" · ")
     : undefined;
 
+  /** Columns on screen, for a group header to span. "Evidenced by" rides beside
+   *  the code, so it is not one. */
+  const columnCount =
+    (canManage ? 1 : 0) +
+    1 +
+    TOGGLEABLE_COLUMNS.filter(
+      ({ key }) => key !== "evidencedBy" && cols.isVisible(key),
+    ).length +
+    1;
+
   const activeFilters = [
     ...types.map((t) => `Type: ${t}`),
+    ...subTypes.map((s) => `Sub-type: ${s}`),
+    ...designs.map((d) => `Design: ${d}`),
     ...trustServices.map((t) => `Trust Services: ${t}`),
     ...frameworkFilter.map((f) => `Framework: ${f}`),
     ...owners.map((o) => `Owner: ${ownerLabel(o)}`),
@@ -865,6 +1019,8 @@ export function ControlsPage() {
   function clearFilters() {
     setSearch("");
     setTypes([]);
+    setSubTypes([]);
+    setDesigns([]);
     setTrustServices([]);
     setFrameworkFilter([]);
     setOwners([]);
@@ -957,12 +1113,27 @@ export function ControlsPage() {
             />
             <FilterFacet
               label="Type"
-              options={vocabulary.control_types.map((v) => ({
+              options={vocabulary.categories.map((v) => ({
                 value: v,
                 label: v,
               }))}
               values={types}
-              onChange={setTypes}
+              onChange={changeTypes}
+            />
+            <FilterFacet
+              label="Sub-type"
+              options={subTypeOptions}
+              values={subTypes}
+              onChange={setSubTypes}
+            />
+            <FilterFacet
+              label="Design"
+              options={vocabulary.control_types.map((v) => ({
+                value: v,
+                label: v,
+              }))}
+              values={designs}
+              onChange={setDesigns}
             />
             <FilterFacet
               label="Owner"
@@ -1021,7 +1192,7 @@ export function ControlsPage() {
         <EmptyState
           icon="controls"
           title="Your control library is empty"
-          description="Build it from the shipped SOC 2 template library, 114 controls already mapped to the criteria they satisfy."
+          description="Build it from the shipped SOC 2 template library, with every control already mapped to the criteria it satisfies."
           action={
             canManage ? (
               <Button
@@ -1043,13 +1214,33 @@ export function ControlsPage() {
           onClearFilters={clearFilters}
         />
       ) : (
-        <Table density="comfortable" actions={<ColumnPicker {...cols} />}>
+        <Table
+          density="comfortable"
+          // Tighter cells than the default 16px: Type and Sub-type join a table
+          // that already filled a 1440px screen, and Status must stay on it.
+          className="[&_td]:px-2 [&_th]:px-2"
+          actions={
+            <>
+              <span className="text-body-sm text-text-subtle">Group by</span>
+              <SegmentedControl
+                label="Group controls by"
+                items={GROUP_ITEMS}
+                value={groupBy}
+                onChange={(next) => {
+                  setGroupBy(next);
+                  setPage(1);
+                }}
+              />
+              <ColumnPicker {...cols} />
+            </>
+          }
+        >
           <THead>
             <TR>
               {/* Selection exists to drive bulk actions — without the
                   permission to act there is nothing to select for. */}
               {canManage ? (
-                <TH className="w-10">
+                <TH className="w-8">
                   <Checkbox
                     checked={
                       allChecked
@@ -1073,6 +1264,12 @@ export function ControlsPage() {
                 </TH>
               ) : null}
               <TH {...thProps("control")}>Control</TH>
+              {cols.isVisible("type") ? (
+                <TH {...thProps("type")}>Type</TH>
+              ) : null}
+              {cols.isVisible("subtype") ? (
+                <TH {...thProps("subtype")}>Sub-type</TH>
+              ) : null}
               {cols.isVisible("description") ? <TH>Description</TH> : null}
               {cols.isVisible("trust") ? <TH>Trust services</TH> : null}
               {cols.isVisible("criteria") ? <TH>Criteria</TH> : null}
@@ -1088,18 +1285,29 @@ export function ControlsPage() {
               {cols.isVisible("status") ? (
                 <TH {...thProps("status")}>Status</TH>
               ) : null}
-              <TH className="w-12">
+              <TH className="w-11">
                 <span className="sr-only">Actions</span>
               </TH>
             </TR>
           </THead>
           <TBody>
-            {paged.map((control) => {
+            {paged.flatMap((control, index) => {
               const tsc = tscFor(control);
               const frameworks = frameworksFor(control);
               const evidenceCount = evidenceCounts.get(control.id) ?? 0;
               const isChecked = checkedIds.includes(control.id);
-              return (
+              // A header whenever the group changes between neighbouring rows,
+              // the first row of every page included: a page boundary can cut a
+              // group in two, and the second half must still say which group it is.
+              const group = groupOf(control);
+              const startsGroup =
+                groupBy !== "none" &&
+                (index === 0 || group !== groupOf(paged[index - 1]));
+              const continuesFromPreviousPage =
+                index === 0 &&
+                pageStart > 0 &&
+                groupOf(ordered[pageStart - 1]) === group;
+              const row = (
                 <TR
                   key={control.id}
                   onClick={() => navigate(`/controls/${control.id}`)}
@@ -1124,26 +1332,69 @@ export function ControlsPage() {
                     </TD>
                   ) : null}
                   <TD>
-                    <div className="max-w-[320px]">
+                    <div className="max-w-48">
                       <div className="flex items-center gap-2">
                         <span className="font-mono text-caption text-text-subtle">
                           {control.code}
                         </span>
-                        {/* Type is authored on internal controls only. */}
+                        {/* What evidences the control, beside its code: a column of
+                            its own would push Status off a 1440 screen. */}
+                        {cols.isVisible("evidencedBy") &&
+                        compositionById.get(control.id) ? (
+                          <>
+                            <EvidencedBy
+                              composition={compositionById.get(control.id)!.composition}
+                              size={16}
+                            />
+                            <MonitoringWord
+                              status={compositionById.get(control.id)!.automation_status}
+                            />
+                          </>
+                        ) : null}
+                        {/* Design is authored on internal controls only. */}
                         {control.origin === "custom" ? (
                           <>
                             <Badge variant="role">Internal</Badge>
                             {control.control_type ? (
-                              <TypeChip label={control.control_type} />
+                              <DesignChip label={control.control_type} />
                             ) : null}
                           </>
                         ) : null}
                       </div>
-                      <span className="mt-0.5 block truncate text-body-md font-medium text-text-primary">
+                      <span
+                        className="mt-0.5 block truncate text-body-md font-medium text-text-primary"
+                        title={control.name}
+                      >
                         {control.name}
                       </span>
                     </div>
                   </TD>
+                  {cols.isVisible("type") ? (
+                    <TD>
+                      <p
+                        className="line-clamp-3 text-body-sm text-text-secondary"
+                        title={control.category}
+                      >
+                        {control.category}
+                      </p>
+                    </TD>
+                  ) : null}
+                  {cols.isVisible("subtype") ? (
+                    <TD>
+                      {control.sub_category ? (
+                        <p
+                          className="line-clamp-3 text-body-sm text-text-secondary"
+                          title={control.sub_category}
+                        >
+                          {control.sub_category}
+                        </p>
+                      ) : (
+                        <span className="text-body-sm text-text-subtle">
+                          Not set
+                        </span>
+                      )}
+                    </TD>
+                  ) : null}
                   {cols.isVisible("description") ? (
                     <TD>
                       <p
@@ -1209,7 +1460,7 @@ export function ControlsPage() {
                       {control.owner_name ? (
                         <span className="flex items-center gap-2">
                           <Avatar name={control.owner_name} size="sm" />
-                          <span className="truncate text-body-sm text-text-secondary">
+                          <span className="max-w-[104px] truncate text-body-sm text-text-secondary">
                             {control.owner_name}
                           </span>
                         </span>
@@ -1299,6 +1550,30 @@ export function ControlsPage() {
                   </TD>
                 </TR>
               );
+              return startsGroup
+                ? [
+                    <tr key={`${control.id}-group`} className="bg-surface-hover">
+                      <th
+                        scope="colgroup"
+                        colSpan={columnCount}
+                        className="h-9 text-left align-middle"
+                      >
+                        <span className="inline-flex items-center gap-2 font-sans text-label-sm font-semibold text-text-primary">
+                          {group}
+                          <Badge variant="neutral">
+                            {groupCounts.get(group)}
+                          </Badge>
+                          {continuesFromPreviousPage ? (
+                            <span className="font-normal text-text-subtle">
+                              continued
+                            </span>
+                          ) : null}
+                        </span>
+                      </th>
+                    </tr>,
+                    row,
+                  ]
+                : [row];
             })}
           </TBody>
         </Table>

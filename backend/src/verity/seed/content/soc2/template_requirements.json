@@ -1,602 +1,194 @@
 [
   {
     "requirement_key": "SOC2:CC1.1",
-    "template_code": "GOV-04"
+    "template_code": "GOV-04",
+    "coverage": "partial",
+    "rationale": "Sets the standard of conduct staff acknowledge. The criterion also expects deviations to be addressed, which the disciplinary and reporting controls cover."
   },
-  {
-    "requirement_key": "SOC2:CC1.1",
-    "template_code": "GOV-11"
-  },
-  {
-    "requirement_key": "SOC2:CC1.5",
-    "template_code": "GOV-11"
-  },
-  {
-    "requirement_key": "SOC2:CC1.3",
-    "template_code": "GOV-21"
-  },
-  {
-    "requirement_key": "SOC2:CC1.3",
-    "template_code": "GOV-10"
-  },
-  {
-    "requirement_key": "SOC2:CC1.5",
-    "template_code": "GOV-10"
-  },
-  {
-    "requirement_key": "SOC2:CC1.2",
-    "template_code": "GOV-02"
-  },
-  {
-    "requirement_key": "SOC2:CC1.2",
-    "template_code": "GOV-15"
-  },
-  {
-    "requirement_key": "SOC2:CC4.2",
-    "template_code": "GOV-15"
-  },
-  {
-    "requirement_key": "SOC2:CC1.5",
-    "template_code": "GOV-09"
-  },
-  {
-    "requirement_key": "SOC2:CC1.3",
-    "template_code": "GOV-09"
-  },
-  {
-    "requirement_key": "SOC2:CC3.1",
-    "template_code": "GOV-22"
-  },
-  {
-    "requirement_key": "SOC2:CC3.1",
-    "template_code": "GOV-18"
-  },
-  {
-    "requirement_key": "SOC2:CC3.2",
-    "template_code": "GOV-18"
-  },
-  {
-    "requirement_key": "SOC2:CC3.2",
-    "template_code": "GOV-19"
-  },
-  {
-    "requirement_key": "SOC2:CC5.1",
-    "template_code": "GOV-19"
-  },
-  {
-    "requirement_key": "SOC2:CC3.2",
-    "template_code": "GOV-20"
-  },
+  {"requirement_key": "SOC2:CC1.1", "template_code": "GOV-11", "coverage": "partial", "rationale": "Shows deviations from the code of conduct are addressed in a timely and consistent way."},
+  {"requirement_key": "SOC2:CC1.5", "template_code": "GOV-11", "coverage": "partial", "rationale": "A documented, consistently applied discipline process is how accountability for control duties is enforced."},
+  {"requirement_key": "SOC2:CC1.3", "template_code": "GOV-21", "coverage": "partial", "rationale": "Documents reporting lines and authorities. The criterion also expects board oversight of the structure."},
+  {"requirement_key": "SOC2:CC1.3", "template_code": "GOV-10", "coverage": "partial", "rationale": "A named security officer is the delegated authority for the program."},
+  {"requirement_key": "SOC2:CC1.5", "template_code": "GOV-10", "coverage": "partial", "rationale": "Gives accountability for the program a single owner. Performance measures for individuals sit in HR controls."},
+  {"requirement_key": "SOC2:CC1.2", "template_code": "GOV-02", "coverage": "full", "rationale": "The oversight body and its minutes are the core evidence for board independence and oversight of internal control."},
+  {"requirement_key": "SOC2:CC1.2", "template_code": "GOV-15", "coverage": "partial", "rationale": "Management review is what reaches the board or executives. It does not show independence of the oversight body."},
+  {"requirement_key": "SOC2:CC4.2", "template_code": "GOV-15", "coverage": "partial", "rationale": "The forum where control deficiencies are communicated to those who can correct them."},
+  {"requirement_key": "SOC2:CC1.5", "template_code": "GOV-09", "coverage": "partial", "rationale": "A named owner is who is held accountable when a control fails."},
+  {"requirement_key": "SOC2:CC1.3", "template_code": "GOV-09", "coverage": "partial", "rationale": "Assigned control owners show responsibilities are delegated to named people."},
+  {"requirement_key": "SOC2:CC3.1", "template_code": "GOV-22", "coverage": "full", "rationale": "Stated service commitments and system requirements are the objectives risk assessment works against."},
+  {"requirement_key": "SOC2:CC3.1", "template_code": "GOV-18", "coverage": "partial", "rationale": "The assessment uses the stated objectives. It does not by itself prove they are clear."},
+  {"requirement_key": "SOC2:CC3.2", "template_code": "GOV-18", "coverage": "full", "rationale": "The annual assessment is how risks across the entity are identified and analyzed."},
+  {"requirement_key": "SOC2:CC3.2", "template_code": "GOV-19", "coverage": "partial", "rationale": "The register records each identified risk, its rating and who owns it."},
+  {"requirement_key": "SOC2:CC5.1", "template_code": "GOV-19", "coverage": "partial", "rationale": "Treatment decisions on the register show which risks controls are selected to mitigate."},
+  {"requirement_key": "SOC2:CC3.2", "template_code": "GOV-20", "coverage": "partial", "rationale": "Treatment plans show analyzed risks lead to action."},
   {
     "requirement_key": "SOC2:CC9.1",
-    "template_code": "GOV-20"
+    "template_code": "GOV-20",
+    "coverage": "partial",
+    "rationale": "Treatment of disruption risks is where mitigation activities are chosen and tracked. Business impact analysis needs the continuity controls."
   },
-  {
-    "requirement_key": "SOC2:CC3.3",
-    "template_code": "GOV-12"
-  },
-  {
-    "requirement_key": "SOC2:CC3.4",
-    "template_code": "GOV-03"
-  },
-  {
-    "requirement_key": "SOC2:CC5.1",
-    "template_code": "GOV-07"
-  },
-  {
-    "requirement_key": "SOC2:CC5.2",
-    "template_code": "GOV-14"
-  },
-  {
-    "requirement_key": "SOC2:CC5.3",
-    "template_code": "GOV-17"
-  },
-  {
-    "requirement_key": "SOC2:CC5.3",
-    "template_code": "GOV-01"
-  },
-  {
-    "requirement_key": "SOC2:CC4.1",
-    "template_code": "GOV-06"
-  },
-  {
-    "requirement_key": "SOC2:CC4.1",
-    "template_code": "GOV-16"
-  },
-  {
-    "requirement_key": "SOC2:CC7.1",
-    "template_code": "GOV-16"
-  },
-  {
-    "requirement_key": "SOC2:CC4.1",
-    "template_code": "GOV-13"
-  },
-  {
-    "requirement_key": "SOC2:CC4.2",
-    "template_code": "GOV-08"
-  },
+  {"requirement_key": "SOC2:CC3.3", "template_code": "GOV-12", "coverage": "full", "rationale": "Fraud and insider threat consideration is the criterion's subject: incentives, opportunity, and management override."},
+  {"requirement_key": "SOC2:CC3.4", "template_code": "GOV-03", "coverage": "full", "rationale": "A risk review triggered by significant change is what the criterion asks for."},
+  {"requirement_key": "SOC2:CC5.1", "template_code": "GOV-07", "coverage": "partial", "rationale": "Links each risk to the controls that mitigate it, which shows controls were chosen against risk."},
+  {"requirement_key": "SOC2:CC5.2", "template_code": "GOV-14", "coverage": "partial", "rationale": "Shows which general technology controls cover which systems. It does not show the controls operate."},
+  {"requirement_key": "SOC2:CC5.3", "template_code": "GOV-17", "coverage": "full", "rationale": "The policy suite is where expectations are set for each control area."},
+  {"requirement_key": "SOC2:CC5.3", "template_code": "GOV-01", "coverage": "partial", "rationale": "Annual review keeps policies in line with how the organization works. Procedures that put policies into action are separate controls."},
+  {"requirement_key": "SOC2:CC4.1", "template_code": "GOV-06", "coverage": "full", "rationale": "Ongoing evaluation of whether controls are present and functioning is the criterion's subject."},
+  {"requirement_key": "SOC2:CC4.1", "template_code": "GOV-16", "coverage": "partial", "rationale": "An independent penetration test is a separate evaluation of technical controls. It covers a subset of the system."},
+  {"requirement_key": "SOC2:CC7.1", "template_code": "GOV-16", "coverage": "partial", "rationale": "Finds exploitable weaknesses that scanning misses. Continuous detection is covered by vulnerability management."},
+  {"requirement_key": "SOC2:CC4.1", "template_code": "GOV-13", "coverage": "partial", "rationale": "A separate evaluation by someone independent of the control owners."},
+  {"requirement_key": "SOC2:CC4.2", "template_code": "GOV-08", "coverage": "full", "rationale": "Tracking deficiencies to closure is how they are communicated to those who correct them."},
   {
     "requirement_key": "SOC2:CC2.3",
-    "template_code": "GOV-05"
+    "template_code": "GOV-05",
+    "coverage": "partial",
+    "rationale": "Knowing which obligations apply is the start of communicating with external parties. Stakeholder communication is covered by the external commitment controls."
   },
-  {
-    "requirement_key": "SOC2:CC2.2",
-    "template_code": "CS-04"
-  },
-  {
-    "requirement_key": "SOC2:CC2.2",
-    "template_code": "CS-03"
-  },
-  {
-    "requirement_key": "SOC2:CC1.1",
-    "template_code": "CS-05"
-  },
-  {
-    "requirement_key": "SOC2:CC2.2",
-    "template_code": "CS-05"
-  },
-  {
-    "requirement_key": "SOC2:CC2.3",
-    "template_code": "CS-02"
-  },
-  {
-    "requirement_key": "SOC2:CC2.3",
-    "template_code": "CS-01"
-  },
-  {
-    "requirement_key": "SOC2:CC1.1",
-    "template_code": "HR-01"
-  },
-  {
-    "requirement_key": "SOC2:CC1.4",
-    "template_code": "HR-08"
-  },
-  {
-    "requirement_key": "SOC2:CC2.2",
-    "template_code": "HR-08"
-  },
-  {
-    "requirement_key": "SOC2:CC1.4",
-    "template_code": "HR-04"
-  },
-  {
-    "requirement_key": "SOC2:CC1.4",
-    "template_code": "HR-06"
-  },
-  {
-    "requirement_key": "SOC2:CC6.2",
-    "template_code": "HR-06"
-  },
-  {
-    "requirement_key": "SOC2:CC6.2",
-    "template_code": "HR-05"
-  },
-  {
-    "requirement_key": "SOC2:CC1.1",
-    "template_code": "HR-02"
-  },
+  {"requirement_key": "SOC2:CC2.2", "template_code": "CS-04", "coverage": "partial", "rationale": "Policies and acknowledgements show expectations were communicated to staff."},
+  {"requirement_key": "SOC2:CC2.2", "template_code": "CS-03", "coverage": "partial", "rationale": "A reporting channel lets staff raise control failures upward."},
+  {"requirement_key": "SOC2:CC2.3", "template_code": "CS-03", "coverage": "partial", "rationale": "Gives customers and others a way to tell the entity about incidents."},
+  {"requirement_key": "SOC2:CC1.1", "template_code": "CS-05", "coverage": "partial", "rationale": "A confidential reporting path supports ethical conduct when the management line is part of the concern."},
+  {"requirement_key": "SOC2:CC2.2", "template_code": "CS-05", "coverage": "partial", "rationale": "An alternative internal channel for raising concerns."},
+  {"requirement_key": "SOC2:CC2.3", "template_code": "CS-02", "coverage": "full", "rationale": "Published commitments are the entity's communication to customers about its controls."},
+  {"requirement_key": "SOC2:CC2.3", "template_code": "CS-01", "coverage": "partial", "rationale": "Tells customers how and when they will hear about incidents."},
+  {"requirement_key": "SOC2:CC1.1", "template_code": "HR-01", "coverage": "partial", "rationale": "Screening before hire supports a commitment to integrity."},
+  {"requirement_key": "SOC2:CC1.4", "template_code": "HR-01", "coverage": "partial", "rationale": "The criterion lists considering the background of individuals. Competence checks and development are covered elsewhere."},
+  {"requirement_key": "SOC2:CC1.4", "template_code": "HR-08", "coverage": "partial", "rationale": "Training develops competence. Attendance alone does not show competence."},
+  {"requirement_key": "SOC2:CC2.2", "template_code": "HR-08", "coverage": "partial", "rationale": "Training is how security responsibilities are communicated to staff."},
+  {"requirement_key": "SOC2:CC1.4", "template_code": "HR-04", "coverage": "partial", "rationale": "Defining what each role requires is where competence starts."},
+  {"requirement_key": "SOC2:CC1.4", "template_code": "HR-06", "coverage": "partial", "rationale": "Onboarding is where agreements, training and policies are completed."},
+  {"requirement_key": "SOC2:CC6.2", "template_code": "HR-06", "coverage": "partial", "rationale": "Access is requested and approved as part of joining."},
+  {"requirement_key": "SOC2:CC6.2", "template_code": "HR-05", "coverage": "partial", "rationale": "Access is removed when employment ends."},
+  {"requirement_key": "SOC2:CC6.3", "template_code": "HR-05", "coverage": "partial", "rationale": "Removal at departure is part of modifying and removing access."},
+  {"requirement_key": "SOC2:CC1.1", "template_code": "HR-02", "coverage": "partial", "rationale": "Agreements set expectations of conduct. A conduct program is covered by the ethics controls."},
   {
     "requirement_key": "SOC2:C1.1",
-    "template_code": "HR-02"
-  },
-  {
-    "requirement_key": "SOC2:CC1.4",
-    "template_code": "HR-07"
-  },
-  {
-    "requirement_key": "SOC2:CC6.2",
-    "template_code": "HR-03"
-  },
-  {
-    "requirement_key": "SOC2:CC9.2",
-    "template_code": "HR-03"
-  },
-  {
-    "requirement_key": "SOC2:CC6.1",
-    "template_code": "IAM-04"
-  },
-  {
-    "requirement_key": "SOC2:CC6.1",
-    "template_code": "IAM-03"
-  },
-  {
-    "requirement_key": "SOC2:CC6.1",
-    "template_code": "IAM-06"
-  },
-  {
-    "requirement_key": "SOC2:CC6.1",
-    "template_code": "IAM-05"
-  },
-  {
-    "requirement_key": "SOC2:CC6.1",
-    "template_code": "IAM-08"
-  },
-  {
-    "requirement_key": "SOC2:CC6.3",
-    "template_code": "IAM-08"
-  },
-  {
-    "requirement_key": "SOC2:CC6.2",
-    "template_code": "IAM-01"
-  },
-  {
-    "requirement_key": "SOC2:CC6.2",
-    "template_code": "IAM-12"
-  },
-  {
-    "requirement_key": "SOC2:CC6.3",
-    "template_code": "IAM-02"
-  },
-  {
-    "requirement_key": "SOC2:CC6.3",
-    "template_code": "IAM-07"
-  },
-  {
-    "requirement_key": "SOC2:CC6.3",
-    "template_code": "IAM-09"
-  },
-  {
-    "requirement_key": "SOC2:CC6.1",
-    "template_code": "IAM-10"
-  },
-  {
-    "requirement_key": "SOC2:CC6.3",
-    "template_code": "IAM-10"
-  },
-  {
-    "requirement_key": "SOC2:CC6.1",
-    "template_code": "IAM-11"
-  },
-  {
-    "requirement_key": "SOC2:CC6.1",
-    "template_code": "NS-01"
-  },
-  {
-    "requirement_key": "SOC2:CC6.7",
-    "template_code": "NS-02"
-  },
-  {
-    "requirement_key": "SOC2:CC6.1",
-    "template_code": "NS-06"
-  },
-  {
-    "requirement_key": "SOC2:CC6.1",
-    "template_code": "NS-09"
-  },
-  {
-    "requirement_key": "SOC2:CC6.1",
-    "template_code": "NS-07"
-  },
-  {
-    "requirement_key": "SOC2:CC6.6",
-    "template_code": "NS-07"
-  },
-  {
-    "requirement_key": "SOC2:CC6.6",
-    "template_code": "NS-03"
-  },
-  {
-    "requirement_key": "SOC2:CC6.6",
-    "template_code": "NS-08"
-  },
-  {
-    "requirement_key": "SOC2:CC6.6",
-    "template_code": "NS-10"
-  },
-  {
-    "requirement_key": "SOC2:CC6.6",
-    "template_code": "NS-11"
-  },
-  {
-    "requirement_key": "SOC2:CC6.8",
-    "template_code": "NS-05"
-  },
-  {
-    "requirement_key": "SOC2:CC6.1",
-    "template_code": "NS-04"
-  },
-  {
-    "requirement_key": "SOC2:CC7.1",
-    "template_code": "NS-04"
-  },
-  {
-    "requirement_key": "SOC2:CC6.5",
-    "template_code": "EP-02"
-  },
-  {
-    "requirement_key": "SOC2:CC6.7",
-    "template_code": "EP-02"
-  },
-  {
-    "requirement_key": "SOC2:CC6.8",
-    "template_code": "EP-01"
-  },
-  {
-    "requirement_key": "SOC2:CC6.5",
-    "template_code": "EP-03"
-  },
-  {
-    "requirement_key": "SOC2:CC6.8",
-    "template_code": "EP-03"
-  },
-  {
-    "requirement_key": "SOC2:CC6.8",
-    "template_code": "EP-04"
-  },
-  {
-    "requirement_key": "SOC2:CC7.1",
-    "template_code": "EP-04"
-  },
-  {
-    "requirement_key": "SOC2:CC6.5",
-    "template_code": "EP-05"
-  },
-  {
-    "requirement_key": "SOC2:CC6.1",
-    "template_code": "EP-06"
-  },
-  {
-    "requirement_key": "SOC2:C1.1",
-    "template_code": "DM-04"
-  },
-  {
-    "requirement_key": "SOC2:C1.1",
-    "template_code": "DM-06"
-  },
-  {
-    "requirement_key": "SOC2:C1.2",
-    "template_code": "DM-08"
-  },
-  {
-    "requirement_key": "SOC2:P4.2",
-    "template_code": "DM-08"
-  },
-  {
-    "requirement_key": "SOC2:C1.2",
-    "template_code": "DM-16"
-  },
-  {
-    "requirement_key": "SOC2:CC6.5",
-    "template_code": "DM-16"
-  },
-  {
-    "requirement_key": "SOC2:P4.3",
-    "template_code": "DM-16"
-  },
-  {
-    "requirement_key": "SOC2:C1.1",
-    "template_code": "DM-13"
-  },
-  {
-    "requirement_key": "SOC2:P1.1",
-    "template_code": "DM-15"
-  },
-  {
-    "requirement_key": "SOC2:P2.1",
-    "template_code": "DM-03"
-  },
-  {
-    "requirement_key": "SOC2:P3.2",
-    "template_code": "DM-03"
-  },
-  {
-    "requirement_key": "SOC2:P3.1",
-    "template_code": "DM-07"
-  },
-  {
-    "requirement_key": "SOC2:P4.1",
-    "template_code": "DM-12"
-  },
-  {
-    "requirement_key": "SOC2:P5.1",
-    "template_code": "DM-11"
-  },
-  {
-    "requirement_key": "SOC2:P6.7",
-    "template_code": "DM-11"
-  },
-  {
-    "requirement_key": "SOC2:P5.2",
-    "template_code": "DM-05"
-  },
-  {
-    "requirement_key": "SOC2:P7.1",
-    "template_code": "DM-05"
-  },
-  {
-    "requirement_key": "SOC2:P6.1",
-    "template_code": "DM-09"
-  },
-  {
-    "requirement_key": "SOC2:P6.2",
-    "template_code": "DM-09"
-  },
-  {
-    "requirement_key": "SOC2:P6.3",
-    "template_code": "DM-02"
-  },
-  {
-    "requirement_key": "SOC2:P6.4",
-    "template_code": "DM-10"
-  },
-  {
-    "requirement_key": "SOC2:CC9.2",
-    "template_code": "DM-10"
-  },
-  {
-    "requirement_key": "SOC2:P6.5",
-    "template_code": "DM-17"
-  },
-  {
-    "requirement_key": "SOC2:P6.6",
-    "template_code": "DM-01"
-  },
-  {
-    "requirement_key": "SOC2:P8.1",
-    "template_code": "DM-14"
-  },
+    "template_code": "HR-02",
+    "coverage": "partial",
+    "rationale": "Confidentiality agreements bind staff to protect confidential information. Identifying and classifying it is covered by the data controls."
+  },
+  {"requirement_key": "SOC2:CC1.4", "template_code": "HR-07", "coverage": "partial", "rationale": "Reviews keep competence maintained rather than assumed."},
+  {"requirement_key": "SOC2:CC1.5", "template_code": "HR-07", "coverage": "partial", "rationale": "Performance reviews are where accountability for control duties is reinforced."},
+  {"requirement_key": "SOC2:CC6.2", "template_code": "HR-03", "coverage": "partial", "rationale": "Contractors need registering and authorizing like employees."},
+  {"requirement_key": "SOC2:CC9.2", "template_code": "HR-03", "coverage": "partial", "rationale": "Contractors are third parties with access."},
+  {"requirement_key": "SOC2:CC6.1", "template_code": "IAM-04", "coverage": "partial", "rationale": "One identity provider enforces access policy in one place."},
+  {"requirement_key": "SOC2:CC6.1", "template_code": "IAM-03", "coverage": "partial", "rationale": "Multi factor authentication is a core logical access protection. It is one of several."},
+  {"requirement_key": "SOC2:CC6.1", "template_code": "IAM-06", "coverage": "partial", "rationale": "A password baseline protects accounts where stronger factors are unavailable."},
+  {"requirement_key": "SOC2:CC6.1", "template_code": "IAM-05", "coverage": "partial", "rationale": "Gives credentials that cannot use single sign on a controlled home."},
+  {"requirement_key": "SOC2:CC6.1", "template_code": "IAM-08", "coverage": "partial", "rationale": "Role based access limits who can reach protected assets."},
+  {"requirement_key": "SOC2:CC6.3", "template_code": "IAM-08", "coverage": "full", "rationale": "Role based access and least privilege are what authorizing access by role means."},
+  {"requirement_key": "SOC2:CC6.2", "template_code": "IAM-01", "coverage": "full", "rationale": "Approved requests are the authorization the criterion requires before access is granted."},
+  {"requirement_key": "SOC2:CC6.3", "template_code": "IAM-01", "coverage": "partial", "rationale": "Approval of changes to access, not only of new access."},
+  {"requirement_key": "SOC2:CC6.2", "template_code": "IAM-12", "coverage": "partial", "rationale": "Removes credentials when authorization ends."},
+  {"requirement_key": "SOC2:CC6.3", "template_code": "IAM-12", "coverage": "partial", "rationale": "Timely removal is the removal half of modifying or removing access."},
+  {"requirement_key": "SOC2:CC6.2", "template_code": "IAM-02", "coverage": "partial", "rationale": "Periodic review confirms registered users are still authorized."},
+  {"requirement_key": "SOC2:CC6.3", "template_code": "IAM-02", "coverage": "full", "rationale": "Access reviews are how role based access is checked as roles change."},
+  {"requirement_key": "SOC2:CC6.3", "template_code": "IAM-07", "coverage": "partial", "rationale": "Privileged access needs tighter approval and review than standard access."},
+  {"requirement_key": "SOC2:CC6.3", "template_code": "IAM-09", "coverage": "partial", "rationale": "Separating duties is part of authorizing access on the basis of responsibilities."},
+  {"requirement_key": "SOC2:CC6.1", "template_code": "IAM-10", "coverage": "partial", "rationale": "Machine credentials are protected assets of the access architecture."},
+  {"requirement_key": "SOC2:CC6.3", "template_code": "IAM-10", "coverage": "partial", "rationale": "Service accounts need the same authorization and review as people."},
+  {"requirement_key": "SOC2:CC6.1", "template_code": "IAM-11", "coverage": "partial", "rationale": "Session limits bound how long a stolen session is useful."},
+  {"requirement_key": "SOC2:CC6.1", "template_code": "NS-01", "coverage": "partial", "rationale": "Encryption at rest protects data if storage is exposed. It is one of the access protections."},
+  {"requirement_key": "SOC2:CC6.7", "template_code": "NS-02", "coverage": "partial", "rationale": "Encryption in transit protects information while it moves. Authorizing who may send it is separate."},
+  {"requirement_key": "SOC2:CC6.1", "template_code": "NS-06", "coverage": "partial", "rationale": "Encryption is only as strong as its key management."},
+  {"requirement_key": "SOC2:CC6.1", "template_code": "NS-09", "coverage": "partial", "rationale": "A managed secret store protects credentials the system depends on."},
+  {"requirement_key": "SOC2:CC6.1", "template_code": "NS-07", "coverage": "partial", "rationale": "Segmentation limits what a compromised host can reach."},
+  {"requirement_key": "SOC2:CC6.6", "template_code": "NS-07", "coverage": "partial", "rationale": "Limits traffic between networks, and between the outside and inner tiers."},
+  {"requirement_key": "SOC2:CC6.6", "template_code": "NS-03", "coverage": "full", "rationale": "Default deny firewall rules are a core boundary protection against outside threats."},
+  {"requirement_key": "SOC2:CC6.6", "template_code": "NS-08", "coverage": "partial", "rationale": "Keeps management interfaces off the public internet."},
+  {"requirement_key": "SOC2:CC6.6", "template_code": "NS-10", "coverage": "partial", "rationale": "Filters attack traffic from outside the system boundary."},
+  {"requirement_key": "SOC2:CC6.6", "template_code": "NS-11", "coverage": "partial", "rationale": "Remote access through verified identity and device rather than network location."},
+  {"requirement_key": "SOC2:CC6.8", "template_code": "NS-05", "coverage": "partial", "rationale": "Detects malicious activity in the cloud control plane."},
+  {"requirement_key": "SOC2:CC7.2", "template_code": "NS-05", "coverage": "partial", "rationale": "Monitors system components for anomalies. Routing and response are covered by alerting controls."},
+  {"requirement_key": "SOC2:CC6.1", "template_code": "NS-04", "coverage": "partial", "rationale": "Hardened baselines reduce what an attacker can reach."},
+  {"requirement_key": "SOC2:CC7.1", "template_code": "NS-04", "coverage": "partial", "rationale": "A baseline gives configuration drift something to be measured against."},
+  {"requirement_key": "SOC2:CC6.1", "template_code": "EP-02", "coverage": "partial", "rationale": "Disk encryption protects data on devices that leave the premises."},
+  {"requirement_key": "SOC2:CC6.5", "template_code": "EP-02", "coverage": "partial", "rationale": "Encryption makes recovery of data from disposed devices impractical. It does not replace sanitization."},
+  {"requirement_key": "SOC2:CC6.7", "template_code": "EP-02", "coverage": "partial", "rationale": "Protects data on portable devices and media. It does not authorize transfers."},
+  {"requirement_key": "SOC2:CC6.8", "template_code": "EP-01", "coverage": "full", "rationale": "Endpoint protection is the primary control for malicious software on devices."},
+  {"requirement_key": "SOC2:CC6.5", "template_code": "EP-03", "coverage": "partial", "rationale": "Enrollment is what makes remote lock and wipe possible. It is not proof a wipe happened."},
+  {"requirement_key": "SOC2:CC6.8", "template_code": "EP-03", "coverage": "partial", "rationale": "Management enforces protection settings across devices."},
+  {"requirement_key": "SOC2:CC6.8", "template_code": "EP-04", "coverage": "partial", "rationale": "Patching removes the vulnerabilities malicious software uses."},
+  {"requirement_key": "SOC2:CC7.1", "template_code": "EP-04", "coverage": "partial", "rationale": "Patching is how found vulnerabilities are treated. Finding them is covered by scanning."},
+  {"requirement_key": "SOC2:CC6.5", "template_code": "EP-05", "coverage": "partial", "rationale": "Remote wipe removes data from a device that cannot be recovered. The capability alone does not show it was used."},
+  {"requirement_key": "SOC2:CC6.1", "template_code": "EP-06", "coverage": "partial", "rationale": "Automatic screen lock means physical proximity is not enough to use a device."},
+  {"requirement_key": "SOC2:C1.1", "template_code": "DM-04", "coverage": "partial", "rationale": "Classification is how confidential information is identified. Maintaining the inventory is a separate control."},
+  {"requirement_key": "SOC2:C1.1", "template_code": "DM-06", "coverage": "full", "rationale": "A data inventory is how confidential information is identified and kept track of."},
+  {"requirement_key": "SOC2:C1.2", "template_code": "DM-08", "coverage": "partial", "rationale": "The retention schedule sets when confidential information is disposed of."},
+  {"requirement_key": "SOC2:P4.2", "template_code": "DM-08", "coverage": "full", "rationale": "A retention schedule enforced technically is how personal information is kept no longer than needed."},
+  {"requirement_key": "SOC2:C1.2", "template_code": "DM-16", "coverage": "full", "rationale": "Secure disposal is the criterion's subject."},
+  {"requirement_key": "SOC2:CC6.5", "template_code": "DM-16", "coverage": "partial", "rationale": "Disposal that makes data unrecoverable is what the criterion asks for before protections end."},
+  {"requirement_key": "SOC2:P4.3", "template_code": "DM-16", "coverage": "full", "rationale": "Secure disposal of personal information, across copies and vendors."},
+  {"requirement_key": "SOC2:C1.1", "template_code": "DM-13", "coverage": "partial", "rationale": "Keeps confidential data out of environments with weaker protection."},
+  {"requirement_key": "SOC2:P1.1", "template_code": "DM-15", "coverage": "full", "rationale": "The privacy notice and its updates are the criterion's subject."},
+  {"requirement_key": "SOC2:P2.1", "template_code": "DM-03", "coverage": "full", "rationale": "Consent and choice records show choices were communicated and respected."},
+  {"requirement_key": "SOC2:P3.2", "template_code": "DM-03", "coverage": "partial", "rationale": "Consent is captured before collection. The criterion also expects the consequences of declining to be communicated."},
+  {"requirement_key": "SOC2:P3.1", "template_code": "DM-07", "coverage": "full", "rationale": "Collecting only what is needed is how collection stays consistent with privacy objectives."},
+  {"requirement_key": "SOC2:P4.1", "template_code": "DM-12", "coverage": "full", "rationale": "Limiting use to disclosed purposes is the criterion's subject."},
+  {"requirement_key": "SOC2:P5.1", "template_code": "DM-11", "coverage": "full", "rationale": "Handling access requests from authenticated data subjects is the criterion's subject."},
+  {"requirement_key": "SOC2:P6.7", "template_code": "DM-11", "coverage": "partial", "rationale": "Access responses must also include disclosure accounting, which a holdings only response does not."},
+  {"requirement_key": "SOC2:P5.2", "template_code": "DM-05", "coverage": "full", "rationale": "Correction requests and passing corrections to third parties are the criterion's subject."},
+  {"requirement_key": "SOC2:P7.1", "template_code": "DM-05", "coverage": "partial", "rationale": "Reactive correction is part of keeping data accurate. Proactive quality checks are also expected."},
+  {"requirement_key": "SOC2:P6.1", "template_code": "DM-09", "coverage": "partial", "rationale": "Governing disclosures shows each one matches the notice and consent. Subprocessors are covered separately."},
+  {"requirement_key": "SOC2:P6.2", "template_code": "DM-09", "coverage": "full", "rationale": "The disclosure record is the criterion's subject."},
+  {"requirement_key": "SOC2:P6.3", "template_code": "DM-02", "coverage": "full", "rationale": "A record of unauthorized disclosures, including near misses, is the criterion's subject."},
+  {"requirement_key": "SOC2:P6.4", "template_code": "DM-10", "coverage": "partial", "rationale": "Agreements hold vendors to privacy commitments. Periodic assessment of vendors is also needed."},
+  {"requirement_key": "SOC2:CC9.2", "template_code": "DM-10", "coverage": "partial", "rationale": "Data processing agreements bind vendors who handle personal data."},
+  {"requirement_key": "SOC2:P6.5", "template_code": "DM-17", "coverage": "partial", "rationale": "Contract terms commit vendors to notify. Receipt and response need operating records."},
+  {"requirement_key": "SOC2:P6.6", "template_code": "DM-01", "coverage": "full", "rationale": "Deciding who is notified and when, before an incident, is the criterion's subject."},
+  {"requirement_key": "SOC2:P8.1", "template_code": "DM-14", "coverage": "full", "rationale": "A channel for inquiries, complaints and disputes, and evidence they are resolved."},
   {
     "requirement_key": "SOC2:CC8.1",
-    "template_code": "SD-06"
+    "template_code": "SD-06",
+    "coverage": "partial",
+    "rationale": "Peer review is how changes are approved before they are implemented. Authorization, testing and deployment are covered by the other change controls."
   },
-  {
-    "requirement_key": "SOC2:CC8.1",
-    "template_code": "SD-02"
-  },
-  {
-    "requirement_key": "SOC2:PI1.3",
-    "template_code": "SD-02"
-  },
-  {
-    "requirement_key": "SOC2:CC8.1",
-    "template_code": "SD-12"
-  },
-  {
-    "requirement_key": "SOC2:CC8.1",
-    "template_code": "SD-01"
-  },
-  {
-    "requirement_key": "SOC2:CC8.1",
-    "template_code": "SD-04"
-  },
-  {
-    "requirement_key": "SOC2:CC8.1",
-    "template_code": "SD-10"
-  },
-  {
-    "requirement_key": "SOC2:CC6.8",
-    "template_code": "SD-03"
-  },
-  {
-    "requirement_key": "SOC2:CC7.1",
-    "template_code": "SD-03"
-  },
-  {
-    "requirement_key": "SOC2:CC6.8",
-    "template_code": "SD-11"
-  },
-  {
-    "requirement_key": "SOC2:PI1.2",
-    "template_code": "SD-05"
-  },
-  {
-    "requirement_key": "SOC2:PI1.1",
-    "template_code": "SD-09"
-  },
-  {
-    "requirement_key": "SOC2:PI1.3",
-    "template_code": "SD-08"
-  },
-  {
-    "requirement_key": "SOC2:PI1.4",
-    "template_code": "SD-08"
-  },
-  {
-    "requirement_key": "SOC2:PI1.5",
-    "template_code": "SD-07"
-  },
-  {
-    "requirement_key": "SOC2:CC7.2",
-    "template_code": "LM-02"
-  },
-  {
-    "requirement_key": "SOC2:CC2.1",
-    "template_code": "LM-02"
-  },
-  {
-    "requirement_key": "SOC2:CC2.1",
-    "template_code": "LM-01"
-  },
-  {
-    "requirement_key": "SOC2:CC7.2",
-    "template_code": "LM-09"
-  },
-  {
-    "requirement_key": "SOC2:CC7.2",
-    "template_code": "LM-08"
-  },
-  {
-    "requirement_key": "SOC2:CC7.1",
-    "template_code": "LM-11"
-  },
-  {
-    "requirement_key": "SOC2:CC7.1",
-    "template_code": "LM-03"
-  },
-  {
-    "requirement_key": "SOC2:CC7.3",
-    "template_code": "LM-04"
-  },
-  {
-    "requirement_key": "SOC2:CC7.4",
-    "template_code": "LM-07"
-  },
-  {
-    "requirement_key": "SOC2:CC7.4",
-    "template_code": "LM-05"
-  },
-  {
-    "requirement_key": "SOC2:CC7.5",
-    "template_code": "LM-05"
-  },
-  {
-    "requirement_key": "SOC2:CC7.4",
-    "template_code": "LM-10"
-  },
-  {
-    "requirement_key": "SOC2:CC7.5",
-    "template_code": "LM-06"
-  },
-  {
-    "requirement_key": "SOC2:CC9.1",
-    "template_code": "BC-03"
-  },
-  {
-    "requirement_key": "SOC2:A1.2",
-    "template_code": "BC-03"
-  },
-  {
-    "requirement_key": "SOC2:A1.1",
-    "template_code": "BC-04"
-  },
-  {
-    "requirement_key": "SOC2:A1.2",
-    "template_code": "BC-01"
-  },
-  {
-    "requirement_key": "SOC2:CC9.1",
-    "template_code": "BC-01"
-  },
-  {
-    "requirement_key": "SOC2:A1.3",
-    "template_code": "BC-02"
-  },
-  {
-    "requirement_key": "SOC2:CC9.2",
-    "template_code": "BC-07"
-  },
-  {
-    "requirement_key": "SOC2:CC9.2",
-    "template_code": "BC-08"
-  },
-  {
-    "requirement_key": "SOC2:CC9.2",
-    "template_code": "BC-05"
-  },
-  {
-    "requirement_key": "SOC2:CC9.2",
-    "template_code": "BC-06"
-  },
-  {
-    "requirement_key": "SOC2:P6.1",
-    "template_code": "BC-06"
-  },
-  {
-    "requirement_key": "SOC2:CC6.4",
-    "template_code": "PE-01"
-  },
-  {
-    "requirement_key": "SOC2:CC6.4",
-    "template_code": "PE-02"
-  }
+  {"requirement_key": "SOC2:CC8.1", "template_code": "SD-02", "coverage": "partial", "rationale": "Automated tests are the testing step of the change process."},
+  {"requirement_key": "SOC2:PI1.3", "template_code": "SD-02", "coverage": "partial", "rationale": "Tests show processing logic behaves as specified. They do not prove production processing."},
+  {"requirement_key": "SOC2:CC8.1", "template_code": "SD-12", "coverage": "partial", "rationale": "Separate environments give changes somewhere to be tested before production."},
+  {"requirement_key": "SOC2:CC8.1", "template_code": "SD-01", "coverage": "full", "rationale": "Change authorization and approval is the criterion's core: changes are authorized, tested and approved before implementation."},
+  {"requirement_key": "SOC2:CC8.1", "template_code": "SD-04", "coverage": "partial", "rationale": "Covers changes that bypass the normal path, so the criterion holds in an emergency."},
+  {"requirement_key": "SOC2:CC8.1", "template_code": "SD-10", "coverage": "partial", "rationale": "The documented lifecycle is where the change process is defined."},
+  {"requirement_key": "SOC2:CC6.8", "template_code": "SD-03", "coverage": "partial", "rationale": "Dependency scanning finds known vulnerable components before they ship."},
+  {"requirement_key": "SOC2:CC7.1", "template_code": "SD-03", "coverage": "partial", "rationale": "Finds newly disclosed vulnerabilities in dependencies."},
+  {"requirement_key": "SOC2:CC6.1", "template_code": "SD-11", "coverage": "partial", "rationale": "A committed credential is a failure to protect credentials."},
+  {"requirement_key": "SOC2:CC7.1", "template_code": "SD-11", "coverage": "partial", "rationale": "A secret in a change is a vulnerability that change introduced."},
+  {"requirement_key": "SOC2:PI1.2", "template_code": "SD-05", "coverage": "partial", "rationale": "Validation at ingestion controls what enters the system. Completeness and duplicate handling also need checking."},
+  {"requirement_key": "SOC2:PI1.1", "template_code": "SD-09", "coverage": "partial", "rationale": "A processing specification defines what accurate means. Communicating it to stakeholders is also needed."},
+  {"requirement_key": "SOC2:PI1.3", "template_code": "SD-08", "coverage": "partial", "rationale": "Reconciling outputs to inputs shows processing was complete and accurate."},
+  {"requirement_key": "SOC2:PI1.4", "template_code": "SD-08", "coverage": "partial", "rationale": "Monitoring shows outputs were produced. Delivery to the right recipient needs its own check."},
+  {"requirement_key": "SOC2:PI1.5", "template_code": "SD-07", "coverage": "partial", "rationale": "Integrity of intermediate stores. Retention and retry behavior also matter."},
+  {"requirement_key": "SOC2:CC7.2", "template_code": "LM-02", "coverage": "partial", "rationale": "Retained logs are the input to anomaly monitoring and investigation."},
+  {"requirement_key": "SOC2:CC2.1", "template_code": "LM-02", "coverage": "partial", "rationale": "Logs are information used to run internal control. Their quality depends on completeness."},
+  {"requirement_key": "SOC2:CC2.1", "template_code": "LM-01", "coverage": "partial", "rationale": "An inventory is quality information about what the controls apply to."},
+  {"requirement_key": "SOC2:CC6.1", "template_code": "LM-01", "coverage": "partial", "rationale": "The criterion starts with the inventory of information assets."},
+  {"requirement_key": "SOC2:CC7.2", "template_code": "LM-09", "coverage": "full", "rationale": "Alerting on anomalies is the criterion's subject."},
+  {"requirement_key": "SOC2:CC7.2", "template_code": "LM-08", "coverage": "partial", "rationale": "An alert only helps if someone receives it."},
+  {"requirement_key": "SOC2:CC7.4", "template_code": "LM-08", "coverage": "partial", "rationale": "An on call rotation staffs incident response."},
+  {"requirement_key": "SOC2:CC7.1", "template_code": "LM-11", "coverage": "full", "rationale": "A defined cadence of vulnerability discovery and remediation is the criterion's detection and monitoring."},
+  {"requirement_key": "SOC2:CC7.1", "template_code": "LM-03", "coverage": "partial", "rationale": "Detects configuration changes that introduce vulnerabilities."},
+  {"requirement_key": "SOC2:CC7.3", "template_code": "LM-04", "coverage": "full", "rationale": "Evaluating security events to decide whether they are incidents is the criterion's subject."},
+  {"requirement_key": "SOC2:CC7.4", "template_code": "LM-07", "coverage": "full", "rationale": "The incident response plan is the program the criterion asks to be executed."},
+  {"requirement_key": "SOC2:CC7.4", "template_code": "LM-05", "coverage": "partial", "rationale": "Postmortems show how incidents were understood and remediated."},
+  {"requirement_key": "SOC2:CC7.5", "template_code": "LM-05", "coverage": "partial", "rationale": "Lessons and actions from recovery."},
+  {"requirement_key": "SOC2:CC7.4", "template_code": "LM-10", "coverage": "partial", "rationale": "An exercise is operating evidence the plan works when no incident has occurred."},
+  {"requirement_key": "SOC2:CC7.5", "template_code": "LM-06", "coverage": "full", "rationale": "Recovery procedures are the criterion's subject."},
+  {"requirement_key": "SOC2:CC9.1", "template_code": "BC-03", "coverage": "partial", "rationale": "Continuity planning is a mitigation for business disruption."},
+  {"requirement_key": "SOC2:A1.2", "template_code": "BC-03", "coverage": "partial", "rationale": "The continuity plan covers recovery infrastructure. Environmental protections are separate."},
+  {"requirement_key": "SOC2:A1.1", "template_code": "BC-04", "coverage": "full", "rationale": "Capacity monitoring and planning is the criterion's subject."},
+  {"requirement_key": "SOC2:A1.2", "template_code": "BC-01", "coverage": "partial", "rationale": "Backups are a recovery protection. Environmental protections are separate."},
+  {"requirement_key": "SOC2:CC9.1", "template_code": "BC-01", "coverage": "partial", "rationale": "Backups mitigate loss from disruption."},
+  {"requirement_key": "SOC2:A1.3", "template_code": "BC-02", "coverage": "full", "rationale": "Restore testing is the criterion's subject."},
+  {"requirement_key": "SOC2:CC9.2", "template_code": "BC-07", "coverage": "partial", "rationale": "The vendor register is the population third party risk management works from."},
+  {"requirement_key": "SOC2:CC9.2", "template_code": "BC-08", "coverage": "full", "rationale": "Due diligence scaled to risk is how vendor risk is assessed and managed."},
+  {"requirement_key": "SOC2:CC9.2", "template_code": "BC-05", "coverage": "partial", "rationale": "Detects vendors adopted outside procurement so they can be assessed."},
+  {"requirement_key": "SOC2:CC9.2", "template_code": "BC-06", "coverage": "partial", "rationale": "Subprocessors are vendors that receive customer data."},
+  {"requirement_key": "SOC2:P6.1", "template_code": "BC-06", "coverage": "partial", "rationale": "Disclosure to a subprocessor needs the consent or notice the criterion asks for."},
+  {"requirement_key": "SOC2:P6.4", "template_code": "BC-06", "coverage": "partial", "rationale": "Subprocessors are third parties that must meet privacy commitments."},
+  {"requirement_key": "SOC2:CC6.4", "template_code": "PE-01", "coverage": "partial", "rationale": "Where a cloud provider runs the facility, reviewing their report is how physical access is evidenced."},
+  {"requirement_key": "SOC2:CC9.2", "template_code": "PE-01", "coverage": "partial", "rationale": "The provider is a vendor whose controls the entity relies on."},
+  {"requirement_key": "SOC2:CC6.4", "template_code": "PE-02", "coverage": "partial", "rationale": "Covers offices in scope. Data centers are covered by the provider review."},
+  {"requirement_key": "SOC2:P6.4", "template_code": "BC-08", "coverage": "partial", "rationale": "Vendor assessment covers privacy commitments where the vendor handles personal information."},
+  {"requirement_key": "SOC2:CC8.1", "template_code": "SD-13", "coverage": "partial", "rationale": "Controls how approved changes reach production, which is the implementation step of the change process."},
+  {"requirement_key": "SOC2:CC8.1", "template_code": "SD-14", "coverage": "partial", "rationale": "Lets each change be followed from request to release, which is how an auditor samples the whole change process."}
 ]
