@@ -63,6 +63,9 @@ What is limited today, all in `core/ratelimit.py`:
 | Vendor portal | per token, see the limits in the module |
 
 A limited call is `429` with code `rate_limited` and a `Retry-After` in seconds. The limiter fails
-closed: with Redis down the call is a `503`, not a pass. The client address is read from `X-Real-IP`
-(nginx overwrites it) and only when the immediate peer is a private address, so a caller reaching the
-API directly cannot choose their own bucket. Keys never hold an email or a token, only a hash.
+closed: with Redis down the call is a `503`, not a pass. The client address is the first public
+address in `X-Forwarded-For`, read from the right, and only when the immediate peer is a private
+address (our own proxy). In production a request crosses two nginx hops, so the API's peer and
+`X-Real-IP` are both the inner proxy or the edge, never the caller; a caller reaching the API directly
+cannot choose their own bucket, and an address put to the left of the real one is never reached.
+Keys never hold an email or a token, only a hash.

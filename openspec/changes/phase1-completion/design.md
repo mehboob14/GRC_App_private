@@ -10,8 +10,9 @@ Each item reuses what is already in the codebase. Nothing here adds a dependency
   Redis and logs).
 - Every attempt counts, successful or not. At ten per fifteen minutes no real user notices, and it
   avoids a second "failures only" counter.
-- The address is read from `X-Real-IP` (nginx overwrites it) only when the immediate peer is a private
-  address, so behind the proxy every user is not one bucket and a direct caller cannot pick theirs.
+- The address is the first public one in `X-Forwarded-For`, read from the right, believed only when the
+  immediate peer is a private address. Production has two nginx hops, so the peer and `X-Real-IP` are
+  a proxy for every caller and would make one shared bucket.
 - The stored tenant lockout setting stays unenforced. A rate limit bounds guessing; a lockout
   would let anyone lock a colleague out, which is a different decision.
 - `RateLimited` already maps to 429; add `Retry-After`.

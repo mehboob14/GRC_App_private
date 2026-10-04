@@ -100,6 +100,30 @@ async def test_one_address_trying_many_accounts_is_stopped(
     assert blocked.status_code == 429
 
 
+async def test_the_address_limit_tells_callers_apart_behind_two_proxies(
+    client: httpx.AsyncClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(ratelimit, "LOGIN_ADDRESS", ratelimit.Limit(requests=3, window_seconds=900))
+
+    async def attempt(email: str, chain: str) -> int:
+        response = await client.post(
+            LOGIN_URL,
+            json={"email": email, "password": WRONG_PASSWORD},
+            headers={"X-Forwarded-For": chain},
+        )
+        return response.status_code
+
+    # Production: the edge proxy, then the web container's proxy, then the API. The API's
+    # own peer is always the last hop, so only the forwarded chain tells callers apart.
+    for index in range(3):
+        assert await attempt(f"user{index}@example.com", "8.8.8.8, 172.18.0.2") == 401
+    assert await attempt("user3@example.com", "8.8.8.8, 172.18.0.2") == 429
+    # A caller prefixing the header with someone else's address does not reach theirs.
+    assert await attempt("user4@example.com", "8.8.4.4, 8.8.8.8, 172.18.0.2") == 429
+    # A different caller is unaffected.
+    assert await attempt("user5@example.com", "1.1.1.1, 172.18.0.2") == 401
+
+
 async def test_code_guesses_are_limited_per_challenge(client: httpx.AsyncClient) -> None:
     workspace = await signup_workspace()
     login = await client.post(

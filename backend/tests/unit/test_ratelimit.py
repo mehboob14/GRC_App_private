@@ -10,27 +10,35 @@ from verity.core import ratelimit
 from verity.core.errors import RateLimited
 
 
-def _request(peer: str | None, headers: dict[str, str] | None = None) -> Request:
-    scope = {
-        "type": "http",
-        "headers": [(k.lower().encode(), v.encode()) for k, v in (headers or {}).items()],
-        "client": (peer, 5000) if peer else None,
-    }
-    return Request(scope)
+def _request(peer: str | None, forwarded: list[str] | None = None) -> Request:
+    headers = [(b"x-forwarded-for", value.encode()) for value in forwarded or []]
+    return Request({"type": "http", "headers": headers, "client": (peer, 5000) if peer else None})
 
 
-def test_the_real_address_is_believed_only_from_a_proxy_on_our_network() -> None:
-    forwarded = {"X-Real-IP": "203.0.113.9"}
-    assert ratelimit.client_address(_request("172.18.0.5", forwarded)) == "203.0.113.9"
-    assert ratelimit.client_address(_request("127.0.0.1", forwarded)) == "203.0.113.9"
-    # A caller reaching the API directly cannot pick their own bucket with a header.
-    assert ratelimit.client_address(_request("8.8.8.8", forwarded)) == "8.8.8.8"
+def test_the_real_address_is_found_through_one_proxy_or_two() -> None:
+    # One proxy hop: it appended the address it saw.
+    assert ratelimit.client_address(_request("172.18.0.5", ["8.8.8.8"])) == "8.8.8.8"
+    # Two hops, as in production (edge nginx, then the web container's nginx).
+    assert ratelimit.client_address(_request("172.18.0.5", ["8.8.8.8, 172.18.0.2"])) == "8.8.8.8"
 
 
-def test_a_garbled_or_missing_forwarded_address_falls_back_to_the_peer() -> None:
-    garbled = _request("172.18.0.5", {"X-Real-IP": "not-an-ip"})
-    assert ratelimit.client_address(garbled) == "172.18.0.5"
+def test_an_address_a_caller_put_to_the_left_is_never_reached() -> None:
+    spoofed = ["6.6.6.6, 8.8.8.8, 172.18.0.2"]
+    assert ratelimit.client_address(_request("172.18.0.5", spoofed)) == "8.8.8.8"
+    # A header split over several lines reads the same as one joined line.
+    split = ["6.6.6.6", "8.8.8.8, 172.18.0.2"]
+    assert ratelimit.client_address(_request("172.18.0.5", split)) == "8.8.8.8"
+
+
+def test_a_caller_reaching_the_api_directly_cannot_choose_their_bucket() -> None:
+    assert ratelimit.client_address(_request("1.1.1.1", ["8.8.8.8"])) == "1.1.1.1"
+
+
+def test_a_garbled_private_or_missing_chain_falls_back_to_the_peer() -> None:
+    assert ratelimit.client_address(_request("172.18.0.5", ["not-an-ip"])) == "172.18.0.5"
+    assert ratelimit.client_address(_request("172.18.0.5", ["10.1.2.3"])) == "172.18.0.5"
     assert ratelimit.client_address(_request("172.18.0.5")) == "172.18.0.5"
+    assert ratelimit.client_address(_request("127.0.0.1")) == "127.0.0.1"
     assert ratelimit.client_address(_request(None)) == "unattributed"
 
 

@@ -14,7 +14,7 @@ tsconfig.app.json`, eslint on touched files. Whole-tree gates and `vite build` r
 
 - [x] 1.1 Named limits in `core/ratelimit.py`; `Retry-After` on 429.
 - [x] 1.2 Apply to login, MFA verify and confirm, signup, password reset, verification resend, provider login.
-- [x] 1.3 Client address from `X-Real-IP` behind the proxy (no compose change); documented in `docs/conventions/api.md`.
+- [x] 1.3 Client address from `X-Forwarded-For` through both proxy hops (no compose change); documented in `docs/conventions/api.md`.
 - [x] 1.4 Tests: helpers (unit), eleventh attempt, other account, address, MFA, reset, provider (integration). Sign in message shows the wait from `Retry-After`.
 
 ## 2. Tasks

@@ -200,21 +200,26 @@ async def limit_mail(request: Request, email: str) -> None:
 
 
 def client_address(request: Request) -> str:
-    """The caller's address, seen through the reverse proxy.
+    """The caller's address, seen through our reverse proxies.
 
-    Behind nginx every request arrives from the proxy's own address, which would put
-    every user of the platform into one bucket. nginx overwrites ``X-Real-IP`` with the
-    address it saw, so that header is believed only when the immediate peer is itself a
-    private or loopback address (a proxy on our network). A caller who reaches the API
-    directly from the internet cannot use the header to pick their own bucket.
+    In production a request crosses two nginx hops (the host's edge proxy, then the web
+    container's), and the API's immediate peer is the second one. Reading the peer, or
+    ``X-Real-IP`` (which the inner hop sets to the edge proxy's address), would put every
+    user of the platform in one bucket, and one caller could then lock everyone out.
+
+    ``X-Forwarded-For`` carries the whole chain, each hop appending the address it saw. It
+    is believed only when the immediate peer is itself a private or loopback address (a
+    proxy on our network), and read from the right, skipping private addresses: the first
+    public one is what our own outermost proxy saw. Anything a caller put to its left is
+    never reached, and a caller who reaches the API directly cannot use the header at all.
     """
     peer = request.client.host if request.client else None
-    forwarded = request.headers.get("x-real-ip")
-    if forwarded and peer and _is_private(peer):
-        try:
-            return str(ipaddress.ip_address(forwarded.strip()))
-        except ValueError:
-            pass
+    if peer and _is_private(peer):
+        chain = ",".join(request.headers.getlist("x-forwarded-for")).split(",")
+        for entry in reversed(chain):
+            public = _public_address(entry)
+            if public:
+                return public
     return client_identity(peer)
 
 
@@ -224,6 +229,15 @@ def _is_private(host: str) -> bool:
     except ValueError:
         return False
     return address.is_private or address.is_loopback
+
+
+def _public_address(text: str) -> str | None:
+    """The address in ``text`` if it is a valid public one, else None."""
+    try:
+        address = ipaddress.ip_address(text.strip())
+    except ValueError:
+        return None
+    return None if address.is_private or address.is_loopback else str(address)
 
 
 def account_identity(email: str) -> str:
