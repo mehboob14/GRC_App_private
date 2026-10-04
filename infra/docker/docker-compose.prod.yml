@@ -144,6 +144,11 @@ services:
     command: ["celery", "-A", "verity.workers.celery_app:celery_app", "worker", "--loglevel=info"]
     env_file:
       - .env.production
+    volumes:
+      # The worker files evidence too (the scheduled connector runs), and the API has to
+      # read what it wrote. Without the same volume the file lands in this container's
+      # own filesystem: the evidence row exists, its download fails, and a rebuild loses it.
+      - evidence-data:/app/.data
     depends_on:
       postgres:
         condition: service_healthy

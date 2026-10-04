@@ -196,7 +196,10 @@ dc run --rm api python -m scripts.backfill_adopt_soc2  # only when the release a
 
 ## Backup and restore
 
-Two things hold state: the Postgres volume and the MinIO (evidence) volume.
+Two things hold state: the Postgres volume and the evidence volume. With `STORAGE_DRIVER=local`
+(the production setting) evidence files live in `verity_evidence-data`, which the API and the worker
+both mount. `verity_minio-data` only matters once the S3 driver exists; MinIO is provisioned but
+unused today.
 
 ```bash
 # Backup the database (custom format, compressed). The user and database names are
@@ -204,18 +207,16 @@ Two things hold state: the Postgres volume and the MinIO (evidence) volume.
 # neither, and pg_dump -U "" falls back to your login name ("role root does not exist").
 dc exec -T postgres sh -c 'pg_dump -U "$POSTGRES_USER" -Fc "$POSTGRES_DB"' > verity-$(date +%F).dump
 
-# Backup evidence objects (MinIO data volume) — snapshot the named volume
-docker run --rm -v verity_minio-data:/data -v "$PWD":/backup alpine \
-    tar czf /backup/minio-$(date +%F).tar.gz -C /data .
+# Backup evidence files (the evidence-data volume)
+docker run --rm -v verity_evidence-data:/data -v "$PWD":/backup alpine     tar czf /backup/evidence-$(date +%F).tar.gz -C /data .
 ```
 
 ```bash
 # Restore the database into a fresh, empty DB (roles must already exist)
 dc exec -T postgres sh -c 'pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --clean --if-exists' < verity-YYYY-MM-DD.dump
 
-# Restore evidence objects
-docker run --rm -v verity_minio-data:/data -v "$PWD":/backup alpine \
-    sh -c "rm -rf /data/* && tar xzf /backup/minio-YYYY-MM-DD.tar.gz -C /data"
+# Restore evidence files
+docker run --rm -v verity_evidence-data:/data -v "$PWD":/backup alpine     sh -c "rm -rf /data/* && tar xzf /backup/evidence-YYYY-MM-DD.tar.gz -C /data"
 ```
 
 Test a restore into a throwaway stack before you need it — an untested backup is a guess.
