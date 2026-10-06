@@ -78,6 +78,7 @@ cp infra/docker/.env.production.example infra/docker/.env.production
 | `STORAGE_DRIVER`, `S3_ENDPOINT_URL`, `S3_BUCKET`, `S3_REGION`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_USE_PATH_STYLE` | evidence object store (MinIO here) |
 | `FRONTEND_BASE_URL` | your public URL, e.g. `https://app.example.com` — used in email links |
 | `SMTP_HOST/PORT/USER/PASSWORD/FROM_EMAIL` | outbound email (notifications, verification, invites) |
+| `LEADS_NOTIFY_EMAIL`, `LEADS_ALLOWED_ORIGINS`, `LEADS_CONFIRM_REQUESTER` | the website's demo-request form (`POST /api/v1/public/demo-requests`): where each request is mailed, which website origins may call it (a JSON list of exact origins, e.g. `["https://www.example.com"]`), and whether the visitor gets a receipt. Without working `SMTP_*` requests are stored and nothing is sent |
 
 The `:?` guards in the compose file mean a missing required secret **fails the command with a
 named error** rather than silently starting a mis-configured stack.

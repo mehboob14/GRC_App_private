@@ -51,9 +51,14 @@ async def client(app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
 
 
 async def _login(
-    client: httpx.AsyncClient, email: str, password: str = WRONG_PASSWORD
+    client: httpx.AsyncClient,
+    email: str,
+    password: str = WRONG_PASSWORD,
+    headers: dict[str, str] | None = None,
 ) -> httpx.Response:
-    return await client.post(LOGIN_URL, json={"email": email, "password": password})
+    return await client.post(
+        LOGIN_URL, json={"email": email, "password": password}, headers=headers
+    )
 
 
 async def test_the_eleventh_attempt_on_one_account_is_429_with_a_retry_time(
@@ -93,11 +98,27 @@ async def test_one_address_trying_many_accounts_is_stopped(
     client: httpx.AsyncClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setattr(ratelimit, "LOGIN_ADDRESS", ratelimit.Limit(requests=3, window_seconds=900))
+    behind_proxy = {"X-Forwarded-For": "8.8.8.8, 172.18.0.2"}
     for index in range(3):
+        attempt = await _login(client, f"user{index}@example.com", headers=behind_proxy)
+        assert attempt.status_code == 401
+
+    blocked = await _login(client, "user99@example.com", headers=behind_proxy)
+    assert blocked.status_code == 429
+
+
+async def test_a_caller_whose_address_is_unknown_is_limited_by_account_only(
+    client: httpx.AsyncClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # The proxy in front sends no X-Forwarded-For, so every caller looks like the proxy.
+    # Keying a limit on that would be one bucket for the platform: it must not exist.
+    monkeypatch.setattr(ratelimit, "LOGIN_ADDRESS", ratelimit.Limit(requests=2, window_seconds=900))
+    for index in range(6):
         assert (await _login(client, f"user{index}@example.com")).status_code == 401
 
-    blocked = await _login(client, "user99@example.com")
-    assert blocked.status_code == 429
+    for _ in range(ratelimit.LOGIN_ACCOUNT.requests):
+        await _login(client, "ada@example.com")
+    assert (await _login(client, "ada@example.com")).status_code == 429, "the account still is"
 
 
 async def test_the_address_limit_tells_callers_apart_behind_two_proxies(

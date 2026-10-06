@@ -66,6 +66,22 @@ session, and a `tenant_memberships` row for an outsider would break rule 3. The 
 built for exactly this, so it cost one CHECK; recording their answers as `system` would have made
 "who answered this question" unanswerable. The ER correction is pending.
 
+**Leads.** `demo_requests` is a provider-plane table and carries **no `tenant_id`**: a prospect asks
+the platform's owner for a demo before any tenant exists, so the row belongs to no tenant (the
+provider plane sits above the tenant boundary, rule 2). Columns: `full_name`, `email` (stored
+lower-cased), `company`, and
+optional `message`, `interest`, `source` (which website button was clicked, not an integration
+origin), `page`, plus the delivery record `notified_at` and `confirmation_sent_at`, which is also what
+limits the visitor's receipt to one a day per address. It is policed like the other provider-plane
+tables: forced row-level security keyed on `app.provider_plane`, with one policy each for `SELECT`,
+`INSERT` and `UPDATE` and none for `DELETE`, and the application role holds no `DELETE` or `TRUNCATE`.
+One unauthenticated route writes it (`POST /api/v1/public/demo-requests`, `modules/leads`), inside
+`provider_session_scope`, which makes that route a third sanctioned user of the scope beside platform
+admins and the iam auth flows. Each request is audited in the provider stream (`tenant_id` NULL, actor
+`system`) with its id and the three non-personal labels only, never the name, address or message.
+Added with the website's demo form; it is not in the signed ER document, and the ER correction is
+pending.
+
 **Compliance.** `readiness_snapshots` is append-only and written on a schedule. Live readiness is
 computed from the maps; history comes from snapshots, because mappings and evidence mutate in place
 and past values could not otherwise be reconstructed.

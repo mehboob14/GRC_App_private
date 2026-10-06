@@ -109,7 +109,9 @@ command, the command matches nothing.
 `app.provider_plane` is a second transaction-local setting, bound through the same
 `set_config(..., true)` primitive as the tenant id, by **exactly one code path**:
 `verity.core.db.provider_session_scope`, entered on behalf of an authenticated platform
-admin or by the iam module's authentication flows for identity resolution (below). It is never
+admin, by the iam module's authentication flows for identity resolution (below), or by the
+leads module's one public route, which writes only the provider-plane `demo_requests` table and
+its audit row (`data-model.md`). It is never
 derived from a request parameter, a header, or a token claim a tenant user can
 influence. It is honestly a switch that widens visibility and is only as strong as the code that
 sets it — the same property `app.tenant_id` already has. The GUC approach (over a dedicated

@@ -283,6 +283,41 @@ async def clean_audit_log(
         await owner_engine.dispose()
 
 
+@pytest.fixture
+async def clean_demo_requests(
+    settings: Settings,
+    app_engine: AsyncEngine,
+    assert_app_role_cannot_bypass_rls: None,
+) -> AsyncIterator[None]:
+    """``demo_requests`` exists, is empty on entry, and is emptied again on exit.
+
+    The leads suites commit rows from the real route and read them back in separate
+    sessions, so they cannot clean up by rolling back. The application role has neither
+    ``DELETE`` nor ``TRUNCATE`` on this table, so the owner empties it: test-database
+    bookkeeping, not a path the application could take.
+    """
+    owner_engine = create_async_engine(settings.database.effective_migration_url, poolclass=None)
+    try:
+        async with owner_engine.connect() as connection:
+            exists = (
+                await connection.execute(text("SELECT to_regclass('demo_requests')"))
+            ).scalar_one_or_none()
+        if exists is None:
+            pytest.fail(
+                "demo_requests does not exist in the test database; "
+                "run `alembic upgrade head` first (see docs/runbooks/local-setup.md)."
+            )
+        async with owner_engine.begin() as connection:
+            await connection.execute(text("TRUNCATE demo_requests"))
+        try:
+            yield
+        finally:
+            async with owner_engine.begin() as connection:
+                await connection.execute(text("TRUNCATE demo_requests"))
+    finally:
+        await owner_engine.dispose()
+
+
 def _clear_rate_limit_counters() -> None:
     try:
         client = redis.Redis.from_url(get_settings().redis.url, socket_connect_timeout=1)

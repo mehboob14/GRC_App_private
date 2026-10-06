@@ -38,6 +38,14 @@ class OutboundEmail:
     reply_to: str | None = None
     """Where a human reply should land. Without it, a reply to an automated
     message disappears into whichever mailbox happened to send it."""
+    log_label: str | None = None
+    """What the mailer's log lines call this message in place of its subject. Set it
+    when the subject carries personal data (a visitor's name and company), because the
+    subject is otherwise logged on every send."""
+
+    @property
+    def log_subject(self) -> str:
+        return self.log_label or self.subject
 
 
 def _compose(
@@ -99,12 +107,16 @@ _LINE = "#E4E7EC"  # border-default
 _FONT = "'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif"
 
 
+_DEFAULT_FOOTER = "You received this because this address was used on Verity."
+
+
 def render_email(
     *,
     heading: str,
     paragraphs: tuple[str, ...],
     action: tuple[str, str] | None = None,
     footnote: str | None = None,
+    footer: str | None = None,
 ) -> str:
     """One layout for every message the platform sends: wordmark, card, at most
     one call to action, footer. ``action`` is ``(label, url)``.
@@ -113,6 +125,11 @@ def render_email(
     that block or rewrite links still leave the address legible, and a recipient
     who distrusts a button can see where it goes before clicking — which matters
     more in a compliance product than a tidy layout does.
+
+    ``footer`` replaces the line saying why the recipient got the message, for the
+    mail that is *not* sent to someone with a Verity account: the default is wrong
+    for the team notice about a website visitor. It is plain text, escaped here,
+    unlike ``paragraphs`` and ``footnote``, which are markup the caller has made safe.
     """
     blocks = "".join(
         f'<p style="margin:0 0 16px;font-size:15px;line-height:24px;color:{_BODY};">{p}</p>'
@@ -160,7 +177,7 @@ def render_email(
       </td></tr>
       <tr><td style="padding:20px 4px 0;font-size:12px;line-height:18px;color:{_MUTED};">
         Verity &middot; SOC 2 compliance automation<br>
-        You received this because this address was used on Verity.
+        {escape(footer) if footer is not None else _DEFAULT_FOOTER}
       </td></tr>
     </table>
   </td></tr>
@@ -184,7 +201,7 @@ class SmtpMailer:
         cfg = self._cfg
         if not cfg.enabled:
             # Not an error: local and test run without a mail server on purpose.
-            logger.info("email.skipped", reason="smtp_not_configured", subject=message.subject)
+            logger.info("email.skipped", reason="smtp_not_configured", subject=message.log_subject)
             return False
 
         mail = _compose(
@@ -205,10 +222,10 @@ class SmtpMailer:
             )
         except (aiosmtplib.SMTPException, OSError, ValueError) as exc:
             # Delivery failure never fails the caller's flow; the user can resend.
-            logger.warning("email.failed", subject=message.subject, error=type(exc).__name__)
+            logger.warning("email.failed", subject=message.log_subject, error=type(exc).__name__)
             return False
 
-        logger.info("email.sent", subject=message.subject)
+        logger.info("email.sent", subject=message.log_subject)
         return True
 
 

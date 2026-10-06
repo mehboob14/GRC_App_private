@@ -34,12 +34,13 @@ def test_a_caller_reaching_the_api_directly_cannot_choose_their_bucket() -> None
     assert ratelimit.client_address(_request("1.1.1.1", ["8.8.8.8"])) == "1.1.1.1"
 
 
-def test_a_garbled_private_or_missing_chain_falls_back_to_the_peer() -> None:
-    assert ratelimit.client_address(_request("172.18.0.5", ["not-an-ip"])) == "172.18.0.5"
-    assert ratelimit.client_address(_request("172.18.0.5", ["10.1.2.3"])) == "172.18.0.5"
-    assert ratelimit.client_address(_request("172.18.0.5")) == "172.18.0.5"
-    assert ratelimit.client_address(_request("127.0.0.1")) == "127.0.0.1"
-    assert ratelimit.client_address(_request(None)) == "unattributed"
+def test_a_garbled_private_or_missing_chain_is_no_address_at_all() -> None:
+    # Never the proxy's own address: a limit keyed on that is one bucket for the platform.
+    assert ratelimit.client_address(_request("172.18.0.5", ["not-an-ip"])) is None
+    assert ratelimit.client_address(_request("172.18.0.5", ["10.1.2.3"])) is None
+    assert ratelimit.client_address(_request("172.18.0.5")) is None
+    assert ratelimit.client_address(_request("127.0.0.1")) is None
+    assert ratelimit.client_address(_request(None)) is None
 
 
 def test_an_account_is_the_same_bucket_however_the_email_is_written() -> None:

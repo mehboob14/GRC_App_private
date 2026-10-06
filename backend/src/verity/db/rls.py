@@ -115,6 +115,22 @@ def grant_crud(table_name: str, *, role: str | None = None) -> None:
     op.execute(sql_text(f"GRANT SELECT, INSERT, UPDATE, DELETE ON {table_name} TO {role}"))
 
 
+def revoke_delete(table_name: str, *, role: str | None = None) -> None:
+    """Take ``DELETE`` and ``TRUNCATE`` back from the application role on a table.
+
+    The cluster's default privileges hand every new table to the application role with
+    ``DELETE`` included (infra/docker/postgres/init/01-roles.sh), so a table whose rows
+    may be added and amended but never removed has to say so. The missing privilege is
+    the wall; a policy would only filter rows. Pair it with :func:`grant_crud`, which nets
+    ``SELECT``, ``INSERT`` and ``UPDATE``. Unlike :func:`make_append_only` it leaves
+    ``UPDATE`` alone, for a table whose rows are amended as work happens to them.
+    """
+    role = role or get_settings().database.app_role
+    _identifier(table_name, what="table name")
+    _identifier(role, what="role name")
+    op.execute(sql_text(f"REVOKE DELETE, TRUNCATE ON {table_name} FROM {role}"))
+
+
 def append_only_function_ddl() -> str:
     """The shared trigger function that refuses ``UPDATE`` and ``DELETE``.
 

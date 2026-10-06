@@ -22,6 +22,7 @@ from verity.core.logging import configure_logging, get_logger
 from verity.core.middleware import (
     AccessLogMiddleware,
     CorrelationIdMiddleware,
+    ScopedCorsMiddleware,
     SecurityHeadersMiddleware,
 )
 from verity.modules.assets.router import assets_router
@@ -44,6 +45,7 @@ from verity.modules.iam.router import (
     security_router,
 )
 from verity.modules.iam.router import provider_router as iam_provider_router
+from verity.modules.leads.router import DEMO_REQUESTS_PATH, leads_router
 from verity.modules.linkage.router import linkage_router
 from verity.modules.notifications.router import notifications_router
 from verity.modules.risk.router import risks_router
@@ -96,6 +98,16 @@ def _middleware(settings: Settings) -> list[Middleware]:
             csp_exempt_paths=frozenset({DOCS_URL, REDOC_URL}),
         ),
     ]
+    if settings.leads.allowed_origins:
+        # Ahead of the global CORS below, so the website's one route has this policy and
+        # only this policy whatever CORS_ALLOW_ORIGINS holds. See ScopedCorsMiddleware.
+        stack.append(
+            Middleware(
+                ScopedCorsMiddleware,
+                path=f"{API_PREFIX}{DEMO_REQUESTS_PATH}",
+                allow_origins=settings.leads.allowed_origins,
+            )
+        )
     if settings.cors_allow_origins:
         stack.append(
             Middleware(
@@ -152,6 +164,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # Unauthenticated by design — see modules/vendors/portal_router.py. Mounted
     # under its own path so a proxy can treat it as a distinct surface.
     app.include_router(vendor_portal_router, prefix=API_PREFIX)
+    # Unauthenticated by design, like the vendor portal and the auth flows: the caller is
+    # a prospect on the marketing site with no account. See modules/leads/router.py for
+    # what protects it in place of a permission.
+    app.include_router(leads_router, prefix=API_PREFIX)
     app.include_router(auth_router, prefix=API_PREFIX)
     app.include_router(members_router, prefix=API_PREFIX)
     app.include_router(groups_router, prefix=API_PREFIX)

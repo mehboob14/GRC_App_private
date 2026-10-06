@@ -111,8 +111,10 @@ async def provider_session_scope() -> AsyncIterator[AsyncSession]:
 
     ``session_scope(None)`` with the provider-plane setting bound inside the same
     transaction, so dual-plane tables (``audit_log``) become visible across streams.
-    Entered only on behalf of an authenticated platform admin — nothing here checks
-    who is asking, which is exactly why no other code path may use it.
+    Entered on behalf of an authenticated platform admin, by the iam auth flows for
+    identity resolution, and by the leads module's one public route, which writes a
+    single provider-plane table and its audit row. Nothing here checks who is asking,
+    which is exactly why no other code path may use it.
     """
     async with session_scope(None) as session:
         await bind_provider_plane(session)

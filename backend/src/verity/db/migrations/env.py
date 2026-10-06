@@ -27,6 +27,7 @@ from verity.modules.customfields import models as _customfields_models  # noqa: 
 from verity.modules.documents import models as _documents_models  # noqa: F401
 from verity.modules.evidence import models as _evidence_models  # noqa: F401
 from verity.modules.iam import models as _iam_models  # noqa: F401
+from verity.modules.leads import models as _leads_models  # noqa: F401
 from verity.modules.links import models as _links_models  # noqa: F401
 from verity.modules.notifications import models as _notifications_models  # noqa: F401
 from verity.modules.risk import models as _risk_models  # noqa: F401

@@ -11,11 +11,12 @@ line renders ``**********`` instead of the value.
 from __future__ import annotations
 
 import base64
+import re
 from functools import lru_cache
 from pathlib import Path
 from typing import Final, Literal
 
-from pydantic import Field, SecretStr, model_validator
+from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 Environment = Literal["local", "test", "ci", "staging", "production"]
@@ -239,6 +240,60 @@ class EmailSettings(_Section):
         return bool(self.host and self.from_email)
 
 
+# One address and nothing else: this lands in a ``To:`` header, so no list, no display
+# name, no whitespace for a header to be split on.
+_SINGLE_ADDRESS: Final = re.compile(r"^[^@\s<>,;]+@[^@\s<>,;]+$")
+
+# ``scheme://host[:port]``, which is the only shape a browser sends in ``Origin``.
+_EXACT_ORIGIN: Final = re.compile(r"^https?://[a-z0-9.-]+(?::[0-9]{1,5})?$")
+
+
+class LeadsSettings(_Section):
+    """The public demo-request form on the marketing website (``modules/leads``).
+
+    The website is another origin from the API and calls exactly one route, so that
+    route has an allow-list of its own here instead of a wider ``CORS_ALLOW_ORIGINS``.
+    """
+
+    model_config = SettingsConfigDict(env_prefix="LEADS_")
+
+    notify_email: str | None = "mehboobarshad300@gmail.com"
+    """Where each new request is announced, and where a reply to the visitor's
+    confirmation lands. Empty (``LEADS_NOTIFY_EMAIL=``) turns both mails off; the request
+    is still stored. Sending needs the ``SMTP_*`` settings."""
+
+    allowed_origins: tuple[str, ...] = ()
+    """Exact origins a browser may call the endpoint from, as a JSON list in the
+    environment. An entry that is not ``https://host[:port]`` (a wildcard, a path, a
+    trailing slash) refuses to load rather than silently matching nothing."""
+
+    confirm_requester: bool = True
+    """Mail the visitor a short generic receipt, at most once per address per 24 hours."""
+
+    @field_validator("notify_email")
+    @classmethod
+    def _one_address_or_none(cls, value: str | None) -> str | None:
+        cleaned = (value or "").strip()
+        if not cleaned:
+            return None
+        if not _SINGLE_ADDRESS.match(cleaned):
+            raise ValueError(
+                "LEADS_NOTIFY_EMAIL must be one email address, or empty to turn mail off"
+            )
+        return cleaned
+
+    @field_validator("allowed_origins")
+    @classmethod
+    def _exact_origins(cls, value: tuple[str, ...]) -> tuple[str, ...]:
+        cleaned = tuple(origin.strip().lower() for origin in value)
+        if not all(_EXACT_ORIGIN.match(origin) for origin in cleaned):
+            raise ValueError(
+                "LEADS_ALLOWED_ORIGINS entries must be exact origins such as "
+                "https://example.com or http://localhost:5174: no wildcard, path or trailing slash"
+            )
+        return cleaned
+
+
 class Settings(_Section):
     env: Environment = "local"
     service_name: str = "verity-api"
@@ -266,6 +321,7 @@ class Settings(_Section):
 
     auth: AuthSettings = Field(default_factory=AuthSettings)
     email: EmailSettings = Field(default_factory=EmailSettings)
+    leads: LeadsSettings = Field(default_factory=LeadsSettings)
     database: DatabaseSettings = Field(default_factory=DatabaseSettings)
     redis: RedisSettings = Field(default_factory=RedisSettings)
     celery: CelerySettings = Field(default_factory=CelerySettings)

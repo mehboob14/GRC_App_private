@@ -110,6 +110,22 @@ EMAIL_ACTIONS: Final = Limit(requests=5, window_seconds=3600)
 """Per recipient. Signup, password reset and verification resend all send a mail to
 an address the caller names, so this is what stops the form being a mail bomb."""
 
+DEMO_ADDRESS: Final = Limit(requests=5, window_seconds=3600)
+"""Per client address, for the website's demo-request form. A person asks for a demo
+once; five an hour is room for a typo and an office sharing one address, and little
+else. Skipped when the address cannot be told (see ``client_address``), like
+``MAIL_ADDRESS``."""
+
+DEMO_EMAIL: Final = Limit(requests=3, window_seconds=86400)
+"""Per requester email, for the same form. The caller names this address and we write
+to it, so this is also what stops the form being used to pester one person."""
+
+DEMO_CEILING: Final = Limit(requests=300, window_seconds=86400)
+"""For the whole platform, under one fixed identity. Past this a flood from many
+addresses would fill the owner's inbox however the other two limits were chosen, so the
+form refuses everybody for the rest of the day instead. It is charged last, so a caller
+the two limits above already turned away never spends any of it."""
+
 
 def _client() -> aioredis.Redis:
     settings = get_settings().redis
@@ -183,9 +199,11 @@ def client_identity(client_host: str | None) -> str:
 
 
 async def limit_sign_in(request: Request, email: str) -> None:
-    """Count one password attempt against its account and against its address."""
+    """Count one password attempt against its account and, when known, its address."""
     await check("login_account", account_identity(email), LOGIN_ACCOUNT)
-    await check("login_address", client_address(request), LOGIN_ADDRESS)
+    address = _known_address(request)
+    if address is not None:
+        await check("login_address", address, LOGIN_ADDRESS)
 
 
 async def limit_challenge(challenge_token: str) -> None:
@@ -196,11 +214,27 @@ async def limit_challenge(challenge_token: str) -> None:
 async def limit_mail(request: Request, email: str) -> None:
     """Count one request that sends a mail to ``email``, against the recipient and the caller."""
     await check("mail_recipient", account_identity(email), EMAIL_ACTIONS)
-    await check("mail_address", client_address(request), MAIL_ADDRESS)
+    address = _known_address(request)
+    if address is not None:
+        await check("mail_address", address, MAIL_ADDRESS)
 
 
-def client_address(request: Request) -> str:
-    """The caller's address, seen through our reverse proxies.
+async def limit_demo_request(request: Request, email: str) -> None:
+    """Count one demo request against its caller, its requester and the day's ceiling.
+
+    In that order, and the order matters: ``check`` counts as it goes, so the broadest
+    bucket is charged last, and a caller one of the narrower limits refuses never
+    uses up the allowance of everyone else. Call it before anything is written.
+    """
+    address = _known_address(request)
+    if address is not None:
+        await check("demo_address", address, DEMO_ADDRESS)
+    await check("demo_email", account_identity(email), DEMO_EMAIL)
+    await check("demo_ceiling", "all", DEMO_CEILING)
+
+
+def client_address(request: Request) -> str | None:
+    """The caller's public address, seen through our reverse proxies, or None.
 
     In production a request crosses two nginx hops (the host's edge proxy, then the web
     container's), and the API's immediate peer is the second one. Reading the peer, or
@@ -212,15 +246,41 @@ def client_address(request: Request) -> str:
     proxy on our network), and read from the right, skipping private addresses: the first
     public one is what our own outermost proxy saw. Anything a caller put to its left is
     never reached, and a caller who reaches the API directly cannot use the header at all.
+
+    When no public address can be found (the proxy sends no usable chain) the answer is
+    None, never the proxy's own address: a limit keyed on that would be one bucket for the
+    whole platform, which any scanner could fill. The caller is then limited by account.
     """
     peer = request.client.host if request.client else None
-    if peer and _is_private(peer):
-        chain = ",".join(request.headers.getlist("x-forwarded-for")).split(",")
-        for entry in reversed(chain):
-            public = _public_address(entry)
-            if public:
-                return public
-    return client_identity(peer)
+    if peer is None:
+        return None
+    if not _is_private(peer):
+        return peer
+    chain = ",".join(request.headers.getlist("x-forwarded-for")).split(",")
+    for entry in reversed(chain):
+        public = _public_address(entry)
+        if public:
+            return public
+    return None
+
+
+_address_warned = False
+
+
+def _known_address(request: Request) -> str | None:
+    """``client_address``, saying once per process when it is not known, because that
+    means the proxy in front is not sending ``X-Forwarded-For`` and the per address
+    limits are off for every caller."""
+    global _address_warned  # noqa: PLW0603 — once per process is the whole point
+    address = client_address(request)
+    if address is None and not _address_warned:
+        _address_warned = True
+        logger.warning(
+            "ratelimit.address_unknown",
+            peer=request.client.host if request.client else None,
+            hint="the proxy in front sends no public X-Forwarded-For; limits are per account only",
+        )
+    return address
 
 
 def _is_private(host: str) -> bool:
