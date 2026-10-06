@@ -24,6 +24,7 @@ import { cn } from "@/lib/cn";
 import { describeError, errorToast } from "@/lib/api/describe-error";
 import { useAuth } from "@/lib/auth/auth-context";
 import { hasPermission } from "@/lib/auth/session";
+import { TraceButton } from "@/features/linkage/components/trace-button";
 import {
   changeStatus,
   getRisk,
@@ -205,6 +206,7 @@ export function RiskDetailPage() {
         actions={
           canManage || canApprove ? (
             <>
+              <TraceButton type="risk" id={risk.id} />
               {pendingForMe && canApprove ? (
                 <Button
                   variant="success-2"
@@ -272,7 +274,9 @@ export function RiskDetailPage() {
                 </DropdownMenu>
               ) : null}
             </>
-          ) : null
+          ) : (
+            <TraceButton type="risk" id={risk.id} />
+          )
         }
       />
 

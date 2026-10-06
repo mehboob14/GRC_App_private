@@ -20,7 +20,8 @@ export type LinkType =
   | "task";
 
 export type LinkedRecord = {
-  link_id: string;
+  /** Null for a pair the other record's page manages: there is no link to remove. */
+  link_id: string | null;
   target_type: LinkType;
   target_id: string;
   relation: string;
@@ -39,6 +40,8 @@ export type LinkedRecords = {
   offered: LinkType[];
   /** Of those, the types the signed in person may link. */
   can_link: LinkType[];
+  /** The read only groups among them, each with where its pair is changed. */
+  managed_elsewhere: Partial<Record<LinkType, string>>;
 };
 
 const BASE: Record<AnchorType, string> = {
@@ -73,6 +76,49 @@ export const removeLink = (
   apiFetch<LinkedRecords>(`${BASE[anchorType]}/${anchorId}/links/${linkId}`, {
     method: "DELETE",
   });
+
+export const TRACE_MAX_DEPTH = 4;
+
+export type TraceNode = {
+  /** `type:id`, what `parent_key` points at. */
+  key: string;
+  type: LinkType;
+  id: string;
+  code: string;
+  title: string;
+  status: string;
+  detail: string | null;
+  /** Hops from the record the trace starts at; the start itself is 0. */
+  depth: number;
+  parent_key: string | null;
+  /** How the parent reaches this record, in words: "Mitigated by". */
+  relation: string | null;
+  direction: "outgoing" | "incoming" | null;
+  /** Only a link drawn on the links table knows when and by whom. */
+  linked_at: string | null;
+  linked_by: string | null;
+};
+
+export type Trace = {
+  start: TraceNode;
+  /** Nearest first, each record once, under its shortest path. */
+  nodes: TraceNode[];
+  depth: number;
+  /** A cap left records out. */
+  truncated: boolean;
+  /** Types linked to something here that the signed in person may not read. */
+  hidden_types: LinkType[];
+  neighbour_limit: number;
+  node_limit: number;
+};
+
+export const traceKey = (type: LinkType, id: string, depth: number) =>
+  ["trace", type, id, depth] as const;
+
+export const getTrace = (type: LinkType, id: string, depth: number) =>
+  apiFetch<Trace>(
+    `/linkage/trace?type=${type}&id=${encodeURIComponent(id)}&depth=${depth}`,
+  );
 
 export type RaisedRisk = { id: string; code: string; title: string };
 

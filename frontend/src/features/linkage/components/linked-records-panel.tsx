@@ -23,8 +23,15 @@ import {
   type LinkedRecords,
   type LinkType,
 } from "../api";
-import { humanize, LINK_META, relationLabel } from "../meta";
+import { groupLabel, humanize, LINK_META, relationLabel } from "../meta";
 import { LinkPickerDialog } from "./link-picker-dialog";
+import { TraceButton } from "./trace-button";
+
+/** A record whose link can be removed from here: it has a link to remove. */
+type RemovableRecord = LinkedRecord & { link_id: string };
+
+const isRemovable = (record: LinkedRecord): record is RemovableRecord =>
+  record.can_unlink && record.link_id !== null;
 
 const CONTEXT: Record<AnchorType, string> = {
   asset: "this asset",
@@ -80,7 +87,7 @@ export function LinkedRecordsPanel({
   });
 
   const unlink = useMutation({
-    mutationFn: (record: LinkedRecord) =>
+    mutationFn: (record: RemovableRecord) =>
       removeLink(anchorType, anchorId, record.link_id),
     onSuccess: (next, record) => {
       apply(next);
@@ -106,6 +113,7 @@ export function LinkedRecordsPanel({
   const folded =
     filter === "all" ? groups.filter((t) => byType(t).length === 0) : [];
   const canLink = data?.can_link ?? [];
+  const managed = data?.managed_elsewhere ?? {};
 
   return (
     <section
@@ -130,12 +138,15 @@ export function LinkedRecordsPanel({
               : "Loading"}
           </p>
         </div>
-        {canLink.length > 0 ? (
-          <Button onClick={() => setPicker(canLink[0])}>
-            <Icon name="plus" className="size-4" />
-            Link record
-          </Button>
-        ) : null}
+        <div className="flex items-center gap-2">
+          <TraceButton type={anchorType} id={anchorId} />
+          {canLink.length > 0 ? (
+            <Button onClick={() => setPicker(canLink[0])}>
+              <Icon name="plus" className="size-4" />
+              Link record
+            </Button>
+          ) : null}
+        </div>
       </header>
 
       {query.isLoading ? (
@@ -170,7 +181,7 @@ export function LinkedRecordsPanel({
                 key={t}
                 active={filter === t}
                 onClick={() => setFilter(t)}
-                label={LINK_META[t].plural}
+                label={groupLabel(anchorType, t)}
                 icon={LINK_META[t].icon}
                 count={byType(t).length}
               />
@@ -190,13 +201,18 @@ export function LinkedRecordsPanel({
                       className="size-4 text-text-subtle"
                     />
                     <h3 className="text-label-md text-text-primary">
-                      {meta.plural}
+                      {groupLabel(anchorType, type)}
                     </h3>
                     <span className="tabular rounded-full bg-surface-sunken px-1.5 text-caption font-semibold text-text-secondary">
                       {rows.length}
                     </span>
                     <span className="ml-auto flex items-center gap-1">
                       {groupActions?.[type]}
+                      {managed[type] ? (
+                        <span className="text-caption text-text-subtle">
+                          {managed[type]}
+                        </span>
+                      ) : null}
                       {mayLink ? (
                         <Button
                           size="sm"
@@ -211,19 +227,24 @@ export function LinkedRecordsPanel({
                   </div>
                   {rows.length === 0 ? (
                     <p className="rounded-md bg-surface-sunken px-3 py-3 text-body-sm text-text-subtle">
-                      No {meta.plural.toLowerCase()} linked.
+                      No {groupLabel(anchorType, type).toLowerCase()} linked.
                     </p>
                   ) : (
                     <ul className="divide-y divide-border overflow-hidden rounded-md border border-border">
                       {rows.map((record) => (
                         <LinkedRow
-                          key={record.link_id}
+                          key={
+                            record.link_id ??
+                            `${record.target_type}:${record.target_id}`
+                          }
                           record={record}
                           removing={
                             unlink.isPending &&
                             unlink.variables?.link_id === record.link_id
                           }
-                          onRemove={() => unlink.mutate(record)}
+                          onRemove={() => {
+                            if (isRemovable(record)) unlink.mutate(record);
+                          }}
                         />
                       ))}
                     </ul>
@@ -245,15 +266,16 @@ export function LinkedRecordsPanel({
                       className="inline-flex h-7 items-center gap-1.5 rounded-full border border-border bg-surface-primary px-2.5 text-label-sm text-text-secondary transition-colors hover:border-action-accent hover:text-action-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-accent"
                     >
                       <Icon name="plus" className="size-3" />
-                      {LINK_META[type].plural}
+                      {groupLabel(anchorType, type)}
                     </button>
                   ) : (
                     <span
                       key={type}
+                      title={managed[type]}
                       className="inline-flex h-7 items-center gap-1.5 rounded-full px-2.5 text-label-sm text-text-subtle"
                     >
                       <Icon name={LINK_META[type].icon} className="size-3" />
-                      {LINK_META[type].plural}
+                      {groupLabel(anchorType, type)}
                     </span>
                   ),
                 )}

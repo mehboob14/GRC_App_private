@@ -693,6 +693,21 @@ class AssetService:
             for a in rows
         }
 
+    async def label(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, asset_id: uuid.UUID
+    ) -> tuple[str | None, str, str, str] | None:
+        """``(hostname, name, status, asset_type)`` of one asset, or None when it is gone.
+        One row, for a page that names many assets and needs nothing else: ``get_asset``
+        also resolves owners, relationships, hygiene and the history."""
+        row = (
+            await session.execute(
+                select(Asset.hostname, Asset.name, Asset.status, Asset.asset_type).where(
+                    Asset.tenant_id == tenant_id, Asset.id == asset_id
+                )
+            )
+        ).first()
+        return None if row is None else (row.hostname, row.name, row.status, row.asset_type)
+
     @staticmethod
     def _register_sort_key(v: AssetView) -> tuple[int, int, str]:
         tier = v.criticality.tier_override or v.criticality.tier

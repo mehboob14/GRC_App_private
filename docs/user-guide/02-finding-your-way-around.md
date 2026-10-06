@@ -57,10 +57,32 @@ Clicking a row opens the record. Detail pages share a layout:
   dates, where the record came from.
 - **Linked records** appears on assets, findings, controls and documents. It
   answers "what else is attached to this" in one place, and you can link something
-  new from there.
+  new from there. On a control it also lists the risks it mitigates and the policies
+  that document it, and a document lists the controls it documents. Those are changed
+  from the risk or the document, so they carry a note saying where.
 - **Activity** or **History** is the record's own trail: who changed what and when.
 
 ![An asset detail page, with tabs, the summary panel and the record's own trail](images/asset-detail.png)
+
+## Trace
+
+Linked records answers "what is attached to this". **Trace** answers "what does this
+reach". Open it with the **Trace** button on Linked records, or in the header of a
+risk.
+
+The record you started from is at the top. Below it each level is one hop: the
+records linked straight to it, then the records linked to those, down to four hops.
+Each record appears once, under the shortest route that reaches it, with how it
+connects ("Mitigated by", "Documented by", "Found on") and, where a person drew the
+link, when. The depth buttons (1 to 4) show fewer hops.
+
+This is how a finding is followed to its asset, the asset to a risk, the risk to a
+control, and the control to its policy and evidence, in one view. It works from
+either end: start at the policy and it walks back to the finding.
+
+Trace only shows what your role can read. If a kind of record is left out you are
+told which, and nothing behind it is shown either. A long trace stops at 25 records
+of one kind under a record and 150 in all, and says so.
 
 ## The things in the top bar
 

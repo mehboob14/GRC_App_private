@@ -5,6 +5,9 @@ own module's keys (rule 7): read needs the module's read key, drawing or
 removing a link needs its manage key. The service adds what a flat key cannot
 say: manage on the module that owns the pair, and read on the other end.
 Raising a risk from a finding needs ``risks:manage``.
+
+The trace starts from any of the eight record types, so the key it needs is the
+start record's own read key, chosen by the ``type`` it is asked about.
 """
 
 from __future__ import annotations
@@ -12,28 +15,32 @@ from __future__ import annotations
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from verity.core.deps import (
     Principal,
     TenantContext,
+    get_current_principal,
     get_tenant_context,
     get_tenant_session,
     require,
 )
+from verity.core.errors import InvalidInput
 from verity.modules.audit.service import Membership
 from verity.modules.linkage.schemas import (
     LinkedRecordsOut,
     LinkWrite,
     RaisedRiskOut,
     RaiseRiskWrite,
+    TraceOut,
 )
 from verity.modules.linkage.service import (
     MANAGE_PERMISSION,
     READ_PERMISSION,
     linkage_service,
 )
+from verity.modules.linkage.trace import MAX_DEPTH
 
 linkage_router = APIRouter(tags=["linkage"])
 
@@ -159,3 +166,45 @@ async def raise_risk(
         permissions=principal.permissions,
     )
     return RaisedRiskOut.model_validate(view)
+
+
+_TraceType = Annotated[str, Query(alias="type", min_length=1, max_length=40)]
+
+
+async def _trace_reader(
+    record_type: _TraceType,
+    principal: Annotated[Principal, Depends(get_current_principal)],
+) -> Principal:
+    """Deny by default (rule 7): the caller needs the read key of the record the trace
+    starts from. The key depends on the type asked about, so it is looked up here and
+    checked by ``require`` itself, which gives the same refusal every other route does."""
+    permission = READ_PERMISSION.get(record_type)
+    if permission is None:
+        raise InvalidInput(
+            "That kind of record cannot be traced.", detail=f"trace from {record_type!r}"
+        )
+    return await require(permission)(principal=principal)
+
+
+@linkage_router.get(
+    "/linkage/trace",
+    response_model=TraceOut,
+    summary="Trace everything connected to one record",
+)
+async def trace_records(  # noqa: PLR0913, PLR0917 — one query parameter each
+    record_type: _TraceType,
+    record_id: Annotated[uuid.UUID, Query(alias="id")],
+    principal: Annotated[Principal, Depends(_trace_reader)],
+    context: _Ctx,
+    session: _Db,
+    depth: Annotated[int, Query(ge=1, le=MAX_DEPTH)] = MAX_DEPTH,
+) -> TraceOut:
+    view = await linkage_service.trace(
+        session,
+        tenant_id=context.tenant_id,
+        record_type=record_type,
+        record_id=record_id,
+        depth=depth,
+        permissions=principal.permissions,
+    )
+    return TraceOut.model_validate(view)

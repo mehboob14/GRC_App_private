@@ -284,6 +284,36 @@ class EvidenceService:
         )
         return list(rows.scalars())
 
+    async def control_ids_for_evidence(
+        self, session: AsyncSession, tenant_id: uuid.UUID, evidence_id: uuid.UUID
+    ) -> list[uuid.UUID]:
+        """The controls one evidence item supports, for the 360 trace. The other end
+        of ``evidence_ids_for_control``."""
+        rows = await session.execute(
+            select(EvidenceControl.control_id)
+            .where(
+                EvidenceControl.tenant_id == tenant_id,
+                EvidenceControl.evidence_id == evidence_id,
+            )
+            .order_by(EvidenceControl.created_at, EvidenceControl.id)
+        )
+        return list(rows.scalars())
+
+    async def label(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, evidence_id: uuid.UUID
+    ) -> tuple[str, str, str] | None:
+        """``(title, freshness, evidence_type)`` of one item, or None when it is gone.
+        One row, for a page that names many items and needs nothing else: ``get`` also
+        reads every mapping in the library and every member's name."""
+        row = (
+            await session.execute(
+                select(Evidence.title, Evidence.renewal_date, Evidence.evidence_type).where(
+                    Evidence.tenant_id == tenant_id, Evidence.id == evidence_id
+                )
+            )
+        ).first()
+        return None if row is None else (row.title, freshness(row.renewal_date), row.evidence_type)
+
     async def set_control_evidence(
         self,
         session: AsyncSession,

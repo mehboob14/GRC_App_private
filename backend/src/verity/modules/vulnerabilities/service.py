@@ -1401,6 +1401,55 @@ class VulnerabilityService:
         ).all()
         return {asset_id: count for asset_id, count in rows}  # noqa: C416 — Row unpack
 
+    async def asset_id_for_instance(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, instance_id: uuid.UUID
+    ) -> uuid.UUID | None:
+        """The asset a finding sits on, or None when the finding is gone. A finding
+        belongs to one asset; the 360 trace reads that edge through here."""
+        return (
+            await session.execute(
+                select(VulnInstance.asset_id).where(
+                    VulnInstance.tenant_id == tenant_id, VulnInstance.id == instance_id
+                )
+            )
+        ).scalar_one_or_none()
+
+    async def instance_ids_for_asset(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, asset_id: uuid.UUID
+    ) -> list[uuid.UUID]:
+        """The findings on one asset: open ones first, the riskiest first among them, so
+        a trace that can only show some shows the ones that matter."""
+        rows = await session.execute(
+            select(VulnInstance.id)
+            .where(VulnInstance.tenant_id == tenant_id, VulnInstance.asset_id == asset_id)
+            .order_by(
+                VulnInstance.state.in_(list(OPEN_STATES)).desc(),
+                VulnInstance.risk_score.desc().nullslast(),
+                VulnInstance.id,
+            )
+        )
+        return list(rows.scalars())
+
+    async def label(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, instance_id: uuid.UUID
+    ) -> tuple[str | None, str, str, str] | None:
+        """``(cve_id, title, state, severity)`` of one finding, or None when it is gone.
+        One row, for a page that names many findings and needs nothing else: ``get_instance``
+        also builds the history, the affected assets and the score breakdown."""
+        row = (
+            await session.execute(
+                select(
+                    VulnDefinition.cve_id,
+                    VulnDefinition.title,
+                    VulnInstance.state,
+                    VulnDefinition.severity,
+                )
+                .join(VulnDefinition, VulnDefinition.id == VulnInstance.definition_id)
+                .where(VulnInstance.tenant_id == tenant_id, VulnInstance.id == instance_id)
+            )
+        ).first()
+        return None if row is None else (row.cve_id, row.title, row.state, row.severity)
+
     async def close_open_for_asset(
         self,
         session: AsyncSession,

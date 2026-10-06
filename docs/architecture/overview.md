@@ -71,7 +71,10 @@ goes beyond approve/reject.
 
 **Links.** The 360-degree model rides a hybrid: explicit join tables for hot pairs, one polymorphic
 `links` table for the long tail, direct FKs for one-way promotions
-([ADR-0003](../adr/0003-hybrid-linkage-model.md)).
+([ADR-0003](../adr/0003-hybrid-linkage-model.md)). `GET /api/v1/linkage/trace` walks
+every kind of edge breadth first from any record (up to four hops): the links table
+directly, and each join table only through the service of the module that owns it.
+It shows only what the caller may read and never passes through a type they cannot.
 
 **Audit log.** Append-only, before/after snapshots, no updates and no deletes ever.
 
@@ -83,3 +86,5 @@ so every future connector is an idempotent upsert against tables that already ex
 Trace a vulnerability to its asset, the asset to a risk, the risk to a control, the control to a
 policy and its evidence. Four hops, all indexed, every step in the audit trail. This is a Phase 1
 exit criterion — treat it as an integration test, not a demo script.
+`backend/tests/integration/test_linkage_trace.py` builds that chain through the real
+routes and asserts each hop, in order, from either end.

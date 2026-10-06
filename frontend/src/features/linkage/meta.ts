@@ -1,5 +1,5 @@
 import type { IconName } from "@/components/ui";
-import type { LinkedRecord, LinkType } from "./api";
+import type { AnchorType, LinkedRecord, LinkType } from "./api";
 
 export const LINK_META: Record<
   LinkType,
@@ -60,6 +60,15 @@ export const LINK_META: Record<
   },
 };
 
+export const isLinkType = (value: string): value is LinkType =>
+  Object.prototype.hasOwnProperty.call(LINK_META, value);
+
+/** What a group is called on a given page: the documents that document a control are its policies. */
+export const groupLabel = (anchorType: AnchorType, type: LinkType) =>
+  anchorType === "control" && type === "document"
+    ? "Policies"
+    : LINK_META[type].plural;
+
 /** What the edge means, read from the record the page is about. Plain "relates to" says nothing. */
 export function relationLabel(record: LinkedRecord): string | null {
   const incoming = record.direction === "incoming";
@@ -72,6 +81,13 @@ export function relationLabel(record: LinkedRecord): string | null {
       return incoming ? "Depends on this" : "Depends on";
     case "duplicates":
       return "Duplicate";
+    // Pairs with a table of their own, shown read only on the control and document pages.
+    case "mitigates":
+      return "Mitigates";
+    case "documented_by":
+      return "Documented by";
+    case "documents":
+      return "Documents";
     default:
       return null;
   }

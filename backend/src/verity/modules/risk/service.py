@@ -1934,6 +1934,30 @@ class RiskService:
         await self._record(session, risk, actor, "update", {"control": str(control_id)}, None)
         return await self.get_risk(session, tenant_id=tenant_id, risk_id=risk.id)
 
+    async def control_ids_for_risk(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, risk_id: uuid.UUID
+    ) -> list[uuid.UUID]:
+        """The controls that mitigate one risk, oldest link first. The trace reads the
+        pair through here; it never opens ``risk_control_map`` itself."""
+        rows = await session.execute(
+            select(RiskControlMap.control_id)
+            .where(RiskControlMap.tenant_id == tenant_id, RiskControlMap.risk_id == risk_id)
+            .order_by(RiskControlMap.created_at, RiskControlMap.id)
+        )
+        return list(rows.scalars())
+
+    async def risk_ids_for_control(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, control_id: uuid.UUID
+    ) -> list[uuid.UUID]:
+        """The risks one control mitigates, oldest link first: the control page's linked
+        records and the trace read them through here."""
+        rows = await session.execute(
+            select(RiskControlMap.risk_id)
+            .where(RiskControlMap.tenant_id == tenant_id, RiskControlMap.control_id == control_id)
+            .order_by(RiskControlMap.created_at, RiskControlMap.id)
+        )
+        return list(rows.scalars())
+
     # =========================================================================
     # Links and treatment actions
     # =========================================================================

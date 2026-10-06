@@ -14,6 +14,7 @@ from __future__ import annotations
 import uuid
 from collections.abc import Sequence
 from dataclasses import dataclass
+from datetime import datetime
 
 from sqlalchemy import delete, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -35,6 +36,10 @@ class LinkedObject:
     relation: str
     note: str | None
     direction: str  # "outgoing" (queried object is the `from`) | "incoming"
+    # When the edge was drawn and by whom, for the trace view. Defaulted so a
+    # caller that builds one by hand does not have to know them.
+    created_at: datetime | None = None
+    created_by_membership_id: uuid.UUID | None = None
 
 
 _UNKNOWN_TYPE_MESSAGE = (
@@ -156,6 +161,8 @@ class LinkService:
                     relation=link.relation,
                     note=link.note,
                     direction="outgoing" if outgoing else "incoming",
+                    created_at=link.created_at,
+                    created_by_membership_id=link.created_by_membership_id,
                 )
             )
         return out

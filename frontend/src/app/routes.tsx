@@ -73,6 +73,7 @@ import { RiskLibraryPage } from "@/features/risk/components/risk-library-page";
 import { RisksSettingsPage } from "@/features/risk/components/risks-settings-page";
 import { RiskAssessmentsPage, RiskIndicatorsPage } from "@/features/risk/components/risks-soon-pages";
 import { RiskDetailPage } from "@/features/risk/components/risk-detail-page";
+import { TracePage } from "@/features/linkage/components/trace-page";
 import { ConnectionsLayout } from "@/features/connectors/components/connections-layout";
 import { ConnectionsPage } from "@/features/connectors/components/connections-page";
 import { ProviderLayout } from "@/features/provider/components/provider-layout";
@@ -212,6 +213,8 @@ export function AppRoutes() {
             <Route path="settings" element={<RisksSettingsPage />} />
           </Route>
           <Route path="risks/:riskId" element={<RiskDetailPage />} />
+          {/* A drill-down from any record's Linked records: no sidebar entry. */}
+          <Route path="trace/:type/:id" element={<TracePage />} />
           <Route path="vulnerabilities" element={<VulnerabilitiesLayout />}>
             <Route index element={<VulnerabilitiesRegisterPage />} />
             {/* Literal segments only; the :instanceId route is a sibling below. */}
