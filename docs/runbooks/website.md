@@ -26,21 +26,32 @@ bash infra/scripts/deploy-site.sh
 
 The script builds the image, starts the container, waits for it to be healthy, checks that the
 address was baked into the pages, connects the edge nginx to the site's network (once) and
-prints what the public address answers. It answers 200 only after the next section is done.
+prints what the public address answers. Until the next section is done that is not a 200: the
+edge hands every hostname it does not know to the platform, with the platform's certificate.
 
 ## Edge server block and certificate
 
-The edge is not ours, so this part is done by hand. `infra/docker/edge-nginx-website.conf.example`
-holds both blocks. In order:
+The edge (`keycloak-nginx`, with `keycloak-certbot` beside it) belongs to the Keycloak stack under
+`/root/keycloak-saml`. Its config is root-owned and mounted read-only, so this step is for whoever
+has root:
 
-1. Add the HTTP block, test and reload (`docker exec <edge> nginx -t && docker exec <edge> nginx -s reload`).
-2. Issue a certificate for the hostname the way the edge already does it for `runwaydream.com`
-   (HTTP challenge through the block from step 1).
-3. Add the HTTPS block with the certificate paths, test and reload.
+```bash
+sudo bash /home/<deploying user>/verity-site/infra/scripts/edge-add-website.sh
+```
 
-The HTTPS block resolves `verity-site` through Docker's DNS on every few seconds instead of once
-at load, so redeploying the site never needs an nginx reload. Do the same for any other
-upstream: a name resolved once at load is what turns a rebuilt container into a 502.
+It issues the certificate through the edge's own certbot folders (the edge's port 80 block already
+answers the HTTP challenge for any hostname), installs the blocks from
+`infra/docker/edge-nginx-website.conf.template` as `sites-enabled/website`, tests them with
+`nginx -t` and only then reloads. If nginx rejects the blocks it removes them again, so a bad run
+leaves the edge as it was. The platform's own blocks are not edited. It stops before changing
+anything if the edge cannot reach `verity-site`.
+
+The HTTPS block resolves `verity-site` through Docker's DNS every few seconds instead of once at
+load, so redeploying the site never needs an nginx reload. Do the same for any other upstream: a
+name resolved once at load is what turns a rebuilt container into a 502.
+
+Connecting the edge to the site's network lasts until the edge container is recreated; running
+`deploy-site.sh` again connects it again.
 
 ## Update
 
@@ -57,11 +68,11 @@ Going back is the same with the earlier commit. `docker compose --env-file infra
 
 1. DNS: one `A` record for the chosen name (`website`, `www` or the bare domain) pointing at the
    server's IP, added where `runwaydream.com`'s DNS is hosted. The platform's records are not touched.
-2. Certificate for the new name, then a new HTTPS block for it in the edge (drop `X-Robots-Tag`,
-   add `Strict-Transport-Security`), test and reload.
+2. Whoever has root runs `edge-add-website.sh <hostname>`. It replaces the temporary hostname's
+   blocks with the new one's (no `noindex` header, HSTS added). The old certificate keeps renewing
+   harmlessly until `certbot delete --cert-name website.37-60-228-227.sslip.io` removes it.
 3. `SITE_URL` in `infra/docker/.env.website` to the new address, then `bash infra/scripts/deploy-site.sh`.
    The canonical links, sitemap and robots.txt carry the address, so the rebuild is required.
-4. Remove the sslip.io block and its certificate once the new address works.
 
 ## Not set yet
 

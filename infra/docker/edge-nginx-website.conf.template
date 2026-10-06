@@ -1,0 +1,35 @@
+# The website's server blocks on the shared edge nginx. infra/scripts/edge-add-website.sh swaps
+# the two @-marked words below for the hostname and for extra response headers, then installs
+# the result. It is the only copy of these blocks, so what is documented here is what runs.
+
+server {
+    listen 80;
+    server_name @HOST@;
+
+    location /.well-known/acme-challenge/ { root /var/www/certbot; }
+    location / { return 301 https://$host$request_uri; }
+}
+
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name @HOST@;
+
+    ssl_certificate     /etc/letsencrypt/live/@HOST@/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/@HOST@/privkey.pem;
+
+@HEADERS@
+
+    # Docker's own DNS, asked every few seconds, so a rebuilt container is found again without
+    # reloading nginx. A plain `proxy_pass http://verity-site;` resolves the name once, when
+    # nginx loads, and keeps the old address after a redeploy: that is the 502.
+    resolver 127.0.0.11 valid=10s ipv6=off;
+    set $site http://verity-site;
+
+    location / {
+        proxy_pass $site;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
