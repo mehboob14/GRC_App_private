@@ -1,4 +1,5 @@
 import type {
+  CategoryCoverage,
   DocumentKpis,
   DocumentRow,
   EvidenceGap,
@@ -28,6 +29,60 @@ export function ringToneFor(percent: number): RingTone {
   if (percent >= 80) return "success";
   if (percent >= 40) return "warning";
   return "danger";
+}
+
+// -- coverage -----------------------------------------------------------------
+
+/**
+ * Whole-number percentages of some parts that add up to exactly 100, so a row never
+ * reads 99% or 101%. The largest remainders take the spare points.
+ */
+export function shares(parts: number[]): number[] {
+  const total = parts.reduce((sum, part) => sum + part, 0);
+  if (total === 0) return parts.map(() => 0);
+  const exact = parts.map((part) => (part / total) * 100);
+  const whole = exact.map(Math.floor);
+  let spare = 100 - whole.reduce((sum, value) => sum + value, 0);
+  const byRemainder = exact.map((value, index) => ({ index, rest: value - whole[index] })).sort((a, b) => b.rest - a.rest);
+  for (const { index } of byRemainder) {
+    if (spare <= 0) break;
+    whole[index] += 1;
+    spare -= 1;
+  }
+  return whole;
+}
+
+export type CoverageKey = "ready" | "partial" | "gap";
+
+export type CoveragePart = {
+  key: CoverageKey;
+  label: string;
+  /** How many criteria are in this state. */
+  count: number;
+  percent: number;
+  /** What the state means, for the tooltip. */
+  hint: string;
+};
+
+const COVERAGE_STATES: { key: CoverageKey; label: string; hint: string }[] = [
+  { key: "ready", label: "Ready", hint: "Every control behind them is ready." },
+  { key: "partial", label: "Needs work", hint: "A control is in place but not ready yet." },
+  { key: "gap", label: "Missing", hint: "No control is mapped yet." },
+];
+
+/**
+ * One Trust Services category split into the three states a criterion can be in:
+ * ready, covered by a control that is not ready (needs work), and with no control
+ * at all (missing). The parts always add up to the criteria in scope.
+ */
+export function coverageParts(row: CategoryCoverage): CoveragePart[] {
+  const counts: Record<CoverageKey, number> = {
+    ready: row.ready,
+    partial: Math.max(row.covered - row.ready, 0),
+    gap: Math.max(row.in_scope - row.covered, 0),
+  };
+  const percents = shares(COVERAGE_STATES.map((state) => counts[state.key]));
+  return COVERAGE_STATES.map((state, index) => ({ ...state, count: counts[state.key], percent: percents[index] }));
 }
 
 const capitalise = (word: string) => word.charAt(0).toUpperCase() + word.slice(1);

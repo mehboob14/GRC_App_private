@@ -32,9 +32,9 @@ import {
   useRisks,
   useVulnerabilities,
 } from "./hooks";
-import { dayDelta, localDay, pct, ringToneFor, type RingTone } from "./model";
+import { coverageParts, dayDelta, localDay, pct, ringToneFor, type CoverageKey, type CoveragePart } from "./model";
 import { Empty, Panel, Settled, Tile, ViewAll } from "./section";
-import type { FrameworkSummary, Posture } from "./types";
+import type { CategoryCoverage, FrameworkSummary, Posture } from "./types";
 
 /**
  * The admin posture view. Every number comes from the workspace's own data:
@@ -51,12 +51,6 @@ const CATEGORY_ICON: Record<string, IconName> = {
   Confidentiality: "book",
   "Processing Integrity": "controls",
   Privacy: "users",
-};
-
-const TONE_TEXT: Record<RingTone, string> = {
-  success: "text-status-success-text",
-  warning: "text-status-warning-text",
-  danger: "text-status-danger-text",
 };
 
 export function AdminDashboard() {
@@ -374,6 +368,19 @@ function FrameworkCards() {
 
 // -- coverage -----------------------------------------------------------------
 
+const COVERAGE_FAMILY = {
+  ready: FAMILY_CHART.success,
+  partial: FAMILY_CHART.warning,
+  gap: FAMILY_CHART.danger,
+} as const;
+
+const percentText = (part: CoveragePart) => (part.percent === 0 && part.count > 0 ? "<1%" : `${part.percent}%`);
+
+/**
+ * Each category is one status bar: how many of its criteria are ready, need work
+ * (a control exists but is not ready) or are missing (no control). The words under
+ * the bar say the same in percent, so the colour is never the only signal.
+ */
 function CoverageCard() {
   const query = usePosture();
   return (
@@ -383,64 +390,96 @@ function CoverageCard() {
       subject="coverage"
       query={query}
       action={<ViewAll to="/controls" label="View controls" />}
-      skeleton={<Skeleton className="h-56 w-full" />}
+      skeleton={<Skeleton className="h-64 w-full" />}
     >
-      {(p) =>
-        p.by_category.length === 0 ? (
-          <Empty to="/frameworks/scope" cta="Set audit scope">
-            No audit scope yet.
-          </Empty>
-        ) : (
+      {(p) => {
+        if (p.by_category.length === 0) {
+          return (
+            <Empty to="/frameworks/scope" cta="Set audit scope">
+              No audit scope yet.
+            </Empty>
+          );
+        }
+        const rows = p.by_category.map((row) => ({ row, parts: coverageParts(row) }));
+        const totalOf = (key: CoverageKey) =>
+          rows.reduce((sum, { parts }) => sum + (parts.find((part) => part.key === key)?.count ?? 0), 0);
+        return (
           <>
             <ChartLegend
               className="mb-4"
-              items={[
-                { key: "ready", label: "Ready", swatchClass: FAMILY_CHART.success.dot },
-                { key: "partial", label: "Covered, not ready", swatchClass: FAMILY_CHART.warning.dot },
-                { key: "gap", label: "No control", swatchClass: FAMILY_CHART.danger.dot },
-              ]}
+              items={rows[0].parts.map((part) => ({
+                key: part.key,
+                label: part.label,
+                swatchClass: COVERAGE_FAMILY[part.key].dot,
+                value: totalOf(part.key),
+              }))}
             />
             <ul className="space-y-1">
-              {p.by_category.map((row) => {
-                const partial = Math.max(row.covered - row.ready, 0);
-                const gap = Math.max(row.in_scope - row.covered, 0);
-                const coverage = pct(row.covered, row.in_scope);
-                const width = (value: number) => `${(value / Math.max(row.in_scope, 1)) * 100}%`;
-                return (
-                  <li key={row.category}>
-                    <Link
-                      to={`/controls?trust=${encodeURIComponent(row.category)}`}
-                      className="flex items-center gap-3 rounded-sm px-1 py-1.5 transition-colors hover:bg-surface-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-action-accent"
-                    >
-                      <Icon name={CATEGORY_ICON[row.category] ?? "shield"} className="size-4 shrink-0 text-text-subtle" />
-                      <span className="w-56 shrink-0 truncate text-body-md text-text-secondary">
-                        {row.category}
-                        {row.category === "Security" ? " (Common Criteria)" : ""}
-                      </span>
-                      <span className="flex h-2.5 flex-1 gap-0.5 overflow-hidden rounded-full bg-surface-sunken" aria-hidden>
-                        <span className={FAMILY_CHART.success.bar} style={{ width: width(row.ready) }} />
-                        <span className={FAMILY_CHART.warning.bar} style={{ width: width(partial) }} />
-                        <span className={FAMILY_CHART.danger.bar} style={{ width: width(gap) }} />
-                      </span>
-                      <span className="tabular w-14 shrink-0 text-right text-body-sm text-text-subtle">
-                        {row.covered}/{row.in_scope}
-                      </span>
-                      <span
-                        className={cn(
-                          "tabular w-10 shrink-0 text-right text-body-md font-semibold",
-                          TONE_TEXT[ringToneFor(coverage)],
-                        )}
-                      >
-                        {coverage}%
-                      </span>
-                    </Link>
-                  </li>
-                );
-              })}
+              {rows.map(({ row, parts }) => (
+                <CoverageRow key={row.category} row={row} parts={parts} />
+              ))}
             </ul>
           </>
-        )
-      }
+        );
+      }}
     </Panel>
+  );
+}
+
+function CoverageRow({ row, parts }: { row: CategoryCoverage; parts: CoveragePart[] }) {
+  const total = parts.reduce((sum, part) => sum + part.count, 0);
+  const ready = parts.find((part) => part.key === "ready")?.count ?? 0;
+  return (
+    <li>
+      <Link
+        to={`/controls?trust=${encodeURIComponent(row.category)}`}
+        className="flex flex-wrap items-start gap-x-3 gap-y-1 rounded-sm px-1 py-1.5 transition-colors hover:bg-surface-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-action-accent"
+      >
+        <span className="flex h-6 w-full items-center gap-3 sm:w-56 sm:shrink-0">
+          <Icon name={CATEGORY_ICON[row.category] ?? "shield"} className="size-4 shrink-0 text-text-subtle" />
+          <span className="truncate text-body-md text-text-secondary">
+            {row.category}
+            {row.category === "Security" ? " (Common Criteria)" : ""}
+          </span>
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="flex h-6 items-center" aria-hidden>
+            <span className="flex h-2.5 w-full gap-0.5 overflow-hidden rounded-full bg-surface-sunken">
+              {parts
+                .filter((part) => part.count > 0)
+                .map((part) => (
+                  <span
+                    key={part.key}
+                    className={COVERAGE_FAMILY[part.key].bar}
+                    style={{ width: `${(part.count / total) * 100}%` }}
+                    title={`${part.label}: ${part.count} of ${total} criteria. ${part.hint}`}
+                  />
+                ))}
+            </span>
+          </span>
+          <span className="flex flex-wrap gap-x-4 gap-y-0.5 text-caption text-text-subtle">
+            {total === 0
+              ? "No criteria in scope"
+              : parts
+                  .filter((part) => part.key === "ready" || part.count > 0)
+                  .map((part) => (
+                    <span
+                      key={part.key}
+                      className={cn("inline-flex items-center gap-1.5", part.key === "gap" && "text-status-danger-text")}
+                    >
+                      <span className={cn("size-2 shrink-0 rounded-full", COVERAGE_FAMILY[part.key].dot)} aria-hidden />
+                      {part.label}
+                      <span className={cn("tabular font-semibold", part.key !== "gap" && "text-text-secondary")}>
+                        {percentText(part)}
+                      </span>
+                    </span>
+                  ))}
+          </span>
+        </span>
+        <span className="tabular flex h-6 w-24 shrink-0 items-center justify-end gap-1 text-body-sm text-text-subtle">
+          <span className="font-semibold text-text-primary">{ready}</span> of {total} ready
+        </span>
+      </Link>
+    </li>
   );
 }
