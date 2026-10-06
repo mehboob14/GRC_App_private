@@ -14,20 +14,25 @@ const out = path.resolve(import.meta.dirname, "../public/og.png");
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1200, height: 630 }, deviceScaleFactor: 1, reducedMotion: "reduce" });
 await page.goto(`${base}/`, { waitUntil: "networkidle" });
+await page.waitForTimeout(2500); // let React finish hydrating, or it redraws the page over the card
 const art = await page.evaluate(() => document.querySelector("svg.iso-hero")?.outerHTML ?? "");
 const mark = await page.evaluate(() => document.querySelector("header svg")?.outerHTML ?? "");
-await page.evaluate(({ art, mark }) => {
+// The card repeats the homepage hero, read from the page so the two cannot drift apart.
+const title = await page.evaluate(() => document.querySelector("#hero-title")?.textContent ?? "");
+const eyebrow = await page.evaluate(() => document.querySelector("#hero-title")?.previousElementSibling?.textContent ?? "");
+if (!title || !eyebrow) throw new Error("The homepage hero was not found on the page");
+await page.evaluate(({ art, mark, title, eyebrow }) => {
   document.body.innerHTML = `
     <div style="position:fixed;inset:0;display:flex;background:linear-gradient(180deg,#E6ECF2 0%,#F3F6F9 60%,#FFFFFF 100%);font-family:Inter,sans-serif;overflow:hidden">
       <div style="position:relative;z-index:1;display:flex;flex-direction:column;justify-content:center;padding:0 0 0 72px;width:640px">
         <div style="display:flex;align-items:center;gap:10px;color:#0B0F17">${mark.replace(/width="\\d+"/, 'width="36"').replace(/height="\\d+"/, 'height="36"')}<span style="font-size:30px;font-weight:600;letter-spacing:-0.035em">verity</span></div>
-        <p style="margin:56px 0 0;font-family:'JetBrains Mono Variable',monospace;font-size:15px;letter-spacing:0.14em;text-transform:uppercase;color:#5D6878">Compliance as a service, end to end</p>
-        <h1 style="margin:18px 0 0;font-family:'Source Serif 4 Variable',Georgia,serif;font-weight:400;font-size:64px;line-height:1.04;letter-spacing:-0.02em;color:#0B0F17">Your source of truth for compliance and security</h1>
+        <p style="margin:56px 0 0;font-family:'JetBrains Mono Variable',monospace;font-size:15px;letter-spacing:0.14em;text-transform:uppercase;color:#5D6878">${eyebrow}</p>
+        <h1 style="margin:18px 0 0;font-family:'Source Serif 4 Variable',Georgia,serif;font-weight:400;font-size:60px;line-height:1.04;letter-spacing:-0.02em;color:#0B0F17">${title}</h1>
         <p style="margin:28px 0 0;font-size:20px;line-height:1.5;color:#363F4E">Frameworks, evidence, policies, risk, vendors, assets and vulnerabilities in one connected platform.</p>
       </div>
       <div style="position:absolute;right:-60px;top:110px;width:700px">${art}</div>
     </div>`;
-}, { art, mark });
+}, { art, mark, title, eyebrow });
 await page.waitForTimeout(300);
 await page.screenshot({ path: out });
 await browser.close();

@@ -8,9 +8,9 @@ import type { IconName } from "@/components/ui/icon";
  */
 
 export const hero = {
-  eyebrow: "Compliance as a service, end to end",
-  title: "Your source of truth for compliance and security",
-  lead: "Verity brings your frameworks, controls, evidence, policies, risks, vendors and systems into one connected workspace. See what needs attention, prove what works, and walk into every audit ready.",
+  eyebrow: "Continuous compliance, built in",
+  title: "Compliance without the scramble.",
+  lead: "Automate evidence collection, track controls and risks, and stay continuously ready for audits across your organization.",
 };
 
 export const facts = {

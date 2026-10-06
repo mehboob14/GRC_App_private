@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     siteName: "Verity",
     title: "Verity | Compliance and security, end to end",
     description,
-    images: [{ url: "/og.png", width: 1200, height: 630, alt: "Verity: your source of truth for compliance and security" }],
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "Verity: compliance without the scramble" }],
   },
   twitter: { card: "summary_large_image" },
 };
