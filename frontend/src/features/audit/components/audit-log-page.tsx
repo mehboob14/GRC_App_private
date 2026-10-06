@@ -34,7 +34,9 @@ import {
 import { auditApi } from "@/lib/api/endpoints";
 import { describeError } from "@/lib/api/describe-error";
 import { useAuth } from "@/lib/auth/auth-context";
+import { hasPermission } from "@/lib/auth/session";
 import type { AuditAction, AuditEvent } from "@/lib/api/types";
+import { AuditExportDialog } from "./audit-export-dialog";
 
 /**
  * Audit actions reuse the StatusPill anatomy (DS §6.2). This map is the single
@@ -190,7 +192,8 @@ function activityOf(event: AuditEvent): string {
   const typeName = humanizeType(event.object_type).toLowerCase();
   const objName = objectLabelOf(event);
   const named = objName.toLowerCase() !== typeName;
-  const objPart = named ? `${typeName} “${objName}”` : `a ${typeName}`;
+  const article = /^[aeiou]/.test(typeName) ? "an" : "a";
+  const objPart = named ? `${typeName} “${objName}”` : `${article} ${typeName}`;
 
   // A state move is the headline: say which field moved, and between what.
   if (event.action === "transition" || event.action === "approve") {
@@ -286,6 +289,7 @@ export function AuditLogPage() {
   const [typeFilter, setTypeFilter] = useState<string[]>([]);
   const [selected, setSelected] = useState<AuditEvent | null>(null);
   const [includeSystem, setIncludeSystem] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
   const cols = useColumnPrefs("verity.audit.columns", AUDIT_COLUMNS);
 
   const query = useInfiniteQuery({
@@ -363,7 +367,18 @@ export function AuditLogPage() {
 
   return (
     <div>
-      <PageHeader eyebrow="Access and audit" title="Audit log" />
+      <PageHeader
+        eyebrow="Access and audit"
+        title="Audit log"
+        actions={
+          hasPermission(principal, "audit:read") ? (
+            <Button variant="secondary" onClick={() => setExportOpen(true)}>
+              <Icon name="export" className="size-4" />
+              Export
+            </Button>
+          ) : undefined
+        }
+      />
 
       <Toolbar
         searchLabel="Filter audit log"
@@ -557,6 +572,10 @@ export function AuditLogPage() {
           </div>
         </>
       )}
+
+      {exportOpen ? (
+        <AuditExportDialog includeSystem={includeSystem} onOpenChange={setExportOpen} />
+      ) : null}
 
       {/* Row detail — a centered, responsive modal. */}
       <Dialog

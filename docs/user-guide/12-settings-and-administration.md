@@ -97,7 +97,26 @@ administrator, and that is enforced by the database rather than by convention. W
 an auditor asks how you know your records have not been quietly rewritten, this is
 the answer.
 
-Filter it by actor, by object type or by date, and export what you filtered.
+Filter it by user type, action or object type.
+
+### Exporting the audit log
+
+Choose **Export** at the top of the page to download the log as an Excel file or a
+CSV file, oldest event first. Give a **From** and a **To** date to cover a period such
+as the audit window. Both are optional, both days are included, and they are UTC
+days. Tick **Include system activity** to add sign ins and workspace setup, which the
+page hides by default.
+
+Each row says who acted, when in UTC, what they did, what it was done to, and the
+values before and after as text. The Excel file adds a second sheet that records who
+exported, when, the dates chosen and how many rows it holds, so a copy that is passed
+around still says where it came from. Excel holds up to 50,000 events. For a longer
+period choose a narrower range, or use CSV, which has no limit.
+
+The export is itself written to the audit log, so the log shows who took a copy and
+when. A value that starts with an equals sign, a plus, a minus or an at sign is saved as
+text with a leading apostrophe, so nothing typed into Verity can run as a formula when
+the file is opened. Anyone who can read the audit log can export it.
 
 ## Data isolation
 

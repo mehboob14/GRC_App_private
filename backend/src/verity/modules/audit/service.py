@@ -5,16 +5,20 @@ point: the audit write has to join the caller's transaction. A service that open
 session of its own would produce exactly the failure this table exists to prevent —
 a committed audit row describing a change that rolled back
 (openspec/changes/add-audit-trail/design.md).
+
+The one exception is the export (``begin_export``, ``export_batches``). It changes nothing
+to join: the only row it writes is its own, and it reads from a response body that is
+streamed after the request's session has done its work, so it opens its own.
 """
 
 from __future__ import annotations
 
 import base64
 import uuid
-from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
-from datetime import datetime
-from typing import Any, ClassVar, Final
+from collections.abc import AsyncGenerator, Mapping, Sequence
+from dataclasses import dataclass, replace
+from datetime import UTC, date, datetime, time
+from typing import Any, ClassVar, Final, Literal
 
 import orjson
 from sqlalchemy import inspect as sa_inspect
@@ -22,6 +26,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import DeclarativeBase
 
+from verity.core.db import session_scope
 from verity.core.errors import InvalidInput
 from verity.core.logging import REDACTED, is_sensitive_key
 from verity.modules.audit.models import (
@@ -33,7 +38,8 @@ from verity.modules.audit.models import (
     AuditAction,
     AuditLog,
 )
-from verity.modules.audit.repository import AuditLogRepository
+from verity.modules.audit.repository import AuditLogRepository, ExportWindow
+from verity.shared.ids import uuid7
 
 
 def _require_uuid(value: object, *, owner: str) -> None:
@@ -126,6 +132,91 @@ _SYSTEM_OBJECT_TYPES: Final[frozenset[str]] = frozenset(
     }
 )
 
+ExportFormat = Literal["csv", "xlsx"]
+
+EXPORT_OBJECT_TYPE: Final = "audit_export"
+"""The ``object_type`` of the row an export writes about itself."""
+
+EXPORT_BATCH_SIZE: Final = 1000
+"""Rows read per round trip. An export holds one batch in memory at a time, however
+long the trail is."""
+
+EXPORT_XLSX_MAX_ROWS: Final = 50_000
+"""An Excel file is built in one piece, so it has a ceiling; CSV streams and has none."""
+
+_EXPORT_RANGE_ERROR: Final = (
+    "The From date is after the To date. Choose a From date on or before the To date."
+)
+_EXPORT_TOO_LARGE_ERROR: Final = (
+    "An Excel export holds at most {limit} events and this range has more. "
+    "Choose a narrower date range, or export CSV, which has no limit."
+)
+_UNKNOWN_EXPORTER: Final = "Member"
+
+_MEMBER_NAMES_SQL: Final = (
+    "SELECT m.id AS id, u.full_name AS name FROM tenant_memberships m "
+    "JOIN users u ON u.id = m.user_id WHERE m.id = ANY(:ids)"
+)
+
+
+@dataclass(frozen=True, slots=True)
+class ExportRequest:
+    """What the person asked to export. ``date_from`` and ``date_to`` are UTC days and
+    both are inclusive."""
+
+    file_format: ExportFormat
+    date_from: date | None = None
+    date_to: date | None = None
+    include_system: bool = False
+    object_type: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class ExportRun:
+    """One export that has started and been recorded, ready to read from."""
+
+    export_id: uuid.UUID
+    tenant_id: uuid.UUID
+    request: ExportRequest
+    cut_off: datetime
+    """Rows recorded at or after this instant are not in the export — which is how it
+    never contains its own audit row."""
+    actor_label: str
+
+
+def _export_window(tenant_id: uuid.UUID, request: ExportRequest, cut_off: datetime) -> ExportWindow:
+    return ExportWindow(
+        tenant_id=tenant_id,
+        occurred_before=cut_off,
+        occurred_from=(
+            None
+            if request.date_from is None
+            else datetime.combine(request.date_from, time.min, tzinfo=UTC)
+        ),
+        # time.max is the last microsecond of the day, the resolution of occurred_at, so
+        # an inclusive bound needs no "start of the next day" that overflows on 9999-12-31.
+        occurred_to=(
+            None
+            if request.date_to is None
+            else datetime.combine(request.date_to, time.max, tzinfo=UTC)
+        ),
+        exclude_object_types=None if request.include_system else _SYSTEM_OBJECT_TYPES,
+        object_type=request.object_type,
+    )
+
+
+def _export_snapshot(request: ExportRequest, rows: int | None) -> dict[str, object]:
+    snapshot: dict[str, object] = {
+        "format": request.file_format,
+        "from": None if request.date_from is None else request.date_from.isoformat(),
+        "to": None if request.date_to is None else request.date_to.isoformat(),
+        "include_system": request.include_system,
+        "object_type": request.object_type,
+    }
+    if rows is not None:
+        snapshot["rows"] = rows
+    return snapshot
+
 
 @dataclass(frozen=True, slots=True)
 class AuditLabels:
@@ -157,6 +248,10 @@ class AuditLabels:
             "vuln_instance": self.findings,
         }
         return by_type.get(object_type, {}).get(object_id)
+
+
+ExportBatch = tuple[list[AuditLog], AuditLabels]
+"""One read of an export: the rows, and the names behind them."""
 
 
 def encode_cursor(occurred_at: datetime, entry_id: uuid.UUID) -> str:
@@ -306,12 +401,7 @@ class AuditService:
             elif e.object_type == "vuln_instance":
                 finding_ids.add(e.object_id)
         return AuditLabels(
-            members=await self._names(
-                session,
-                "SELECT m.id AS id, u.full_name AS name FROM tenant_memberships m "
-                "JOIN users u ON u.id = m.user_id WHERE m.id = ANY(:ids)",
-                member_ids,
-            ),
+            members=await self._names(session, _MEMBER_NAMES_SQL, member_ids),
             users=await self._names(
                 session, "SELECT id, full_name AS name FROM users WHERE id = ANY(:ids)", user_ids
             ),
@@ -344,6 +434,88 @@ class AuditService:
             return {}
         rows = (await session.execute(text(sql), {"ids": list(ids)})).all()
         return {row.id: row.name for row in rows if row.name}
+
+    async def begin_export(
+        self, *, tenant_id: uuid.UUID, actor: Membership, request: ExportRequest
+    ) -> ExportRun:
+        """Start one export: fix its cut-off, and write its audit row before any data
+        leaves.
+
+        Runs in a unit of work of its own rather than the caller's. A streamed response
+        outlives the request's session, and the row has to be committed by the time the
+        first byte is sent: an export that fails half way is still an export that
+        happened. The cut-off is the database's ``now()`` in the same transaction as the
+        audit row, so the two are the same instant and the row sits exactly on the
+        boundary the export excludes.
+
+        An Excel export is counted first. The count is bounded, so a long trail costs no
+        more than the ceiling, and it is what lets the row carry ``rows``; a streamed CSV
+        has no count to give, so its row has none.
+
+        Raises:
+            InvalidInput: the range runs backwards, or an Excel export is over its ceiling.
+        """
+        if request.date_from and request.date_to and request.date_from > request.date_to:
+            raise InvalidInput(
+                _EXPORT_RANGE_ERROR,
+                detail=f"export range {request.date_from} to {request.date_to} runs backwards",
+            )
+        request = replace(request, object_type=(request.object_type or "").strip() or None)
+        async with session_scope(tenant_id) as session:
+            cut_off = await self._repository.database_time(session)
+            rows: int | None = None
+            if request.file_format == "xlsx":
+                rows = await self._repository.export_count(
+                    session,
+                    _export_window(tenant_id, request, cut_off),
+                    limit=EXPORT_XLSX_MAX_ROWS,
+                )
+                if rows > EXPORT_XLSX_MAX_ROWS:
+                    raise InvalidInput(
+                        _EXPORT_TOO_LARGE_ERROR.format(limit=f"{EXPORT_XLSX_MAX_ROWS:,}"),
+                        detail="xlsx export is over the row ceiling",
+                    )
+            run = ExportRun(
+                export_id=uuid7(),
+                tenant_id=tenant_id,
+                request=request,
+                cut_off=cut_off,
+                actor_label=(await self._names(session, _MEMBER_NAMES_SQL, {actor.id})).get(
+                    actor.id, _UNKNOWN_EXPORTER
+                ),
+            )
+            await self.record(
+                session,
+                action="create",
+                object_type=EXPORT_OBJECT_TYPE,
+                object_id=run.export_id,
+                actor=actor,
+                tenant_id=tenant_id,
+                after=_export_snapshot(request, rows),
+            )
+        return run
+
+    async def export_batches(self, run: ExportRun) -> AsyncGenerator[ExportBatch, None]:
+        """The export's events, oldest first, one batch at a time, with the names the
+        list shows.
+
+        Each batch is read in a unit of work of its own and nothing is held between
+        them: a long export never pins a connection or a transaction, and never holds
+        more than one batch, however long the trail is."""
+        window = _export_window(run.tenant_id, run.request, run.cut_off)
+        after: tuple[datetime, uuid.UUID] | None = None
+        while True:
+            async with session_scope(run.tenant_id) as session:
+                rows = await self._repository.export_batch(
+                    session, window, after=after, limit=EXPORT_BATCH_SIZE
+                )
+                labels = await self.resolve_labels(session, rows)
+            if not rows:
+                return
+            yield rows, labels
+            if len(rows) < EXPORT_BATCH_SIZE:
+                return
+            after = (rows[-1].occurred_at, rows[-1].id)
 
     @staticmethod
     def snapshot(

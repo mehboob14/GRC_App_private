@@ -905,4 +905,53 @@ export const handlers = [
       lastItem && start + PAGE_SIZE < all.length ? lastItem.id : null;
     return HttpResponse.json({ items, next_cursor });
   }),
+
+  // The export, oldest first. The mock cannot build a workbook, so Excel gets the
+  // same CSV under a .csv name.
+  http.get("/api/v1/audit-log/export", ({ request }) => {
+    const membershipId = membershipFromToken(
+      request.headers.get("Authorization"),
+    );
+    const principal = membershipId
+      ? principalFromMembership(membershipId)
+      : null;
+    if (!principal) return err(401, "unauthenticated", "Sign in to continue.");
+    if (!principal.permissions.includes("audit:read")) {
+      return err(403, "permission_denied", "Missing permission: audit:read");
+    }
+    const params = new URL(request.url).searchParams;
+    const from = params.get("from");
+    const to = params.get("to");
+    const system = new Set(["session", "auth_attempt", "tenant", "tenant_branding"]);
+    const quote = (value: unknown) => `"${String(value ?? "").replace(/"/g, '""')}"`;
+    const rows = auditEvents
+      .filter((e) => e.tenant_id === principal.tenant_id)
+      .filter((e) => params.get("include_system") === "true" || !system.has(e.object_type))
+      .filter((e) => (!from || e.occurred_at.slice(0, 10) >= from) && (!to || e.occurred_at.slice(0, 10) <= to))
+      .reverse()
+      .map((e) =>
+        [
+          e.occurred_at,
+          e.actor_label,
+          e.actor_type,
+          e.actor_id,
+          e.action,
+          e.object_type,
+          e.object_label,
+          e.object_id,
+          e.before && JSON.stringify(e.before),
+          e.after && JSON.stringify(e.after),
+        ]
+          .map(quote)
+          .join(","),
+      );
+    const header =
+      "occurred_at,actor,actor_type,actor_id,action,object_type,object,object_id,before,after";
+    return new HttpResponse([header, ...rows].join("\r\n"), {
+      headers: {
+        "Content-Type": "text/csv",
+        "Content-Disposition": 'attachment; filename="audit-log.csv"',
+      },
+    });
+  }),
 ];
