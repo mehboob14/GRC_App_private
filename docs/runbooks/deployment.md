@@ -162,6 +162,21 @@ reports each dependency and answers 503 when one is down.
 
 ## Routine deployment (updating)
 
+One script does all of it, in the right order, and stops at the first failure. Run it inside
+`tmux` after fetching the revision you want:
+
+```bash
+cd /opt/verity
+tmux new -s deploy
+git fetch origin && git checkout main && git pull    # or the branch you are deploying
+bash infra/scripts/deploy.sh                         # shows what will go out, asks, then:
+                                                     # backup, build, migrate, swap, content, checks
+```
+
+`infra/scripts/backup.sh` is the backup step on its own (the database dump and the evidence
+volume, each read back before it says done). The script migrates before it swaps the containers,
+which is safe while every migration only adds. The same steps by hand:
+
 ```bash
 cd /opt/verity
 git pull                                   # fetch the new revision
