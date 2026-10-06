@@ -144,6 +144,10 @@ services:
     command: ["celery", "-A", "verity.workers.celery_app:celery_app", "worker", "--loglevel=info"]
     env_file:
       - .env.production
+    # The image's HEALTHCHECK probes the API's port, which the worker does not serve, so
+    # it would only ever read unhealthy.
+    healthcheck:
+      disable: true
     volumes:
       # The worker files evidence too (the scheduled connector runs), and the API has to
       # read what it wrote. Without the same volume the file lands in this container's
@@ -165,9 +169,23 @@ services:
       dockerfile: Dockerfile
     image: verity-api:${VERITY_VERSION:-latest}
     container_name: verity-beat
-    command: ["celery", "-A", "verity.workers.celery_app:celery_app", "beat", "--loglevel=info"]
+    # Beat keeps its last-run times in a file. Its default is the working directory,
+    # /app, which the image owns as root while the process runs as uid 1001, so beat
+    # died on start with "Permission denied: celerybeat-schedule" and nothing scheduled
+    # ever ran. /tmp is writable. The cost: a recreated container starts its interval
+    # clocks again, so a daily job first runs a day after each deploy.
+    command:
+      - celery
+      - -A
+      - verity.workers.celery_app:celery_app
+      - beat
+      - --loglevel=info
+      - --schedule=/tmp/celerybeat-schedule
     env_file:
       - .env.production
+    # The image's HEALTHCHECK probes the API's port, which beat does not serve.
+    healthcheck:
+      disable: true
     depends_on:
       redis:
         condition: service_healthy

@@ -8,9 +8,10 @@
 #   bash infra/scripts/deploy.sh          # add -y to skip the question
 #
 # In order: show what will go out, back up, build, migrate, swap the containers, load the
-# shipped content, check. Migrations run before the swap on purpose: every migration so far
-# only adds, so the old code is fine on the new schema and the new code never meets the old
-# one. Nothing here deletes data.
+# shipped content, then check that the API is ready and that the worker and the scheduler
+# stay up. Migrations run before the swap on purpose: every migration so far only adds, so
+# the old code is fine on the new schema and the new code never meets the old one. Nothing
+# here deletes data.
 set -euo pipefail
 
 cd "$(dirname "$0")/../.."
@@ -74,6 +75,19 @@ done
 [ -n "$ready" ] || { echo "the API did not become ready within a minute: dc logs api" >&2; exit 1; }
 echo "readyz: $ready"
 
+# The worker runs every job and beat is what schedules them. A container that restarts
+# or has exited means nothing scheduled will run, however healthy the API looks.
+sleep 15
+down=""
+for name in verity-worker verity-beat; do
+  state="$(docker inspect -f '{{.State.Status}} restarts={{.RestartCount}}' "$name" 2>&1 || true)"
+  echo "$name: $state"
+  [ "$state" = "running restarts=0" ] || down="$down $name"
+done
+if [ -n "$down" ]; then
+  echo "not staying up:$down. Read why with: $DC logs --tail 40$down" >&2
+  exit 1
+fi
 $DC logs --tail 15 worker beat
 
 say "Done"
