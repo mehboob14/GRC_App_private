@@ -1,0 +1,45 @@
+# Server blocks that put the website on the shared edge nginx. Compose does not use this file:
+# the edge is not ours, so the blocks are copied into its config by hand, then
+#
+#   docker exec <edge> nginx -t && docker exec <edge> nginx -s reload
+#
+# Order for a new hostname: (1) the HTTP block alone, so a certificate can be issued;
+# (2) issue the certificate; (3) add the HTTPS block. The two lines marked <- are the parts
+# that depend on how the edge keeps its certificates.
+
+server {
+    listen 80;
+    server_name website.37-60-228-227.sslip.io;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;                                                   # <-
+    }
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name website.37-60-228-227.sslip.io;
+
+    ssl_certificate     /etc/letsencrypt/live/website.37-60-228-227.sslip.io/fullchain.pem;   # <-
+    ssl_certificate_key /etc/letsencrypt/live/website.37-60-228-227.sslip.io/privkey.pem;     # <-
+
+    # A temporary address: keep it out of search results. Remove with the real hostname.
+    add_header X-Robots-Tag "noindex, nofollow" always;
+
+    # Docker's own DNS, asked every few seconds, so a rebuilt container is found again
+    # without reloading nginx. A plain `proxy_pass http://verity-site;` resolves the name
+    # once, when nginx loads, and keeps the old address after a redeploy: that is the 502.
+    resolver 127.0.0.11 valid=10s ipv6=off;
+    set $site http://verity-site;
+
+    location / {
+        proxy_pass $site;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}

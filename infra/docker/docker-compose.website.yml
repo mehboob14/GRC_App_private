@@ -1,0 +1,34 @@
+# The public website, on its own. Run from the repository root (deploy-site.sh does this):
+#
+#   docker compose --env-file infra/docker/.env.website \
+#                  -f infra/docker/docker-compose.website.yml up -d --build
+#
+# A separate project from the platform on purpose: it shares no network, no database and
+# no release with it. Deploying or breaking the website cannot touch the app, and the
+# website cannot reach the app's containers.
+#
+# Like the platform it publishes no port. The edge proxy reaches `verity-site` by joining
+# this project's network, once (deploy-site.sh does it when it finds the edge container):
+#
+#   docker network connect verity-site_default <their-nginx-container>
+
+name: verity-site
+
+services:
+  site:
+    build:
+      context: ../../website
+      dockerfile: Dockerfile
+      args:
+        # `:?` fails the command with a named error instead of building a site with no
+        # address to put in its canonical links.
+        SITE_URL: ${SITE_URL:?set SITE_URL in infra/docker/.env.website}
+        APP_URL: ${APP_URL:-https://runwaydream.com}
+        NEXT_PUBLIC_DEMO_ENDPOINT: ${NEXT_PUBLIC_DEMO_ENDPOINT:-}
+        NEXT_PUBLIC_FEEDBACK_ENDPOINT: ${NEXT_PUBLIC_FEEDBACK_ENDPOINT:-}
+        PRIVACY_URL: ${PRIVACY_URL:-}
+        TERMS_URL: ${TERMS_URL:-}
+    image: verity-site:${VERITY_VERSION:-latest}
+    # Fixed name so the edge proxy's upstream keeps resolving across rebuilds.
+    container_name: verity-site
+    restart: unless-stopped

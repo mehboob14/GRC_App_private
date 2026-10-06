@@ -157,6 +157,9 @@ headers. The CSP allows inline script and style because the static export inline
 blocks third-party scripts, frames and network calls. **If you set a demo or feedback endpoint, add its
 origin to `connect-src`.** No runtime Node process is needed.
 
+This repository deploys it as a Docker image next to the platform: see
+[docs/runbooks/website.md](../docs/runbooks/website.md).
+
 ## Motion and accessibility
 
 Animations use CSS and one IntersectionObserver; with reduced motion requested, everything renders
