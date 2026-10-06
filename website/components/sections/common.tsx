@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import { getSiteConfig } from "@/lib/site-config";
 import { Icon } from "@/components/ui/icon";
-import { DemoButton } from "@/components/site/demo-provider";
+import { DemoButton } from "@/components/site/demo-button";
 import { IsometricHero } from "@/components/visuals/isometric-hero";
 
 /** Primary call-to-action pair: See a demo (outline) and Start trial (dark), as on the reference. */

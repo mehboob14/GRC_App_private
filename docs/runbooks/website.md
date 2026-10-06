@@ -53,6 +53,21 @@ name resolved once at load is what turns a rebuilt container into a 502.
 Connecting the edge to the site's network lasts until the edge container is recreated; running
 `deploy-site.sh` again connects it again.
 
+## Demo requests
+
+The `/demo/` page posts to the platform: `POST {APP_URL}/api/v1/public/demo-requests`. The platform
+keeps the request, emails the sales inbox (`LEADS_NOTIFY_EMAIL`, with the visitor's address as
+Reply-To) and sends the visitor a short acknowledgement. Two things must be true on the platform:
+
+1. It runs a version that has the endpoint. Deploy the platform first, then the site.
+2. `LEADS_ALLOWED_ORIGINS` in the platform's `.env.production` lists this site's origin exactly, as a
+   JSON list, for example `LEADS_ALLOWED_ORIGINS=["https://website.37-60-228-227.sslip.io"]`.
+   Without it the browser blocks the request and the visitor sees "We could not send your request".
+   Change it together with `SITE_URL` when the site moves to its real hostname.
+
+The site's image allows the endpoint's origin in its Content-Security-Policy by itself: it reads the
+same address the pages were built with.
+
 ## Update
 
 ```bash
@@ -76,6 +91,6 @@ Going back is the same with the earlier commit. `docker compose --env-file infra
 
 ## Not set yet
 
-The demo request endpoint, the "Was this page helpful?" endpoint and the privacy and terms links
-are empty on purpose (`website/README.md`, "Before going live"). Fill them in the settings file
-when they exist; an endpoint's origin must also be added to `connect-src` in `website/nginx.conf`.
+The "Was this page helpful?" endpoint and the privacy and terms links are empty on purpose
+(`website/README.md`, "Before going live"). Fill them in the settings file when they exist; the image
+build allows an endpoint's origin in the Content-Security-Policy.

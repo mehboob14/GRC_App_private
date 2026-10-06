@@ -8,7 +8,7 @@ import { Icon, type IconName } from "@/components/ui/icon";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type { MenuColumn, MenuLink } from "@/content/navigation";
 import { Brand } from "./brand";
-import { DemoButton } from "./demo-provider";
+import { DemoButton } from "./demo-button";
 
 type MenuId = "platform" | "solutions" | "resources";
 

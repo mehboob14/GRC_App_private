@@ -1,14 +1,11 @@
 import Link from "next/link";
-import { getSiteConfig } from "@/lib/site-config";
-import { DemoProvider } from "@/components/site/demo-provider";
 import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
 import { Icon } from "@/components/ui/icon";
 
 export default function NotFound() {
-  const { demoEndpoint } = getSiteConfig();
   return (
-    <DemoProvider endpoint={demoEndpoint}>
+    <>
       <SiteHeader />
       <main id="main-content" className="bg-gradient-to-b from-[#eef2f6] to-white">
         <div className="frame flex min-h-[60vh] flex-col items-start justify-center py-24">
@@ -22,6 +19,6 @@ export default function NotFound() {
         </div>
       </main>
       <SiteFooter />
-    </DemoProvider>
+    </>
   );
 }

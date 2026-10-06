@@ -24,7 +24,9 @@ services:
         # address to put in its canonical links.
         SITE_URL: ${SITE_URL:?set SITE_URL in infra/docker/.env.website}
         APP_URL: ${APP_URL:-https://runwaydream.com}
-        NEXT_PUBLIC_DEMO_ENDPOINT: ${NEXT_PUBLIC_DEMO_ENDPOINT:-}
+        # Where demo requests go. Unless set, the platform that APP_URL names: its API
+        # emails the sales inbox and keeps the request. That origin also joins the CSP.
+        NEXT_PUBLIC_DEMO_ENDPOINT: ${NEXT_PUBLIC_DEMO_ENDPOINT:-${APP_URL:-https://runwaydream.com}/api/v1/public/demo-requests}
         NEXT_PUBLIC_FEEDBACK_ENDPOINT: ${NEXT_PUBLIC_FEEDBACK_ENDPOINT:-}
         PRIVACY_URL: ${PRIVACY_URL:-}
         TERMS_URL: ${TERMS_URL:-}

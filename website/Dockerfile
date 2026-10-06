@@ -42,6 +42,21 @@ FROM nginx:1.27-alpine AS runtime
 COPY --from=build /app/out /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
+# The demo form and the docs feedback widget call their endpoints from the browser, so
+# those origins must be allowed in the Content-Security-Policy. They are read from the
+# same build arguments the pages were built with, so the policy cannot drift from the code.
+ARG NEXT_PUBLIC_DEMO_ENDPOINT
+ARG NEXT_PUBLIC_FEEDBACK_ENDPOINT
+# Only the policy line is edited: the comments in nginx.conf mention connect-src too.
+RUN set -eu; \
+    origins=""; \
+    for url in "$NEXT_PUBLIC_DEMO_ENDPOINT" "$NEXT_PUBLIC_FEEDBACK_ENDPOINT"; do \
+      origin="$(printf '%s' "$url" | sed -nE 's|^(https://[^/?]+).*|\1|p')"; \
+      if [ -n "$origin" ] && ! printf '%s' "$origins" | grep -qF "$origin"; then origins="$origins $origin"; fi; \
+    done; \
+    sed -i "/Content-Security-Policy/ s|connect-src 'self'|connect-src 'self'$origins|" /etc/nginx/conf.d/default.conf; \
+    grep "Content-Security-Policy" /etc/nginx/conf.d/default.conf | grep -o "connect-src[^;]*"
+
 EXPOSE 80
 
 HEALTHCHECK --interval=15s --timeout=4s --start-period=5s --retries=3 \

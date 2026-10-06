@@ -2,7 +2,7 @@ import type { Status } from "./catalog";
 
 /**
  * Plan packaging. This is a proposal for the product owner to confirm: the
- * site shows no prices, and every "Talk to sales" action opens the demo form
+ * site shows no prices, and every "Talk to sales" action opens the demo request page
  * with the tier preselected. Statuses follow content/catalog.ts.
  */
 

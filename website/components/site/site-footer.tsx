@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getSiteConfig } from "@/lib/site-config";
 import { footerColumns } from "@/content/navigation";
 import { Brand } from "./brand";
-import { DemoButton } from "./demo-provider";
+import { DemoButton } from "./demo-button";
 
 export function SiteFooter() {
   const { trialUrl, signInUrl, privacyUrl, termsUrl } = getSiteConfig();

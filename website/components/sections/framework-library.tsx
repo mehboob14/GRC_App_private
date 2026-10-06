@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/cn";
 import { Icon } from "@/components/ui/icon";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { DemoButton } from "@/components/site/demo-provider";
+import { DemoButton } from "@/components/site/demo-button";
 import type { Framework, FrameworkCategory, Region } from "@/content/frameworks";
 
 interface Props {

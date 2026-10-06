@@ -4,7 +4,7 @@ import { getSiteConfig } from "@/lib/site-config";
 import { comparison, pricingFaqs, tiers } from "@/content/pricing";
 import { FaqSection, FinalCta } from "@/components/sections/common";
 import { PricingTable } from "@/components/sections/pricing-table";
-import { DemoButton } from "@/components/site/demo-provider";
+import { DemoButton } from "@/components/site/demo-button";
 import { Icon } from "@/components/ui/icon";
 
 export const metadata: Metadata = {

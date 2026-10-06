@@ -40,17 +40,22 @@ npm run dev          # http://localhost:3001
 |---|---|---|
 | `SITE_URL` | production | Canonical HTTPS origin of this site |
 | `APP_URL` | no | Verity app origin (default `https://runwaydream.com`); Start trial → `/sign-up`, Sign in → `/sign-in` |
-| `NEXT_PUBLIC_DEMO_ENDPOINT` | no | HTTPS endpoint that receives demo requests as JSON. Unset: the form says nothing is sent and submit stays disabled |
+| `NEXT_PUBLIC_DEMO_ENDPOINT` | no | HTTPS endpoint that receives demo requests as JSON. The Docker build defaults it to `APP_URL` + `/api/v1/public/demo-requests`. Unset in any other build: the form says requests are not connected and submit stays disabled |
 | `NEXT_PUBLIC_FEEDBACK_ENDPOINT` | no | HTTPS endpoint for "Was this page helpful?" on docs pages. Unset: hidden |
 | `PRIVACY_URL`, `TERMS_URL` | no | Approved policy pages. Unset: no legal links are shown |
 
 The build fails on a malformed URL. `.env.example` shows the shape; its example domain must never
 ship.
 
-**Demo request payload** (POST, `Content-Type: application/json`, no cookies):
-`firstName, lastName, email, company, jobTitle, country, organisationSize, interests[], tier, message, consent, source, page`.
-A 2xx response shows the success state; anything else offers a retry. Bots are filtered with a
-honeypot field and a minimum fill time before anything is sent.
+**Demo request** (`/demo/`, a page and not a popup; every "See a demo" action links to it). The form
+asks for a name, a work email and a company, and has one optional message. Everything else is
+settled by email afterwards. Links carry `?interest=<topic>&from=<button>` so the team knows what
+prompted the request. The request is a POST with `Content-Type: application/json` and no cookies:
+`full_name, email, company, message, interest, source, page, website`. `website` is a honeypot that
+people never fill. A 2xx response shows the thank-you; a 429, a rejection and a network failure each
+show their own message and keep what the visitor typed. The platform's
+`POST /api/v1/public/demo-requests` accepts exactly this, keeps the request and emails the sales
+inbox, and its `LEADS_ALLOWED_ORIGINS` must list this site's origin (docs/runbooks/website.md).
 
 ## Where things live
 
@@ -59,7 +64,7 @@ app/(site)/            marketing routes: home, platform, platform/[module], solu
                        frameworks, why-verity, pricing, security, demo
 app/docs/              docs layout and [[...slug]] (articles, docs home, redirects from old URLs)
 app/search-index.json/ the docs search index, generated at build
-components/site/       header, mega menus, mobile drawer, footer, demo popup and form
+components/site/       header, mega menus, mobile drawer, footer, demo button and request form
 components/sections/   page sections and templates
 components/visuals/    isometric hero art, charts and product-interface compositions
 components/docs/       docs shell (sidebar, contents, search, theme) and MDX components
@@ -154,8 +159,9 @@ npx -y -p playwright@1.56.1 node scripts/generate-og.mjs   # writes public/og.pn
 Deploy `out/` to any static host or CDN on its own origin. [nginx.conf](nginx.conf) is an example:
 terminate HTTPS and set HSTS at the edge, serve `404.html` for unknown routes, and keep the security
 headers. The CSP allows inline script and style because the static export inlines hydration data; it
-blocks third-party scripts, frames and network calls. **If you set a demo or feedback endpoint, add its
-origin to `connect-src`.** No runtime Node process is needed.
+blocks third-party scripts, frames and network calls. **If you set a demo or feedback endpoint, its
+origin must be in `connect-src`;** the Docker image does that at build time, and any other host must do
+it by hand. No runtime Node process is needed.
 
 This repository deploys it as a Docker image next to the platform: see
 [docs/runbooks/website.md](../docs/runbooks/website.md).

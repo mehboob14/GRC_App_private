@@ -8,7 +8,7 @@ import { modulePages } from "@/content/modules";
 import { CtaPair, FaqSection, FinalCta, PageHero } from "@/components/sections/common";
 import { ModuleVisual } from "@/components/sections/module-visual";
 import { SectionShell } from "@/components/sections/pillar";
-import { DemoButton } from "@/components/site/demo-provider";
+import { DemoButton } from "@/components/site/demo-button";
 import { Icon } from "@/components/ui/icon";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { SectionHeading } from "@/components/ui/section-heading";
