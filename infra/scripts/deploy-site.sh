@@ -2,7 +2,7 @@
 # Build and (re)start the public website. Run on the server from the checkout of the website
 # branch, which is a separate worktree from the platform's (docs/runbooks/website.md):
 #
-#   cd /opt/verity-site
+#   cd ~/verity-site
 #   bash infra/scripts/deploy-site.sh
 #
 # The site is its own compose project: no database, nothing to migrate, nothing to back up.

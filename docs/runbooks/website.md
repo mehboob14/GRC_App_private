@@ -9,18 +9,17 @@ the platform, so a bad site deploy cannot reach the app.
 |---|---|
 | Container | `verity-site` (nginx, port 80 inside, nothing published) |
 | Compose | `infra/docker/docker-compose.website.yml`, settings in `infra/docker/.env.website` (per server, not committed) |
-| Checkout | `/opt/verity-site`, a detached git worktree of the platform repository, so the platform's own checkout stays on its branch |
+| Checkout | `~/verity-site` (the deploying user's home, which needs no sudo), a detached git worktree of the platform repository in `/opt/verity`, so the platform's own checkout stays on its branch |
 | Address | `SITE_URL` in the settings file. Temporary: `https://website.37-60-228-227.sslip.io` |
 | HTTPS | ends at the edge nginx (`keycloak-nginx`), which proxies to `verity-site` |
 
 ## First time
 
 ```bash
-sudo mkdir -p /opt/verity-site && sudo chown "$USER": /opt/verity-site
 cd /opt/verity && git fetch origin
-git worktree add --detach /opt/verity-site origin/feat/website-deploy
+git worktree add --detach ~/verity-site origin/feat/website-deploy
 
-cd /opt/verity-site
+cd ~/verity-site
 cp infra/docker/.env.website.example infra/docker/.env.website
 bash infra/scripts/deploy-site.sh
 ```
@@ -47,7 +46,7 @@ upstream: a name resolved once at load is what turns a rebuilt container into a 
 
 ```bash
 cd /opt/verity && git fetch origin
-cd /opt/verity-site && git checkout --detach origin/feat/website-deploy
+cd ~/verity-site && git checkout --detach origin/feat/website-deploy
 bash infra/scripts/deploy-site.sh
 ```
 
