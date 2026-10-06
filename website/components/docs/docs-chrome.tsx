@@ -114,7 +114,8 @@ export function DocsHeader({ groups, trialUrl }: { groups: SidebarGroup[]; trial
 export function SidebarNav({ groups }: { groups: SidebarGroup[] }) {
   const pathname = usePathname();
   const current = pathname.replace(/^\/docs\/?/, "").replace(/\/$/, "");
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => Object.fromEntries(groups.map((group) => [group.id, true])));
+  // Every group starts closed: the visitor opens the ones they want, and they stay open while they read on.
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const activeRef = useRef<HTMLAnchorElement>(null);
 
   useEffect(() => {
@@ -127,13 +128,20 @@ export function SidebarNav({ groups }: { groups: SidebarGroup[] }) {
         <Icon name="book" size={17} />Documentation home
       </Link>
       {groups.map((group) => {
-        const open = openGroups[group.id];
+        const open = Boolean(openGroups[group.id]);
         const hasActive = group.items.some((item) => item.slug === current);
         return (
           <div key={group.id} className="mb-1">
             <button type="button" onClick={() => setOpenGroups((state) => ({ ...state, [group.id]: !state[group.id] }))} aria-expanded={open} className={cn("flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left font-semibold transition-colors hover:bg-subtle", hasActive ? "text-ink" : "text-body")}>
               <Icon name={group.icon} size={17} className="text-dim" />
               <span className="flex-1">{group.title}</span>
+              {/* A closed section still says it holds the page being read. */}
+              {hasActive && !open && (
+                <>
+                  <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent" aria-hidden="true" />
+                  <span className="sr-only">(contains the current page)</span>
+                </>
+              )}
               <Icon name="caret-down" size={12} weight="bold" className={cn("text-faint transition-transform duration-200", !open && "-rotate-90")} />
             </button>
             {open && (

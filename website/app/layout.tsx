@@ -35,11 +35,13 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang={locale.lang} dir={locale.dir} suppressHydrationWarning>
       <head>
-        {/* Before paint: mark scripting (reveal styles apply only then) and restore the docs theme. */}
+        {/* Before paint: mark scripting (reveal styles apply only then) and restore the docs theme.
+            The docs are light unless the visitor has switched them to dark themselves: the
+            operating system's preference is deliberately not read, so the first visit is white. */}
         <script
           dangerouslySetInnerHTML={{
             __html:
-              "document.documentElement.classList.add('js');try{var t=localStorage.getItem('verity-docs-theme');var d=t==='dark'||(t!=='light'&&matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.dataset.docsTheme=d?'dark':'light'}catch(e){}",
+              "document.documentElement.classList.add('js');try{document.documentElement.dataset.docsTheme=localStorage.getItem('verity-docs-theme')==='dark'?'dark':'light'}catch(e){document.documentElement.dataset.docsTheme='light'}",
           }}
         />
       </head>
