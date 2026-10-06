@@ -20,11 +20,16 @@ nothing here widens beyond what was asked.
 | 4 | Provider plane UI and branding | Week 1 "internal admin panel to register, brand, and provision each tenant"; §9 "per-workspace branding, white-label ready" | A platform admin signs in (with TOTP), registers a tenant, sets its branding, runs provisioning and invites the first admin from screens, and a tenant's own screens then show that logo, name and colour |
 | 5 | Dashboard live | §1.1 "posture dashboard ... health"; week 3 "readiness dashboards" | The sidebar Dashboard shows the workspace's own numbers for every tile it draws, and no tile is fabricated |
 
+## Round 2 (2026-10-06)
+
+Three more items from that list, built after the first five: the trace view and the risks and policies
+on the control page, the audit export, and review dates with acknowledgement reminders (plus the
+completion export that sits in the same spec sentence). Plus one script to deploy and one to back up.
+
 ## Not in this change (still open for Phase 1)
 
-Tenant admin MFA default, the spec's five roles and their scoping, audit export, evidence retention
-and legal hold, readiness over time, branded PDF, criteria colouring view and renewal queue, Change
-Management and Acceptable Use templates, document review dates, acknowledgement reminders and
-completion export, SIG / CAIQ / ISO / DPA questionnaires, scan ingest (XML upload, PDF, AI parsing),
-the four hop trace view, the asset form gaps, backup and restore script and drill, the metrics
-endpoint, and tests for tasks, documents, evidence and controls.
+Tenant admin MFA default, the spec's five roles and their scoping, evidence retention and legal
+hold, readiness over time, branded PDF, criteria colouring view and renewal queue, Change Management
+and Acceptable Use templates, SIG / CAIQ / ISO / DPA questionnaires, scan ingest (XML upload, PDF,
+AI parsing), the asset form gaps, a demonstrated restore (the backup script exists, the drill does
+not), the metrics endpoint, and tests for evidence and controls.

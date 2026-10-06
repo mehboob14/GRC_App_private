@@ -60,3 +60,15 @@ tsconfig.app.json`, eslint on touched files. Whole-tree gates and `vite build` r
 - [ ] 6.2 Whole-tree gates, full unit and integration run on `verity_test`, `vite build`.
 - [ ] 6.3 Look at every changed screen in a browser at 1440px.
 - [ ] 6.4 Update the user guide pages and the deployment runbook where they changed.
+
+## 7. Round 2 (2026-10-06)
+
+- [x] 7.1 Audit export: CSV (streamed) and Excel (50,000 events), a cut off so it never holds itself,
+      itself audited, formula safe, Export popup on the Audit log page.
+- [x] 7.2 Review dates: set from the form, set on publish (12 months), Overdue and Due soon, a daily
+      notice job, a real Acknowledged percentage.
+- [x] 7.3 Acknowledgement reminders: a Remind button and a daily schedule (3 days before, on the day,
+      every 7 days overdue), campaign Overdue pill, campaign completion export.
+- [x] 7.4 Trace view and the control page showing the risks that mitigate it and the policies that
+      document it.
+- [x] 7.5 `infra/scripts/deploy.sh` and `backup.sh`; the runbook points at them.
