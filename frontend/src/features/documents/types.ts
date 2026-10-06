@@ -66,8 +66,13 @@ export type Document = {
   approved_on: string | null;
   published_on: string | null;
   renewal_date: string | null;
+  /** Set by the server, which owns the clock the daily reminders run on: `overdue`
+   *  once the review date has passed, `due_soon` inside the next 30 days. */
+  review_status: ReviewStatus | null;
   updated_at: string | null;
 };
+
+export type ReviewStatus = "overdue" | "due_soon";
 
 export type ChangeType = "major" | "minor" | "patch";
 
@@ -226,6 +231,9 @@ export type CampaignRecipient = {
   status: RecipientStatus;
   acknowledged_at: string | null;
   ack_comment: string | null;
+  /** When this person was last chased, by hand or by the daily sweep. */
+  last_reminded_at: string | null;
+  reminder_count: number;
 };
 
 export type CampaignComment = {
@@ -254,6 +262,8 @@ export type Campaign = {
   total: number;
   acknowledged: number;
   pending: number;
+  /** The due day has passed and people are still pending. */
+  overdue: boolean;
   recipients: CampaignRecipient[];
   comments: CampaignComment[];
 };
@@ -269,7 +279,16 @@ export type CampaignSummary = {
   total: number;
   acknowledged: number;
   pending: number;
+  overdue: boolean;
 };
+
+/** What a manual reminder did: chased, and skipped for having been chased in the last day. */
+export type ReminderResult = {
+  reminded: number;
+  skipped: number;
+};
+
+export type ExportFormat = "csv" | "xlsx";
 
 export type PendingCampaign = {
   id: string;

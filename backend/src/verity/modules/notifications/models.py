@@ -38,6 +38,9 @@ NOTIFICATION_KINDS: Final[tuple[str, ...]] = (
     "risk_acceptance_decided",  # your acceptance request was approved or rejected
     "risk_acceptance_expired",  # an acceptance on a risk you own lapsed; the risk reopened
     "risk_review_due",  # a risk you own is past its review date
+    "document_review_due",  # a document you own is due for review within two weeks
+    "document_review_overdue",  # a document you own is past its review date
+    "document_ack_reminder",  # you have not yet signed an acknowledgement you were asked for
 )
 
 _MEMBERSHIP_FK = "tenant_memberships.id"
@@ -58,6 +61,10 @@ class Notification(UUIDPrimaryKey, TenantScoped, Base):
     body: Mapped[str] = mapped_column(default="")
     object_type: Mapped[str | None] = mapped_column(default=None)
     object_id: Mapped[uuid.UUID | None] = mapped_column(default=None)
+    #: The occasion a notice is about, when the object alone does not say: a review
+    #: notice carries the review date, so moving the date is a new occasion and a new
+    #: notice. Null for everything else; ``notify_once`` matches on it when given.
+    dedupe_key: Mapped[str | None] = mapped_column(default=None)
 
     # Outbox: email is a copy delivered by a worker, never in the request txn.
     email_requested: Mapped[bool] = mapped_column(server_default=text("false"), default=False)

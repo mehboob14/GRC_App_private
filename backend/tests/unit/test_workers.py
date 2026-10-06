@@ -50,3 +50,16 @@ def test_the_task_jobs_run_daily_and_are_registered_under_the_names_the_schedule
         scheduled = celery_app.conf.beat_schedule[entry]
         assert scheduled["schedule"] == 24 * 3600.0
         assert scheduled["task"] in celery_app.tasks
+
+
+def test_the_document_jobs_run_daily_and_are_registered_under_their_scheduled_names() -> None:
+    """The review notices and the acknowledgement reminders each have one daily entry,
+    and the task it names exists, so the first tick does not fail on a typo."""
+    for entry, task in (
+        ("sweep-document-reviews", "verity.workers.tasks.sweep_document_reviews"),
+        ("remind-pending-acknowledgements", "verity.workers.tasks.remind_pending_acknowledgements"),
+    ):
+        scheduled = celery_app.conf.beat_schedule[entry]
+        assert scheduled["task"] == task
+        assert scheduled["schedule"] == 24 * 3600.0
+        assert task in celery_app.tasks

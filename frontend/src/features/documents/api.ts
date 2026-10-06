@@ -1,5 +1,6 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { ApiError, apiFetch } from "@/lib/api/client";
+import type { ApiErrorBody } from "@/lib/api/types";
 import { getAccessToken } from "@/lib/auth/session";
 import type {
   ApprovalAssignee,
@@ -12,8 +13,11 @@ import type {
   Classification,
   Document,
   DocumentDetail,
+  ExportFormat,
   PolicyTemplate,
   Placeholder,
+  ReminderResult,
+  ReviewStatus,
   VersionDiff,
   DocumentKpis,
   DocumentVersion,
@@ -45,6 +49,7 @@ type RawDocument = {
   owner_name: string | null;
   assigned_to: string | null;
   renewal_date: string | null;
+  review_status: ReviewStatus | null;
   created_at: string;
   approved_at: string | null;
   published_at: string | null;
@@ -124,6 +129,7 @@ function toDocument(r: RawDocument): Document {
     approved_on: day(r.approved_at),
     published_on: day(r.published_at),
     renewal_date: r.renewal_date,
+    review_status: r.review_status ?? null,
     updated_at: day(r.updated_at),
   };
 }
@@ -201,6 +207,8 @@ export type AuthoredInput = {
   classification: Classification;
   content_html?: string | null;
   assigned_to?: string | null;
+  /** The next review, as a date (YYYY-MM-DD). Not earlier than today. */
+  renewal_date?: string | null;
   owner_membership_id?: string | null;
   framework_ids: string[];
   control_ids: string[];
@@ -240,6 +248,9 @@ export type DocumentPatch = {
   doc_type?: DocType;
   classification?: Classification;
   assigned_to?: string | null;
+  /** Send only when it changed: an unchanged overdue date is not a new date. */
+  renewal_date?: string | null;
+  clear_renewal_date?: boolean;
   owner_membership_id?: string | null;
   clear_owner?: boolean;
   framework_ids?: string[];
@@ -388,6 +399,55 @@ export async function commentOnCampaign(
 
 export async function closeCampaign(campaignId: string): Promise<Campaign> {
   return apiFetch<Campaign>(`/documents/campaigns/${campaignId}/close`, { method: "POST" });
+}
+
+/** Chase everyone who has not signed. Anyone chased in the last day is skipped. */
+export async function remindCampaign(campaignId: string): Promise<ReminderResult> {
+  return apiFetch<ReminderResult>(`/documents/campaigns/${campaignId}/remind`, {
+    method: "POST",
+  });
+}
+
+/** The campaign's completion as a file, through the authenticated client: a bare link
+ *  would 401, since the token rides in a header. Failures are thrown as `ApiError`, so
+ *  `errorToast` words them like every other request. */
+export async function downloadCampaignExport(
+  campaignId: string,
+  format: ExportFormat,
+): Promise<void> {
+  let response: Response;
+  try {
+    response = await fetch(`/api/v1/documents/campaigns/${campaignId}/export?format=${format}`, {
+      headers: { Authorization: `Bearer ${getAccessToken() ?? ""}` },
+    });
+  } catch {
+    throw ApiError.network();
+  }
+  if (!response.ok) {
+    let body: ApiErrorBody;
+    try {
+      body = (await response.json()) as ApiErrorBody;
+    } catch {
+      body = {
+        error: {
+          code: "http_error",
+          message: "Something went wrong. Try again, or contact support if it continues.",
+          correlation_id: "unknown",
+        },
+      };
+    }
+    throw new ApiError(response.status, body);
+  }
+  const blob = await response.blob();
+  const named = /filename="?([^"]+)"?/.exec(response.headers.get("Content-Disposition") ?? "");
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = named?.[1] ?? `acknowledgements.${format}`;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
 }
 
 /** Merge a summary `Document` into the cached `DocumentDetail`, never replace it.

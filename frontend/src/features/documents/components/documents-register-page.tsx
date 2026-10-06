@@ -49,7 +49,9 @@ import {
 } from "@/features/documents/types";
 import { TemplatePickerDialog } from "./template-picker-dialog";
 import { DocumentFormDialog } from "./document-form-dialog";
+import { ReviewDate } from "./review-date";
 import { CLASS_LABEL, LIFECYCLE_META, TYPE_LABEL } from "../labels";
+import { formatDay } from "../review";
 
 
 
@@ -82,12 +84,10 @@ const COLUMN_PREFS_KEY = "verity.documents.columns";
 
 const PAGE_SIZE = 12;
 
+/** The server decides (and never flags a retired document), so this list, the detail
+ *  page, the dashboard count and the owner's reminder agree. */
 function isOverdue(doc: Document): boolean {
-  return (
-    doc.renewal_date != null &&
-    doc.lifecycle !== "archived" &&
-    new Date(doc.renewal_date) <= new Date()
-  );
+  return doc.review_status === "overdue";
 }
 
 /** The status shown in the register — a published document past its renewal
@@ -98,13 +98,6 @@ function displayStatus(doc: Document): { family: StatusFamily; label: string } {
   }
   const meta = LIFECYCLE_META[doc.lifecycle];
   return { family: meta.family, label: meta.label };
-}
-
-function fmtDate(value: string | null): string {
-  if (!value) return "No date";
-  return new Date(value).toLocaleDateString(undefined, {
-    year: "numeric", month: "short", day: "2-digit",
-  });
 }
 
 type SortKey = "title" | "version" | "owner" | "lifecycle" | "renewal" | "attestation";
@@ -292,7 +285,8 @@ export function DocumentsRegisterPage() {
                   : `${overdue.length} documents need renewal`}
               </p>
               <p className="text-caption text-text-subtle">
-                {overdue[0].title}, review was due {fmtDate(overdue[0].renewal_date)}
+                {overdue[0].title}, review was due{" "}
+                {overdue[0].renewal_date ? formatDay(overdue[0].renewal_date) : "earlier"}
                 {overdue[0].frameworks.length
                   ? ` · required for ${overdue[0].frameworks.join(", ")}`
                   : ""}
@@ -424,7 +418,6 @@ export function DocumentsRegisterPage() {
           <TBody>
             {paged.map((doc) => {
               const status = displayStatus(doc);
-              const overdueRow = isOverdue(doc);
               const pct = doc.attestation_pct;
               const ackColor =
                 pct == null
@@ -478,21 +471,13 @@ export function DocumentsRegisterPage() {
                   ) : null}
                   {cols.isVisible("renewal") ? (
                     <TD>
-                      {overdueRow ? (
-                        <span className="text-body-sm font-medium text-status-danger-text">
-                          Overdue
-                        </span>
-                      ) : (
-                        <span className="text-body-sm text-text-secondary">
-                          {fmtDate(doc.renewal_date)}
-                        </span>
-                      )}
+                      <ReviewDate doc={doc} />
                     </TD>
                   ) : null}
                   {cols.isVisible("attestation") ? (
                     <TD>
                       {pct == null ? (
-                        <span className="text-body-sm text-text-subtle">not published</span>
+                        <span className="text-body-sm text-text-subtle">No campaign</span>
                       ) : (
                         <span className="flex items-center gap-2">
                           <span className="h-1.5 w-24 overflow-hidden rounded-full bg-surface-sunken">

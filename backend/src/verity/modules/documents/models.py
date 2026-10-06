@@ -361,6 +361,10 @@ class DocumentAckCampaignRecipient(UUIDPrimaryKey, TenantScoped, Timestamped, Ba
     status: Mapped[str] = mapped_column(default="pending", server_default=text("'pending'"))
     acknowledged_at: Mapped[datetime | None] = mapped_column(default=None)
     ack_comment: Mapped[str | None] = mapped_column(default=None)
+    # Chasing an unsigned recipient, by hand or by the daily sweep. The count is for
+    # the reader ("reminded three times"); the schedule runs on dates, not on it.
+    last_reminded_at: Mapped[datetime | None] = mapped_column(default=None)
+    reminder_count: Mapped[int] = mapped_column(default=0, server_default=text("0"))
 
     __table_args__ = (
         status_check("document_ack_campaign_recipients", "kind", RECIPIENT_KINDS),

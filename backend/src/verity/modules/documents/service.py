@@ -13,7 +13,7 @@ import uuid
 from collections import defaultdict
 from collections.abc import Sequence
 from dataclasses import dataclass, field
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from typing import TYPE_CHECKING, Any, Final
 
 from sqlalchemy import delete, func, select
@@ -21,7 +21,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from verity.core.errors import Conflict, InvalidInput, NotFound, PermissionDenied
 from verity.core.storage import ObjectStore, get_object_store
-from verity.modules.audit.service import Actor, AuditService, audit_service
+from verity.modules.audit.service import Actor, AuditService, System, audit_service
+from verity.modules.documents import exports, schedule
 from verity.modules.documents import placeholders as placeholder_lib
 from verity.modules.documents.diffing import (
     DiffBlock,
@@ -202,6 +203,7 @@ class DocumentView:
     frameworks: list[str] = field(default_factory=list)
     controls: list[str] = field(default_factory=list)
     attestation_pct: float | None = None
+    review_status: str | None = None
 
 
 @dataclass(frozen=True)
@@ -243,6 +245,8 @@ class CampaignRecipientView:
     status: str
     acknowledged_at: datetime | None
     ack_comment: str | None
+    last_reminded_at: datetime | None = None
+    reminder_count: int = 0
 
 
 @dataclass(frozen=True)
@@ -275,6 +279,7 @@ class CampaignView:
     pending: int
     recipients: list[CampaignRecipientView] = field(default_factory=list)
     comments: list[CampaignCommentView] = field(default_factory=list)
+    overdue: bool = False
 
 
 @dataclass(frozen=True)
@@ -289,6 +294,25 @@ class CampaignSummaryView:
     total: int
     acknowledged: int
     pending: int
+    overdue: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class ReminderResult:
+    """A manual reminder's outcome: chased, and skipped for having been chased
+    within the cooldown."""
+
+    reminded: int
+    skipped: int
+
+
+@dataclass(frozen=True, slots=True)
+class ExportedFile:
+    """A rendered export, ready to stream: the bytes, a safe name, the media type."""
+
+    data: bytes
+    filename: str
+    content_type: str
 
 
 @dataclass(frozen=True)
@@ -392,30 +416,76 @@ class DocumentService:
             controls.setdefault(doc_id, []).append(ct_id)
         return frameworks, controls
 
-    async def _ack_counts(
-        self, session: AsyncSession, tenant_id: uuid.UUID
-    ) -> dict[uuid.UUID, int]:
+    async def control_ids_for_document(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, document_id: uuid.UUID
+    ) -> list[uuid.UUID]:
+        """The controls one document documents, oldest link first: its linked records
+        and the 360 trace read the pair through here."""
         rows = await session.execute(
-            select(DocumentAcknowledgement.document_id).where(
-                DocumentAcknowledgement.tenant_id == tenant_id
+            select(DocumentControl.control_id)
+            .where(
+                DocumentControl.tenant_id == tenant_id,
+                DocumentControl.document_id == document_id,
             )
+            .order_by(DocumentControl.created_at, DocumentControl.id)
         )
-        out: dict[uuid.UUID, int] = {}
-        for (doc_id,) in rows:
-            out[doc_id] = out.get(doc_id, 0) + 1
-        return out
+        return list(rows.scalars())
+
+    async def document_ids_for_control(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, control_id: uuid.UUID
+    ) -> list[uuid.UUID]:
+        """The documents that document one control, oldest link first."""
+        rows = await session.execute(
+            select(DocumentControl.document_id)
+            .where(
+                DocumentControl.tenant_id == tenant_id,
+                DocumentControl.control_id == control_id,
+            )
+            .order_by(DocumentControl.created_at, DocumentControl.id)
+        )
+        return list(rows.scalars())
+
+    async def label(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, document_id: uuid.UUID
+    ) -> tuple[str, str, str, str] | None:
+        """``(code, title, lifecycle, doc_type)`` of one document, or None when it is gone.
+        One row, for a page that names many documents and needs nothing else:
+        ``get_document`` also reads every document's links, versions and approvals."""
+        row = (
+            await session.execute(
+                select(Document.code, Document.title, Document.lifecycle, Document.doc_type).where(
+                    Document.tenant_id == tenant_id, Document.id == document_id
+                )
+            )
+        ).first()
+        return None if row is None else (row.code, row.title, row.lifecycle, row.doc_type)
+
+    async def _attestation_counts(
+        self, session: AsyncSession, tenant_id: uuid.UUID
+    ) -> dict[uuid.UUID, tuple[int, int]]:
+        """Per document, (acknowledged, asked) across its open campaigns, in one query.
+
+        A document with no open campaign has no entry, which reads as no percentage
+        rather than 0%: nobody was asked, so nobody can have failed to sign."""
+        recipient = DocumentAckCampaignRecipient
+        rows = await session.execute(
+            select(
+                DocumentAckCampaign.document_id,
+                func.count().filter(recipient.status == "acknowledged"),
+                func.count(),
+            )
+            .select_from(recipient)
+            .join(DocumentAckCampaign, DocumentAckCampaign.id == recipient.campaign_id)
+            .where(recipient.tenant_id == tenant_id, DocumentAckCampaign.status == "active")
+            .group_by(DocumentAckCampaign.document_id)
+        )
+        return {doc_id: (ack, total) for doc_id, ack, total in rows}
 
     @staticmethod
-    def _assigned_count(doc: Document) -> int:
-        # A real campaign resolves the assignment to a headcount; until the
-        # people-directory join lands, "All personnel" stands in at a fixed size.
-        return 50 if doc.assigned_to else 0
-
-    def _attestation(self, doc: Document, acked: int) -> float | None:
-        assigned = self._assigned_count(doc)
-        if assigned == 0:
+    def _attestation(attest: tuple[int, int] | None) -> float | None:
+        if attest is None or attest[1] == 0:
             return None
-        return round(acked / assigned * 100, 1)
+        return round(attest[0] / attest[1] * 100, 1)
 
     def _view(  # noqa: PLR0913
         self,
@@ -426,7 +496,7 @@ class DocumentService:
         ct_codes: dict[uuid.UUID, str],
         fw_ids: list[uuid.UUID],
         ct_ids: list[uuid.UUID],
-        acked: int,
+        attest: tuple[int, int] | None,
     ) -> DocumentView:
         return DocumentView(
             id=doc.id,
@@ -450,7 +520,13 @@ class DocumentService:
             updated_at=doc.updated_at,
             frameworks=sorted(fw_names[i] for i in fw_ids if i in fw_names),
             controls=sorted(ct_codes[i] for i in ct_ids if i in ct_codes),
-            attestation_pct=self._attestation(doc, acked),
+            attestation_pct=self._attestation(attest),
+            # An archived document is retired, so its review date no longer nags.
+            review_status=(
+                None
+                if doc.lifecycle == "archived"
+                else schedule.review_status(doc.renewal_date, datetime.now(UTC).date())
+            ),
         )
 
     async def list_documents(
@@ -465,7 +541,7 @@ class DocumentService:
         fw_names = await self._framework_names(session)
         ct_codes = await self._control_codes(session, tenant_id)
         fw_ids, ct_ids = await self._links(session, tenant_id)
-        acks = await self._ack_counts(session, tenant_id)
+        attest = await self._attestation_counts(session, tenant_id)
         current = await self._current_versions(session, tenant_id, [r.id for r in rows])
         views = []
         for doc in rows:
@@ -476,7 +552,7 @@ class DocumentService:
                 ct_codes=ct_codes,
                 fw_ids=fw_ids.get(doc.id, []),
                 ct_ids=ct_ids.get(doc.id, []),
-                acked=acks.get(doc.id, 0),
+                attest=attest.get(doc.id),
             )
             views.append(_with_version(base, current.get(doc.id)))
         views.sort(key=lambda v: v.code)
@@ -506,12 +582,11 @@ class DocumentService:
             .scalars()
             .all()
         )
-        now = datetime.now(UTC).date()
-        soon = date.fromordinal(now.toordinal() + 30)
-        past_due = sum(1 for d in rows if d.renewal_date and d.renewal_date <= now)
+        today = datetime.now(UTC).date()
+        states = [schedule.review_status(d.renewal_date, today) for d in rows]
         return {
-            "renewal_past_due": past_due,
-            "renewal_soon": sum(1 for d in rows if d.renewal_date and now < d.renewal_date <= soon),
+            "renewal_past_due": states.count("overdue"),
+            "renewal_soon": states.count("due_soon"),
             "needs_approval": sum(1 for d in rows if d.lifecycle == "needs_approval"),
             "ready_to_publish": sum(1 for d in rows if d.lifecycle == "approved"),
         }
@@ -534,7 +609,7 @@ class DocumentService:
         fw_names = await self._framework_names(session)
         ct_codes = await self._control_codes(session, tenant_id)
         fw_ids, ct_ids = await self._links(session, tenant_id)
-        acks = await self._ack_counts(session, tenant_id)
+        attest = await self._attestation_counts(session, tenant_id)
 
         versions = (
             (
@@ -576,9 +651,9 @@ class DocumentService:
             ct_codes=ct_codes,
             fw_ids=fw_ids.get(doc.id, []),
             ct_ids=ct_ids.get(doc.id, []),
-            acked=acks.get(doc.id, 0),
+            attest=attest.get(doc.id),
         )
-        acked = acks.get(doc.id, 0)
+        acked, asked = attest.get(doc.id, (0, 0))
         me_acked = False
         if me is not None:
             me_acked = (
@@ -638,7 +713,7 @@ class DocumentService:
                 for a in approvals
             ],
             acknowledged=acked,
-            assigned_count=self._assigned_count(doc),
+            assigned_count=asked,
             acknowledged_by_me=me_acked,
         )
 
@@ -707,6 +782,7 @@ class DocumentService:
         description: str | None = None,
         content_html: str | None = None,
         assigned_to: str | None = None,
+        renewal_date: date | None = None,
         owner_membership_id: uuid.UUID | None = None,
         framework_ids: Sequence[uuid.UUID] | None = None,
         control_ids: Sequence[uuid.UUID] | None = None,
@@ -716,6 +792,8 @@ class DocumentService:
                 "Pick a document type from the list before saving.",
                 detail=f"unknown document type {doc_type!r}",
             )
+        if renewal_date is not None:
+            _check_review_date(renewal_date)
         code = await self._next_code(session, tenant_id, doc_type)
         doc = Document(
             id=uuid7(),
@@ -728,6 +806,7 @@ class DocumentService:
             lifecycle="draft",
             content_format="html",
             assigned_to=assigned_to,
+            renewal_date=renewal_date,
             owner_membership_id=owner_membership_id,
         )
         session.add(doc)
@@ -850,6 +929,7 @@ class DocumentService:
         classification: str | None = None,
         assigned_to: str | None = None,
         renewal_date: date | None = None,
+        clear_renewal_date: bool = False,
         owner_membership_id: uuid.UUID | None = None,
         clear_owner: bool = False,
         framework_ids: Sequence[uuid.UUID] | None = None,
@@ -869,10 +949,16 @@ class DocumentService:
             ("doc_type", doc_type),
             ("classification", classification),
             ("assigned_to", assigned_to),
-            ("renewal_date", renewal_date),
         ):
             if value is not None:
                 setattr(doc, attr, value)
+        if clear_renewal_date:
+            doc.renewal_date = None
+        elif renewal_date is not None and renewal_date != doc.renewal_date:
+            # Only a change is held to "not in the past": saving an overdue
+            # document's other details must not trip over the date it already has.
+            _check_review_date(renewal_date)
+            doc.renewal_date = renewal_date
         if clear_owner:
             doc.owner_membership_id = None
         elif owner_membership_id is not None:
@@ -1553,6 +1639,7 @@ class DocumentService:
             before = AuditService.snapshot(doc, fields=_DOC_SNAPSHOT)
             doc.published_at = now
             doc.lifecycle = "published"
+            doc.renewal_date = schedule.next_review_on_publish(doc.renewal_date, now.date())
             await self._audit.record(
                 session,
                 action="transition",
@@ -1622,8 +1709,10 @@ class DocumentService:
                 detail="only an approved document can be published",
             )
         before = AuditService.snapshot(doc, fields=_DOC_SNAPSHOT)
+        now = datetime.now(UTC)
         doc.lifecycle = "published"
-        doc.published_at = datetime.now(UTC)
+        doc.published_at = now
+        doc.renewal_date = schedule.next_review_on_publish(doc.renewal_date, now.date())
         await self._audit.record(
             session,
             action="transition",
@@ -1825,6 +1914,7 @@ class DocumentService:
             ).scalars()
         )
         counts = await self._recipient_counts(session, tenant_id, [c.id for c in camps])
+        now = datetime.now(UTC)
         out: list[CampaignSummaryView] = []
         for c in camps:
             total, ack = counts.get(c.id, (0, 0))
@@ -1840,6 +1930,7 @@ class DocumentService:
                     total=total,
                     acknowledged=ack,
                     pending=total - ack,
+                    overdue=_overdue(c, total - ack, now),
                 )
             )
         return out
@@ -2036,6 +2127,262 @@ class DocumentService:
             )
         return await self._campaign_view(session, tenant_id, camp)
 
+    # -- reminders: chasing the people who have not signed -------------------
+
+    async def _pending_recipients(
+        self, session: AsyncSession, tenant_id: uuid.UUID, campaign_id: uuid.UUID
+    ) -> list[DocumentAckCampaignRecipient]:
+        return list(
+            (
+                await session.execute(
+                    select(DocumentAckCampaignRecipient)
+                    .where(
+                        DocumentAckCampaignRecipient.tenant_id == tenant_id,
+                        DocumentAckCampaignRecipient.campaign_id == campaign_id,
+                        DocumentAckCampaignRecipient.status == "pending",
+                    )
+                    .order_by(DocumentAckCampaignRecipient.created_at)
+                )
+            ).scalars()
+        )
+
+    async def _chase(  # noqa: PLR0913
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        camp: DocumentAckCampaign,
+        doc: Document,
+        recipients: Sequence[DocumentAckCampaignRecipient],
+        now: datetime,
+    ) -> None:
+        """Tell each of these people the acknowledgement is still waiting, by
+        notification and email, and record when they were told."""
+        body = f"{doc.code} is still waiting for your acknowledgement."
+        if camp.due_at is not None:
+            when = camp.due_at.astimezone(UTC).strftime("%d %b %Y")
+            late = schedule.campaign_overdue(camp.due_at, now)
+            body += f" It was due {when}." if late else f" It is due {when}."
+        for rec in recipients:
+            await self._notify().notify(
+                session,
+                tenant_id=tenant_id,
+                recipient_membership_id=rec.membership_id,
+                kind="document_ack_reminder",
+                title=f"Reminder: please acknowledge {doc.title}",
+                body=body,
+                object_type="document_ack_campaign",
+                object_id=camp.id,
+                email=True,
+            )
+            rec.last_reminded_at = now
+            rec.reminder_count += 1
+        await session.flush()
+
+    async def remind_campaign(
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        campaign_id: uuid.UUID,
+        is_manager: bool,
+    ) -> ReminderResult:
+        """Chase everyone who has not signed. The person who sent the campaign may,
+        and so may anyone who manages documents; the route's flat permission says
+        who may read, this says who may nag.
+
+        Anyone chased within the last day is skipped, so a second click or a second
+        manager cannot pester the same person twice in a day."""
+        camp = await self._load_campaign(session, tenant_id, campaign_id)
+        if not is_manager and camp.created_by_membership_id != _membership(actor):
+            raise PermissionDenied(
+                "Only the person who sent this request, or someone who manages documents, "
+                "can send reminders.",
+                detail=f"{_membership(actor)} did not send campaign {camp.id} and cannot manage",
+            )
+        if camp.status != "active":
+            raise InvalidInput(
+                "This acknowledgement request is closed, so there is no one left to remind.",
+                detail="this campaign is closed",
+            )
+        now = datetime.now(UTC)
+        pending = await self._pending_recipients(session, tenant_id, camp.id)
+        cutoff = now - schedule.REMINDER_COOLDOWN
+        owed = [r for r in pending if r.last_reminded_at is None or r.last_reminded_at <= cutoff]
+        skipped = len(pending) - len(owed)
+        if owed:
+            doc = await self._load(session, tenant_id, camp.document_id)
+            await self._chase(
+                session, tenant_id=tenant_id, camp=camp, doc=doc, recipients=owed, now=now
+            )
+            await self._audit.record(
+                session,
+                action="update",
+                object_type="document_ack_campaign",
+                object_id=camp.id,
+                actor=actor,
+                tenant_id=tenant_id,
+                after={"reminded": len(owed), "skipped": skipped, "trigger": "manual"},
+            )
+        return ReminderResult(reminded=len(owed), skipped=skipped)
+
+    async def remind_due_campaigns(self, session: AsyncSession, *, tenant_id: uuid.UUID) -> int:
+        """The daily sweep: chase the unsigned recipients of every open campaign with
+        a due date whose turn on the reminder calendar has come (see
+        ``schedule.reminders_due``). Returns how many reminders went out.
+
+        Idempotent: a recipient chased today is not owed another until the next date
+        on the calendar, so a re-run or a second delivery sends nothing twice. A
+        closed campaign and a signed recipient are never chased, and nor is anyone
+        about a retired document."""
+        now = datetime.now(UTC)
+        open_campaigns = (
+            await session.execute(
+                select(DocumentAckCampaign, Document)
+                .join(Document, Document.id == DocumentAckCampaign.document_id)
+                .where(
+                    DocumentAckCampaign.tenant_id == tenant_id,
+                    DocumentAckCampaign.status == "active",
+                    DocumentAckCampaign.due_at.is_not(None),
+                    Document.lifecycle != "archived",
+                )
+            )
+        ).all()
+        system = System()
+        sent = 0
+        for camp, doc in open_campaigns:
+            due_at = camp.due_at
+            assert due_at is not None  # noqa: S101 - filtered above
+            owed = [
+                r
+                for r in await self._pending_recipients(session, tenant_id, camp.id)
+                if schedule.reminders_due(now, due_at, r.last_reminded_at or camp.created_at)
+            ]
+            if not owed:
+                continue
+            await self._chase(
+                session, tenant_id=tenant_id, camp=camp, doc=doc, recipients=owed, now=now
+            )
+            await self._audit.record(
+                session,
+                action="update",
+                object_type="document_ack_campaign",
+                object_id=camp.id,
+                actor=system,
+                tenant_id=tenant_id,
+                after={"reminded": len(owed), "trigger": "schedule"},
+            )
+            sent += len(owed)
+        return sent
+
+    async def notify_reviews_due(self, session: AsyncSession, *, tenant_id: uuid.UUID) -> int:
+        """Tell each document's owner when its review is two weeks away, and again
+        once the date has passed. Returns how many notices were written.
+
+        Idempotent through ``notify_once``, keyed on the review date: one notice per
+        owner, document, kind and date however often this runs, and a document given
+        a new date starts a new lapse. Nothing here moves the document's lifecycle;
+        a policy that is overdue for review is still the policy in force."""
+        today = datetime.now(UTC).date()
+        horizon = today + timedelta(days=schedule.REVIEW_NOTICE_DAYS)
+        docs = (
+            await session.execute(
+                select(Document).where(
+                    Document.tenant_id == tenant_id,
+                    Document.lifecycle != "archived",
+                    Document.renewal_date.is_not(None),
+                    Document.renewal_date <= horizon,
+                    Document.owner_membership_id.is_not(None),
+                )
+            )
+        ).scalars()
+        written = 0
+        for doc in docs:
+            notice = schedule.review_notice(doc.renewal_date, today)
+            if notice is None or doc.renewal_date is None or doc.owner_membership_id is None:
+                continue
+            late = notice == "overdue"
+            when = doc.renewal_date.strftime("%d %b %Y")
+            wrote = await self._notify().notify_once(
+                session,
+                tenant_id=tenant_id,
+                recipient_membership_id=doc.owner_membership_id,
+                kind=f"document_review_{notice}",
+                title=f"{doc.code} is {notice} for review",
+                body=f"{doc.title}. The review {'was due' if late else 'is due'} on {when}.",
+                object_type="document",
+                object_id=doc.id,
+                email=True,
+                dedupe_key=doc.renewal_date.isoformat(),
+            )
+            written += int(wrote)
+        return written
+
+    # -- the completion export -------------------------------------------------
+
+    async def export_campaign(
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        campaign_id: uuid.UUID,
+        file_format: str,
+    ) -> ExportedFile:
+        """The campaign's completion as one file: who was asked, who signed and when.
+        Exporting evidence is itself recorded, with who took it and in what format."""
+        if file_format not in ("csv", "xlsx"):
+            raise InvalidInput(
+                "Choose CSV or Excel for the export.",
+                detail=f"unknown export format {file_format!r}",
+            )
+        from verity.modules.iam.service import iam_service  # noqa: PLC0415
+
+        camp = await self._load_campaign(session, tenant_id, campaign_id)
+        doc = await self._load(session, tenant_id, camp.document_id)
+        members = await iam_service.list_members(session, tenant_id=tenant_id)
+        view = await self._campaign_view(session, tenant_id, camp, members=members)
+        version = (await self._current_versions(session, tenant_id, [doc.id])).get(doc.id)
+        who = next((m for m in members if m.membership_id == _membership(actor)), None)
+        now = datetime.now(UTC)
+        content = exports.AckExport(
+            document_code=doc.code,
+            document_title=doc.title,
+            version=version,
+            campaign_title=camp.title,
+            campaign_status=camp.status,
+            due_at=camp.due_at,
+            exported_by=f"{who.full_name} ({who.email})" if who else "Unknown",
+            exported_at=now,
+            recipients=[
+                exports.ExportRecipient(
+                    name=r.name,
+                    email=r.email,
+                    kind=r.kind,
+                    signed=r.status == "acknowledged",
+                    acknowledged_at=r.acknowledged_at,
+                    comment=r.ack_comment,
+                )
+                for r in view.recipients
+            ],
+        )
+        await self._audit.record(
+            session,
+            action="create",
+            object_type="document_ack_export",
+            object_id=camp.id,
+            actor=actor,
+            tenant_id=tenant_id,
+            after={"format": file_format, "recipients": len(content.recipients)},
+        )
+        data = exports.render_csv(content) if file_format == "csv" else exports.render_xlsx(content)
+        return ExportedFile(
+            data=data,
+            filename=exports.filename(content, file_format),
+            content_type=exports.CONTENT_TYPES[file_format],
+        )
+
     # -- campaign helpers ----------------------------------------------------
 
     def _notify(self) -> NotificationService:
@@ -2112,6 +2459,8 @@ class DocumentService:
                 status=r.status,
                 acknowledged_at=r.acknowledged_at,
                 ack_comment=r.ack_comment,
+                last_reminded_at=r.last_reminded_at,
+                reminder_count=r.reminder_count,
             )
             for r in rec_rows
         ]
@@ -2163,6 +2512,7 @@ class DocumentService:
             pending=total - ack,
             recipients=recipients,
             comments=comments,
+            overdue=_overdue(camp, total - ack, datetime.now(UTC)),
         )
 
     # -- helper: one document's view (with current version_no) ---------------
@@ -2415,6 +2765,21 @@ def _with_version(view: DocumentView, version_no: str | None) -> DocumentView:
 
 def _membership(actor: Actor) -> uuid.UUID | None:
     return getattr(actor, "id", None)
+
+
+def _check_review_date(value: date) -> None:
+    """A review date is set for the future. A past one would be overdue from the
+    moment it was saved, which is a mistake rather than a schedule."""
+    if value < datetime.now(UTC).date():
+        raise InvalidInput(
+            "Pick a review date from today onwards.",
+            detail=f"review date {value} is in the past",
+        )
+
+
+def _overdue(camp: DocumentAckCampaign, pending: int, now: datetime) -> bool:
+    """Open, past its due day, and somebody still has not signed."""
+    return camp.status == "active" and pending > 0 and schedule.campaign_overdue(camp.due_at, now)
 
 
 def _name_of(names: dict[uuid.UUID, str], mid: uuid.UUID | None) -> str:

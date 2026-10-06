@@ -99,6 +99,18 @@ celery_app.conf.update(
             "task": "verity.workers.tasks.sweep_risk_register",
             "schedule": 24 * 3600.0,
         },
+        # Daily: tell document owners their review is two weeks away and again once
+        # it has passed. Notifies only; the document's lifecycle is never moved.
+        "sweep-document-reviews": {
+            "task": "verity.workers.tasks.sweep_document_reviews",
+            "schedule": 24 * 3600.0,
+        },
+        # Daily: chase unsigned acknowledgements three days before the due date, on
+        # it, then weekly while overdue, until the campaign closes or the person signs.
+        "remind-pending-acknowledgements": {
+            "task": "verity.workers.tasks.remind_pending_acknowledgements",
+            "schedule": 24 * 3600.0,
+        },
         # Daily: refresh EPSS/KEV/public-exploit on open findings, recompute risk,
         # and expire lapsed risk acceptances (ADR-0010 daily enrichment).
         "refresh-vulnerabilities": {

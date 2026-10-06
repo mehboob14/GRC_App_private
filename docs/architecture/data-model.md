@@ -81,7 +81,11 @@ approval path.
 
 **Documents.** Published versions are immutable rows; editing creates the next version. Acknowledgement
 campaigns target a **version**, not the document. Group membership is snapshot at campaign launch, so
-later joiners fall into the next campaign rather than appearing retroactively overdue.
+later joiners fall into the next campaign rather than appearing retroactively overdue. The review
+date is `documents.renewal_date` (optional, never earlier than today when set; publishing sets it
+to the approval date plus 12 months when it is empty or lapsed). A recipient carries
+`last_reminded_at` and `reminder_count`, and the Acknowledged percentage is acknowledged over asked
+across the document's open campaigns, with no percentage when there is none.
 
 **Risk.** A risk with no linked control is found by querying `risk_control_map` against the active
 controls, never by a stored flag, so the warning cannot go stale. **The matrix belongs to the
@@ -206,6 +210,17 @@ acceptances reopen their risk, `sweep_risk_register`, which also notifies overdu
 SLA sweep; vendor reassessment queue; vendor document expiry; vendor SLA breach sweep; scheduled
 checks and connector syncs; acknowledgement reminders; vendor monitoring; asset hygiene;
 vulnerability enrichment (daily EPSS/KEV refresh, score recomputation, resurfacing check).
+
+Two of these are the documents module's, both daily and both per tenant:
+
+- `sweep_document_reviews` notifies each document's owner (in app, with an email copy) 14
+  days before `documents.renewal_date` and again once it has passed. It only notifies and never
+  moves the lifecycle. Once per owner, document, kind and review date, through
+  `notifications.dedupe_key`, so moving the date starts a new lapse.
+- `remind_pending_acknowledgements` chases the pending recipients of each open campaign that has
+  a `due_at`: three days before, on the due date, then weekly while overdue. Each reminder is
+  recorded in `document_ack_campaign_recipients.last_reminded_at` and `reminder_count` and audited
+  on the campaign as the system. A closed campaign and a signed recipient are never chased.
 
 Each is idempotent and safe to re-run.
 

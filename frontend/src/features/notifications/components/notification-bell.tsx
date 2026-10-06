@@ -22,6 +22,14 @@ import type { Notification } from "../types";
 
 const INBOX_KEY = ["notifications", "inbox"] as const;
 
+/** Where a notice leads, by what it is about. A review notice carries its document, an
+ *  acknowledgement reminder (and the "please acknowledge" notice) its campaign. */
+const ROUTES = new Map<string, (id: string) => string>([
+  ["task", (id) => `/tasks/${id}`],
+  ["document", (id) => `/documents/${id}`],
+  ["document_ack_campaign", (id) => `/documents/campaigns/${id}`],
+]);
+
 /** Compact "3m ago" / "2d ago"; falls back to a date past a week. */
 function relativeTime(iso: string): string {
   const seconds = Math.round((Date.now() - new Date(iso).getTime()) / 1000);
@@ -76,9 +84,8 @@ export function NotificationBell() {
 
   function open(notification: Notification) {
     if (!notification.read_at) readMutation.mutate(notification.id);
-    if (notification.object_type === "task" && notification.object_id) {
-      navigate(`/tasks/${notification.object_id}`);
-    }
+    const route = notification.object_type ? ROUTES.get(notification.object_type) : undefined;
+    if (route && notification.object_id) navigate(route(notification.object_id));
   }
 
   return (

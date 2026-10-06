@@ -16,7 +16,7 @@ read and signed it.
 | Needs approval | Sent for sign off and waiting on a decision |
 | Approved | Every required approver said yes, not yet published |
 | Published | Live. This is the version people are held to |
-| Expired | Its review date passed without a new version |
+| Expired | Not set automatically. A document past its review date stays Published and is flagged Overdue, see Review dates below |
 | Archived | Retired on purpose, kept for the record |
 
 A published document is never deleted. It is archived, and the text stays readable,
@@ -39,8 +39,9 @@ You have three ways in, all from **New** on the register.
 2. Choose the template, for example Access Control Policy.
 3. Set the **owner**: the person accountable for the content, not necessarily the
    author.
-4. Set **classification** (internal, confidential, and so on) and the **review
-   cadence**, which is how often this document must be revisited.
+4. Set the **classification** (internal, confidential, and so on). If you already
+   know when it must next be revisited, pick a **next review** date. Leave it empty
+   and Verity sets one when the document is published.
 5. Save. You now have a draft with its own code, for example POL-004.
 
 ## The editor
@@ -103,18 +104,60 @@ read and sign.
 4. Set a due date and send.
 5. Each recipient gets a notification and a read and sign page. They cannot sign
    until they have opened the document.
-6. Track progress from the campaign page: who has signed, who has not, with a
-   reminder you can send.
+6. Track progress from the campaign page: who has signed, who has not, and a
+   **Remind** button for the people who have not.
 
 The campaign's record is the evidence: an auditor asking "how do you know staff read
 the policy" gets a list of names, dates and versions.
 
-## Reviews and expiry
+### Reminding people who have not signed
 
-A document with a review cadence gets a next review date. As it approaches, the
-owner is reminded. If the date passes with no new version, the document moves to
-**Expired**, which is visible in the register. Expired is not archived: the text is
-still live, it is just overdue.
+Verity chases the people who have not signed, so you do not have to.
+
+- **By hand.** On the campaign page, **Remind** asks you to confirm and tells you how
+  many people have not signed. Each of them gets a notification and an email. Anyone
+  you reminded in the last 24 hours is skipped, so pressing it twice never pesters the
+  same person, and the result tells you how many were reminded and how many skipped.
+  The person who sent the campaign and anyone who manages documents can use it.
+- **Automatically.** Once a day Verity reminds everyone still pending on an open
+  campaign that has a due date: three days before it is due, on the due date, then
+  every seven days while it is overdue. It stops when the person signs or the campaign
+  is closed. A reminder you send by hand does not use up the next automatic one.
+- **What you see.** Each pending person shows when they were last reminded and how many
+  times. A campaign whose due date has passed with people still pending carries an
+  **Overdue** pill.
+
+The **Acknowledged** column in the register is the share of people who have signed
+across the document's open campaigns. A document with no open campaign shows **No
+campaign** rather than 0%, because nobody was asked.
+
+### Exporting the result as evidence
+
+On the campaign page, **Export** gives you the campaign as **CSV** or **Excel**. Each
+row is one person: the document code, title and version, the campaign and its due date,
+then their name, email, whether they were asked as a reviewer or an approver, whether
+they have signed or are pending, when they signed, and any comment they left. The Excel
+file also has a second sheet that says who exported it and when. Every export is
+recorded on the audit trail.
+
+## Review dates
+
+Every document can carry a **next review** date. Set it when you create or edit the
+document, in the same form as the title and the owner. It cannot be earlier than today.
+
+- **Publishing sets one if there is none.** When the last approval publishes the
+  document, a document with no review date, or one that has already passed, gets a new
+  one: the approval date plus 12 months. A future date you chose yourself is kept.
+- **The register shows it.** The **Next review** column shows the date with an
+  **Overdue** pill once it has passed, or a **Due soon** pill inside the next 30 days.
+  The banner at the top of the register and the policies card on the dashboard count
+  the overdue ones.
+- **The owner is told.** Once a day Verity notifies the owner of each document, by
+  notification and email, 14 days before the review date and again once it has passed.
+  Each is sent once. Move the date and the new date gets its own reminders.
+- **Nothing changes by itself.** A document past its review date is still the policy in
+  force. It stays Published and flagged Overdue until someone reviews it and publishes
+  a new version, which starts the next 12 months.
 
 ---
 

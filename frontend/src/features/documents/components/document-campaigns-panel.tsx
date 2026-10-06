@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Badge, Button, Icon } from "@/components/ui";
+import { Badge, Button, Icon, StatusPill } from "@/components/ui";
 import { describeError } from "@/lib/api/describe-error";
 import { listDocumentCampaigns } from "../api";
 import type { CampaignSummary } from "../types";
@@ -84,9 +84,12 @@ export function DocumentCampaignsPanel({
                   <span className="min-w-0 truncate text-body-sm font-semibold text-text-primary">
                     {c.title}
                   </span>
-                  <Badge variant={c.status === "active" ? "statusReview" : "neutral"}>
-                    {c.status === "active" ? "Active" : "Closed"}
-                  </Badge>
+                  <span className="flex shrink-0 items-center gap-1.5">
+                    {c.overdue ? <StatusPill status="danger" label="Overdue" /> : null}
+                    <Badge variant={c.status === "active" ? "statusReview" : "neutral"}>
+                      {c.status === "active" ? "Active" : "Closed"}
+                    </Badge>
+                  </span>
                 </div>
                 <Progress done={c.acknowledged} total={c.total} />
               </button>

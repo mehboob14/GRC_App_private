@@ -11,7 +11,7 @@ from __future__ import annotations
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, File, Form, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, Query, UploadFile, status
 from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -43,6 +43,7 @@ from verity.modules.documents.schemas import (
     DocumentVocabularyOut,
     PendingApprovalOut,
     PendingCampaignOut,
+    ReminderOut,
     TemplateOut,
     VersionDiffOut,
 )
@@ -120,6 +121,7 @@ async def create_document(
         description=body.description,
         content_html=body.content_html,
         assigned_to=body.assigned_to,
+        renewal_date=body.renewal_date,
         owner_membership_id=body.owner_membership_id,
         framework_ids=body.framework_ids,
         control_ids=body.control_ids,
@@ -287,6 +289,54 @@ async def comment_campaign(
 
 
 @documents_router.post(
+    "/campaigns/{campaign_id}/remind",
+    response_model=ReminderOut,
+    summary="Remind everyone who has not signed (campaign owner or document manager)",
+)
+async def remind_campaign(
+    campaign_id: uuid.UUID,
+    principal: Annotated[Principal, Depends(require_read)],
+    context: Annotated[TenantContext, Depends(get_tenant_context)],
+    session: Annotated[AsyncSession, Depends(get_tenant_session)],
+) -> ReminderOut:
+    """Reading the campaign is the flat permission; who may chase is decided in the
+    service, which lets the person who sent it, or a document manager, through."""
+    result = await document_service.remind_campaign(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(principal),
+        campaign_id=campaign_id,
+        is_manager=principal.has("documents:manage"),
+    )
+    return ReminderOut(reminded=result.reminded, skipped=result.skipped)
+
+
+@documents_router.get(
+    "/campaigns/{campaign_id}/export",
+    summary="Export who was asked and who signed, as CSV or Excel",
+)
+async def export_campaign(
+    campaign_id: uuid.UUID,
+    principal: Annotated[Principal, Depends(require_read)],
+    context: Annotated[TenantContext, Depends(get_tenant_context)],
+    session: Annotated[AsyncSession, Depends(get_tenant_session)],
+    file_format: Annotated[str, Query(alias="format", pattern="^(csv|xlsx)$")] = "csv",
+) -> Response:
+    exported = await document_service.export_campaign(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(principal),
+        campaign_id=campaign_id,
+        file_format=file_format,
+    )
+    return Response(
+        content=exported.data,
+        media_type=exported.content_type,
+        headers={"Content-Disposition": f'attachment; filename="{exported.filename}"'},
+    )
+
+
+@documents_router.post(
     "/campaigns/{campaign_id}/close",
     response_model=CampaignOut,
     summary="Close a campaign (owner)",
@@ -435,6 +485,7 @@ async def update_document(
         classification=body.classification,
         assigned_to=body.assigned_to,
         renewal_date=body.renewal_date,
+        clear_renewal_date=body.clear_renewal_date,
         owner_membership_id=body.owner_membership_id,
         clear_owner=body.clear_owner,
         framework_ids=body.framework_ids,

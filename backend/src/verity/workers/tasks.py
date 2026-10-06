@@ -37,6 +37,7 @@ from __future__ import annotations
 import asyncio
 import uuid
 from datetime import UTC, datetime, timedelta
+from html import escape
 from typing import Any, Final
 
 from sqlalchemy import text
@@ -214,8 +215,12 @@ async def _flush_notification_emails() -> dict[str, Any]:
                     # Recipient is gone; stop retrying this one forever.
                     done.append(note.id)
                     continue
+                # render_email takes paragraphs as markup. A body is plain text that can
+                # carry what somebody typed (a document or task title), so it is
+                # escaped here, the one place a notice becomes HTML.
                 html = render_email(
-                    heading=note.title, paragraphs=(note.body,) if note.body else ()
+                    heading=note.title,
+                    paragraphs=(escape(note.body),) if note.body else (),
                 )
                 ok = await mailer.send(
                     OutboundEmail(
@@ -408,6 +413,55 @@ async def _sweep_risk_register() -> dict[str, Any]:
         "worker.sweep_risk_register", acceptances_expired=expired, reviews_notified=notified
     )
     return {"acceptances_expired": expired, "reviews_notified": notified}
+
+
+@celery_app.task(name="verity.workers.tasks.sweep_document_reviews")
+def sweep_document_reviews() -> dict[str, Any]:
+    """Tell each document's owner when its review is two weeks away, and again once
+    the date has passed.
+
+    It only notifies. A policy past its review date is still the policy in force, and
+    flipping every one to ``expired`` overnight would be the platform asserting a
+    judgement nobody made. Idempotent through ``notify_once`` keyed on the review
+    date: one notice per document and date however often this runs, and a document
+    given a new date starts a new lapse.
+    """
+    return asyncio.run(_sweep_document_reviews())
+
+
+async def _sweep_document_reviews() -> dict[str, Any]:
+    from verity.modules.documents.service import document_service  # noqa: PLC0415
+
+    written = 0
+    for tenant_id in await _active_tenant_ids():
+        async with session_scope(tenant_id) as session:
+            written += await document_service.notify_reviews_due(session, tenant_id=tenant_id)
+    logger.info("worker.sweep_document_reviews", notices_written=written)
+    return {"notices_written": written}
+
+
+@celery_app.task(name="verity.workers.tasks.remind_pending_acknowledgements")
+def remind_pending_acknowledgements() -> dict[str, Any]:
+    """Chase the people who have not signed an open acknowledgement campaign: three
+    days before its due date, on it, then weekly while it is overdue.
+
+    Writes, as the system: each reminder is recorded on the recipient and on the
+    campaign's audit trail. Idempotent, because the schedule is a set of dates and a
+    recipient chased on one is not owed another until the next. A closed campaign and
+    a signed recipient are never chased.
+    """
+    return asyncio.run(_remind_pending_acknowledgements())
+
+
+async def _remind_pending_acknowledgements() -> dict[str, Any]:
+    from verity.modules.documents.service import document_service  # noqa: PLC0415
+
+    reminded = 0
+    for tenant_id in await _active_tenant_ids():
+        async with session_scope(tenant_id) as session:
+            reminded += await document_service.remind_due_campaigns(session, tenant_id=tenant_id)
+    logger.info("worker.remind_pending_acknowledgements", reminders_sent=reminded)
+    return {"reminders_sent": reminded}
 
 
 @celery_app.task(name="verity.workers.tasks.run_connector_checks")

@@ -22,6 +22,7 @@ import { describeError, errorToast } from "@/lib/api/describe-error";
 import { complianceApi, controlsApi, iamApi } from "@/lib/api/endpoints";
 import { useAuth } from "@/lib/auth/auth-context";
 import { CLASS_LABEL, TYPE_LABEL } from "../labels";
+import { todayInputValue } from "../review";
 import {
   createDocument,
   updateDocument,
@@ -178,6 +179,7 @@ export function DocumentFormDialog({
   const [description, setDescription] = useState("");
   const [docType, setDocType] = useState<DocType>("policy");
   const [classification, setClassification] = useState<Classification>("internal");
+  const [reviewOn, setReviewOn] = useState("");
   const [frameworkIds, setFrameworkIds] = useState<string[]>([]);
   const [controlIds, setControlIds] = useState<string[]>([]);
 
@@ -219,6 +221,7 @@ export function DocumentFormDialog({
       setDescription(doc.description);
       setDocType(doc.doc_type);
       setClassification(doc.classification);
+      setReviewOn(doc.renewal_date ?? "");
       // The document carries framework names + control codes; map back to ids.
       const fwByName = new Map((frameworksQuery.data ?? []).map((f) => [f.name, f.id]));
       const ctByCode = new Map((controlsQuery.data ?? []).map((c) => [c.code, c.id]));
@@ -230,6 +233,7 @@ export function DocumentFormDialog({
       setDescription("");
       setDocType("policy");
       setClassification("internal");
+      setReviewOn("");
       setFrameworkIds([]);
       setControlIds([]);
       setOwnerId(principal?.membership_id ?? "");
@@ -239,6 +243,9 @@ export function DocumentFormDialog({
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (mode === "edit" && doc) {
+        // Only a changed date is sent: the server holds a new date to "not in the
+        // past", and an overdue document's unchanged date is not a new one.
+        const originalReview = doc.renewal_date ?? "";
         return updateDocument(doc.id, {
           title,
           description: description || null,
@@ -246,6 +253,11 @@ export function DocumentFormDialog({
           classification,
           owner_membership_id: ownerId || undefined,
           clear_owner: ownerId === "",
+          ...(reviewOn === originalReview
+            ? {}
+            : reviewOn
+              ? { renewal_date: reviewOn }
+              : { clear_renewal_date: true }),
           framework_ids: frameworkIds,
           control_ids: controlIds,
         });
@@ -257,9 +269,10 @@ export function DocumentFormDialog({
           classification,
           description: description || null,
         });
-        if (frameworkIds.length || controlIds.length || ownerId) {
+        if (frameworkIds.length || controlIds.length || ownerId || reviewOn) {
           await updateDocument(created.id, {
             owner_membership_id: ownerId || undefined,
+            renewal_date: reviewOn || undefined,
             framework_ids: frameworkIds,
             control_ids: controlIds,
           });
@@ -271,6 +284,7 @@ export function DocumentFormDialog({
         description: description || null,
         doc_type: docType,
         classification,
+        renewal_date: reviewOn || null,
         owner_membership_id: ownerId || null,
         framework_ids: frameworkIds,
         control_ids: controlIds,
@@ -413,7 +427,14 @@ export function DocumentFormDialog({
                 </p>
               ) : null}
             </SelectField>
-            <div />
+            <TextField
+              label="Next review"
+              type="date"
+              optional
+              min={todayInputValue()}
+              value={reviewOn}
+              onChange={(e) => setReviewOn(e.target.value)}
+            />
 
             <MultiSelect
               label="Frameworks"

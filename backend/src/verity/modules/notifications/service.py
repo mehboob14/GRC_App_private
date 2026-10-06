@@ -36,6 +36,7 @@ class NotificationService:
         object_type: str | None = None,
         object_id: uuid.UUID | None = None,
         email: bool = False,
+        dedupe_key: str | None = None,
     ) -> Notification:
         row = Notification(
             tenant_id=tenant_id,
@@ -46,6 +47,7 @@ class NotificationService:
             object_type=object_type,
             object_id=object_id,
             email_requested=email,
+            dedupe_key=dedupe_key,
         )
         session.add(row)
         await session.flush()
@@ -96,12 +98,15 @@ class NotificationService:
         object_id: uuid.UUID | None = None,
         email: bool = False,
         since: datetime | None = None,
+        dedupe_key: str | None = None,
     ) -> bool:
         """Notify unless an identical (recipient, kind, object) notice already
         exists. This is what makes the SLA sweep idempotent without a marker
         column: one breach alert per task per person, however often it runs.
         ``since`` narrows "already exists" to notices written after it, for a
         reminder that should come round again rather than fire once ever.
+        ``dedupe_key`` narrows it to the same occasion: a review notice keyed on
+        the review date is sent once per date, and a new date is a new notice.
         Returns True if a row was written."""
         stmt = select(Notification.id).where(
             Notification.tenant_id == tenant_id,
@@ -111,6 +116,8 @@ class NotificationService:
         )
         if since is not None:
             stmt = stmt.where(Notification.created_at >= since)
+        if dedupe_key is not None:
+            stmt = stmt.where(Notification.dedupe_key == dedupe_key)
         exists = (await session.execute(stmt)).first()
         if exists is not None:
             return False
@@ -124,6 +131,7 @@ class NotificationService:
             object_type=object_type,
             object_id=object_id,
             email=email,
+            dedupe_key=dedupe_key,
         )
         return True
 

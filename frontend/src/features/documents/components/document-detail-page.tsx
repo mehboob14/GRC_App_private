@@ -33,11 +33,13 @@ import { DocumentContentViewer } from "./document-content-viewer";
 import { DocumentCampaignsPanel } from "./document-campaigns-panel";
 import { DocumentFormDialog } from "./document-form-dialog";
 import { LinkControlsDialog } from "./link-controls-dialog";
+import { ReviewDate } from "./review-date";
 import { TierApprovalCard } from "./tier-approval-card";
 import { OwnerSelect } from "@/features/iam/components/owner-select";
 import { LinkedRecordsPanel } from "@/features/linkage/components/linked-records-panel";
 import { useLinkedRecords } from "@/features/linkage/hooks";
 import { CLASS_LABEL, LIFECYCLE_META, TYPE_LABEL } from "../labels";
+import { formatDay } from "../review";
 
 const APPROVAL_LABEL: Record<ApprovalTier["status"], string> = {
   approved: "Approved", pending: "Pending", rejected: "Rejected", not_started: "Not started",
@@ -197,6 +199,7 @@ export function DocumentDetailPage() {
         <Field label="Created on"><Plain>{fmtDate(doc.created_on)}</Plain></Field>
         <Field label="Approved on"><Plain>{fmtDate(doc.approved_on)}</Plain></Field>
         <Field label="Published on"><Plain>{fmtDate(doc.published_on)}</Plain></Field>
+        <Field label="Next review"><ReviewDate doc={doc} large /></Field>
         <Field label="Owner">
           {doc.owner ? (
             <span className="flex items-center gap-2">
@@ -229,7 +232,10 @@ export function DocumentDetailPage() {
                 <Meta label="Document name" value={doc.title} />
                 <Meta label="Type" value={TYPE_LABEL[doc.doc_type]} />
                 <Meta label="Classification" value={CLASS_LABEL[doc.classification]} />
-                <Meta label="Renewal date" value={fmtDate(doc.renewal_date)} />
+                <Meta
+                  label="Next review"
+                  value={doc.renewal_date ? formatDay(doc.renewal_date, "long") : "Not set"}
+                />
                 <Meta label="Assigned to" value={doc.assigned_to ?? "Unassigned"} />
                 <Meta
                   label="Frameworks"

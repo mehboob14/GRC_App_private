@@ -41,6 +41,8 @@ class DocumentOut(_Response):
     frameworks: list[str]
     controls: list[str]
     attestation_pct: float | None
+    #: ``overdue`` once the review date has passed, ``due_soon`` inside 30 days.
+    review_status: str | None = None
 
 
 class DiffSegmentOut(_Response):
@@ -188,6 +190,7 @@ class DocumentCreate(_Request):
     # Authored documents only here; a file is created via the upload route.
     content_html: str | None = Field(default=None)
     assigned_to: str | None = Field(default=None, max_length=200)
+    renewal_date: date | None = None
     owner_membership_id: uuid.UUID | None = None
     framework_ids: list[uuid.UUID] = Field(default_factory=list)
     control_ids: list[uuid.UUID] = Field(default_factory=list)
@@ -200,6 +203,7 @@ class DocumentUpdate(_Request):
     classification: str | None = None
     assigned_to: str | None = Field(default=None, max_length=200)
     renewal_date: date | None = None
+    clear_renewal_date: bool = False
     owner_membership_id: uuid.UUID | None = None
     clear_owner: bool = False
     framework_ids: list[uuid.UUID] | None = None
@@ -267,6 +271,8 @@ class CampaignRecipientOut(_Response):
     status: str
     acknowledged_at: UtcDateTime | None
     ack_comment: str | None
+    last_reminded_at: UtcDateTime | None = None
+    reminder_count: int = 0
 
 
 class CampaignCommentOut(_Response):
@@ -295,6 +301,8 @@ class CampaignOut(_Response):
     total: int
     acknowledged: int
     pending: int
+    #: The due day has passed and people are still pending.
+    overdue: bool = False
     recipients: list[CampaignRecipientOut]
     comments: list[CampaignCommentOut]
 
@@ -310,6 +318,15 @@ class CampaignSummaryOut(_Response):
     total: int
     acknowledged: int
     pending: int
+    overdue: bool = False
+
+
+class ReminderOut(_Response):
+    """What a manual reminder did: how many were chased, how many skipped because
+    they had been chased within the last day."""
+
+    reminded: int
+    skipped: int
 
 
 class PendingCampaignOut(_Response):

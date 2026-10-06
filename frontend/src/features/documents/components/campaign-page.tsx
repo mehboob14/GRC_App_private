@@ -6,10 +6,15 @@ import {
   Badge,
   Button,
   DetailHeader,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   ErrorState,
   Icon,
   PeopleSelect,
   type Person,
+  StatusPill,
   useToast,
 } from "@/components/ui";
 import { describeError, errorToast } from "@/lib/api/describe-error";
@@ -18,12 +23,15 @@ import {
   acknowledgeCampaign,
   closeCampaign,
   commentOnCampaign,
+  downloadCampaignExport,
   getCampaign,
   getDocumentDetail,
 } from "../api";
-import type { Campaign, CampaignRecipient } from "../types";
+import { formatDay } from "../review";
+import type { Campaign, CampaignRecipient, ExportFormat } from "../types";
 import { DocumentContentViewer } from "./document-content-viewer";
 import { PENDING_CAMPAIGNS_KEY } from "./acknowledgements-bell";
+import { RemindDialog } from "./remind-dialog";
 
 /** Typed in full to sign off. Deliberate beats one-click for a legal attestation. */
 const ACK_WORD = "acknowledge";
@@ -73,7 +81,15 @@ function RecipientRow({ r }: { r: CampaignRecipient }) {
             Acknowledged{r.acknowledged_at ? ` · ${relativeTime(r.acknowledged_at)}` : ""}
           </p>
         ) : (
-          <p className="mt-0.5 text-caption text-text-subtle">Pending</p>
+          <>
+            <p className="mt-0.5 text-caption text-text-subtle">Pending</p>
+            {r.last_reminded_at ? (
+              <p className="text-caption text-text-subtle">
+                Reminded {fmtDate(r.last_reminded_at)} · {r.reminder_count}{" "}
+                {r.reminder_count === 1 ? "time" : "times"}
+              </p>
+            ) : null}
+          </>
         )}
         {r.ack_comment ? (
           <p className="mt-1 rounded-sm bg-surface-hover px-2 py-1 text-caption text-text-secondary">
@@ -118,6 +134,7 @@ export function CampaignPage() {
   const [ackConfirm, setAckConfirm] = useState("");
   const [commentBody, setCommentBody] = useState("");
   const [mentioned, setMentioned] = useState<string[]>([]);
+  const [reminding, setReminding] = useState(false);
 
   const key = ["campaign", campaignId];
   const campaignQuery = useQuery({ queryKey: key, queryFn: () => getCampaign(campaignId) });
@@ -195,8 +212,16 @@ export function CampaignPage() {
     );
   }
 
+  const exportAs = (format: ExportFormat) => {
+    downloadCampaignExport(campaign.id, format).catch((error: unknown) =>
+      toast({ title: errorToast(error, "export"), tone: "danger" }),
+    );
+  };
+
   const myRecipient = me ? campaign.recipients.find((r) => r.membership_id === me) ?? null : null;
   const isOwner = Boolean(me && campaign.created_by_membership_id === me);
+  // The sender, or anyone who manages documents, may chase people who have not signed.
+  const canRemind = isOwner || Boolean(principal?.permissions.includes("documents:manage"));
   const canAcknowledge = Boolean(myRecipient && myRecipient.status === "pending" && campaign.status === "active");
   // Case and stray whitespace should not stand between a reader and signing off.
   const ackConfirmed = ackConfirm.trim().toLowerCase() === ACK_WORD;
@@ -227,20 +252,48 @@ export function CampaignPage() {
             <span className="tabular text-body-sm text-text-secondary">
               {campaign.acknowledged}/{campaign.total} acknowledged
             </span>
+            {campaign.overdue ? <StatusPill status="danger" label="Overdue" /> : null}
           </>
         }
         meta={
           <>
             Started by {campaign.created_by_name}
-            {campaign.due_at ? ` · due ${fmtDate(campaign.due_at)}` : ""}
+            {campaign.due_at ? ` · due ${formatDay(campaign.due_at)}` : ""}
           </>
         }
         actions={
-          isOwner && active ? (
-            <Button variant="secondary" loading={close.isPending} onClick={() => close.mutate()}>
-              Close campaign
-            </Button>
-          ) : null
+          <>
+            {active && campaign.pending > 0 && canRemind ? (
+              <Button variant="secondary" onClick={() => setReminding(true)}>
+                <Icon name="mail" className="size-4" />
+                Remind
+              </Button>
+            ) : null}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="secondary">
+                  <Icon name="export" className="size-4" />
+                  Export
+                  <Icon name="chev" className="size-3.5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44">
+                <DropdownMenuItem onSelect={() => exportAs("xlsx")}>
+                  <Icon name="spreadsheet" className="size-4 text-text-subtle" />
+                  Excel
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => exportAs("csv")}>
+                  <Icon name="doc" className="size-4 text-text-subtle" />
+                  CSV
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            {isOwner && active ? (
+              <Button variant="secondary" loading={close.isPending} onClick={() => close.mutate()}>
+                Close campaign
+              </Button>
+            ) : null}
+          </>
         }
       />
 
@@ -293,7 +346,7 @@ export function CampaignPage() {
                   <Fact label="Published" value={fmtDate(doc.published_on)} />
                 ) : null}
                 {doc.renewal_date ? (
-                  <Fact label="Next review" value={fmtDate(doc.renewal_date)} />
+                  <Fact label="Next review" value={formatDay(doc.renewal_date)} />
                 ) : null}
                 {doc.frameworks.length > 0 ? (
                   <Fact label="Frameworks" value={doc.frameworks.join(", ")} />
@@ -441,6 +494,8 @@ export function CampaignPage() {
           </Card>
         </div>
       </div>
+
+      <RemindDialog campaign={campaign} open={reminding} onOpenChange={setReminding} />
     </div>
   );
 }

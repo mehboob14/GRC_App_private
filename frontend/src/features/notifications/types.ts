@@ -8,14 +8,18 @@ export type NotificationKind =
   | "sla_breach"
   | "sla_due"
   | "approval"
-  | "recurrence";
+  | "recurrence"
+  | "document_review_due"
+  | "document_review_overdue"
+  | "document_ack_reminder";
 
 export type Notification = {
   id: string;
   kind: NotificationKind;
   title: string;
   body: string;
-  /** What it is about, for the deep-link. `"task"` today; null if not object-bound. */
+  /** What it is about, for the deep-link: a task, a document or an acknowledgement
+   *  campaign have pages of their own. Null if not object-bound. */
   object_type: string | null;
   object_id: string | null;
   read_at: string | null;
