@@ -2389,6 +2389,11 @@ class TaskService:
         stale = await evidence_service.list_evidence(
             session, tenant_id=tenant_id, freshness_filter="stale"
         )
+        # What a connector filed is replaced by its next run, not renewed by a person: a
+        # lapsed file is history, or the sign that the connection stopped, which the
+        # control page and the connection already say. A task for each would be one
+        # per check per day.
+        stale = [item for item in stale if item.source is None]
         if not stale:
             return 0
 

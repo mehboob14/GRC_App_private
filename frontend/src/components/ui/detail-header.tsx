@@ -1,6 +1,8 @@
-import type { ReactNode } from "react";
-import { Link } from "react-router-dom";
+import type { MouseEvent, ReactNode } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Icon, type IconName } from "@/components/ui/icon";
+import { backLabelFor, recordOf } from "@/lib/nav/back-labels";
+import { previousEntry } from "@/lib/nav/history-log";
 
 /**
  * The header every drill-down page shares: back, title, chips, meta, actions -
@@ -17,6 +19,11 @@ import { Icon, type IconName } from "@/components/ui/icon";
  *
  * `backTo` is optional: TaskDetail renders inside the tasks register as an
  * embedded master/detail pane, where there is nothing to go back to.
+ *
+ * Back means the page this one was opened from, when this tab saw it: an evidence
+ * item opened from a control goes back to that control, and a control opened from
+ * a filtered list goes back to the list as it was left. Only a page reached some
+ * other way (a bookmark, a new tab) falls back to the parent `backTo` names.
  */
 export function DetailHeader({
   backTo,
@@ -41,15 +48,43 @@ export function DetailHeader({
   /** Buttons, or any single node - a detail page may put a stat here. */
   actions?: ReactNode;
 }) {
+  const navigate = useNavigate();
+  const here = useLocation();
+  const previous = previousEntry();
+  const returnTo =
+    previous !== null &&
+    previous !== here.pathname + here.search &&
+    backLabelFor(previous) !== null &&
+    // Another tab of this same record is not where Back goes.
+    (recordOf(previous) === null || recordOf(previous) !== recordOf(here.pathname))
+      ? previous
+      : null;
+
+  // A plain click goes back in the history, so the page returns as it was left. A
+  // click with a modifier (a new tab) keeps the link's own address.
+  function goBack(event: MouseEvent<HTMLAnchorElement>) {
+    const plain =
+      event.button === 0 &&
+      !event.metaKey &&
+      !event.ctrlKey &&
+      !event.shiftKey &&
+      !event.altKey;
+    if (returnTo !== null && plain && !event.defaultPrevented) {
+      event.preventDefault();
+      navigate(-1);
+    }
+  }
+
   return (
     <div className="mb-5">
       {backTo && backLabel ? (
         <Link
-          to={backTo}
+          to={returnTo ?? backTo}
+          onClick={goBack}
           className="-ml-1.5 mb-3 inline-flex h-7 items-center gap-1 rounded-sm px-1.5 text-label-sm text-text-secondary transition-colors duration-80 ease-state hover:bg-surface-hover hover:text-text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-accent"
         >
           <Icon name="arrowleft" className="size-4 shrink-0" aria-hidden />
-          {backLabel}
+          {returnTo !== null ? backLabelFor(returnTo) : backLabel}
         </Link>
       ) : null}
 

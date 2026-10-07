@@ -214,7 +214,6 @@ async def test_connect_run_and_read_pass_and_fail_on_the_control(  # noqa: PLR09
         assert run["status"] == "completed", run
         assert run["failed"] > 0
         assert run["passed"] > 0
-        assert run["evidence_id"]
 
         automation = (await api.get(f"/controls/{sd06}/automation")).json()
         assert automation["status"] == "failing"
@@ -233,13 +232,24 @@ async def test_connect_run_and_read_pass_and_fail_on_the_control(  # noqa: PLR09
             "acme/web": "fail",
         }
 
+        # Each check files its own evidence, named for the check, on the controls that check
+        # supports and no others: SD-06 is judged by three checks, SD-11 by one.
         evidence = (await api.get("/evidence", params={"control_id": sd06})).json()
-        assert any(item["source_label"] == "GitHub connector" for item in evidence)
+        connector = [e for e in evidence if e["source_label"] == "GitHub connector"]
+        assert sorted(e["title"].split(":")[0] for e in connector) == [
+            "Default branch is protected",
+            "Merged changes were reviewed",
+            "Merges need an approving review",
+        ]
+        assert {e["source"] for e in connector} == {"github"}
+        scanning_evidence = (await api.get("/evidence", params={"control_id": sd11})).json()
+        assert [e["title"].split(":")[0] for e in scanning_evidence] == ["Secret scanning is on"]
+        assert scanning_evidence[0]["control_codes"] == ["SD-11"]
 
-        # A second run with the same results files no second evidence item.
+        # A second run with the same results files nothing new.
         await api.post(f"/connections/{connection['id']}/runs")
         again = (await api.get("/evidence", params={"control_id": sd06})).json()
-        assert len([e for e in again if e["source_label"] == "GitHub connector"]) == 1
+        assert len([e for e in again if e["source_label"] == "GitHub connector"]) == 3
 
         # The token is revoked: results become error, never fail (rule 7).
         github.revoked = True
@@ -300,7 +310,7 @@ async def _connected(api: httpx.AsyncClient, account: str | None = "acme") -> di
     return connection
 
 
-async def test_scope_is_chosen_with_a_reason_audited_and_printed_on_the_evidence(
+async def test_scope_is_chosen_with_a_reason_audited_and_printed_on_the_evidence(  # noqa: PLR0915 — one story
     app: FastAPI, workspaces: tuple[Workspace, Workspace], github: RecordedGitHub
 ) -> None:
     """AU-9. A repository is checked unless it is out of scope, and out of scope
@@ -367,20 +377,41 @@ async def test_scope_is_chosen_with_a_reason_audited_and_printed_on_the_evidence
             (e for e in evidence if e["source_label"] == "GitHub connector"),
             key=lambda e: e["id"],  # ids are time ordered
         )
-        # Told apart by when it was collected, since several can land on one day, and the
-        # file names each check so a report of it needs nothing else.
+        # Named for the check, where and when: the moment tells apart the several that can
+        # land on one day, and the file names its check so a report of it needs nothing else.
         assert re.fullmatch(
-            r"GitHub acme: automated test results, \d{1,2} [A-Z][a-z]{2} \d{4} \d{2}:\d{2} UTC",
+            r"[A-Z][^:]+: GitHub acme, \d{1,2} [A-Z][a-z]{2} \d{4} \d{2}:\d{2} UTC",
             newest["title"],
         )
         document = json.loads((await api.get(f"/evidence/{newest['id']}/download")).content)
+        check = document["verity"]["check"]
+        assert newest["title"].startswith(f"{check['name']}: ")
+        # The file holds this check's results and the part of the snapshot it read: no other
+        # check's results, and not the whole inventory.
         assert document["verity"]["results"]
-        assert all(row["name"] and row["check"] for row in document["verity"]["results"])
+        assert {row["check"] for row in document["verity"]["results"]} == {check["key"]}
+        assert all(row["name"] == check["name"] for row in document["verity"]["results"])
+        assert "inventory" not in document["snapshot"]
+        assert all(
+            "security_and_analysis" not in repo for repo in document["snapshot"]["repositories"]
+        )
         printed = {e["resource"]: e for e in document["verity"]["scope"]["excluded"]}
         assert document["verity"]["scope"]["checked"] == 1
         assert printed["acme/web"]["reason"] == "Prototype, never deployed."
         assert printed["acme/web"]["decided_by"] == "person"
         assert printed["acme/old"]["decided_by"] == "system"
+
+        # The six files the second run replaced are history: the dashboard counts the
+        # seven that stand (one per check), not the thirteen in the library.
+        posture = (await api.get("/engagement/dashboard")).json()
+        assert posture["evidence_total"] == 7
+
+        # Only what changed is filed again: the account level two factor check found the same
+        # thing both times, so IAM-03 still holds the one file from the first run.
+        iam03 = await _control(api, "IAM-03")
+        two_factor = (await api.get("/evidence", params={"control_id": iam03})).json()
+        assert len(two_factor) == 1
+        assert two_factor[0]["control_codes"] == ["IAM-03"]
 
         trail = (await api.get("/audit-log", params={"object_type": "connection_resource"})).json()
         assert [entry["action"] for entry in trail["items"]] == ["update"]

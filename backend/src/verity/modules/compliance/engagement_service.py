@@ -606,7 +606,13 @@ class EngagementService:
 
         # Evidence summary through the evidence service — freshness is its call to
         # make, and the views already carry the control codes for the recent list.
-        ev_views = await evidence_service.list_evidence(session, tenant_id=tenant_id)
+        # Earlier results a connector has since replaced are history, not evidence that is
+        # stale or aging for anyone to act on.
+        ev_views = [
+            v
+            for v in await evidence_service.list_evidence(session, tenant_id=tenant_id)
+            if not v.superseded
+        ]
         evidence_recent = [
             RecentEvidence(
                 title=v.title,

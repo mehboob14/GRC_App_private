@@ -179,8 +179,9 @@ Simplifications against 4.1 to 4.3, each reversible without a data migration of 
   2.2) adds them with auto resolve.
 - `check_results` monthly partitions are pre-created to December 2028 with a default partition;
   `tests/unit/test_check_result_partitions.py` fails six months before the range ends.
-- Evidence: one JSON snapshot per connection per day, sooner when results change, attached to every
-  control whose checks produced a pass or fail, valid seven days. It carries a `scope` block: how
+- Evidence: one JSON file per check (changed 2026-10-07; it was one snapshot per connection),
+  at most one a day unless that check's results change, attached only to the controls that check
+  supports, valid seven days. It carries a `scope` block: how
   many repositories were listed and checked, and each exclusion with its reason and who decided it
   (AU-9). Evidence a reviewer rejected, or past its renewal date, no longer counts towards readiness.
 

@@ -24,18 +24,19 @@ import { useDebouncedValue, useTenantsPage } from "../hooks";
 import { STATUS_META, formatDate, tenantName } from "../tokens";
 import { TENANT_STATUSES, type TenantStatus } from "../types";
 import { RegisterTenantDialog } from "./register-tenant-dialog";
+import { useEntryState } from "@/lib/nav/entry-state";
 
 const PAGE_SIZE = 25;
 
 export function ProviderTenantsPage() {
   const navigate = useNavigate();
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState<TenantStatus | undefined>(undefined);
+  const [search, setSearch] = useEntryState("tenants.search", "");
+  const [status, setStatus] = useEntryState<TenantStatus | undefined>("tenants.status", undefined);
   const [registerOpen, setRegisterOpen] = useState(false);
   // The register pages by cursor, so a page number can only be jumped to once its
   // cursor is known: cursors[n - 1] opens page n, and each page teaches us the next.
-  const [cursors, setCursors] = useState<(string | null)[]>([null]);
-  const [page, setPage] = useState(1);
+  const [cursors, setCursors] = useEntryState<(string | null)[]>("tenants.cursors", [null]);
+  const [page, setPage] = useEntryState("tenants.page", 1);
 
   const term = useDebouncedValue(search.trim());
   const query = useTenantsPage({
@@ -51,7 +52,7 @@ export function ProviderTenantsPage() {
     if (settled && nextCursor && cursors.length === page) {
       setCursors((known) => [...known, nextCursor]);
     }
-  }, [settled, nextCursor, cursors.length, page]);
+  }, [settled, nextCursor, cursors.length, page, setCursors]);
 
   function changeFilter(apply: () => void) {
     apply();

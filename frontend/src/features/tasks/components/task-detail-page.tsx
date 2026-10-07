@@ -71,6 +71,7 @@ import {
 import { AttachPicker } from "./attach-picker";
 import { NO_ATTACHMENTS, hasAttachments, useAttachAccess, type AttachSelection } from "./attach-selection";
 import { TaskFormDialog } from "./task-form-dialog";
+import { useEntryState } from "@/lib/nav/entry-state";
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const sourceLabel = (s: string) =>
@@ -134,7 +135,7 @@ export function TaskDetail({
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const [tab, setTab] = useState<TabId>("overview");
+  const [tab, setTab] = useEntryState<TabId>("detail.tab", "overview");
   const [transition, setTransition] = useState<TaskStatus | null>(null);
   const [editingAssignees, setEditingAssignees] = useState(false);
   const [editing, setEditing] = useState(false);

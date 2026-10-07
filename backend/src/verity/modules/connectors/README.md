@@ -89,13 +89,30 @@ Generated from the shipped content, not written by hand:
 | `vcs.dependency_alerts_enabled` | SD-03 (partial), LM-11 (partial) | CC6.8, CC7.1 | `vulnerability_alerts` |
 | `vcs.org_two_factor_required` | IAM-03 (partial) | CC6.1 | `account.two_factor_required` |
 
-The evidence file also carries the account, `verity.scope` (what was checked and every
-exclusion with its reason) and every result (`check`, `name`, `resource`, `outcome`,
-`summary`, `reason`). It is attached to each control whose checks produced a pass or fail.
-Its title carries the moment, `GitHub devuser: automated test results, 6 Oct 2026 14:05 UTC`,
-because several can be filed in a day. The evidence page reads it as a report (what was
-checked, what was left out and why, what each check found) with the raw file behind a toggle;
-a file that is not in this shape opens as plain text.
+**One evidence file per check.** A run files each check's results as its own evidence item,
+linked only to the controls that check supports (SD-11 holds the secret scanning file and
+nothing about branch protection). A check that found nothing an auditor can use, only errors or
+not applicable results, files nothing. The file carries `verity.check` (key, name,
+description), `verity.scope` (what was checked and every exclusion with its reason), that
+check's results (`check`, `name`, `resource`, `outcome`, `summary`, `reason`) and the part of the
+snapshot it read (`evidence_snapshot` in `github.py`: protection and rules for the three
+branch checks, `merged_changes`, `security_and_analysis`, `vulnerability_alerts`, or the account
+alone for two factor).
+
+It is named for what it evidences, where and when: `Secret scanning is on: GitHub devuser,
+6 Oct 2026 14:05 UTC`, because a check whose results changed files again within the day. It
+is filed with `source` (the provider), `external_id` (`connection:check:digest:run`) and
+`synced_at` (rule 9); the digest is how the next run tells a repeat from a new result, so a
+check files again only when its results changed or its last file is more than 20 hours old.
+`check_runs.evidence_id` is no longer set: a run has no single file.
+
+The evidence page reads it as a report (what was checked, what was left out and why, what the
+check found) with the raw file behind a toggle, and the original JSON downloads from the header.
+A file that is not in this shape opens as plain text. Files filed before this held every
+check of the run and were linked to every control any of them touched; the evidence page still
+reads them, and `python -m scripts.retire_legacy_connector_evidence --apply` unlinks them from
+the controls (nothing is deleted, each unlink is audited) once a run on the new code has filed
+the per-check evidence.
 
 **What GitHub can and cannot prove.** It speaks for part of five criteria, not all of them:
 
@@ -112,9 +129,9 @@ criterion can read "met" from GitHub alone. That is the intended behaviour, not 
 connector: a source control system cannot show that laptops are encrypted.
 
 Runs: daily from the worker (`run_connector_checks`, due after 20 hours), and on demand
-from the control page or the Connections page. Evidence: one JSON snapshot per day per
-connection, or sooner when anything it found changes (a reviewer, a setting, a population,
-not only a pass or a fail), valid for 7 days (it reads aging only in its last two, because
+from the control page or the Connections page. Evidence: one file per check, at most one a
+day unless anything that check found changes (a reviewer, a setting, a population, not only a
+pass or a fail), valid for 7 days (it reads aging only in its last two, because
 evidence reads aging in the last third of its life, up to 30 days). Every result names the rules that judged it
 (`rule`, currently `github.2026-10`), so a later rewording of a check never reinterprets an
 old result.

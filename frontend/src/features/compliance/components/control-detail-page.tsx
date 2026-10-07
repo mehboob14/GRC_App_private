@@ -43,7 +43,7 @@ import { ago, type CriterionMapping } from "@/features/connectors/api";
 import { useAutomation } from "@/features/connectors/hooks";
 import { useLinkedRecords } from "@/features/linkage/hooks";
 import { ControlEvidenceList } from "./control-evidence-list";
-import type { Control } from "@/lib/api/types";
+import { useEntryState } from "@/lib/nav/entry-state";
 
 const STATUS_LABEL: Record<string, string> = {
   not_started: "Not started",
@@ -268,7 +268,7 @@ export function ControlDetailPage() {
   const { principal } = useAuth();
   const canManage = Boolean(principal?.permissions.includes("controls:manage"));
   const canReadAudit = Boolean(principal?.permissions.includes("audit:read"));
-  const [tab, setTab] = useState<TabId>("overview");
+  const [tab, setTab] = useEntryState<TabId>("detail.tab", "overview");
   const linksQuery = useLinkedRecords("control", controlId);
   // Same query key as the Checks tab, so the rail and the tab share one fetch.
   const automation = useAutomation(controlId).data;
@@ -315,10 +315,6 @@ export function ControlDetailPage() {
     queryKey: ["frameworks"],
     queryFn: () => complianceApi.listFrameworks(),
   });
-  const allControlsQuery = useQuery({
-    queryKey: ["controls"],
-    queryFn: () => controlsApi.list(),
-  });
   // The audit trail, scoped to this control. Immutable by construction — the
   // table is append-only, so this is the record, not a reconstruction.
   const historyQuery = useQuery({
@@ -359,20 +355,6 @@ export function ControlDetailPage() {
         Boolean(requirement),
       );
   }, [control?.requirement_keys, requirementsQuery.data]);
-
-  // Related = other live controls sharing at least one criterion. That is the
-  // relationship an auditor actually traces, and it needs no extra table.
-  const related = useMemo(() => {
-    if (!control) return [] as Control[];
-    const mine = new Set(control.requirement_keys);
-    return (allControlsQuery.data ?? [])
-      .filter(
-        (candidate) =>
-          candidate.id !== control.id &&
-          candidate.requirement_keys.some((key) => mine.has(key)),
-      )
-      .slice(0, 12);
-  }, [control, allControlsQuery.data]);
 
   const history = useMemo(
     () => historyQuery.data?.items ?? [],
@@ -866,31 +848,6 @@ export function ControlDetailPage() {
               ISO 27001 and HIPAA mappings arrive with those content packs.
             </p>
           </section>
-
-          {related.length > 0 ? (
-            <section className="rounded-lg border border-border bg-surface-primary p-5">
-              <h2 className="mb-1 font-display text-title-md text-text-primary">
-                Related controls
-              </h2>
-              <p className="mb-3 text-caption text-text-subtle">
-                Also satisfying a criterion this control covers.
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {related.map((item) => (
-                  <Link
-                    key={item.id}
-                    to={`/controls/${item.id}`}
-                    title={item.name}
-                  >
-                    <CodeChip
-                      code={item.code}
-                      className="transition-colors duration-80 ease-state hover:bg-action-accent hover:text-text-inverse"
-                    />
-                  </Link>
-                ))}
-              </div>
-            </section>
-          ) : null}
         </aside>
       </div>
 

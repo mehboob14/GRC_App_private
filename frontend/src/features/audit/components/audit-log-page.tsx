@@ -37,6 +37,7 @@ import { useAuth } from "@/lib/auth/auth-context";
 import { hasPermission } from "@/lib/auth/session";
 import type { AuditAction, AuditEvent } from "@/lib/api/types";
 import { AuditExportDialog } from "./audit-export-dialog";
+import { useEntryState } from "@/lib/nav/entry-state";
 
 /**
  * Audit actions reuse the StatusPill anatomy (DS §6.2). This map is the single
@@ -284,11 +285,11 @@ const AUDIT_COLUMNS = [
 
 export function AuditLogPage() {
   const { principal } = useAuth();
-  const [actorTypeFilter, setActorTypeFilter] = useState<string[]>([]);
-  const [actionFilter, setActionFilter] = useState<string[]>([]);
-  const [typeFilter, setTypeFilter] = useState<string[]>([]);
+  const [actorTypeFilter, setActorTypeFilter] = useEntryState<string[]>("audit.actorTypeFilter", []);
+  const [actionFilter, setActionFilter] = useEntryState<string[]>("audit.actionFilter", []);
+  const [typeFilter, setTypeFilter] = useEntryState<string[]>("audit.typeFilter", []);
   const [selected, setSelected] = useState<AuditEvent | null>(null);
-  const [includeSystem, setIncludeSystem] = useState(false);
+  const [includeSystem, setIncludeSystem] = useEntryState("audit.includeSystem", false);
   const [exportOpen, setExportOpen] = useState(false);
   const cols = useColumnPrefs("verity.audit.columns", AUDIT_COLUMNS);
 

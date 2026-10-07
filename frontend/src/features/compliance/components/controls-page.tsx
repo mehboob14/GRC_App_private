@@ -76,6 +76,7 @@ import {
   downloadControlReport,
   printControlReport,
 } from "@/features/compliance/control-report-export";
+import { useEntryState } from "@/lib/nav/entry-state";
 
 /** A facet option that also states how many rows it would leave. */
 const withCount = (label: string, n: number) => (n ? `${label} (${n})` : label);
@@ -627,40 +628,40 @@ export function ControlsPage() {
   // initial value so a click on a chart lands on exactly that slice; the facets
   // stay the owner of the filter afterwards, and Clear still clears it.
   const [params] = useSearchParams();
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useEntryState("controls.search", "");
   /** Type is the domain (`category`); Design is Preventive, Detective… */
-  const [types, setTypes] = useState<string[]>(() => params.getAll("type"));
-  const [subTypes, setSubTypes] = useState<string[]>(() =>
+  const [types, setTypes] = useEntryState<string[]>("controls.types", () => params.getAll("type"));
+  const [subTypes, setSubTypes] = useEntryState<string[]>("controls.subTypes", () =>
     params.getAll("subtype"),
   );
-  const [designs, setDesigns] = useState<string[]>(() =>
+  const [designs, setDesigns] = useEntryState<string[]>("controls.designs", () =>
     params.getAll("design"),
   );
-  const [groupBy, setGroupBy] = useState<GroupBy>("none");
-  const [trustServices, setTrustServices] = useState<string[]>(() =>
+  const [groupBy, setGroupBy] = useEntryState<GroupBy>("controls.groupBy", "none");
+  const [trustServices, setTrustServices] = useEntryState<string[]>("controls.trustServices", () =>
     params.getAll("trust"),
   );
-  const [statuses, setStatuses] = useState<string[]>(() =>
+  const [statuses, setStatuses] = useEntryState<string[]>("controls.statuses", () =>
     params.getAll("status"),
   );
-  const [owners, setOwners] = useState<string[]>(() => params.getAll("owner"));
-  const [evidence, setEvidence] = useState<string[]>(() =>
+  const [owners, setOwners] = useEntryState<string[]>("controls.owners", () => params.getAll("owner"));
+  const [evidence, setEvidence] = useEntryState<string[]>("controls.evidence", () =>
     params.getAll("evidence"),
   );
-  const [frameworkFilter, setFrameworkFilter] = useState<string[]>(() =>
+  const [frameworkFilter, setFrameworkFilter] = useEntryState<string[]>("controls.frameworkFilter", () =>
     params.getAll("framework"),
   );
   /** How a control is evidenced (`?evidenced=automated`) and which system checks
    *  it (`?system=github`, where the connections page links). Both come from the
    *  composition, so they apply once it has loaded. */
-  const [modes, setModes] = useState<ComposeMode[]>(() =>
+  const [modes, setModes] = useEntryState<ComposeMode[]>("controls.modes", () =>
     params
       .getAll("evidenced")
       .filter((mode): mode is ComposeMode =>
         (COMPOSE_MODES as string[]).includes(mode),
       ),
   );
-  const [systems, setSystems] = useState<string[]>(() =>
+  const [systems, setSystems] = useEntryState<string[]>("controls.systems", () =>
     params.getAll("system"),
   );
   /** The open row, held by id — a snapshot would go stale the moment an edit
@@ -672,9 +673,9 @@ export function ControlsPage() {
   const [editing, setEditing] = useState<Control | null>(null);
   /** Row selection for bulk actions — distinct from `selected`, the open row. */
   const [checkedIds, setCheckedIds] = useState<string[]>([]);
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
-  const [customSize, setCustomSize] = useState(false);
+  const [page, setPage] = useEntryState("controls.page", 1);
+  const [pageSize, setPageSize] = useEntryState("controls.pageSize", DEFAULT_PAGE_SIZE);
+  const [customSize, setCustomSize] = useEntryState("controls.customSize", false);
 
   const navigate = useNavigate();
 

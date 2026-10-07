@@ -1,4 +1,5 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
+import { useEntryState } from "@/lib/nav/entry-state";
 
 export type SortDir = "asc" | "desc";
 
@@ -18,6 +19,9 @@ type SortValue = string | number | boolean | Date | null | undefined;
  *     name: (r) => r.name,
  *     risk: (r) => r.risk_score,
  *   }, "desc");
+ *
+ * The sort comes back when a person returns to the page with Back (see
+ * `useEntryState`). A page has one table to sort, so the state is named for that.
  *   ...
  *   <TH {...thProps("name")}>Name</TH>
  *   ...
@@ -34,8 +38,8 @@ export function useTableSort<T, K extends string>(
   accessors: Record<K, (row: T) => SortValue>,
   initialDir: SortDir = "asc",
 ) {
-  const [key, setKey] = useState<K | null>(initialKey);
-  const [dir, setDir] = useState<SortDir>(initialDir);
+  const [key, setKey] = useEntryState<K | null>("table.sort", initialKey);
+  const [dir, setDir] = useEntryState<SortDir>("table.sortDir", initialDir);
 
   // Not a side effect inside a setState updater: React invokes updaters twice
   // under StrictMode, which would toggle the direction twice per click.
@@ -57,7 +61,7 @@ export function useTableSort<T, K extends string>(
       setKey(next);
       setDir("asc");
     },
-    [key, dir, initialKey, initialDir],
+    [key, dir, initialKey, initialDir, setKey, setDir],
   );
 
   /** Spread onto a TH to make that column sortable. */
@@ -70,7 +74,8 @@ export function useTableSort<T, K extends string>(
     [key, dir, onSort],
   );
 
-  const accessor = key === null ? null : accessors[key];
+  // A remembered column this build no longer sorts on is ignored, not called.
+  const accessor = key === null ? null : (accessors[key] ?? null);
   const sortRows = useCallback(
     (rows: readonly T[]): T[] => {
       // Untouched: hand back the server's order rather than imposing one.

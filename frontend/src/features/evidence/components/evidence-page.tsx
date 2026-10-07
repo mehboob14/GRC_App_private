@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Avatar,
-  Badge,
   Button,
   ColumnPicker,
   Dialog,
@@ -46,7 +45,6 @@ import { complianceApi, controlsApi, evidenceApi, iamApi } from "@/lib/api/endpo
 import { describeError, errorToast } from "@/lib/api/describe-error";
 import { cn } from "@/lib/cn";
 import { useAuth } from "@/lib/auth/auth-context";
-import { getAccessToken } from "@/lib/auth/session";
 import type {
   Control,
   Evidence,
@@ -54,6 +52,10 @@ import type {
   ReviewStatus,
 } from "@/lib/api/types";
 import { ControlPicker, type ControlGroup } from "./control-picker";
+import { ControlsCell, TypeCell } from "./evidence-cells";
+import { downloadEvidenceFile } from "./evidence-files";
+import { historyKey } from "../tokens";
+import { useEntryState } from "@/lib/nav/entry-state";
 
 /** DS §6.1 — freshness maps to a status family once, here, so every surface
  *  renders the same word the same way. */
@@ -376,25 +378,6 @@ function formatDate(iso: string | null): string {
 
 
 const today = () => new Date().toISOString().slice(0, 10);
-
-/** Download goes through fetch, not a bare href: the API is behind a bearer
- *  token, so an anchor would 401. The object URL is revoked straight after the
- *  click so it does not leak. */
-async function downloadEvidence(item: Evidence): Promise<void> {
-  const response = await fetch(evidenceApi.downloadUrl(item.id), {
-    headers: { Authorization: `Bearer ${getAccessToken() ?? ""}` },
-  });
-  if (!response.ok) throw new Error("download failed");
-  const blob = await response.blob();
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = item.filename ?? item.title;
-  document.body.appendChild(anchor);
-  anchor.click();
-  anchor.remove();
-  URL.revokeObjectURL(url);
-}
 
 // Validity presets → a renewal date computed off the collection date. "Type
 // default" stays null so the server fills in the type's own period (D13).
@@ -841,10 +824,10 @@ export function EvidencePage() {
   const { principal } = useAuth();
   const canManage = Boolean(principal?.permissions.includes("evidence:manage"));
 
-  const [search, setSearch] = useState("");
-  const [freshnessFilter, setFreshnessFilter] = useState<string[]>([]);
-  const [typeFilter, setTypeFilter] = useState<string[]>([]);
-  const [reviewFilter, setReviewFilter] = useState<string[]>([]);
+  const [search, setSearch] = useEntryState("evidence.search", "");
+  const [freshnessFilter, setFreshnessFilter] = useEntryState<string[]>("evidence.freshnessFilter", []);
+  const [typeFilter, setTypeFilter] = useEntryState<string[]>("evidence.typeFilter", []);
+  const [reviewFilter, setReviewFilter] = useEntryState<string[]>("evidence.reviewFilter", []);
   const [adding, setAdding] = useState(false);
   const cols = useColumnPrefs("verity.evidence.columns", EVIDENCE_COLUMNS);
 
@@ -863,11 +846,40 @@ export function EvidencePage() {
   });
 
   const items = useMemo(() => evidenceQuery.data ?? [], [evidenceQuery.data]);
+  const controlsByCode = useMemo(
+    () => new Map((controlsQuery.data ?? []).map((control) => [control.code, control])),
+    [controlsQuery.data],
+  );
+
+  // Automated evidence is filed again whenever what it found changes, so one check
+  // has a history of items with the same name. The list shows the latest of each
+  // and keeps the rest a click away. It arrives newest first.
+  const [showEarlier, setShowEarlier] = useEntryState("evidence.showEarlier", false);
+  const earlierAutomated = useMemo(() => {
+    const latest = new Set<string>();
+    const earlier = new Set<string>();
+    for (const item of items) {
+      const key = historyKey(item);
+      if (key === null) continue;
+      if (latest.has(key)) earlier.add(item.id);
+      else latest.add(key);
+    }
+    return earlier;
+  }, [items]);
+  const listed = showEarlier ? items.length : items.length - earlierAutomated.size;
+  // Earlier automated results are history. They lapse on schedule and are replaced by
+  // the next run, so they are not stale, aging or unlinked work for anyone: the counts
+  // and the overview read the items that are current.
+  const counted = useMemo(
+    () => items.filter((item) => !earlierAutomated.has(item.id)),
+    [items, earlierAutomated],
+  );
 
   const visible = useMemo(() => {
     const query = search.trim().toLowerCase();
     return items.filter(
       (item) =>
+        (showEarlier || !earlierAutomated.has(item.id)) &&
         (freshnessFilter.length === 0 ||
           freshnessFilter.includes(item.freshness)) &&
         (typeFilter.length === 0 || typeFilter.includes(item.evidence_type)) &&
@@ -879,7 +891,7 @@ export function EvidencePage() {
           (item.source_label ?? "").toLowerCase().includes(query) ||
           item.control_codes.some((code) => code.toLowerCase().includes(query))),
     );
-  }, [items, search, freshnessFilter, typeFilter, reviewFilter]);
+  }, [items, search, freshnessFilter, typeFilter, reviewFilter, showEarlier, earlierAutomated]);
 
   // Freshness and review sort by their own severity order, not alphabetically,
   // so "stale first" is one click rather than a reading exercise.
@@ -912,12 +924,12 @@ export function EvidencePage() {
 
   // Nothing until the list arrives, so a loading page never claims a zero.
   // Words match the freshness legend and facet, so a number can be filtered.
-  const stale = items.filter((item) => item.freshness === "stale").length;
-  const aging = items.filter((item) => item.freshness === "aging").length;
-  const unlinked = items.filter((item) => item.control_ids.length === 0).length;
+  const stale = counted.filter((item) => item.freshness === "stale").length;
+  const aging = counted.filter((item) => item.freshness === "aging").length;
+  const unlinked = counted.filter((item) => item.control_ids.length === 0).length;
   const subtitle = evidenceQuery.data
     ? [
-        `${items.length} ${items.length === 1 ? "item" : "items"}`,
+        `${counted.length} ${counted.length === 1 ? "item" : "items"}`,
         stale ? `${stale} stale` : null,
         aging ? `${aging} aging` : null,
         unlinked ? `${unlinked} unlinked` : null,
@@ -958,7 +970,7 @@ export function EvidencePage() {
 
       {items.length > 0 ? (
         <EvidenceOverview
-          items={items}
+          items={counted}
           controlsTotal={controlsQuery.isError ? null : (controlsQuery.data?.length ?? 0)}
           onPickFreshness={(state) => setFreshnessFilter([state])}
         />
@@ -977,7 +989,7 @@ export function EvidencePage() {
         actions={
           <p aria-live="polite" className="text-caption text-text-subtle">
             Showing <span className="tabular">{visible.length}</span> of{" "}
-            <span className="tabular">{items.length}</span> items
+            <span className="tabular">{listed}</span> items
           </p>
         }
       >
@@ -1009,6 +1021,16 @@ export function EvidencePage() {
             values={typeFilter}
             onChange={setTypeFilter}
           />
+        ) : null}
+        {earlierAutomated.size > 0 ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowEarlier((shown) => !shown)}
+          >
+            {showEarlier ? "Hide" : "Show"} {earlierAutomated.size} earlier automated{" "}
+            {earlierAutomated.size === 1 ? "result" : "results"}
+          </Button>
         ) : null}
         {activeFilters.length > 0 ? (
           <Button variant="ghost" size="sm" onClick={clearFilters}>
@@ -1082,36 +1104,16 @@ export function EvidencePage() {
                 </TD>
                 {cols.isVisible("type") ? (
                   <TD>
-                    <Badge variant="neutral">
-                      {item.evidence_type.replace(/_/g, " ")}
-                    </Badge>
+                    <TypeCell item={item} />
                   </TD>
                 ) : null}
                 {cols.isVisible("controls") ? (
                   <TD>
-                    <div className="flex flex-wrap gap-1">
-                      {item.control_links.length ? (
-                        item.control_links.map((link) => (
-                          <span
-                            key={link.code}
-                            className="inline-flex flex-col rounded-xs bg-surface-sunken px-1.5 py-0.5 leading-tight"
-                          >
-                            <span className="text-caption font-medium text-text-secondary">
-                              {link.code}
-                            </span>
-                            {link.criteria.length ? (
-                              <span className="text-[10px] text-text-subtle">
-                                {link.criteria.join(" · ")}
-                              </span>
-                            ) : null}
-                          </span>
-                        ))
-                      ) : (
-                        <span className="text-caption text-status-warning-text">
-                          None
-                        </span>
-                      )}
-                    </div>
+                    <ControlsCell
+                      links={item.control_links}
+                      controlIds={item.control_ids}
+                      controlsByCode={controlsByCode}
+                    />
                   </TD>
                 ) : null}
                 {cols.isVisible("owner") ? (
@@ -1195,7 +1197,7 @@ export function EvidencePage() {
                           onSelect={() =>
                             window.setTimeout(
                               () =>
-                                void downloadEvidence(item).catch(() =>
+                                void downloadEvidenceFile(item).catch(() =>
                                   toast({
                                     title: "Couldn't download the file.",
                                     tone: "danger",
@@ -1205,7 +1207,7 @@ export function EvidencePage() {
                             )
                           }
                         >
-                          Download
+                          {item.content_type === "application/json" ? "Download JSON" : "Download"}
                         </DropdownMenuItem>
                       ) : item.link_url ? (
                         <DropdownMenuItem

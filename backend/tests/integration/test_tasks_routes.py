@@ -31,6 +31,8 @@ from tests.support.iam import (
 from verity.core.config import Settings
 from verity.core.db import dispose_engine, session_scope
 from verity.main import create_app
+from verity.modules.audit.service import System
+from verity.modules.evidence.service import evidence_service
 from verity.modules.iam.service import iam_auth_service
 from verity.modules.links.service import link_service
 from verity.modules.tasks.service import task_service
@@ -1040,6 +1042,37 @@ async def test_nothing_is_raised_when_no_evidence_has_lapsed(api: httpx.AsyncCli
     await _evidence(api, "Fresh")
     assert await _raise_evidence_renewals() == {"tasks_created": 0}
     assert await _renewal_tasks(api) == []
+
+
+async def test_evidence_a_connector_filed_is_replaced_by_its_next_run_not_renewed_by_a_person(
+    api: httpx.AsyncClient, workspace: Workspace
+) -> None:
+    """A connector files each check again on every run, so a lapsed file is history, or the
+    sign that the connection stopped. Either way nobody renews it: a task for each would be
+    one per check per day, and an email with it."""
+    control = (await api.get("/controls")).json()[0]["id"]
+    today = _today()
+    async with session_scope(workspace.tenant_id) as session:
+        await evidence_service.add_file(
+            session,
+            tenant_id=workspace.tenant_id,
+            actor=System(),
+            title="Secret scanning is on: GitHub acme, 1 Sep 2026 10:00 UTC",
+            filename="github-acme-secret-scanning.json",
+            data=b"{}",
+            evidence_type="configuration_export",
+            collected_at=today - timedelta(days=30),
+            renewal_date=today - timedelta(days=10),
+            control_ids=[uuid.UUID(control)],
+            source="github",
+            external_id=f"{uuid.uuid4()}:vcs.secret_scanning_enabled:abc123:{uuid.uuid4()}",
+        )
+    await _stale(api, "Access review export", controls=[control])
+
+    # The person's lapsed item earns its task; the connector's lapsed file earns none.
+    assert await _raise_evidence_renewals() == {"tasks_created": 1}
+    (task,) = await _renewal_tasks(api)
+    assert task["title"] == "Renew evidence: Access review export"
 
 
 async def test_task_codes_keep_counting_past_four_digits(

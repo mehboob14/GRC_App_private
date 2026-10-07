@@ -136,6 +136,24 @@ class EvidenceView:
     control_ids: list[uuid.UUID] = field(default_factory=list)
     control_codes: list[str] = field(default_factory=list)
     control_links: list[ControlLink] = field(default_factory=list)
+    #: A connector files its result again on each run, so an item is history once a
+    #: later one of the same series exists. History lapses on schedule and nobody
+    #: renews it; it is not counted as stale or aging work. Only set by ``list_evidence``,
+    #: which sees the whole series.
+    superseded: bool = False
+
+
+def series_of(source: str | None, external_id: str | None) -> str | None:
+    """The series a connector's item belongs to, or None for any other item.
+
+    A connector files under ``<series>:<digest>:<run>``: every item of one series is a
+    revision of the same thing (one check on one connection), and the newest replaces
+    the rest.
+    """
+    if source is None or external_id is None:
+        return None
+    parts = external_id.rsplit(":", 2)
+    return parts[0] if len(parts) == 3 else None  # noqa: PLR2004 - series, digest, run
 
 
 @dataclass(frozen=True, slots=True)
@@ -236,7 +254,22 @@ class EvidenceService:
         )
         mappings = await self._mappings(session, tenant_id)
         owners = await self._owner_names(session, tenant_id)
-        views = [self._view(row, mappings, owners) for row in rows]
+        # The rows come newest first, so the first of a series is the one that stands.
+        newest: dict[str, uuid.UUID] = {}
+        for row in rows:
+            series = series_of(row.source, row.external_id)
+            if series is not None:
+                newest.setdefault(series, row.id)
+        views = [
+            replace(
+                self._view(row, mappings, owners),
+                superseded=(
+                    (series := series_of(row.source, row.external_id)) is not None
+                    and newest[series] != row.id
+                ),
+            )
+            for row in rows
+        ]
         # Filtered after the query because freshness is derived, not a column.
         if freshness_filter:
             views = [view for view in views if view.freshness == freshness_filter]
@@ -561,6 +594,9 @@ class EvidenceService:
         owner_membership_id: uuid.UUID | None = None,
         renewal_date: date | None = None,
         control_ids: list[uuid.UUID] | None = None,
+        source: str | None = None,
+        external_id: str | None = None,
+        synced_at: datetime | None = None,
     ) -> EvidenceView:
         # The store hashes, sniffs and caps. Repeating any of that here would be
         # a second implementation of the same guarantee — one too many.
@@ -585,8 +621,42 @@ class EvidenceService:
             content_type=stored.content_type,
             size_bytes=stored.size_bytes,
             sha256=stored.sha256,
+            # Rule 9: what a connector filed says which one, and under what id.
+            source=source,
+            external_id=external_id,
+            synced_at=synced_at,
         )
         return await self._insert(session, row, actor, tenant_id, control_ids or [])
+
+    async def latest_synced(
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        source: str,
+        external_id_prefix: str,
+    ) -> tuple[str, datetime] | None:
+        """The newest item a connector filed under an id prefix: its id and when.
+
+        A connector asks this to decide whether what it just read is worth a new file,
+        so it never reads the evidence table itself.
+        """
+        row = (
+            await session.execute(
+                select(Evidence.external_id, Evidence.synced_at)
+                .where(
+                    Evidence.tenant_id == tenant_id,
+                    Evidence.source == source,
+                    Evidence.external_id.startswith(external_id_prefix, autoescape=True),
+                    Evidence.synced_at.is_not(None),
+                )
+                .order_by(Evidence.synced_at.desc())
+                .limit(1)
+            )
+        ).first()
+        if row is None or row.external_id is None or row.synced_at is None:
+            return None
+        return row.external_id, row.synced_at
 
     async def add_link(  # noqa: PLR0913 — the item's own fields, no more
         self,

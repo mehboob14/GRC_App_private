@@ -55,6 +55,7 @@ import {
 import { ConnectGitHubDialog } from "./connect-github-dialog";
 import { RequestIntegrationDialog } from "./request-integration-dialog";
 import { ScopeDialog } from "./scope-dialog";
+import { useEntryState } from "@/lib/nav/entry-state";
 
 const CATEGORY_OPTIONS = CONNECTOR_CATEGORIES.map((category) => ({
   value: category,
@@ -483,15 +484,15 @@ export function ConnectionsPage() {
     [providersQuery.data],
   );
 
-  const [tab, setTab] = useState<Tab>(() =>
+  const [tab, setTab] = useEntryState<Tab>("connections.tab", () =>
     params.get("tab") === "active" ? "active" : "available",
   );
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useEntryState("connections.search", "");
   // `?category=Identity` deep-links a pre-filtered catalogue (quick start sends
   // you here for your IdP). Read once as the initial value, so the facet stays
   // the owner of the filter afterwards and Clear filters still clears it.
   // Repeatable, and unknown values are dropped rather than filtering to nothing.
-  const [categories, setCategories] = useState<string[]>(() =>
+  const [categories, setCategories] = useEntryState<string[]>("connections.categories", () =>
     params
       .getAll("category")
       .filter((value): value is ConnectorCategory =>

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -43,6 +43,7 @@ import {
   shortenTitle,
   VectorCell,
 } from "./register-cells";
+import { useEntryState } from "@/lib/nav/entry-state";
 
 const SEVERITIES: Severity[] = ["critical", "high", "medium", "low"];
 
@@ -121,13 +122,13 @@ export function VulnerabilitiesRegisterPage() {
   const [params] = useSearchParams();
   const assetIdParam = params.get("asset_id") ?? undefined;
 
-  const [filters, setFilters] = useState<VulnListFilters>({
+  const [filters, setFilters] = useEntryState<VulnListFilters>("vulnerabilities.filters", {
     state: "open",
     kev_only: params.get("kev") === "1",
     overdue_only: params.get("overdue") === "1",
   });
-  const [search, setSearch] = useState("");
-  const [exploit, setExploit] = useState<"all" | "yes" | "no">("all");
+  const [search, setSearch] = useEntryState("vulnerabilities.search", "");
+  const [exploit, setExploit] = useEntryState<"all" | "yes" | "no">("vulnerabilities.exploit", "all");
   const { setExportRows } = useVulnerabilitiesOutlet();
 
   const set = <K extends keyof VulnListFilters>(key: K, value: VulnListFilters[K]) =>

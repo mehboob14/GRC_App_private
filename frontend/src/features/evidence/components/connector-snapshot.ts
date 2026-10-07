@@ -8,6 +8,8 @@ export type SnapshotOutcome = "pass" | "fail" | "error" | "not_applicable";
 
 export type ConnectorSnapshot = {
   connection: { provider: string; account: string };
+  /** The check this file is evidence of. Absent on files filed before each check had its own. */
+  check?: { key: string; name: string; description?: string | null };
   collected_at: string;
   access?: string;
   scope: {

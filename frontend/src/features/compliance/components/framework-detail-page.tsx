@@ -23,11 +23,12 @@ import { complianceApi } from "@/lib/api/endpoints";
 import { describeError } from "@/lib/api/describe-error";
 import type { Requirement } from "@/lib/api/types";
 import { RequirementChainDialog } from "@/features/compliance/components/requirement-chain-dialog";
+import { useEntryState } from "@/lib/nav/entry-state";
 
 export function FrameworkDetailPage() {
   const { frameworkId = "" } = useParams();
-  const [search, setSearch] = useState("");
-  const [categories, setCategories] = useState<string[]>([]);
+  const [search, setSearch] = useEntryState("framework.search", "");
+  const [categories, setCategories] = useEntryState<string[]>("framework.categories", []);
   const [chainFor, setChainFor] = useState<string | null>(null);
 
   const frameworksQuery = useQuery({

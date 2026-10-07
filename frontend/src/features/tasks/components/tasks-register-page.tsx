@@ -46,6 +46,7 @@ import { PRIORITY_META, SEVERITY_LABEL, SLA_META, STATUS_META, fmtDate, severity
 import { TaskBoard } from "./task-board";
 import { TaskDetail } from "./task-detail-page";
 import type { TasksOutlet } from "./tasks-outlet";
+import { useEntryState } from "@/lib/nav/entry-state";
 
 const PAGE_SIZE = 40;
 
@@ -118,11 +119,11 @@ function filtersFromParams(p: URLSearchParams): TaskFilters {
 
 export function TasksRegisterPage() {
   const [searchParams] = useSearchParams();
-  const [filters, setFilters] = useState<TaskFilters>(() => filtersFromParams(searchParams));
-  const [activeView, setActiveView] = useState<string | null>(null);
-  const [page, setPage] = useState(1);
+  const [filters, setFilters] = useEntryState<TaskFilters>("tasks.filters", () => filtersFromParams(searchParams));
+  const [activeView, setActiveView] = useEntryState<string | null>("tasks.activeView", null);
+  const [page, setPage] = useEntryState("tasks.page", 1);
   const { addTask } = useOutletContext<TasksOutlet>();
-  const [view, setView] = useState<"list" | "board">("list");
+  const [view, setView] = useEntryState<"list" | "board">("tasks.view", "list");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const cols = useColumnPrefs("verity.tasks.columns", TASK_COLUMNS);
 

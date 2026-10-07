@@ -59,6 +59,7 @@ import {
   fmtMoney,
   relativeTime,
 } from "../tokens";
+import { useEntryState } from "@/lib/nav/entry-state";
 
 const PAGE_SIZE = 25;
 
@@ -92,8 +93,8 @@ export function AssetsRegisterPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { addAsset, registerView } = useAssetsOutlet();
-  const [filters, setFilters] = useState<AssetFilters>(EMPTY);
-  const [page, setPage] = useState(1);
+  const [filters, setFilters] = useEntryState<AssetFilters>("assets.filters", EMPTY);
+  const [page, setPage] = useEntryState("assets.page", 1);
   // Add asset lives in the layout; edit needs the row, so its drawer stays here.
   const [editingId, setEditingId] = useState<string | undefined>(undefined);
   const [formOpen, setFormOpen] = useState(false);

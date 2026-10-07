@@ -106,12 +106,16 @@ A line under the status says how much was checked: "Checking 35 of 41 repositori
 devuser", with a link to change it. It appears on controls that have repository level tests.
 
 The output is attached to the control as evidence, dated, so the control's evidence
-list fills without anybody uploading anything. Each item is named with the moment it was
-collected, and opens as a report: what was checked, each repository left out with its reason,
-and what every check found. **Show the raw file** is one click away, and the original JSON is
-what is stored and downloaded. Evidence is attached at most once a day unless the result
-changes, so a passing check does not bury the record in identical copies; on the control, the
-newest result is the row and the earlier ones sit under **earlier results**. A failing run is
+list fills without anybody uploading anything. Each check files its own evidence, linked only to
+the controls that check supports, so SD-11 holds the secret scanning result and nothing about
+branch protection. It is named for the check, the account and the moment it was collected, for
+example "Secret scanning is on: GitHub devuser, 6 Oct 2026 14:05 UTC", and opens as a report:
+what was checked, each repository left out with its reason, and what the check found. **Show the
+raw file** is one click away, and **Download JSON** saves the original, which is what is stored.
+A check files again at most once a day unless its result changes, so a passing check does not
+bury the record in identical copies; on the control, the newest result is the row and the
+earlier ones sit under **earlier results**. In the evidence library the same earlier results
+are folded away until you ask for them. A failing run is
 filed too, because it is the dated record of what was observed, but it never makes a failing
 control look ready: readiness looks at the tests as well as the evidence. A result reads
 **Current** when it is filed and **Aging** in the last two days of its week, by which time the

@@ -8,8 +8,11 @@ import type { ConnectorSnapshot, SnapshotOutcome } from "./connector-snapshot";
  *
  * The file is JSON so a machine can read it, and an auditor cannot. This turns it
  * into what they came for: what was looked at, what was left out and why, and what
- * each check found. The raw file stays one click away and is what is stored, so
+ * the check found. The raw file stays one click away and is what is stored, so
  * nothing here is a second source.
+ *
+ * A file holds one check. Files filed before each check had its own held every check
+ * of the run, and are still read: they show a section per check.
  */
 
 type Outcome = SnapshotOutcome;
@@ -81,43 +84,84 @@ function Names({ summary, names }: { summary: string; names: string[] }) {
   );
 }
 
-function Check({ name, rows }: { name: string; rows: Row[] }) {
-  const offered = rows.filter((r) => !notOffered(r));
+/** What a check found, resource by resource, with the plan limited ones folded. */
+function Findings({ rows }: { rows: Row[] }) {
+  const offered = rows.filter((row) => !notOffered(row));
   const limited = rows.filter(notOffered);
-  const count = (outcome: Outcome) =>
-    offered.filter((r) => r.outcome === outcome).length;
-  const failed = count("fail");
-  const errored = count("error");
   return (
-    <details
-      className="group rounded-md border border-border"
-      open={failed > 0 || errored > 0}
-    >
+    <div className="space-y-2">
+      {offered.length > 0 ? (
+        <ul className="divide-y divide-border">
+          {offered.map((row) => {
+            const mark = OUTCOME[row.outcome];
+            return (
+              <li key={row.resource} className="flex items-start gap-2.5 py-2">
+                <Icon
+                  name={mark.icon}
+                  className={cn("mt-0.5 size-4 shrink-0", mark.className)}
+                  aria-hidden
+                />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-body-sm font-semibold text-text-primary">
+                    {row.resource}
+                  </span>
+                  {row.summary ? (
+                    <span className="block text-caption text-text-secondary">{row.summary}</span>
+                  ) : null}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      ) : null}
+      {limited.length > 0 ? (
+        <Names
+          summary={`${limited.length} ${limited.length === 1 ? "repository" : "repositories"} where GitHub does not offer this on the plan`}
+          names={limited.map((row) => row.resource)}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+/** The outcomes of one check as short coloured counts. */
+function Counts({ rows }: { rows: Row[] }) {
+  const offered = rows.filter((row) => !notOffered(row));
+  const limited = rows.filter(notOffered).length;
+  const count = (outcome: Outcome) => offered.filter((row) => row.outcome === outcome).length;
+  return (
+    <span className="flex flex-wrap gap-x-3 text-caption tabular">
+      {count("pass") > 0 ? (
+        <span className="text-status-success-text">{count("pass")} passed</span>
+      ) : null}
+      {count("fail") > 0 ? (
+        <span className="text-status-danger-text">{count("fail")} failed</span>
+      ) : null}
+      {count("error") > 0 ? (
+        <span className="text-status-warning-text">{count("error")} not checked</span>
+      ) : null}
+      {limited > 0 ? (
+        <span className="text-status-warning-text">{limited} not offered on the plan</span>
+      ) : null}
+      {count("not_applicable") > 0 ? (
+        <span className="text-text-subtle">{count("not_applicable")} not applicable</span>
+      ) : null}
+    </span>
+  );
+}
+
+/** One check of an older file that holds several: its name and counts, its findings inside. */
+function Check({ name, rows }: { name: string; rows: Row[] }) {
+  const worried = rows.some(
+    (row) => !notOffered(row) && (row.outcome === "fail" || row.outcome === "error"),
+  );
+  return (
+    <details className="group rounded-md border border-border" open={worried}>
       <summary className="flex cursor-pointer items-start gap-3 px-3 py-2.5">
         <span className="min-w-0 flex-1">
-          <span className="block text-body-md font-semibold text-text-primary">
-            {name}
-          </span>
-          <span className="mt-0.5 flex flex-wrap gap-x-3 text-caption tabular">
-            {count("pass") > 0 ? (
-              <span className="text-status-success-text">{count("pass")} passed</span>
-            ) : null}
-            {failed > 0 ? (
-              <span className="text-status-danger-text">{failed} failed</span>
-            ) : null}
-            {errored > 0 ? (
-              <span className="text-status-warning-text">{errored} not checked</span>
-            ) : null}
-            {limited.length > 0 ? (
-              <span className="text-status-warning-text">
-                {limited.length} not offered on the plan
-              </span>
-            ) : null}
-            {count("not_applicable") > 0 ? (
-              <span className="text-text-subtle">
-                {count("not_applicable")} not applicable
-              </span>
-            ) : null}
+          <span className="block text-body-md font-semibold text-text-primary">{name}</span>
+          <span className="mt-0.5 block">
+            <Counts rows={rows} />
           </span>
         </span>
         <Icon
@@ -126,39 +170,8 @@ function Check({ name, rows }: { name: string; rows: Row[] }) {
           aria-hidden
         />
       </summary>
-      <div className="space-y-2 border-t border-border px-3 py-2">
-        {offered.length > 0 ? (
-          <ul className="divide-y divide-border">
-            {offered.map((row) => {
-              const mark = OUTCOME[row.outcome];
-              return (
-                <li key={row.resource} className="flex items-start gap-2.5 py-2">
-                  <Icon
-                    name={mark.icon}
-                    className={cn("mt-0.5 size-4 shrink-0", mark.className)}
-                    aria-hidden
-                  />
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-body-sm font-semibold text-text-primary">
-                      {row.resource}
-                    </span>
-                    {row.summary ? (
-                      <span className="block text-caption text-text-secondary">
-                        {row.summary}
-                      </span>
-                    ) : null}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        ) : null}
-        {limited.length > 0 ? (
-          <Names
-            summary={`${limited.length} ${limited.length === 1 ? "repository" : "repositories"} where GitHub does not offer this on the plan`}
-            names={limited.map((r) => r.resource)}
-          />
-        ) : null}
+      <div className="border-t border-border px-3 py-2">
+        <Findings rows={rows} />
       </div>
     </details>
   );
@@ -171,7 +184,7 @@ export function ConnectorReport({
   snapshot: ConnectorSnapshot;
   heightClass?: string;
 }) {
-  const { connection, scope, results } = snapshot;
+  const { connection, scope, results, check } = snapshot;
   const tally = useMemo(() => {
     const among = (outcome: Outcome) =>
       results.filter((r) => r.outcome === outcome && !notOffered(r)).length;
@@ -200,6 +213,15 @@ export function ConnectorReport({
   }, [scope.excluded]);
   const provider = PROVIDER[connection.provider] ?? connection.provider;
   const collected = new Date(snapshot.collected_at);
+  const when = Number.isNaN(collected.getTime())
+    ? snapshot.collected_at
+    : collected.toLocaleString(undefined, {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
 
   return (
     <div
@@ -210,21 +232,15 @@ export function ConnectorReport({
     >
       <header>
         <p className="font-display text-title-md text-text-primary">
-          {provider} checks on {connection.account}
+          {check ? check.name : `${provider} checks on ${connection.account}`}
         </p>
         <p className="text-body-sm text-text-subtle">
-          Collected{" "}
-          {Number.isNaN(collected.getTime())
-            ? snapshot.collected_at
-            : collected.toLocaleString(undefined, {
-                day: "numeric",
-                month: "short",
-                year: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
+          {check ? `${provider} ${connection.account}. ` : ""}Collected {when}
           {snapshot.access ? `, ${snapshot.access}` : ""}.
         </p>
+        {check?.description ? (
+          <p className="mt-1.5 text-body-sm text-text-secondary">{check.description}</p>
+        ) : null}
       </header>
 
       <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -245,8 +261,8 @@ export function ConnectorReport({
       <section>
         <h3 className="type-overline mb-1">What was checked</h3>
         <p className="text-body-sm text-text-secondary">
-          <span className="font-semibold text-text-primary">{scope.checked}</span>{" "}
-          of {scope.listed} repositories
+          <span className="font-semibold text-text-primary">{scope.checked}</span> of{" "}
+          {scope.listed} repositories
           {scope.excluded.length > 0 ? `, ${scope.excluded.length} left out` : ""}.
         </p>
         {leftOut.length > 0 ? (
@@ -262,14 +278,21 @@ export function ConnectorReport({
         ) : null}
       </section>
 
-      <section>
-        <h3 className="type-overline mb-2">What each check found</h3>
-        <div className="space-y-2">
-          {checks.map(([name, rows]) => (
-            <Check key={name} name={name} rows={rows} />
-          ))}
-        </div>
-      </section>
+      {check ? (
+        <section>
+          <h3 className="type-overline mb-2">What it found</h3>
+          <Findings rows={results} />
+        </section>
+      ) : (
+        <section>
+          <h3 className="type-overline mb-2">What each check found</h3>
+          <div className="space-y-2">
+            {checks.map(([name, rows]) => (
+              <Check key={name} name={name} rows={rows} />
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

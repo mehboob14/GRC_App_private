@@ -6,6 +6,8 @@
 
 import { isPermissionKey } from "@/lib/api/types";
 import type { SessionPrincipal, WorkspaceSummary } from "@/lib/api/types";
+import { createTabShare } from "@/lib/auth/tab-share";
+import { forgetEntryState } from "@/lib/nav/entry-state";
 
 const TOKEN_KEY = "verity.session.token";
 const PRINCIPAL_KEY = "verity.session.principal";
@@ -37,6 +39,49 @@ function bootstrapFromOpener(): void {
 
 bootstrapFromOpener();
 
+/**
+ * A tab opened from a link has no sessionStorage of its own. It asks the open tabs
+ * for the session before it first renders (see `adoptSessionFromOtherTab`), and
+ * every tab answers and hears when the session ends. See tab-share.ts.
+ */
+const share = createTabShare(
+  "verity.session",
+  [TOKEN_KEY, PRINCIPAL_KEY],
+  TOKEN_KEY,
+  // The pages a person reaches signed out on purpose never ask: someone opening an
+  // invitation or the sign-in page is not to be handed the session of whoever else
+  // used this browser. The platform console has a session of its own.
+  (pathname) =>
+    !/^\/(sign-in|sign-up|mfa|forgot-password|reset-password|accept-invite|verify-email|vendor-portal|provider)(\/|$)/.test(
+      pathname,
+    ),
+);
+const signOutListeners = new Set<() => void>();
+
+/** Call before the first render, so a tab opened from a link starts signed in. */
+export const adoptSessionFromOtherTab = share.adopt;
+
+/** Hear that another tab signed this session out. Returns the unsubscribe. */
+export function onRemoteSignOut(listener: () => void): () => void {
+  signOutListeners.add(listener);
+  return () => {
+    signOutListeners.delete(listener);
+  };
+}
+
+function wipe(): void {
+  memoryToken = null;
+  memoryPrincipal = null;
+  sessionStorage.removeItem(TOKEN_KEY);
+  sessionStorage.removeItem(PRINCIPAL_KEY);
+  forgetEntryState();
+}
+
+share.serve(() => {
+  wipe();
+  for (const listener of signOutListeners) listener();
+});
+
 function readJson<T>(key: string): T | null {
   try {
     const raw = sessionStorage.getItem(key);
@@ -63,6 +108,9 @@ export function setSession(
   token: string,
   principal: SessionPrincipal,
 ): void {
+  // A new sign-in or a switch of workspace: filters and ids remembered for the last
+  // one mean nothing here.
+  forgetEntryState();
   memoryToken = token;
   memoryPrincipal = principal;
   sessionStorage.setItem(TOKEN_KEY, token);
@@ -82,10 +130,9 @@ export function setPrincipalCache(principal: SessionPrincipal): void {
 }
 
 export function clearSession(): void {
-  memoryToken = null;
-  memoryPrincipal = null;
-  sessionStorage.removeItem(TOKEN_KEY);
-  sessionStorage.removeItem(PRINCIPAL_KEY);
+  const token = getAccessToken();
+  wipe();
+  share.announceSignOut(token);
 }
 
 export function hasPermission(

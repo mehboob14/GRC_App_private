@@ -189,6 +189,18 @@ dc run --rm api python -m verity.manage seed-content   # pick up new shipped con
 dc run --rm api python -m scripts.backfill_adopt_soc2  # only when the release adds controls
 ```
 
+- **The release that files one evidence item per check** (2026-10-07) leaves the old
+  one-file-per-run items linked to many controls. After the first connector run on the new code
+  has filed the per-check evidence (press **Run now** on the connection, or wait for the daily
+  run), unlink the old items once. They stay in the library as history, and each unlink is
+  audited:
+
+  ```bash
+  dc run --rm api python -m scripts.retire_legacy_connector_evidence           # what it would do
+  dc run --rm api python -m scripts.retire_legacy_connector_evidence --apply   # do it
+  ```
+
+  A workspace with no per-check evidence yet is skipped, so it is safe to run early.
 - **A release that adds control templates** (2026-10-04 adds SD-13 and SD-14) needs the last line
   after `seed-content`, so existing workspaces adopt them. It is idempotent: a workspace that
   already holds a control gets nothing new. New workspaces adopt the whole library at signup.

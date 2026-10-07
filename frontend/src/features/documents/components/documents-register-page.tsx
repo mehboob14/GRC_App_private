@@ -52,6 +52,7 @@ import { DocumentFormDialog } from "./document-form-dialog";
 import { ReviewDate } from "./review-date";
 import { CLASS_LABEL, LIFECYCLE_META, TYPE_LABEL } from "../labels";
 import { formatDay } from "../review";
+import { useEntryState } from "@/lib/nav/entry-state";
 
 
 
@@ -118,13 +119,13 @@ export function DocumentsRegisterPage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const [scope, setScope] = useState<"active" | "archived">("active");
-  const [search, setSearch] = useState("");
-  const [types, setTypes] = useState<string[]>([]);
-  const [statuses, setStatuses] = useState<string[]>([]);
-  const [owners, setOwners] = useState<string[]>([]);
-  const [classes, setClasses] = useState<string[]>([]);
-  const [page, setPage] = useState(1);
+  const [scope, setScope] = useEntryState<"active" | "archived">("documents.scope", "active");
+  const [search, setSearch] = useEntryState("documents.search", "");
+  const [types, setTypes] = useEntryState<string[]>("documents.types", []);
+  const [statuses, setStatuses] = useEntryState<string[]>("documents.statuses", []);
+  const [owners, setOwners] = useEntryState<string[]>("documents.owners", []);
+  const [classes, setClasses] = useEntryState<string[]>("documents.classes", []);
+  const [page, setPage] = useEntryState("documents.page", 1);
 
   const [creating, setCreating] = useState(false);
   const [pickingTemplate, setPickingTemplate] = useState(false);
@@ -178,8 +179,10 @@ export function DocumentsRegisterPage() {
   const pageCount = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
   const paged = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   useEffect(() => {
-    if (page > pageCount) setPage(1);
-  }, [page, pageCount]);
+    // Only once the list has arrived: before that there are no pages at all, and a
+    // page remembered from the last visit would be thrown away.
+    if (documentsQuery.isSuccess && page > pageCount) setPage(1);
+  }, [documentsQuery.isSuccess, page, pageCount, setPage]);
 
   const activeFilters =
     types.length + statuses.length + owners.length + classes.length;

@@ -40,6 +40,7 @@ import { LinkedRecordsPanel } from "@/features/linkage/components/linked-records
 import { useLinkedRecords } from "@/features/linkage/hooks";
 import { CLASS_LABEL, LIFECYCLE_META, TYPE_LABEL } from "../labels";
 import { formatDay } from "../review";
+import { useEntryState } from "@/lib/nav/entry-state";
 
 const APPROVAL_LABEL: Record<ApprovalTier["status"], string> = {
   approved: "Approved", pending: "Pending", rejected: "Rejected", not_started: "Not started",
@@ -88,7 +89,7 @@ export function DocumentDetailPage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { principal } = useAuth();
-  const [tab, setTab] = useState<TabId>("overview");
+  const [tab, setTab] = useEntryState<TabId>("detail.tab", "overview");
   const linksQuery = useLinkedRecords("document", documentId);
   const [editing, setEditing] = useState(false);
   const [mapping, setMapping] = useState(false);

@@ -1,9 +1,10 @@
-import { useCallback, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { LoginResponse, SessionPrincipal } from "@/lib/api/types";
 import {
   clearSession,
   getAccessToken,
   getPrincipal,
+  onRemoteSignOut,
   setPrincipalCache,
   setSession,
 } from "@/lib/auth/session";
@@ -20,6 +21,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     getPrincipal(),
   );
   const [token, setToken] = useState<string | null>(() => getAccessToken());
+
+  // Signing out in one tab ends the session in every tab that holds it, so a tab
+  // left open does not keep working on a session the person ended.
+  useEffect(
+    () =>
+      onRemoteSignOut(() => {
+        setPrincipal(null);
+        setToken(null);
+      }),
+    [],
+  );
 
   /**
    * Re-read the principal from the server and update the cache.

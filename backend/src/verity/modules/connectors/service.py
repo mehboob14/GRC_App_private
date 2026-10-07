@@ -3,7 +3,7 @@
 A run is three short steps on purpose. Starting it takes a row lock on the
 connection, so two clicks cannot start two runs. Collecting talks to the provider
 for as long as it takes, outside any database transaction. Finishing writes the
-results, the evidence file and the connection's health together in one
+results, the evidence files and the connection's health together in one
 transaction, so a half finished run never leaves half its results behind.
 
 Rule 7 runs through all of it: a token the provider refuses, a permission the
@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import uuid
 from collections import defaultdict
 from collections.abc import Sequence
@@ -473,6 +474,55 @@ def _digest(results: list[github.Result]) -> str:
         for r in results
     )
     return hashlib.sha256(json.dumps(rows).encode()).hexdigest()
+
+
+_DIGEST_LENGTH: Final = 16
+"""How much of a check's digest is kept in the id its evidence is filed under."""
+
+
+def _rows_digest(rows: Sequence[CheckResult]) -> str:
+    """What one check found in a run, for deciding whether it is worth a new evidence file."""
+    ordered = sorted(
+        (
+            row.resource_type,
+            row.resource_id,
+            row.outcome,
+            json.dumps(row.detail, sort_keys=True, default=str),
+        )
+        for row in rows
+    )
+    return hashlib.sha256(json.dumps(ordered).encode()).hexdigest()
+
+
+def _external_id(
+    connection_id: uuid.UUID,
+    check_key: str,
+    digest: str | None = None,
+    run_id: uuid.UUID | None = None,
+) -> str:
+    """The id a check's evidence is filed under: ``connection:check:digest:run``.
+
+    The digest is of what the check found, so the next run can tell a new result from a
+    repeat; the run keeps the id unique when the same result is filed again a day later.
+    Without a digest and a run this is the prefix every file of that check starts with.
+    ``connection:check`` is the item's series (evidence_service.series_of): the newest
+    file of a series replaces the rest, and the older ones read as history.
+    """
+    prefix = f"{connection_id}:{check_key}:"
+    if digest is None or run_id is None:
+        return prefix
+    return f"{prefix}{digest[:_DIGEST_LENGTH]}:{run_id}"
+
+
+def _filed_digest(external_id: str) -> str | None:
+    """The digest an evidence file was filed under, or None for an id of another shape."""
+    parts = external_id.split(":")
+    return parts[2] if len(parts) == 4 else None  # noqa: PLR2004 — connection:check:digest:run
+
+
+def _slug(check_key: str) -> str:
+    """A check key as a file name part: ``vcs.secret_scanning_enabled`` becomes dashes."""
+    return re.sub(r"[^a-z0-9]+", "-", check_key.lower()).strip("-")
 
 
 @dataclass(frozen=True, slots=True)
@@ -1137,7 +1187,9 @@ class ConnectorService:
             run.results_digest = digest
             if snapshot is not None:
                 await self._sync_inventory(session, tenant_id, connection, snapshot, now)
-                run.evidence_id = await self._evidence(
+                # A run files one evidence item per check, so there is no single
+                # ``evidence_id`` to record on it: the items name the run they came from.
+                await self._evidence(
                     session, tenant_id, run, connection, snapshot, rows, actor, now
                 )
             connection.last_run_at = now
@@ -1176,120 +1228,150 @@ class ConnectorService:
         rows: list[CheckResult],
         actor: Actor,
         now: datetime,
-    ) -> uuid.UUID | None:
-        """File the snapshot as evidence on every control its checks map to.
+    ) -> list[uuid.UUID]:
+        """File what each check found as its own evidence, on the controls that check supports.
 
-        At most one file a day per connection unless the results changed: a person
-        clicking Run now five times gets one evidence item, not five.
+        One file per check rather than one per run, so the evidence on a control is what that
+        control's checks looked at, named for the check, and never the whole account. A check
+        files again only when its results changed or its last file is older than
+        ``EVIDENCE_REFRESH``: a person clicking Run now five times gets one file per check,
+        not five.
         """
-        previous = (
-            await session.execute(
-                select(CheckRun.results_digest, CheckRun.finished_at)
-                .where(
-                    CheckRun.tenant_id == tenant_id,
-                    CheckRun.connection_id == connection.id,
-                    CheckRun.evidence_id.is_not(None),
-                    CheckRun.id != run.id,
-                )
-                .order_by(CheckRun.finished_at.desc())
-                .limit(1)
-            )
-        ).first()
-        if (
-            previous is not None
-            and previous.results_digest == run.results_digest
-            and previous.finished_at is not None
-            and previous.finished_at > now - EVIDENCE_REFRESH
-        ):
-            return None
-
-        check_ids = {row.check_id for row in rows if row.outcome in ("pass", "fail")}
-        template_ids = set(
-            (
-                await session.execute(
-                    select(ControlTemplateCheck.template_id).where(
-                        ControlTemplateCheck.check_id.in_(check_ids)
-                    )
-                )
+        by_check: dict[uuid.UUID, list[CheckResult]] = defaultdict(list)
+        for row in rows:
+            by_check[row.check_id].append(row)
+        # A check files only when it found something an auditor can use: a pass or a fail.
+        found = {
+            check_id: check_rows
+            for check_id, check_rows in by_check.items()
+            if any(row.outcome in ("pass", "fail") for row in check_rows)
+        }
+        if not found:
+            return []
+        checks = {
+            row.id: row
+            for row in (
+                await session.execute(select(Check).where(Check.id.in_(list(found))))
             ).scalars()
-        )
-        control_ids = await control_service.control_ids_for_templates(
-            session, tenant_id=tenant_id, template_ids=template_ids
-        )
+        }
+        templates: dict[uuid.UUID, set[uuid.UUID]] = defaultdict(set)
+        for check_id, template_id in (
+            await session.execute(
+                select(ControlTemplateCheck.check_id, ControlTemplateCheck.template_id).where(
+                    ControlTemplateCheck.check_id.in_(list(found))
+                )
+            )
+        ).tuples():
+            templates[check_id].add(template_id)
+
         name = _PROVIDER_NAMES.get(connection.provider, connection.provider)
-        checks_by_id = {row.id: row for row in (await session.execute(select(Check))).scalars()}
         inventory = snapshot.get("inventory") or []
-        document = {
-            "verity": {
-                "run_id": str(run.id),
-                "trigger": run.trigger,
-                "connection": {
-                    "provider": connection.provider,
-                    "account": connection.account_login,
-                },
-                "collected_at": now.isoformat(),
-                "access": "read only",
-                # What the checks did not look at, and why. An auditor reading a
-                # clean result needs to know the population it was clean over.
-                "scope": {
-                    "listed": len(inventory),
-                    "checked": sum(1 for entry in inventory if entry["scope"] == "in_scope"),
-                    "excluded": [
+        # What the checks did not look at, and why. An auditor reading a clean result needs
+        # to know the population it was clean over.
+        scope = {
+            "listed": len(inventory),
+            "checked": sum(1 for entry in inventory if entry["scope"] == "in_scope"),
+            "excluded": [
+                {
+                    "resource": entry["full_name"],
+                    "reason": entry["reason"],
+                    "decided_by": entry["decided_by"],
+                }
+                for entry in inventory
+                if entry["scope"] == "excluded"
+            ],
+        }
+        filed: list[uuid.UUID] = []
+        for check_id, check_rows in found.items():
+            check = checks.get(check_id)
+            if check is None:
+                continue
+            digest = _rows_digest(check_rows)
+            latest = await evidence_service.latest_synced(
+                session,
+                tenant_id=tenant_id,
+                source=connection.provider,
+                external_id_prefix=_external_id(connection.id, check.key),
+            )
+            if (
+                latest is not None
+                and _filed_digest(latest[0]) == digest[:_DIGEST_LENGTH]
+                and latest[1] > now - EVIDENCE_REFRESH
+            ):
+                continue
+            # Only the controls this check supports: not every control the account touches.
+            control_ids = await control_service.control_ids_for_templates(
+                session, tenant_id=tenant_id, template_ids=templates[check_id]
+            )
+            if not control_ids:
+                continue
+            outcomes = [row.outcome for row in check_rows]
+            document = {
+                "verity": {
+                    "run_id": str(run.id),
+                    "trigger": run.trigger,
+                    "connection": {
+                        "provider": connection.provider,
+                        "account": connection.account_login,
+                    },
+                    "collected_at": now.isoformat(),
+                    "access": "read only",
+                    "check": {
+                        "key": check.key,
+                        "name": check.name,
+                        "description": check.description,
+                    },
+                    "scope": scope,
+                    "results": [
                         {
-                            "resource": entry["full_name"],
-                            "reason": entry["reason"],
-                            "decided_by": entry["decided_by"],
+                            "check": check.key,
+                            # The name people read, so a report of this file needs no catalogue.
+                            "name": check.name,
+                            "resource": row.resource_name,
+                            "outcome": row.outcome,
+                            "summary": row.detail.get("summary"),
+                            "reason": row.detail.get("reason"),
                         }
-                        for entry in inventory
-                        if entry["scope"] == "excluded"
+                        for row in check_rows
                     ],
                 },
-                "results": [
-                    {
-                        "check": checks_by_id[row.check_id].key
-                        if row.check_id in checks_by_id
-                        else None,
-                        # The name people read, so a report of this file needs no catalogue.
-                        "name": checks_by_id[row.check_id].name
-                        if row.check_id in checks_by_id
-                        else None,
-                        "resource": row.resource_name,
-                        "outcome": row.outcome,
-                        "summary": row.detail.get("summary"),
-                        "reason": row.detail.get("reason"),
-                    }
-                    for row in rows
-                ],
-            },
-            "snapshot": snapshot,
-        }
-        data = json.dumps(document, indent=2, default=str).encode()
-        view = await evidence_service.add_file(
-            session,
-            tenant_id=tenant_id,
-            actor=actor,
-            # The moment is in the title because several can land in a day (a run whose
-            # results changed files its own), and a list of identical titles tells nobody
-            # which is which.
-            title=(
-                f"{name} {connection.account_login}: automated test results, "
-                f"{now.day} {now:%b %Y %H:%M} UTC"
-            ),
-            filename=f"{connection.provider}-{connection.account_login}-{now:%Y%m%dT%H%MZ}.json",
-            data=data,
-            evidence_type="configuration_export",
-            collected_at=now.date(),
-            description=(
-                f"{run.passed} passed, {run.failed} failed and {run.errored} could not be "
-                f"checked across {run.resources} resources. Collected read only by the "
-                f"{name} connector."
-            ),
-            source_label=f"{name} connector",
-            owner_membership_id=connection.created_by_membership_id,
-            renewal_date=now.date() + timedelta(days=EVIDENCE_VALIDITY_DAYS),
-            control_ids=control_ids,
-        )
-        return view.id
+                "snapshot": github.evidence_snapshot(check.key, snapshot),
+            }
+            data = json.dumps(document, indent=2, default=str).encode()
+            resources = len({(row.resource_type, row.resource_id) for row in check_rows})
+            view = await evidence_service.add_file(
+                session,
+                tenant_id=tenant_id,
+                actor=actor,
+                # Named for what it evidences, where and when. The moment is in the title
+                # because a check whose results changed files again within the day, and a
+                # list of identical titles tells nobody which is which.
+                title=(
+                    f"{check.name}: {name} {connection.account_login}, "
+                    f"{now.day} {now:%b %Y %H:%M} UTC"
+                ),
+                filename=(
+                    f"{connection.provider}-{connection.account_login}-{_slug(check.key)}-"
+                    f"{now:%Y%m%dT%H%MZ}.json"
+                ),
+                data=data,
+                evidence_type="configuration_export",
+                collected_at=now.date(),
+                description=(
+                    f"{outcomes.count('pass')} passed, {outcomes.count('fail')} failed and "
+                    f"{outcomes.count('error')} could not be checked across {resources} "
+                    f"resources. Collected read only by the {name} connector."
+                ),
+                source_label=f"{name} connector",
+                owner_membership_id=connection.created_by_membership_id,
+                renewal_date=now.date() + timedelta(days=EVIDENCE_VALIDITY_DAYS),
+                control_ids=control_ids,
+                source=connection.provider,
+                external_id=_external_id(connection.id, check.key, digest, run.id),
+                synced_at=now,
+            )
+            filed.append(view.id)
+        return filed
 
     async def due_connection_ids(
         self, session: AsyncSession, *, tenant_id: uuid.UUID

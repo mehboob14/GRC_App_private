@@ -701,3 +701,37 @@ def test_a_failed_read_of_one_change_is_still_unknown() -> None:
     good = _change(("carol", "APPROVED", "2026-10-01T10:00:00Z", "c2"))
     blind = {"number": 10, "author": "alice", "merged_at": "2026-10-01T12:00:00Z", "reviews": None}
     assert _review_result(_repo("api", merged_changes=_merged(good, blind))).outcome == "error"
+
+
+def test_each_checks_evidence_holds_what_it_read_and_not_the_rest() -> None:
+    snapshot = _snapshot(_repo("api", admin=True))
+    snapshot["inventory"] = [{"id": "api", "full_name": "acme/api", "scope": "in_scope"}]
+    snapshot["window_days"] = 30
+    identity = {"id", "full_name", "url", "private", "fork", "admin", "default_branch"}
+
+    def kept(check: str) -> set[str]:
+        repository = github.evidence_snapshot(check, snapshot)["repositories"][0]
+        return set(repository) - identity
+
+    assert kept(github.SECRET_SCANNING_ENABLED) == {"security_and_analysis"}
+    assert kept(github.DEPENDENCY_ALERTS_ENABLED) == {"vulnerability_alerts"}
+    assert kept(github.DEFAULT_BRANCH_PROTECTED) == {"protection", "rules"}
+    assert kept(github.REVIEW_REQUIRED) == {"protection", "rules"}
+    assert kept(github.STATUS_CHECKS_REQUIRED) == {"protection", "rules"}
+    assert kept(github.MERGED_CHANGES_REVIEWED) == {"merged_changes"}
+    # The inventory is the scope's business, and the evidence prints its own scope block.
+    assert all(
+        "inventory" not in github.evidence_snapshot(key, snapshot) for key in github.IMPLEMENTED
+    )
+    assert github.evidence_snapshot(github.MERGED_CHANGES_REVIEWED, snapshot)["window_days"] == 30
+
+
+def test_an_account_level_check_holds_the_account_and_no_repository() -> None:
+    held = github.evidence_snapshot(github.ORG_TWO_FACTOR_REQUIRED, _snapshot(_repo("api")))
+    assert "repositories" not in held
+    assert held["account"]["login"] == "acme"
+
+
+def test_a_check_this_module_does_not_know_keeps_every_repository_whole() -> None:
+    repo = _repo("api")
+    assert github.evidence_snapshot("vcs.something_new", _snapshot(repo))["repositories"] == [repo]

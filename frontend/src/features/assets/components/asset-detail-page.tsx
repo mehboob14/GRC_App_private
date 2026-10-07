@@ -68,6 +68,7 @@ import {
   fmtMoney,
   relativeTime,
 } from "../tokens";
+import { useEntryState } from "@/lib/nav/entry-state";
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const humanize = (s: string) => s.replace(/_/g, " ");
@@ -104,7 +105,7 @@ export function AssetDetailPage() {
   const { assetId = "" } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [tab, setTab] = useState<TabId>("overview");
+  const [tab, setTab] = useEntryState<TabId>("detail.tab", "overview");
   const [transition, setTransition] = useState<AssetStatus | null>(null);
   const [editing, setEditing] = useState(false);
 

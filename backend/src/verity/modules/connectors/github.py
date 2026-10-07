@@ -61,6 +61,27 @@ IMPLEMENTED: Final[tuple[str, ...]] = (
     ORG_TWO_FACTOR_REQUIRED,
 )
 
+EVIDENCE_FIELDS: Final[dict[str, tuple[str, ...]]] = {
+    DEFAULT_BRANCH_PROTECTED: ("protection", "rules"),
+    REVIEW_REQUIRED: ("protection", "rules"),
+    STATUS_CHECKS_REQUIRED: ("protection", "rules"),
+    MERGED_CHANGES_REVIEWED: ("merged_changes",),
+    SECRET_SCANNING_ENABLED: ("security_and_analysis",),
+    DEPENDENCY_ALERTS_ENABLED: ("vulnerability_alerts",),
+}
+"""What each per repository check read from a repository. Its evidence file holds these and
+the repository's identity, not everything the snapshot has: a control's evidence is what its own
+checks looked at."""
+_REPOSITORY_IDENTITY: Final = (
+    "id",
+    "full_name",
+    "url",
+    "private",
+    "fork",
+    "admin",
+    "default_branch",
+)
+
 _NEEDS_ADMIN_READ: Final = "Grant the token Administration read access, then run again."
 
 
@@ -850,6 +871,32 @@ def evaluate(snapshot: Mapping[str, Any]) -> list[Result]:
         else:
             results += [check(repo) for _key, check in _PER_REPOSITORY]
     return results
+
+
+def evidence_snapshot(check_key: str, snapshot: Mapping[str, Any]) -> dict[str, Any]:
+    """The part of a snapshot one check read, for that check's evidence file.
+
+    An account level check read no repository, so its file holds the account alone. A check
+    this module does not know keeps every repository whole: never less than it read.
+    """
+    kept: dict[str, Any] = {
+        key: snapshot[key]
+        for key in ("provider", "evaluator", "collected_at", "account")
+        if key in snapshot
+    }
+    if check_key == ORG_TWO_FACTOR_REQUIRED:
+        return kept
+    repositories = snapshot.get("repositories", [])
+    fields = EVIDENCE_FIELDS.get(check_key)
+    if fields is None:
+        return {**kept, "repositories": repositories}
+    if check_key == MERGED_CHANGES_REVIEWED:
+        kept["window_days"] = snapshot.get("window_days")
+    kept["repositories"] = [
+        {key: repo[key] for key in (*_REPOSITORY_IDENTITY, *fields) if key in repo}
+        for repo in repositories
+    ]
+    return kept
 
 
 def unreachable(login: str, account_type: str, reason: str) -> list[Result]:

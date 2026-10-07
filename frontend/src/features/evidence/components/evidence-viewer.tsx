@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button, FileViewer, Icon, Skeleton } from "@/components/ui";
-import { evidenceApi } from "@/lib/api/endpoints";
-import { getAccessToken } from "@/lib/auth/session";
 import type { Evidence } from "@/lib/api/types";
+import { automatedBy } from "../tokens";
 import { ConnectorReport } from "./connector-report";
 import { parseSnapshot } from "./connector-snapshot";
+import { fetchEvidenceBlob } from "./evidence-files";
 
 /**
  * Preview of a piece of evidence.
@@ -18,24 +18,12 @@ import { parseSnapshot } from "./connector-snapshot";
  * filed is JSON for machines, so it is read as a report first.
  */
 
-/** The download route is authenticated, so a bare `src="/api/..."` would 401.
- *  Every preview goes through the bearer token into a blob. */
-export function fetchEvidenceBlob(id: string): () => Promise<Blob> {
-  return async () => {
-    const response = await fetch(evidenceApi.downloadUrl(id), {
-      headers: { Authorization: `Bearer ${getAccessToken() ?? ""}` },
-    });
-    if (!response.ok) throw new Error(String(response.status));
-    return response.blob();
-  };
-}
-
-/** Filed by a connector (its label says so), and JSON, so there is a report to read. */
+/** Filed by a connector, and JSON, so there is a report to read. */
 function filedByConnector(item: Evidence): boolean {
   return (
     item.kind === "file" &&
     item.content_type === "application/json" &&
-    Boolean(item.source_label?.endsWith(" connector"))
+    automatedBy(item) !== null
   );
 }
 

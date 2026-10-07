@@ -19,6 +19,7 @@ import {
   EmptyState,
   ErrorState,
   Icon,
+  Skeleton,
   StatusPill,
   TabStrip,
   useToast,
@@ -26,12 +27,21 @@ import {
 import { auditApi, controlsApi, evidenceApi } from "@/lib/api/endpoints";
 import { describeError, errorToast } from "@/lib/api/describe-error";
 import { useAuth } from "@/lib/auth/auth-context";
-import type { Evidence } from "@/lib/api/types";
+import type { Control, Evidence } from "@/lib/api/types";
 import { LinkControlsDialog } from "./link-controls-dialog";
-import { EvidenceViewer, fetchEvidenceBlob } from "./evidence-viewer";
+import { EvidenceViewer } from "./evidence-viewer";
+import { downloadEvidenceFile } from "./evidence-files";
 import { LinkedRecordsSection } from "./linked-records-section";
 import { SuggestedMappings } from "@/features/compliance/components/suggested-mappings-teaser";
-import { FRESHNESS, REVIEW_META, formatBytes, formatDate, formatDateTime } from "../tokens";
+import {
+  FRESHNESS,
+  REVIEW_META,
+  automatedBy,
+  formatBytes,
+  formatDate,
+  formatDateTime,
+} from "../tokens";
+import { useEntryState } from "@/lib/nav/entry-state";
 
 type TabId = "overview" | "controls" | "links" | "activity";
 
@@ -43,7 +53,7 @@ export function EvidenceDetailPage() {
   const canManage = Boolean(principal?.permissions.includes("evidence:manage"));
   const canReview = Boolean(principal?.permissions.includes("evidence:review"));
 
-  const [tab, setTab] = useState<TabId>("overview");
+  const [tab, setTab] = useEntryState<TabId>("detail.tab", "overview");
   const [linking, setLinking] = useState(false);
   const [previewing, setPreviewing] = useState(false);
   const [rejecting, setRejecting] = useState(false);
@@ -57,7 +67,8 @@ export function EvidenceDetailPage() {
   const controlsQuery = useQuery({
     queryKey: ["controls"],
     queryFn: () => controlsApi.list(),
-    enabled: linking,
+    // The Controls tab names each control and quotes its statement from this list.
+    enabled: linking || tab === "controls",
   });
   // Counts on the tabs, so the reader knows what is behind one before opening
   // it. Shares its key with the section itself, so React Query fetches once.
@@ -68,6 +79,10 @@ export function EvidenceDetailPage() {
   });
 
   const item = itemQuery.data;
+  const controlsById = useMemo(
+    () => new Map((controlsQuery.data ?? []).map((control) => [control.id, control])),
+    [controlsQuery.data],
+  );
 
   const reviewMutation = useMutation({
     mutationFn: (body: { decision: "approved" | "rejected"; note?: string }) =>
@@ -97,15 +112,7 @@ export function EvidenceDetailPage() {
 
   async function download(target: Evidence) {
     try {
-      const blob = await fetchEvidenceBlob(target.id)();
-      const url = URL.createObjectURL(blob);
-      const anchor = document.createElement("a");
-      anchor.href = url;
-      anchor.download = target.filename ?? target.title;
-      document.body.appendChild(anchor);
-      anchor.click();
-      anchor.remove();
-      URL.revokeObjectURL(url);
+      await downloadEvidenceFile(target);
     } catch (error) {
       toast({ title: errorToast(error, "file"), tone: "danger" });
     }
@@ -178,6 +185,12 @@ export function EvidenceDetailPage() {
                 </a>
               </Button>
             ) : null}
+            {item.content_type === "application/json" ? (
+              <Button variant="secondary" onClick={() => void download(item)}>
+                <Icon name="download" className="size-4" />
+                Download JSON
+              </Button>
+            ) : null}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="secondary">
@@ -189,7 +202,7 @@ export function EvidenceDetailPage() {
                 {item.kind === "file" ? (
                   <DropdownMenuItem onSelect={() => void download(item)}>
                     <Icon name="download" className="size-4" />
-                    Download original
+                    {item.content_type === "application/json" ? "Download JSON" : "Download original"}
                   </DropdownMenuItem>
                 ) : null}
                 {canManage ? (
@@ -249,7 +262,13 @@ export function EvidenceDetailPage() {
 
           {tab === "controls" ? (
             <>
-              <ControlsPanel item={item} canManage={canManage} onLink={() => setLinking(true)} />
+              <ControlsPanel
+                item={item}
+                canManage={canManage}
+                onLink={() => setLinking(true)}
+                controlsById={controlsById}
+                loading={controlsQuery.isLoading}
+              />
               <SuggestedMappings
                 evidenceId={evidenceId}
                 onApproved={async () => {
@@ -330,8 +349,8 @@ export function EvidenceDetailPage() {
               <Meta label="Owner">{item.owner_name ?? "Unassigned"}</Meta>
               <Meta label="Source label">{item.source_label ?? "Not set"}</Meta>
               <Meta label="Origin">
-                {item.source ? (
-                  item.source
+                {automatedBy(item) !== null ? (
+                  `Collected by ${automatedBy(item)}`
                 ) : (
                   <span className="font-normal text-text-subtle">Uploaded by hand</span>
                 )}
@@ -466,10 +485,14 @@ function ControlsPanel({
   item,
   canManage,
   onLink,
+  controlsById,
+  loading,
 }: {
   item: Evidence;
   canManage: boolean;
   onLink: () => void;
+  controlsById: Map<string, Control>;
+  loading: boolean;
 }) {
   return (
     <Panel
@@ -492,20 +515,44 @@ function ControlsPanel({
           action={canManage ? <Button onClick={onLink}>Link controls</Button> : undefined}
         />
       ) : (
-        <ul className="space-y-1.5">
-          {item.control_links.map((link, index) => (
-            <li
-              key={link.code}
-              className="flex flex-wrap items-center gap-2 rounded-sm border border-border px-3 py-2"
-            >
-              <Link to={`/controls/${item.control_ids[index] ?? ""}`}>
-                <CodeChip code={link.code} />
-              </Link>
-              {link.criteria.length > 0 ? (
-                <span className="text-caption text-text-subtle">{link.criteria.join(" · ")}</span>
-              ) : null}
-            </li>
-          ))}
+        <ul className="space-y-2">
+          {item.control_links.map((link, index) => {
+            const id = item.control_ids[index] ?? "";
+            const control = controlsById.get(id);
+            return (
+              <li key={link.code} className="rounded-md border border-border px-4 py-3">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <Link to={`/controls/${id}`} className="shrink-0">
+                    <CodeChip code={link.code} />
+                  </Link>
+                  {control ? (
+                    <Link
+                      to={`/controls/${id}`}
+                      className="min-w-0 text-body-md font-semibold text-text-primary hover:underline"
+                    >
+                      {control.name}
+                    </Link>
+                  ) : null}
+                  {link.criteria.length > 0 ? (
+                    <span className="text-caption text-text-subtle sm:ml-auto">
+                      {link.criteria.join(" · ")}
+                    </span>
+                  ) : null}
+                </div>
+                {/* The statement is what the control promises: the thing this item is evidence of. */}
+                {control?.description ? (
+                  <>
+                    <p className="type-overline mb-0.5 mt-2.5">Control statement</p>
+                    <p className="text-body-sm leading-relaxed text-text-secondary">
+                      {control.description}
+                    </p>
+                  </>
+                ) : loading ? (
+                  <Skeleton className="mt-2.5 h-10 w-full rounded-sm" />
+                ) : null}
+              </li>
+            );
+          })}
         </ul>
       )}
     </Panel>

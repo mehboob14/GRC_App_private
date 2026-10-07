@@ -1,10 +1,14 @@
+import { useRef } from "react";
 import { Outlet } from "react-router-dom";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
 import { ShellHeaderProvider } from "@/components/layout/shell-header";
 import { BrandingEffects } from "@/features/tenancy/branding-effects";
+import { useScrollRestoration } from "@/lib/nav/scroll-restore";
 
 export function AppLayout() {
+  const area = useRef<HTMLElement>(null);
+  useScrollRestoration(area);
   return (
     <ShellHeaderProvider>
       <BrandingEffects />
@@ -12,7 +16,7 @@ export function AppLayout() {
         <Sidebar />
         <div className="flex min-w-0 flex-1 flex-col">
           <Topbar />
-          <main className="min-h-0 flex-1 overflow-auto px-5 py-4">
+          <main ref={area} className="min-h-0 flex-1 overflow-auto px-5 py-4">
             <Outlet />
           </main>
         </div>

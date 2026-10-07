@@ -16,7 +16,8 @@ catalogue.
   Disconnecting destroys the token; the row and its history stay.
 - **A run** collects once (outside any transaction), evaluates every implemented check as a pure
   function of the snapshot, and then writes in one transaction: one `check_results` row per check and
-  resource, the snapshot as an evidence file on every mapped control (at most one a day unless the
+  resource, one evidence file per check holding that check's results and the part of the snapshot
+  it read, linked only to the controls that check supports (at most one a day per check unless its
   results change), and the connection's health. Runs are daily from the worker
   (`run_connector_checks`, hourly beat, due after 20 hours) and on demand.
 - **The control page** reads `GET /controls/{id}/automation`: tests, the capability and providers

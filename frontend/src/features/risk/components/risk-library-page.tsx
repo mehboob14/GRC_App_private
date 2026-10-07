@@ -27,6 +27,7 @@ import type { LibraryTemplate } from "../types";
 import { TREATMENT_META } from "../tokens";
 import { useRisksOutlet } from "./risks-outlet";
 import { ScoreChip } from "./score";
+import { useEntryState } from "@/lib/nav/entry-state";
 
 /**
  * The starter library as a catalogue: pick what applies, add it in one go.
@@ -37,10 +38,10 @@ export function RiskLibraryPage() {
   const { register, canManage } = useRisksOutlet();
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const [search, setSearch] = useState("");
-  const [categories, setCategories] = useState<string[]>([]);
-  const [frameworks, setFrameworks] = useState<string[]>([]);
-  const [hideAdopted, setHideAdopted] = useState(false);
+  const [search, setSearch] = useEntryState("risklibrary.search", "");
+  const [categories, setCategories] = useEntryState<string[]>("risklibrary.categories", []);
+  const [frameworks, setFrameworks] = useEntryState<string[]>("risklibrary.frameworks", []);
+  const [hideAdopted, setHideAdopted] = useEntryState("risklibrary.hideAdopted", false);
   const [picked, setPicked] = useState<string[]>([]);
   const [preview, setPreview] = useState<LibraryTemplate | null>(null);
 

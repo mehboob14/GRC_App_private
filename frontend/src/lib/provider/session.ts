@@ -7,8 +7,32 @@
  * (ADR-0006).
  */
 
+import { createTabShare } from "@/lib/auth/tab-share";
+import { forgetEntryState } from "@/lib/nav/entry-state";
+
 const TOKEN_KEY = "verity.provider.token";
 const ADMIN_KEY = "verity.provider.admin";
+
+/** The same cross-tab sharing as the workspace session, on a channel of its own (see tab-share.ts). */
+const share = createTabShare(
+  "verity.provider",
+  [TOKEN_KEY, ADMIN_KEY],
+  TOKEN_KEY,
+  // Only the console's own pages, and not its sign-in page.
+  (pathname) => /^\/provider(\/|$)/.test(pathname) && !/^\/provider\/login(\/|$)/.test(pathname),
+);
+const signOutListeners = new Set<() => void>();
+
+/** Call before the first render, so a tab opened from a link starts signed in. */
+export const adoptProviderSessionFromOtherTab = share.adopt;
+
+/** Hear that another tab signed this session out. Returns the unsubscribe. */
+export function onRemoteProviderSignOut(listener: () => void): () => void {
+  signOutListeners.add(listener);
+  return () => {
+    signOutListeners.delete(listener);
+  };
+}
 
 export type ProviderAdmin = {
   /** What the admin typed to sign in; the session response carries no profile. */
@@ -52,6 +76,7 @@ export function getProviderAdmin(): ProviderAdmin | null {
 }
 
 export function setProviderSession(token: string, admin: ProviderAdmin): void {
+  forgetEntryState();
   memoryToken = token;
   memoryAdmin = admin;
   try {
@@ -62,15 +87,27 @@ export function setProviderSession(token: string, admin: ProviderAdmin): void {
   }
 }
 
-export function clearProviderSession(): void {
+function wipe(): void {
   memoryToken = null;
   memoryAdmin = null;
+  forgetEntryState();
   try {
     sessionStorage.removeItem(TOKEN_KEY);
     sessionStorage.removeItem(ADMIN_KEY);
   } catch {
     // Nothing stored to remove.
   }
+}
+
+share.serve(() => {
+  wipe();
+  for (const listener of signOutListeners) listener();
+});
+
+export function clearProviderSession(): void {
+  const token = getProviderToken();
+  wipe();
+  share.announceSignOut(token);
 }
 
 /** Signed in, and not past the token's own expiry. The server is still the authority. */

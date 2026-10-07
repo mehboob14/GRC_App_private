@@ -6,8 +6,14 @@ import { AppRoutes } from "@/app/routes";
 import { ToastProvider, TooltipProvider } from "@/components/ui";
 import { ThemeProvider } from "@/lib/theme-provider";
 import { AuthProvider } from "@/lib/auth/auth-provider";
+import { adoptSessionFromOtherTab } from "@/lib/auth/session";
+import {
+  adoptProviderSessionFromOtherTab,
+  onRemoteProviderSignOut,
+} from "@/lib/provider/session";
 import { ApiError, mocksEnabled } from "@/lib/api/client";
 import { ErrorBoundary } from "@/components/error-boundary";
+import { HistoryTrail } from "@/lib/nav/history-trail";
 
 import "@fontsource/inter/400.css";
 import "@fontsource/inter/500.css";
@@ -64,7 +70,21 @@ if (!root) {
   throw new Error("Root element #root not found");
 }
 
-void enableMocks().then(() => {
+// The console's gates read its session only when a page renders, so a tab left open on
+// a console page would otherwise sit on error states after another tab signs out.
+onRemoteProviderSignOut(() => {
+  if (window.location.pathname.startsWith("/provider")) {
+    window.location.assign("/provider/login");
+  }
+});
+
+// A tab opened from a link starts with no session of its own: take one from an open
+// tab before the first render, so the person is not sent to sign in again.
+void Promise.all([
+  enableMocks(),
+  adoptSessionFromOtherTab(),
+  adoptProviderSessionFromOtherTab(),
+]).then(() => {
   createRoot(root).render(
     <StrictMode>
       <QueryClientProvider client={queryClient}>
@@ -72,6 +92,7 @@ void enableMocks().then(() => {
           <ToastProvider>
             <TooltipProvider>
               <BrowserRouter>
+                <HistoryTrail />
                 <ErrorBoundary>
                   <AuthProvider>
                     <AppRoutes />

@@ -45,6 +45,9 @@ The list of records. Registers work the same way everywhere:
   things you can do without opening the record.
 - **Export** produces a spreadsheet of what you are currently looking at, filters
   included.
+- **Coming back.** Open a record and press Back (or the back link at the top of the
+  record) and the register is as you left it: the same search, filters, sort, page and
+  place on the page. Opening the register again from the sidebar starts fresh.
 
 ## 4. The detail page
 
@@ -61,6 +64,9 @@ Clicking a row opens the record. Detail pages share a layout:
   that document it, and a document lists the controls it documents. Those are changed
   from the risk or the document, so they carry a note saying where.
 - **Activity** or **History** is the record's own trail: who changed what and when.
+- **Back** at the top goes to the page you came from. An evidence item opened from a
+  control goes back to that control, on the tab you were on. A link opened in a new tab
+  is already signed in, and signing out in one tab signs you out of the others.
 
 ![An asset detail page, with tabs, the summary panel and the record's own trail](images/asset-detail.png)
 

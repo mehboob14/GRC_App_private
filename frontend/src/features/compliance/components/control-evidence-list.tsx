@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Icon, StatusPill } from "@/components/ui";
 import type { Evidence, EvidenceFreshness } from "@/lib/api/types";
+import { automatedBy, historyKey } from "@/features/evidence/tokens";
 
 const FRESHNESS: Record<
   EvidenceFreshness,
@@ -13,21 +14,12 @@ const FRESHNESS: Record<
   no_expiry: { label: "No expiry", family: "neutral" },
 };
 
-/** A connector files its results again each time they change. Titles carry the
- *  moment (`, 6 Oct 2026 14:05 UTC`); older ones do not. */
-const FILED_AT = /,\s\d{1,2} [A-Z][a-z]{2} \d{4} \d{2}:\d{2} UTC$/;
-
-const filedByConnector = (item: Evidence) =>
-  Boolean(item.source_label?.endsWith(" connector"));
-
 /** The same results filed on other days read as one item with a history, not as
  *  copies. The list arrives newest first, so the first of a group is the latest. */
 function grouped(items: Evidence[]): { latest: Evidence; earlier: Evidence[] }[] {
   const groups = new Map<string, Evidence[]>();
   for (const item of items) {
-    const key = filedByConnector(item)
-      ? `${item.source_label}|${item.title.replace(FILED_AT, "")}`
-      : item.id;
+    const key = historyKey(item) ?? item.id;
     groups.set(key, [...(groups.get(key) ?? []), item]);
   }
   return [...groups.values()].map(([latest, ...earlier]) => ({ latest, earlier }));
@@ -44,7 +36,7 @@ function day(iso: string): string {
 /** What the file says, in a line: for a connector, what it found. */
 function detail(item: Evidence): string {
   const parts = [item.source_label ?? item.evidence_type.replace(/_/g, " "), day(item.collected_at)];
-  if (filedByConnector(item) && item.description) {
+  if (automatedBy(item) !== null && item.description) {
     parts.push(item.description.split(". ")[0].replace(/\.$/, ""));
   }
   return parts.join(" · ");
