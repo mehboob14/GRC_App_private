@@ -106,20 +106,36 @@ A line under the status says how much was checked: "Checking 35 of 41 repositori
 devuser", with a link to change it. It appears on controls that have repository level tests.
 
 The output is attached to the control as evidence, dated, so the control's evidence
-list fills without anybody uploading anything. The file lists what was checked and, under
-`scope`, each repository that was left out with its reason. Evidence is attached at most once
-a day unless the result changes, so a passing check does not bury the record in identical
-copies. A failing run is filed too, because it is the dated record of what was observed, but
-it never makes a failing control look ready: readiness looks at the tests as well as the
-evidence.
+list fills without anybody uploading anything. Each item is named with the moment it was
+collected, and opens as a report: what was checked, each repository left out with its reason,
+and what every check found. **Show the raw file** is one click away, and the original JSON is
+what is stored and downloaded. Evidence is attached at most once a day unless the result
+changes, so a passing check does not bury the record in identical copies; on the control, the
+newest result is the row and the earlier ones sit under **earlier results**. A failing run is
+filed too, because it is the dated record of what was observed, but it never makes a failing
+control look ready: readiness looks at the tests as well as the evidence. A result reads
+**Current** when it is filed and **Aging** in the last two days of its week, by which time the
+next run has normally replaced it.
 
 ### When the plan, not the setting, is the problem
 
-GitHub's free plan does not offer branch protection on private repositories, and some
-security features need a paid plan. Verity tells these apart from a missing permission. The
-result is a failure, because the control's aim is not being met, and it says what to do:
-upgrade the plan, or leave the repository out with a reason. It does not tell you to grant a
-permission your token already has.
+GitHub offers branch protection and secret scanning on private repositories only to paid
+plans, so a personal account on Free cannot meet them there. Verity tells this apart from a
+missing permission. The result is a failure, because the control's aim is not being met, but
+it is said once for the account instead of on every repository: "30 repositories on devuser
+cannot be checked on the current GitHub plan". Your options are to move the owning account to a
+paid plan, to make a repository public if it can be, or to leave the repositories out with a
+reason. **Leave these out** opens the repository list with them already unticked, asks for the
+reason, and checks again. It does not tell you to grant a permission your token already has,
+and it does not ask you to turn on a setting the plan does not have.
+
+### Which controls a connection checks
+
+Each connection card on the Connections page lists the controls it checks, failing ones first,
+with a link into the controls library. In the library, **Evidenced by** filters by how a control
+is evidenced (systems, systems and people, people), and **System** then narrows to the controls
+one system checks. **System** is hidden when only **People** is chosen, because no system
+checks those.
 
 ### What "protected" means
 

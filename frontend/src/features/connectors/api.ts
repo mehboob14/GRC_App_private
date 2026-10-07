@@ -97,6 +97,9 @@ export type TestResult = {
   outcome: Outcome;
   summary: string;
   url: string | null;
+  /** What the collector recorded. `reason` is `plan` when the provider does not
+   *  offer the feature on the account's plan. */
+  detail: { reason?: string } & Record<string, unknown>;
   observed_at: string;
 };
 
@@ -155,6 +158,9 @@ export type Composition = {
   checks_ready: number;
   checks_planned: number;
   sources: CompositionSource[];
+  /** Keys of the providers with a collector for any of the control's checks,
+   *  connected or not. Verity's own modules appear as `verity`. */
+  runs_on: string[];
   items_total: number;
   items_automatic: number;
   items_planned: number;
@@ -244,6 +250,8 @@ export type Automation = {
 /** What evidences each control, for the register. */
 export type ControlComposition = {
   control_id: string;
+  code: string;
+  name: string;
   composition: Composition;
   automation_status: AutomationStatus | null;
 };

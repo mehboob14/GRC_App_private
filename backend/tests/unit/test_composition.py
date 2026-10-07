@@ -147,3 +147,14 @@ def test_the_mode_is_by_design_and_the_counts_say_what_runs_today() -> None:
         1,
     )
     assert composition.items_planned == 1
+
+
+def test_the_providers_with_a_collector_for_any_of_the_checks_are_named_connected_or_not() -> None:
+    # GitHub has a collector for the review check, so it is named whether or not it is connected;
+    # a check nobody collects yet names nobody.
+    assert compose([REVIEW, PIPELINE], CAPS, set(), []).runs_on == ("github",)
+    assert compose([REVIEW, PIPELINE], CAPS, {"github"}, []).runs_on == ("github",)
+    assert compose([PIPELINE, LEAVERS], CAPS, {"github"}, []).runs_on == ()
+    assert compose([], CAPS, set(), []).runs_on == ()
+    both = CheckFacts("x", ["version_control"], ["github", "verity"])
+    assert compose([both], CAPS, set(), []).runs_on == ("github", "verity")

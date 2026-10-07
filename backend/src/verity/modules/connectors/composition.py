@@ -75,6 +75,10 @@ class Composition:
     items_planned: int = 0
     items_platform: int = 0
     items_manual: int = 0
+    runs_on: tuple[str, ...] = ()
+    """Keys of the providers that have a collector for at least one of the control's checks,
+    connected or not (Verity's own modules appear as ``verity``). It answers "which controls
+    does GitHub check?" for the register's filter and for a connection's control list."""
 
 
 def is_platform(capabilities: Iterable[str]) -> bool:
@@ -215,4 +219,5 @@ def compose(
         items_planned=sum(1 for s in states if s == "planned"),
         items_platform=sum(1 for s in states if s == "platform"),
         items_manual=sum(1 for s in states if s == "manual"),
+        runs_on=tuple(sorted({key for check in checks for key in check.implementations})),
     )

@@ -42,7 +42,8 @@ import { RequirementChainDialog } from "@/features/compliance/components/require
 import { ago, type CriterionMapping } from "@/features/connectors/api";
 import { useAutomation } from "@/features/connectors/hooks";
 import { useLinkedRecords } from "@/features/linkage/hooks";
-import type { Control, Evidence, EvidenceFreshness } from "@/lib/api/types";
+import { ControlEvidenceList } from "./control-evidence-list";
+import type { Control } from "@/lib/api/types";
 
 const STATUS_LABEL: Record<string, string> = {
   not_started: "Not started",
@@ -59,16 +60,6 @@ const STATUS_FAMILY: Record<
   in_progress: "progress",
   implemented: "success",
   not_applicable: "neutral",
-};
-
-const FRESHNESS: Record<
-  EvidenceFreshness,
-  { label: string; family: "success" | "warning" | "danger" | "neutral" }
-> = {
-  current: { label: "Current", family: "success" },
-  aging: { label: "Aging", family: "warning" },
-  stale: { label: "Stale", family: "danger" },
-  no_expiry: { label: "No expiry", family: "neutral" },
 };
 
 function Panel({
@@ -613,36 +604,10 @@ export function ControlDetailPage() {
                   description="A control with no evidence cannot be shown to operate. Attach a file or link from the evidence library."
                 />
               ) : (
-                <ul className="divide-y divide-border">
-                  {(tab === "overview" ? evidence.slice(0, 6) : evidence).map(
-                    (item: Evidence) => (
-                      <li
-                        key={item.id}
-                        className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0"
-                      >
-                        <Icon
-                          name={item.kind === "file" ? "doc" : "globe"}
-                          className="size-4 shrink-0 text-text-subtle"
-                          aria-hidden
-                        />
-                        <span className="min-w-0 flex-1">
-                          <span className="block truncate text-body-md text-text-primary">
-                            {item.title}
-                          </span>
-                          <span className="block truncate text-caption text-text-subtle">
-                            {item.source_label ??
-                              item.evidence_type.replace(/_/g, " ")}
-                          </span>
-                        </span>
-                        <StatusPill
-                          kind="inline"
-                          status={FRESHNESS[item.freshness].family}
-                          label={FRESHNESS[item.freshness].label}
-                        />
-                      </li>
-                    ),
-                  )}
-                </ul>
+                <ControlEvidenceList
+                  items={evidence}
+                  limit={tab === "overview" ? 6 : undefined}
+                />
               )}
               {tab === "overview" && evidence.length > 6 ? (
                 <button

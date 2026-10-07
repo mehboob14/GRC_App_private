@@ -282,6 +282,8 @@ class ControlComposition:
     """One control's evidence composition and monitoring status, for the register."""
 
     control_id: uuid.UUID
+    code: str
+    name: str
     composition: comp.Composition
     automation_status: str | None
 
@@ -1215,7 +1217,7 @@ class ConnectorService:
             session, tenant_id=tenant_id, template_ids=template_ids
         )
         name = _PROVIDER_NAMES.get(connection.provider, connection.provider)
-        keys = {row.id: row.key for row in (await session.execute(select(Check))).scalars()}
+        checks_by_id = {row.id: row for row in (await session.execute(select(Check))).scalars()}
         inventory = snapshot.get("inventory") or []
         document = {
             "verity": {
@@ -1244,10 +1246,17 @@ class ConnectorService:
                 },
                 "results": [
                     {
-                        "check": keys.get(row.check_id),
+                        "check": checks_by_id[row.check_id].key
+                        if row.check_id in checks_by_id
+                        else None,
+                        # The name people read, so a report of this file needs no catalogue.
+                        "name": checks_by_id[row.check_id].name
+                        if row.check_id in checks_by_id
+                        else None,
                         "resource": row.resource_name,
                         "outcome": row.outcome,
                         "summary": row.detail.get("summary"),
+                        "reason": row.detail.get("reason"),
                     }
                     for row in rows
                 ],
@@ -1259,7 +1268,13 @@ class ConnectorService:
             session,
             tenant_id=tenant_id,
             actor=actor,
-            title=f"{name} {connection.account_login}: automated test results",
+            # The moment is in the title because several can land in a day (a run whose
+            # results changed files its own), and a list of identical titles tells nobody
+            # which is which.
+            title=(
+                f"{name} {connection.account_login}: automated test results, "
+                f"{now.day} {now:%b %Y %H:%M} UTC"
+            ),
             filename=f"{connection.provider}-{connection.account_login}-{now:%Y%m%dT%H%MZ}.json",
             data=data,
             evidence_type="configuration_export",
@@ -1616,8 +1631,10 @@ class ConnectorService:
             session, tenant_id, set(links.values())
         )
         statuses = await self.automation_statuses(session, tenant_id=tenant_id)
+        labels = await control_service.control_labels(session, tenant_id=tenant_id)
         out: list[ControlComposition] = []
         for control_id, template_id in links.items():
+            code, name = labels.get(control_id, ("", ""))
             check_facts = [
                 comp.CheckFacts(
                     key=check.key,
@@ -1629,6 +1646,8 @@ class ConnectorService:
             out.append(
                 ControlComposition(
                     control_id=control_id,
+                    code=code,
+                    name=name,
                     composition=comp.compose(
                         check_facts, facts, connected, evidence.get(template_id, [])
                     ),

@@ -53,7 +53,12 @@ import { describeError, errorToast } from "@/lib/api/describe-error";
 import { useAuth } from "@/lib/auth/auth-context";
 import type { Control, ControlStatus } from "@/lib/api/types";
 import { OwnerSelect } from "@/features/iam/components/owner-select";
+import type { ComposeMode } from "@/features/connectors/api";
 import { useControlComposition } from "@/features/connectors/hooks";
+import {
+  MODE,
+  systemOptions,
+} from "@/features/connectors/components/composition-meta";
 import {
   EvidencedBy,
   MonitoringWord,
@@ -74,6 +79,9 @@ import {
 
 /** A facet option that also states how many rows it would leave. */
 const withCount = (label: string, n: number) => (n ? `${label} (${n})` : label);
+
+/** How a control can be evidenced, in the order the facet lists them. */
+const COMPOSE_MODES: ComposeMode[] = ["automated", "hybrid", "manual"];
 
 /** DS §6.1 — a control's implementation state, mapped once so every screen
  *  renders the same word the same way. */
@@ -642,6 +650,19 @@ export function ControlsPage() {
   const [frameworkFilter, setFrameworkFilter] = useState<string[]>(() =>
     params.getAll("framework"),
   );
+  /** How a control is evidenced (`?evidenced=automated`) and which system checks
+   *  it (`?system=github`, where the connections page links). Both come from the
+   *  composition, so they apply once it has loaded. */
+  const [modes, setModes] = useState<ComposeMode[]>(() =>
+    params
+      .getAll("evidenced")
+      .filter((mode): mode is ComposeMode =>
+        (COMPOSE_MODES as string[]).includes(mode),
+      ),
+  );
+  const [systems, setSystems] = useState<string[]>(() =>
+    params.getAll("system"),
+  );
   /** The open row, held by id — a snapshot would go stale the moment an edit
    *  inside the dialog refetched the list, leaving the dialog showing the old
    *  owner while the table behind it showed the new one. */
@@ -762,10 +783,29 @@ export function ControlsPage() {
   );
   const vocabulary = vocabularyQuery.data;
 
+  /** Whether a control fits the Evidenced by and System facets. Without a
+   *  composition (loading, or it failed) the facets are hidden and there is
+   *  nothing to match on, so every control fits. */
+  const evidencedAs = useCallback(
+    (controlId: string) => {
+      if (!composition.data) return true;
+      const item = compositionById.get(controlId);
+      return (
+        (modes.length === 0 ||
+          (item !== undefined && modes.includes(item.composition.mode))) &&
+        (systems.length === 0 ||
+          (item?.composition.runs_on.some((key) => systems.includes(key)) ??
+            false))
+      );
+    },
+    [composition.data, compositionById, modes, systems],
+  );
+
   const visible = useMemo(() => {
     const query = search.trim().toLowerCase();
     return controls.filter(
       (control) =>
+        evidencedAs(control.id) &&
         (types.length === 0 || types.includes(control.category)) &&
         (subTypes.length === 0 ||
           (control.sub_category != null &&
@@ -821,6 +861,7 @@ export function ControlsPage() {
     evidence,
     evidenceCounts,
     tscFor,
+    evidencedAs,
   ]);
 
   // Selection survives filtering. Pruning to the visible rows would wipe a
@@ -970,6 +1011,34 @@ export function ControlsPage() {
     return [...all].sort().map((f) => ({ value: f, label: f }));
   }, [controls]);
 
+  /** The systems that check any control, and how many controls each one checks. */
+  const systemList = useMemo(
+    () => systemOptions(composition.data ?? []),
+    [composition.data],
+  );
+  const modeCounts = useMemo(() => {
+    const counts: Record<ComposeMode, number> = {
+      automated: 0,
+      hybrid: 0,
+      manual: 0,
+    };
+    for (const item of composition.data ?? []) counts[item.composition.mode] += 1;
+    return counts;
+  }, [composition.data]);
+  /** People alone means no system checks the control, so a System choice would
+   *  match nothing. It is dropped rather than left to empty the page. */
+  const peopleOnly = modes.length > 0 && modes.every((mode) => mode === "manual");
+  function changeModes(next: ComposeMode[]) {
+    setModes(next);
+    if (next.length > 0 && next.every((mode) => mode === "manual")) {
+      setSystems([]);
+    }
+  }
+  // A link in from the connections page lands on a filtered list, so the table
+  // waits for the composition rather than flashing the whole library first.
+  const waitingOnComposition =
+    composition.isLoading && (modes.length > 0 || systems.length > 0);
+
   // The two numbers the deleted header summary carried. They now ride on the
   // facet option that filters to exactly that set.
   const unowned = controls.filter(
@@ -1013,6 +1082,10 @@ export function ControlsPage() {
     ...evidence.map(
       (e) => `Evidence: ${e === "with" ? "Has evidence" : "None"}`,
     ),
+    ...modes.map((m) => `Evidenced by: ${MODE[m].label}`),
+    ...systems.map(
+      (s) => `System: ${systemList.find((o) => o.value === s)?.label ?? s}`,
+    ),
     ...(search.trim() ? [`Search: ${search.trim()}`] : []),
   ];
 
@@ -1026,6 +1099,8 @@ export function ControlsPage() {
     setOwners([]);
     setStatuses([]);
     setEvidence([]);
+    setModes([]);
+    setSystems([]);
   }
 
   if (controlsQuery.isError) {
@@ -1173,6 +1248,30 @@ export function ControlsPage() {
             />
           </>
         ) : null}
+        {composition.data ? (
+          <>
+            <FilterFacet
+              label="Evidenced by"
+              options={COMPOSE_MODES.map((mode) => ({
+                value: mode,
+                label: withCount(MODE[mode].label, modeCounts[mode]),
+              }))}
+              values={modes}
+              onChange={(next) => changeModes(next as ComposeMode[])}
+            />
+            {!peopleOnly && systemList.length > 0 ? (
+              <FilterFacet
+                label="System"
+                options={systemList.map((option) => ({
+                  value: option.value,
+                  label: withCount(option.label, option.count),
+                }))}
+                values={systems}
+                onChange={setSystems}
+              />
+            ) : null}
+          </>
+        ) : null}
         {activeFilters.length > 0 ? (
           <Button variant="ghost" size="sm" onClick={clearFilters}>
             Clear filters
@@ -1185,7 +1284,7 @@ export function ControlsPage() {
         <span className="tabular">{controls.length}</span> controls
       </p>
 
-      {controlsQuery.isLoading ? (
+      {controlsQuery.isLoading || waitingOnComposition ? (
         <TableSkeleton rows={10} density="comfortable" />
       ) : controls.length === 0 ? (
         // First use: the library exists as templates but has not been adopted.

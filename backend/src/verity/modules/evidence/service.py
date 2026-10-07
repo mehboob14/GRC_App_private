@@ -60,19 +60,28 @@ _SNAPSHOT: Final = (
 )
 
 
-def freshness(renewal_date: date | None, *, today: date | None = None) -> str:
+def freshness(
+    renewal_date: date | None, *, collected_at: date | None = None, today: date | None = None
+) -> str:
     """``current`` | ``aging`` | ``stale`` | ``no_expiry``.
 
     An item with no renewal date does not expire and is reported as such rather
     than quietly counted as current — "never expires" and "fine for now" are
     different claims to an auditor.
+
+    Given when the item was collected, the aging warning is the last third of its
+    life at most: a connector's result is valid for a week and replaced by the next
+    run, so it must not read as aging the moment it is filed.
     """
     if renewal_date is None:
         return "no_expiry"
     now = today or datetime.now(UTC).date()
     if renewal_date < now:
         return "stale"
-    if (renewal_date - now).days <= AGING_WINDOW_DAYS:
+    window = AGING_WINDOW_DAYS
+    if collected_at is not None:
+        window = min(window, max((renewal_date - collected_at).days // 3, 0))
+    if (renewal_date - now).days <= window:
         return "aging"
     return "current"
 
@@ -216,8 +225,14 @@ class EvidenceService:
                     )
                 )
             )
+        # created_at breaks the tie: collected_at is a day, and several results from one
+        # connection can land in it, so "newest first" needs a second key to be true.
         rows = list(
-            (await session.execute(statement.order_by(Evidence.collected_at.desc()))).scalars()
+            (
+                await session.execute(
+                    statement.order_by(Evidence.collected_at.desc(), Evidence.created_at.desc())
+                )
+            ).scalars()
         )
         mappings = await self._mappings(session, tenant_id)
         owners = await self._owner_names(session, tenant_id)
@@ -307,12 +322,18 @@ class EvidenceService:
         reads every mapping in the library and every member's name."""
         row = (
             await session.execute(
-                select(Evidence.title, Evidence.renewal_date, Evidence.evidence_type).where(
-                    Evidence.tenant_id == tenant_id, Evidence.id == evidence_id
-                )
+                select(
+                    Evidence.title,
+                    Evidence.renewal_date,
+                    Evidence.collected_at,
+                    Evidence.evidence_type,
+                ).where(Evidence.tenant_id == tenant_id, Evidence.id == evidence_id)
             )
         ).first()
-        return None if row is None else (row.title, freshness(row.renewal_date), row.evidence_type)
+        if row is None:
+            return None
+        state = freshness(row.renewal_date, collected_at=row.collected_at)
+        return (row.title, state, row.evidence_type)
 
     async def set_control_evidence(
         self,
@@ -477,7 +498,7 @@ class EvidenceService:
             owner_name=(owners.get(row.owner_membership_id) if row.owner_membership_id else None),
             collected_at=row.collected_at,
             renewal_date=row.renewal_date,
-            freshness=freshness(row.renewal_date),
+            freshness=freshness(row.renewal_date, collected_at=row.collected_at),
             filename=row.filename,
             content_type=row.content_type,
             size_bytes=row.size_bytes,
@@ -1124,7 +1145,7 @@ class EvidenceService:
                 sha256=row.sha256,
                 link_url=row.link_url,
                 renewal_date=row.renewal_date,
-                freshness=freshness(row.renewal_date),
+                freshness=freshness(row.renewal_date, collected_at=row.collected_at),
                 review_status=row.review_status,
             )
             for row in rows

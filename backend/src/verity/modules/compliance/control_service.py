@@ -377,6 +377,18 @@ class ControlService:
             if template_id is not None
         }
 
+    async def control_labels(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID
+    ) -> dict[uuid.UUID, tuple[str, str]]:
+        """Each live control's code and name, for a page that lists controls it does not own
+        (the connections page lists the controls a connection checks)."""
+        rows = await session.execute(
+            select(Control.id, Control.code, Control.name).where(
+                Control.tenant_id == tenant_id, Control.disabled_at.is_(None)
+            )
+        )
+        return {control_id: (code, name) for control_id, code, name in rows.tuples()}
+
     async def control_mappings(
         self, session: AsyncSession, *, tenant_id: uuid.UUID, control_id: uuid.UUID
     ) -> list[MappingView]:

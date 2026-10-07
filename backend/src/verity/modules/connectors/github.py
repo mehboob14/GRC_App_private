@@ -438,10 +438,22 @@ def _fail_or_unknown(repo: Mapping[str, Any], key: str, summary: str, **extra: o
     return _repo_result(repo, key, "fail", summary, **extra)
 
 
-_PLAN_SETTING: Final = (
-    "GitHub does not offer this on the repository's plan. Upgrade the plan, "
-    "or exclude the repository with a reason."
-)
+def _plan_summary(repo: Mapping[str, Any], feature: str) -> str:
+    """The sentence for a repository whose plan does not offer a setting, with the ways out.
+
+    A private repository on a free plan is the usual case. Making it public is only
+    offered for a private one, and leaving it out of the audit, which is the way out for a
+    repository that is not part of the audited system, is always offered. The word
+    "plan" stays in the sentence: the panel groups these results by their ``reason``, and
+    people search for the word.
+    """
+    private = bool(repo.get("private"))
+    where = "this private repository" if private else "this repository"
+    ways = "Upgrade the plan, make the repository public" if private else "Upgrade the plan"
+    return (
+        f"GitHub does not offer {feature} for {where} on its current plan. "
+        f"{ways}, or exclude it with a reason."
+    )
 
 
 def _plan_limited(repo: Mapping[str, Any]) -> bool:
@@ -517,7 +529,13 @@ def _protected(repo: Mapping[str, Any]) -> Result:
             "Require a pull request.",
         )
     if _plan_limited(repo):
-        return _repo_result(repo, DEFAULT_BRANCH_PROTECTED, "fail", _PLAN_SETTING, reason="plan")
+        return _repo_result(
+            repo,
+            DEFAULT_BRANCH_PROTECTED,
+            "fail",
+            _plan_summary(repo, "branch protection"),
+            reason="plan",
+        )
     return _fail_or_unknown(
         repo,
         DEFAULT_BRANCH_PROTECTED,
@@ -555,7 +573,14 @@ def _reviews_required(repo: Mapping[str, Any]) -> Result:
             last_push_approval=reviews.get("require_last_push_approval"),
         )
     if _plan_limited(repo):
-        return _repo_result(repo, REVIEW_REQUIRED, "fail", _PLAN_SETTING, required=0, reason="plan")
+        return _repo_result(
+            repo,
+            REVIEW_REQUIRED,
+            "fail",
+            _plan_summary(repo, "branch protection, which is what requires reviews"),
+            required=0,
+            reason="plan",
+        )
     return _fail_or_unknown(
         repo, REVIEW_REQUIRED, "Changes can merge without an approving review.", required=0
     )
@@ -577,7 +602,13 @@ def _status_checks(repo: Mapping[str, Any]) -> Result:
                 repo, STATUS_CHECKS_REQUIRED, "pass", "A ruleset requires checks to pass."
             )
     if _plan_limited(repo):
-        return _repo_result(repo, STATUS_CHECKS_REQUIRED, "fail", _PLAN_SETTING, reason="plan")
+        return _repo_result(
+            repo,
+            STATUS_CHECKS_REQUIRED,
+            "fail",
+            _plan_summary(repo, "branch protection, which is what requires status checks"),
+            reason="plan",
+        )
     return _fail_or_unknown(
         repo, STATUS_CHECKS_REQUIRED, "Nothing has to pass before a change merges."
     )
@@ -589,7 +620,13 @@ def _secret_scanning(repo: Mapping[str, Any]) -> Result:
         # With admin on the repository the setting is simply not there, which means
         # the plan does not offer it. Without admin the token cannot see it.
         if repo.get("admin") is True:
-            return _repo_result(repo, SECRET_SCANNING_ENABLED, "fail", _PLAN_SETTING, reason="plan")
+            return _repo_result(
+                repo,
+                SECRET_SCANNING_ENABLED,
+                "fail",
+                _plan_summary(repo, "secret scanning"),
+                reason="plan",
+            )
         return _repo_result(
             repo,
             SECRET_SCANNING_ENABLED,

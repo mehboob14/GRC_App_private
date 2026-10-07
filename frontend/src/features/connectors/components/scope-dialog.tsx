@@ -40,11 +40,19 @@ import { refreshAutomation } from "../hooks";
  * audited, and printed on the evidence, so an auditor reading a clean result knows
  * what it was clean over.
  */
+const NONE: string[] = [];
+
 export function ScopeDialog({
   connection,
+  leaveOut = NONE,
   onClose,
 }: {
-  connection: Connection | null;
+  /** Only what the dialog reads, so a page that knows the connection by id and
+   *  account (the Checks tab) can open it without loading the whole record. */
+  connection: (Pick<Connection, "id" | "account_login"> & Partial<Pick<Connection, "scope">>) | null;
+  /** Repositories (by full name) to untick on opening, for a caller that knows
+   *  which ones cannot be checked. The reason is still the person's to give. */
+  leaveOut?: string[];
   onClose: () => void;
 }) {
   const open = connection !== null;
@@ -69,8 +77,13 @@ export function ScopeDialog({
 
   // What each row is now, so the dialog only ever sends what actually changed.
   useEffect(() => {
-    setChecked(Object.fromEntries(rows.map((r) => [r.external_id, r.scope === "in_scope"])));
-  }, [rows]);
+    const unticked = new Set(leaveOut);
+    setChecked(
+      Object.fromEntries(
+        rows.map((r) => [r.external_id, r.scope === "in_scope" && !unticked.has(r.name)]),
+      ),
+    );
+  }, [rows, leaveOut]);
 
   const shown = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -124,6 +137,9 @@ export function ScopeDialog({
           <DialogDescription>
             Only ticked repositories are checked. {connection?.account_login} has{" "}
             {rows.length || connection?.scope?.listed || 0}.
+            {leaveOut.length > 0
+              ? ` ${leaveOut.length} are unticked because GitHub does not offer these checks on their plan.`
+              : ""}
           </DialogDescription>
         </DialogHeader>
 

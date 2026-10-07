@@ -1,10 +1,11 @@
 import { useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Badge,
   Button,
   Card,
+  CodeChip,
   Dialog,
   DialogBody,
   DialogContent,
@@ -42,9 +43,15 @@ import {
   disconnectConnection,
   listProviders,
   type Connection,
+  type ControlComposition,
   type Provider,
 } from "../api";
-import { refreshAutomation, useConnections, useRunConnections } from "../hooks";
+import {
+  refreshAutomation,
+  useConnections,
+  useControlComposition,
+  useRunConnections,
+} from "../hooks";
 import { ConnectGitHubDialog } from "./connect-github-dialog";
 import { RequestIntegrationDialog } from "./request-integration-dialog";
 import { ScopeDialog } from "./scope-dialog";
@@ -162,8 +169,73 @@ function health(connection: Connection): {
   return { label: "Healthy", family: "success" };
 }
 
+/** The controls a system checks, so a connection answers what it is for. The
+ *  ones failing come first: they are why anyone opens this. */
+function ControlsChecked({
+  provider,
+  name,
+  items,
+}: {
+  provider: string;
+  name: string;
+  items: ControlComposition[];
+}) {
+  const mine = items
+    .filter((item) => item.composition.runs_on.includes(provider))
+    .sort(
+      (a, b) =>
+        Number(b.automation_status === "failing") -
+          Number(a.automation_status === "failing") ||
+        a.code.localeCompare(b.code, undefined, { numeric: true }),
+    );
+  if (mine.length === 0) return null;
+  const failing = mine.filter((item) => item.automation_status === "failing");
+  const shown = mine.slice(0, 10);
+  return (
+    <div className="mt-3 rounded-md border border-border px-3 py-2.5">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-body-sm text-text-secondary">
+          <span className="font-semibold text-text-primary">{mine.length}</span>{" "}
+          {mine.length === 1 ? "control is" : "controls are"} checked by {name}
+          {failing.length > 0 ? (
+            <span className="font-semibold text-status-danger-text">
+              , {failing.length} failing
+            </span>
+          ) : null}
+          .
+        </p>
+        <Link
+          to={`/controls?system=${provider}`}
+          className="text-body-sm font-semibold text-action-accent hover:underline"
+        >
+          View in the controls library
+        </Link>
+      </div>
+      <ul className="mt-2 flex flex-wrap gap-1.5">
+        {shown.map((item) => (
+          <li key={item.control_id}>
+            <Link
+              to={`/controls/${item.control_id}`}
+              title={item.name}
+              className="rounded-xs hover:opacity-80"
+            >
+              <CodeChip code={item.code} />
+            </Link>
+          </li>
+        ))}
+        {mine.length > shown.length ? (
+          <li className="self-center text-caption text-text-subtle">
+            +{mine.length - shown.length} more
+          </li>
+        ) : null}
+      </ul>
+    </div>
+  );
+}
+
 function ConnectionCard({
   connection,
+  controls,
   canManage,
   onRun,
   running,
@@ -171,6 +243,7 @@ function ConnectionCard({
   onChooseScope,
 }: {
   connection: Connection;
+  controls: ControlComposition[];
   canManage: boolean;
   onRun: () => void;
   running: boolean;
@@ -262,6 +335,12 @@ function ConnectionCard({
           ) : null}
         </div>
       ) : null}
+
+      <ControlsChecked
+        provider={connection.provider}
+        name={connection.provider_name}
+        items={controls}
+      />
 
       {connection.last_error ? (
         <p className="mt-3 flex items-start gap-2 rounded-md border border-status-warning-border bg-status-warning-bg px-3 py-2 text-body-sm text-status-warning-text">
@@ -383,6 +462,13 @@ export function ConnectionsPage() {
     staleTime: 5 * 60_000,
   });
   const run = useRunConnections(connectionsQuery.kick);
+  // Which controls each connection checks. A role that cannot read them simply
+  // sees no list: the card does not depend on it.
+  const compositionQuery = useControlComposition(canRead);
+  const controlsChecked = useMemo(
+    () => compositionQuery.data ?? [],
+    [compositionQuery.data],
+  );
 
   const active = useMemo(
     () => (connectionsQuery.data ?? []).filter((c) => c.status === "active"),
@@ -517,6 +603,7 @@ export function ConnectionsPage() {
               <li key={connection.id}>
                 <ConnectionCard
                   connection={connection}
+                  controls={controlsChecked}
                   canManage={canManage}
                   running={
                     run.isPending &&

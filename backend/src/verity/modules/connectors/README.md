@@ -54,10 +54,15 @@ scope (AU-9).
 
 | `stale` | Not a result but a reading of one: the last run is older than two days (one missed run is tolerated, two are not). Shown instead of pass or fail, and blocks readiness |
 
-A plan that does not offer a setting is a `fail` with its own remedy ("upgrade the plan, or
-exclude the repository with a reason"), not an `error`: with admin on the repository, the
-setting being absent means the plan, not the token. A control whose every result is not
-applicable reads "Nothing to verify", never "Passing".
+A plan that does not offer a setting is a `fail` with its own remedy, not an `error`: with
+admin on the repository, the setting being absent means the plan, not the token. The
+result's `detail.reason` is `plan` and its summary names the feature and the ways out
+("GitHub does not offer secret scanning for this private repository on its current plan.
+Upgrade the plan, make the repository public, or exclude it with a reason."). The control
+page says it once per account instead of per repository, withholds the how-to-fix hint that
+cannot apply, and offers **Leave these out**, which opens the repository picker with those
+repositories unticked. A control whose every result is not applicable reads "Nothing to
+verify", never "Passing".
 
 | Check | Passes when |
 |---|---|
@@ -85,8 +90,12 @@ Generated from the shipped content, not written by hand:
 | `vcs.org_two_factor_required` | IAM-03 (partial) | CC6.1 | `account.two_factor_required` |
 
 The evidence file also carries the account, `verity.scope` (what was checked and every
-exclusion with its reason) and every result. It is attached to each control whose checks
-produced a pass or fail.
+exclusion with its reason) and every result (`check`, `name`, `resource`, `outcome`,
+`summary`, `reason`). It is attached to each control whose checks produced a pass or fail.
+Its title carries the moment, `GitHub devuser: automated test results, 6 Oct 2026 14:05 UTC`,
+because several can be filed in a day. The evidence page reads it as a report (what was
+checked, what was left out and why, what each check found) with the raw file behind a toggle;
+a file that is not in this shape opens as plain text.
 
 **What GitHub can and cannot prove.** It speaks for part of five criteria, not all of them:
 
@@ -105,7 +114,8 @@ connector: a source control system cannot show that laptops are encrypted.
 Runs: daily from the worker (`run_connector_checks`, due after 20 hours), and on demand
 from the control page or the Connections page. Evidence: one JSON snapshot per day per
 connection, or sooner when anything it found changes (a reviewer, a setting, a population,
-not only a pass or a fail), valid for 7 days. Every result names the rules that judged it
+not only a pass or a fail), valid for 7 days (it reads aging only in its last two, because
+evidence reads aging in the last third of its life, up to 30 days). Every result names the rules that judged it
 (`rule`, currently `github.2026-10`), so a later rewording of a check never reinterprets an
 old result.
 
@@ -144,5 +154,11 @@ which software runs each one (and whether it is connected, ready to connect, or 
 planned), what each collects, and the evidence people or Verity modules provide.
 `composition.py` holds the rules and is covered by `tests/unit/test_composition.py`; the
 design is in `openspec/changes/common-control-framework/design.md` section 4.5.
+
+`GET /control-composition` feeds the controls register: for every control its mode, counts,
+the control's `code` and `name`, and `runs_on`, the keys of the systems that have a collector
+for any of its checks, connected or not (Verity's own modules appear as `verity`). That one
+response drives the register's **Evidenced by** and **System** filters and the list of
+controls on each connection card, with no request per system.
 
 GitHub Enterprise Server: set `CONNECTORS_GITHUB_API_URL` to its API base.

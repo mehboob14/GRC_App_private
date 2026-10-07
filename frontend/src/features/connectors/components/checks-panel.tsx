@@ -42,6 +42,86 @@ import {
 } from "./composition-ui";
 import { ConnectGitHubDialog } from "./connect-github-dialog";
 import { RequestIntegrationDialog } from "./request-integration-dialog";
+import { ScopeDialog } from "./scope-dialog";
+
+/** The repositories on one connection that the provider does not offer a check on
+ *  at the account's plan, which is not something a setting can fix. */
+type PlanLimited = { connectionId: string; account: string; names: string[] };
+
+function planLimited(test: AutomatedTest): PlanLimited[] {
+  const byConnection = new Map<string, PlanLimited>();
+  for (const result of test.results) {
+    if (result.detail?.reason !== "plan") continue;
+    const group = byConnection.get(result.connection_id) ?? {
+      connectionId: result.connection_id,
+      account: result.account,
+      names: [],
+    };
+    group.names.push(result.resource_name);
+    byConnection.set(result.connection_id, group);
+  }
+  return [...byConnection.values()];
+}
+
+/** Said once for the whole account, in place of the same sentence on every repository. */
+function PlanNotice({
+  group,
+  canExclude,
+  onExclude,
+}: {
+  group: PlanLimited;
+  canExclude: boolean;
+  onExclude: () => void;
+}) {
+  const [listing, setListing] = useState(false);
+  const count = group.names.length;
+  return (
+    <div className="mt-3 rounded-md border border-border bg-surface-sunken px-3 py-3">
+      <p className="flex items-start gap-2 text-body-sm font-semibold text-text-primary">
+        <Icon
+          name="info"
+          className="mt-0.5 size-4 shrink-0 text-status-warning-text"
+        />
+        {count === 1 ? "1 repository" : `${count} repositories`} on{" "}
+        {group.account} cannot be checked on the current GitHub plan
+      </p>
+      <p className="mt-1 text-body-sm text-text-secondary">
+        GitHub offers this on private repositories only to paid plans. An
+        account on Free does not get it, so the control cannot be met there.
+        Your options:
+      </p>
+      <ul className="mt-1.5 list-disc space-y-0.5 pl-9 text-body-sm text-text-secondary">
+        <li>Move the owning account to a paid plan.</li>
+        <li>Make a repository public, if it can be.</li>
+        <li>Leave them out of the checks, with a reason auditors will see.</li>
+      </ul>
+      <div className="mt-3 flex flex-wrap items-center gap-3">
+        {canExclude ? (
+          <Button size="sm" onClick={onExclude}>
+            Leave these out
+          </Button>
+        ) : null}
+        <button
+          type="button"
+          onClick={() => setListing((v) => !v)}
+          aria-expanded={listing}
+          className="text-body-sm font-semibold text-action-accent hover:underline"
+        >
+          {listing ? "Hide" : "Show"} the {count === 1 ? "repository" : `${count} repositories`}
+        </button>
+      </div>
+      {listing ? (
+        <ul className="mt-2 columns-1 gap-6 text-caption text-text-secondary sm:columns-2">
+          {group.names.map((name) => (
+            <li key={name} className="truncate">
+              {name}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  );
+}
 
 /** One line under the status: what is running, or what it takes to start. */
 function headline(data: Automation): string {
@@ -95,14 +175,21 @@ function CheckRow({
   test,
   canConnect,
   onConnect,
+  onExclude,
 }: {
   test: AutomatedTest;
   canConnect: boolean;
   onConnect: () => void;
+  onExclude: (group: PlanLimited) => void;
 }) {
   const [open, setOpen] = useState(test.status === "fail");
   const state = TEST_STATE[test.status];
-  const failing = test.results.filter((r) => r.outcome === "fail").length;
+  // A repository the plan rules out is not a setting to fix, so it is said once
+  // below and left out of the per-repository lines and the how-to-fix hint.
+  const limited = planLimited(test);
+  const limitedCount = limited.reduce((n, g) => n + g.names.length, 0);
+  const rest = test.results.filter((r) => r.detail?.reason !== "plan");
+  const failing = rest.filter((r) => r.outcome === "fail").length;
   const marks = test.needs.flatMap((n) =>
     n.providers
       .filter((p) =>
@@ -140,7 +227,7 @@ function CheckRow({
             </span>
             <span className="truncate">
               {test.results.length > 0
-                ? `${test.results.length} checked${failing ? `, ${failing} failing` : ""}. ${ago(test.last_run_at)}`
+                ? `${test.results.length} checked${failing ? `, ${failing} failing` : ""}${limitedCount ? `, ${limitedCount} not offered on the plan` : ""}. ${ago(test.last_run_at)}`
                 : runsOnLine(test)}
             </span>
           </span>
@@ -216,7 +303,7 @@ function CheckRow({
             <div>
               <p className="type-overline mb-1">Last result</p>
               <ul className="divide-y divide-border">
-                {test.results.map((r) => {
+                {rest.map((r) => {
                   const icon = OUTCOME_ICON[r.outcome];
                   return (
                     <li
@@ -259,6 +346,14 @@ function CheckRow({
                   {test.remediation}
                 </p>
               ) : null}
+              {limited.map((group) => (
+                <PlanNotice
+                  key={group.connectionId}
+                  group={group}
+                  canExclude={canConnect}
+                  onExclude={() => onExclude(group)}
+                />
+              ))}
             </div>
           ) : null}
         </div>
@@ -374,6 +469,7 @@ export function ChecksPanel({
     useAutomationActions(controlId);
   const [connecting, setConnecting] = useState(false);
   const [requesting, setRequesting] = useState<string | null | false>(false);
+  const [excluding, setExcluding] = useState<PlanLimited | null>(null);
   const data = automation.data;
 
   if (automation.isError) {
@@ -526,6 +622,7 @@ export function ChecksPanel({
                 test={test}
                 canConnect={canConnect}
                 onConnect={() => setConnecting(true)}
+                onExclude={setExcluding}
               />
             ))}
           </ul>
@@ -581,6 +678,15 @@ export function ChecksPanel({
         controlId={controlId}
         capabilities={capabilities}
         defaultCapability={requesting || null}
+      />
+      <ScopeDialog
+        connection={
+          excluding
+            ? { id: excluding.connectionId, account_login: excluding.account }
+            : null
+        }
+        leaveOut={excluding?.names}
+        onClose={() => setExcluding(null)}
       />
     </div>
   );

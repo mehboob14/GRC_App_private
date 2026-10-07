@@ -1,7 +1,11 @@
-import { Button, FileViewer, Icon } from "@/components/ui";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Button, FileViewer, Icon, Skeleton } from "@/components/ui";
 import { evidenceApi } from "@/lib/api/endpoints";
 import { getAccessToken } from "@/lib/auth/session";
 import type { Evidence } from "@/lib/api/types";
+import { ConnectorReport } from "./connector-report";
+import { parseSnapshot } from "./connector-snapshot";
 
 /**
  * Preview of a piece of evidence.
@@ -10,7 +14,8 @@ import type { Evidence } from "@/lib/api/types";
  * the server will store (`core/storage.py` sniffs magic bytes against a
  * ten-value allowlist): pdf, png/jpeg/gif/webp, docx, csv, plain text and json
  * inline, with a named download prompt for xlsx and pptx, which no browser
- * renders natively. A link is not a file and gets its own card.
+ * renders natively. A link is not a file and gets its own card. What a connector
+ * filed is JSON for machines, so it is read as a report first.
  */
 
 /** The download route is authenticated, so a bare `src="/api/..."` would 401.
@@ -23,6 +28,51 @@ export function fetchEvidenceBlob(id: string): () => Promise<Blob> {
     if (!response.ok) throw new Error(String(response.status));
     return response.blob();
   };
+}
+
+/** Filed by a connector (its label says so), and JSON, so there is a report to read. */
+function filedByConnector(item: Evidence): boolean {
+  return (
+    item.kind === "file" &&
+    item.content_type === "application/json" &&
+    Boolean(item.source_label?.endsWith(" connector"))
+  );
+}
+
+function ConnectorFile({ item, heightClass }: { item: Evidence; heightClass?: string }) {
+  const [raw, setRaw] = useState(false);
+  const report = useQuery({
+    queryKey: ["evidence-report", item.id],
+    queryFn: async () => parseSnapshot(await (await fetchEvidenceBlob(item.id)()).text()),
+    // A stored file never changes under its id.
+    staleTime: Infinity,
+  });
+  const file = (
+    <FileViewer
+      fileKey={item.id}
+      title={item.title}
+      filename={item.filename}
+      contentType={item.content_type}
+      fetchBlob={fetchEvidenceBlob(item.id)}
+      heightClass={heightClass}
+    />
+  );
+
+  if (report.isPending) {
+    return <Skeleton className={`w-full rounded-lg ${heightClass ?? "h-[32rem]"}`} />;
+  }
+  // A file that is not a report (or would not load as one) is still a file.
+  if (!report.data) return file;
+  return (
+    <div className="space-y-2">
+      <div className="flex justify-end">
+        <Button size="sm" variant="secondary" onClick={() => setRaw((v) => !v)}>
+          {raw ? "Show the report" : "Show the raw file"}
+        </Button>
+      </div>
+      {raw ? file : <ConnectorReport snapshot={report.data} heightClass={heightClass} />}
+    </div>
+  );
 }
 
 export function EvidenceViewer({ item, heightClass }: { item: Evidence; heightClass?: string }) {
@@ -46,6 +96,8 @@ export function EvidenceViewer({ item, heightClass }: { item: Evidence; heightCl
       </div>
     );
   }
+
+  if (filedByConnector(item)) return <ConnectorFile item={item} heightClass={heightClass} />;
 
   return (
     <FileViewer

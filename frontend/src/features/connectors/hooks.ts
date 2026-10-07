@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   useMutation,
   useQuery,
@@ -50,6 +50,7 @@ export function useRequirementChain(requirementId: string | null) {
 
 export function useAutomation(controlId: string) {
   const [kickedAt, setKickedAt] = useState(0);
+  const queryClient = useQueryClient();
   const query = useQuery({
     queryKey: connectorKeys.automation(controlId),
     queryFn: () => getAutomation(controlId),
@@ -59,6 +60,16 @@ export function useAutomation(controlId: string) {
         ? POLL_MS
         : false,
   });
+  // A run files its evidence as it lands, so a result newer than the one this page
+  // already holds means the evidence list beside it is out of date too.
+  const lastRun = query.data ? (query.data.last_run_at ?? "never") : undefined;
+  const seen = useRef(lastRun);
+  useEffect(() => {
+    if (seen.current !== undefined && lastRun !== undefined && seen.current !== lastRun) {
+      void queryClient.invalidateQueries({ queryKey: ["evidence"] });
+    }
+    seen.current = lastRun;
+  }, [lastRun, queryClient]);
   return { ...query, kick: () => setKickedAt(Date.now()) };
 }
 

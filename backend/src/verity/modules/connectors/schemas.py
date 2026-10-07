@@ -213,6 +213,7 @@ class CompositionOut(_Response):
     items_planned: int
     items_platform: int
     items_manual: int
+    runs_on: list[str] = Field(default_factory=list)
 
 
 class MappingOut(_Response):
@@ -230,6 +231,8 @@ class MappingOut(_Response):
 
 class ControlCompositionOut(_Response):
     control_id: uuid.UUID
+    code: str
+    name: str
     composition: CompositionOut
     automation_status: str | None
 

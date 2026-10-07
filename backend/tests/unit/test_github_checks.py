@@ -284,6 +284,35 @@ def test_missing_secret_scanning_is_the_plan_with_admin_and_the_token_without() 
     assert scanning.detail["reason"] == "plan"
 
 
+def test_the_plan_sentence_names_what_is_not_offered_and_the_ways_out() -> None:
+    """A person who reads "upgrade the plan" needs to know what the plan lacks and what else
+    they can do: make a private repository public, or leave it out of the audit."""
+
+    def summary(repo: dict[str, Any], key: str) -> str:
+        found = next(r for r in github.evaluate(_snapshot(repo)) if r.check_key == key)
+        return str(found.detail["summary"])
+
+    private = _repo("p", private=True, security_and_analysis=None, admin=True)
+    public = _repo("q", private=False, security_and_analysis=None, admin=True)
+
+    scanning = summary(private, github.SECRET_SCANNING_ENABLED)
+    assert "secret scanning for this private repository" in scanning
+    assert "make the repository public" in scanning
+    assert "exclude it with a reason" in scanning
+
+    # A public repository is never told to make itself public.
+    open_scanning = summary(public, github.SECRET_SCANNING_ENABLED)
+    assert "make the repository public" not in open_scanning
+    assert "exclude it with a reason" in open_scanning
+
+    blocked = _repo("r", protection={"state": "absent", "reason": "plan"})
+    assert "branch protection for this private repository" in summary(
+        blocked, github.DEFAULT_BRANCH_PROTECTED
+    )
+    assert "requires reviews" in summary(blocked, github.REVIEW_REQUIRED)
+    assert "requires status checks" in summary(blocked, github.STATUS_CHECKS_REQUIRED)
+
+
 def test_a_repository_with_no_commits_has_nothing_to_check() -> None:
     repo = _repo("fresh", protection={"state": "absent", "reason": "no_branch"})
     outcomes = {

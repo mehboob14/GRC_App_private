@@ -10,6 +10,7 @@ second workspace sees none of it.
 from __future__ import annotations
 
 import json
+import re
 from collections.abc import Iterator
 from datetime import timedelta
 from typing import Any
@@ -366,7 +367,15 @@ async def test_scope_is_chosen_with_a_reason_audited_and_printed_on_the_evidence
             (e for e in evidence if e["source_label"] == "GitHub connector"),
             key=lambda e: e["id"],  # ids are time ordered
         )
+        # Told apart by when it was collected, since several can land on one day, and the
+        # file names each check so a report of it needs nothing else.
+        assert re.fullmatch(
+            r"GitHub acme: automated test results, \d{1,2} [A-Z][a-z]{2} \d{4} \d{2}:\d{2} UTC",
+            newest["title"],
+        )
         document = json.loads((await api.get(f"/evidence/{newest['id']}/download")).content)
+        assert document["verity"]["results"]
+        assert all(row["name"] and row["check"] for row in document["verity"]["results"])
         printed = {e["resource"]: e for e in document["verity"]["scope"]["excluded"]}
         assert document["verity"]["scope"]["checked"] == 1
         assert printed["acme/web"]["reason"] == "Prototype, never deployed."
@@ -605,6 +614,13 @@ async def test_the_register_says_how_every_control_is_evidenced(
         sd13_id = await _control(api, "SD-13")
         sd13 = next(i for i in items if i["control_id"] == sd13_id)
         assert sd13["composition"]["checks_total"] == 2
+        # Each row names its control, and says which systems have a collector for it, so a
+        # page can list the controls a connection checks without a second request.
+        assert (sd13["code"], bool(sd13["name"])) == ("SD-13", True)
+        sd11_id = await _control(api, "SD-11")
+        sd11 = next(i for i in items if i["control_id"] == sd11_id)
+        assert "github" in sd11["composition"]["runs_on"]
+        assert all(i["code"] and i["name"] for i in items)
         # Another workspace gets its own controls, never this one's.
         theirs = {i["control_id"] for i in (await outsider.get("/control-composition")).json()}
         assert theirs

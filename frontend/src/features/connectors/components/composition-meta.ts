@@ -3,6 +3,7 @@ import type {
   Availability,
   ComposeMode,
   Composition,
+  ControlComposition,
   EvidenceState,
   ExpectedEvidence,
   SourceState,
@@ -81,6 +82,33 @@ export const MODULE: Record<string, { label: string; to: string }> = {
   tasks: { label: "Tasks", to: "/tasks" },
   controls: { label: "Controls", to: "/controls" },
 };
+
+/**
+ * The systems that run a check on at least one control, as filter options: the
+ * name people know them by, and how many controls each one checks. Names come
+ * from the compositions themselves, so a system the catalogue gains needs no
+ * edit here. Verity's own modules are not a system anyone connects.
+ */
+export function systemOptions(
+  items: ControlComposition[],
+): { value: string; label: string; count: number }[] {
+  const names = new Map<string, string>([["verity", "Verity modules"]]);
+  const counts = new Map<string, number>();
+  for (const { composition } of items) {
+    for (const source of composition.sources) {
+      source.provider_keys.forEach((key, index) => {
+        const name = source.providers[index];
+        if (name && !names.has(key)) names.set(key, name);
+      });
+    }
+    for (const key of composition.runs_on) {
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+  }
+  return [...counts]
+    .map(([value, count]) => ({ value, label: names.get(value) ?? value, count }))
+    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+}
 
 export const EVIDENCE_STATE: Record<
   EvidenceState,
