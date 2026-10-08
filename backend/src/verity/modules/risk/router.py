@@ -24,6 +24,7 @@ from verity.core.deps import (
 )
 from verity.core.errors import InvalidInput
 from verity.modules.audit.service import Membership
+from verity.modules.customfields.service import FieldInput
 from verity.modules.risk import assist, transfer
 from verity.modules.risk.schemas import (
     AcceptanceWrite,
@@ -36,6 +37,10 @@ from verity.modules.risk.schemas import (
     CategoriesWrite,
     CategoryNodeIn,
     ControlsWrite,
+    CustomFieldArchiveWrite,
+    CustomFieldOut,
+    CustomFieldPageOut,
+    CustomFieldWrite,
     DecisionWrite,
     FacetsOut,
     ImportPreviewOut,
@@ -105,6 +110,7 @@ def _filters(  # noqa: PLR0913, PLR0917 — one per query parameter
     department_ids: list[uuid.UUID] | None,
     attention: list[str] | None,
     cell: str | None,
+    custom: list[str] | None = None,
 ) -> RiskFilters:
     return RiskFilters(
         register_id=register_id,
@@ -117,6 +123,9 @@ def _filters(  # noqa: PLR0913, PLR0917 — one per query parameter
         department_ids=tuple(department_ids or ()),
         attention=tuple(attention or ()),
         cell=cell,
+        custom=tuple(
+            (key, value) for key, _, value in (c.partition(":") for c in custom or ()) if key
+        ),
     )
 
 
@@ -245,10 +254,11 @@ async def export(  # noqa: PLR0913, PLR0917 — the list filters plus the format
     department_ids: Annotated[list[uuid.UUID] | None, Query()] = None,
     attention: Annotated[list[str] | None, Query()] = None,
     cell: str | None = None,
+    custom: Annotated[list[str] | None, Query()] = None,
 ) -> Response:
     filters = _filters(
         register_id, search, statuses, bands, category_ids, treatments, owner, department_ids,
-        attention, cell,
+        attention, cell, custom,
     )  # fmt: skip
     data, filename, content_type = await transfer.export_register(
         session, tenant_id=context.tenant_id, filters=filters, file_format=file_format
@@ -438,6 +448,85 @@ async def promote(
 # -- the collection -----------------------------------------------------------------------
 
 
+@risks_router.get(
+    "/custom-fields", response_model=CustomFieldPageOut, summary="Fields this tenant adds"
+)
+async def list_custom_fields(
+    _p: Annotated[Principal, Depends(require_read)],
+    context: _Ctx,
+    session: _Db,
+    include_archived: bool = False,
+) -> CustomFieldPageOut:
+    items = await risk_service.custom_fields(
+        session, tenant_id=context.tenant_id, include_archived=include_archived
+    )
+    return CustomFieldPageOut(items=[CustomFieldOut.model_validate(i) for i in items])
+
+
+@risks_router.post(
+    "/custom-fields",
+    response_model=CustomFieldOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="Add a field",
+)
+async def create_custom_field(
+    _p: Annotated[Principal, Depends(require_configure)],
+    context: _Ctx,
+    session: _Db,
+    body: CustomFieldWrite,
+) -> CustomFieldOut:
+    view = await risk_service.save_custom_field(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(context),
+        field_id=None,
+        data=FieldInput(**{**body.model_dump(), "options": tuple(body.options)}),
+    )
+    return CustomFieldOut.model_validate(view)
+
+
+@risks_router.patch(
+    "/custom-fields/{field_id}", response_model=CustomFieldOut, summary="Edit a field"
+)
+async def update_custom_field(
+    _p: Annotated[Principal, Depends(require_configure)],
+    context: _Ctx,
+    session: _Db,
+    field_id: uuid.UUID,
+    body: CustomFieldWrite,
+) -> CustomFieldOut:
+    view = await risk_service.save_custom_field(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(context),
+        field_id=field_id,
+        data=FieldInput(**{**body.model_dump(), "options": tuple(body.options)}),
+    )
+    return CustomFieldOut.model_validate(view)
+
+
+@risks_router.post(
+    "/custom-fields/{field_id}/archive",
+    response_model=CustomFieldOut,
+    summary="Stop collecting a field",
+)
+async def archive_custom_field(
+    _p: Annotated[Principal, Depends(require_configure)],
+    context: _Ctx,
+    session: _Db,
+    field_id: uuid.UUID,
+    body: CustomFieldArchiveWrite,
+) -> CustomFieldOut:
+    view = await risk_service.set_custom_field_archived(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(context),
+        field_id=field_id,
+        archived=body.archived,
+    )
+    return CustomFieldOut.model_validate(view)
+
+
 @risks_router.get("", response_model=RiskPageOut, summary="List risks in a register")
 async def list_risks(  # noqa: PLR0913, PLR0917 — one query parameter per filter
     register_id: uuid.UUID,
@@ -453,6 +542,7 @@ async def list_risks(  # noqa: PLR0913, PLR0917 — one query parameter per filt
     department_ids: Annotated[list[uuid.UUID] | None, Query()] = None,
     attention: Annotated[list[str] | None, Query()] = None,
     cell: str | None = None,
+    custom: Annotated[list[str] | None, Query()] = None,
     sort: str | None = None,
     direction: Annotated[str, Query(pattern="^(asc|desc)$")] = "desc",
     page: Annotated[int, Query(ge=1)] = 1,
@@ -460,7 +550,7 @@ async def list_risks(  # noqa: PLR0913, PLR0917 — one query parameter per filt
 ) -> RiskPageOut:
     filters = _filters(
         register_id, search, statuses, bands, category_ids, treatments, owner, department_ids,
-        attention, cell,
+        attention, cell, custom,
     )  # fmt: skip
     items, total = await risk_service.list_risks(
         session,

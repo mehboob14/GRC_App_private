@@ -16,6 +16,7 @@ import { cn } from "@/lib/cn";
 import { errorToast } from "@/lib/api/describe-error";
 import { commitImport, downloadTemplate, previewImport } from "../api";
 import type { ImportPreview, Register } from "../types";
+import { scoreOf } from "../scoring";
 import { STATUS_META } from "../tokens";
 
 /**
@@ -184,7 +185,7 @@ export function ImportRisksDialog({
                         <td className="px-3 py-2 text-text-secondary">{STATUS_META[r.status]?.label ?? r.status}</td>
                         <td className="px-3 py-2 text-text-secondary">{r.owner_name ?? "None"}</td>
                         <td className="tabular px-3 py-2 text-text-secondary">
-                          {r.inherent_likelihood && r.inherent_impact ? r.inherent_likelihood * r.inherent_impact : "None"}
+                          {r.inherent_likelihood && r.inherent_impact ? scoreOf(register.scoring_formula, r.inherent_likelihood, r.inherent_impact) : "None"}
                         </td>
                         <td className="px-3 py-2">
                           {r.errors.length ? (

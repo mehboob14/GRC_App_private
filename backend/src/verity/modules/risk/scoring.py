@@ -117,6 +117,93 @@ LIBRARY_LEVELS: Final = 5
 """The scale the starter library's default scores are written on."""
 
 
+FORMULA_METHODS: Final[tuple[str, ...]] = ("product", "additive", "weighted")
+MAX_WEIGHT: Final = 10
+DEFAULT_FORMULA: Final[dict[str, Any]] = {"method": "product"}
+
+
+def validate_formula(raw: dict[str, Any] | None) -> dict[str, Any]:
+    """Normalise a submitted formula: product (L x I), additive (L + I) or weighted
+    (wL x L + wI x I with whole weights)."""
+    if not raw:
+        return dict(DEFAULT_FORMULA)
+    method = str(raw.get("method") or "product")
+    if method not in FORMULA_METHODS:
+        raise InvalidInput(
+            "Choose product, additive or weighted scoring.", detail=f"formula method {method!r}"
+        )
+    if method != "weighted":
+        return {"method": method}
+    weights: dict[str, int] = {}
+    for key in ("likelihood_weight", "impact_weight"):
+        try:
+            weight = int(raw.get(key, 1))
+        except (TypeError, ValueError) as exc:
+            raise InvalidInput("Weights must be whole numbers.", detail=key) from exc
+        if not 1 <= weight <= MAX_WEIGHT:
+            raise InvalidInput(
+                f"Weights must be between 1 and {MAX_WEIGHT}.", detail=f"{key} {weight}"
+            )
+        weights[key] = weight
+    return {"method": "weighted", **weights}
+
+
+def formula_score(formula: dict[str, Any], likelihood: int, impact: int) -> int:
+    """The same arithmetic as the ``risk_score`` SQL function."""
+    method = formula.get("method", "product")
+    if method == "additive":
+        return likelihood + impact
+    if method == "weighted":
+        return likelihood * int(formula.get("likelihood_weight", 1)) + impact * int(
+            formula.get("impact_weight", 1)
+        )
+    return likelihood * impact
+
+
+def max_score(formula: dict[str, Any], likelihood_levels: int, impact_levels: int) -> int:
+    return formula_score(formula, likelihood_levels, impact_levels)
+
+
+APPETITE_STATUSES: Final[tuple[str, ...]] = ("within", "tolerated", "breach")
+
+
+def validate_appetite(
+    raw: dict[str, Any] | None, category_ids: set[str], top: int
+) -> dict[str, dict[str, int]]:
+    """``{category id: {appetite, tolerance}}``: appetite is the score a risk may
+    sit at without comment, tolerance the most the business will carry."""
+    out: dict[str, dict[str, int]] = {}
+    for key, entry in (raw or {}).items():
+        if key not in category_ids:
+            raise InvalidInput(
+                "Appetite can only be set on this register's categories.",
+                detail=f"appetite for unknown category {key}",
+            )
+        try:
+            appetite, tolerance = int(entry["appetite"]), int(entry["tolerance"])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise InvalidInput(
+                "Give each category an appetite and a tolerance score.", detail=f"appetite {key}"
+            ) from exc
+        if not 1 <= appetite <= tolerance <= top:
+            raise InvalidInput(
+                f"Appetite must be at least 1 and no higher than tolerance, and tolerance "
+                f"no higher than {top}.",
+                detail=f"appetite {appetite} tolerance {tolerance} top {top}",
+            )
+        out[key] = {"appetite": appetite, "tolerance": tolerance}
+    return out
+
+
+def appetite_status(entry: dict[str, int] | None, score: int | None) -> str | None:
+    """within appetite, tolerated (above appetite, within tolerance) or breach."""
+    if entry is None or score is None:
+        return None
+    if score <= entry["appetite"]:
+        return "within"
+    return "tolerated" if score <= entry["tolerance"] else "breach"
+
+
 def default_scale(kind: str, levels: int) -> list[dict[str, Any]]:
     """Labelled levels for a likelihood or impact axis of the given size."""
     labels = (_LIKELIHOOD_LABELS if kind == "likelihood" else _IMPACT_LABELS)[levels]

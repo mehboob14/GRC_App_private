@@ -12,7 +12,7 @@ export type CustomFieldType = (typeof CUSTOM_FIELD_TYPES)[number];
 
 /** The modules that carry custom fields. The path is the module's own prefix,
  *  so each one's settings routes are guarded by that module's permission. */
-export type CustomFieldScope = "assets" | "vulnerabilities";
+export type CustomFieldScope = "assets" | "vulnerabilities" | "risks";
 
 export type CustomFieldDefinition = {
   id: string;

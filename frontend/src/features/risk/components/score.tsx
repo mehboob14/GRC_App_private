@@ -1,6 +1,7 @@
 import { cn } from "@/lib/cn";
 import { Tooltip } from "@/components/ui";
 import type { Band, BandKey, ScaleLevel } from "../types";
+import { scoreOf, type ScoringFormula } from "../scoring";
 import { BAND_TONE, bandFor } from "../tokens";
 
 /** Where a level sits on its axis, as a severity key, so a scale reads as a ramp. */
@@ -124,8 +125,10 @@ export function ScorePairInput({
   likelihood,
   impact,
   onChange,
+  formula,
 }: {
   title: string;
+  formula?: ScoringFormula;
   likelihoodScale: ScaleLevel[];
   impactScale: ScaleLevel[];
   bands: Band[];
@@ -133,7 +136,7 @@ export function ScorePairInput({
   impact: number | null;
   onChange: (likelihood: number | null, impact: number | null) => void;
 }) {
-  const score = likelihood && impact ? likelihood * impact : null;
+  const score = likelihood && impact ? scoreOf(formula, likelihood, impact) : null;
   const band = bandFor(bands, score);
   return (
     <div className="rounded-lg border border-border bg-surface-primary p-3.5">

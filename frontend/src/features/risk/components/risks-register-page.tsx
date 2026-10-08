@@ -42,6 +42,8 @@ import {
   STATUS_META,
   TREATMENT_META,
 } from "../tokens";
+import { useCustomFields } from "@/features/custom-fields/hooks";
+import { AppetitePill } from "./risk-extras";
 import { ScoreChip } from "./score";
 import { useRisksOutlet } from "./risks-outlet";
 
@@ -67,6 +69,7 @@ const EMPTY: RiskFilters = {
   department_ids: [],
   attention: [],
   cell: null,
+  custom: [],
 };
 
 function readFilters(p: URLSearchParams): RiskFilters {
@@ -80,6 +83,7 @@ function readFilters(p: URLSearchParams): RiskFilters {
     department_ids: p.getAll("department_ids"),
     attention: p.getAll("attention"),
     cell: p.get("cell"),
+    custom: p.getAll("custom"),
   };
 }
 
@@ -94,6 +98,7 @@ function writeFilters(f: RiskFilters, page: number): URLSearchParams {
   for (const v of f.attention) p.append("attention", v);
   if (f.owner) p.set("owner", f.owner);
   if (f.cell) p.set("cell", f.cell);
+  for (const v of f.custom) p.append("custom", v);
   if (page > 1) p.set("page", String(page));
   return p;
 }
@@ -134,6 +139,9 @@ export function RisksRegisterPage() {
   const summaryQuery = useQuery({ queryKey: ["risk-summary", register.id], queryFn: () => getSummary(register.id) });
   const optionsQuery = useQuery({ queryKey: ["risk-options"], queryFn: getOptions, staleTime: 60_000 });
   const summary = summaryQuery.data;
+  const customFacets = (useCustomFields("risks").data ?? []).filter(
+    (f) => f.field_type === "select" || f.field_type === "checkbox",
+  );
 
   const total = query.data?.total ?? 0;
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -226,6 +234,22 @@ export function RisksRegisterPage() {
             onChange={(v) => set("department_ids", v)}
           />
         ) : null}
+        {customFacets.map((f) => (
+          <FilterFacet
+            key={f.id}
+            label={f.label}
+            options={
+              f.field_type === "checkbox"
+                ? [
+                    { value: `${f.key}:true`, label: "Yes" },
+                    { value: `${f.key}:false`, label: "No" },
+                  ]
+                : f.options.map((o) => ({ value: `${f.key}:${o}`, label: o }))
+            }
+            values={filters.custom.filter((v) => v.startsWith(`${f.key}:`))}
+            onChange={(v) => set("custom", [...filters.custom.filter((c) => !c.startsWith(`${f.key}:`)), ...v])}
+          />
+        ))}
         {cellLabel ? (
           <button
             type="button"
@@ -371,7 +395,10 @@ function RiskRow({ risk: r, isVisible }: { risk: Risk; isVisible: (key: ColumnKe
       ) : null}
       <TD>
         {r.residual_score !== null ? (
-          <ScoreChip score={r.residual_score} bands={bands} size="sm" />
+          <span className="inline-flex flex-wrap items-center gap-1.5">
+            <ScoreChip score={r.residual_score} bands={bands} size="sm" />
+            {r.appetite_status && r.appetite_status !== "within" ? <AppetitePill status={r.appetite_status} /> : null}
+          </span>
         ) : (
           <span className="whitespace-nowrap text-caption text-text-subtle">Not assessed</span>
         )}
