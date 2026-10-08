@@ -57,6 +57,7 @@ export function filterParams(registerId: string, f: Partial<RiskFilters>): URLSe
   for (const v of f.attention ?? []) p.append("attention", v);
   if (f.owner) p.set("owner", f.owner);
   if (f.cell) p.set("cell", f.cell);
+  for (const v of f.custom ?? []) p.append("custom", v);
   return p;
 }
 
@@ -193,7 +194,10 @@ export const commitImport = (registerId: string, rows: ImportRow[]) =>
     method: "POST",
     body: JSON.stringify({
       register_id: registerId,
-      rows: rows.map((r) => Object.fromEntries(IMPORT_FIELDS.map((k) => [k, r[k]]))),
+      rows: rows.map((r) => ({
+        ...Object.fromEntries(IMPORT_FIELDS.map((k) => [k, r[k]])),
+        custom_fields: r.custom_fields ?? {},
+      })),
     }),
   });
 
