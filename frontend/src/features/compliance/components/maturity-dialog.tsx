@@ -53,7 +53,9 @@ export function MaturityDialog({
             <Skeleton className="h-32 w-full rounded-md" />
           ) : query.isError || !result?.available ? (
             <p className="text-body-sm text-text-secondary">
-              The AI check is not available right now (no model key is set, or it could not decide).
+              {query.isError || result?.reason === "failed"
+                ? "The AI could not produce a usable answer this time (the model or its reply failed). Try again from the evidence page."
+                : "The AI check is not available: no model key is set on this server."}{" "}
               The evidence is saved and linked either way.
             </p>
           ) : (

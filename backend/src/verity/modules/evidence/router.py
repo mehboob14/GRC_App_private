@@ -19,6 +19,7 @@ from fastapi import APIRouter, Depends, File, Form, Query, UploadFile, status
 from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from verity.core.config import get_settings
 from verity.core.deps import (
     Principal,
     TenantContext,
@@ -301,7 +302,10 @@ async def assess_maturity(
         session, tenant_id=context.tenant_id, evidence_id=evidence_id, control_id=body.control_id
     )
     if view is None:
-        return MaturityOut(available=False, control_id=body.control_id)
+        keyed = get_settings().ai.api_key is not None
+        return MaturityOut(
+            available=False, reason="failed" if keyed else "no_key", control_id=body.control_id
+        )
     return MaturityOut(
         available=True,
         control_id=view.control_id,

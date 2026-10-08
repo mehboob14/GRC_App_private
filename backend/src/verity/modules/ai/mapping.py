@@ -143,6 +143,18 @@ def _heuristic(
     return out
 
 
+def _content_text(content: object) -> str:
+    """A model reply as text. Newer models answer with a list of content blocks."""
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        return "".join(
+            b if isinstance(b, str) else str(b.get("text", "")) if isinstance(b, dict) else ""
+            for b in content
+        )
+    return str(content)
+
+
 def _json_array(text: str) -> str:
     """Pull the JSON array out of a reply that may wrap it in prose or fences."""
     start = text.find("[")
@@ -180,7 +192,7 @@ async def _from_llm(
     )
     valid = {c.control_id for c in candidates}
     response = await get_chat_model().ainvoke([("system", system), ("user", user)])
-    content = response.content if isinstance(response.content, str) else str(response.content)
+    content = _content_text(response.content)
     parsed = json.loads(_json_array(content))
     out: list[MappingSuggestion] = []
     for row in parsed if isinstance(parsed, list) else []:
@@ -283,7 +295,7 @@ async def assess_maturity(
     )
     try:
         response = await get_chat_model().ainvoke([("system", system), ("user", user)])
-        content = response.content if isinstance(response.content, str) else str(response.content)
+        content = _content_text(response.content)
         data = json.loads(_json_object(content))
     except Exception:
         logger.warning("ai.maturity_failed", exc_info=True)

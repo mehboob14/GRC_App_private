@@ -838,6 +838,7 @@ export type MappingSuggestion = {
 /** A draft judgement of how well one item proves one control and its requirements. */
 export type MaturityResult = {
   available: boolean;
+  reason: "" | "no_key" | "failed";
   control_id: string;
   code: string;
   name: string;

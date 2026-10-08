@@ -132,6 +132,8 @@ class MaturityOut(_Response):
     """A draft judgement of how well an item proves a control (rule 11)."""
 
     available: bool
+    #: Why there is no judgement: "no_key" or "failed" (the model's reply could not be used).
+    reason: str = ""
     control_id: uuid.UUID
     code: str = ""
     name: str = ""
