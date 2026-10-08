@@ -31,6 +31,9 @@ import { REGISTER_TYPES } from "../types";
 import { BAND_TONE, REGISTER_TYPE_LABEL } from "../tokens";
 import { BandLegend, Heatmap } from "./heatmap";
 import { useRisksOutlet } from "./risks-outlet";
+import { CustomFieldsCard } from "@/features/custom-fields/components/custom-fields-card";
+import { scoreOf } from "../scoring";
+import { AppetiteCard, ScoringFormulaCard } from "./risk-settings-cards";
 import { SoonBadge } from "./soon";
 
 const LEVELS = [3, 4, 5, 6] as const;
@@ -112,12 +115,18 @@ export function RisksSettingsPage() {
       </section>
 
       <section>
+        <h2 className="mb-3 font-display text-title-md text-text-primary">Scoring and fields</h2>
+        <div className="space-y-4">
+          <ScoringFormulaCard register={register} canEdit={canConfigure} />
+          <AppetiteCard register={register} canEdit={canConfigure} />
+          <CustomFieldsCard scope="risks" noun="risk" canEdit={canConfigure} />
+        </div>
+      </section>
+
+      <section>
         <h2 className="mb-3 font-display text-title-md text-text-primary">More configuration</h2>
         <div className="divide-y divide-border rounded-lg border border-border bg-surface-primary">
           {[
-            { icon: "textbox" as const, title: "Custom fields", text: "Extra fields per register on the form, filters and import." },
-            { icon: "formula" as const, title: "Scoring formula", text: "Weighted or additive scoring instead of likelihood times impact." },
-            { icon: "target" as const, title: "Risk appetite", text: "Appetite and tolerance thresholds per category." },
             { icon: "workflow" as const, title: "Approval workflows", text: "Multi step sign off for acceptance and closure." },
             { icon: "lock" as const, title: "Register permissions", text: "Who can read or manage each register." },
           ].map((row) => (
@@ -156,7 +165,7 @@ function MiniMatrix({ register }: { register: Register }) {
     >
       {rows.flatMap((l) =>
         Array.from({ length: register.impact_levels }, (_, i) => {
-          const score = l * (i + 1);
+          const score = scoreOf(register.scoring_formula, l, i + 1);
           const band = [...register.severity_bands].reverse().find((b) => b.min_score <= score);
           return <span key={`${l}-${i}`} className={cn("size-2.5 rounded-[2px]", band ? BAND_TONE[band.key].dot : "bg-surface-sunken")} />;
         }),
@@ -278,14 +287,18 @@ function RegisterDialog({
   });
 
   if (!form) return null;
-  const max = form.likelihood_levels * form.impact_levels;
+  const formula = register?.scoring_formula;
+  const max = scoreOf(formula, form.likelihood_levels, form.impact_levels);
   const set = <K extends keyof RegisterForm>(key: K, value: RegisterForm[K]) =>
     setForm((f) => (f ? { ...f, [key]: value } : f));
   const resize = (kind: "likelihood" | "impact", levels: number) =>
     setForm((f) => {
       if (!f) return f;
       const next = { ...f, [`${kind}_levels`]: levels, [`${kind}_scale`]: defaultScale(kind, levels, []) } as RegisterForm;
-      next.severity_bands = defaultBands(next.likelihood_levels * next.impact_levels, f.severity_bands);
+      next.severity_bands = defaultBands(
+        scoreOf(register?.scoring_formula, next.likelihood_levels, next.impact_levels),
+        f.severity_bands,
+      );
       return next;
     });
   const scale = axis === "likelihood" ? form.likelihood_scale : form.impact_scale;
@@ -441,6 +454,7 @@ function RegisterDialog({
                   likelihoodScale={form.likelihood_scale}
                   impactScale={form.impact_scale}
                   bands={form.severity_bands}
+                  formula={formula}
                 />
                 <div className="mt-3">
                   <BandLegend bands={form.severity_bands} />

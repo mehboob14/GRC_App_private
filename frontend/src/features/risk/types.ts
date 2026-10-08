@@ -1,3 +1,4 @@
+import type { Appetite, ScoringFormula } from "./scoring";
 /** Mirrors backend `modules/risk/schemas.py`. */
 
 export type RiskStatus = "open" | "in_treatment" | "mitigated" | "accepted" | "closed";
@@ -51,6 +52,9 @@ export type Register = {
   risk_count: number;
   categories: Category[];
   created_at: string;
+  scoring_formula: ScoringFormula;
+  appetite: Appetite;
+  max_score: number;
 };
 
 export type RegisterInput = {
@@ -66,6 +70,8 @@ export type RegisterInput = {
   review_cadence_days?: number;
   is_default?: boolean;
   status?: "active" | "archived";
+  scoring_formula?: ScoringFormula;
+  appetite?: Appetite;
 };
 
 export type CategoryNode = { id?: string; name: string; children: { id?: string; name: string }[] };
@@ -112,6 +118,8 @@ export type Risk = {
   attention: Attention[];
   created_at: string;
   updated_at: string;
+  appetite_status: "within" | "tolerated" | "breach" | null;
+  custom_fields: Record<string, string | number | boolean>;
 };
 
 export type RiskPage = { items: Risk[]; total: number };
@@ -217,6 +225,7 @@ export type RiskInput = {
   treatment_due_on: string | null;
   next_review_on: string | null;
   asset_ids: string[] | null;
+  custom_fields?: Record<string, string | number | boolean> | null;
 };
 
 export type RiskFilters = {
@@ -229,6 +238,8 @@ export type RiskFilters = {
   department_ids: string[];
   attention: string[];
   cell: string | null;
+  /** "field key:value" pairs for the workspace's own choice fields. */
+  custom: string[];
 };
 
 export type RiskSort = "code" | "title" | "inherent" | "residual" | "status" | "next_review" | "updated";
@@ -242,6 +253,7 @@ export type Summary = {
   heatmap_inherent: number[][];
   heatmap_residual: number[][];
   by_band: Record<string, number>;
+  by_appetite?: Record<string, number>;
   by_status: Record<string, number>;
   by_treatment: Record<string, number>;
   by_category: { name: string; count: number }[];
@@ -298,6 +310,7 @@ export type ImportRow = {
   treatment_plan: string | null;
   treatment_due_on: string | null;
   next_review_on: string | null;
+  custom_fields?: Record<string, string | number | boolean>;
   errors: string[];
   warnings: string[];
 };

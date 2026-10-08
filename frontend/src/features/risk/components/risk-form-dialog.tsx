@@ -35,6 +35,9 @@ import type {
 } from "../types";
 import { REGISTER_TYPE_LABEL, STATUS_META, TREATMENT_META } from "../tokens";
 import { AssetPicker } from "./asset-picker";
+import { CustomFieldInputs } from "@/features/custom-fields/components/custom-field-inputs";
+import { useCustomFields } from "@/features/custom-fields/hooks";
+import { scoreOf } from "../scoring";
 import { ScorePairInput } from "./score";
 import { SoonBadge } from "./soon";
 
@@ -67,6 +70,7 @@ function blank(register: Register): Form {
     treatment_due_on: null,
     next_review_on: null,
     asset_ids: [],
+    custom_fields: {},
   };
 }
 
@@ -92,6 +96,7 @@ function fromRisk(risk: RiskDetail): Form {
     treatment_due_on: risk.treatment_due_on,
     next_review_on: risk.next_review_on,
     asset_ids: risk.links.filter((l) => l.target_type === "asset").map((l) => l.target_id),
+    custom_fields: { ...(risk.custom_fields ?? {}) },
   };
 }
 
@@ -172,6 +177,7 @@ export function RiskFormDialog({
     onError: (e: unknown) => toast({ title: errorToast(e, "draft"), tone: "danger" }),
   });
 
+  const customFields = useCustomFields("risks").data ?? [];
   const suggestions = useMemo(() => (draft ? draftRows(draft, active) : []), [draft, active]);
 
   const apply = (key: string) => {
@@ -429,6 +435,7 @@ export function RiskFormDialog({
                   likelihoodScale={active.likelihood_scale}
                   impactScale={active.impact_scale}
                   bands={active.severity_bands}
+                  formula={active.scoring_formula}
                   likelihood={form.inherent_likelihood}
                   impact={form.inherent_impact}
                   onChange={(l, i) => setForm((f) => ({ ...f, inherent_likelihood: l, inherent_impact: i }))}
@@ -444,6 +451,17 @@ export function RiskFormDialog({
                 />
               </div>
             </section>
+
+            {customFields.length > 0 ? (
+              <section>
+                <SectionTitle icon="textbox" title="More details" />
+                <CustomFieldInputs
+                  fields={customFields}
+                  values={form.custom_fields ?? {}}
+                  onChange={(values) => set("custom_fields", values)}
+                />
+              </section>
+            ) : null}
 
             <section>
               <SectionTitle icon="shield" title="Treatment" />
@@ -533,7 +551,7 @@ export function RiskFormDialog({
   );
 }
 
-function SectionTitle({ icon, title }: { icon: "heatmap" | "shield"; title: string }) {
+function SectionTitle({ icon, title }: { icon: "heatmap" | "shield" | "textbox"; title: string }) {
   return (
     <h3 className="mb-2.5 flex items-center gap-2 text-label-md text-text-primary">
       <Icon name={icon} className="size-4 text-text-subtle" />
@@ -566,14 +584,14 @@ function draftRows(draft: AssistDraft, register: Register): DraftRow[] {
     rows.push({
       key: "inherent",
       label: "Inherent",
-      value: `Likelihood ${draft.inherent_likelihood} · Impact ${draft.inherent_impact} · Score ${draft.inherent_likelihood * draft.inherent_impact}`,
+      value: `Likelihood ${draft.inherent_likelihood} · Impact ${draft.inherent_impact} · Score ${scoreOf(register.scoring_formula, draft.inherent_likelihood, draft.inherent_impact)}`,
     });
   }
   if (draft.residual_likelihood && draft.residual_impact) {
     rows.push({
       key: "residual",
       label: "Residual",
-      value: `Likelihood ${draft.residual_likelihood} · Impact ${draft.residual_impact} · Score ${draft.residual_likelihood * draft.residual_impact}`,
+      value: `Likelihood ${draft.residual_likelihood} · Impact ${draft.residual_impact} · Score ${scoreOf(register.scoring_formula, draft.residual_likelihood, draft.residual_impact)}`,
     });
   }
   if (draft.treatment) rows.push({ key: "treatment", label: "Treatment", value: TREATMENT_META[draft.treatment].label });

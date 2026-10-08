@@ -2,6 +2,7 @@ import { Fragment } from "react";
 import { cn } from "@/lib/cn";
 import { Tooltip } from "@/components/ui";
 import type { Band, ScaleLevel } from "../types";
+import { scoreOf, type ScoringFormula } from "../scoring";
 import { BAND_TONE, bandFor } from "../tokens";
 
 type Marker = { likelihood: number; impact: number; label: string };
@@ -19,6 +20,7 @@ export function Heatmap({
   onCell,
   markers = [],
   compact = false,
+  formula,
 }: {
   /** counts[likelihood - 1][impact - 1] */
   grid?: number[][];
@@ -29,6 +31,7 @@ export function Heatmap({
   /** Positions to ring, such as a single risk's inherent and residual scores. */
   markers?: Marker[];
   compact?: boolean;
+  formula?: ScoringFormula;
 }) {
   const rows = [...likelihoodScale].reverse();
   const cell = compact ? "h-9" : "h-12";
@@ -57,7 +60,7 @@ export function Heatmap({
               </div>
               {impactScale.map((i) => {
                 const count = grid?.[l.level - 1]?.[i.level - 1] ?? 0;
-                const score = l.level * i.level;
+                const score = scoreOf(formula, l.level, i.level);
                 const band = bandFor(bands, score);
                 const tone = band ? BAND_TONE[band.key] : BAND_TONE.low;
                 const here = markers.filter((m) => m.likelihood === l.level && m.impact === i.level);

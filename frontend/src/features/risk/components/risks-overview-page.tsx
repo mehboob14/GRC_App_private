@@ -151,6 +151,7 @@ export function RisksOverviewPage() {
             likelihoodScale={register.likelihood_scale}
             impactScale={register.impact_scale}
             bands={bands}
+            formula={register.scoring_formula}
             onCell={(l, i) => navigate(`/risks?cell=${view}:${l}:${i}`)}
           />
           <div className="mt-3 flex flex-wrap items-center justify-between gap-2">

@@ -22,7 +22,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, date, datetime, timedelta
 from typing import Any, Final
 
-from sqlalchemy import Select, and_, exists, func, or_, select
+from sqlalchemy import Select, and_, exists, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from verity.core.errors import Conflict, InvalidInput, NotFound, PermissionDenied
@@ -32,6 +32,11 @@ from verity.modules.audit.service import (
     Membership,
     System,
     audit_service,
+)
+from verity.modules.customfields.service import (
+    FieldDefinition,
+    FieldInput,
+    custom_field_service,
 )
 from verity.modules.risk import scoring
 from verity.modules.risk.models import (
@@ -94,6 +99,8 @@ _REGISTER_SNAPSHOT: Final[tuple[str, ...]] = (
     "impact_scale",
     "severity_bands",
     "review_cadence_days",
+    "scoring_formula",
+    "appetite",
 )
 """Named rather than every column: ``updated_at`` is refreshed by the database on
 flush, and reading an expired attribute outside the async context fails."""
@@ -148,6 +155,9 @@ class RegisterView:
     risk_count: int
     categories: list[CategoryView]
     created_at: datetime
+    scoring_formula: dict[str, Any] = field(default_factory=lambda: {"method": "product"})
+    appetite: dict[str, Any] = field(default_factory=dict)
+    max_score: int = 25
 
 
 @dataclass(frozen=True, slots=True)
@@ -188,6 +198,8 @@ class RiskView:
     attention: list[str]
     created_at: datetime
     updated_at: datetime
+    appetite_status: str | None = None
+    custom_fields: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True, slots=True)
@@ -326,6 +338,8 @@ class RegisterInput:
     review_cadence_days: int | None = None
     is_default: bool | None = None
     status: str | None = None
+    scoring_formula: dict[str, Any] | None = None
+    appetite: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -358,6 +372,8 @@ class RiskInput:
     next_review_on: date | None = None
     # None on update means "leave the asset links alone"; a list replaces them.
     asset_ids: list[uuid.UUID] | None = None
+    # None on update leaves the extras alone; a dict is validated against the definitions.
+    custom_fields: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -373,6 +389,7 @@ class RiskFilters:
     attention: tuple[str, ...] = ()
     cell: str | None = None  # "inherent:L:I" | "residual:L:I"
     include_closed: bool = True
+    custom: tuple[tuple[str, str], ...] = ()  # (field key, value)
 
 
 _SORTS: Final[tuple[str, ...]] = (
@@ -644,6 +661,8 @@ class RiskService:
         impact = data.impact_levels or 5
         scoring.validate_levels(likelihood, axis="likelihood")
         scoring.validate_levels(impact, axis="impact")
+        formula = scoring.validate_formula(data.scoring_formula)
+        top = scoring.max_score(formula, likelihood, impact)
         register = RiskRegister(
             id=uuid7(),
             tenant_id=tenant_id,
@@ -666,10 +685,12 @@ class RiskService:
                 else scoring.default_scale("impact", impact)
             ),
             severity_bands=(
-                scoring.validate_bands(data.severity_bands, likelihood * impact)
+                scoring.validate_bands(data.severity_bands, top)
                 if data.severity_bands
-                else scoring.default_bands(likelihood * impact)
+                else scoring.default_bands(top)
             ),
+            scoring_formula=formula,
+            appetite={},
             review_cadence_days=data.review_cadence_days or 90,
             created_by_membership_id=_actor_id(actor),
         )
@@ -813,6 +834,11 @@ class RiskService:
             risk_count=total,
             categories=tree,
             created_at=register.created_at,
+            scoring_formula=dict(register.scoring_formula or scoring.DEFAULT_FORMULA),
+            appetite=dict(register.appetite or {}),
+            max_score=scoring.max_score(
+                register.scoring_formula or {}, register.likelihood_levels, register.impact_levels
+            ),
         )
 
     async def create_register(
@@ -845,7 +871,7 @@ class RiskService:
         register.status = "active"
         await session.flush([register])
 
-    async def update_register(  # noqa: PLR0912 — one branch per configurable part
+    async def update_register(  # noqa: PLR0912, PLR0915 — one branch per configurable part
         self,
         session: AsyncSession,
         *,
@@ -885,12 +911,32 @@ class RiskService:
             register.impact_scale = scoring.validate_scale(data.impact_scale, impact, axis="impact")
         elif resized:
             register.impact_scale = scoring.default_scale("impact", impact)
+        formula = (
+            scoring.validate_formula(data.scoring_formula)
+            if data.scoring_formula is not None
+            else dict(register.scoring_formula or scoring.DEFAULT_FORMULA)
+        )
+        reformula = formula != dict(register.scoring_formula or scoring.DEFAULT_FORMULA)
+        register.scoring_formula = formula
+        top = scoring.max_score(formula, likelihood, impact)
         if data.severity_bands is not None:
-            register.severity_bands = scoring.validate_bands(
-                data.severity_bands, likelihood * impact
+            register.severity_bands = scoring.validate_bands(data.severity_bands, top)
+        elif resized or reformula:
+            register.severity_bands = scoring.default_bands(top)
+        if data.appetite is not None:
+            register.appetite = scoring.validate_appetite(
+                data.appetite,
+                {
+                    str(c.id)
+                    for c in await self._categories(session, tenant_id, register.id)
+                    if c.parent_id is None
+                },
+                top,
             )
-        elif resized:
-            register.severity_bands = scoring.default_bands(likelihood * impact)
+        elif resized or reformula:
+            register.appetite = {
+                k: v for k, v in (register.appetite or {}).items() if v["tolerance"] <= top
+            }
 
         if data.review_cadence_days is not None:
             if not 7 <= data.review_cadence_days <= 730:  # noqa: PLR2004 — the CHECK's bounds
@@ -910,6 +956,14 @@ class RiskService:
         if data.is_default and not register.is_default:
             await self._make_default(session, tenant_id, register)
         await session.flush([register])
+        if reformula:
+            # The trigger re-reads the register's formula on every touched row.
+            await session.execute(
+                update(Risk)
+                .where(Risk.tenant_id == tenant_id, Risk.register_id == register.id)
+                .values(inherent_score=Risk.inherent_score)
+                .execution_options(synchronize_session=False)
+            )
         await self._audit.record(
             session,
             action="update",
@@ -1175,6 +1229,73 @@ class RiskService:
         risk.department_group_id = data.department_group_id
         risk.treatment_due_on = data.treatment_due_on
 
+    async def custom_fields(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, include_archived: bool = False
+    ) -> list[FieldDefinition]:
+        return await custom_field_service.definitions(
+            session, tenant_id=tenant_id, object_type="risk", include_archived=include_archived
+        )
+
+    async def clean_custom(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, values: dict[str, Any]
+    ) -> dict[str, Any]:
+        return await custom_field_service.clean(
+            session, tenant_id=tenant_id, object_type="risk", values=values
+        )
+
+    async def save_custom_field(
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        field_id: uuid.UUID | None,
+        data: FieldInput,
+    ) -> FieldDefinition:
+        if field_id is None:
+            view = await custom_field_service.create(
+                session, tenant_id=tenant_id, object_type="risk", data=data
+            )
+        else:
+            view = await custom_field_service.update(
+                session, tenant_id=tenant_id, field_id=field_id, data=data
+            )
+        await self._audit.record(
+            session,
+            action="create" if field_id is None else "update",
+            object_type="risk_custom_field",
+            object_id=view.id,
+            actor=actor,
+            tenant_id=tenant_id,
+            after={"key": view.key, "label": view.label, "field_type": view.field_type},
+        )
+        await session.flush()
+        return view
+
+    async def set_custom_field_archived(
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        field_id: uuid.UUID,
+        archived: bool,
+    ) -> FieldDefinition:
+        view = await custom_field_service.set_archived(
+            session, tenant_id=tenant_id, field_id=field_id, archived=archived
+        )
+        await self._audit.record(
+            session,
+            action="update",
+            object_type="risk_custom_field",
+            object_id=view.id,
+            actor=actor,
+            tenant_id=tenant_id,
+            after={"key": view.key, "archived": archived},
+        )
+        await session.flush()
+        return view
+
     async def create_risk(  # noqa: PLR0913
         self,
         session: AsyncSession,
@@ -1212,6 +1333,10 @@ class RiskService:
             created_by_membership_id=_actor_id(actor),
         )
         self._assign(risk, data)
+        if data.custom_fields or origin in ("manual", "import"):
+            risk.custom_fields = await custom_field_service.clean(
+                session, tenant_id=tenant_id, object_type="risk", values=data.custom_fields
+            )
         session.add(risk)
         await session.flush([risk])
         kind = {"library": "adopted", "import": "imported", "vendor_finding": "promoted"}.get(
@@ -1263,6 +1388,14 @@ class RiskService:
             await self._event(session, risk, actor, "status", risk.status, data.status)
             risk.status = data.status
         self._assign(risk, data)
+        if data.custom_fields is not None:
+            risk.custom_fields = await custom_field_service.clean(
+                session,
+                tenant_id=tenant_id,
+                object_type="risk",
+                values=data.custom_fields,
+                previous=dict(risk.custom_fields or {}),
+            )
         if data.next_review_on is not None:
             risk.next_review_on = data.next_review_on
         new_scores = (
@@ -1498,6 +1631,11 @@ class RiskService:
             origin=risk.origin,
             control_count=control_count,
             attention=self._attention(risk, control_count, acceptance_flag, today),
+            appetite_status=scoring.appetite_status(
+                (register.appetite or {}).get(str(risk.category_id)),
+                risk.residual_score or risk.inherent_score,
+            ),
+            custom_fields=dict(risk.custom_fields or {}),
             created_at=risk.created_at,
             updated_at=risk.updated_at,
         )
@@ -1548,9 +1686,19 @@ class RiskService:
                 stmt = stmt.where(Risk.owner_membership_id == uuid.UUID(filters.owner))
         if filters.department_ids:
             stmt = stmt.where(Risk.department_group_id.in_(list(filters.department_ids)))
+        by_key: dict[str, list[str]] = {}
+        for key, value in filters.custom:
+            by_key.setdefault(key, []).append(value)
+        for key, values in by_key.items():
+            stmt = stmt.where(Risk.custom_fields[key].astext.in_(values))
         if filters.bands:
             ranges = scoring.band_ranges(
-                register.severity_bands, register.likelihood_levels * register.impact_levels
+                register.severity_bands,
+                scoring.max_score(
+                    register.scoring_formula or {},
+                    register.likelihood_levels,
+                    register.impact_levels,
+                ),
             )
             effective = func.coalesce(Risk.residual_score, Risk.inherent_score)
             clauses = [effective.between(*ranges[band]) for band in filters.bands if band in ranges]
@@ -2668,6 +2816,7 @@ class RiskService:
         inherent = [[0] * cols for _ in range(rows)]
         residual = [[0] * cols for _ in range(rows)]
         by_band: Counter[str] = Counter()
+        by_appetite: Counter[str] = Counter()
         attention: Counter[str] = Counter()
         by_treatment: Counter[str] = Counter()
         by_category: Counter[str] = Counter()
@@ -2677,6 +2826,8 @@ class RiskService:
             if v.residual_likelihood and v.residual_impact:
                 residual[v.residual_likelihood - 1][v.residual_impact - 1] += 1
             by_band[v.residual_band or v.inherent_band or "unscored"] += 1
+            if v.appetite_status:
+                by_appetite[v.appetite_status] += 1
             by_treatment[v.treatment or "undecided"] += 1
             by_category[v.category_name] += 1
             attention.update(v.attention)
@@ -2694,6 +2845,7 @@ class RiskService:
             "heatmap_inherent": inherent,
             "heatmap_residual": residual,
             "by_band": dict(by_band),
+            "by_appetite": dict(by_appetite),
             "by_status": {s: by_status.get(s, 0) for s in RISK_STATUSES},
             "by_treatment": dict(by_treatment),
             "by_category": [

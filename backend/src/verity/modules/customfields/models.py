@@ -31,7 +31,7 @@ from verity.db.base import (
 # The records that can carry custom fields. A module adds itself here and to the
 # check constraint, in a migration — a typo is then a constraint violation rather
 # than a field nothing renders.
-FIELD_OBJECT_TYPES: Final[tuple[str, ...]] = ("asset", "vulnerability")
+FIELD_OBJECT_TYPES: Final[tuple[str, ...]] = ("asset", "vulnerability", "risk")
 
 # Deliberately small. Every type here is one HTML control and one JSON scalar;
 # anything richer (a person, a linked record, a file) is a real column on the

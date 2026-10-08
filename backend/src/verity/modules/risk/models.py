@@ -26,7 +26,7 @@ import uuid
 from datetime import date, datetime
 from typing import Any, Final
 
-from sqlalchemy import CheckConstraint, Computed, ForeignKey, Index, SmallInteger, text
+from sqlalchemy import CheckConstraint, FetchedValue, ForeignKey, Index, SmallInteger, text
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql.elements import conv
@@ -125,6 +125,12 @@ class RiskRegister(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
     # [{key, label, min_score}] ascending; the first starts at 1.
     severity_bands: Mapped[list[dict[str, Any]]] = mapped_column(postgresql.JSONB, default=list)
     review_cadence_days: Mapped[int] = mapped_column(default=90, server_default=text("90"))
+    # {method: product|additive|weighted, likelihood_weight, impact_weight}
+    scoring_formula: Mapped[dict[str, Any]] = mapped_column(
+        postgresql.JSONB, default=lambda: {"method": "product"}
+    )
+    # {<category id>: {appetite, tolerance}} in score units of this register.
+    appetite: Mapped[dict[str, Any]] = mapped_column(postgresql.JSONB, default=dict)
     created_by_membership_id: Mapped[uuid.UUID | None] = _member()
 
     __table_args__ = (
@@ -210,11 +216,16 @@ class Risk(UUIDPrimaryKey, TenantScoped, Timestamped, Integratable, Base):
     inherent_impact: Mapped[int | None] = mapped_column(SmallInteger, default=None)
     residual_likelihood: Mapped[int | None] = mapped_column(SmallInteger, default=None)
     residual_impact: Mapped[int | None] = mapped_column(SmallInteger, default=None)
+    # Filled by the ``trg_risks_scores`` trigger from the register's formula (R2).
     inherent_score: Mapped[int | None] = mapped_column(
-        Computed("inherent_likelihood * inherent_impact", persisted=True)
+        server_default=FetchedValue(), server_onupdate=FetchedValue()
     )
     residual_score: Mapped[int | None] = mapped_column(
-        Computed("residual_likelihood * residual_impact", persisted=True)
+        server_default=FetchedValue(), server_onupdate=FetchedValue()
+    )
+    # Tenant-defined extras (``customfields``), validated against the definitions.
+    custom_fields: Mapped[dict[str, Any]] = mapped_column(
+        postgresql.JSONB, default=dict, server_default=text("'{}'::jsonb")
     )
     root_cause: Mapped[str | None] = mapped_column(default=None)
     consequences: Mapped[str | None] = mapped_column(default=None)

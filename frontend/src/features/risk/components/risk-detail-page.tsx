@@ -52,6 +52,7 @@ import {
   TREATMENT_META,
 } from "../tokens";
 import { Heatmap } from "./heatmap";
+import { AppetitePill, CustomValues } from "./risk-extras";
 import {
   AcceptanceRequestDialog,
   AcceptanceStatus,
@@ -513,7 +514,8 @@ function OverviewTab({ risk, register }: { risk: RiskDetail; register: Register 
         <Prose label="Consequences" value={risk.consequences} icon="lightning" />
       </div>
       <Prose label="Recommendations" value={risk.recommendations} icon="sparkle" />
-      <Panel title="Where it sits">
+      <CustomValues values={risk.custom_fields ?? {}} />
+      <Panel title="Where it sits" action={<AppetitePill status={risk.appetite_status} />}>
         <div className="grid gap-4 md:grid-cols-2">
           <div>
             <p className="mb-2 text-label-sm text-text-secondary">Inherent</p>
@@ -521,6 +523,7 @@ function OverviewTab({ risk, register }: { risk: RiskDetail; register: Register 
               compact
               likelihoodScale={register.likelihood_scale}
               impactScale={register.impact_scale}
+              formula={register.scoring_formula}
               bands={register.severity_bands}
               markers={
                 risk.inherent_likelihood && risk.inherent_impact
@@ -535,6 +538,7 @@ function OverviewTab({ risk, register }: { risk: RiskDetail; register: Register 
               compact
               likelihoodScale={register.likelihood_scale}
               impactScale={register.impact_scale}
+              formula={register.scoring_formula}
               bands={register.severity_bands}
               markers={
                 risk.residual_likelihood && risk.residual_impact

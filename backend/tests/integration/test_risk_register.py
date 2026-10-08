@@ -554,3 +554,47 @@ async def test_a_vendor_finding_is_promoted_once_and_linked_to_its_vendor(ready:
             session, tenant_id=ready.tenant_id, finding_id=finding.id
         )
     assert str(view.promoted_risk_id) == risk["id"]
+
+
+async def test_formula_appetite_and_custom_fields_are_live_settings(ready: Ready) -> None:
+    client = ready.client
+    register = await _register(client)
+    risk = await _risk(client, register, inherent_likelihood=4, inherent_impact=3)
+    assert risk["inherent_score"] == 12  # product by default
+
+    base = {"name": register["name"], "register_type": "enterprise"}
+    operational = _category(register, "Operational")["id"]
+    patch = f"{API}/registers/{register['id']}"
+    changed = await client.patch(
+        patch,
+        json={**base, "scoring_formula": {"method": "weighted", "likelihood_weight": 2}},
+    )
+    assert changed.status_code == 200, changed.text
+    assert changed.json()["max_score"] == 15  # 2 * 5 + 1 * 5
+    rescored = (await client.get(f"{API}/{risk['id']}")).json()
+    assert rescored["inherent_score"] == 11  # 2 * 4 + 3
+    refused = await client.patch(patch, json={**base, "scoring_formula": {"method": "magic"}})
+    assert refused.status_code == 422
+
+    tuned = await client.patch(
+        patch, json={**base, "appetite": {operational: {"appetite": 6, "tolerance": 10}}}
+    )
+    assert tuned.status_code == 200, tuned.text
+    assert (await client.get(f"{API}/{risk['id']}")).json()["appetite_status"] == "breach"
+    bad = await client.patch(
+        patch, json={**base, "appetite": {operational: {"appetite": 12, "tolerance": 10}}}
+    )
+    assert bad.status_code == 422
+
+    field = await client.post(
+        f"{API}/custom-fields", json={"label": "Cost centre", "field_type": "text"}
+    )
+    assert field.status_code == 201, field.text
+    key = field.json()["key"]
+    made = await _risk(client, register, title="With extras", custom_fields={key: "CC-7"})
+    assert made["custom_fields"] == {key: "CC-7"}
+    found = await client.get(API, params={"register_id": register["id"], "custom": f"{key}:CC-7"})
+    assert [r["id"] for r in found.json()["items"]] == [made["id"]]
+    assert (
+        await client.get(API, params={"register_id": register["id"], "custom": f"{key}:x"})
+    ).json()["total"] == 0

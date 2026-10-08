@@ -53,6 +53,9 @@ class RegisterOut(_Response):
     risk_count: int
     categories: list[CategoryOut]
     created_at: UtcDateTime
+    scoring_formula: dict[str, Any]
+    appetite: dict[str, Any]
+    max_score: int
 
 
 class ScaleLevelIn(_Request):
@@ -79,6 +82,8 @@ class RegisterWrite(_Request):
     review_cadence_days: int | None = None
     is_default: bool | None = None
     status: str | None = None
+    scoring_formula: dict[str, Any] | None = None
+    appetite: dict[str, Any] | None = None
 
 
 class CategoryNodeIn(_Request):
@@ -89,6 +94,37 @@ class CategoryNodeIn(_Request):
 
 class CategoriesWrite(_Request):
     categories: list[CategoryNodeIn] = Field(max_length=60)
+
+
+class CustomFieldOut(_Response):
+    """One tenant-defined field, as the settings screen and the form read it."""
+
+    id: uuid.UUID
+    key: str
+    label: str
+    field_type: str
+    options: list[str]
+    help_text: str | None
+    required: bool
+    position: int
+    archived: bool
+
+
+class CustomFieldPageOut(_Response):
+    items: list[CustomFieldOut]
+
+
+class CustomFieldWrite(_Request):
+    label: str = Field(min_length=1, max_length=80)
+    field_type: str = Field(default="text", pattern="^(text|textarea|number|date|select|checkbox)$")
+    options: list[str] = Field(default_factory=list, max_length=50)
+    help_text: str | None = Field(default=None, max_length=300)
+    required: bool = False
+    position: int = Field(default=0, ge=0, le=999)
+
+
+class CustomFieldArchiveWrite(_Request):
+    archived: bool = True
 
 
 # -- risks ---------------------------------------------------------------------
@@ -130,6 +166,8 @@ class RiskOut(_Response):
     attention: list[str]
     created_at: UtcDateTime
     updated_at: UtcDateTime
+    appetite_status: str | None = None
+    custom_fields: dict[str, Any] = {}
 
 
 class RiskPageOut(_Response):
@@ -234,6 +272,7 @@ class RiskWrite(_Request):
     treatment_due_on: date | None = None
     next_review_on: date | None = None
     asset_ids: list[uuid.UUID] | None = Field(default=None, max_length=200)
+    custom_fields: dict[str, Any] | None = None
 
 
 class StatusWrite(_Request):
@@ -327,6 +366,7 @@ class SummaryOut(_Response):
     heatmap_inherent: list[list[int]]
     heatmap_residual: list[list[int]]
     by_band: dict[str, int]
+    by_appetite: dict[str, int] = {}
     by_status: dict[str, int]
     by_treatment: dict[str, int]
     by_category: list[CategoryCountOut]
@@ -397,6 +437,7 @@ class ImportRowOut(_Response):
     treatment_plan: str | None
     treatment_due_on: date | None
     next_review_on: date | None
+    custom_fields: dict[str, Any] = {}
     errors: list[str]
     warnings: list[str]
 
@@ -427,6 +468,7 @@ class ImportRowIn(_Request):
     treatment_plan: str | None = None
     treatment_due_on: date | None = None
     next_review_on: date | None = None
+    custom_fields: dict[str, Any] = Field(default_factory=dict)
 
 
 class ImportWrite(_Request):

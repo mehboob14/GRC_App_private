@@ -150,6 +150,7 @@ class ImportRow:
     treatment_plan: str | None = None
     treatment_due_on: date | None = None
     next_review_on: date | None = None
+    custom_fields: dict[str, Any] = field(default_factory=dict)
     errors: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
 
@@ -286,6 +287,7 @@ async def preview(  # noqa: PLR0912, PLR0915 — one rule per column
             "The file needs a Title column. Download the template to see the expected columns.",
             detail="no title column",
         )
+    extras = await risk_service.custom_fields(session, tenant_id=tenant_id)
     members = await risk_service.members(session, tenant_id=tenant_id)
     groups = await risk_service.groups(session, tenant_id=tenant_id)
     by_email = {m.email.lower(): m for m in members}
@@ -384,6 +386,19 @@ async def preview(  # noqa: PLR0912, PLR0915 — one rule per column
             setattr(row, key, _text(values.get(key)) or None)
         row.treatment_due_on = _date(values.get("treatment_due_on"), "Treatment due", row)
         row.next_review_on = _date(values.get("next_review_on"), "Next review", row)
+        for definition in extras:
+            cell = _text(values.get(definition.key))
+            if cell and definition.field_type == "checkbox":
+                cell = "true" if cell.lower() in ("yes", "y", "true", "1", "x") else "false"
+            if cell:
+                row.custom_fields[definition.key] = cell
+        if row.custom_fields or extras:
+            try:
+                row.custom_fields = await risk_service.clean_custom(
+                    session, tenant_id=tenant_id, values=row.custom_fields
+                )
+            except VerityError as exc:
+                row.errors.append(exc.message)
         out.append(row)
     return out
 
@@ -436,6 +451,7 @@ async def commit(
                         department_group_id=row.department_group_id,
                         treatment_due_on=row.treatment_due_on,
                         next_review_on=row.next_review_on,
+                        custom_fields=row.custom_fields,
                     ),
                     origin="import",
                     code_number=number,
@@ -452,7 +468,10 @@ async def commit(
 
 
 def build_template(  # noqa: PLR0915 — three sheets, laid out in order
-    register: RegisterView, owners: Sequence[str], units: Sequence[str]
+    register: RegisterView,
+    owners: Sequence[str],
+    units: Sequence[str],
+    extras: Sequence[tuple[str, str]] = (),
 ) -> bytes:
     """The import workbook: a Risks sheet with dropdowns (subcategory follows
     category), a hidden Lists sheet feeding them, and a Guide."""
@@ -483,6 +502,11 @@ def build_template(  # noqa: PLR0915 — three sheets, laid out in order
             else 20
         )
         ws.column_dimensions[get_column_letter(index)].width = width
+    for offset, (_key, label) in enumerate(extras, start=len(COLUMNS) + 1):
+        cell = ws.cell(row=1, column=offset, value=label)
+        cell.font = header_font
+        cell.fill = header_fill
+        ws.column_dimensions[get_column_letter(offset)].width = 20
     ws.freeze_panes = "B2"
     ws.row_dimensions[1].height = 22
 
@@ -737,7 +761,13 @@ def export_xlsx(  # noqa: PLR0912, PLR0915 — three sheets, laid out in order
             heat.row_dimensions[row].height = 30
             for impact in range(1, register.impact_levels + 1):
                 count = grid[likelihood - 1][impact - 1]
-                band = scoring.band_for(register.severity_bands, likelihood * impact) or "low"
+                band = (
+                    scoring.band_for(
+                        register.severity_bands,
+                        scoring.formula_score(register.scoring_formula, likelihood, impact),
+                    )
+                    or "low"
+                )
                 bg, fg = _BAND_FILL[band]
                 cell = heat.cell(row=row, column=impact + 1, value=count or None)
                 cell.fill = PatternFill("solid", fgColor=bg)
@@ -821,4 +851,7 @@ async def template_for(
     owners = sorted(m.email for m in members if m.status == "active")
     units = sorted(groups.values(), key=str.lower)
     slug = re.sub(r"[^a-z0-9]+", "_", register.name.lower()).strip("_") or "risk_register"
-    return build_template(register, owners, units), f"{slug}_import_template.xlsx"
+    extras = [
+        (d.key, d.label) for d in await risk_service.custom_fields(session, tenant_id=tenant_id)
+    ]
+    return build_template(register, owners, units, extras), f"{slug}_import_template.xlsx"
