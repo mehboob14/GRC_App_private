@@ -112,6 +112,35 @@ class MappingSuggestionOut(_Response):
     coverage: str
     confidence: float
     rationale: str
+    maturity: int | None = None
+    verdict: str | None = None
+    gaps: str = ""
+    requirements: list[str] = []
+
+
+class MaturityRequest(_Request):
+    control_id: uuid.UUID
+
+
+class RequirementVerdictOut(_Response):
+    code: str
+    verdict: str
+    note: str
+
+
+class MaturityOut(_Response):
+    """A draft judgement of how well an item proves a control (rule 11)."""
+
+    available: bool
+    control_id: uuid.UUID
+    code: str = ""
+    name: str = ""
+    maturity: int | None = None
+    verdict: str | None = None
+    summary: str = ""
+    strengths: list[str] = []
+    gaps: list[str] = []
+    requirements: list[RequirementVerdictOut] = []
 
 
 class MappingSuggestionsOut(_Response):

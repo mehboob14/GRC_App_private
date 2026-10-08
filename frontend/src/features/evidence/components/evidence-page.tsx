@@ -416,10 +416,13 @@ export function AddEvidenceDialog({
    *  item is linked where the user started, while still offering the full
    *  picker — this is the same dialog, not a copy of it. */
   presetControlIds,
+  onCreated,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   presetControlIds?: string[];
+  /** Called with the new item once it is saved. */
+  onCreated?: (item: Evidence) => void;
 }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -582,7 +585,7 @@ export function AddEvidenceDialog({
       for (const id of controlIds) form.append("control_ids", id);
       return evidenceApi.uploadFile(form);
     },
-    onSuccess: async () => {
+    onSuccess: async (created) => {
       await queryClient.invalidateQueries({ queryKey: ["evidence"] });
       // Attaching evidence writes audit rows against each control it links to,
       // so any open control History must refetch. Prefix-invalidated because
@@ -591,6 +594,7 @@ export function AddEvidenceDialog({
       toast({ title: "Evidence added", tone: "success" });
       reset();
       onOpenChange(false);
+      onCreated?.(created);
     },
     onError: (error: unknown) =>
       toast({ title: errorToast(error, "evidence item"), tone: "danger" }),
@@ -1239,7 +1243,12 @@ export function EvidencePage() {
         </Table>
       )}
 
-      <AddEvidenceDialog open={adding} onOpenChange={setAdding} />
+      {/* A new item opens on its suggested controls, with the AI's reading of it. */}
+      <AddEvidenceDialog
+        open={adding}
+        onOpenChange={setAdding}
+        onCreated={(item) => navigate(`/evidence/${item.id}?suggest=1`)}
+      />
     </div>
   );
 }

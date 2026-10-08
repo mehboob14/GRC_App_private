@@ -40,6 +40,9 @@ from verity.modules.evidence.schemas import (
     LinkRecordRequest,
     MappingSuggestionOut,
     MappingSuggestionsOut,
+    MaturityOut,
+    MaturityRequest,
+    RequirementVerdictOut,
 )
 from verity.modules.evidence.service import LinkTarget, evidence_service
 
@@ -279,6 +282,37 @@ async def suggest_mappings(
     return MappingSuggestionsOut(
         source=source,
         suggestions=[MappingSuggestionOut.model_validate(s) for s in suggestions],
+    )
+
+
+@evidence_router.post(
+    "/{evidence_id}/maturity",
+    response_model=MaturityOut,
+    summary="How well this evidence proves one control and its requirements: a draft",
+)
+async def assess_maturity(
+    evidence_id: uuid.UUID,
+    body: MaturityRequest,
+    _principal: Annotated[Principal, Depends(require_evidence_manage)],
+    context: Annotated[TenantContext, Depends(get_tenant_context)],
+    session: Annotated[AsyncSession, Depends(get_tenant_session)],
+) -> MaturityOut:
+    view = await evidence_service.assess_maturity(
+        session, tenant_id=context.tenant_id, evidence_id=evidence_id, control_id=body.control_id
+    )
+    if view is None:
+        return MaturityOut(available=False, control_id=body.control_id)
+    return MaturityOut(
+        available=True,
+        control_id=view.control_id,
+        code=view.code,
+        name=view.name,
+        maturity=view.maturity,
+        verdict=view.verdict,
+        summary=view.summary,
+        strengths=view.strengths,
+        gaps=view.gaps,
+        requirements=[RequirementVerdictOut(**r) for r in view.requirements],
     )
 
 

@@ -12,6 +12,7 @@ rewrite what an auditor already reviewed.
 from __future__ import annotations
 
 import uuid
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any, Final
@@ -436,6 +437,19 @@ class ControlService:
             )
         )
         return {template_id: list(evidence or []) for template_id, evidence in rows.tuples()}
+
+    async def requirement_texts(
+        self, session: AsyncSession, *, keys: Sequence[str]
+    ) -> dict[str, tuple[str, str]]:
+        """``requirement_key`` to ``(name, description)`` for the criteria a control cites."""
+        if not keys:
+            return {}
+        rows = await session.execute(
+            select(Requirement.requirement_key, Requirement.name, Requirement.description).where(
+                Requirement.requirement_key.in_(list(keys))
+            )
+        )
+        return {key: (name, description or "") for key, name, description in rows.tuples()}
 
     async def get_requirement(
         self, session: AsyncSession, *, requirement_id: uuid.UUID

@@ -1,5 +1,5 @@
 import { useMemo, useState, type ReactNode } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Badge,
@@ -53,7 +53,9 @@ export function EvidenceDetailPage() {
   const canManage = Boolean(principal?.permissions.includes("evidence:manage"));
   const canReview = Boolean(principal?.permissions.includes("evidence:review"));
 
-  const [tab, setTab] = useEntryState<TabId>("detail.tab", "overview");
+  const [params] = useSearchParams();
+  const justUploaded = params.get("suggest") === "1";
+  const [tab, setTab] = useEntryState<TabId>("detail.tab", justUploaded ? "controls" : "overview");
   const [linking, setLinking] = useState(false);
   const [previewing, setPreviewing] = useState(false);
   const [rejecting, setRejecting] = useState(false);
@@ -271,6 +273,7 @@ export function EvidenceDetailPage() {
               />
               <SuggestedMappings
                 evidenceId={evidenceId}
+                autoRun={justUploaded}
                 onApproved={async () => {
                   await queryClient.invalidateQueries({ queryKey: ["evidence"] });
                   await queryClient.invalidateQueries({ queryKey: ["audit"] });

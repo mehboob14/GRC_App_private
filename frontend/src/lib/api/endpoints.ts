@@ -26,6 +26,7 @@ import type {
   LinkedRecord,
   LinkTargetType,
   MappingSuggestions,
+  MaturityResult,
   Framework,
   Group,
   InviteMemberRequest,
@@ -367,6 +368,11 @@ export const evidenceApi = {
     }),
   suggestMappings: (id: string) =>
     apiFetch<MappingSuggestions>(`/evidence/${id}/suggest-mappings`, { method: "POST" }),
+  assessMaturity: (id: string, controlId: string) =>
+    apiFetch<MaturityResult>(`/evidence/${id}/maturity`, {
+      method: "POST",
+      body: JSON.stringify({ control_id: controlId }),
+    }),
   approveMapping: (id: string, controlId: string) =>
     apiFetch<Evidence>(`/evidence/${id}/mappings/approve`, {
       method: "POST",

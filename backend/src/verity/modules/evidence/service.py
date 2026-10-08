@@ -17,7 +17,7 @@ import uuid
 from collections.abc import Sequence
 from dataclasses import dataclass, field, replace
 from datetime import UTC, date, datetime, timedelta
-from typing import Final
+from typing import Any, Final
 
 from sqlalchemy import delete, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -30,6 +30,7 @@ from verity.modules.evidence.models import (
     Evidence,
     EvidenceControl,
 )
+from verity.modules.evidence.text import extract_text
 from verity.shared.ids import uuid7
 
 #: Types evidence may be linked to. A subset of the links table's own
@@ -167,6 +168,26 @@ class SuggestionView:
     coverage: str
     confidence: float
     rationale: str
+    maturity: int | None = None
+    verdict: str | None = None
+    gaps: str = ""
+    #: "CC6.1: Logical access security" for each criterion the control answers.
+    requirements: list[str] = field(default_factory=list)
+
+
+@dataclass(frozen=True, slots=True)
+class MaturityView:
+    """A draft judgement of how well one item proves one control (rule 11)."""
+
+    control_id: uuid.UUID
+    code: str
+    name: str
+    maturity: int
+    verdict: str
+    summary: str
+    strengths: list[str]
+    gaps: list[str]
+    requirements: list[dict[str, str]]
 
 
 @dataclass(frozen=True, slots=True)
@@ -941,6 +962,15 @@ class EvidenceService:
         )
         controls = await control_service.list_controls(session, tenant_id=tenant_id)
         by_id = {str(c.id): c for c in controls}
+        texts = await control_service.requirement_texts(
+            session, keys=sorted({k for c in controls for k in c.requirement_keys})
+        )
+
+        def cited(c: Any) -> list[str]:  # noqa: ANN401 — a control view
+            return [
+                f"{k.split(':', 1)[-1]}: {texts[k][0]}" for k in c.requirement_keys if k in texts
+            ]
+
         candidates = [
             ControlCandidate(
                 control_id=str(c.id),
@@ -948,6 +978,7 @@ class EvidenceService:
                 name=c.name,
                 description=c.description or "",
                 criteria=[k.split(":", 1)[-1] for k in c.requirement_keys],
+                requirements=cited(c),
             )
             for c in controls
             if c.id not in linked
@@ -957,6 +988,7 @@ class EvidenceService:
                 title=row.title,
                 description=row.description or "",
                 evidence_type=row.evidence_type,
+                text=await self._text_of(tenant_id, row),
             ),
             candidates,
         )
@@ -969,11 +1001,81 @@ class EvidenceService:
                 coverage=s.coverage,
                 confidence=s.confidence,
                 rationale=s.rationale,
+                maturity=s.maturity,
+                verdict=s.verdict,
+                gaps=s.gaps,
+                requirements=cited(by_id[s.control_id]),
             )
             for s in suggestions
             if s.control_id in by_id
         ]
         return source, views
+
+    async def _text_of(self, tenant_id: uuid.UUID, row: Evidence) -> str:
+        if row.kind != "file" or row.object_key is None:
+            return ""
+        try:
+            data = self._store.open(tenant_id, row.object_key)
+        except Exception:
+            return ""
+        return extract_text(data, row.content_type or "", row.filename or "")
+
+    async def assess_maturity(
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        evidence_id: uuid.UUID,
+        control_id: uuid.UUID,
+    ) -> MaturityView | None:
+        """Judge this item against one control and the requirements it answers: a draft
+        for a person (rule 11). None when no model is configured or it could not decide."""
+        from verity.modules.ai.mapping import (  # noqa: PLC0415 — keeps the LLM path optional
+            ControlCandidate,
+            EvidenceContext,
+            assess_maturity,
+        )
+        from verity.modules.compliance.control_service import control_service  # noqa: PLC0415
+
+        row = await self._load(session, tenant_id, evidence_id)
+        controls = await control_service.list_controls(session, tenant_id=tenant_id)
+        control = next((c for c in controls if c.id == control_id), None)
+        if control is None:
+            raise NotFound("That control does not exist.", detail=str(control_id))
+        texts = await control_service.requirement_texts(session, keys=control.requirement_keys)
+        result = await assess_maturity(
+            EvidenceContext(
+                title=row.title,
+                description=row.description or "",
+                evidence_type=row.evidence_type,
+                text=await self._text_of(tenant_id, row),
+            ),
+            ControlCandidate(
+                control_id=str(control.id),
+                code=control.code,
+                name=control.name,
+                description=control.description or "",
+                criteria=[k.split(":", 1)[-1] for k in control.requirement_keys],
+                requirements=[
+                    f"{k.split(':', 1)[-1]}: {texts[k][0]}. {texts[k][1][:300]}"
+                    for k in control.requirement_keys
+                    if k in texts
+                ],
+            ),
+        )
+        if result is None:
+            return None
+        return MaturityView(
+            control_id=control.id,
+            code=control.code,
+            name=control.name,
+            maturity=result.maturity,
+            verdict=result.verdict,
+            summary=result.summary,
+            strengths=result.strengths,
+            gaps=result.gaps,
+            requirements=result.requirements,
+        )
 
     async def approve_mapping(
         self,

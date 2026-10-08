@@ -43,6 +43,8 @@ import { ago, type CriterionMapping } from "@/features/connectors/api";
 import { useAutomation } from "@/features/connectors/hooks";
 import { useLinkedRecords } from "@/features/linkage/hooks";
 import { ControlEvidenceList } from "./control-evidence-list";
+import { MaturityDialog } from "./maturity-dialog";
+import type { Evidence } from "@/lib/api/types";
 import { useEntryState } from "@/lib/nav/entry-state";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -275,6 +277,7 @@ export function ControlDetailPage() {
   const [editing, setEditing] = useState(false);
   const [linking, setLinking] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [judged, setJudged] = useState<Evidence | null>(null);
   const [chainFor, setChainFor] = useState<string | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -876,6 +879,12 @@ export function ControlDetailPage() {
         open={uploading}
         onOpenChange={setUploading}
         presetControlIds={[controlId]}
+        onCreated={(item) => setJudged(item)}
+      />
+      <MaturityDialog
+        item={judged}
+        controlId={controlId}
+        onClose={() => setJudged(null)}
       />
 
       <AttachEvidenceDialog

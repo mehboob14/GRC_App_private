@@ -827,6 +827,26 @@ export type MappingSuggestion = {
   coverage: "full" | "partial";
   confidence: number;
   rationale: string;
+  /** 0..100: how well the evidence would prove this control. Null from the offline matcher. */
+  maturity: number | null;
+  verdict: "proves" | "partly" | "does_not" | null;
+  gaps: string;
+  /** "CC6.1: Logical access security" for each criterion the control answers. */
+  requirements: string[];
+};
+
+/** A draft judgement of how well one item proves one control and its requirements. */
+export type MaturityResult = {
+  available: boolean;
+  control_id: string;
+  code: string;
+  name: string;
+  maturity: number | null;
+  verdict: "proves" | "partly" | "does_not" | null;
+  summary: string;
+  strengths: string[];
+  gaps: string[];
+  requirements: { code: string; verdict: string; note: string }[];
 };
 
 export type MappingSuggestions = {

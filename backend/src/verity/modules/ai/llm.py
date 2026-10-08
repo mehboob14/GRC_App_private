@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import os
 from functools import lru_cache
+from typing import Any
 
 from langchain.chat_models import init_chat_model
 from langchain_core.language_models import BaseChatModel
@@ -77,10 +78,13 @@ def build_chat_model(settings: Settings) -> BaseChatModel:
     """
     configure_tracing(settings)
     ai = settings.ai
+    # Reasoning models (gpt-5, o-series) refuse a temperature and fix their own sampling.
+    reasoning = ai.model.startswith(("gpt-5", "o1", "o3", "o4"))
+    options: dict[str, Any] = {} if reasoning else {"temperature": ai.temperature}
     model: BaseChatModel = init_chat_model(
         model=ai.model,
         model_provider=ai.provider,
-        temperature=ai.temperature,
+        **options,
         max_tokens=ai.max_tokens,
         timeout=ai.timeout_seconds,
         max_retries=ai.max_retries,
