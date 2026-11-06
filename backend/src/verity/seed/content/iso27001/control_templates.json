@@ -1,0 +1,578 @@
+[
+  {
+    "canonical_key": "isms-scope",
+    "category": "Governance, Risk & Compliance",
+    "sub_category": "Governance & Accountability",
+    "code": "GOV-23",
+    "control_sub_type": "Manual",
+    "description": "A security program protects only what it has declared to cover, so a scope that drifts leaves gaps nobody owns. A written scope signed by leadership tells staff, customers and auditors what is inside the boundary and why anything is left out. A short map of how the management processes connect shows the program runs as one system.",
+    "implementation_guidance": "Write a scope statement that names the products, services, cloud environments, data centers and other sites, offices, teams, systems and data the security program covers, and explain where the boundary sits with reference to the internal and external factors and the requirements of interested parties.\nState what is left out and why, list the suppliers, group entities and interfaces the services in scope depend on, such as the cloud or hosting provider and outsourced operations, and keep a data flow diagram showing where sensitive data, such as payment card data, crosses the boundary.\nHave leadership approve the scope in writing, make it available to staff, customers and auditors who need it, and review it at least annually and whenever products, sites, suppliers or customer commitments change.\nDescribe the main management processes, such as risk assessment, internal audit, management review and corrective action, and how each one feeds the next.",
+    "importance": "mandatory",
+    "name": "ISMS scope and boundaries",
+    "evidence": [
+      {
+        "key": "scope-statement-approved-by-leadership",
+        "name": "Scope statement approved by leadership",
+        "assurance": "design",
+        "cadence": "annual",
+        "source": "platform",
+        "module": "documents",
+        "automated_by": [
+          "verity.isms.scope_documented",
+          "verity.isms.scope_recorded"
+        ]
+      },
+      {
+        "key": "map-of-the-management-processes-and",
+        "name": "Map of the management processes and how they connect",
+        "assurance": "design",
+        "cadence": "annual",
+        "source": "upload"
+      },
+      {
+        "key": "scope-review-after-changes-to-products",
+        "name": "Scope review after changes to products, sites or suppliers",
+        "assurance": "operating",
+        "cadence": "on_change",
+        "source": "upload"
+      }
+    ]
+  },
+  {
+    "canonical_key": "organizational-context",
+    "category": "Governance, Risk & Compliance",
+    "sub_category": "Compliance Management",
+    "code": "GOV-24",
+    "control_sub_type": "Manual",
+    "description": "Security effort aimed at last year's picture misses the pressures that matter now. A written view of the external and internal factors that shape the program, such as regulation, customer demands, technology change, staffing and funding, keeps risk work and objectives pointed at what actually affects the business.",
+    "implementation_guidance": "List the external factors that affect the security program, such as laws and regulators, customer expectations, threat trends, supplier changes and market conditions, and record whether climate change is relevant, for example through its effect on sites, hosting regions, suppliers or customer demands, with the reason either way.\nList the internal factors, such as strategy, growth plans, team capacity, technology choices, culture and budget.\nName an owner, and review the list at least annually and after major events such as a funding round, an acquisition, a new market, a new regulation or a serious incident.\nUse the list as an input to the risk assessment, the objectives and the scope, and record where a factor led to an action or a decision.",
+    "importance": "mandatory",
+    "name": "Internal and external factors register",
+    "evidence": [
+      {
+        "key": "register-of-external-and-internal-factors",
+        "name": "Register of external and internal factors",
+        "assurance": "design",
+        "cadence": "annual",
+        "source": "platform",
+        "module": "documents",
+        "automated_by": [
+          "verity.context.documented"
+        ]
+      },
+      {
+        "key": "yearly-review-notes-and-decisions-taken",
+        "name": "Yearly review notes and decisions taken",
+        "assurance": "operating",
+        "cadence": "annual",
+        "source": "upload"
+      }
+    ]
+  },
+  {
+    "canonical_key": "interested-parties",
+    "category": "Governance, Risk & Compliance",
+    "sub_category": "Compliance Management",
+    "code": "GOV-25",
+    "control_sub_type": "Manual",
+    "description": "Customers, regulators, employees, suppliers and owners each expect something from the security program, and an expectation nobody wrote down is missed until a complaint or an audit finds it. A register of who they are and what each requires shows which expectations the program meets and feeds the obligations register.",
+    "implementation_guidance": "List the parties with a stake in security, such as customers, regulators, employees, suppliers, investors and insurers.\nRecord what each party requires or expects, separating legal, contractual and other expectations, including any that relate to climate change, and note where each came from.\nDecide which of those requirements the program will take on, and carry the legal and contractual ones into the compliance obligations register with a named owner.\nReview the list at least annually and whenever a major customer, regulator or contract changes.",
+    "importance": "mandatory",
+    "name": "Interested parties and their requirements",
+    "evidence": [
+      {
+        "key": "register-of-interested-parties-and-what",
+        "name": "Register of interested parties and what each requires",
+        "assurance": "design",
+        "cadence": "annual",
+        "source": "platform",
+        "module": "documents",
+        "automated_by": [
+          "verity.interested_parties.documented"
+        ]
+      },
+      {
+        "key": "review-record-covering-new-contracts-and",
+        "name": "Review record covering new contracts and regulatory changes",
+        "assurance": "operating",
+        "cadence": "annual",
+        "source": "upload"
+      }
+    ]
+  },
+  {
+    "canonical_key": "security-objectives",
+    "category": "Governance, Risk & Compliance",
+    "sub_category": "Governance & Accountability",
+    "code": "GOV-26",
+    "control_sub_type": "Hybrid",
+    "description": "Security work without targets cannot show whether it is succeeding or whether the people and budget behind it are enough. Objectives with an owner, a date and a measure turn intent into something leadership can check, and they show that resources were considered rather than assumed.",
+    "implementation_guidance": "Each year, set a small number of security objectives that follow from the security policy, the risk assessment and customer commitments, each worded so it can be measured.\nGive every objective an owner, a target, a due date and the people, time and budget needed to reach it.\nDefine the measures behind each objective: what is measured, how, how often and who reviews the numbers.\nShare the objectives with the people who work toward them, review results at management review, record the decisions taken on resources, and update or retire objectives that no longer fit.",
+    "importance": "mandatory",
+    "name": "Security objectives, plans and measures",
+    "evidence": [
+      {
+        "key": "security-objectives-with-owners-targets-and",
+        "name": "Security objectives with owners, targets and due dates",
+        "assurance": "design",
+        "cadence": "annual",
+        "source": "platform",
+        "module": "tasks",
+        "automated_by": [
+          "verity.objectives.documented"
+        ]
+      },
+      {
+        "key": "measures-and-results-compared-with-targets",
+        "name": "Measures and results compared with targets",
+        "assurance": "operating",
+        "cadence": "quarterly",
+        "source": "upload"
+      },
+      {
+        "key": "resourcing-decisions-for-the-security-program",
+        "name": "Resourcing decisions for the security program",
+        "assurance": "operating",
+        "cadence": "annual",
+        "source": "upload"
+      }
+    ]
+  },
+  {
+    "canonical_key": "statement-of-applicability",
+    "category": "Governance, Risk & Compliance",
+    "sub_category": "Risk Management",
+    "code": "GOV-27",
+    "control_sub_type": "Hybrid",
+    "description": "Which controls you run and which you leave out are decisions that customers and auditors will ask you to defend. The statement of applicability records, for every control in the reference set, whether it applies, whether it is in place and why, so each choice traces back to a risk or an obligation rather than habit.",
+    "implementation_guidance": "List every control in the reference set you work to, plus any further controls you chose from other sources such as regulations or contracts, and record for each whether it applies, whether it is in place and who owns it.\nGive a reason for every control you include and every one you leave out, pointing to a risk, a legal or contractual requirement or the scope, not a general statement.\nMark controls that a supplier performs for you as inherited, and attach the supplier's report or certificate as support.\nHave risk owners and leadership approve each version, keep every approved version, review the statement at least annually, and reissue it when risk treatment or scope changes.",
+    "importance": "mandatory",
+    "name": "Statement of Applicability",
+    "evidence": [
+      {
+        "key": "statement-of-applicability-showing-every-decision",
+        "name": "Statement of Applicability showing every decision and reason",
+        "assurance": "design",
+        "cadence": "annual",
+        "source": "platform",
+        "module": "controls",
+        "automated_by": [
+          "verity.soa.complete"
+        ]
+      },
+      {
+        "key": "approval-of-each-version-by-risk",
+        "name": "Approval of each version by risk owners and leadership",
+        "assurance": "operating",
+        "cadence": "on_change",
+        "source": "upload"
+      },
+      {
+        "key": "supplier-certificates-behind-inherited-controls",
+        "name": "Supplier certificates behind inherited controls",
+        "assurance": "operating",
+        "cadence": "annual",
+        "source": "platform",
+        "module": "vendors"
+      }
+    ]
+  },
+  {
+    "canonical_key": "document-control",
+    "category": "Governance, Risk & Compliance",
+    "sub_category": "Policies & Ethics",
+    "code": "GOV-28",
+    "control_sub_type": "Hybrid",
+    "description": "A policy nobody can find, or one that exists in three conflicting versions, does more harm than no policy because people follow the wrong one. Controlled documents carry an owner, a version, an approval and a review date, and they sit where the right people can read them and the wrong people cannot change them.",
+    "implementation_guidance": "List the documents and records the security program needs, including every one that the standards, laws and contracts you work to require and the operating procedures staff follow to run the systems in scope, and name an owner for each.\nGive every document a title, version, date, owner and next review date, at least yearly for policies and procedures, keep it in an agreed format, and require a named approver to review it before it is published or changed.\nKeep documents in a controlled system of record with access set by role, backup and version history, withdraw superseded versions from use, and protect paper records the same way where they exist.\nSet retention and disposal rules for records that meet legal and contractual periods, and identify and control documents from outside sources that the program relies on, such as supplier reports and regulator notices.",
+    "importance": "mandatory",
+    "name": "Document and record management",
+    "evidence": [
+      {
+        "key": "document-control-procedure-covering-approval-versions",
+        "name": "Document control procedure covering approval, versions and retention",
+        "assurance": "design",
+        "cadence": "annual",
+        "source": "platform",
+        "module": "documents"
+      },
+      {
+        "key": "version-history-and-approval-record-for",
+        "name": "Version history and approval record for each document",
+        "assurance": "operating",
+        "cadence": "on_change",
+        "source": "platform",
+        "module": "documents",
+        "automated_by": [
+          "verity.documents.controlled"
+        ]
+      },
+      {
+        "key": "access-and-retention-settings-for-the",
+        "name": "Access and retention settings for the document store",
+        "assurance": "design",
+        "cadence": "annual",
+        "source": "upload"
+      }
+    ]
+  },
+  {
+    "canonical_key": "operational-planning",
+    "category": "Governance, Risk & Compliance",
+    "sub_category": "Governance & Accountability",
+    "code": "GOV-29",
+    "control_sub_type": "Manual",
+    "description": "Security work that nobody scheduled happens only when someone remembers it. An operating plan lists the recurring activities that keep the management system running, such as risk assessment, access reviews, audits, management review and training, with an owner, a due date and the standard each must meet.",
+    "implementation_guidance": "Maintain an operating plan that lists each recurring security activity with its owner, schedule and expected output, and review the plan at least annually.\nDefine what counts as done for each activity, such as the scope, the method, the approver and the record it must leave.\nBefore changing the management system or the services in scope, record the reason, the expected effect, the owner, the timing and the resources needed, and after any unplanned change, review its effect and act on any harm it caused.\nList the security work that suppliers, contractors or other group entities do on your behalf, set the standard they must meet in the contract or service agreement, and check it at the supplier review.",
+    "importance": "mandatory",
+    "name": "Security operating plan",
+    "evidence": [
+      {
+        "key": "operating-plan-listing-activities-owners-and",
+        "name": "Operating plan listing activities, owners and schedule",
+        "assurance": "design",
+        "cadence": "annual",
+        "source": "platform",
+        "module": "documents"
+      },
+      {
+        "key": "records-showing-planned-activities-were-completed",
+        "name": "Records showing planned activities were completed",
+        "assurance": "operating",
+        "cadence": "quarterly",
+        "source": "upload"
+      },
+      {
+        "key": "review-of-planned-changes-and-outsourced",
+        "name": "Review of planned changes and outsourced work",
+        "assurance": "operating",
+        "cadence": "on_change",
+        "source": "upload"
+      }
+    ]
+  },
+  {
+    "canonical_key": "continual-improvement",
+    "category": "Governance, Risk & Compliance",
+    "sub_category": "Audit & Assurance",
+    "code": "GOV-30",
+    "control_sub_type": "Hybrid",
+    "description": "A management system that only maintains itself slowly goes stale. Collecting improvement ideas from audits, incidents, measures and staff, deciding which to act on and tracking them to completion is how the program improves each year instead of repeating itself.",
+    "implementation_guidance": "Keep one improvement log that takes input from audits, incidents, measurement results, management review, customer feedback and staff suggestions.\nAssess each item for benefit and effort, decide whether to act, and record the decision and the reason.\nGive accepted items an owner and a due date, track them as tasks, and close them only with evidence that the change was made.\nCheck a sample of completed improvements at management review to confirm they had the intended effect.",
+    "importance": "mandatory",
+    "name": "Security program improvement",
+    "evidence": [
+      {
+        "key": "procedure-for-raising-and-deciding-improvements",
+        "name": "Procedure for raising and deciding improvements",
+        "assurance": "design",
+        "cadence": "annual",
+        "source": "platform",
+        "module": "documents"
+      },
+      {
+        "key": "improvement-log-with-owners-decisions-and",
+        "name": "Improvement log with owners, decisions and closure",
+        "assurance": "operating",
+        "cadence": "ongoing",
+        "source": "platform",
+        "module": "tasks"
+      },
+      {
+        "key": "review-of-completed-improvements-and-their",
+        "name": "Review of completed improvements and their effect",
+        "assurance": "operating",
+        "cadence": "annual",
+        "source": "upload"
+      }
+    ]
+  },
+  {
+    "canonical_key": "security-role-competence",
+    "category": "Human Resources & Personnel Security",
+    "sub_category": "Training & Competence",
+    "code": "HR-09",
+    "control_sub_type": "Manual",
+    "description": "The people who run security, such as the security lead, administrators, incident responders and internal auditors, need skills well beyond general awareness. Recording what each role requires, what each holder has and how gaps were closed shows that the work is done by people able to do it.",
+    "implementation_guidance": "List the roles that carry security duties, such as security lead, system and database administrators, on call responders, internal auditors, risk owners and, where they exist, key custodians.\nDefine the skills, experience and qualifications each role needs, building on the job description.\nBefore someone takes up a security role and at least once a year after, record what they can show, such as training, certificates, past experience or a practical assessment, and note any gaps.\nClose gaps with training, mentoring, supervision or a change of assignment, set a date for each action, and check afterwards that it worked.",
+    "importance": "mandatory",
+    "name": "Competence of people in security roles",
+    "evidence": [
+      {
+        "key": "competence-requirements-for-each-security-role",
+        "name": "Competence requirements for each security role",
+        "assurance": "design",
+        "cadence": "annual",
+        "source": "upload",
+        "automated_by": [
+          "verity.competence.documented"
+        ]
+      },
+      {
+        "key": "competence-record-for-each-person-in",
+        "name": "Competence record for each person in a security role",
+        "assurance": "operating",
+        "cadence": "annual",
+        "source": "upload"
+      },
+      {
+        "key": "training-or-other-actions-taken-to",
+        "name": "Training or other actions taken to close gaps",
+        "assurance": "operating",
+        "cadence": "annual",
+        "source": "upload"
+      }
+    ]
+  },
+  {
+    "canonical_key": "communication-plan",
+    "category": "Communications & Collaboration Security",
+    "sub_category": "Internal Communication",
+    "code": "CS-06",
+    "control_sub_type": "Manual",
+    "description": "Security messages reach the right people only when someone decided in advance what to say, when, to whom and through which channel. A communication plan covers routine messages and urgent ones, so staff, customers, suppliers and authorities hear what they need without anyone improvising.",
+    "implementation_guidance": "List the security topics that need communicating, such as policy changes, incidents, threats, audit results and customer commitments.\nState the audience, the timing or trigger, the channel and the sender for each topic.\nCover internal messages to staff and leadership as well as external ones to customers, suppliers, regulators and the public.\nReview the plan at least annually, and check that messages were sent and understood, for example through acknowledgments or feedback.",
+    "importance": "mandatory",
+    "name": "Security communication plan",
+    "evidence": [
+      {
+        "key": "security-communication-plan",
+        "name": "Security communication plan",
+        "assurance": "design",
+        "cadence": "annual",
+        "source": "platform",
+        "module": "documents",
+        "automated_by": [
+          "verity.communication.plan_documented"
+        ]
+      },
+      {
+        "key": "sample-of-messages-sent-under-the",
+        "name": "Sample of messages sent under the plan",
+        "assurance": "operating",
+        "cadence": "quarterly",
+        "source": "upload"
+      }
+    ]
+  },
+  {
+    "canonical_key": "authority-and-community-contacts",
+    "category": "Communications & Collaboration Security",
+    "sub_category": "Reporting Channels",
+    "code": "CS-07",
+    "control_sub_type": "Manual",
+    "description": "During an incident, searching for the right regulator, law enforcement contact or provider escalation path wastes time you do not have. A current contact list and a few active community memberships bring help and early warning faster, and they stop individuals from improvising disclosures.",
+    "implementation_guidance": "List the authorities you may need to contact, such as data protection regulators, sector or financial supervisors, national cyber agencies or CERTs, law enforcement, and emergency services for any site you run, with contact details, the situations that call for contact and any legal reporting deadline.\nName an owner for the list and who may contact each authority, require the incident lead and legal counsel to agree before a regulator or law enforcement is contacted about a security incident, except where life or safety is at risk, and log each contact made with its date, reason and outcome.\nJoin the security communities, information sharing groups and professional bodies that match your technology and sector, such as a sector ISAC or a national CERT service, and name a person who follows each one and passes on what matters.\nCheck the list and memberships at least annually and after a change of regulator, jurisdiction or site, and confirm each contact channel still works, recording the date and result.",
+    "importance": "preferred",
+    "name": "Contacts with authorities and security communities",
+    "evidence": [
+      {
+        "key": "contact-list-for-authorities-and-security",
+        "name": "Contact list for authorities and security communities",
+        "assurance": "design",
+        "cadence": "annual",
+        "source": "upload"
+      },
+      {
+        "key": "memberships-or-subscriptions-to-security-communities",
+        "name": "Memberships or subscriptions to security communities",
+        "assurance": "operating",
+        "cadence": "annual",
+        "source": "upload"
+      },
+      {
+        "key": "yearly-check-that-contact-details-still",
+        "name": "Yearly check that contact details still work",
+        "assurance": "operating",
+        "cadence": "annual",
+        "source": "upload"
+      }
+    ]
+  },
+  {
+    "canonical_key": "threat-intelligence",
+    "category": "Logging, Monitoring & Incident Management",
+    "sub_category": "Assets & Vulnerabilities",
+    "code": "LM-12",
+    "control_sub_type": "Manual",
+    "description": "Attackers change tools faster than a yearly assessment can follow, so learning about a new technique only after an incident means learning too late. Collecting reports on threats to your stack, checking them against what you run and acting on the ones that matter turns outside news into earlier fixes and better detection.",
+    "implementation_guidance": "Choose sources that fit your technology and sector, such as vendor security bulletins, cloud provider notices, government and national CERT alerts, known exploited vulnerability lists, sector sharing groups such as an ISAC, and trusted research, and record why each was chosen.\nName a person or team to read the sources on a written schedule, at least weekly, and to assess urgent alerts, such as an actively exploited flaw in software you run, on the day they arrive, judging which items affect your systems, data or suppliers.\nRecord each relevant item with its assessment and the action taken, such as a patch, a detection rule, a configuration change, a supplier question or a note to staff, with an owner and a date.\nFeed confirmed threats into the risk assessment, vulnerability priorities and incident planning, give leadership a summary of threat trends at each management review, and review the choice of sources at least annually.",
+    "importance": "preferred",
+    "name": "Threat source monitoring",
+    "evidence": [
+      {
+        "key": "threat-sources-and-the-routine-for",
+        "name": "Threat sources and the routine for reviewing them",
+        "assurance": "design",
+        "cadence": "annual",
+        "source": "upload"
+      },
+      {
+        "key": "log-of-threats-reviewed-and-actions",
+        "name": "Log of threats reviewed and actions taken",
+        "assurance": "operating",
+        "cadence": "ongoing",
+        "source": "upload"
+      },
+      {
+        "key": "actively-exploited-vulnerabilities-and-time-taken",
+        "name": "Actively exploited vulnerabilities and time taken to respond",
+        "assurance": "operating",
+        "cadence": "ongoing",
+        "source": "platform",
+        "module": "vulnerabilities"
+      }
+    ]
+  },
+  {
+    "canonical_key": "data-masking",
+    "category": "Data Management & Privacy",
+    "sub_category": "Data Handling",
+    "code": "DM-18",
+    "control_sub_type": "Manual",
+    "description": "Many tasks need data that looks real without being real, such as support screens, analytics, demos, training and test environments. Masking or pseudonymizing sensitive fields limits what a leaked export, a curious employee or a contractor can see while the work carries on.",
+    "implementation_guidance": "Use the data classification to list the fields that need masking, such as personal identifiers, contact details, account and card numbers, and credentials, and check the list against the privacy, sector and payment card rules that apply.\nChoose a method for each use, such as redaction, partial display, tokenization, hashing or synthetic replacement, and keep the masking rules in reviewed code or configuration so every change is approved and recorded.\nApply masking by default in support tools, analytics exports, logs, demos and lower environments, allow unmasked access only to approved roles, and show no more than the issuer prefix and the last four digits of a card number to anyone whose role does not need the full number.\nAt least annually and whenever schemas or data types change, test that masked data cannot be reversed by combining fields or reading a mapping, and record the result.",
+    "importance": "preferred",
+    "name": "Masking sensitive fields",
+    "evidence": [
+      {
+        "key": "masking-standard-listing-fields-methods-and",
+        "name": "Masking standard listing fields, methods and where applied",
+        "assurance": "design",
+        "cadence": "annual",
+        "source": "platform",
+        "module": "documents"
+      },
+      {
+        "key": "sample-of-masked-data-in-test",
+        "name": "Sample of masked data in test, support or analytics use",
+        "assurance": "operating",
+        "cadence": "annual",
+        "source": "upload"
+      }
+    ]
+  },
+  {
+    "canonical_key": "data-leakage-prevention",
+    "category": "Data Management & Privacy",
+    "sub_category": "Data Handling",
+    "code": "DM-19",
+    "control_sub_type": "Manual",
+    "description": "Sensitive data usually leaves by ordinary routes such as email, file sharing, chat, personal cloud storage, removable media and open storage buckets. Setting rules for those routes and watching them for bulk or unusual transfers lets you stop or catch a leak that no attacker needed to break in to cause.",
+    "implementation_guidance": "List the routes data can leave by, such as email, file sharing, chat, code repositories, storage buckets, removable media, printing and screenshots, for the systems that hold confidential or restricted data.\nSet rules that fit the data classification, such as blocking external sharing of restricted data, limiting downloads and forwarding, and warning before a risky action.\nTurn on the sharing controls and leakage alerts in the email, file, chat, endpoint, network egress and cloud storage tools you use, including alerts for bulk downloads and public links, block or restrict removable storage on company devices through device management, allowing only encrypted media by approved exception, and keep a record of the settings.\nTriage leakage alerts within a set time, such as one business day, through the security event process, raise confirmed leaks as incidents, and review exceptions and rule tuning at least quarterly, recording the outcome of each, so people can work without bypassing the rules.",
+    "importance": "preferred",
+    "name": "Outbound data leak controls",
+    "evidence": [
+      {
+        "key": "leakage-prevention-and-sharing-settings-in",
+        "name": "Leakage prevention and sharing settings in email, chat and file tools",
+        "assurance": "design",
+        "cadence": "annual",
+        "source": "upload"
+      },
+      {
+        "key": "alerts-and-exceptions-that-were-reviewed",
+        "name": "Alerts and exceptions that were reviewed and followed up",
+        "assurance": "operating",
+        "cadence": "quarterly",
+        "source": "upload"
+      }
+    ]
+  },
+  {
+    "canonical_key": "time-synchronization",
+    "category": "Infrastructure & Network Security",
+    "sub_category": "Cloud",
+    "code": "NS-12",
+    "control_sub_type": "Manual",
+    "description": "Logs from different systems line up into one timeline only if their clocks agree. Drifting clocks break incident reconstruction, weaken audit trails and can cause failures in certificate and token checks, so every system should take its time from a small set of trusted sources.",
+    "implementation_guidance": "Choose trusted time sources, such as the cloud provider's time service or at least two internal time servers that take time from national or satellite references, and record them.\nConfigure servers, containers, network devices, databases and managed services to take time only from those sources, restrict who can change time settings, and log every change to them.\nRecord log timestamps in one standard time zone, normally UTC, or with an explicit offset, so events from every source can be compared directly.\nSet the largest clock offset allowed, for example one second, alert when a system exceeds it, check a sample of systems at least quarterly, and confirm the setting whenever a new image, device or account is built.",
+    "importance": "preferred",
+    "name": "Time synchronization",
+    "evidence": [
+      {
+        "key": "trusted-time-sources-and-how-systems",
+        "name": "Trusted time sources and how systems use them",
+        "assurance": "design",
+        "cadence": "annual",
+        "source": "upload"
+      },
+      {
+        "key": "clock-check-across-a-sample-of",
+        "name": "Clock check across a sample of systems",
+        "assurance": "operating",
+        "cadence": "quarterly",
+        "source": "upload"
+      }
+    ]
+  },
+  {
+    "canonical_key": "web-filtering",
+    "category": "Endpoint Security",
+    "sub_category": "Security Tooling",
+    "code": "EP-07",
+    "control_sub_type": "Manual",
+    "description": "Staff browse from the same devices that hold credentials and customer data, and one click on a malicious or deceptive site can hand an attacker both. Blocking known bad categories and risky downloads, and logging what was blocked, cuts exposure to malware and phishing without relying on every user to spot every trap.",
+    "implementation_guidance": "Define which website categories are blocked or restricted on company devices, such as malware, phishing, newly registered domains and unapproved file sharing, and record them in the filtering standard.\nApply the filter to every managed device whether the user is in the office or remote, through device management, DNS filtering, a secure web gateway or a proxy, confirm each newly enrolled device is covered, and where servers or administrative workstations handle card data or other high value systems, give them no general web access and allow only the named update and service destinations they need.\nGrant exceptions by request with an approver, a reason and an end date, and remove expired exceptions at each review.\nReview filter coverage against the device inventory, blocked activity and open exceptions at least quarterly, record the review, and use repeat hits to update training and tighten the rules.",
+    "importance": "preferred",
+    "name": "Harmful website blocking",
+    "evidence": [
+      {
+        "key": "web-filtering-standard-covering-blocked-categories",
+        "name": "Web filtering standard covering blocked categories and exceptions",
+        "assurance": "design",
+        "cadence": "annual",
+        "source": "platform",
+        "module": "documents"
+      },
+      {
+        "key": "report-of-filter-coverage-and-blocked",
+        "name": "Report of filter coverage and blocked activity",
+        "assurance": "operating",
+        "cadence": "quarterly",
+        "source": "upload"
+      }
+    ]
+  },
+  {
+    "canonical_key": "own-site-environmental-protection",
+    "category": "Physical & Environmental Security",
+    "sub_category": "Own Sites",
+    "code": "PE-03",
+    "control_sub_type": "Manual",
+    "description": "Server rooms, comms cabinets and data centers that you run yourself rely on power, cooling, cabling and hardware that a fire, a flood, a power cut or a careless repair can take down or expose. Where no cloud provider carries that duty for you, assessing the hazards at each site, fitting protections to match and keeping service records is what keeps systems running and data safe.",
+    "implementation_guidance": "List each site you run that holds equipment or information, such as an office comms cabinet, a server room, a data center or a recovery site, name an owner for each, and assess its hazards, such as fire, flood, heat, power loss and tampering, at least annually and after any change to the site.\nFit protections that match the hazards, such as fire detection and suppression, water detection, locked racks kept away from windows and public view, uninterruptible power with a generator or a tested shutdown, monitored cooling, and cabling in protected routes with power and network kept apart.\nService site equipment and protections at the intervals the manufacturer or the building sets, using only approved engineers, supervise their work in secure areas, remove or wipe storage from any equipment, including laptops, before it leaves for repair, keep a record of each fault and service visit, and where you run card terminals, ATMs or other payment devices, keep a list of each device and its location, inspect them for tampering or substitution on a schedule set by risk, and train staff at those sites to spot and report tampering.\nTest power failover, alarms and suppression at least annually and follow up every failed test; where the only site is a shared office in a managed building, keep the landlord's fire, power and maintenance certificates instead of duplicating them.",
+    "importance": "preferred",
+    "name": "Environmental and equipment protection at own sites",
+    "evidence": [
+      {
+        "key": "hazard-assessment-and-protections-for-each",
+        "name": "Hazard assessment and protections for each site",
+        "assurance": "design",
+        "cadence": "annual",
+        "source": "upload"
+      },
+      {
+        "key": "service-and-fault-records-for-site",
+        "name": "Service and fault records for site equipment",
+        "assurance": "operating",
+        "cadence": "annual",
+        "source": "upload"
+      },
+      {
+        "key": "power-alarm-and-suppression-test-results",
+        "name": "Power, alarm and suppression test results",
+        "assurance": "operating",
+        "cadence": "annual",
+        "source": "upload"
+      },
+      {
+        "key": "payment-device-list-and-tamper-inspections",
+        "name": "Where payment devices are used: device list with locations, tamper inspection records and site staff training",
+        "assurance": "operating",
+        "cadence": "ongoing",
+        "source": "upload"
+      }
+    ]
+  }
+]

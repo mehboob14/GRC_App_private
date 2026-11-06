@@ -46,29 +46,33 @@ export function FrameworkDetailPage() {
     () => requirementsQuery.data ?? [],
     [requirementsQuery.data],
   );
+  // A framework that works by applicability has clauses and Annex A sections, not
+  // Trust Services Categories, so its filter and columns speak in those terms.
+  const certification = framework?.scope_model === "applicability";
 
-  // The Trust Services Categories present, in the order the criteria arrive.
+  // The groups present, in the order the requirements arrive.
   const categoryOptions = useMemo(() => {
     const seen: string[] = [];
     for (const requirement of requirements) {
-      if (!seen.includes(requirement.trust_services_category)) {
-        seen.push(requirement.trust_services_category);
-      }
+      const group = certification ? requirement.category : requirement.trust_services_category;
+      if (!seen.includes(group)) seen.push(group);
     }
     return seen.map((value) => ({ value, label: value }));
-  }, [requirements]);
+  }, [requirements, certification]);
 
   const visible = useMemo(() => {
     const query = search.trim().toLowerCase();
     return requirements.filter(
       (requirement) =>
         (categories.length === 0 ||
-          categories.includes(requirement.trust_services_category)) &&
+          categories.includes(
+            certification ? requirement.category : requirement.trust_services_category,
+          )) &&
         (query === "" ||
           requirement.code.toLowerCase().includes(query) ||
           requirement.name.toLowerCase().includes(query)),
     );
-  }, [requirements, search, categories]);
+  }, [requirements, search, categories, certification]);
 
   const activeFilters = [
     ...categories.map((category) => `Category: ${category}`),
@@ -121,13 +125,14 @@ export function FrameworkDetailPage() {
         actions={
           <p aria-live="polite" className="text-caption text-text-subtle">
             Showing <span className="tabular">{visible.length}</span> of{" "}
-            <span className="tabular">{requirements.length}</span> criteria
+            <span className="tabular">{requirements.length}</span>{" "}
+            {certification ? "requirements" : "criteria"}
           </p>
         }
       >
         {categoryOptions.length > 1 ? (
           <FilterFacet
-            label="Category"
+            label={certification ? "Section" : "Category"}
             options={categoryOptions}
             values={categories}
             onChange={setCategories}
@@ -157,9 +162,9 @@ export function FrameworkDetailPage() {
         <Table density="comfortable">
           <THead>
             <TR>
-              <TH>Criterion</TH>
-              <TH>Category</TH>
-              <TH>Trust services</TH>
+              <TH>{certification ? "Requirement" : "Criterion"}</TH>
+              <TH>{certification ? "Section" : "Category"}</TH>
+              <TH>{certification ? "Scope" : "Trust services"}</TH>
               <TH numeric>Controls</TH>
               <TH className="w-40">
                 <span className="sr-only">How it is met</span>
@@ -189,7 +194,7 @@ export function FrameworkDetailPage() {
                     </Badge>
                     {requirement.is_always_in_scope ? (
                       <span className="text-caption text-text-subtle">
-                        always in scope
+                        {certification ? "cannot be excluded" : "always in scope"}
                       </span>
                     ) : null}
                   </div>

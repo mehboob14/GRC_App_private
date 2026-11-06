@@ -7,7 +7,6 @@ import {
   Tooltip,
 } from "@/components/ui";
 import { cn } from "@/lib/cn";
-import { ConnectorLogo } from "@/features/connectors/connector-logo";
 import {
   ago,
   type Automation,
@@ -21,7 +20,7 @@ import {
   TEST_STATE,
   useAutomationActions,
 } from "./automation-meta";
-import { ModeBadge, SourceChip } from "./composition-ui";
+import { ModeBadge, SourceChip, SourceMark } from "./composition-ui";
 
 const CONNECTABLE = new Set(["github"]);
 
@@ -122,7 +121,7 @@ export function ProviderChip({
           : "border-border bg-surface-primary",
       )}
     >
-      <ConnectorLogo id={option.key} name={option.name} size={26} />
+      <SourceMark providerKey={option.key} name={option.name} size={26} />
       <span className="min-w-0 flex-1 truncate text-body-sm font-semibold text-text-primary">
         {option.name}
       </span>
@@ -148,6 +147,8 @@ export function CapabilityBlock({
   const connectable = capability.providers.some(
     (p) => p.status === "available",
   );
+  // Verity's own registers: nothing to connect and nothing else to ask for.
+  const builtIn = capability.key.startsWith("verity_");
   return (
     <div className="rounded-lg border border-border p-4">
       <div className="mb-3 flex items-start justify-between gap-3">
@@ -156,14 +157,16 @@ export function CapabilityBlock({
             {capability.name}
           </p>
           <p className="text-caption text-text-subtle">
-            {connected
-              ? "Connected. Tests run daily."
-              : connectable
-                ? "Connect any one of these."
-                : "None of these connect yet. Request yours."}
+            {builtIn
+              ? "Built in. Tests run daily on the records kept in Verity."
+              : connected
+                ? "Connected. Tests run daily."
+                : connectable
+                  ? "Connect any one of these."
+                  : "None of these connect yet. Request yours."}
           </p>
         </div>
-        {canRequest ? (
+        {canRequest && !builtIn ? (
           <Button
             size="sm"
             variant="ghost"

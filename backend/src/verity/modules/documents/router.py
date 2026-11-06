@@ -693,5 +693,6 @@ async def acknowledge_document(
         tenant_id=context.tenant_id,
         membership_id=principal.membership_id,
         document_id=document_id,
+        actor=_actor(principal),
     )
     return Response(status_code=status.HTTP_204_NO_CONTENT)

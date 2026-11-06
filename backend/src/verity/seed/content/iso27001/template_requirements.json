@@ -1,0 +1,1802 @@
+[
+  {
+    "requirement_key": "ISO27001:4.1",
+    "template_code": "GOV-24",
+    "coverage": "full",
+    "rationale": "The factors register records the internal and external factors that affect the security program, including a recorded decision on whether climate change is relevant, and has an owner and a review at least yearly and after major events. That is the record this clause asks for."
+  },
+  {
+    "requirement_key": "ISO27001:4.2",
+    "template_code": "GOV-05",
+    "coverage": "partial",
+    "rationale": "Holds the legal, regulatory and contractual requirements of stakeholders, with an owner and review date. It does not cover wider parties such as staff, owners or the public, which GOV-25 adds."
+  },
+  {
+    "requirement_key": "ISO27001:4.2",
+    "template_code": "GOV-25",
+    "coverage": "full",
+    "rationale": "The register of interested parties lists each party, what it requires and which of those requirements the management system takes on. That list is the record this clause is tested against."
+  },
+  {
+    "requirement_key": "ISO27001:4.3",
+    "template_code": "GOV-22",
+    "coverage": "partial",
+    "rationale": "Describes the system boundary, the infrastructure and people in it, and which controls sit with service providers. That feeds the scope statement, but it does not set the management system scope or weigh stakeholder requirements."
+  },
+  {
+    "requirement_key": "ISO27001:4.3",
+    "template_code": "GOV-23",
+    "coverage": "full",
+    "rationale": "The signed scope statement fixes the boundaries and applicability of the management system, including interfaces and dependencies on other organizations. It is the document this clause asks for."
+  },
+  {
+    "requirement_key": "ISO27001:4.4",
+    "template_code": "GOV-23",
+    "coverage": "partial",
+    "rationale": "Defines what the management system covers and sets out its main processes and how each feeds the next, which is the design of the system as one set of connected processes. Running and maintaining it is shown by GOV-29, and improving it by GOV-30."
+  },
+  {
+    "requirement_key": "ISO27001:4.4",
+    "template_code": "GOV-29",
+    "coverage": "partial",
+    "rationale": "The operating plan lists each recurring management activity with an owner, a schedule and the record it must leave, and the completion records show the system being run and maintained. The processes and how they connect are set out in GOV-23, and improvement is shown by GOV-30."
+  },
+  {
+    "requirement_key": "ISO27001:4.4",
+    "template_code": "GOV-30",
+    "coverage": "partial",
+    "rationale": "The improvement log takes ideas from audits, incidents, measures, management review, customers and staff, records a decision on each and tracks accepted ones to closure, which shows the system being improved as a whole. Its design is set in GOV-23 and its running in GOV-29."
+  },
+  {
+    "requirement_key": "ISO27001:5.1",
+    "template_code": "GOV-02",
+    "coverage": "partial",
+    "rationale": "Board or executive minutes show top management steering security, challenging results and recording resourcing decisions. They do not by themselves show the policy and objectives were set or that security is built into business processes."
+  },
+  {
+    "requirement_key": "ISO27001:5.1",
+    "template_code": "GOV-10",
+    "coverage": "partial",
+    "rationale": "A named security officer with written authority, budget and a reporting line to leadership shows top management directs and supports the people running the system. It does not show leadership's own involvement."
+  },
+  {
+    "requirement_key": "ISO27001:5.1",
+    "template_code": "GOV-15",
+    "coverage": "partial",
+    "rationale": "Senior managers review the program at least quarterly and the executive team judges once a year whether it still fits and works, which shows leadership checking results and committing resources. Setting objectives is shown by GOV-26, and approval of the top level policy by GOV-17."
+  },
+  {
+    "requirement_key": "ISO27001:5.1",
+    "template_code": "GOV-17",
+    "coverage": "partial",
+    "rationale": "The top level security policy is approved by top management, or by the board where a regulator requires it, and states how objectives are set and the commitments to meet requirements and to improve, which shows leadership establishing the policy. Oversight and review are shown by GOV-02 and GOV-15, and the objectives by GOV-26."
+  },
+  {
+    "requirement_key": "ISO27001:5.1",
+    "template_code": "GOV-26",
+    "coverage": "partial",
+    "rationale": "Security objectives that follow from the policy, the risk results and customer commitments, each with an owner and resources and with results reviewed at management review, show that the objectives leadership must ensure are set exist and fit the business. Leadership's own oversight and review are shown by GOV-02 and GOV-15, and approval of the top level policy by GOV-17."
+  },
+  {
+    "requirement_key": "ISO27001:5.2",
+    "template_code": "CS-04",
+    "coverage": "partial",
+    "rationale": "The policy portal and acknowledgment tracking show the policy was communicated within the organization. Making it available to outside interested parties is covered by GOV-17."
+  },
+  {
+    "requirement_key": "ISO27001:5.2",
+    "template_code": "GOV-17",
+    "coverage": "partial",
+    "rationale": "The top level policy is approved by top management, states the objectives or how they are set, commits to meeting requirements and to improving, and is available to staff and to outside parties that need it. Communicating it to staff and tracking acknowledgement is covered by CS-04."
+  },
+  {
+    "requirement_key": "ISO27001:5.3",
+    "template_code": "GOV-09",
+    "coverage": "partial",
+    "rationale": "Every control has a named owner with authority to act, which assigns operating responsibility for the controls of the system. It covers control ownership only, not roles such as internal auditor."
+  },
+  {
+    "requirement_key": "ISO27001:5.3",
+    "template_code": "GOV-10",
+    "coverage": "partial",
+    "rationale": "Names the person accountable for the program, with authority, budget and a line to leadership, which covers responsibility for conformity and for reporting performance. It does not assign the other relevant roles."
+  },
+  {
+    "requirement_key": "ISO27001:5.3",
+    "template_code": "GOV-21",
+    "coverage": "partial",
+    "rationale": "The organization chart and role descriptions show who holds which security responsibilities and authority and where they report. They do not by themselves show the roles were communicated to the people concerned."
+  },
+  {
+    "requirement_key": "ISO27001:6.1.1",
+    "template_code": "GOV-18",
+    "coverage": "partial",
+    "rationale": "The assessment, run at least annually and on significant change, takes account of internal and external factors and stakeholder requirements and identifies risks to information and to the program meeting its objectives. Opportunities are handled through GOV-30 and the actions through GOV-20."
+  },
+  {
+    "requirement_key": "ISO27001:6.1.1",
+    "template_code": "GOV-19",
+    "coverage": "partial",
+    "rationale": "The register records each identified risk with an owner, rating and treatment decision, which is where the risks that need action are kept. Opportunities are logged and decided under GOV-30, and the actions to address risks are planned under GOV-20."
+  },
+  {
+    "requirement_key": "ISO27001:6.1.1",
+    "template_code": "GOV-20",
+    "coverage": "partial",
+    "rationale": "The treatment plan turns chosen actions into owned, dated work and re-rates risk only once the action is in place. That covers planning actions and checking they worked, but not how actions fit other ISMS processes."
+  },
+  {
+    "requirement_key": "ISO27001:6.1.1",
+    "template_code": "GOV-30",
+    "coverage": "partial",
+    "rationale": "The improvement log records opportunities raised from audits, incidents, measures, management review, customers and staff, with a decision on each, an owner and due date for those taken up, and a check at management review that a sample of them worked. That covers the opportunities this clause asks to be planned for; risks are covered by GOV-18, GOV-19 and GOV-20."
+  },
+  {
+    "requirement_key": "ISO27001:6.1.2",
+    "template_code": "GOV-18",
+    "coverage": "partial",
+    "rationale": "A documented method and scoring scale with acceptance criteria approved by leadership, applied at least annually and on significant change, makes assessments repeatable and shows how risks to information are found, rated, ranked and given an owner. Each risk's ongoing record is kept in the register under GOV-19."
+  },
+  {
+    "requirement_key": "ISO27001:6.1.2",
+    "template_code": "GOV-19",
+    "coverage": "partial",
+    "rationale": "The register holds each risk's owner, inherent and residual rating and treatment decision, which is the retained record of risks identified, analysed and evaluated. The method and the acceptance criteria are set in GOV-18."
+  },
+  {
+    "requirement_key": "ISO27001:6.1.3",
+    "template_code": "GOV-07",
+    "coverage": "partial",
+    "rationale": "Links each risk to the controls that mitigate it and flags risks with none, which is how the necessary controls are determined and checked for gaps. It does not produce the Statement of Applicability."
+  },
+  {
+    "requirement_key": "ISO27001:6.1.3",
+    "template_code": "GOV-19",
+    "coverage": "partial",
+    "rationale": "Records the treatment option chosen for each risk and a named sign-off where a risk is accepted as it stands, which covers option selection. Risk owner approval of the treatment plan and acceptance of the risk that remains after mitigation are recorded under GOV-20."
+  },
+  {
+    "requirement_key": "ISO27001:6.1.3",
+    "template_code": "GOV-20",
+    "coverage": "partial",
+    "rationale": "The treatment plan records actions, owners, target dates and expected residual ratings, with the risk owner's approval of the plan and written acceptance of the risk that remains, which is the plan and approval this clause requires. Control selection is shown by GOV-07 and the Statement of Applicability by GOV-27."
+  },
+  {
+    "requirement_key": "ISO27001:6.1.3",
+    "template_code": "GOV-27",
+    "coverage": "partial",
+    "rationale": "The Statement of Applicability lists every control in the reference set and any added from other sources, whether each applies and is in place, and the reason for each inclusion and exclusion, with each version approved by risk owners and leadership. Treatment options are recorded in GOV-19, and the treatment plan and its approval in GOV-20."
+  },
+  {
+    "requirement_key": "ISO27001:6.2",
+    "template_code": "GOV-26",
+    "coverage": "full",
+    "rationale": "Objectives with an owner, target and date, tracked as tasks, give the measurable goals and the plan for who does what and by when. Each objective is checked against its target and kept current."
+  },
+  {
+    "requirement_key": "ISO27001:6.3",
+    "template_code": "GOV-03",
+    "coverage": "partial",
+    "rationale": "Forces a risk review before significant business or system changes go live and records it, which covers the risk side of planning a change. Changes to the management system itself, such as scope, processes or tooling, are planned under GOV-29."
+  },
+  {
+    "requirement_key": "ISO27001:6.3",
+    "template_code": "GOV-29",
+    "coverage": "partial",
+    "rationale": "Planned changes to the management system, such as its scope, processes, roles or tools, are assessed for their effect before they are made, and unplanned changes are reviewed afterwards, with the review kept. GOV-03 adds the risk review before significant changes go live."
+  },
+  {
+    "requirement_key": "ISO27001:7.1",
+    "template_code": "GOV-02",
+    "coverage": "partial",
+    "rationale": "Records resourcing decisions taken by the board or executive body, which shows resources were provided. It does not show what resources were determined to be needed; the objectives plan does that."
+  },
+  {
+    "requirement_key": "ISO27001:7.1",
+    "template_code": "GOV-15",
+    "coverage": "partial",
+    "rationale": "Each management review records the resource commitments made for the program as a whole, not only those tied to single objectives. Resource needs per objective are set in GOV-26, and decisions of the oversight body are recorded under GOV-02."
+  },
+  {
+    "requirement_key": "ISO27001:7.1",
+    "template_code": "GOV-26",
+    "coverage": "partial",
+    "rationale": "Objective plans state the resources each objective needs, such as people, time and budget, so resource needs are determined. They cover resources for the objectives, not every resource the whole management system needs."
+  },
+  {
+    "requirement_key": "ISO27001:7.2",
+    "template_code": "HR-04",
+    "coverage": "partial",
+    "rationale": "Role descriptions set required qualifications and experience and state security responsibilities, which defines the competence a role needs. They do not show that people hold that competence."
+  },
+  {
+    "requirement_key": "ISO27001:7.2",
+    "template_code": "HR-08",
+    "coverage": "partial",
+    "rationale": "Awareness training at onboarding and every year, with role-based modules for engineers and administrators and completion tracked, is one of the actions taken to build the competence security work needs. Checking that people in security roles hold the competence their role needs, and that training worked, is covered by HR-09."
+  },
+  {
+    "requirement_key": "ISO27001:7.2",
+    "template_code": "HR-09",
+    "coverage": "full",
+    "rationale": "The competence record per security role shows the skills each role needs, who meets them and what was done about gaps, with proof kept. That is the evidence this clause asks for."
+  },
+  {
+    "requirement_key": "ISO27001:7.3",
+    "template_code": "CS-04",
+    "coverage": "partial",
+    "rationale": "Acknowledgement of the current policies, per person, shows staff were told of the policy. Understanding of their own part comes from HR-08 training, and of the consequences of not complying from GOV-11."
+  },
+  {
+    "requirement_key": "ISO27001:7.3",
+    "template_code": "GOV-11",
+    "coverage": "partial",
+    "rationale": "The disciplinary process is referenced in the code of conduct that staff acknowledge, so people know in advance what follows from breaking security rules. Awareness of the policy and of each person's own part is covered by CS-04 and HR-08."
+  },
+  {
+    "requirement_key": "ISO27001:7.3",
+    "template_code": "HR-08",
+    "coverage": "partial",
+    "rationale": "Awareness training at onboarding and yearly, with completion tracked, builds understanding of each person's security duties and why they matter. Awareness of the policy is shown by CS-04 acknowledgements, and of the consequences of not complying by GOV-11."
+  },
+  {
+    "requirement_key": "ISO27001:7.4",
+    "template_code": "CS-06",
+    "coverage": "full",
+    "rationale": "The communication plan sets what security matters are communicated inside and outside the business, when, to whom and how. That plan is the record this clause asks for."
+  },
+  {
+    "requirement_key": "ISO27001:7.5.1",
+    "template_code": "GOV-28",
+    "coverage": "full",
+    "rationale": "Controls the documents the management system relies on, with versions, approvals and review dates kept in Documents, so required records can be shown to exist and be current."
+  },
+  {
+    "requirement_key": "ISO27001:7.5.2",
+    "template_code": "GOV-01",
+    "coverage": "partial",
+    "rationale": "Reviewing and re-approving each policy through the approval path, with reviewer, date and outcome recorded, shows suitability and adequacy are checked. It covers policies only, not every other document."
+  },
+  {
+    "requirement_key": "ISO27001:7.5.2",
+    "template_code": "GOV-28",
+    "coverage": "full",
+    "rationale": "Documents carry title, version, author and approval record, and review dates prompt updates, which is the identification, format and approval this clause expects for anything created or changed."
+  },
+  {
+    "requirement_key": "ISO27001:7.5.3",
+    "template_code": "GOV-01",
+    "coverage": "partial",
+    "rationale": "Keeping superseded versions and re-approving through the documented path gives a traceable version history for policies. It covers policies only, not storage, access or retention of other documents."
+  },
+  {
+    "requirement_key": "ISO27001:7.5.3",
+    "template_code": "GOV-28",
+    "coverage": "full",
+    "rationale": "Controls distribution, access, versions, retention and disposal of management system documents, and keeps them available and protected. Documents of outside origin that the system relies on are identified and controlled the same way."
+  },
+  {
+    "requirement_key": "ISO27001:8.1",
+    "template_code": "GOV-14",
+    "coverage": "partial",
+    "rationale": "Confirms every system in the footprint sits under access, change and operations controls, one way operating criteria are applied in practice. It does not set criteria for the other ISMS processes or cover outsourced services."
+  },
+  {
+    "requirement_key": "ISO27001:8.1",
+    "template_code": "GOV-29",
+    "coverage": "full",
+    "rationale": "The operating plan sets each recurring activity's owner, schedule and what counts as done, and completion records show it ran as planned. Changes to the system or the services in scope are planned before they are made, unplanned ones are reviewed and acted on, and work done by suppliers or group entities is held to a set standard and checked. That is the operational control this clause asks for."
+  },
+  {
+    "requirement_key": "ISO27001:8.2",
+    "template_code": "GOV-03",
+    "coverage": "partial",
+    "rationale": "Defines the triggers for an out of cycle review and requires it before a change goes live, which covers reassessing when significant changes are proposed. The planned yearly assessment is GOV-18."
+  },
+  {
+    "requirement_key": "ISO27001:8.2",
+    "template_code": "GOV-18",
+    "coverage": "partial",
+    "rationale": "The assessment is repeated at least annually and its report, method and sign-off are kept, which meets the planned interval and records the results. Reassessment when changes are proposed is handled by GOV-03."
+  },
+  {
+    "requirement_key": "ISO27001:8.3",
+    "template_code": "GOV-19",
+    "coverage": "partial",
+    "rationale": "Residual ratings and acceptance sign-offs on the register show the result of each treatment. The register records outcomes, while the work of carrying out treatment is tracked in GOV-20."
+  },
+  {
+    "requirement_key": "ISO27001:8.3",
+    "template_code": "GOV-20",
+    "coverage": "full",
+    "rationale": "The plan is worked through to closure with evidence, risks are re-rated only once treatment is in place, and the records are kept. That is implementing the treatment plan and keeping its results."
+  },
+  {
+    "requirement_key": "ISO27001:9.1",
+    "template_code": "GOV-06",
+    "coverage": "partial",
+    "rationale": "Checks run continuously on connected systems, and on a set schedule for systems that cannot be connected, keep timestamped results and send failures to owners, so control performance is monitored and measured with evidence. What else is measured is set in GOV-26, and results are analyzed and evaluated at management review under GOV-15."
+  },
+  {
+    "requirement_key": "ISO27001:9.1",
+    "template_code": "GOV-15",
+    "coverage": "partial",
+    "rationale": "Management review looks at control health, findings, incidents and risk changes and decides on remediation, and once a year the executive team judges whether the program works, which is where monitoring and measurement results are analysed and evaluated. What is measured is set in GOV-26, and control results come from GOV-06."
+  },
+  {
+    "requirement_key": "ISO27001:9.1",
+    "template_code": "GOV-26",
+    "coverage": "partial",
+    "rationale": "The measures set in the objectives plan state what is measured, the target and who owns it, which is the measurement plan this clause requires. Results from connected systems come from GOV-06."
+  },
+  {
+    "requirement_key": "ISO27001:9.2.1",
+    "template_code": "GOV-13",
+    "coverage": "full",
+    "rationale": "A yearly internal audit of the whole program, management processes as well as controls, against stated criteria and by auditors who do not audit their own work, with scope, evidence and findings recorded, is the internal audit this clause asks for."
+  },
+  {
+    "requirement_key": "ISO27001:9.2.2",
+    "template_code": "GOV-13",
+    "coverage": "full",
+    "rationale": "The audit program sets how often each area is audited based on its importance and earlier results, the methods used and who plans, performs and reports, records scope and criteria for each audit, keeps auditors off their own work and reports results to management. Those records are what this clause is tested against."
+  },
+  {
+    "requirement_key": "ISO27001:9.3.1",
+    "template_code": "GOV-15",
+    "coverage": "full",
+    "rationale": "Senior managers review control health, findings and risk at least quarterly, and once a year the executive team judges whether the program still fits, covers what it needs to and works, with attendees and decisions recorded. That is the review at planned intervals this clause asks for."
+  },
+  {
+    "requirement_key": "ISO27001:9.3.2",
+    "template_code": "GOV-15",
+    "coverage": "full",
+    "rationale": "The yearly executive review works from a set list of inputs: earlier actions, changes in internal and external factors and in stakeholder needs, nonconformities and corrective actions, measurement and audit results, objectives achieved, stakeholder feedback, risk results and treatment status, and improvement ideas. The minutes record which inputs were considered."
+  },
+  {
+    "requirement_key": "ISO27001:9.3.3",
+    "template_code": "GOV-15",
+    "coverage": "full",
+    "rationale": "Minutes record decisions on improvements and on any changes the program needs, with resource commitments and owned actions carried forward until closed. That record is the output this clause asks for."
+  },
+  {
+    "requirement_key": "ISO27001:10.1",
+    "template_code": "GOV-30",
+    "coverage": "full",
+    "rationale": "The improvement log records each improvement to the management system with an owner and outcome, and shows the system being made more suitable and effective over time."
+  },
+  {
+    "requirement_key": "ISO27001:10.2",
+    "template_code": "GOV-08",
+    "coverage": "full",
+    "rationale": "Every nonconformity from audits, tests, monitoring, incidents or complaints is logged with its containment and how its consequences were handled, root cause, owner and due date, checked for the same cause elsewhere, closed on evidence, confirmed to have worked and used to change the program where needed. LM-05 adds the incident postmortem route."
+  },
+  {
+    "requirement_key": "ISO27001:10.2",
+    "template_code": "LM-05",
+    "coverage": "partial",
+    "rationale": "Postmortems with root cause and tracked corrective actions, plus a review of recurring themes across incidents, cover the part of corrective action that starts from incidents. Nonconformities found by audits, monitoring or complaints are handled under GOV-08."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.1",
+    "template_code": "CS-04",
+    "coverage": "partial",
+    "rationale": "Publishes the current policies to all staff and tracks per person acknowledgment, which covers communicating the policies and staff acknowledging them. It does not show approval or the review cycle."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.1",
+    "template_code": "CS-06",
+    "coverage": "partial",
+    "rationale": "The communication plan sets which outside parties, such as customers and suppliers, hear about the policies that affect them and about policy changes, through which channel and when, which covers communicating policies beyond staff. Publication to staff and their acknowledgment are in CS-04."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.1",
+    "template_code": "GOV-01",
+    "coverage": "partial",
+    "rationale": "Every policy is reviewed at least yearly and re-approved, with reviewer, date and outcome kept, which covers review at planned intervals and after change. It does not show the policies were published or communicated."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.1",
+    "template_code": "GOV-17",
+    "coverage": "partial",
+    "rationale": "Maintains the approved, versioned and dated policy set and makes it available to staff, which covers defining, approving and publishing the policies. Review is GOV-01 and staff acknowledgment is CS-04."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.2",
+    "template_code": "GOV-09",
+    "coverage": "partial",
+    "rationale": "Maps every control to a named owner with authority to act and reassigns ownership when people leave, which allocates security duties at control level. It does not cover duties that are not tied to a control."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.2",
+    "template_code": "GOV-10",
+    "coverage": "partial",
+    "rationale": "Designates one accountable security officer with documented authority, budget and escalation path, and a named deputy. This allocates the lead responsibility, but not the other security duties across roles."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.2",
+    "template_code": "GOV-21",
+    "coverage": "partial",
+    "rationale": "Role descriptions state the security responsibilities attached to each role and are reviewed yearly, with reporting lines on the chart. This is where duties are defined per role; control level duties are held by GOV-09."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.3",
+    "template_code": "IAM-09",
+    "coverage": "full",
+    "rationale": "Identifies conflicting duty pairs, separates them in system permissions and documents a compensating review where the team is too small. That is how conflicting duties are kept apart."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.3",
+    "template_code": "SD-06",
+    "coverage": "partial",
+    "rationale": "Branch protection that requires an approving review from someone other than the author is a live example of separated duties in code changes, checkable in the repository. It covers one duty pair only."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.4",
+    "template_code": "GOV-04",
+    "coverage": "partial",
+    "rationale": "A code of conduct covering acceptable use and confidentiality, acknowledged by every employee and contractor at hire and yearly, shows management requires staff to follow the rules. It does not show how breaches are handled."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.4",
+    "template_code": "GOV-11",
+    "coverage": "partial",
+    "rationale": "A documented, consistently applied disciplinary process is how management follows up when personnel do not apply the rules. It does not show the requirement was communicated to staff at the outset."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.4",
+    "template_code": "HR-06",
+    "coverage": "partial",
+    "rationale": "The onboarding checklist has every new joiner sign agreements, acknowledge policies, complete security training within a set period and receive only approved access, which shows management sets the expectation to apply security from a person's first day. Yearly acknowledgment is in GOV-04 and follow-up on breaches in GOV-11."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.5",
+    "template_code": "CS-07",
+    "coverage": "full",
+    "rationale": "The contact list names the relevant authorities, such as regulators, law enforcement and emergency services, who contacts each and when, and is kept current. That is the contact this requirement asks for."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.5",
+    "template_code": "DM-01",
+    "coverage": "partial",
+    "rationale": "The jurisdiction matrix names the regulators to notify, their deadlines and pre-approved templates, which is the contact route for personal data breaches. It covers breach reporting only, not other authorities."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.6",
+    "template_code": "CS-07",
+    "coverage": "full",
+    "rationale": "The contact list also records the security forums, specialist groups and professional bodies the organization stays in touch with and who owns each relationship. That is the contact this requirement asks for."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.7",
+    "template_code": "LM-12",
+    "coverage": "full",
+    "rationale": "Records the advisory and threat sources followed and how the information is analyzed and acted on, supported by the platform's known exploited vulnerability and exploit likelihood data. That is collecting and analyzing threat information."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.8",
+    "template_code": "GOV-03",
+    "coverage": "partial",
+    "rationale": "Requires a recorded risk review at the planning stage of any project that changes systems, data, sites or suppliers, and before significant changes go live, so security risks in every kind of project are assessed and new risks registered early. Security requirements within software projects come from SD-10."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.8",
+    "template_code": "SD-10",
+    "coverage": "partial",
+    "rationale": "The secure development lifecycle policy builds security requirements, design review and testing into software work from the start, which covers software delivery projects. Projects of other kinds get their security risk review from GOV-03."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.9",
+    "template_code": "DM-06",
+    "coverage": "partial",
+    "rationale": "The data map lists each data store with its categories, owner, classification and location, which inventories the information itself. Technology assets that hold or process it are inventoried by LM-01."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.9",
+    "template_code": "LM-01",
+    "coverage": "partial",
+    "rationale": "Keeps an inventory of systems, cloud resources, endpoints and applications with owner and classification, collected automatically where possible. It covers technology assets, not the information held in them."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.10",
+    "template_code": "DM-04",
+    "coverage": "partial",
+    "rationale": "Handling rules for each sensitivity level set how information is stored, sent, shared and disposed of, which gives the handling procedures for information. Rules for acceptable use of information, devices and systems are in GOV-04 and GOV-17."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.10",
+    "template_code": "GOV-04",
+    "coverage": "partial",
+    "rationale": "The code of conduct covers acceptable use, and acknowledgment at hire and yearly shows staff accepted the rules. It does not replace detailed handling procedures for assets."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.10",
+    "template_code": "GOV-17",
+    "coverage": "partial",
+    "rationale": "Keeps the acceptable use policy among the approved, versioned core policies available to all staff, which documents the rules for using information and assets. Handling procedures per sensitivity level are in DM-04, and staff acceptance in GOV-04."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.11",
+    "template_code": "EP-05",
+    "coverage": "partial",
+    "rationale": "Remote wipe, with confirmation retained, closes the exposure when a device is not returned or is lost, and credentials it held are rotated. It covers devices only, not other assets such as badges or documents."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.11",
+    "template_code": "HR-03",
+    "coverage": "partial",
+    "rationale": "The contractor's end date in the register triggers return of company devices, badges and data, and each item returned is recorded, which covers return by contractors and other outside workers. Employees return assets through HR-05, and devices that are not returned are wiped under EP-05."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.11",
+    "template_code": "HR-05",
+    "coverage": "partial",
+    "rationale": "The offboarding checklist covers return of devices, badges, physical keys and hardware tokens and transfer of accounts and documents, verified per item for each departing employee, with the relevant items also run on a role change. Contractors return assets through HR-03, and devices that are not returned are wiped under EP-05."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.12",
+    "template_code": "DM-04",
+    "coverage": "partial",
+    "rationale": "Adopts a classification scheme in which each set of data gets its level from its confidentiality, integrity and availability needs and from legal, contractual and customer requirements, with handling rules per level, and has data owners apply it to data stores. The level recorded for each store is kept in DM-06."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.12",
+    "template_code": "DM-06",
+    "coverage": "partial",
+    "rationale": "The data map records the classification of each data store next to its owner and location, which shows the scheme has been applied across systems. It does not set or define the levels."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.13",
+    "template_code": "DM-04",
+    "coverage": "full",
+    "rationale": "Defines how each sensitivity level is marked on documents, email, files, media and system records and when marking may be left out, has information marked that way, and trains staff to apply the marks, all tied to the classification scheme. That is the labelling procedure set and put into use."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.14",
+    "template_code": "DM-04",
+    "coverage": "partial",
+    "rationale": "Handling rules per classification level cover transmission and sharing, which gives the rules for how information may be moved. It does not cover technical protection of channels or agreements with outside parties."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.14",
+    "template_code": "DM-09",
+    "coverage": "partial",
+    "rationale": "Routes each new third party data flow through vendor review and keeps a register of recipients, data categories and purpose, which governs transfers to outside parties. It is written for personal information, not all information."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.14",
+    "template_code": "DM-19",
+    "coverage": "partial",
+    "rationale": "Sets rules that fit the data classification for each route information leaves by, such as email, file sharing, chat, storage buckets and removable media, and turns on the sharing controls in those tools, which puts the transfer rules into effect channel by channel. Network encryption is NS-02 and transfers of personal information to third parties are DM-09."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.14",
+    "template_code": "NS-02",
+    "coverage": "partial",
+    "rationale": "Enforces TLS on external endpoints, internal service traffic and database connections, which protects information moved over networks. It does not cover other channels such as physical media or spoken transfer."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.15",
+    "template_code": "IAM-01",
+    "coverage": "partial",
+    "rationale": "Requires a recorded request and approval before access is granted, with business justification, which puts the access rules into effect for each grant. It does not define the rules themselves."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.15",
+    "template_code": "IAM-08",
+    "coverage": "partial",
+    "rationale": "The role and access matrix defines access by job function on a least privilege basis, which is the rule set for access through systems. Physical access rules are in PE-02."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.15",
+    "template_code": "PE-02",
+    "coverage": "partial",
+    "rationale": "Physical access rules control entry to offices and to any server room, data center or recovery site the organization runs, with badge or equivalent access, tighter limits on server and network areas, escorted visitors in secure areas and badges revoked at offboarding, which gives the rules for physical access to sites the organization runs. Rules for access through systems are in IAM-08."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.16",
+    "template_code": "IAM-01",
+    "coverage": "partial",
+    "rationale": "Every account or entitlement is created only after a recorded approval, each person gets an account of their own, and shared accounts need an approved exception with a named owner, which covers creating identities. Changes and removal are covered by IAM-12, and identities used by systems by IAM-10."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.16",
+    "template_code": "IAM-10",
+    "coverage": "partial",
+    "rationale": "Inventories service accounts, API keys and tokens with owner and purpose, rotates them and disables unused ones, which manages identities that belong to systems rather than people. People accounts are covered by IAM-01 and IAM-12."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.16",
+    "template_code": "IAM-12",
+    "coverage": "partial",
+    "rationale": "Triggers deprovisioning from the HR or identity system on departure or role change, within a stated time, and reconciles accounts against active staff. This covers the removal stage, not creation."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.17",
+    "template_code": "HR-08",
+    "coverage": "partial",
+    "rationale": "Awareness training at onboarding and at least yearly includes credential handling, which is how staff are advised to keep their passwords and other secrets safe. The rules themselves are in IAM-05 and IAM-06."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.17",
+    "template_code": "IAM-05",
+    "coverage": "partial",
+    "rationale": "Gives shared and non SSO credentials a managed vault and bans sharing over chat or email, which tells people how to handle secrets. It covers credentials staff use, not those used by systems."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.17",
+    "template_code": "IAM-06",
+    "coverage": "partial",
+    "rationale": "Sets a central password policy with minimum length, breach screening and lockout, makes initial and reset passwords unique and changed at first use, and checks identity before any reset, which controls how passwords are issued and managed. Other secrets are covered by IAM-05 and NS-09, and advice to staff by HR-08."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.17",
+    "template_code": "NS-09",
+    "coverage": "partial",
+    "rationale": "Keeps system secrets such as API keys and database passwords in a managed vault, injected at runtime, with access scoped and logged per service and rotation on a schedule and on exposure, which controls how authentication information used by systems is stored, accessed and replaced. Credentials used by staff are in IAM-05 and IAM-06."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.17",
+    "template_code": "SD-11",
+    "coverage": "partial",
+    "rationale": "Secret scanning of repositories, with pre-commit hooks, detects authentication information leaking into code, and each exposed secret is rotated, checked for misuse and the rotation recorded. It covers protecting and replacing exposed secrets; how secrets are stored is covered by IAM-05 and NS-09."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.18",
+    "template_code": "IAM-01",
+    "coverage": "partial",
+    "rationale": "Access is given only after a recorded request and approval, which covers provisioning in line with the access rules. Review, change and removal are covered by IAM-02 and IAM-12."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.18",
+    "template_code": "IAM-02",
+    "coverage": "partial",
+    "rationale": "Owners certify each user's access at least yearly, and quarterly for production and admin systems, and uncertified access is revoked. This covers the review stage but not initial grants or leaver removal."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.18",
+    "template_code": "IAM-12",
+    "coverage": "partial",
+    "rationale": "Access is removed on departure or role change within a set time and accounts are reconciled against active staff, which covers modification and removal. It does not cover first-time grants or periodic review."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.19",
+    "template_code": "BC-07",
+    "coverage": "partial",
+    "rationale": "The vendor register records each supplier's owner, service, criticality and data access, and is reconciled against payments and identity records. It identifies suppliers but does not assess their security risk."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.19",
+    "template_code": "BC-08",
+    "coverage": "partial",
+    "rationale": "Assesses vendor security before access is granted, with depth scaled to criticality, and records the decision and any accepted risk. It depends on the register to know which suppliers exist."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.19",
+    "template_code": "GOV-17",
+    "coverage": "partial",
+    "rationale": "The core policy set includes an approved, versioned vendor management policy available to all staff. That is the documented process that the register in BC-07 and the due diligence in BC-08 carry out."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.20",
+    "template_code": "BC-08",
+    "coverage": "partial",
+    "rationale": "Before access is granted, due diligence agrees the security terms each vendor's contract must carry for its criticality, such as incident notice, audit rights, subcontracting limits and return or deletion of data at exit, and records them. This reaches suppliers that hold no personal data, which DM-10 and DM-17 do not cover."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.20",
+    "template_code": "DM-10",
+    "coverage": "partial",
+    "rationale": "Requires a data processing agreement with every vendor that handles personal information, covering permitted purposes, security duties, subprocessing, deletion and audit rights. It does not apply to suppliers that do not handle personal data."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.20",
+    "template_code": "DM-17",
+    "coverage": "partial",
+    "rationale": "Requires a breach notification clause with a timeframe in hours in each data processing agreement, which is one specific security requirement agreed with the supplier. Other security terms depend on the kind of supplier."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.21",
+    "template_code": "BC-06",
+    "coverage": "partial",
+    "rationale": "The subprocessor list records vendors that receive customer data, with purpose and location, and a notice step before additions, giving visibility of the data handling part of the chain. It does not reach suppliers' own suppliers."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.21",
+    "template_code": "BC-08",
+    "coverage": "partial",
+    "rationale": "For critical technology suppliers, the contract limits subcontracting, the assurance report review records the subservice providers each one relies on, and a new subservice provider triggers a re-review. This covers the suppliers behind a service; software components are covered by SD-03."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.21",
+    "template_code": "SD-03",
+    "coverage": "partial",
+    "rationale": "Scanning dependencies and container images, with a software bill of materials and severity based triage, manages risk in the software components the organization builds on. It does not cover hardware or service suppliers."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.22",
+    "template_code": "BC-06",
+    "coverage": "partial",
+    "rationale": "When the organization adds or replaces a subprocessor, the notice step and the reconciled list keep control of who handles customer data and where. Changes a supplier makes to its own service are picked up by the BC-08 re-review on material change."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.22",
+    "template_code": "BC-07",
+    "coverage": "partial",
+    "rationale": "The yearly register review and the contract and renewal dates recorded for every supplier give each supplier a review point before its contract renews, and suppliers no longer used are removed with their access revoked. It does not check security practice or service delivery; critical suppliers get that in BC-08."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.22",
+    "template_code": "BC-08",
+    "coverage": "partial",
+    "rationale": "Re-reviews critical vendors at least yearly and on material change, covering their assurance report, the exceptions it reports and whether they met the security and service levels agreed in the contract, and records the decision. Lower risk suppliers get only the lighter yearly register review in BC-07."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.23",
+    "template_code": "BC-05",
+    "coverage": "partial",
+    "rationale": "Detects applications adopted outside procurement through sign-ins, OAuth grants and expenses, and routes them into vendor onboarding, which controls how cloud services are acquired. It does not control how approved services are used."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.23",
+    "template_code": "BC-08",
+    "coverage": "partial",
+    "rationale": "Due diligence on a cloud provider before adoption agrees exit terms, such as return or deletion of data, and the assurance report review records the controls the provider expects its customers to run, which sets the split of responsibility. Configuration in use is covered by NS-04, and detection of unapproved services by BC-05."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.23",
+    "template_code": "GOV-17",
+    "coverage": "partial",
+    "rationale": "The cloud services policy in the suite sets the rules for adopting, operating and leaving cloud services, including who is responsible for which safeguards, and is approved and available to staff. Provider due diligence and exit terms come from BC-08, configuration in use from NS-04 and detection of unapproved services from BC-05."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.23",
+    "template_code": "NS-04",
+    "coverage": "partial",
+    "rationale": "Applies a hardening baseline to cloud services and checks for drift, which sets how cloud services are configured in use. It covers configuration, not data location, shared responsibility terms or exit."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.23",
+    "template_code": "PE-01",
+    "coverage": "partial",
+    "rationale": "Reviews the cloud provider's assurance report each year, including exceptions and the controls the customer must operate, which covers due diligence on the provider in use. Exit terms come from BC-08 and the rules for using cloud services from GOV-17."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.24",
+    "template_code": "CS-03",
+    "coverage": "partial",
+    "rationale": "A dedicated reporting channel, communicated at onboarding, in training and in the incident plan, and routed into triage, is the part of preparation that tells staff and customers how to raise a suspected incident. It does not define the response, which LM-07 covers."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.24",
+    "template_code": "LM-07",
+    "coverage": "partial",
+    "rationale": "The incident response plan defines roles, severity levels, response phases, communication steps and current contacts, is shared with everyone who holds a role in it, and is reviewed yearly and after significant incidents. That is the documented process and responsibilities; the yearly exercise in LM-10 shows responders know it, and CS-03 tells everyone else how to report."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.24",
+    "template_code": "LM-10",
+    "coverage": "partial",
+    "rationale": "A yearly tabletop exercise with the people who would respond tests the plan and exposes gaps in contacts and decision authority before a real incident. It shows preparation, not the plan itself."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.25",
+    "template_code": "LM-04",
+    "coverage": "full",
+    "rationale": "Defines severity levels, triages every security event and records the assessment, including events judged benign, with escalation paths. That is the assessment and decision on whether an event is an incident."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.26",
+    "template_code": "LM-05",
+    "coverage": "partial",
+    "rationale": "The postmortem for each significant incident records the timeline of the response, its impact and its root cause, which is the record an auditor samples to confirm containment, communication and recovery followed the plan. Smaller incidents are evidenced by their triage records and the LM-06 recovery records."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.26",
+    "template_code": "LM-06",
+    "coverage": "partial",
+    "rationale": "Recovery procedures and a record of the steps taken in each incident show the recovery part of the response was carried out as written. Detection, containment and communication follow the LM-07 plan and, for significant incidents, are recorded in LM-05 postmortems."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.26",
+    "template_code": "LM-07",
+    "coverage": "partial",
+    "rationale": "The plan sets out the phases of containment, eradication and recovery and who does what, which is the documented procedure to follow. Records that incidents were handled that way come from the LM-05 postmortems and the LM-06 recovery records."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.27",
+    "template_code": "LM-05",
+    "coverage": "full",
+    "rationale": "A postmortem for each significant incident records timeline, root cause and detection gap, and corrective actions are tracked to closure, with recurring themes reviewed. That is learning from incidents to strengthen controls."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.28",
+    "template_code": "LM-02",
+    "coverage": "partial",
+    "rationale": "Centralized logs are retained for twelve months and protected against modification, which keeps the main source of evidence intact until it is needed. Capturing other material, such as disk images, and recording who handled it follow the incident response plan in LM-07."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.28",
+    "template_code": "LM-07",
+    "coverage": "partial",
+    "rationale": "The incident response plan states who may collect evidence, how logs, disk images and files are captured without changing them, and how each item is stored with a record of who handled it and when. That is the evidence procedure; LM-02 keeps the logs it draws on."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.29",
+    "template_code": "BC-01",
+    "coverage": "partial",
+    "rationale": "Backups are encrypted, restore permissions are restricted and a copy is kept in a separate account or region, which keeps data protected during recovery. It covers backed up data only."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.29",
+    "template_code": "BC-03",
+    "coverage": "partial",
+    "rationale": "The continuity and disaster recovery plan sets activation criteria and recovery targets, and for each workaround keeps access control, logging and encryption in place or names who may approve a temporary relaxation, what compensates for it and when it ends; the plan is tested yearly. BC-01 keeps the backup copies it recovers from protected."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.30",
+    "template_code": "BC-01",
+    "coverage": "partial",
+    "rationale": "Automated, monitored backups aligned to the documented recovery point implement the data side of readiness and alert on failure. Failover and the readiness of services are covered by BC-03."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.30",
+    "template_code": "BC-02",
+    "coverage": "partial",
+    "rationale": "A full restore test at least yearly into an isolated environment, with measured recovery time against targets, shows data can be recovered in practice. Failover of services is tested under BC-03."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.30",
+    "template_code": "BC-03",
+    "coverage": "partial",
+    "rationale": "Defines recovery time and point targets per critical service, records the redundancy each one relies on and tests the plan each year, including failover and, where one exists, a switch to the secondary site or region, which sets and checks technology readiness against continuity needs. Proof that data can be restored comes from BC-02."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.31",
+    "template_code": "GOV-05",
+    "coverage": "full",
+    "rationale": "The obligations register lists every legal, regulatory and contractual obligation with source, owner and review date, mapped to the controls that meet it. That is identifying, documenting and keeping requirements current."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.32",
+    "template_code": "GOV-05",
+    "coverage": "partial",
+    "rationale": "The obligations register records software license agreements and other intellectual property terms as contractual obligations, each with its source, owner and review date and mapped to the controls that keep to it. Open source licenses inside the product are tracked through the SD-03 bill of materials."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.32",
+    "template_code": "HR-02",
+    "coverage": "partial",
+    "rationale": "Signed confidentiality and intellectual property agreements from every employee and contractor protect the organization's own rights in what staff create. License terms for software the organization uses are tracked through GOV-05 and the SD-03 bill of materials."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.32",
+    "template_code": "SD-03",
+    "coverage": "partial",
+    "rationale": "The software bill of materials records each open source component's license, and licenses that conflict with how the product is used or sold are flagged for review before release. Commercial license terms are tracked as contractual obligations in GOV-05, and rights in what staff create are covered by HR-02."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.33",
+    "template_code": "BC-01",
+    "coverage": "partial",
+    "rationale": "Automated, monitored and encrypted backups with a separate copy protect records against loss and destruction. They do not address falsification or who may see or release records."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.33",
+    "template_code": "DM-08",
+    "coverage": "partial",
+    "rationale": "The retention schedule sets how long each data type is kept based on purpose and legal need and enforces it technically, which protects records against premature or unlawful disposal. It does not cover loss or tampering."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.33",
+    "template_code": "GOV-28",
+    "coverage": "partial",
+    "rationale": "Records of the security program are held in a controlled system of record with access set by role, a backup and full version history, and kept and disposed of under set retention rules, which guards them against unauthorized access, undetected change and loss. Business records in production systems rely on BC-01 against loss and on DM-08 for how long they are kept."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.34",
+    "template_code": "DM-03",
+    "coverage": "partial",
+    "rationale": "Consent is captured per purpose with the time, notice version and method recorded, explicit consent is obtained for sensitive data, and withdrawal is honored and passed to downstream systems and processors, which meets the consent duties privacy laws set. Access requests are handled under DM-11 and correction under DM-05."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.34",
+    "template_code": "DM-05",
+    "coverage": "partial",
+    "rationale": "Subjects can ask for inaccurate personal information to be corrected, their identity is checked first, and the correction reaches downstream systems, processors and backups within a set window, which meets the correction right privacy laws give. Access requests are handled under DM-11 and consent under DM-03."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.34",
+    "template_code": "DM-10",
+    "coverage": "partial",
+    "rationale": "Executes a data processing agreement with every vendor that processes personal information, setting purposes, security duties and breach terms, which carries privacy obligations to processors. It does not cover obligations owed directly to individuals."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.34",
+    "template_code": "DM-11",
+    "coverage": "partial",
+    "rationale": "Runs one intake for data subject access requests with identity checks, a deadline set by the applicable law and a log of each response, which shows the right of access is met on time. Correction and consent withdrawal run under their own controls, DM-05 and DM-03."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.34",
+    "template_code": "DM-12",
+    "coverage": "partial",
+    "rationale": "Limits personal information use to its stated purpose, requires approval for secondary use and states the position on AI training, with a yearly review of flows. It does not cover subject rights or processors."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.34",
+    "template_code": "DM-15",
+    "coverage": "partial",
+    "rationale": "The privacy notice, written against the data map, states what is collected, why, who receives it, how long it is kept and what rights people hold. It is a statement of practice, not proof the practice is followed."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.34",
+    "template_code": "GOV-05",
+    "coverage": "partial",
+    "rationale": "The obligations register lists the privacy laws and contract terms that apply, with source, owner and review date, mapped to the controls that meet them. That is the identification part; DM-10, DM-11, DM-12 and DM-15 show the duties are met."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.35",
+    "template_code": "GOV-13",
+    "coverage": "full",
+    "rationale": "A yearly internal review of the security program and its controls, run before each external audit and in targeted form after significant change, is carried out by a reviewer independent of the work, or by an outside reviewer where the team is too small, with scope, method, evidence and findings documented. That is the independent review this requirement asks for."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.35",
+    "template_code": "GOV-16",
+    "coverage": "partial",
+    "rationale": "An independent penetration test each year, with findings tracked and retested, reviews the technology part of the program. It does not review people or processes."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.36",
+    "template_code": "GOV-06",
+    "coverage": "partial",
+    "rationale": "Automated checks against connected systems, with failures routed to owners and recurring ones reviewed, regularly test whether technical rules are followed. They do not test compliance with policies that cannot be checked by a system."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.36",
+    "template_code": "GOV-13",
+    "coverage": "partial",
+    "rationale": "The internal review examines evidence that the security program and its controls run as its policies say, including rules no automated check can test, and routes each gap into deficiency tracking so it is fixed at its cause."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.36",
+    "template_code": "GOV-15",
+    "coverage": "partial",
+    "rationale": "The management review looks at control health, open findings and remediation, with actions carried forward until done. It reviews results rather than checking each policy area directly."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.37",
+    "template_code": "BC-03",
+    "coverage": "partial",
+    "rationale": "The continuity and disaster recovery plan documents recovery activation and steps for critical services. It covers recovery only, not day to day procedures such as backup, monitoring and restart."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.37",
+    "template_code": "GOV-28",
+    "coverage": "partial",
+    "rationale": "Operating procedures for the systems in scope are listed with an owner, version, approval and review date, and kept in a controlled system of record that the people who run the systems can reach. That covers writing procedures down and keeping them available; BC-03 and SD-10 supply the recovery and engineering procedures."
+  },
+  {
+    "requirement_key": "ISO27001:A.5.37",
+    "template_code": "SD-10",
+    "coverage": "partial",
+    "rationale": "The development policy documents design review, code review, testing and release steps, which are the operating procedures for engineering. It does not cover procedures for running infrastructure and support."
+  },
+  {
+    "requirement_key": "ISO27001:A.6.1",
+    "template_code": "HR-01",
+    "coverage": "full",
+    "rationale": "Checks run before access is granted and again before a move into a more sensitive role. Privileged roles get deeper checks that are repeated at a set interval, and contractors are held to the same standard. Evidence is the screening policy and completed checks for a sample of hires and role changes."
+  },
+  {
+    "requirement_key": "ISO27001:A.6.2",
+    "template_code": "GOV-04",
+    "coverage": "partial",
+    "rationale": "Acknowledging the code of conduct at hire records the person's acceptance of rules on conduct, acceptable use and confidentiality. The security duties written into the contract itself are covered by HR-02."
+  },
+  {
+    "requirement_key": "ISO27001:A.6.2",
+    "template_code": "HR-02",
+    "coverage": "partial",
+    "rationale": "The signed confidentiality and IP agreement, and the security clause in each employment or contractor contract, state the person's security duties and the organization's own, and are signed before access is granted. Role-specific duties are set out in HR-04, and the conduct rules the person accepts are in GOV-04."
+  },
+  {
+    "requirement_key": "ISO27001:A.6.2",
+    "template_code": "HR-04",
+    "coverage": "partial",
+    "rationale": "Job descriptions that state each role's security responsibilities put the duties in writing at hire. They do not prove the person accepted them, which the signed agreements and code of conduct show."
+  },
+  {
+    "requirement_key": "ISO27001:A.6.3",
+    "template_code": "CS-04",
+    "coverage": "partial",
+    "rationale": "A policy portal with tracked acknowledgment shows staff were told of policies and of changes to them, which is the update part of this requirement. It is communication, not training."
+  },
+  {
+    "requirement_key": "ISO27001:A.6.3",
+    "template_code": "HR-08",
+    "coverage": "partial",
+    "rationale": "Staff and contractors get awareness training at onboarding and every year, with role-based modules for engineers and administrators and completion tracked per person. This covers the training part of the requirement. Telling staff when policies change is covered by CS-04."
+  },
+  {
+    "requirement_key": "ISO27001:A.6.4",
+    "template_code": "GOV-04",
+    "coverage": "partial",
+    "rationale": "The acknowledged code of conduct is where staff learn the consequence in advance, which is the communicated part of this requirement. The procedure and its application are covered by GOV-11."
+  },
+  {
+    "requirement_key": "ISO27001:A.6.4",
+    "template_code": "GOV-11",
+    "coverage": "full",
+    "rationale": "A documented disciplinary process that sets out sanctions and who decides, applied consistently and recorded, is this requirement's subject. Evidence is the procedure and a sample of cases showing it was used."
+  },
+  {
+    "requirement_key": "ISO27001:A.6.5",
+    "template_code": "HR-02",
+    "coverage": "partial",
+    "rationale": "Signed agreements make confidentiality and other duties continue after the engagement ends, so the continuing duties are defined and enforceable. Reminding the person at exit and handling a change of role are covered by HR-05."
+  },
+  {
+    "requirement_key": "ISO27001:A.6.5",
+    "template_code": "HR-05",
+    "coverage": "partial",
+    "rationale": "The offboarding checklist gives each leaver a written reminder of the duties that continue, such as confidentiality, records their acknowledgment, and is rerun for access and duties when someone changes role. HR-02 makes the continuing duties binding."
+  },
+  {
+    "requirement_key": "ISO27001:A.6.6",
+    "template_code": "HR-02",
+    "coverage": "full",
+    "rationale": "Every employee and contractor signs a confidentiality and IP agreement, and other outside parties sign a non-disclosure agreement, before they receive confidential information. The agreements outlast the engagement, and the templates are reviewed every year and when law or access changes. Evidence is the templates and signed copies for a sample of staff, contractors and outside parties."
+  },
+  {
+    "requirement_key": "ISO27001:A.6.7",
+    "template_code": "EP-03",
+    "coverage": "partial",
+    "rationale": "Enrolled and managed devices carry the encryption, screen lock and patch settings that protect information kept on home and travel equipment. The written remote working rules, including safeguards for the home setting, are set in GOV-17."
+  },
+  {
+    "requirement_key": "ISO27001:A.6.7",
+    "template_code": "GOV-17",
+    "coverage": "partial",
+    "rationale": "The remote working policy in the suite sets the rules for working from home and while traveling, such as approved locations and networks, which devices may be used and keeping screens and papers away from others. It is approved and available to staff. Device settings come from EP-03 and secure access to systems from NS-11."
+  },
+  {
+    "requirement_key": "ISO27001:A.6.7",
+    "template_code": "NS-11",
+    "coverage": "partial",
+    "rationale": "A VPN or zero-trust service with MFA is required for administrative access, and each access decision rests on identity and device posture, which protects systems reached from home or on the road. The remote working rules themselves are set in GOV-17."
+  },
+  {
+    "requirement_key": "ISO27001:A.6.8",
+    "template_code": "CS-03",
+    "coverage": "full",
+    "rationale": "A dedicated, monitored reporting channel that staff learn about at onboarding and in training, with reports routed into triage and no blame for good-faith reports, is this requirement's subject."
+  },
+  {
+    "requirement_key": "ISO27001:A.7.1",
+    "template_code": "PE-01",
+    "coverage": "partial",
+    "rationale": "Perimeters of hosted data centers are usually inherited from the cloud provider. PE-01 holds the evidence: the provider's current ISO 27001 certificate or SOC 2 report for the regions you use, and your recorded review of it."
+  },
+  {
+    "requirement_key": "ISO27001:A.7.1",
+    "template_code": "PE-02",
+    "coverage": "partial",
+    "rationale": "Badge-controlled office entry, with tighter limits on server and network areas, gives the organization's own premises a physical boundary. It does not reach hosted infrastructure, and an organization with no office has nothing here to show."
+  },
+  {
+    "requirement_key": "ISO27001:A.7.2",
+    "template_code": "PE-01",
+    "coverage": "partial",
+    "rationale": "Entry to hosted data centers is usually inherited from the cloud provider. Evidence is their current ISO 27001 certificate or SOC 2 report for the sites you use, and your recorded review of exceptions."
+  },
+  {
+    "requirement_key": "ISO27001:A.7.2",
+    "template_code": "PE-02",
+    "coverage": "partial",
+    "rationale": "Badge or equivalent entry, tighter limits on server and network areas, deliveries received at a controlled point, escorted and logged visitors, and badges revoked at offboarding and reconciled each quarter control entry to the organization's own premises. Entry to hosted data centers is covered by PE-01."
+  },
+  {
+    "requirement_key": "ISO27001:A.7.3",
+    "template_code": "PE-01",
+    "coverage": "partial",
+    "rationale": "Facility design at hosted data centers is usually inherited from the cloud provider. Evidence is their current ISO 27001 certificate or SOC 2 report covering the sites you use, plus your recorded review of it."
+  },
+  {
+    "requirement_key": "ISO27001:A.7.3",
+    "template_code": "PE-02",
+    "coverage": "partial",
+    "rationale": "Controlled entry protects the organization's own premises, with server and network areas restricted and kept, along with screens showing sensitive work, out of public view. Facility design at hosted data centers is covered by PE-01."
+  },
+  {
+    "requirement_key": "ISO27001:A.7.4",
+    "template_code": "PE-01",
+    "coverage": "partial",
+    "rationale": "Monitoring of hosted data centers, such as cameras and intrusion alarms, is usually inherited from the cloud provider. Evidence is their current ISO 27001 certificate or SOC 2 report and your recorded review of it."
+  },
+  {
+    "requirement_key": "ISO27001:A.7.4",
+    "template_code": "PE-02",
+    "coverage": "partial",
+    "rationale": "Intruder alarms or cameras at the organization's own premises, or the building's monitoring where that is what protects the office, detect unauthorized entry and alert a named responder, and alarm events are reviewed each quarter with access exceptions. Monitoring of hosted data centers is covered by PE-01."
+  },
+  {
+    "requirement_key": "ISO27001:A.7.5",
+    "template_code": "PE-01",
+    "coverage": "partial",
+    "rationale": "Fire, flood and power protection at hosted data centers is usually inherited from the cloud provider, evidenced by their current ISO 27001 certificate or SOC 2 report. Protection of the organization's own premises is covered by PE-03."
+  },
+  {
+    "requirement_key": "ISO27001:A.7.5",
+    "template_code": "PE-03",
+    "coverage": "partial",
+    "rationale": "A hazard assessment of each site the organization runs, with fire, water, power and cooling protections fitted to match and tested every year, covers its own premises. Hosted data centers are covered by PE-01."
+  },
+  {
+    "requirement_key": "ISO27001:A.7.6",
+    "template_code": "PE-01",
+    "coverage": "partial",
+    "rationale": "Rules for working in the secure areas of hosted data centers are set and enforced by the cloud provider. Evidence is their current ISO 27001 certificate or SOC 2 report for the sites you use and your recorded review of it."
+  },
+  {
+    "requirement_key": "ISO27001:A.7.6",
+    "template_code": "PE-02",
+    "coverage": "partial",
+    "rationale": "Written rules for secure areas, such as no unsupervised visitors or contractors and no recording without approval, together with restricted entry and quarterly walk-throughs, govern work in the organization's own server rooms and other secure areas. Secure areas at hosted data centers are covered by PE-01."
+  },
+  {
+    "requirement_key": "ISO27001:A.7.7",
+    "template_code": "EP-06",
+    "coverage": "partial",
+    "rationale": "Automatic screen lock set through device management, with a short idle time and a sign-in to unlock, meets the clear screen half of this requirement. Clear desk rules for papers and removable media are set in GOV-17 and checked on the PE-02 walk-through."
+  },
+  {
+    "requirement_key": "ISO27001:A.7.7",
+    "template_code": "GOV-17",
+    "coverage": "partial",
+    "rationale": "The acceptable use policy in the suite sets the clear desk and clear screen rules and is approved and available to staff. Screen lock is enforced by EP-06 and desks are checked on the PE-02 walk-through."
+  },
+  {
+    "requirement_key": "ISO27001:A.7.7",
+    "template_code": "PE-02",
+    "coverage": "partial",
+    "rationale": "In the organization's own offices, printed confidential material is secured and disposed of safely, and a quarterly walk-through checks desks and printers, which shows the clear desk rule is followed. Screens are covered by EP-06 and the written rules by GOV-17."
+  },
+  {
+    "requirement_key": "ISO27001:A.7.8",
+    "template_code": "PE-01",
+    "coverage": "partial",
+    "rationale": "Siting and protection of hosted servers is usually inherited from the cloud provider, evidenced by their current ISO 27001 certificate or SOC 2 report. Equipment you place in offices or colocation racks yourself is covered by PE-03."
+  },
+  {
+    "requirement_key": "ISO27001:A.7.8",
+    "template_code": "PE-03",
+    "coverage": "partial",
+    "rationale": "Racks and equipment at the organization's own sites are locked, kept away from windows and public view, and protected against the assessed hazards. Hosted servers are covered by PE-01."
+  },
+  {
+    "requirement_key": "ISO27001:A.7.9",
+    "template_code": "EP-02",
+    "coverage": "partial",
+    "rationale": "Full-disk encryption keeps the data safe when a laptop is lost or stolen, the main protection for equipment that leaves the premises. Rules for carrying equipment and leaving it unattended are set in GOV-17."
+  },
+  {
+    "requirement_key": "ISO27001:A.7.9",
+    "template_code": "EP-03",
+    "coverage": "partial",
+    "rationale": "Enrolment gives an inventory of company devices and enforces encryption, screen lock and patch settings wherever they are used. Rules for carrying equipment and leaving it unattended are set in GOV-17."
+  },
+  {
+    "requirement_key": "ISO27001:A.7.9",
+    "template_code": "EP-05",
+    "coverage": "partial",
+    "rationale": "Remote wipe and a lost-device procedure limit the damage when off-site equipment is lost or stolen, and the wipe confirmation is retained. Rules for carrying equipment, which help prevent loss, are set in GOV-17."
+  },
+  {
+    "requirement_key": "ISO27001:A.7.9",
+    "template_code": "GOV-17",
+    "coverage": "partial",
+    "rationale": "The remote working policy in the suite sets the rules for equipment and media taken off site, such as not leaving them unattended in vehicles or public places, and is approved and available to staff. Encryption, management and wipe of the devices come from EP-02, EP-03 and EP-05."
+  },
+  {
+    "requirement_key": "ISO27001:A.7.10",
+    "template_code": "DM-04",
+    "coverage": "partial",
+    "rationale": "Handling rules for each classification level cover how data is stored, sent, shared and disposed of, which sets how media holding each level must be handled."
+  },
+  {
+    "requirement_key": "ISO27001:A.7.10",
+    "template_code": "DM-16",
+    "coverage": "partial",
+    "rationale": "The disposal procedure covers drives and removable media at the end of their life: each is wiped or destroyed by a method that fits the data, and a record is kept. Handling rules by classification come from DM-04 and limits on using removable media from DM-19."
+  },
+  {
+    "requirement_key": "ISO27001:A.7.10",
+    "template_code": "DM-19",
+    "coverage": "partial",
+    "rationale": "Removable storage on company devices is blocked or restricted through device management and allowed only as encrypted media by approved exception, which controls which media are acquired and used and protects them if lost in transit. Handling by classification comes from DM-04 and disposal from DM-16."
+  },
+  {
+    "requirement_key": "ISO27001:A.7.10",
+    "template_code": "EP-02",
+    "coverage": "partial",
+    "rationale": "Encrypting endpoint disks protects the data if a device is lost in use or in transport. Rules for using removable media come from DM-19, handling by classification from DM-04, and disposal from DM-16."
+  },
+  {
+    "requirement_key": "ISO27001:A.7.11",
+    "template_code": "PE-01",
+    "coverage": "partial",
+    "rationale": "Power, cooling and similar utilities at hosted data centers are usually inherited from the cloud provider, evidenced by their current ISO 27001 certificate or SOC 2 report. Utilities at your own premises are covered by PE-03."
+  },
+  {
+    "requirement_key": "ISO27001:A.7.11",
+    "template_code": "PE-03",
+    "coverage": "partial",
+    "rationale": "Uninterruptible power, a generator or a tested shutdown, and monitored cooling protect equipment at the organization's own sites, with failover tested every year. Utilities at hosted data centers are covered by PE-01."
+  },
+  {
+    "requirement_key": "ISO27001:A.7.12",
+    "template_code": "PE-01",
+    "coverage": "partial",
+    "rationale": "Cabling at hosted data centers is usually inherited from the cloud provider, evidenced by their current ISO 27001 certificate or SOC 2 report. Cabling in your own offices or racks is covered by PE-03."
+  },
+  {
+    "requirement_key": "ISO27001:A.7.12",
+    "template_code": "PE-03",
+    "coverage": "partial",
+    "rationale": "Cabling at the organization's own sites runs through protected routes, with power and network kept apart. Cabling at hosted data centers is covered by PE-01."
+  },
+  {
+    "requirement_key": "ISO27001:A.7.13",
+    "template_code": "PE-01",
+    "coverage": "partial",
+    "rationale": "Hardware maintenance at hosted data centers is usually inherited from the cloud provider, evidenced by their current ISO 27001 certificate or SOC 2 report. Maintenance of your own equipment is covered by PE-03."
+  },
+  {
+    "requirement_key": "ISO27001:A.7.13",
+    "template_code": "PE-03",
+    "coverage": "partial",
+    "rationale": "Site equipment is serviced at the set intervals by approved engineers, storage is removed before anything leaves for repair, and each visit is recorded, which covers maintenance the organization is responsible for. Hosted hardware is covered by PE-01."
+  },
+  {
+    "requirement_key": "ISO27001:A.7.14",
+    "template_code": "DM-16",
+    "coverage": "partial",
+    "rationale": "The disposal procedure covers laptops, servers, drives and removable media the organization holds before they are reused, sold or scrapped. Each is wiped or destroyed by a method that fits its data, so neither company data nor licensed software can be recovered, the result is confirmed, and a record or contractor certificate is kept. Disposal of drives in hosted data centers is covered by PE-01."
+  },
+  {
+    "requirement_key": "ISO27001:A.7.14",
+    "template_code": "EP-05",
+    "coverage": "partial",
+    "rationale": "Remote wipe clears company data from a device that is lost or that a leaver does not return, and the wipe is confirmed and the confirmation kept, so data cannot be recovered from equipment that has left the organization's hands. Wiping and checking returned equipment before reuse or sale is covered by DM-16."
+  },
+  {
+    "requirement_key": "ISO27001:A.7.14",
+    "template_code": "PE-01",
+    "coverage": "partial",
+    "rationale": "Drives and other storage in hosted data centers are wiped or destroyed by the cloud provider when retired or reused. Evidence is their current ISO 27001 certificate or SOC 2 report for the sites you use and your recorded review of it."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.1",
+    "template_code": "EP-01",
+    "coverage": "partial",
+    "rationale": "Endpoint detection and response or anti-malware on every managed endpoint, with agent health monitored, protects devices from malicious software. It does not by itself set the wider endpoint rules."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.1",
+    "template_code": "EP-02",
+    "coverage": "partial",
+    "rationale": "Full-disk encryption protects information on a device that is lost or stolen. It is one protection among several, and the endpoint policy, malware protection and screen lock are covered separately."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.1",
+    "template_code": "EP-03",
+    "coverage": "partial",
+    "rationale": "Enrolment in device management with an enforced baseline for encryption, screen lock, patch level and permitted software is the umbrella for protecting company endpoints. Malware protection is covered by EP-01."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.1",
+    "template_code": "EP-05",
+    "coverage": "partial",
+    "rationale": "Remote wipe through device management protects information on a laptop or phone that is lost, stolen or not returned. The wipe is confirmed, and the credentials a device held are rotated if it never reconnects. EP-03, EP-02, EP-06 and EP-01 cover the device baseline, encryption, screen lock and malware protection."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.1",
+    "template_code": "EP-06",
+    "coverage": "partial",
+    "rationale": "Automatic screen lock enforced through device management stops someone nearby using an unattended device. It is one protection among several for information on endpoints."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.2",
+    "template_code": "IAM-07",
+    "coverage": "full",
+    "rationale": "An inventory of privileged accounts, separately recorded approval for each grant, logged elevation and quarterly review are how elevated rights are limited and kept under control. This covers cloud root and break-glass accounts."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.3",
+    "template_code": "IAM-08",
+    "coverage": "partial",
+    "rationale": "Defining roles that match job functions, and granting each only the minimum access it needs, is how people's access to information is limited under the access control policy, and the role definitions are reviewed over time. IAM-10 covers access held by service accounts, API keys and integrations."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.3",
+    "template_code": "IAM-10",
+    "coverage": "partial",
+    "rationale": "Every service account, API key and integration token has an owner, a stated purpose and least-privilege permissions, and the inventory is reviewed at least annually. This limits what systems and integrations can reach, in the same way IAM-08 roles limit what people can reach."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.4",
+    "template_code": "IAM-02",
+    "coverage": "partial",
+    "rationale": "Access reviews have the owner of each system certify every user's rights individually and remove any right that is not confirmed. With the code host, build pipelines and package registries in the review scope, they show who holds read, write and admin rights on source code and the tools around it. IAM-08 covers how those rights are assigned, and SD-06 covers how changes reach protected branches."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.4",
+    "template_code": "IAM-08",
+    "coverage": "partial",
+    "rationale": "Roles that match job functions decide who gets read, write or admin rights on repositories, build tools and package registries, so access to code follows the job rather than the person. IAM-02 access reviews check that those rights are still correct, and SD-06 controls how changes reach protected branches."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.4",
+    "template_code": "SD-06",
+    "coverage": "partial",
+    "rationale": "Branch protection, required reviews and no direct pushes gate changes to protected branches. They do not show who can read, write or administer the repositories."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.5",
+    "template_code": "IAM-03",
+    "coverage": "partial",
+    "rationale": "Requiring multi-factor authentication on every system that supports it, with phishing-resistant factors for administrators and production, is the core of secure sign-in. IAM-04, IAM-06 and IAM-11 complete the requirement with central enforcement, password rules with lockout, and session limits."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.5",
+    "template_code": "IAM-04",
+    "coverage": "partial",
+    "rationale": "Routing applications through one identity provider applies MFA, password and session policy in one place, so every connected application inherits it. Systems that cannot use single sign-on need compensating controls."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.5",
+    "template_code": "IAM-06",
+    "coverage": "partial",
+    "rationale": "A central password policy with minimum length, breach screening and lockout on repeated failures protects accounts where stronger factors are unavailable. It is secondary to MFA and does not cover session handling."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.5",
+    "template_code": "IAM-11",
+    "coverage": "partial",
+    "rationale": "Idle and absolute session timeouts, with re-authentication for high-risk actions, limit how long a stolen session stays useful. They do not verify who is signing in."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.6",
+    "template_code": "BC-04",
+    "coverage": "full",
+    "rationale": "Compute, storage, network bandwidth, quotas and, at sites the organization runs, power, cooling and rack space are monitored against thresholds set below failure, with autoscaling or early hardware orders and a quarterly review against forecast growth. Evidence is the capacity review and the actions taken."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.7",
+    "template_code": "EP-01",
+    "coverage": "partial",
+    "rationale": "Endpoint detection or anti-malware on every managed endpoint and server, with automatic updates, monitored coverage and detections routed into incident handling, is the technical protection against malware. HR-08 covers the user awareness that must support it."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.7",
+    "template_code": "HR-08",
+    "coverage": "partial",
+    "rationale": "Training on phishing and social engineering, two common routes for malware, is the user awareness ISO expects to support the technical protection. It does not itself block or detect anything."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.8",
+    "template_code": "EP-04",
+    "coverage": "partial",
+    "rationale": "Patch timeframes by severity and automated deployment are how known weaknesses in endpoint operating systems and installed software get fixed. Finding them, and the application dependency side, are covered by LM-11 and SD-03."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.8",
+    "template_code": "LM-11",
+    "coverage": "full",
+    "rationale": "Scheduled scanning of infrastructure, containers, dependencies and the external surface, with remediation times by severity and tracking to closure, is how weaknesses are found and treated. Documented risk acceptance covers anything left unfixed."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.8",
+    "template_code": "SD-03",
+    "coverage": "partial",
+    "rationale": "Dependency and image scanning finds known vulnerable components in the software the organization builds and flags them for triage to a severity-based timeframe. Infrastructure and endpoint weaknesses are covered elsewhere."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.9",
+    "template_code": "LM-03",
+    "coverage": "partial",
+    "rationale": "Continuous monitoring of cloud configuration against the baseline, with alerts on risky regressions, is the monitoring step. It covers cloud settings, not network devices or operating systems."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.9",
+    "template_code": "NS-04",
+    "coverage": "full",
+    "rationale": "A hardening baseline for operating systems, containers, databases, cloud services and network devices is built into images and templates, removes what systems do not need, has approved deviations, is checked for drift at least quarterly and is itself reviewed yearly and on new benchmark releases. That is the secure configuration this requirement asks for."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.10",
+    "template_code": "DM-08",
+    "coverage": "partial",
+    "rationale": "The retention schedule, enforced through lifecycle rules or purge jobs, decides when data is no longer needed and triggers deletion. It sets the timing and does not by itself prove the data was removed."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.10",
+    "template_code": "DM-16",
+    "coverage": "full",
+    "rationale": "A disposal procedure covering primary stores, replicas, search indexes, caches, analytics copies, backups and vendor systems, with a record of what was destroyed and how, is how data is deleted when no longer needed."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.11",
+    "template_code": "DM-18",
+    "coverage": "full",
+    "rationale": "The fields to mask are listed from the data classification and checked against the privacy, sector and card rules that apply, each use has a set method, masking is on by default with unmasked access only for approved roles, and the rules are tested yearly so masked data cannot be reversed. That is masking in line with access rules, business need and law."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.12",
+    "template_code": "DM-19",
+    "coverage": "full",
+    "rationale": "Leak routes are listed for the systems that hold confidential data, rules matched to the classification block or warn on risky sharing in email, file, chat, endpoint, network egress, cloud storage and removable media, and alerts are triaged within a set time with confirmed leaks raised as incidents. That covers the systems, networks and devices that handle sensitive data."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.13",
+    "template_code": "BC-01",
+    "coverage": "partial",
+    "rationale": "Automated, monitored backups with retention matched to recovery targets, encrypted and kept in a separate account or region, are the maintained copies. Proof that they can be restored comes from BC-02."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.13",
+    "template_code": "BC-02",
+    "coverage": "partial",
+    "rationale": "An annual restore into an isolated environment, checking data integrity and measuring recovery time against targets, is the regular testing ISO expects. It relies on BC-01 for the backups themselves."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.14",
+    "template_code": "BC-03",
+    "coverage": "full",
+    "rationale": "The continuity plan sets recovery time and point targets for each critical service, records the redundancy each one relies on to meet them, such as multiple availability zones, a secondary site or standby equipment, and tests failover at least annually. The failover test record shows the redundancy is enough for the availability promised."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.15",
+    "template_code": "LM-02",
+    "coverage": "full",
+    "rationale": "Security logs for authentication, authorization, administrative action and application audit events are collected centrally, kept for at least twelve months with three months searchable, protected so a system's own administrators cannot change or delete them, watched for gaps and reviewed at least daily. That meets this requirement."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.16",
+    "template_code": "EP-01",
+    "coverage": "partial",
+    "rationale": "Endpoint detection and response or anti-malware on every managed laptop and server watches for malicious activity on the device and routes each detection into incident handling, which is the endpoint part of monitoring. LM-09 and NS-05 cover alerting on access, cloud and service activity."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.16",
+    "template_code": "LM-04",
+    "coverage": "partial",
+    "rationale": "Recording the triage of each security event, including those judged benign, shows that alerts raised by monitoring were assessed as potential incidents. Detection itself is covered by LM-09."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.16",
+    "template_code": "LM-09",
+    "coverage": "partial",
+    "rationale": "A small set of high-signal alerts on unauthorized access, unusual sign-in patterns, privilege escalation and resource exhaustion, each routed to an owner with a defined response, is the core of watching systems for abnormal behavior. LM-04 records how each alert was evaluated as a potential incident, NS-05 covers the cloud control plane, and EP-01 covers laptops and servers."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.16",
+    "template_code": "NS-05",
+    "coverage": "partial",
+    "rationale": "A managed threat-detection service across all cloud accounts and regions watches the control plane for credential misuse and anomalous activity. It covers cloud infrastructure only, not endpoints or applications."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.17",
+    "template_code": "NS-12",
+    "coverage": "full",
+    "rationale": "NS-12 names the approved time sources, requires servers, containers, network devices and managed services to use only those, records timestamps in one time zone and alerts on clock drift. The list of sources and a quarterly clock check across a sample of systems are the evidence."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.18",
+    "template_code": "IAM-07",
+    "coverage": "partial",
+    "rationale": "Privileged accounts and the tools that can bypass system controls, such as admin consoles, container exec access and debuggers on production hosts, are listed and granted only with separate approval, preferably just in time. Every use is logged, and access is reviewed quarterly. Removing tools that systems do not need comes from NS-04."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.18",
+    "template_code": "NS-04",
+    "coverage": "partial",
+    "rationale": "Hardening baselines such as CIS Benchmarks, built into images and infrastructure as code, remove or disable services and tools a system does not need, and any deviation is approved, so fewer tools able to bypass controls are present. Who may run the remaining tools, and the record of their use, comes from IAM-07."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.19",
+    "template_code": "EP-03",
+    "coverage": "partial",
+    "rationale": "Device management enforces the permitted software list on every company device, so staff cannot install software outside it themselves. It covers staff devices only; installs on servers are approved under SD-01 and SD-13."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.19",
+    "template_code": "NS-04",
+    "coverage": "partial",
+    "rationale": "Building hardened baselines into images and infrastructure as code means production systems start from a known set of software, and deviations are approved. It does not set rules for later installs, updates or rollback."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.19",
+    "template_code": "SD-01",
+    "coverage": "partial",
+    "rationale": "Every production change, including software installed or updated directly on servers, needs a recorded approval and a stated rollback before it is made, or must fall under a standard change approved in advance. So software put onto live systems outside the deployment pipeline is approved and can be undone. How pipeline builds reach production comes from SD-13, the starting baseline from NS-04, and installs on staff devices from EP-03."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.19",
+    "template_code": "SD-13",
+    "coverage": "partial",
+    "rationale": "Deploying to production only from the protected branch or a pipeline-built release, with approval and a deployment history, controls how software gets onto live systems through the pipeline. Installs and patches made directly on servers are approved under SD-01."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.20",
+    "template_code": "LM-03",
+    "coverage": "partial",
+    "rationale": "Cloud configuration is monitored continuously against an approved baseline, with alerts on regressions such as an opened management port or disabled logging. That is how network settings are watched after they are set. It detects drift; the rules themselves come from NS-03 and NS-07."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.20",
+    "template_code": "NS-03",
+    "coverage": "partial",
+    "rationale": "Default deny firewall and security group rules, with an owner and purpose for each allow rule and a periodic review, control which connections the network permits. The documented network design and its zones come from NS-07, closed management ports from NS-08, and watching for risky configuration changes from LM-03."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.20",
+    "template_code": "NS-04",
+    "coverage": "partial",
+    "rationale": "Firewalls, routers, switches and wireless controllers are hardened to an approved baseline, their configurations are backed up on change, and drift and unsupported firmware are checked at least quarterly, which is how network devices are configured and kept secure. Filtering rules come from NS-03, the network design from NS-07 and cloud configuration change detection from LM-03."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.20",
+    "template_code": "NS-07",
+    "coverage": "partial",
+    "rationale": "The network diagram of segments and allowed paths, private subnets for data stores and default deny rules between zones give the documented network design this requirement starts from. Filtering at each boundary comes from NS-03, and detection of configuration changes comes from LM-03."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.20",
+    "template_code": "NS-08",
+    "coverage": "partial",
+    "rationale": "Blocking SSH, RDP and database ports from the internet and scanning the external surface for newly exposed management ports closes a common high-severity exposure. It covers one class of exposure only."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.21",
+    "template_code": "BC-08",
+    "coverage": "partial",
+    "rationale": "Network service providers, such as the cloud network, CDN, DNS or internet carrier, go through vendor due diligence scaled to criticality. Their assurance reports are read for exceptions, and critical providers are reviewed again at least yearly, including whether they met the security and service levels agreed in the contract. That checks the provider's ability to run the service securely. The security mechanisms themselves come from NS-02, NS-10 and NS-11."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.21",
+    "template_code": "NS-02",
+    "coverage": "partial",
+    "rationale": "Current TLS on all external endpoints, HSTS and encrypted internal traffic are the security mechanisms for services that carry data. The security and service levels agreed with network providers are checked under BC-08."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.21",
+    "template_code": "NS-10",
+    "coverage": "partial",
+    "rationale": "A web application firewall and DDoS protection in front of public services are network security services with monitored rules and alerts. The control does not cover other network services or their agreed service levels."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.21",
+    "template_code": "NS-11",
+    "coverage": "partial",
+    "rationale": "A VPN or zero-trust service with MFA, deciding access by identity and device posture and logging sessions, is the secure remote access service. The terms and service levels of network providers are checked under BC-08."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.22",
+    "template_code": "NS-07",
+    "coverage": "full",
+    "rationale": "Private subnets for data stores, default-deny rules between trust zones, production kept apart from development and corporate networks, and reachability testing are how services and systems are split into separate zones."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.23",
+    "template_code": "EP-07",
+    "coverage": "full",
+    "rationale": "Blocked website categories are defined in a filtering standard and applied on every managed device in the office or remote, exceptions need an approver and an end date, and coverage, blocked activity and exceptions are reviewed quarterly. That is how access to harmful websites is managed."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.24",
+    "template_code": "EP-02",
+    "coverage": "partial",
+    "rationale": "Full disk encryption is enforced on every endpoint through device management, with recovery keys held centrally. That applies the encryption rules to laptops and gives a recovery path for their keys. It covers endpoints only; production data stores are covered by NS-01, and key management by NS-06."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.24",
+    "template_code": "NS-01",
+    "coverage": "partial",
+    "rationale": "Encryption at rest on every data store, with checks that it is really enabled, sets the at-rest part of the cryptography rules. Transport encryption and key handling are covered by NS-02 and NS-06."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.24",
+    "template_code": "NS-02",
+    "coverage": "partial",
+    "rationale": "Current TLS on external endpoints and encrypted internal and database traffic set the in-transit part of the cryptography rules. Encryption at rest and key handling are covered by NS-01 and NS-06."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.24",
+    "template_code": "NS-06",
+    "coverage": "partial",
+    "rationale": "Keys held in a dedicated KMS or HSM, with use and administration separated, rotation and logged use, are the key management ISO names explicitly. Where encryption is used is covered by NS-01 and NS-02."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.25",
+    "template_code": "SD-02",
+    "coverage": "partial",
+    "rationale": "A test suite that must pass before merge shows the testing rule is applied to every change. It does not show design review or security requirements were followed."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.25",
+    "template_code": "SD-06",
+    "coverage": "partial",
+    "rationale": "Required peer review and branch protection show one of the lifecycle rules is applied to every change. It is one practice, not the whole lifecycle."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.25",
+    "template_code": "SD-10",
+    "coverage": "full",
+    "rationale": "A secure development policy covering design review, code review, testing, environment use, deployment, secure coding standards and secrets handling, reviewed yearly, is the set of rules this requirement asks for."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.26",
+    "template_code": "BC-08",
+    "coverage": "partial",
+    "rationale": "A supplier's security is assessed before its application is given access to systems or data, scaled to risk and with the decision recorded. That checks that bought software can meet the security needs set for it. Stating and approving those needs, for software built or bought, comes from SD-10."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.26",
+    "template_code": "SD-05",
+    "coverage": "partial",
+    "rationale": "Validating input at the boundary against schema, type and range is one application security requirement put into practice. It covers input handling only, not authentication, logging or other requirements."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.26",
+    "template_code": "SD-10",
+    "coverage": "partial",
+    "rationale": "The secure development policy requires the security requirements of each new application, major feature or acquired system, such as authentication, access, data classification, logging, privacy and legal needs, to be recorded and approved at design review before building or buying, and checked before release. Checking that a supplier can meet them comes from BC-08, and input validation, one such requirement put into practice, from SD-05."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.27",
+    "template_code": "SD-10",
+    "coverage": "full",
+    "rationale": "The secure development policy lists the design principles, such as least privilege, defense in depth, secure defaults and failing safely, that every new system and major change is built to, whether built in house or by a supplier. Design review is where they are applied, and the policy is reviewed yearly."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.28",
+    "template_code": "SD-03",
+    "coverage": "partial",
+    "rationale": "Dependency and image scanning that fails builds on new critical findings addresses weaknesses in reused code. It does not look at the code the team writes."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.28",
+    "template_code": "SD-05",
+    "coverage": "partial",
+    "rationale": "Validating input at the boundary against schema, type and range is one secure coding practice, and static analysis can check it. It covers input handling only, not the other weaknesses code can have."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.28",
+    "template_code": "SD-06",
+    "coverage": "partial",
+    "rationale": "Every change needs a review by someone other than its author, enforced through branch protection, and that review is where security weaknesses in the team's own code are caught before merge. The secure coding standard and static analysis that reviewers rely on come from SD-10."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.28",
+    "template_code": "SD-10",
+    "coverage": "partial",
+    "rationale": "The policy sets the secure coding standard and static code analysis in the pipeline, and trains everyone who writes or reviews code in them when they join and every year. Review of each change against the standard is shown by SD-06, and weaknesses in reused code are found by SD-03."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.28",
+    "template_code": "SD-11",
+    "coverage": "partial",
+    "rationale": "Secret scanning across history catches credentials committed to the code base, and rotation of anything exposed limits the harm. It addresses one insecure coding pattern."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.29",
+    "template_code": "GOV-16",
+    "coverage": "partial",
+    "rationale": "An independent penetration test each year and after major change tests the running system as an attacker would. It is periodic, so it does not replace tests on every release."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.29",
+    "template_code": "SD-02",
+    "coverage": "partial",
+    "rationale": "The merge gate where tests must pass is the place security tests run before release. Static analysis and checks against each application's security requirements are defined in SD-10, and dependency scanning and penetration testing come from SD-03 and GOV-16."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.29",
+    "template_code": "SD-03",
+    "coverage": "partial",
+    "rationale": "Dependency and image scanning in the pipeline, failing builds on new critical findings, is an automated security test of every release. It does not test the application's own logic or running behavior."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.29",
+    "template_code": "SD-10",
+    "coverage": "partial",
+    "rationale": "The secure development policy defines security testing in the lifecycle: it requires static code analysis in the pipeline, and it requires each application's approved security requirements to be checked before release, which brings acceptance against requirements into security testing. The merge gate, dependency scanning and the yearly penetration test come from SD-02, SD-03 and GOV-16."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.30",
+    "template_code": "BC-08",
+    "coverage": "partial",
+    "rationale": "A development supplier goes through due diligence scaled to risk before it gets access, repeated at least yearly when critical. Its contract sets security requirements, code ownership and audit rights, and its work is tested before it goes live. That is how outsourced developers are chosen, bound and checked. Review of delivered code comes from SD-06, and individual contract developers are managed through HR-03 and HR-02."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.30",
+    "template_code": "HR-02",
+    "coverage": "partial",
+    "rationale": "Each contract developer signs a confidentiality and intellectual property agreement before access is granted. That sets who owns the code they write and binds them to protect what they see. It covers individuals, not development firms, whose contract terms come from BC-08."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.30",
+    "template_code": "HR-03",
+    "coverage": "partial",
+    "rationale": "A contractor register with sponsor, scope of access and an end date, plus onboarding, offboarding and access reviews, controls individual contract developers. It does not cover code review or acceptance of delivered work."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.30",
+    "template_code": "SD-06",
+    "coverage": "partial",
+    "rationale": "Required peer review and branch protection apply to every contributor, contractors included, so delivered work is reviewed before it reaches production. It does not cover acceptance testing or ownership of the code."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.31",
+    "template_code": "SD-12",
+    "coverage": "full",
+    "rationale": "Distinct development, staging and production environments with separate credentials and accounts, controlled promotion between them and production access limited to those who need it, are this requirement's subject."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.32",
+    "template_code": "SD-01",
+    "coverage": "partial",
+    "rationale": "Every production change, including database migrations, configuration, infrastructure and software installed directly on servers, needs a recorded authorization and approval before deployment, with its expected impact and rollback stated on the change record and the deployment linked back to it. That is the impact check and authorization step of the change route. Testing comes from SD-02, peer review from SD-06, release from SD-13, the end to end record from SD-14 and the emergency route from SD-04."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.32",
+    "template_code": "SD-02",
+    "coverage": "partial",
+    "rationale": "Automated tests that must pass before merge are the testing step of a change. Approval, release and records come from the other change controls."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.32",
+    "template_code": "SD-04",
+    "coverage": "partial",
+    "rationale": "A defined emergency route, with reasons recorded at the time and after-the-fact review, keeps urgent changes inside change management. It covers the exception path only, not normal changes."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.32",
+    "template_code": "SD-06",
+    "coverage": "partial",
+    "rationale": "Peer review by someone other than the author is how most changes are approved before they merge, which makes it the approval step of the change route. Authorization of the change itself and its release are covered by SD-01 and SD-13."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.32",
+    "template_code": "SD-13",
+    "coverage": "partial",
+    "rationale": "Releasing only from the protected branch or a pipeline-built release, with approval and a record of what shipped, when and by whom, is the implementation step of a change. Planning and approval are covered by SD-01."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.32",
+    "template_code": "SD-14",
+    "coverage": "partial",
+    "rationale": "Linking each change from request through review and release to the deployment lets an auditor follow any sampled change end to end. It depends on the approvals and releases the other change controls produce."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.33",
+    "template_code": "DM-13",
+    "coverage": "full",
+    "rationale": "Populating lower environments with masked, synthetic or subset data, banning production copies in policy, scanning for stray production data and approving time-boxed exceptions is how test data is selected and protected."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.34",
+    "template_code": "GOV-16",
+    "coverage": "partial",
+    "rationale": "A penetration test is the main audit test run against live systems. Agreeing its scope, timing, test accounts and any disruptive tests with the system owner in writing before it starts keeps it from harming normal service. Access granted to auditors for other reviews is approved under IAM-01."
+  },
+  {
+    "requirement_key": "ISO27001:A.8.34",
+    "template_code": "IAM-01",
+    "coverage": "partial",
+    "rationale": "An auditor's or tester's access to a live system is requested with a justification and approved before it is created, like any other access, with privileged access approved by the system owner. That is how management agrees who may touch production for an audit, and at what level. The scope, timing and limits of the tests themselves are agreed under GOV-16."
+  }
+]

@@ -12,11 +12,9 @@ export type ConnectorSnapshot = {
   check?: { key: string; name: string; description?: string | null };
   collected_at: string;
   access?: string;
-  scope: {
-    listed: number;
-    checked: number;
-    excluded: { resource: string; reason: string | null; decided_by: string }[];
-  };
+  /** A connector reports the repositories it listed; Verity's built-in checks report the
+   * population each register was read over. */
+  scope: RepositoryScope | PopulationScope;
   results: {
     check: string | null;
     /** Absent on files filed before checks carried a name. */
@@ -29,15 +27,31 @@ export type ConnectorSnapshot = {
   }[];
 };
 
+export type RepositoryScope = {
+  listed: number;
+  checked: number;
+  excluded: { resource: string; reason: string | null; decided_by: string }[];
+};
+
+export type PopulationScope = { population: string[] };
+
+export function isPopulation(
+  scope: ConnectorSnapshot["scope"],
+): scope is PopulationScope {
+  return Array.isArray((scope as Partial<PopulationScope>).population);
+}
+
 /** The report of a file, or null when it is not one a connector filed. */
 export function parseSnapshot(text: string): ConnectorSnapshot | null {
   try {
-    const verity = (JSON.parse(text) as { verity?: Partial<ConnectorSnapshot> } | null)
-      ?.verity;
+    const verity = (
+      JSON.parse(text) as { verity?: Partial<ConnectorSnapshot> } | null
+    )?.verity;
     return verity &&
       Array.isArray(verity.results) &&
       verity.scope &&
-      Array.isArray(verity.scope.excluded) &&
+      (isPopulation(verity.scope) ||
+        Array.isArray((verity.scope as Partial<RepositoryScope>).excluded)) &&
       verity.connection
       ? (verity as ConnectorSnapshot)
       : null;

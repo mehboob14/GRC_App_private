@@ -1,0 +1,8 @@
+{
+  "code": "ISO27001",
+  "description": "The information security management system standard, 2022 edition: the management system requirements in clauses 4 to 10 and the 93 controls of Annex A, selected through a Statement of Applicability.",
+  "name": "ISO 27001",
+  "position": 200,
+  "scope_model": "applicability",
+  "version": "2022"
+}

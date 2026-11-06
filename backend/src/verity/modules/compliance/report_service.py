@@ -24,9 +24,9 @@ from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from verity.modules.compliance.readiness import control_ready
+from verity.modules.compliance.readiness import BUILT_IN_SOURCE, control_ready
 
-_FRAMEWORK_LABEL = {"SOC2": "SOC 2"}
+_FRAMEWORK_LABEL = {"SOC2": "SOC 2", "ISO27001": "ISO 27001"}
 
 _STATUS_LABEL = {
     "not_started": "Not started",
@@ -102,8 +102,12 @@ class ReportService:
         controls = await control_service.list_controls(
             session, tenant_id=tenant_id, include_disabled=True
         )
-        counts = await evidence_service.evidence_counts_by_control(session, tenant_id)
-        with_current = await evidence_service.control_ids_with_current_evidence(session, tenant_id)
+        counts = await evidence_service.evidence_counts_by_control(
+            session, tenant_id, exclude_source=BUILT_IN_SOURCE
+        )
+        with_current = await evidence_service.control_ids_with_current_evidence(
+            session, tenant_id, exclude_source=BUILT_IN_SOURCE
+        )
         automation = await connector_service.automation_statuses(session, tenant_id=tenant_id)
 
         rows: list[ReportRow] = []

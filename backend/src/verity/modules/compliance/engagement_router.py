@@ -17,6 +17,7 @@ from verity.core.deps import (
 )
 from verity.modules.audit.service import Membership
 from verity.modules.compliance.engagement_service import engagement_service
+from verity.modules.compliance.models import DEFAULT_FRAMEWORK
 from verity.modules.compliance.schemas import (
     CoverageOut,
     DashboardOut,
@@ -30,6 +31,10 @@ engagement_router = APIRouter(prefix="/engagement", tags=["engagement"])
 require_engagement_read = require("frameworks:read")
 require_engagement_manage = require("controls:manage")
 
+# The framework a read is about, by code. Omitted means SOC 2, so every client written
+# before a second framework existed keeps getting the answer it always did.
+FrameworkParam = Annotated[str, Query(alias="framework", max_length=40)]
+
 
 @engagement_router.get(
     "",
@@ -40,8 +45,11 @@ async def get_engagement(
     _principal: Annotated[Principal, Depends(require_engagement_read)],
     context: Annotated[TenantContext, Depends(get_tenant_context)],
     session: Annotated[AsyncSession, Depends(get_tenant_session)],
+    framework: FrameworkParam = DEFAULT_FRAMEWORK,
 ) -> EngagementOut | None:
-    engagement = await engagement_service.get(session, tenant_id=context.tenant_id)
+    engagement = await engagement_service.get(
+        session, tenant_id=context.tenant_id, framework_code=framework
+    )
     return EngagementOut.model_validate(engagement) if engagement else None
 
 
@@ -64,6 +72,9 @@ async def put_engagement(
         window_start=body.window_start,
         window_end=body.window_end,
         status=body.status,
+        scope_statement=body.scope_statement,
+        certification_body=body.certification_body,
+        audit_on=body.audit_on,
     )
     return EngagementOut.model_validate(engagement)
 
@@ -77,8 +88,11 @@ async def get_scope(
     _principal: Annotated[Principal, Depends(require_engagement_read)],
     context: Annotated[TenantContext, Depends(get_tenant_context)],
     session: Annotated[AsyncSession, Depends(get_tenant_session)],
+    framework: FrameworkParam = DEFAULT_FRAMEWORK,
 ) -> list[ScopeCriterionOut]:
-    criteria = await engagement_service.criteria_in_scope(session, tenant_id=context.tenant_id)
+    criteria = await engagement_service.criteria_in_scope(
+        session, tenant_id=context.tenant_id, framework_code=framework
+    )
     return [ScopeCriterionOut.model_validate(c) for c in criteria]
 
 
@@ -91,8 +105,11 @@ async def get_coverage(
     _principal: Annotated[Principal, Depends(require_engagement_read)],
     context: Annotated[TenantContext, Depends(get_tenant_context)],
     session: Annotated[AsyncSession, Depends(get_tenant_session)],
+    framework: FrameworkParam = DEFAULT_FRAMEWORK,
 ) -> CoverageOut:
-    report = await engagement_service.coverage(session, tenant_id=context.tenant_id)
+    report = await engagement_service.coverage(
+        session, tenant_id=context.tenant_id, framework_code=framework
+    )
     return CoverageOut.model_validate(report)
 
 
@@ -107,11 +124,13 @@ async def get_dashboard(
     session: Annotated[AsyncSession, Depends(get_tenant_session)],
     window_from: Annotated[date | None, Query(alias="from")] = None,
     window_to: Annotated[date | None, Query(alias="to")] = None,
+    framework: FrameworkParam = DEFAULT_FRAMEWORK,
 ) -> DashboardOut:
     report = await engagement_service.dashboard(
         session,
         tenant_id=context.tenant_id,
         window_from=window_from,
         window_to=window_to,
+        framework_code=framework,
     )
     return DashboardOut.model_validate(report)

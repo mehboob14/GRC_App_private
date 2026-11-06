@@ -24,6 +24,140 @@ so you start by editing reality rather than building a list from nothing.
 
 ![The framework list](images/frameworks-list.png)
 
+## ISO 27001
+
+### One library, shared controls
+
+Verity keeps one control library for every framework. A control that SOC 2 and ISO 27001
+both need is worked once: one owner, one status, one set of evidence. Each framework
+counts it towards its own requirements, so adding ISO 27001 never gives you a second copy
+of work you already do.
+
+Every workspace starts on SOC 2. ISO 27001 is listed on the **Frameworks** tab with
+**Add to workspace**. Adding it needs the **Manage controls** permission.
+
+Verity works to ISO/IEC 27001:2022. Certification bodies audit it together with its 2024
+amendment, which asks whether climate change is a relevant issue for your management
+system. The Context and Interested Parties Register template asks that question for you.
+
+### Adding ISO 27001
+
+![Adding ISO 27001, with the overlap shown before anything changes](images/iso-add-framework.png)
+
+**Add to workspace** opens a dialog that shows the overlap before anything changes:
+
+- the total number of requirements, 123,
+- how many are already answered by controls your workspace runs, fully or only in part
+  (the note under the figure gives each number; a requirement answered in part needs its
+  other mapped controls too),
+- how many need a new control,
+- how many new controls will be added, 17, and a list of them,
+- a table by section: Clause 4 Context to Clause 10 Improvement, then the Annex A
+  themes **Organizational**, **People**, **Physical** and **Technological**.
+
+Adding is one step, and it is written to the audit log. Nothing changes for SOC 2.
+
+### Switching between frameworks
+
+Once a workspace runs a second framework, a switcher appears at the top of
+**Frameworks**: **SOC 2 | ISO 27001**. Each framework has its own **Dashboard** and
+**Scope** tab. ISO 27001 also has an **Applicability** tab.
+
+### The Scope tab
+
+![The management system scope](images/iso-scope.png)
+
+For ISO 27001 the **Scope** tab is headed **Management system scope**. It holds:
+
+- the **scope statement**: what your management system covers,
+- the **audit name**,
+- the **audit type**: Initial certification, Surveillance audit or Recertification,
+- the **audit date**,
+- the **certification body**.
+
+**Save scope** keeps it. Below the form is a summary of your Statement of Applicability,
+with **Open the statement**.
+
+### The Statement of Applicability
+
+![The Statement of Applicability](images/iso-applicability.png)
+
+The **Applicability** tab is your Statement of Applicability. It has one row for each of
+the 123 requirements: the 93 Annex A controls, which you decide on, and the 30
+requirements of clauses 4 to 10, which always apply.
+
+| Each row shows | What it is |
+|---|---|
+| Reference and name | The requirement's identifier and Verity's summary of it |
+| Section | The clause or Annex A theme it belongs to |
+| Decision | **Applies** or **Excluded** |
+| Implementation | **Implemented**, **In progress**, **Not started**, **No control** or **Excluded** |
+| Controls | The controls behind the requirement |
+| Owner | The person who answers for the decision |
+| Decide | Opens the decision dialog |
+
+Nobody types **Implementation**. Verity works it out from the controls mapped to the
+requirement, so it moves when their status moves. A statement that says "Implemented"
+is only as true as the controls behind it.
+
+Use the **Section**, **Decision** and **Implementation** filters and the search box to
+narrow the list. **Export XLSX** downloads the statement as a spreadsheet for your
+auditor.
+
+### Deciding whether a requirement applies
+
+![The decision dialog](images/iso-decision.png)
+
+**Decide** on a row opens the decision dialog.
+
+- **Does it apply?** Choose **It applies** or **It does not apply**.
+- **The reason.** The box reads **Why it applies** or **Why it does not apply**. Write one
+  either way: ISO 27001 asks why each control is included as well as why any is left out.
+  A good reason names the risk, law or contract that makes the control necessary, or says
+  why none does. Verity will not exclude a requirement without a reason, and a built in
+  check fails any Annex A row, included or excluded, that has none. Clauses 4 to 10 cannot
+  be excluded, because they are the management system itself.
+- **Operated by.** **Our organization**, or **A supplier**, for example the hosting
+  provider. A control a supplier runs is still in your statement: you answer for it.
+- **Owner.** The person accountable for the decision.
+- **Mark as reviewed today.** Records today as the review date.
+
+> **A changed decision is an unreviewed decision.** If you change a decision without
+> ticking **Mark as reviewed today**, its review date is cleared. A Verity built in check
+> fails any Annex A decision not reviewed, with its reason, in the last 12 months. See
+> [Connections](11-connections.md).
+
+### Walkthrough: add ISO 27001 and decide what applies
+
+1. Go to **Frameworks** and open the **Frameworks** tab.
+2. On ISO 27001, choose **Add to workspace**.
+3. Read the overlap: how many requirements your controls already answer, how many need
+   a new control, and the 17 controls that will be added. Check the table by section.
+4. Add it. The switcher appears at the top of **Frameworks**.
+5. Switch to **ISO 27001** and open **Scope**. Write the scope statement, fill in the
+   audit details you know, and choose **Save scope**.
+6. Open **Applicability**. Use the **Section** filter to work one clause or theme at a
+   time.
+7. On each row choose **Decide**. Say whether it applies, write why, set who operates it
+   and who owns it, and tick **Mark as reviewed today**.
+8. Give each new control an owner, the same way as any other control.
+9. When every row is decided, **Export XLSX** gives you the statement to share with
+   your auditor.
+10. Treat the export as a controlled document. Your auditor will expect the statement to
+    carry a version, a date and management approval: upload the exported file to
+    **Policies and Documents** and send it through approval. If your risk treatment needs
+    controls that are not in Annex A, for example a regulator's rule you added as your
+    own control, ISO 27001 expects them in the statement too. Add them to the exported
+    file before it is approved.
+
+> **What Verity does and does not do.** Verity helps you prepare for certification. It
+> cannot certify you: only a certification body can. ISO 27001's text is copyrighted,
+> so Verity shows each requirement's identifier and its own summary, not the standard's
+> wording. Keep your own copy of the standard. Have a qualified consultant or your
+> internal auditor confirm the requirement to control mappings for your organisation
+> before you rely on them. Your certification body will assess what you run, but it
+> cannot advise you on how to design it.
+
 ## The controls library
 
 ![The controls register](images/controls-register.png)

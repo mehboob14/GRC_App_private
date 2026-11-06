@@ -180,7 +180,15 @@ function TemplateCard({
   checked: boolean;
   onToggle: () => void;
 }) {
-  const criteria = Object.values(template.satisfies).flat();
+  // One count per framework: "SOC 2 criteria" for SOC 2, "requirements" for the rest.
+  const frameworks = Object.entries(template.satisfies).filter(([, ids]) => ids.length > 0);
+  // Attribution: third-party text names its source and licence before anyone adopts it.
+  const origin =
+    template.source === "verity"
+      ? "Written by Verity"
+      : template.source
+        ? `Open source${template.license ? `, ${template.license}` : ""}`
+        : null;
   // company_name is filled in on creation, so it is not work for the reader.
   const toDecide = template.placeholders
     .filter((p) => p.key !== "company_name")
@@ -210,18 +218,19 @@ function TemplateCard({
             </span>
           ) : null}
           <span className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-caption text-text-subtle">
-            {criteria.length > 0 ? (
-              <span className="flex items-center gap-1">
+            {frameworks.map(([name, ids]) => (
+              <span key={name} className="flex items-center gap-1">
                 <Icon name="shield" className="size-3.5" aria-hidden />
-                {criteria.length} SOC 2 criteria
+                {ids.length} {name} {name === "SOC 2" ? "criteria" : "requirements"}
               </span>
-            ) : null}
+            ))}
             {toDecide > 0 ? (
               <span className="flex items-center gap-1 text-status-warning-text">
                 <Icon name="alert" className="size-3.5" aria-hidden />
                 {toDecide} to fill in
               </span>
             ) : null}
+            {origin ? <span title={template.source_url ?? undefined}>{origin}</span> : null}
           </span>
         </span>
       </label>

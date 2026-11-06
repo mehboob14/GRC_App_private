@@ -2,11 +2,11 @@
   "pack": "automation",
   "source": "Authored for Verity. Capabilities and providers follow section 8 of the signed specification; providers outside it are marked not_planned. Every check lists the evidence it collects, and every link from a check to a control says how much of the control it verifies and why. Platform checks (provider Verity, built in) follow appendix C of docs/product/control-framework-requirements.md and are planned until their runner ships.",
   "version": "2026.2",
-  "capabilities": 21,
-  "checks": 81,
-  "controls_mapped": 71,
+  "capabilities": 22,
+  "checks": 93,
+  "controls_mapped": 80,
   "sha256": {
-    "capabilities.json": "76468f11b18911466b52402cf598755d429ac4e67a2bc2b29fddff2377f38fe9",
-    "checks.json": "feb64b9b09b46e9b40251515c9a5d49a761eb94940f3f5d6df9b28ad9a4589fa"
+    "capabilities.json": "170b533d750513aa171bd2200cfef59cb30c18d78c8ecbccbeadafd237d5a6f0",
+    "checks.json": "0ceb15871a7dbf39dce1acbcd8a304890f668373079b406232a713b2c79e4f47"
   }
 }

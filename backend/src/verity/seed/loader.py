@@ -152,7 +152,15 @@ async def _load_framework(
     framework = (
         await session.execute(select(Framework).where(Framework.code == doc["code"]))
     ).scalar_one_or_none()
-    fields = {"name": doc["name"], "description": doc.get("description"), "built_in": True}
+    fields = {
+        "name": doc["name"],
+        "description": doc.get("description"),
+        "built_in": True,
+        # How scope is chosen, and the order frameworks are listed in. A pack that says
+        # neither is a SOC 2 style pack, so the first framework stays first.
+        "scope_model": doc.get("scope_model", "categories"),
+        "position": doc.get("position", 100),
+    }
     if framework is None:
         framework = Framework(id=uuid7(), code=doc["code"], **fields)
         session.add(framework)

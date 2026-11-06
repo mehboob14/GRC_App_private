@@ -24,6 +24,7 @@ from verity.modules.compliance.models import (
     Framework,
     FrameworkVersion,
     Requirement,
+    natural_key,
 )
 from verity.modules.compliance.repository import (
     ControlTemplateRepository,
@@ -51,6 +52,8 @@ class FrameworkView:
     description: str | None
     built_in: bool
     versions: list[FrameworkVersionView]
+    scope_model: str = "categories"
+    position: int = 100
 
     @classmethod
     def of(
@@ -62,6 +65,8 @@ class FrameworkView:
             name=framework.name,
             description=framework.description,
             built_in=framework.built_in,
+            scope_model=framework.scope_model,
+            position=framework.position,
             versions=[
                 FrameworkVersionView(
                     id=version.id,
@@ -162,7 +167,10 @@ class ComplianceService:
 
         requirements = await self._requirements.list_for_version(session, version.id)
         counts = await self._requirements.template_counts(session)
-        return [RequirementView(r, counts.get(r.id, 0)) for r in requirements]
+        return [
+            RequirementView(r, counts.get(r.id, 0))
+            for r in sorted(requirements, key=lambda r: natural_key(r.code))
+        ]
 
     async def list_templates(  # noqa: PLR0913 — one argument per query filter
         self,

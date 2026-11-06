@@ -702,7 +702,7 @@ def _invite_message(to_email: str, invitee_name: str, accept_url: str) -> Outbou
     subject = "You have been invited to a Verity workspace"
     text = (
         f"{greeting}\n\n"
-        "You have been invited to join a workspace on Verity, a SOC 2 "
+        "You have been invited to join a workspace on Verity, a "
         "compliance platform. Accept the invitation to set up your account.\n\n"
         f"{accept_url}\n\n"
         f"This link expires in {days} days and can be used once.\n\n"
@@ -712,7 +712,7 @@ def _invite_message(to_email: str, invitee_name: str, accept_url: str) -> Outbou
         heading="You have been invited to Verity",
         paragraphs=(
             _html_escape(greeting),
-            "You have been invited to join a workspace on Verity, a SOC 2 "
+            "You have been invited to join a workspace on Verity, a "
             "compliance platform. Accept the invitation to set up your account.",
         ),
         action=("Accept invitation", accept_url),
@@ -2082,6 +2082,14 @@ class IamService:
                 )
             )
         return views
+
+    async def guest_membership_ids(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID
+    ) -> set[uuid.UUID]:
+        """Members who hold access only through an engagement or a time boxed role (guest
+        auditors). Staff obligations, such as acknowledging the code of conduct, do not
+        apply to them."""
+        return await self._roles.engagement_scoped_membership_ids(session, tenant_id)
 
     async def invite_member(  # noqa: PLR0913 — the invite contract's fields, no more
         self,

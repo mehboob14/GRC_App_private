@@ -165,6 +165,11 @@ classmethod-decorators = ["sqlalchemy.orm.declared_attr", "declared_attr"]
     "E501",
     "ERA001",
 ]
+"src/verity/db/migrations/versions/20261016_1100_neutral_control_wording.py" = [
+    # Same reason as the control guidance rewrite: the before and after text of each
+    # control is embedded verbatim, so the migration stays a fixed snapshot.
+    "E501",
+]
 "src/verity/db/migrations/versions/20260913_1000_policy_template_summaries.py" = [
     # Same reason as the control guidance rewrite: the old and new template
     # summaries are embedded verbatim, including the upstream typographic quotes.
@@ -429,6 +434,9 @@ ignore_imports = [
     # reading check_results from here (AU-6). What the service does with its own
     # models is the connectors module's private business.
     "verity.modules.connectors.service -> verity.modules.connectors.models",
+    # Readiness reads automated results; it never runs the built-in checks, whose reach
+    # into every register is the connectors module's private business.
+    "verity.modules.connectors.service -> verity.modules.connectors.verity",
 ]
 forbidden_modules = [
     "verity.modules.ai.repository", "verity.modules.ai.models",
@@ -462,6 +470,8 @@ ignore_imports = [
     "verity.modules.audit.service -> verity.modules.audit.repository",
     "verity.modules.compliance.control_service -> verity.modules.compliance.models",
     "verity.modules.compliance.control_service -> verity.modules.iam.service",
+    "verity.modules.compliance.engagement_service -> verity.modules.compliance.models",
+    "verity.modules.compliance.framework_service -> verity.modules.compliance.models",
     "verity.modules.compliance.service -> verity.modules.compliance.models",
     "verity.modules.compliance.service -> verity.modules.compliance.repository",
     "verity.modules.documents.service -> verity.modules.compliance.service",
@@ -478,11 +488,17 @@ ignore_imports = [
     "verity.modules.iam.service -> verity.modules.iam.repository",
     "verity.modules.iam.service -> verity.modules.tenancy.service",
     "verity.modules.notifications.service -> verity.modules.notifications.models",
+    # The built-in checks (connectors/verity.py) read each register through its owning
+    # service; what risk and vendors do with their own models is their business.
+    "verity.modules.risk.scoring -> verity.modules.risk.models",
+    "verity.modules.risk.service -> verity.modules.risk.models",
     "verity.modules.tasks.service -> verity.modules.notifications.service",
     "verity.modules.tasks.service -> verity.modules.tasks.models",
     "verity.modules.tenancy.repository -> verity.modules.tenancy.models",
     "verity.modules.tenancy.service -> verity.modules.tenancy.models",
     "verity.modules.tenancy.service -> verity.modules.tenancy.repository",
+    "verity.modules.vendors.questionnaires -> verity.modules.vendors.models",
+    "verity.modules.vendors.service -> verity.modules.vendors.models",
     "verity.modules.vulnerabilities.service -> verity.modules.vulnerabilities.models",
 ]
 forbidden_modules = [

@@ -11,6 +11,10 @@ date. When the expiry passes, the thing reopens on its own.
 published document. The record of who signed, and when, is the evidence that a
 policy reached its audience.
 
+**Annex A.** The list of security controls in ISO 27001, grouped in four themes:
+Organizational, People, Physical and Technological. You decide which apply to you, and
+record why, in the Statement of Applicability.
+
 **Approval gate.** A lifecycle stage that will not clear until specific conditions
 are met. The vendor approval stage is one: open findings and unfinished earlier
 stages block it.
@@ -20,6 +24,11 @@ about: an application, a server, a dataset, a cloud resource, a business service
 
 **Audit log.** The append only record of every state changing action. Cannot be
 edited or deleted by anyone, including an administrator.
+
+**Built in checks.** The checks Verity runs every day on the records your workspace
+already keeps in Verity: assets, vulnerabilities, risks, vendors, documents, tasks,
+controls and the ISO 27001 statement. Always on, with no credential. Each run files its
+report as evidence on the controls it serves.
 
 **Check.** One automatic test a connected system or a Verity module runs against a control,
 for example "the default branch requires a review". Each check names what it collects, which
@@ -55,7 +64,7 @@ and a due date.
 **Finding (vulnerability).** A weakness on one of your assets at one location.
 
 **Framework.** A published set of criteria you are being measured against, for
-example SOC 2.
+example SOC 2 or ISO 27001.
 
 **Freshness.** How current a piece of evidence is, against the renewal date its type
 implies.
@@ -63,12 +72,31 @@ implies.
 **Group.** A team of people in the workspace, usable as an assignee, an approver or
 a campaign target.
 
+**Inherited control (operated by a supplier).** A control someone else runs for you,
+for example physical security at your hosting provider. In the Statement of
+Applicability it is marked as operated by **A supplier**. You still answer for it.
+
+**Internal audit.** Your own planned check, by people who do not audit their own work,
+that the management system meets your own rules and ISO 27001 and works in practice.
+ISO 27001 expects one at planned intervals, run to a programme, with the results reported
+to management. A built in check looks for one filed as evidence, by a person, in the last
+12 months.
+
 **Inventory hygiene.** The completeness score on an asset: five checks on the record
 plus a freshness clock on when a person last reviewed it.
+
+**ISMS (information security management system).** The policies, processes, people
+and records an organisation uses to run information security on purpose and improve it.
+It is what an ISO 27001 certificate covers.
 
 **KEV.** The Known Exploited Vulnerabilities catalogue published by CISA. A
 vulnerability on it is being exploited now, and Verity floors its priority
 accordingly.
+
+**Management review.** Top management's planned look at the management system: is it
+working, what has changed, what must improve. ISO 27001 expects one at planned intervals,
+with its outcome recorded. A built in check looks for one filed as evidence, by a person,
+in the last 12 months.
 
 **Membership.** A person's place in one workspace. All ownership and assignment in
 Verity points at a membership, never at a global user, so nobody can be attached to
@@ -105,6 +133,11 @@ with a reason.
 
 **Soon.** A badge marking a screen that is not built yet. Nothing behind one holds
 real data.
+
+**Statement of Applicability.** The ISO 27001 record of the controls you need, why each
+is included or left out, and whether each is implemented. In Verity it is the
+**Applicability** tab under Frameworks. It also lists clauses 4 to 10, which always
+apply, and who operates each control, and it exports as a spreadsheet.
 
 **Subprocessor.** A third party your vendor relies on. Your fourth party.
 

@@ -44,3 +44,13 @@ uv run --with markdown python scripts/build_policy_templates.py --source <clone>
 
 `markdown` is a build-time tool only and is deliberately not a project
 dependency — nothing converts markdown at runtime.
+
+## Templates written by Verity
+
+Fourteen templates in `document_templates.json` are not from the Openlane Policy Hub. They carry
+`"source": "verity"` and were written for Verity (2026-10-16): the ISMS scope statement, the context
+and interested parties register, security objectives, the risk assessment method, change
+management, document control, internal audit, management review, corrective action, acceptable use,
+remote working, competence and awareness, the security communication plan and cloud services
+security. They refer to ISO/IEC 27001, PCI DSS and SOC 2 requirements by identifier only and
+reproduce no text of those standards. The template picker shows them as written by Verity.

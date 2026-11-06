@@ -88,6 +88,21 @@ async def connect(body: ConnectWrite, context: _Ctx, session: _Db) -> Connection
 
 
 @connectors_router.post(
+    "/connections/built-in",
+    response_model=ConnectionOut,
+    dependencies=[Depends(require("connectors:manage"))],
+    summary="Make sure Verity's built in checks are on for this workspace",
+)
+async def ensure_built_in(context: _Ctx, session: _Db) -> ConnectionOut:
+    """Idempotent: the scheduler does the same for every workspace each hour. Run the
+    checks afterwards with ``POST /connections/{id}/runs``, once this has committed."""
+    view = await connector_service.ensure_built_in(
+        session, tenant_id=context.tenant_id, actor=_actor(context)
+    )
+    return ConnectionOut.model_validate(view)
+
+
+@connectors_router.post(
     "/connections/{connection_id}/disconnect",
     response_model=ConnectionOut,
     dependencies=[Depends(require("connectors:manage"))],

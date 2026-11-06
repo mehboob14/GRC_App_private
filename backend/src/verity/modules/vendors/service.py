@@ -1297,6 +1297,48 @@ def _attention_code(vendor: Vendor, today: date) -> str | None:  # noqa: PLR0911
     return None
 
 
+@dataclass(frozen=True, slots=True)
+class EngagementCheckFacts:
+    """One engagement as the built-in checks read it. ``last_review_completed_at`` is the
+    latest completed approval gate across every cycle: the event a reassessment treats
+    as "the review finished"."""
+
+    id: uuid.UUID
+    name: str
+    tier: str | None
+    status: str
+    last_review_completed_at: datetime | None
+
+
+@dataclass(frozen=True, slots=True)
+class DpaRecord:
+    """A data processing agreement on file, as a vendor document or as a contract."""
+
+    kind: str  # "document" or "contract"
+    id: uuid.UUID
+    title: str
+    status: str  # the document's collection status, or the contract's status
+    valid_until: date | None  # the document's valid_until, or the contract's end_date
+    evidence_attached: bool
+
+
+@dataclass(frozen=True, slots=True)
+class VendorCheckFacts:
+    """One vendor as Verity's built-in checks read it: plain data, owner names unresolved."""
+
+    id: uuid.UUID
+    name: str
+    lifecycle_status: str
+    tier: str | None
+    business_owner_membership_id: uuid.UUID | None
+    stores_pii: bool
+    data_types_in_scope: tuple[str, ...]
+    data_classification: str | None
+    next_reassessment_on: date | None
+    engagements: tuple[EngagementCheckFacts, ...]
+    dpas: tuple[DpaRecord, ...]
+
+
 class VendorService:
     def __init__(self, audit: AuditService | None = None) -> None:
         self._audit = audit or audit_service
@@ -1385,6 +1427,102 @@ class VendorService:
         vendor.business_owner_membership_id = data.business_owner_membership_id
         vendor.security_owner_membership_id = data.security_owner_membership_id
         vendor.relationship_owner_membership_id = data.relationship_owner_membership_id
+
+    async def check_facts(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID
+    ) -> tuple[list[VendorCheckFacts], dict[str, int]]:
+        """Every vendor with what the built-in checks judge, and the cadence in days per tier.
+
+        A handful of reads, no N+1 and no permission or object scope: the caller is the
+        check runner inside a tenant bound session. Sorted by name for a stable digest.
+        """
+        vendors = list(
+            (
+                await session.execute(
+                    select(Vendor)
+                    .where(Vendor.tenant_id == tenant_id)
+                    .order_by(Vendor.name, Vendor.id)
+                )
+            ).scalars()
+        )
+        cadence = dict((await self._resolved_policy(session, tenant_id)).cadence_days)
+        if not vendors:
+            return [], cadence
+        engagements = await self._engagements_of(session, tenant_id, *[v.id for v in vendors])
+        reviewed: dict[uuid.UUID, datetime | None] = {  # noqa: C416 — dict() would read a Result as a mapping
+            key: value
+            for key, value in (
+                await session.execute(
+                    select(VendorStage.engagement_id, func.max(VendorStage.exited_at))
+                    .where(
+                        VendorStage.tenant_id == tenant_id,
+                        VendorStage.stage == "approval",
+                        VendorStage.status == "complete",
+                    )
+                    .group_by(VendorStage.engagement_id)
+                )
+            ).tuples()
+        }
+        dpas: dict[uuid.UUID, list[DpaRecord]] = {}
+        for doc in (
+            await session.execute(
+                select(VendorDocument).where(
+                    VendorDocument.tenant_id == tenant_id, VendorDocument.doc_type == "dpa"
+                )
+            )
+        ).scalars():
+            dpas.setdefault(doc.vendor_id, []).append(
+                DpaRecord(
+                    kind="document",
+                    id=doc.id,
+                    title=doc.title,
+                    status=doc.collection_status,
+                    valid_until=doc.valid_until,
+                    evidence_attached=doc.evidence_id is not None or bool(doc.file_ref),
+                )
+            )
+        for contract in (
+            await session.execute(
+                select(VendorContract).where(
+                    VendorContract.tenant_id == tenant_id, VendorContract.contract_type == "dpa"
+                )
+            )
+        ).scalars():
+            dpas.setdefault(contract.vendor_id, []).append(
+                DpaRecord(
+                    kind="contract",
+                    id=contract.id,
+                    title=contract.title,
+                    status=contract.status,
+                    valid_until=contract.end_date,
+                    evidence_attached=contract.evidence_id is not None or bool(contract.file_ref),
+                )
+            )
+        return [
+            VendorCheckFacts(
+                id=v.id,
+                name=v.name,
+                lifecycle_status=v.lifecycle_status,
+                tier=v.tier,
+                business_owner_membership_id=v.business_owner_membership_id,
+                stores_pii=bool(v.stores_pii),
+                data_types_in_scope=tuple(str(x) for x in (v.data_types_in_scope or [])),
+                data_classification=v.data_classification,
+                next_reassessment_on=v.next_reassessment_on,
+                engagements=tuple(
+                    EngagementCheckFacts(
+                        id=e.id,
+                        name=e.name,
+                        tier=e.tier,
+                        status=e.status,
+                        last_review_completed_at=reviewed.get(e.id),
+                    )
+                    for e in engagements.get(v.id, [])
+                ),
+                dpas=tuple(dpas.get(v.id, [])),
+            )
+            for v in vendors
+        ], cadence
 
     async def _engagements_of(
         self, session: AsyncSession, tenant_id: uuid.UUID, *vendor_ids: uuid.UUID

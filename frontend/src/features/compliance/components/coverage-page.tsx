@@ -13,6 +13,7 @@ import {
   TR,
 } from "@/components/ui";
 import { engagementApi } from "@/lib/api/endpoints";
+import { frameworkSearch, useFrameworkCode } from "../use-frameworks";
 import { describeError } from "@/lib/api/describe-error";
 import { useAuth } from "@/lib/auth/auth-context";
 import { cn } from "@/lib/cn";
@@ -161,14 +162,15 @@ function GapSection<T>({
 export function CoveragePage() {
   const { principal } = useAuth();
   const tenantId = principal?.tenant_id;
+  const framework = useFrameworkCode();
 
   const engagementQuery = useQuery({
-    queryKey: ["engagement", tenantId],
-    queryFn: () => engagementApi.get(),
+    queryKey: ["engagement", tenantId, framework],
+    queryFn: () => engagementApi.get(framework),
   });
   const coverageQuery = useQuery({
-    queryKey: ["engagement-coverage", tenantId],
-    queryFn: () => engagementApi.coverage(),
+    queryKey: ["engagement-coverage", tenantId, framework],
+    queryFn: () => engagementApi.coverage(framework),
   });
 
   if (engagementQuery.isLoading || coverageQuery.isLoading) {
@@ -208,7 +210,7 @@ export function CoveragePage() {
   // Coverage is measured against the criteria an engagement elects. Without one
   // there is no denominator, and inventing 61 would measure a workspace against
   // criteria it has not taken on.
-  if (!engagementQuery.data) {
+  if (!engagementQuery.data && (coverageQuery.data?.criteria_total ?? 0) === 0) {
     return (
       <EmptyState
         icon="shield"
@@ -216,7 +218,7 @@ export function CoveragePage() {
         description="Coverage is measured against the criteria your engagement covers. Choose an audit type and its Trust Services categories, and this page fills in."
         action={
           <Link
-            to="/frameworks/scope"
+            to={`/frameworks/scope${frameworkSearch(framework)}`}
             className="text-body-md font-semibold text-text-link"
           >
             Go to Scope

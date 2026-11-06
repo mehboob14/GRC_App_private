@@ -30,6 +30,10 @@ BLOCKING_AUTOMATION: Final = frozenset({"failing", "error", "stale"})
 
 NOT_APPLICABLE: Final = "not_applicable"
 
+BUILT_IN_SOURCE: Final = "verity"
+"""The ``source`` of evidence Verity's built-in checks file. Readiness never counts it as the
+evidence a control rests on: a check can take readiness away, never grant it."""
+
 
 def control_ready(*, status: str, has_current_evidence: bool, automation: str | None) -> bool:
     """Implemented, evidenced with something that still counts, and not contradicted."""

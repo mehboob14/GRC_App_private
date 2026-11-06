@@ -38,7 +38,7 @@ Requirement IDs refer to `docs/product/control-framework-requirements.md`.
       review rather than a defect: A1.2, CC1.1, CC1.3, CC1.4, CC1.5, CC2.1, CC2.2, CC5.1,
       CC5.2, CC6.1, CC6.4, CC6.5, CC6.7, CC9.1, P3.2, P6.1, P6.4, P6.5, P6.7, P7.1, PI1.1 to
       PI1.5.
-- [ ] A6 Probo MIT attribution notice in the repository. (CF-10)
+- [x] A6 Probo MIT attribution notice in the repository. (CF-10) Built: `THIRD_PARTY_NOTICES.md`.
 - [ ] A7 Crosswalk CSV export per framework. (CF-9)
 
 ## B. Automation catalogue in the product (small, before Phase 2)
@@ -122,12 +122,27 @@ Requirement IDs refer to `docs/product/control-framework-requirements.md`.
 
 ## E. Frameworks (Phase 3, signed for ISO 27001, HIPAA, GDPR)
 
-- [ ] E1 `tenant_frameworks`; one engagement per framework version. (FW-10)
-- [ ] E2 Add framework flow with the overlap preview; adoption of new controls in one
+- [x] E1 `tenant_frameworks`; one engagement per framework version. (FW-10)
+      Built (c5d8a2f7e91b): `tenant_frameworks` (SOC 2 written for every existing workspace, signup
+      writes it from now on), `engagements` one per framework version with certification audit
+      types, scope statement, certification body and audit date, `frameworks.scope_model` and
+      `position`. Scope reuses `requirements.trust_services_category` as the scope group and
+      `is_always_in_scope` as "cannot be excluded", so no `scope_group` column was added. Every read
+      under `/engagement` takes `?framework=CODE` and answers for SOC 2 without it.
+- [x] E2 Add framework flow with the overlap preview; adoption of new controls in one
       transaction. (FW-6)
-- [ ] E3 ISO/IEC 27001:2022 pack: clauses 4 to 10 and Annex A, review of the appendix B draft
+      Built: `GET /tenant-frameworks`, `GET /frameworks/{id}/overlap`, `POST /tenant-frameworks`.
+      Adoption is per pack (`instantiate_library` no longer adopts every loaded pack) and adding a
+      framework links the controls already running (`link_framework`). The Frameworks tab shows
+      the preview and adds; a switch beside the title moves every tab between frameworks.
+- [x] E3 ISO/IEC 27001:2022 pack: clauses 4 to 10 and Annex A, review of the appendix B draft
       mappings, new management system controls, Statement of Applicability with
       `requirement_applicability` and XLSX export. (FW-4, FW-5, FW-7)
+      Built: pack `iso27001` (123 requirements in Verity's own words, 16 new controls, the
+      crosswalk), the Statement of Applicability (decide, reason, operated by, owner, reviewed,
+      XLSX), per framework dashboard and coverage, the Applicability tab. Implementation status
+      in the statement is read from the controls, not stored. Open: the second reviewer (A5), ISO
+      document templates, platform tests for the management system controls (need C2).
 - [ ] E4 HIPAA Security Rule pack (full text) with required and addressable specifications.
       (FW-8)
 - [ ] E5 GDPR pack (articles relevant to controllers and processors) with the privacy controls.

@@ -1,6 +1,8 @@
 {
   "counts": {
-    "document_templates": 15
+    "document_templates": 30,
+    "openlane_policy_hub": 15,
+    "verity_authored": 15
   },
   "source": {
     "repository": "https://github.com/theopenlane/policy-hub",
@@ -12,7 +14,13 @@
   "generated": [
     {
       "path": "document_templates.json",
-      "sha256": "9b0e021816f55c242bc6c5a1c6c2394a89535395f5e7e89501f138b2115971cd"
+      "sha256": "aeb94f203f2da2e8f2cdd3161a5100f04983a7830378ad25bdfa78357aeec7c8"
     }
-  ]
+  ],
+  "authored": {
+    "author": "Verity",
+    "license": "Verity",
+    "templates": 15,
+    "note": "Written by Verity on 2026-10-16 for the ISO 27001 management system and the Phase 1 change management, acceptable use and operating procedure gaps, and reviewed by the compliance review pass (ISO 27001, PCI DSS and banking perspective) before shipping. No text of ISO/IEC 27001, 27002, PCI DSS or the AICPA criteria is reproduced: requirements are referred to by identifier only. Rows carry source 'verity' and are kept by scripts/build_policy_templates.py when the Openlane templates are rebuilt."
+  }
 }

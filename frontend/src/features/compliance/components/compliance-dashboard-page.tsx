@@ -20,9 +20,19 @@ import { useAuth } from "@/lib/auth/auth-context";
 import { cn } from "@/lib/cn";
 import type {
   ActivityItem,
+  AuditType,
   EvidenceFreshness,
   TimelinePoint,
 } from "@/lib/api/types";
+import { frameworkSearch, useFrameworkCode } from "../use-frameworks";
+
+const AUDIT_TYPE_LABEL: Record<AuditType, string> = {
+  type_1: "Type I",
+  type_2: "Type II",
+  initial_certification: "Initial certification",
+  surveillance: "Surveillance",
+  recertification: "Recertification",
+};
 
 /**
  * The compliance dashboard — one honest read across frameworks, controls and
@@ -419,10 +429,11 @@ export function ComplianceDashboardPage() {
   const { toast } = useToast();
 
   const [range, setRange] = useState<{ from?: string; to?: string }>({});
+  const framework = useFrameworkCode();
 
   const query = useQuery({
-    queryKey: ["compliance-dashboard", tenantId, range.from, range.to],
-    queryFn: () => engagementApi.dashboard(range),
+    queryKey: ["compliance-dashboard", tenantId, range.from, range.to, framework],
+    queryFn: () => engagementApi.dashboard(range, framework),
   });
   const data = query.data;
 
@@ -463,10 +474,14 @@ export function ComplianceDashboardPage() {
       <EmptyState
         icon="shield"
         title="Set your audit scope first"
-        description="The dashboard measures your workspace against the criteria your engagement covers. Choose an audit type and its Trust Services categories, and this fills in."
+        description={
+          data.scope_model === "applicability"
+            ? "The dashboard measures your workspace against the requirements of this framework. Add it to your workspace and describe its scope, and this fills in."
+            : "The dashboard measures your workspace against the criteria your engagement covers. Choose an audit type and its Trust Services categories, and this fills in."
+        }
         action={
           <Link
-            to="/frameworks/scope"
+            to={`/frameworks/scope${frameworkSearch(framework)}`}
             className="text-body-md font-semibold text-text-link"
           >
             Go to Scope
@@ -476,12 +491,7 @@ export function ComplianceDashboardPage() {
     );
   }
 
-  const auditTypeLabel =
-    data.audit_type === "type_2"
-      ? "Type II"
-      : data.audit_type === "type_1"
-        ? "Type I"
-        : "";
+  const auditTypeLabel = data.audit_type ? (AUDIT_TYPE_LABEL[data.audit_type as AuditType] ?? "") : "";
   const categories = data.by_category.map((c) => c.category);
   const total = data.controls_total;
   const remaining = Math.max(
@@ -526,13 +536,19 @@ export function ComplianceDashboardPage() {
                 ) : null}
               </p>
               <p className="mt-0.5 text-body-sm text-text-subtle">
-                {categories.length > 0 ? categories.join(" · ") : "No scope set"}
+                {data.scope_model === "applicability"
+                  ? "Management system and Annex A controls"
+                  : categories.length > 0
+                    ? categories.join(" · ")
+                    : "No scope set"}
               </p>
               <div className="mt-4 flex gap-6">
                 {[
                   ["In scope", data.criteria_total],
                   ["Ready", data.controls_ready],
                   ["Evidence", data.evidence_total],
+                  // Controls that also answer another framework: worked once, counted in both.
+                  ...(data.controls_shared > 0 ? [["Shared", data.controls_shared]] : []),
                 ].map(([label, value]) => (
                   <div key={label}>
                     <p className="font-display text-numeral-sm tabular text-text-primary">

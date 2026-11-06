@@ -161,6 +161,8 @@ class TestOut(_Response):
     capabilities: list[str]
     status: str
     results: list[ResultOut]
+    #: How many results the last run left; ``results`` holds the first of them, failures first.
+    results_total: int = 0
     counts: dict[str, int]
     last_run_at: datetime | None
     rationale: str | None = None

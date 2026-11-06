@@ -1,7 +1,12 @@
 import { useMemo } from "react";
 import { Icon, type IconName } from "@/components/ui";
 import { cn } from "@/lib/cn";
-import type { ConnectorSnapshot, SnapshotOutcome } from "./connector-snapshot";
+import { PROVIDER_NAMES } from "../tokens";
+import {
+  type ConnectorSnapshot,
+  isPopulation,
+  type SnapshotOutcome,
+} from "./connector-snapshot";
 
 /**
  * A file a connector filed as evidence, read as a report.
@@ -17,7 +22,7 @@ import type { ConnectorSnapshot, SnapshotOutcome } from "./connector-snapshot";
 
 type Outcome = SnapshotOutcome;
 
-const PROVIDER: Record<string, string> = { github: "GitHub" };
+const PROVIDER = PROVIDER_NAMES;
 
 const OUTCOME: Record<Outcome, { icon: IconName; className: string }> = {
   pass: { icon: "check", className: "text-status-success-text" },
@@ -92,10 +97,10 @@ function Findings({ rows }: { rows: Row[] }) {
     <div className="space-y-2">
       {offered.length > 0 ? (
         <ul className="divide-y divide-border">
-          {offered.map((row) => {
+          {offered.map((row, i) => {
             const mark = OUTCOME[row.outcome];
             return (
-              <li key={row.resource} className="flex items-start gap-2.5 py-2">
+              <li key={`${row.resource}:${i}`} className="flex items-start gap-2.5 py-2">
                 <Icon
                   name={mark.icon}
                   className={cn("mt-0.5 size-4 shrink-0", mark.className)}
@@ -106,7 +111,9 @@ function Findings({ rows }: { rows: Row[] }) {
                     {row.resource}
                   </span>
                   {row.summary ? (
-                    <span className="block text-caption text-text-secondary">{row.summary}</span>
+                    <span className="block text-caption text-text-secondary">
+                      {row.summary}
+                    </span>
                   ) : null}
                 </span>
               </li>
@@ -128,7 +135,8 @@ function Findings({ rows }: { rows: Row[] }) {
 function Counts({ rows }: { rows: Row[] }) {
   const offered = rows.filter((row) => !notOffered(row));
   const limited = rows.filter(notOffered).length;
-  const count = (outcome: Outcome) => offered.filter((row) => row.outcome === outcome).length;
+  const count = (outcome: Outcome) =>
+    offered.filter((row) => row.outcome === outcome).length;
   return (
     <span className="flex flex-wrap gap-x-3 text-caption tabular">
       {count("pass") > 0 ? (
@@ -138,13 +146,19 @@ function Counts({ rows }: { rows: Row[] }) {
         <span className="text-status-danger-text">{count("fail")} failed</span>
       ) : null}
       {count("error") > 0 ? (
-        <span className="text-status-warning-text">{count("error")} not checked</span>
+        <span className="text-status-warning-text">
+          {count("error")} not checked
+        </span>
       ) : null}
       {limited > 0 ? (
-        <span className="text-status-warning-text">{limited} not offered on the plan</span>
+        <span className="text-status-warning-text">
+          {limited} not offered on the plan
+        </span>
       ) : null}
       {count("not_applicable") > 0 ? (
-        <span className="text-text-subtle">{count("not_applicable")} not applicable</span>
+        <span className="text-text-subtle">
+          {count("not_applicable")} not applicable
+        </span>
       ) : null}
     </span>
   );
@@ -153,13 +167,16 @@ function Counts({ rows }: { rows: Row[] }) {
 /** One check of an older file that holds several: its name and counts, its findings inside. */
 function Check({ name, rows }: { name: string; rows: Row[] }) {
   const worried = rows.some(
-    (row) => !notOffered(row) && (row.outcome === "fail" || row.outcome === "error"),
+    (row) =>
+      !notOffered(row) && (row.outcome === "fail" || row.outcome === "error"),
   );
   return (
     <details className="group rounded-md border border-border" open={worried}>
       <summary className="flex cursor-pointer items-start gap-3 px-3 py-2.5">
         <span className="min-w-0 flex-1">
-          <span className="block text-body-md font-semibold text-text-primary">{name}</span>
+          <span className="block text-body-md font-semibold text-text-primary">
+            {name}
+          </span>
           <span className="mt-0.5 block">
             <Counts rows={rows} />
           </span>
@@ -205,12 +222,12 @@ export function ConnectorReport({
   }, [results]);
   const leftOut = useMemo(() => {
     const byReason = new Map<string, string[]>();
-    for (const entry of scope.excluded) {
+    for (const entry of isPopulation(scope) ? [] : scope.excluded) {
       const reason = entry.reason?.trim() || "No reason recorded";
       byReason.set(reason, [...(byReason.get(reason) ?? []), entry.resource]);
     }
     return [...byReason];
-  }, [scope.excluded]);
+  }, [scope]);
   const provider = PROVIDER[connection.provider] ?? connection.provider;
   const collected = new Date(snapshot.collected_at);
   const when = Number.isNaN(collected.getTime())
@@ -239,13 +256,23 @@ export function ConnectorReport({
           {snapshot.access ? `, ${snapshot.access}` : ""}.
         </p>
         {check?.description ? (
-          <p className="mt-1.5 text-body-sm text-text-secondary">{check.description}</p>
+          <p className="mt-1.5 text-body-sm text-text-secondary">
+            {check.description}
+          </p>
         ) : null}
       </header>
 
       <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Tile label="Passed" value={tally.pass} tone="text-status-success-text" />
-        <Tile label="Failed" value={tally.fail} tone="text-status-danger-text" />
+        <Tile
+          label="Passed"
+          value={tally.pass}
+          tone="text-status-success-text"
+        />
+        <Tile
+          label="Failed"
+          value={tally.fail}
+          tone="text-status-danger-text"
+        />
         <Tile
           label="Not offered on the plan"
           value={tally.plan}
@@ -260,11 +287,24 @@ export function ConnectorReport({
 
       <section>
         <h3 className="type-overline mb-1">What was checked</h3>
-        <p className="text-body-sm text-text-secondary">
-          <span className="font-semibold text-text-primary">{scope.checked}</span> of{" "}
-          {scope.listed} repositories
-          {scope.excluded.length > 0 ? `, ${scope.excluded.length} left out` : ""}.
-        </p>
+        {isPopulation(scope) ? (
+          scope.population.map((line) => (
+            <p key={line} className="text-body-sm text-text-secondary">
+              {line}
+            </p>
+          ))
+        ) : (
+          <p className="text-body-sm text-text-secondary">
+            <span className="font-semibold text-text-primary">
+              {scope.checked}
+            </span>{" "}
+            of {scope.listed} repositories
+            {scope.excluded.length > 0
+              ? `, ${scope.excluded.length} left out`
+              : ""}
+            .
+          </p>
+        )}
         {leftOut.length > 0 ? (
           <div className="mt-2 space-y-1.5">
             {leftOut.map(([reason, names]) => (

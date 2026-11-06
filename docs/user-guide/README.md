@@ -26,11 +26,13 @@ step by step, with a picture of the screen you will be looking at.
 2. [Finding your way around](02-finding-your-way-around.md). The shape of every
    screen: navigation, registers, detail pages, filters, the notification bell.
 3. [Frameworks and controls](03-frameworks-and-controls.md). Your control library,
-   who owns what, scope, and how readiness is measured.
+   who owns what, scope, how readiness is measured, and adding ISO 27001 with its
+   Statement of Applicability.
 4. [Evidence](04-evidence.md). Collecting proof, mapping it to controls, keeping it
    fresh, and the review cycle.
-5. [Policies and documents](05-policies-and-documents.md). Drafting from a template,
-   the editor, approval tiers, publishing, and acknowledgement campaigns.
+5. [Policies and documents](05-policies-and-documents.md). The 30 templates and
+   drafting from one, the editor, approval tiers, publishing, and acknowledgement
+   campaigns.
 6. [Tasks](06-tasks.md). Work assignment, due dates, service levels, approvals and
    corrective actions.
 7. [Risks](07-risks.md). Registers, scoring, treatment, acceptance and the library.
@@ -40,7 +42,8 @@ step by step, with a picture of the screen you will be looking at.
    inventory hygiene and import.
 10. [Vulnerabilities](10-vulnerabilities.md). Importing scanner output, priority,
     remediation windows, plans and exceptions.
-11. [Connections](11-connections.md). Connecting a system so checks run on their own.
+11. [Connections](11-connections.md). Verity's built in checks on your own records,
+    and connecting a system so checks run on their own.
 12. [Settings and administration](12-settings-and-administration.md). People, roles,
     groups, security settings, custom fields and the audit log.
 13. [Glossary](13-glossary.md). The words this platform uses and what they mean here.

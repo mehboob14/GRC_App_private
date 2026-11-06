@@ -166,6 +166,57 @@ class Person:
     name: str
 
 
+#: Risk events that record an assessment: identification (created, imported, adopted,
+#: promoted), analysis (scored) or a review confirming the scores (reviewed).
+ASSESSMENT_EVENT_KINDS: Final = ("created", "imported", "adopted", "promoted", "scored", "reviewed")
+
+
+@dataclass(frozen=True, slots=True)
+class RiskCheckFact:
+    """One live risk as Verity's built-in checks read it, judged on its own register.
+
+    ``effective_score`` and ``effective_band`` prefer the residual values, as the
+    register does; ``last_assessed_at`` is the latest assessment event that carried a
+    score; the acceptance fields describe the one pending or active acceptance, if any.
+    """
+
+    risk_id: uuid.UUID
+    code: str
+    title: str
+    status: str
+    treatment: str | None
+    owner_membership_id: uuid.UUID | None
+    inherent_score: int | None
+    effective_score: int | None
+    effective_band: str | None
+    appetite_status: str | None
+    control_count: int
+    attention: tuple[str, ...]
+    next_review_on: date | None
+    last_reviewed_at: datetime | None
+    last_assessed_at: datetime | None
+    acceptance_id: uuid.UUID | None
+    acceptance_status: str | None
+    acceptance_expires_on: date | None
+    acceptance_approver_membership_id: uuid.UUID | None
+
+
+@dataclass(frozen=True, slots=True)
+class RegisterCheckFacts:
+    """A register and its live (not closed) risks, for the built-in checks."""
+
+    register_id: uuid.UUID
+    name: str
+    status: str
+    is_default: bool
+    review_cadence_days: int
+    #: The key of the register's lowest severity band, the floor used when a risk's
+    #: category has no appetite set.
+    lowest_band: str | None
+    closed_count: int
+    risks: tuple[RiskCheckFact, ...]
+
+
 @dataclass(frozen=True, slots=True)
 class RiskView:
     id: uuid.UUID
@@ -1813,6 +1864,114 @@ class RiskService:
             )
             for r in risks
         ]
+
+    async def check_facts(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID
+    ) -> list[RegisterCheckFacts]:
+        """Every register with its live risks, for Verity's built-in checks. Read only.
+
+        Never calls ``list_registers``, which creates a default register when there is
+        none. Flags, bands and appetite come from ``_views`` unchanged, so a check never
+        disagrees with the register page. No permission or object scope: the caller is
+        the check runner inside a tenant bound session.
+        """
+        registers = list(
+            (
+                await session.execute(
+                    select(RiskRegister)
+                    .where(RiskRegister.tenant_id == tenant_id)
+                    .order_by(RiskRegister.name, RiskRegister.id)
+                )
+            ).scalars()
+        )
+        if not registers:
+            return []
+        assessed: dict[uuid.UUID, datetime] = {  # noqa: C416 — dict() would read a Result as a mapping
+            key: value
+            for key, value in (
+                await session.execute(
+                    select(RiskEvent.risk_id, func.max(RiskEvent.created_at))
+                    .where(
+                        RiskEvent.tenant_id == tenant_id,
+                        RiskEvent.kind.in_(ASSESSMENT_EVENT_KINDS),
+                        RiskEvent.inherent_score.is_not(None),
+                    )
+                    .group_by(RiskEvent.risk_id)
+                )
+            ).tuples()
+        }
+        acceptances = {
+            row.risk_id: row
+            for row in (
+                await session.execute(
+                    select(RiskAcceptance).where(
+                        RiskAcceptance.tenant_id == tenant_id,
+                        RiskAcceptance.status.in_(("pending", "active")),
+                    )
+                )
+            ).scalars()
+        }
+        out: list[RegisterCheckFacts] = []
+        for register in registers:
+            risks = list(
+                (
+                    await session.execute(
+                        select(Risk)
+                        .where(Risk.tenant_id == tenant_id, Risk.register_id == register.id)
+                        .order_by(Risk.code)
+                    )
+                ).scalars()
+            )
+            live = [r for r in risks if r.status != "closed"]
+            views = {v.id: v for v in await self._views(session, tenant_id, register, live)}
+            facts: list[RiskCheckFact] = []
+            for risk in live:
+                view = views[risk.id]
+                acceptance = acceptances.get(risk.id)
+                facts.append(
+                    RiskCheckFact(
+                        risk_id=risk.id,
+                        code=risk.code,
+                        title=risk.title,
+                        status=risk.status,
+                        treatment=risk.treatment,
+                        owner_membership_id=risk.owner_membership_id,
+                        inherent_score=risk.inherent_score,
+                        effective_score=risk.residual_score
+                        if risk.residual_score is not None
+                        else risk.inherent_score,
+                        effective_band=view.residual_band or view.inherent_band,
+                        appetite_status=view.appetite_status,
+                        control_count=view.control_count,
+                        attention=tuple(view.attention),
+                        next_review_on=risk.next_review_on,
+                        last_reviewed_at=risk.last_reviewed_at,
+                        last_assessed_at=assessed.get(risk.id),
+                        acceptance_id=acceptance.id if acceptance else None,
+                        acceptance_status=acceptance.status if acceptance else None,
+                        acceptance_expires_on=acceptance.expires_on if acceptance else None,
+                        acceptance_approver_membership_id=acceptance.approver_membership_id
+                        if acceptance
+                        else None,
+                    )
+                )
+            out.append(
+                RegisterCheckFacts(
+                    register_id=register.id,
+                    name=register.name,
+                    status=register.status,
+                    is_default=register.is_default,
+                    review_cadence_days=register.review_cadence_days,
+                    lowest_band=min(
+                        (band for band in register.severity_bands or [] if "key" in band),
+                        key=lambda band: int(band.get("min_score", 0)),
+                        default={"key": None},
+                    )["key"],
+                    closed_count=len(risks) - len(live),
+                    risks=tuple(facts),
+                )
+            )
+        return out
 
     async def all_risks(
         self, session: AsyncSession, *, tenant_id: uuid.UUID, filters: RiskFilters

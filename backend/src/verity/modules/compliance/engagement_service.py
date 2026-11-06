@@ -6,6 +6,12 @@ criterion is in scope if its category was elected, or if it is always in scope
 (the Common Criteria). Deriving rather than copying means a scope change is one
 column write and cannot leave a stale criterion list behind.
 
+A framework with the ``applicability`` scope model (ISO 27001) works the other way
+round: everything is in scope until the workspace excludes a requirement with a
+written reason, and a requirement the framework marks always in scope cannot be
+excluded. Every read here takes the framework it is measuring, SOC 2 by default, so
+what existed before a second framework keeps answering exactly as it did.
+
 Coverage answers two questions the Week 2 brief asks: which criteria in scope
 have no control, and which controls have no evidence. The second is answered
 honestly — the evidence module does not exist yet, so every control reports as
@@ -15,16 +21,19 @@ having none, and the response says so rather than implying zero is a finding.
 from __future__ import annotations
 
 import uuid
+from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from verity.core.errors import InvalidInput, NotFound
+from verity.core.errors import Conflict, InvalidInput, NotFound
 from verity.modules.audit.service import Actor, AuditService, audit_service
 from verity.modules.compliance.models import (
+    AUDIT_TYPES_BY_SCOPE_MODEL,
     CONTROL_STATUSES,
+    DEFAULT_FRAMEWORK,
     Control,
     ControlRequirement,
     Engagement,
@@ -32,8 +41,11 @@ from verity.modules.compliance.models import (
     FrameworkVersion,
     FrameworkVersionRequirement,
     Requirement,
+    RequirementApplicability,
+    TenantFramework,
+    natural_key,
 )
-from verity.modules.compliance.readiness import control_ready, requirement_ready
+from verity.modules.compliance.readiness import BUILT_IN_SOURCE, control_ready, requirement_ready
 from verity.shared.ids import uuid7
 
 _ENGAGEMENT_SNAPSHOT = (
@@ -44,7 +56,34 @@ _ENGAGEMENT_SNAPSHOT = (
     "window_start",
     "window_end",
     "categories_in_scope",
+    "scope_statement",
+    "certification_body",
+    "audit_on",
 )
+
+
+@dataclass(frozen=True, slots=True)
+class FrameworkContext:
+    """The framework a read is about, and what the workspace has set up for it."""
+
+    framework: Framework
+    version: FrameworkVersion | None
+    """The version scope is measured against. None until the scope is set."""
+    engagement: Engagement | None
+    scope_set: bool
+    """An engagement for a category framework; the framework being added for the
+    others, which need no engagement to be measured."""
+
+    @property
+    def scope_model(self) -> str:
+        return self.framework.scope_model
+
+    def group_of(self, requirement: Requirement) -> str:
+        """The label a requirement is bucketed under: its Trust Services Category for
+        SOC 2, its clause or Annex A section for a framework with no such categories."""
+        if self.scope_model == "categories":
+            return requirement.trust_services_category
+        return requirement.category
 
 
 @dataclass(frozen=True, slots=True)
@@ -187,6 +226,10 @@ class DashboardReport:
     controls_no_evidence: int = 0
     controls_in_progress: int = 0
     framework_name: str | None = None
+    framework_code: str | None = None
+    scope_model: str = "categories"
+    controls_shared: int = 0
+    """Controls here that also answer a requirement of another framework."""
     audit_type: str | None = None
     categories_in_scope: list[str] = field(default_factory=list)
     by_owner: list[OwnerCount] = field(default_factory=list)
@@ -205,9 +248,77 @@ class EngagementService:
     def __init__(self, audit: AuditService | None = None) -> None:
         self._audit = audit or audit_service
 
-    async def get(self, session: AsyncSession, *, tenant_id: uuid.UUID) -> Engagement | None:
-        result = await session.execute(select(Engagement).where(Engagement.tenant_id == tenant_id))
-        return result.scalar_one_or_none()
+    async def context(
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        framework_code: str = DEFAULT_FRAMEWORK,
+    ) -> FrameworkContext | None:
+        """The framework, its version for this workspace and its engagement.
+
+        None when the framework is not in the catalogue. That is an empty database for
+        the default framework (nothing to measure yet), and an unknown code otherwise,
+        which the caller turns into a not found.
+        """
+        framework = (
+            await session.execute(select(Framework).where(Framework.code == framework_code))
+        ).scalar_one_or_none()
+        if framework is None:
+            return None
+        engagement = (
+            await session.execute(
+                select(Engagement)
+                .join(FrameworkVersion, FrameworkVersion.id == Engagement.framework_version_id)
+                .where(
+                    Engagement.tenant_id == tenant_id, FrameworkVersion.framework_id == framework.id
+                )
+                .order_by(Engagement.created_at.desc())
+                .limit(1)
+            )
+        ).scalar_one_or_none()
+        if framework.scope_model == "applicability":
+            added = (
+                await session.execute(
+                    select(TenantFramework).where(
+                        TenantFramework.tenant_id == tenant_id,
+                        TenantFramework.framework_id == framework.id,
+                        TenantFramework.status == "active",
+                    )
+                )
+            ).scalar_one_or_none()
+            version = (
+                await session.get(FrameworkVersion, added.framework_version_id) if added else None
+            )
+            return FrameworkContext(framework, version, engagement, scope_set=added is not None)
+        version = (
+            await session.get(FrameworkVersion, engagement.framework_version_id)
+            if engagement
+            else None
+        )
+        return FrameworkContext(framework, version, engagement, scope_set=engagement is not None)
+
+    async def _context_or_404(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, framework_code: str
+    ) -> FrameworkContext | None:
+        ctx = await self.context(session, tenant_id=tenant_id, framework_code=framework_code)
+        if ctx is None and framework_code != DEFAULT_FRAMEWORK:
+            raise NotFound(
+                "That framework is not available here.", detail=f"framework {framework_code!r}"
+            )
+        return ctx
+
+    async def get(
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        framework_code: str = DEFAULT_FRAMEWORK,
+    ) -> Engagement | None:
+        ctx = await self._context_or_404(
+            session, tenant_id=tenant_id, framework_code=framework_code
+        )
+        return ctx.engagement if ctx else None
 
     async def upsert(  # noqa: PLR0913 — the engagement's own fields
         self,
@@ -222,6 +333,9 @@ class EngagementService:
         window_start: date | None = None,
         window_end: date | None = None,
         status: str | None = None,
+        scope_statement: str | None = None,
+        certification_body: str | None = None,
+        audit_on: date | None = None,
     ) -> Engagement:
         version = await session.get(FrameworkVersion, framework_version_id)
         if version is None:
@@ -230,6 +344,32 @@ class EngagementService:
                 "Pick a version from the list and try again.",
                 detail=f"framework version {framework_version_id}",
             )
+        framework = await session.get(Framework, version.framework_id)
+        assert framework is not None  # noqa: S101 — the version's foreign key guarantees it
+        allowed = AUDIT_TYPES_BY_SCOPE_MODEL[framework.scope_model]
+        if audit_type not in allowed:
+            raise InvalidInput(
+                f"{framework.name} does not have that kind of audit. "
+                "Choose one of the audits offered for it.",
+                detail=f"audit type {audit_type!r} for framework {framework.code}",
+            )
+        if framework.scope_model == "applicability":
+            categories_in_scope = []
+            if window_start is not None or window_end is not None:
+                raise InvalidInput(
+                    "A certification audit has no observation window. "
+                    "Remove the start and end dates and give the audit date instead.",
+                    detail="window dates on a certification engagement",
+                )
+            added = await self.context(session, tenant_id=tenant_id, framework_code=framework.code)
+            if added is None or not added.scope_set:
+                raise Conflict(
+                    f"Add {framework.name} to your workspace before setting up its audit.",
+                    detail=f"engagement for {framework.code} before it was added",
+                )
+        else:
+            scope_statement = certification_body = None
+            audit_on = None
 
         # Enforced here as well as by the CHECK so the client gets a typed
         # message instead of a constraint-violation surfaced as a 500.
@@ -252,7 +392,7 @@ class EngagementService:
                 detail="the observation window ends before it starts",
             )
 
-        existing = await self.get(session, tenant_id=tenant_id)
+        existing = await self.get(session, tenant_id=tenant_id, framework_code=framework.code)
         before = AuditService.snapshot(existing, fields=_ENGAGEMENT_SNAPSHOT) if existing else None
 
         if existing is None:
@@ -266,6 +406,9 @@ class EngagementService:
                 window_start=window_start,
                 window_end=window_end,
                 categories_in_scope=categories_in_scope,
+                scope_statement=(scope_statement or "").strip() or None,
+                certification_body=(certification_body or "").strip() or None,
+                audit_on=audit_on,
             )
             session.add(engagement)
             await session.flush([engagement])
@@ -277,6 +420,9 @@ class EngagementService:
             engagement.window_start = window_start
             engagement.window_end = window_end
             engagement.categories_in_scope = categories_in_scope
+            engagement.scope_statement = (scope_statement or "").strip() or None
+            engagement.certification_body = (certification_body or "").strip() or None
+            engagement.audit_on = audit_on
             if status is not None:
                 engagement.status = status
 
@@ -295,40 +441,101 @@ class EngagementService:
     # -- scope -------------------------------------------------------------------
 
     async def criteria_in_scope(
-        self, session: AsyncSession, *, tenant_id: uuid.UUID
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        framework_code: str = DEFAULT_FRAMEWORK,
     ) -> list[Requirement]:
         """The criteria this tenant's engagement actually covers.
 
-        No engagement yet means nothing has been elected, so only the
-        always-in-scope Common Criteria apply — never "everything", which would
-        overstate what a tenant has committed to.
+        No engagement yet means nothing has been elected, so nothing is in scope —
+        never "everything", which would overstate what a tenant has committed to.
+        A framework that works by applicability has its scope the moment it is added:
+        every requirement, less the ones the workspace excluded with a reason.
         """
-        engagement = await self.get(session, tenant_id=tenant_id)
-        if engagement is None:
-            return []
+        ctx = await self._context_or_404(
+            session, tenant_id=tenant_id, framework_code=framework_code
+        )
+        return await self._in_scope(session, tenant_id=tenant_id, ctx=ctx)
 
+    async def _in_scope(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, ctx: FrameworkContext | None
+    ) -> list[Requirement]:
+        if ctx is None or ctx.version is None or not ctx.scope_set:
+            return []
         rows = await session.execute(
             select(Requirement)
             .join(
                 FrameworkVersionRequirement,
                 FrameworkVersionRequirement.requirement_id == Requirement.id,
             )
-            .where(
-                FrameworkVersionRequirement.framework_version_id == engagement.framework_version_id
-            )
-            .order_by(Requirement.code)
+            .where(FrameworkVersionRequirement.framework_version_id == ctx.version.id)
         )
-        elected = set(engagement.categories_in_scope)
+        requirements = sorted(rows.scalars(), key=lambda r: natural_key(r.code))
+        if ctx.scope_model == "applicability":
+            excluded = set(
+                (
+                    await session.execute(
+                        select(RequirementApplicability.requirement_id).where(
+                            RequirementApplicability.tenant_id == tenant_id,
+                            RequirementApplicability.applicable.is_(False),
+                        )
+                    )
+                ).scalars()
+            )
+            return [r for r in requirements if r.is_always_in_scope or r.id not in excluded]
+        assert ctx.engagement is not None  # noqa: S101 — scope_set means one exists
+        elected = set(ctx.engagement.categories_in_scope)
         return [
             requirement
-            for requirement in rows.scalars()
+            for requirement in requirements
             if requirement.is_always_in_scope or requirement.trust_services_category in elected
         ]
 
+    async def _control_frameworks(
+        self, session: AsyncSession, tenant_id: uuid.UUID
+    ) -> dict[uuid.UUID, set[uuid.UUID]]:
+        """For each control, the frameworks it answers a requirement of."""
+        rows = await session.execute(
+            select(ControlRequirement.control_id, Requirement.framework_id)
+            .join(Requirement, Requirement.id == ControlRequirement.requirement_id)
+            .where(ControlRequirement.tenant_id == tenant_id)
+        )
+        found: dict[uuid.UUID, set[uuid.UUID]] = defaultdict(set)
+        for control_id, framework_id in rows:
+            found[control_id].add(framework_id)
+        return found
+
+    @staticmethod
+    def _is_relevant(
+        control_id: uuid.UUID,
+        framework_id: uuid.UUID,
+        by_control: dict[uuid.UUID, set[uuid.UUID]],
+    ) -> bool:
+        """A control belongs in a framework's numbers unless it exists only for another.
+
+        The library is one list. A control that answers nothing yet (a workspace's own)
+        counts everywhere, as it always did; a control that answers a requirement of
+        this framework counts here; one that answers only another framework's does not,
+        so adding ISO 27001 does not move a SOC 2 percentage with controls SOC 2 never asked for.
+        """
+        linked = by_control.get(control_id)
+        return not linked or framework_id in linked
+
     # -- coverage ----------------------------------------------------------------
 
-    async def coverage(self, session: AsyncSession, *, tenant_id: uuid.UUID) -> CoverageReport:
-        in_scope = await self.criteria_in_scope(session, tenant_id=tenant_id)
+    async def coverage(
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        framework_code: str = DEFAULT_FRAMEWORK,
+    ) -> CoverageReport:
+        ctx = await self._context_or_404(
+            session, tenant_id=tenant_id, framework_code=framework_code
+        )
+        in_scope = await self._in_scope(session, tenant_id=tenant_id, ctx=ctx)
         in_scope_ids = {requirement.id for requirement in in_scope}
 
         # How many live controls satisfy each criterion. A disabled control is
@@ -354,7 +561,9 @@ class EngagementService:
                 requirement_key=requirement.requirement_key,
                 code=requirement.code,
                 name=requirement.name,
-                trust_services_category=requirement.trust_services_category,
+                trust_services_category=(
+                    ctx.group_of(requirement) if ctx else requirement.trust_services_category
+                ),
                 in_scope=True,
                 control_count=per_criterion.get(requirement.id, 0),
             )
@@ -388,7 +597,15 @@ class EngagementService:
         # would close the cycle.
         from verity.modules.evidence.service import evidence_service  # noqa: PLC0415
 
-        with_evidence = await evidence_service.control_ids_with_evidence(session, tenant_id)
+        with_evidence = await evidence_service.control_ids_with_evidence(
+            session, tenant_id, exclude_source=BUILT_IN_SOURCE
+        )
+        by_framework = await self._control_frameworks(session, tenant_id)
+        in_framework = [
+            control
+            for control in controls
+            if ctx is None or self._is_relevant(control.id, ctx.framework.id, by_framework)
+        ]
         no_evidence = [
             ControlGap(
                 control_id=control.id,
@@ -396,7 +613,7 @@ class EngagementService:
                 name=control.name,
                 reason="No evidence attached",
             )
-            for control in controls
+            for control in in_framework
             if control.id not in with_evidence
         ]
 
@@ -404,7 +621,7 @@ class EngagementService:
             criteria_total=len(in_scope),
             criteria_covered=len(in_scope) - len(uncovered),
             criteria_uncovered=uncovered,
-            controls_total=len(controls),
+            controls_total=len(in_framework),
             controls_without_evidence=len(no_evidence),
             controls_no_evidence=no_evidence,
             evidence_tracking_available=True,
@@ -419,6 +636,7 @@ class EngagementService:
         tenant_id: uuid.UUID,
         window_from: date | None = None,
         window_to: date | None = None,
+        framework_code: str = DEFAULT_FRAMEWORK,
     ) -> DashboardReport:
         """Everything the compliance dashboard shows, in one read.
 
@@ -429,9 +647,17 @@ class EngagementService:
         # The tenant's own controls and their criterion mappings — this module's
         # tables, so read directly. Everything else is derived from these rows in
         # Python; a library is ~120 rows, so one load beats a query per metric.
+        ctx = await self._context_or_404(
+            session, tenant_id=tenant_id, framework_code=framework_code
+        )
         controls = list(
             (await session.execute(select(Control).where(Control.tenant_id == tenant_id))).scalars()
         )
+        by_framework = await self._control_frameworks(session, tenant_id)
+        if ctx is not None:
+            controls = [
+                c for c in controls if self._is_relevant(c.id, ctx.framework.id, by_framework)
+            ]
         by_control = {c.id: c for c in controls}
         live = [c for c in controls if c.disabled_at is None]
 
@@ -445,6 +671,8 @@ class EngagementService:
         controls_by_requirement: dict[uuid.UUID, list[uuid.UUID]] = {}
         mapped_control_ids: set[uuid.UUID] = set()
         for requirement_id, control_id in mapped_rows:
+            if control_id not in by_control:
+                continue  # exists only for another framework
             controls_by_requirement.setdefault(requirement_id, []).append(control_id)
             mapped_control_ids.add(control_id)
         mapped_requirement_ids = set(controls_by_requirement)
@@ -452,10 +680,14 @@ class EngagementService:
         from verity.modules.connectors.service import connector_service  # noqa: PLC0415
         from verity.modules.evidence.service import evidence_service  # noqa: PLC0415
 
-        with_evidence = await evidence_service.control_ids_with_evidence(session, tenant_id)
+        with_evidence = await evidence_service.control_ids_with_evidence(
+            session, tenant_id, exclude_source=BUILT_IN_SOURCE
+        )
         # Readiness asks for evidence that still counts (not rejected, not past its
         # renewal date) and for no automated test saying otherwise.
-        with_current = await evidence_service.control_ids_with_current_evidence(session, tenant_id)
+        with_current = await evidence_service.control_ids_with_current_evidence(
+            session, tenant_id, exclude_source=BUILT_IN_SOURCE
+        )
         automation = await connector_service.automation_statuses(session, tenant_id=tenant_id)
 
         def _ready(control: Control) -> bool:
@@ -475,18 +707,26 @@ class EngagementService:
 
         # Scope and criteria coverage, per Trust Services category. Each category
         # splits three ways: ready, covered-but-not-ready, and no control at all.
-        in_scope = await self.criteria_in_scope(session, tenant_id=tenant_id)
+        in_scope = await self._in_scope(session, tenant_id=tenant_id, ctx=ctx)
         by_category_map: dict[str, list[int]] = {}
         for requirement in in_scope:
             covered = 1 if requirement.id in mapped_requirement_ids else 0
             ready = 1 if _requirement_ready(requirement.id) else 0
-            bucket = by_category_map.setdefault(requirement.trust_services_category, [0, 0, 0])
+            group = ctx.group_of(requirement) if ctx else requirement.trust_services_category
+            bucket = by_category_map.setdefault(group, [0, 0, 0])
             bucket[0] += 1
             bucket[1] += covered
             bucket[2] += ready
+        # Trust Services Categories read best alphabetically; clauses and Annex A
+        # sections read in the standard's own order, which is the order met first.
+        group_items = (
+            sorted(by_category_map.items())
+            if ctx is None or ctx.scope_model == "categories"
+            else list(by_category_map.items())
+        )
         by_category = [
             CategoryCoverage(category=name, in_scope=totals[0], covered=totals[1], ready=totals[2])
-            for name, totals in sorted(by_category_map.items())
+            for name, totals in group_items
         ]
         criteria_covered = sum(row.covered for row in by_category)
         criteria_total = len(in_scope)
@@ -556,16 +796,8 @@ class EngagementService:
             )
 
         # Engagement context for the framework-progress header.
-        engagement = await self.get(session, tenant_id=tenant_id)
-        framework_name: str | None = None
-        if engagement is not None:
-            framework_name = (
-                await session.execute(
-                    select(Framework.name)
-                    .join(FrameworkVersion, FrameworkVersion.framework_id == Framework.id)
-                    .where(FrameworkVersion.id == engagement.framework_version_id)
-                )
-            ).scalar_one_or_none()
+        engagement = ctx.engagement if ctx else None
+        framework_name: str | None = ctx.framework.name if ctx and ctx.scope_set else None
 
         # Controls per owner, names resolved through IAM's service (rule 4). The
         # unassigned bucket is a first-class row, not an omission — it is the one
@@ -624,8 +856,11 @@ class EngagementService:
         ]
 
         return DashboardReport(
-            has_engagement=engagement is not None,
+            has_engagement=bool(ctx and ctx.scope_set),
             framework_name=framework_name,
+            framework_code=ctx.framework.code if ctx else None,
+            scope_model=ctx.scope_model if ctx else "categories",
+            controls_shared=sum(1 for c in live if len(by_framework.get(c.id, ())) > 1),
             audit_type=engagement.audit_type if engagement else None,
             categories_in_scope=list(engagement.categories_in_scope) if engagement else [],
             criteria_total=criteria_total,

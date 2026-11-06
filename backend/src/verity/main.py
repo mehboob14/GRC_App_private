@@ -34,6 +34,10 @@ from verity.modules.compliance.router import (
     requirements_router,
     templates_router,
 )
+from verity.modules.compliance.tenant_framework_router import (
+    framework_scope_router,
+    tenant_frameworks_router,
+)
 from verity.modules.connectors.router import connectors_router
 from verity.modules.documents.router import documents_router
 from verity.modules.evidence.router import evidence_router
@@ -64,7 +68,7 @@ DOCS_URL = f"{API_PREFIX}/docs"
 REDOC_URL = f"{API_PREFIX}/redoc"
 
 DESCRIPTION = """
-Verity — multi-tenant SOC 2 / GRC compliance platform.
+Verity — multi-tenant compliance platform (SOC 2, ISO 27001).
 
 The tenant is never a path or query parameter. It is resolved from the authenticated
 session and verified against the caller's membership. Errors return
@@ -147,6 +151,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(health_router)
     app.include_router(audit_router, prefix=API_PREFIX)
     app.include_router(frameworks_router, prefix=API_PREFIX)
+    app.include_router(framework_scope_router, prefix=API_PREFIX)
+    app.include_router(tenant_frameworks_router, prefix=API_PREFIX)
     app.include_router(templates_router, prefix=API_PREFIX)
     app.include_router(requirements_router, prefix=API_PREFIX)
     app.include_router(controls_router, prefix=API_PREFIX)

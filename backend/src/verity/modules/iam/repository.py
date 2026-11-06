@@ -485,6 +485,30 @@ class RoleRepository:
             names.setdefault(membership_id, []).append(name)
         return names
 
+    async def engagement_scoped_membership_ids(
+        self, session: AsyncSession, tenant_id: uuid.UUID
+    ) -> set[uuid.UUID]:
+        """Memberships whose every direct role assignment is scoped to an engagement or
+        time boxed: the guest auditors, who are not members of staff. The guest auditor
+        invitation gives a role with a start or end date; staff roles carry neither. A
+        guest invited with no dates cannot be told apart from staff here."""
+        result = await session.execute(
+            select(
+                RoleAssignment.assignee_id,
+                RoleAssignment.engagement_id,
+                RoleAssignment.valid_from,
+                RoleAssignment.valid_until,
+            ).where(
+                RoleAssignment.tenant_id == tenant_id,
+                RoleAssignment.assignee_type == ASSIGNEE_TYPE_MEMBERSHIP,
+            )
+        )
+        scoped: dict[uuid.UUID, bool] = {}
+        for membership_id, engagement_id, valid_from, valid_until in result.all():
+            guest = engagement_id is not None or valid_from is not None or valid_until is not None
+            scoped[membership_id] = scoped.get(membership_id, True) and guest
+        return {membership_id for membership_id, only in scoped.items() if only}
+
     # -- provisioning gates ------------------------------------------------------
 
     async def admin_membership_exists(

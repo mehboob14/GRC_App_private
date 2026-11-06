@@ -78,7 +78,11 @@ async def test_adoption_copies_the_type_and_sub_type_of_every_template(
         templates = await _templates(api)
         controls = (await api.get("/controls")).json()
 
-    assert len(controls) == len(templates) > 100
+    # A workspace adopts the library of the frameworks it runs (SOC 2 from signup), not
+    # every pack that is loaded, so a framework nobody added brings no controls.
+    assert len(controls) > 100
+    assert {control["template_id"] for control in controls} <= set(templates)
+    assert {"GOV-23", "LM-12"}.isdisjoint({control["code"] for control in controls})
     for control in controls:
         shipped = templates[control["template_id"]]
         assert control["category"] == shipped["category"], control["code"]

@@ -19,7 +19,7 @@ from dataclasses import dataclass, field, replace
 from datetime import UTC, date, datetime, timedelta
 from typing import Any, Final
 
-from sqlalchemy import delete, or_, select
+from sqlalchemy import and_, delete, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from verity.core.errors import InvalidInput, NotFound
@@ -102,6 +102,17 @@ class ControlLink:
     id: uuid.UUID
     code: str
     criteria: list[str] = field(default_factory=list)
+
+
+@dataclass(frozen=True, slots=True)
+class PersonEvidence:
+    """An evidence item a person filed, as the built-in checks read it."""
+
+    id: uuid.UUID
+    title: str
+    evidence_type: str
+    collected_at: date
+    review_status: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -425,24 +436,28 @@ class EvidenceService:
         await session.flush()
 
     async def evidence_counts_by_control(
-        self, session: AsyncSession, tenant_id: uuid.UUID
+        self, session: AsyncSession, tenant_id: uuid.UUID, *, exclude_source: str | None = None
     ) -> dict[uuid.UUID, int]:
         """How many evidence items each control carries, in one query.
 
         For the gap-assessment report, which shows a count per control. Reads
         this module's own join table; the compliance report asks through the
-        service, never the table (rule 4).
+        service, never the table (rule 4). ``exclude_source`` leaves out what one
+        system filed, as ``control_ids_with_evidence`` does.
         """
-        rows = await session.execute(
-            select(EvidenceControl.control_id).where(EvidenceControl.tenant_id == tenant_id)
-        )
+        stmt = select(EvidenceControl.control_id).where(EvidenceControl.tenant_id == tenant_id)
+        if exclude_source is not None:
+            stmt = stmt.join(Evidence, Evidence.id == EvidenceControl.evidence_id).where(
+                or_(Evidence.source.is_(None), Evidence.source != exclude_source)
+            )
+        rows = await session.execute(stmt)
         counts: dict[uuid.UUID, int] = {}
         for (control_id,) in rows:
             counts[control_id] = counts.get(control_id, 0) + 1
         return counts
 
     async def control_ids_with_evidence(
-        self, session: AsyncSession, tenant_id: uuid.UUID
+        self, session: AsyncSession, tenant_id: uuid.UUID, *, exclude_source: str | None = None
     ) -> set[uuid.UUID]:
         """Which controls have at least one evidence item linked to them.
 
@@ -452,15 +467,22 @@ class EvidenceService:
         from evidence, so this stays a set membership test rather than a join
         that would drag evidence rows across the module boundary.
         """
-        rows = await session.execute(
-            select(EvidenceControl.control_id)
-            .where(EvidenceControl.tenant_id == tenant_id)
-            .distinct()
-        )
+        statement = select(EvidenceControl.control_id).where(EvidenceControl.tenant_id == tenant_id)
+        if exclude_source is not None:
+            statement = statement.join(Evidence, Evidence.id == EvidenceControl.evidence_id).where(
+                or_(Evidence.source.is_(None), Evidence.source != exclude_source)
+            )
+        rows = await session.execute(statement.distinct())
         return set(rows.scalars())
 
     async def control_ids_with_current_evidence(
-        self, session: AsyncSession, tenant_id: uuid.UUID, *, today: date | None = None
+        self,
+        session: AsyncSession,
+        tenant_id: uuid.UUID,
+        *,
+        today: date | None = None,
+        exclude_source: str | None = None,
+        undated_since: date | None = None,
     ) -> set[uuid.UUID]:
         """Which controls have evidence that still counts as evidence.
 
@@ -477,11 +499,60 @@ class EvidenceService:
             .where(
                 EvidenceControl.tenant_id == tenant_id,
                 Evidence.review_status != "rejected",
-                or_(Evidence.renewal_date.is_(None), Evidence.renewal_date >= now),
+                (
+                    or_(Evidence.renewal_date.is_(None), Evidence.renewal_date >= now)
+                    if undated_since is None
+                    # An item with no renewal date counts only while it is recent enough.
+                    else or_(
+                        Evidence.renewal_date >= now,
+                        and_(
+                            Evidence.renewal_date.is_(None), Evidence.collected_at >= undated_since
+                        ),
+                    )
+                ),
+                *(
+                    ()
+                    if exclude_source is None
+                    else (or_(Evidence.source.is_(None), Evidence.source != exclude_source),)
+                ),
             )
             .distinct()
         )
         return set(rows.scalars())
+
+    async def person_evidence(
+        self, session: AsyncSession, tenant_id: uuid.UUID, *, control_ids: list[uuid.UUID]
+    ) -> dict[uuid.UUID, list[PersonEvidence]]:
+        """Evidence a person filed on each of these controls, newest first.
+
+        Anything a system filed (``source`` set: a connector, or Verity's own checks) is
+        left out. The built-in checks that ask "did the internal audit happen" must not
+        be answered by their own earlier report.
+        """
+        if not control_ids:
+            return {}
+        rows = await session.execute(
+            select(EvidenceControl.control_id, Evidence)
+            .join(Evidence, Evidence.id == EvidenceControl.evidence_id)
+            .where(
+                EvidenceControl.tenant_id == tenant_id,
+                EvidenceControl.control_id.in_(control_ids),
+                Evidence.source.is_(None),
+            )
+            .order_by(Evidence.collected_at.desc(), Evidence.created_at.desc())
+        )
+        out: dict[uuid.UUID, list[PersonEvidence]] = {}
+        for control_id, item in rows.tuples():
+            out.setdefault(control_id, []).append(
+                PersonEvidence(
+                    id=item.id,
+                    title=item.title,
+                    evidence_type=item.evidence_type,
+                    collected_at=item.collected_at,
+                    review_status=item.review_status,
+                )
+            )
+        return out
 
     async def _mappings(
         self, session: AsyncSession, tenant_id: uuid.UUID

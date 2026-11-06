@@ -258,6 +258,29 @@ def sla_state(sla_due_at: datetime | None, status: str, *, now: datetime | None 
 
 
 @dataclass(frozen=True, slots=True)
+class RemediationSla:
+    """A remediation task as Verity's built-in checks read it.
+
+    A remediation task is an active, top-level, non-recurring task linked (in either
+    direction) to a control, a vulnerability or a risk. ``deadline`` is the SLA due time,
+    or the plain due date where no SLA level is set (risk treatment actions carry only a
+    due date); ``deadline_from`` says which. ``state`` is ``sla_state`` over that deadline.
+    """
+
+    task_id: uuid.UUID
+    code: str
+    title: str
+    task_kind: str
+    status: str
+    sla_level: str | None
+    deadline: datetime | None
+    deadline_from: str | None
+    paused_at: datetime | None
+    state: str
+    linked_to: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
 class Member:
     membership_id: uuid.UUID
     name: str
@@ -2755,6 +2778,68 @@ class TaskService:
         return list(rows)
 
     # -- summary -------------------------------------------------------------
+
+    async def remediation_sla(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, now: datetime
+    ) -> list[RemediationSla]:
+        """Active remediation tasks and their deadline state, for the built-in checks.
+
+        Read only, no permission or object scope (the caller is the check runner).
+        Sub-tasks and recurring occurrences are left out: a sub-task is part of its
+        parent, and a recurring occurrence is a scheduled control operation, not a fix.
+        """
+        tasks = list(
+            (
+                await session.execute(
+                    select(Task)
+                    .where(
+                        Task.tenant_id == tenant_id,
+                        Task.parent_task_id.is_(None),
+                        Task.recurrence_parent_id.is_(None),
+                        Task.recurrence_rule.is_(None),
+                        Task.status.in_(_ACTIVE),
+                    )
+                    .order_by(Task.code)
+                )
+            ).scalars()
+        )
+        if not tasks:
+            return []
+        ids = [task.id for task in tasks]
+        linked: dict[uuid.UUID, set[str]] = {}
+        for kind in ("control", "vulnerability", "risk"):
+            outgoing = await link_service.ids_of_type_linked_from(
+                session, tenant_id=tenant_id, from_type="task", from_ids=ids, to_type=kind
+            )
+            incoming = await link_service.counts_into(
+                session, tenant_id=tenant_id, to_type="task", to_ids=ids, from_type=kind
+            )
+            for task_id in set(outgoing) | set(incoming):
+                linked.setdefault(task_id, set()).add(kind)
+        out: list[RemediationSla] = []
+        for task in tasks:
+            kinds = linked.get(task.id)
+            if not kinds:
+                continue
+            deadline = task.sla_due_at or task.due_at
+            out.append(
+                RemediationSla(
+                    task_id=task.id,
+                    code=task.code,
+                    title=task.title,
+                    task_kind=task.task_kind,
+                    status=task.status,
+                    sla_level=task.sla_level,
+                    deadline=deadline,
+                    deadline_from=(
+                        "sla" if task.sla_due_at is not None else "due_date" if deadline else None
+                    ),
+                    paused_at=task.sla_paused_at,
+                    state=sla_state(deadline, task.status, now=now),
+                    linked_to=tuple(sorted(kinds)),
+                )
+            )
+        return out
 
     async def summary(self, session: AsyncSession, *, tenant_id: uuid.UUID) -> dict[str, Any]:
         tasks = list(

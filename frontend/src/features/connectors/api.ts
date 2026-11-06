@@ -124,7 +124,10 @@ export type AutomatedTest = {
   coverage: "full" | "partial";
   capabilities: string[];
   status: TestStatus;
+  /** The results shown, failures first; a large register sends only the first of them. */
   results: TestResult[];
+  /** How many results the last run left. `counts` always covers all of them. */
+  results_total?: number;
   counts: Record<Outcome, number>;
   last_run_at: string | null;
   /** Why this check is evidence for this control, and what it does not prove. */
@@ -304,12 +307,14 @@ export type RequirementChain = {
 
 export const connectorKeys = {
   connections: ["connections"] as const,
-  resources: (connectionId: string) => ["connection-resources", connectionId] as const,
+  resources: (connectionId: string) =>
+    ["connection-resources", connectionId] as const,
   providers: ["connector-providers"] as const,
   requests: ["integration-requests"] as const,
   automation: (controlId: string) => ["control-automation", controlId] as const,
   composition: ["control-composition"] as const,
-  chain: (requirementId: string) => ["requirement-chain", requirementId] as const,
+  chain: (requirementId: string) =>
+    ["requirement-chain", requirementId] as const,
 };
 
 export const listConnections = () => apiFetch<Connection[]>("/connections");

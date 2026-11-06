@@ -55,6 +55,7 @@ import {
 import { ConnectGitHubDialog } from "./connect-github-dialog";
 import { RequestIntegrationDialog } from "./request-integration-dialog";
 import { ScopeDialog } from "./scope-dialog";
+import { SourceMark } from "./composition-ui";
 import { useEntryState } from "@/lib/nav/entry-state";
 
 const CATEGORY_OPTIONS = CONNECTOR_CATEGORIES.map((category) => ({
@@ -253,6 +254,8 @@ function ConnectionCard({
 }) {
   const state = health(connection);
   const run = connection.latest_run;
+  // Verity's own checks: always on, no credential, nothing to disconnect.
+  const builtIn = connection.provider === "verity";
   const expires = connection.credential_expires_at
     ? new Date(connection.credential_expires_at).toLocaleDateString(undefined, {
         day: "numeric",
@@ -263,21 +266,31 @@ function ConnectionCard({
   return (
     <Card className="p-5">
       <div className="flex flex-wrap items-start gap-4">
-        <ConnectorLogo
-          id={connection.provider}
-          name={connection.provider_name}
-          size={48}
-        />
+        {builtIn ? (
+          <SourceMark providerKey="verity" name={connection.provider_name} size={48} />
+        ) : (
+          <ConnectorLogo
+            id={connection.provider}
+            name={connection.provider_name}
+            size={48}
+          />
+        )}
         <div className="min-w-0 flex-1">
           <p className="truncate text-body-lg font-semibold text-text-primary">
             {connection.display_name}
           </p>
           <p className="text-caption text-text-subtle">
-            {connection.provider_name}{" "}
-            {connection.account_type === "organization"
-              ? "organisation"
-              : "account"}{" "}
-            {connection.account_login}
+            {builtIn ? (
+              "Built in. Checks the records this workspace keeps in Verity."
+            ) : (
+              <>
+                {connection.provider_name}{" "}
+                {connection.account_type === "organization"
+                  ? "organisation"
+                  : "account"}{" "}
+                {connection.account_login}
+              </>
+            )}
           </p>
         </div>
         <StatusPill status={state.family} label={state.label} />
@@ -352,17 +365,25 @@ function ConnectionCard({
 
       <div className="mt-4 flex items-center justify-between gap-3 border-t border-border pt-3">
         <span className="inline-flex min-w-0 items-center gap-1.5 text-caption text-text-subtle">
-          <Icon name="key" className="size-3.5 shrink-0" />
+          <Icon name={builtIn ? "shield" : "key"} className="size-3.5 shrink-0" />
           <span className="truncate">
-            Read only token {connection.credential_hint ?? "stored"}
-            {expires ? `, expires ${expires}` : ""}
+            {builtIn ? (
+              "No credential. Always on, and runs every day."
+            ) : (
+              <>
+                Read only token {connection.credential_hint ?? "stored"}
+                {expires ? `, expires ${expires}` : ""}
+              </>
+            )}
           </span>
         </span>
         {canManage ? (
           <span className="flex shrink-0 gap-2">
-            <Button size="sm" variant="ghost" onClick={onDisconnect}>
-              Disconnect
-            </Button>
+            {builtIn ? null : (
+              <Button size="sm" variant="ghost" onClick={onDisconnect}>
+                Disconnect
+              </Button>
+            )}
             <Button
               size="sm"
               onClick={onRun}

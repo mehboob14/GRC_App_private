@@ -44,6 +44,9 @@ class FrameworkOut(_Response):
     description: str | None
     built_in: bool
     versions: list[FrameworkVersionOut]
+    # How scope is chosen: "categories" (SOC 2) or "applicability" (ISO 27001).
+    scope_model: str = "categories"
+    position: int = 100
 
 
 class RequirementOut(_Response):
@@ -207,16 +210,24 @@ class EngagementOut(_Response):
     window_start: date | None
     window_end: date | None
     categories_in_scope: list[str]
+    scope_statement: str | None = None
+    certification_body: str | None = None
+    audit_on: date | None = None
 
 
 class EngagementPut(_Request):
     name: str = Field(min_length=1, max_length=200)
     framework_version_id: uuid.UUID
-    audit_type: str = Field(pattern="^(type_1|type_2)$")
+    audit_type: str = Field(
+        pattern="^(type_1|type_2|initial_certification|surveillance|recertification)$"
+    )
     categories_in_scope: list[str] = Field(default_factory=list)
     window_start: date | None = None
     window_end: date | None = None
     status: str | None = Field(default=None, pattern="^(draft|active|closed)$")
+    scope_statement: str | None = Field(default=None, max_length=8000)
+    certification_body: str | None = Field(default=None, max_length=200)
+    audit_on: date | None = None
 
 
 class CriterionCoverageOut(_Response):
@@ -304,6 +315,10 @@ class DashboardOut(_Response):
 
     has_engagement: bool
     framework_name: str | None
+    framework_code: str | None = None
+    scope_model: str = "categories"
+    # Controls here that also answer a requirement of another framework.
+    controls_shared: int = 0
     audit_type: str | None
     categories_in_scope: list[str]
     criteria_total: int
@@ -409,3 +424,130 @@ class RequirementChainOut(BaseModel):
     requirement: ChainRequirementOut
     state: str
     controls: list[ChainControlOut]
+
+
+# ---------------------------------------------------------------------------
+# Frameworks a workspace runs, the overlap preview, and the Statement of Applicability
+# ---------------------------------------------------------------------------
+
+
+class TenantFrameworkOut(_Response):
+    """One framework in the catalogue, as this workspace sees it."""
+
+    framework_id: uuid.UUID
+    code: str
+    name: str
+    description: str | None
+    scope_model: str
+    position: int
+    version_id: uuid.UUID | None
+    version: str | None
+    requirement_count: int
+    added: bool
+    added_at: UtcDateTime | None
+
+
+class OverlapGroupOut(_Response):
+    group: str
+    total: int
+    covered: int
+    partly: int
+    needs_new: int
+    no_control: int
+
+
+class OverlapControlOut(_Response):
+    code: str
+    name: str
+    category: str
+
+
+class OverlapOut(_Response):
+    """What adding a framework would mean for this workspace, before it is added."""
+
+    framework_id: uuid.UUID
+    code: str
+    name: str
+    version: str
+    added: bool
+    requirements_total: int
+    # A control the workspace already runs is the main route to the requirement.
+    covered: int
+    # Only controls that cover part of it are running.
+    partly: int
+    # No running control answers it; adding the framework brings the controls that do.
+    needs_new: int
+    # No control in the library answers it (a gap in the content, never expected).
+    no_control: int
+    controls_in_use: int
+    controls_to_adopt: list[OverlapControlOut]
+    groups: list[OverlapGroupOut]
+
+
+class FrameworkAdd(_Request):
+    framework_id: uuid.UUID
+
+
+class FrameworkAddedOut(_Response):
+    framework: TenantFrameworkOut
+    controls_adopted: int
+    links_created: int
+
+
+class ApplicabilityControlOut(_Response):
+    control_id: uuid.UUID
+    code: str
+    name: str
+    status: str
+    ready: bool
+    coverage: str | None
+
+
+class ApplicabilityRowOut(_Response):
+    requirement_id: uuid.UUID
+    requirement_key: str
+    code: str
+    name: str
+    description: str | None
+    category: str
+    # A requirement that cannot be excluded (the management system clauses).
+    locked: bool
+    applicable: bool
+    justification: str | None
+    provided_by: str
+    owner_membership_id: uuid.UUID | None
+    owner_name: str | None
+    reviewed_at: UtcDateTime | None
+    # excluded, met, partly, not_started or no_controls
+    state: str
+    controls: list[ApplicabilityControlOut]
+
+
+class ApplicabilitySummaryOut(_Response):
+    total: int
+    applicable: int
+    excluded: int
+    reviewed: int
+    met: int
+    partly: int
+    not_started: int
+    no_controls: int
+
+
+class StatementOut(_Response):
+    framework_id: uuid.UUID
+    code: str
+    name: str
+    version: str
+    scope_statement: str | None
+    summary: ApplicabilitySummaryOut
+    rows: list[ApplicabilityRowOut]
+
+
+class ApplicabilityPut(_Request):
+    applicable: bool
+    justification: str | None = Field(default=None, max_length=4000)
+    provided_by: str = Field(default="organization", pattern="^(organization|supplier)$")
+    owner_membership_id: uuid.UUID | None = None
+    # Stamp the row as reviewed now, so a decision shows who last confirmed it and when.
+    reviewed: bool = False

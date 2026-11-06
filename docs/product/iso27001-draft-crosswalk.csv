@@ -1,0 +1,124 @@
+requirement,kind,verity_summary,status,primary_controls,supporting_controls,new_control,soc2_criteria_via_primary,note
+ISO27001:4.1,clause,Context and issues the ISMS must handle,new,,GOV-22,GOV-24,,"Written once, reviewed yearly"
+ISO27001:4.2,clause,Interested parties and what they require,new,,GOV-05 CS-02,GOV-25,,Feeds the compliance obligations register
+ISO27001:4.3,clause,ISMS scope and boundaries,new,,GOV-22,GOV-23,,Signed by leadership; scope statement is shown on the SoA
+ISO27001:4.4,clause,Running the ISMS as a whole,organizational,,GOV-06,,,Met by operating clauses 4 to 10 together
+ISO27001:5.1,clause,Leadership commitment,covered,GOV-02,GOV-10 GOV-15,,CC1.2,
+ISO27001:5.2,clause,Information security policy,covered,GOV-17,GOV-01 CS-04,,CC5.3,Extend guidance: objectives framework and improvement commitment
+ISO27001:5.3,clause,"Roles, responsibilities and authorities",covered,GOV-10,GOV-09 GOV-21 HR-04,,CC1.3 CC1.5,
+ISO27001:6.1.1,clause,Risks and opportunities to address,covered,GOV-18,GOV-19 GOV-20 GOV-03,,CC3.1 CC3.2,Extend guidance: opportunities
+ISO27001:6.1.2,clause,Risk assessment process,covered,GOV-18,GOV-19,,CC3.1 CC3.2,Risk register matrix and appetite settings are the criteria
+ISO27001:6.1.3,clause,Risk treatment and Statement of Applicability,covered,GOV-20,GOV-19 GOV-07,GOV-27,CC3.2 CC9.1,"SoA is a platform feature, see plan"
+ISO27001:6.2,clause,Security objectives and plans,new,,GOV-02,GOV-26,,"Objectives with owners, measures and dates"
+ISO27001:6.3,clause,Planning of changes to the ISMS,partial,,GOV-03,,,Extend GOV-03 to cover ISMS changes
+ISO27001:7.1,clause,Resources,partial,,GOV-02 GOV-10,GOV-26,,Resourcing is part of the objectives plan
+ISO27001:7.2,clause,Competence,new,,HR-04 HR-07 HR-08 HR-01,HR-09,,Competence evidence per ISMS role
+ISO27001:7.3,clause,Awareness,covered,HR-08,CS-04,,CC1.4 CC2.2,
+ISO27001:7.4,clause,Communication,new,,CS-04 CS-02,CS-06,,"What, when, to whom, how"
+ISO27001:7.5.1,clause,"Documented information, general",new,,GOV-17,GOV-28,,Backed by the Documents module
+ISO27001:7.5.2,clause,Creating and updating documents,new,,GOV-01,GOV-28,,"Version, approval and review already exist in Documents"
+ISO27001:7.5.3,clause,Control of documents,new,,GOV-01 CS-04,GOV-28,,
+ISO27001:8.1,clause,Operational planning and control,new,,GOV-14,GOV-29,,Plans and criteria for ISMS processes
+ISO27001:8.2,clause,Risk assessment in operation,covered,GOV-18,GOV-03,,CC3.1 CC3.2,
+ISO27001:8.3,clause,Risk treatment in operation,covered,GOV-20,GOV-19,,CC3.2 CC9.1,
+ISO27001:9.1,clause,Monitoring and measurement,covered,GOV-06,GOV-08,GOV-26,CC4.1,Platform tests and control status are the measurements
+ISO27001:9.2.1,clause,Internal audit,covered,GOV-13,,,CC4.1,
+ISO27001:9.2.2,clause,Internal audit programme,partial,,GOV-13,,,"Extend GOV-13: programme, criteria, auditor independence"
+ISO27001:9.3.1,clause,Management review,covered,GOV-15,,,CC1.2 CC4.2,
+ISO27001:9.3.2,clause,Management review inputs,partial,,GOV-15,,,Extend GOV-15: the required inputs list
+ISO27001:9.3.3,clause,Management review results,partial,,GOV-15 GOV-08,,,Extend GOV-15: recorded decisions and actions
+ISO27001:10.1,clause,Continual improvement,new,,GOV-08 LM-05,GOV-30,,
+ISO27001:10.2,clause,Nonconformity and corrective action,covered,GOV-08,LM-05,,CC4.2,
+ISO27001:A.5.1,annex,Policies for information security,covered,GOV-17,GOV-01 CS-04,,CC5.3,
+ISO27001:A.5.2,annex,Security roles and responsibilities,covered,GOV-10,GOV-09 GOV-21 HR-04,,CC1.3 CC1.5,
+ISO27001:A.5.3,annex,Segregation of duties,covered,IAM-09,SD-06,,CC6.3,Reviewer is not the author
+ISO27001:A.5.4,annex,Management responsibilities,partial,,GOV-02 GOV-04 GOV-15,,,
+ISO27001:A.5.5,annex,Contact with authorities,new,,LM-07 DM-01,CS-07,,One control with 5.6
+ISO27001:A.5.6,annex,Contact with security communities,new,,,CS-07,,
+ISO27001:A.5.7,annex,Threat intelligence,new,,LM-11 NS-05,LM-12,,Verity KEV and EPSS enrichment is platform evidence
+ISO27001:A.5.8,annex,Security in project management,partial,,SD-10 GOV-03,,,
+ISO27001:A.5.9,annex,Inventory of information and assets,covered,LM-01,DM-06 BC-05,,CC2.1 CC6.1,Asset module and cloud inventory
+ISO27001:A.5.10,annex,Acceptable use,partial,,GOV-17 GOV-04 CS-04,,,Needs an acceptable use policy template
+ISO27001:A.5.11,annex,Return of assets,partial,,HR-05 EP-05,,,
+ISO27001:A.5.12,annex,Classification of information,covered,DM-04,DM-06,,C1.1,
+ISO27001:A.5.13,annex,Labelling of information,partial,,DM-04,,,
+ISO27001:A.5.14,annex,Information transfer,partial,,NS-02 DM-09 HR-02,,,
+ISO27001:A.5.15,annex,Access control,covered,IAM-08,IAM-01,,CC6.1 CC6.3,
+ISO27001:A.5.16,annex,Identity management,covered,IAM-01,IAM-12 IAM-04 HR-05 IAM-10,,CC6.2 CC6.3,
+ISO27001:A.5.17,annex,Authentication information,covered,IAM-05 IAM-06,NS-09 SD-11,,CC6.1,Secret scanning supports it
+ISO27001:A.5.18,annex,Access rights,covered,IAM-01 IAM-02 IAM-12,HR-05 IAM-10,,CC6.2 CC6.3,
+ISO27001:A.5.19,annex,Security in supplier relationships,covered,BC-07 BC-08,,,CC9.2 P6.4,
+ISO27001:A.5.20,annex,Security in supplier agreements,partial,,DM-10 DM-17 BC-08,,,
+ISO27001:A.5.21,annex,ICT supply chain,partial,,BC-06 SD-03 BC-08,,,
+ISO27001:A.5.22,annex,Monitoring and changes of supplier services,partial,,BC-08 BC-06,,,
+ISO27001:A.5.23,annex,Use of cloud services,partial,,PE-01 BC-07 NS-04 BC-05,,,Needs a cloud use policy
+ISO27001:A.5.24,annex,Incident management planning,covered,LM-07,LM-08 LM-10,,CC7.4,
+ISO27001:A.5.25,annex,Assessing security events,covered,LM-04,,,CC7.3,
+ISO27001:A.5.26,annex,Responding to incidents,covered,LM-07 LM-06,,,CC7.4 CC7.5,
+ISO27001:A.5.27,annex,Learning from incidents,covered,LM-05,LM-10,,CC7.4 CC7.5,
+ISO27001:A.5.28,annex,Collecting evidence,partial,,LM-07 LM-02,,,
+ISO27001:A.5.29,annex,Security during disruption,covered,BC-03,BC-01,,A1.2 CC9.1,
+ISO27001:A.5.30,annex,ICT readiness for continuity,covered,BC-03,BC-02 BC-01 BC-04,,A1.2 CC9.1,
+ISO27001:A.5.31,annex,Legal and contractual requirements,covered,GOV-05,CS-01,,CC2.3,
+ISO27001:A.5.32,annex,Intellectual property,partial,,HR-02 GOV-05,,,
+ISO27001:A.5.33,annex,Protection of records,partial,,DM-08 BC-01 LM-02,,,
+ISO27001:A.5.34,annex,Privacy and personal data,covered,DM-15 DM-07 DM-12,DM-10 DM-11 DM-02 DM-03 DM-05 DM-14,,P1.1 P3.1 P4.1,SOC 2 privacy controls carry most of it
+ISO27001:A.5.35,annex,Independent review of security,covered,GOV-13,GOV-16,,CC4.1,
+ISO27001:A.5.36,annex,Compliance with policies and standards,partial,,GOV-06 GOV-13 GOV-15,,,
+ISO27001:A.5.37,annex,Documented operating procedures,partial,,GOV-17 SD-10 BC-03,,,Needs procedure templates
+ISO27001:A.6.1,annex,Screening,covered,HR-01,,,CC1.1 CC1.4,
+ISO27001:A.6.2,annex,Terms of employment,partial,,HR-02 HR-04 GOV-04 HR-06,,,
+ISO27001:A.6.3,annex,Awareness and training,covered,HR-08,CS-04,,CC1.4 CC2.2,
+ISO27001:A.6.4,annex,Disciplinary process,covered,GOV-11,GOV-04,,CC1.1 CC1.5,
+ISO27001:A.6.5,annex,After termination or change,partial,,HR-05 HR-02,,,
+ISO27001:A.6.6,annex,Confidentiality agreements,covered,HR-02,,,C1.1 CC1.1,
+ISO27001:A.6.7,annex,Remote working,partial,,NS-11 EP-02 EP-03 EP-06,,,Needs a remote working policy template
+ISO27001:A.6.8,annex,Reporting security events,covered,CS-03,CS-05 LM-07,,CC2.2 CC2.3,
+ISO27001:A.7.1,annex,Physical perimeters,partial,,PE-02 PE-01,,,Inherited from the cloud provider where hosted
+ISO27001:A.7.2,annex,Physical entry,covered,PE-02,PE-01,,CC6.4,
+ISO27001:A.7.3,annex,Securing offices and rooms,partial,,PE-02,,,
+ISO27001:A.7.4,annex,Physical security monitoring,partial,,PE-02,,,
+ISO27001:A.7.5,annex,Physical and environmental threats,partial,,PE-01,,,Inherited
+ISO27001:A.7.6,annex,Working in secure areas,partial,,PE-02,,,Candidate to exclude with a reason
+ISO27001:A.7.7,annex,Clear desk and clear screen,partial,,EP-06 GOV-17,,,
+ISO27001:A.7.8,annex,Equipment siting and protection,partial,,PE-01,,,Inherited
+ISO27001:A.7.9,annex,Assets off premises,partial,,EP-02 EP-03 EP-05,,,
+ISO27001:A.7.10,annex,Storage media,partial,,DM-16 EP-02,,,
+ISO27001:A.7.11,annex,Supporting utilities,partial,,PE-01,,,Inherited
+ISO27001:A.7.12,annex,Cabling,partial,,PE-01,,,Inherited
+ISO27001:A.7.13,annex,Equipment maintenance,partial,,EP-04 PE-01,,,
+ISO27001:A.7.14,annex,Disposal or reuse of equipment,covered,DM-16,EP-05,,C1.2 CC6.5 P4.3,
+ISO27001:A.8.1,annex,User endpoint devices,covered,EP-01 EP-02 EP-03 EP-06,EP-05,,CC6.1 CC6.5 CC6.7 CC6.8,
+ISO27001:A.8.2,annex,Privileged access rights,covered,IAM-07,,,CC6.3,
+ISO27001:A.8.3,annex,Information access restriction,covered,IAM-08,IAM-02,,CC6.1 CC6.3,
+ISO27001:A.8.4,annex,Access to source code,partial,,SD-06 IAM-08,,,GitHub repository access check proposed
+ISO27001:A.8.5,annex,Secure authentication,covered,IAM-03,IAM-04 IAM-06 IAM-11,,CC6.1,
+ISO27001:A.8.6,annex,Capacity management,covered,BC-04,,,A1.1,
+ISO27001:A.8.7,annex,Protection against malware,covered,EP-01,EP-03,,CC6.8,
+ISO27001:A.8.8,annex,Technical vulnerabilities,covered,LM-11,EP-04 SD-03 GOV-16,,CC7.1,
+ISO27001:A.8.9,annex,Configuration management,covered,NS-04,LM-03 SD-14,,CC6.1 CC7.1,
+ISO27001:A.8.10,annex,Information deletion,covered,DM-16,DM-08,,C1.2 CC6.5 P4.3,
+ISO27001:A.8.11,annex,Data masking,new,,DM-13,DM-18,,Masking and pseudonymisation
+ISO27001:A.8.12,annex,Data leakage prevention,new,,NS-02 DM-09,DM-19,,
+ISO27001:A.8.13,annex,Information backup,covered,BC-01 BC-02,,,A1.2 A1.3 CC9.1,
+ISO27001:A.8.14,annex,Redundancy,partial,,BC-03 BC-04,,,
+ISO27001:A.8.15,annex,Logging,covered,LM-02,LM-03,,CC2.1 CC7.2,
+ISO27001:A.8.16,annex,Monitoring activities,covered,LM-09,NS-05 LM-04,,CC7.2,
+ISO27001:A.8.17,annex,Clock synchronization,new,,,NS-12,,Cloud providers supply it; one cloud check
+ISO27001:A.8.18,annex,Privileged utility programs,partial,,IAM-07,,,
+ISO27001:A.8.19,annex,Software on operational systems,partial,,SD-13 EP-03 NS-04,,,
+ISO27001:A.8.20,annex,Network security,covered,NS-03,NS-08 NS-07,,CC6.6,
+ISO27001:A.8.21,annex,Network services security,partial,,NS-02 NS-10 NS-11,,,
+ISO27001:A.8.22,annex,Network segregation,covered,NS-07,,,CC6.1 CC6.6,
+ISO27001:A.8.23,annex,Web filtering,new,,NS-10,EP-07,,
+ISO27001:A.8.24,annex,Use of cryptography,covered,NS-01 NS-02 NS-06,NS-09,,CC6.1 CC6.7,
+ISO27001:A.8.25,annex,Secure development life cycle,covered,SD-10,SD-01 SD-06 SD-02,,CC8.1,
+ISO27001:A.8.26,annex,Application security requirements,partial,,SD-09 SD-05 SD-10,,,
+ISO27001:A.8.27,annex,Secure architecture principles,partial,,SD-10 NS-07,,,
+ISO27001:A.8.28,annex,Secure coding,partial,,SD-05 SD-03 SD-11 SD-06,,,"Code scanning check is catalogued, not built"
+ISO27001:A.8.29,annex,Security testing before release,covered,SD-02,SD-03 GOV-16,,CC8.1 PI1.3,
+ISO27001:A.8.30,annex,Outsourced development,partial,,HR-03 BC-06 BC-08,,,
+ISO27001:A.8.31,annex,"Separate dev, test and production",covered,SD-12,DM-13,,CC8.1,
+ISO27001:A.8.32,annex,Change management,covered,SD-01,SD-04 SD-06 SD-13 SD-14 SD-02 SD-12,,CC8.1,Already shown as the worked example
+ISO27001:A.8.33,annex,Test information,covered,DM-13,,,C1.1,
+ISO27001:A.8.34,annex,Protection during audit testing,partial,,GOV-16,,,Rules of engagement in GOV-16 guidance

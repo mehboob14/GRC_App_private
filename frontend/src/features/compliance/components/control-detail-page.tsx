@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Badge,
   Button,
@@ -31,6 +31,7 @@ import {
 // The evidence library owns the add-evidence form. Reused here rather than
 // re-implemented, so the fields cannot drift between the two entry points.
 import { AddEvidenceDialog } from "@/features/evidence/components/evidence-page";
+import { FrameworkLogo } from "@/features/iam/components/framework-logo";
 import { OwnerSelect } from "@/features/iam/components/owner-select";
 import { LinkedRecordsPanel } from "@/features/linkage/components/linked-records-panel";
 import {
@@ -333,31 +334,48 @@ export function ControlDetailPage() {
     [evidenceQuery.data],
   );
 
-  const framework = frameworksQuery.data?.[0];
-  const frameworkVersionId = framework?.versions.find((v) => v.is_current)?.id;
+  // One control, one library: it can answer several frameworks. Its requirement keys
+  // look like "SOC2:CC6.2" and "ISO27001:A.8.5", so the frameworks it serves are read
+  // off the prefixes and each one's requirement text is fetched.
+  const served = useMemo(() => {
+    const codes = new Set(
+      (control?.requirement_keys ?? []).map((key) => key.slice(0, key.indexOf(":"))),
+    );
+    return (frameworksQuery.data ?? []).filter((f) => codes.has(f.code));
+  }, [control?.requirement_keys, frameworksQuery.data]);
+  const framework = served[0];
+  const frameworkName = useMemo(
+    () => new Map(served.map((f) => [f.code, f.name])),
+    [served],
+  );
 
-  const requirementsQuery = useQuery({
-    queryKey: ["requirements", framework?.id],
-    queryFn: () =>
-      complianceApi.listRequirements(framework!.id, frameworkVersionId),
-    enabled: Boolean(framework?.id),
+  const requirementsQuery = useQueries({
+    queries: served.map((f) => ({
+      queryKey: ["requirements", f.id],
+      queryFn: () =>
+        complianceApi.listRequirements(f.id, f.versions.find((v) => v.is_current)?.id),
+    })),
+    combine: (results) => ({
+      data: results.flatMap((r) => r.data ?? []),
+      isError: results.some((r) => r.isError),
+      error: results.find((r) => r.isError)?.error,
+    }),
   });
 
-  // The criteria this control satisfies, with their full text — requirement_keys
-  // look like "SOC2:CC6.2", and the criterion list is keyed on the bare code.
+  // The criteria this control satisfies, with their full text, across every
+  // framework it serves, matched on the full key so two frameworks never collide.
   const criteria = useMemo(() => {
-    const byCode = new Map(
-      (requirementsQuery.data ?? []).map((requirement) => [
-        requirement.code,
-        requirement,
-      ]),
+    const byKey = new Map(
+      requirementsQuery.data.map((requirement) => [requirement.requirement_key, requirement]),
     );
     return (control?.requirement_keys ?? [])
-      .map((key) => byCode.get(key.replace(/^[^:]+:/, "")))
+      .map((key) => byKey.get(key))
       .filter((requirement): requirement is NonNullable<typeof requirement> =>
         Boolean(requirement),
       );
   }, [control?.requirement_keys, requirementsQuery.data]);
+  const frameworkOf = (requirementKey: string) =>
+    frameworkName.get(requirementKey.slice(0, requirementKey.indexOf(":"))) ?? "";
 
   const history = useMemo(
     () => historyQuery.data?.items ?? [],
@@ -673,7 +691,9 @@ export function ControlDetailPage() {
 
           {tab === "requirements" ? (
             <Panel
-              title={`${framework?.name ?? "Framework"} requirements`}
+              title={
+                served.length > 1 ? "Requirements" : `${framework?.name ?? "Framework"} requirements`
+              }
               action={
                 <span className="text-caption text-text-subtle">
                   The criterion text this control is written against
@@ -706,6 +726,11 @@ export function ControlDetailPage() {
                       className="py-4 first:pt-0 last:pb-0"
                     >
                       <div className="mb-1.5 flex flex-wrap items-center gap-2">
+                        {served.length > 1 ? (
+                          <span className="text-caption font-semibold text-text-subtle">
+                            {frameworkOf(requirement.requirement_key)}
+                          </span>
+                        ) : null}
                         <CodeChip code={requirement.code} />
                         <Badge variant="neutral">
                           {requirement.trust_services_category}
@@ -832,12 +857,12 @@ export function ControlDetailPage() {
               <ul className="space-y-2.5">
                 {criteria.map((requirement) => (
                   <li key={requirement.id} className="flex items-start gap-2.5">
-                    <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-action-accent-tint font-display text-caption font-bold text-text-link">
-                      {framework?.code ?? "SOC"}
+                    <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-action-accent-tint">
+                      <FrameworkLogo name={frameworkOf(requirement.requirement_key)} size={24} />
                     </span>
                     <span className="min-w-0">
                       <span className="block text-body-sm font-semibold text-text-primary">
-                        {framework?.name ?? "SOC 2"}
+                        {frameworkOf(requirement.requirement_key)}
                       </span>
                       <span className="block truncate text-caption text-text-subtle">
                         {requirement.code} · {requirement.name}
@@ -847,9 +872,11 @@ export function ControlDetailPage() {
                 ))}
               </ul>
             )}
-            <p className="mt-3 border-t border-border pt-3 text-caption text-text-subtle">
-              ISO 27001 and HIPAA mappings arrive with those content packs.
-            </p>
+            {served.length > 1 ? (
+              <p className="mt-3 border-t border-border pt-3 text-caption text-text-subtle">
+                This control answers {served.length} frameworks. Its evidence is collected once and counts in each.
+              </p>
+            ) : null}
           </section>
         </aside>
       </div>

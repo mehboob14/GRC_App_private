@@ -274,8 +274,10 @@ async def assess_maturity(
     from verity.modules.ai.llm import get_chat_model  # noqa: PLC0415 — keeps the LLM optional
 
     system = (
-        "You are a senior SOC 2 auditor. Judge how mature a piece of evidence is as proof of "
-        "ONE control and the framework requirements linked to it. Be strict and auditor "
+        "You are a senior information security auditor who works to SOC 2 and ISO 27001. Judge "
+        "how mature a piece of evidence is as proof of ONE control and the framework "
+        "requirements linked to it (SOC 2 criteria such as CC6.1, ISO 27001 clauses such as "
+        "6.1.2 or Annex A controls such as A.8.5). Be strict and auditor "
         "defensible; never claim more than the evidence shows. Return STRICT JSON only: an "
         'object with "maturity" (integer 0..100), "verdict" ("proves", "partly" or '
         '"does_not"), "summary" (two sentences), "strengths" (array of short strings), '

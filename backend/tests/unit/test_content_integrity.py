@@ -40,6 +40,8 @@ REQUIREMENTS = _load(_SOC2 / "requirements.json")
 CHECKS = _load(_AUTOMATION / "checks.json")
 CAPABILITIES = {c["key"]: c for c in _load(_AUTOMATION / "capabilities.json")}
 CODES = {t["code"] for t in TEMPLATES}
+#: Every control code in the one library: a check may serve a control of any framework pack.
+LIBRARY_CODES = CODES | {t["code"] for t in _load(_CONTENT / "iso27001" / "control_templates.json")}
 
 
 def test_every_pack_matches_the_hashes_sealed_in_its_manifest() -> None:
@@ -106,7 +108,7 @@ def test_every_check_names_what_it_collects_and_why_it_belongs_to_each_control()
             }
             assert declared.get(provider) == "available", (check["key"], provider)
         for mapping in check["controls"]:
-            assert mapping["code"] in CODES, (check["key"], mapping["code"])
+            assert mapping["code"] in LIBRARY_CODES, (check["key"], mapping["code"])
             assert mapping["coverage"] in _COVERAGE
             assert len(mapping["rationale"].strip()) > 20, (check["key"], mapping["code"])
 

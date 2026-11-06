@@ -481,12 +481,34 @@ async def _run_connector_checks() -> dict[str, Any]:
 
     runs = 0
     for tenant_id in await _active_tenant_ids():
-        async with session_scope(tenant_id) as session:
-            due = await connector_service.due_connection_ids(session, tenant_id=tenant_id)
-        for connection_id in due:
-            ran = await connector_service.run(
-                tenant_id=tenant_id, connection_id=connection_id, trigger="schedule", actor=System()
-            )
-            runs += int(ran is not None)
+        # One workspace's failure is logged and never stops the workspaces after it.
+        try:
+            async with session_scope(tenant_id) as session:
+                # Verity's built-in checks are always on (ME-1): every workspace gets its
+                # connection here, so existing workspaces need no backfill script.
+                await connector_service.ensure_built_in(
+                    session, tenant_id=tenant_id, actor=System()
+                )
+            async with session_scope(tenant_id) as session:
+                due = await connector_service.due_connection_ids(session, tenant_id=tenant_id)
+            # One connection's failure never stops the others: a broken token must not
+            # starve the built-in checks of their daily run.
+            for connection_id in due:
+                try:
+                    ran = await connector_service.run(
+                        tenant_id=tenant_id,
+                        connection_id=connection_id,
+                        trigger="schedule",
+                        actor=System(),
+                    )
+                    runs += int(ran is not None)
+                except Exception:
+                    logger.exception(
+                        "worker.run_connector_checks.connection_failed",
+                        tenant_id=str(tenant_id),
+                        connection_id=str(connection_id),
+                    )
+        except Exception:
+            logger.exception("worker.run_connector_checks.tenant_failed", tenant_id=str(tenant_id))
     logger.info("worker.run_connector_checks", runs=runs)
     return {"runs": runs}

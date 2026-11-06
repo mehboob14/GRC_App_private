@@ -381,6 +381,10 @@ export type FrameworkVersion = {
   requirement_count: number;
 };
 
+/** How a framework's scope is chosen: SOC 2 elects categories, ISO 27001 works by
+ *  applicability (everything is in unless excluded with a reason). */
+export type ScopeModel = "categories" | "applicability";
+
 export type Framework = {
   id: string;
   code: string;
@@ -388,6 +392,8 @@ export type Framework = {
   description: string | null;
   built_in: boolean;
   versions: FrameworkVersion[];
+  scope_model: ScopeModel;
+  position: number;
 };
 
 export type Requirement = {
@@ -543,7 +549,12 @@ export type AdoptLibraryResult = {
 
 // --- Engagement, scope and coverage -----------------------------------------
 
-export type AuditType = "type_1" | "type_2";
+export type AuditType =
+  | "type_1"
+  | "type_2"
+  | "initial_certification"
+  | "surveillance"
+  | "recertification";
 
 export type Engagement = {
   id: string;
@@ -554,6 +565,10 @@ export type Engagement = {
   window_start: string | null;
   window_end: string | null;
   categories_in_scope: string[];
+  /** Certification frameworks: the management system scope, the auditor and the date. */
+  scope_statement: string | null;
+  certification_body: string | null;
+  audit_on: string | null;
 };
 
 export type EngagementPut = {
@@ -564,6 +579,9 @@ export type EngagementPut = {
   window_start?: string | null;
   window_end?: string | null;
   status?: string | null;
+  scope_statement?: string | null;
+  certification_body?: string | null;
+  audit_on?: string | null;
 };
 
 export type ScopeCriterion = {
@@ -677,6 +695,10 @@ export type ControlReport = {
 export type ComplianceDashboard = {
   has_engagement: boolean;
   framework_name: string | null;
+  framework_code: string | null;
+  scope_model: ScopeModel;
+  /** Controls here that also answer a requirement of another framework. */
+  controls_shared: number;
   audit_type: string | null;
   categories_in_scope: string[];
   criteria_total: number;

@@ -221,12 +221,32 @@ def build(source: Path, out: Path) -> int:
         )
 
     out.mkdir(parents=True, exist_ok=True)
+    # Templates Verity wrote itself (source "verity") are not upstream: keep them, after
+    # the Openlane rows, and keep the manifest's note about them.
+    previous = out / "document_templates.json"
+    authored = [
+        row
+        for row in (json.loads(previous.read_text(encoding="utf-8")) if previous.exists() else [])
+        if row.get("source") == "verity"
+    ]
+    openlane = len(rows)
+    rows.extend(authored)
     payload = json.dumps(rows, indent=2, ensure_ascii=False) + "\n"
     (out / "document_templates.json").write_text(payload, encoding="utf-8")
 
+    old_manifest = out / "MANIFEST.json"
+    authored_note = (
+        json.loads(old_manifest.read_text(encoding="utf-8")).get("authored")
+        if old_manifest.exists()
+        else None
+    )
     digest = hashlib.sha256(payload.encode("utf-8")).hexdigest()
-    manifest = {
-        "counts": {"document_templates": len(rows)},
+    manifest: dict[str, Any] = {
+        "counts": {
+            "document_templates": len(rows),
+            "openlane_policy_hub": openlane,
+            "verity_authored": len(authored),
+        },
         "source": {
             "repository": SOURCE_REPO,
             "commit": commit,
@@ -241,7 +261,11 @@ def build(source: Path, out: Path) -> int:
         },
         "generated": [{"path": "document_templates.json", "sha256": digest}],
     }
-    (out / "MANIFEST.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+    if authored_note:
+        manifest["authored"] = authored_note
+    (out / "MANIFEST.json").write_text(
+        json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
 
     total_ph = sum(p["count"] for r in rows for p in r["placeholders"])
     print(f"{len(rows)} templates -> {out}")

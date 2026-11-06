@@ -32,10 +32,12 @@ from verity.core.crypto import get_secret_box
 from verity.core.db import session_scope
 from verity.core.errors import Conflict, InvalidInput, NotFound, UpstreamUnavailable
 from verity.core.logging import get_logger
+from verity.core.storage import FILE_TOO_LARGE_CODE
 from verity.modules.audit.service import Actor, AuditService, Membership, audit_service
 from verity.modules.compliance.control_service import MappingView, control_service
 from verity.modules.connectors import composition as comp
 from verity.modules.connectors import github
+from verity.modules.connectors import verity as builtin
 from verity.modules.connectors.http import (
     AccessDenied,
     CredentialRejected,
@@ -45,6 +47,7 @@ from verity.modules.connectors.http import (
     RateLimitExhausted,
 )
 from verity.modules.connectors.models import (
+    BUILT_IN,
     PROVIDERS,
     SCOPE_STATES,
     Check,
@@ -73,6 +76,9 @@ daily, so one missed run is tolerated and two are not: a passing control whose
 last check was last week is out of date, not passing (AU-5)."""
 EVIDENCE_VALIDITY_DAYS: Final = 7
 HISTORY_DAYS: Final = 30
+RESULTS_SHOWN: Final = 200
+"""Results a control page receives per test. A built-in check judges every record of a
+register, so a large inventory would otherwise send tens of thousands of rows per page."""
 
 _CONNECTION_SNAPSHOT: Final = (
     "provider",
@@ -86,7 +92,10 @@ _CONNECTION_SNAPSHOT: Final = (
 )
 _RUN_SNAPSHOT: Final = ("trigger", "status", "resources", "passed", "failed", "errored", "error")
 _REQUEST_SNAPSHOT: Final = ("provider_name", "capability_key", "control_id", "note", "status")
-_PROVIDER_NAMES: Final = {"github": "GitHub"}
+_PROVIDER_NAMES: Final = {"github": "GitHub", BUILT_IN: "Verity"}
+_BUILT_IN_LOGIN: Final = "workspace"
+"""The built-in connection's account: the workspace itself. With the unique index on active
+connections this keeps one built-in connection per workspace."""
 _STATUS_RANK: Final = {"available": 0, "planned": 1, "not_planned": 2}
 
 
@@ -252,6 +261,9 @@ class TestView:
     """running, ready, planned or not_planned: whether this workspace can have it run."""
     needs: list[CapabilityView] = field(default_factory=list)
     """The capabilities this check needs, each with the providers that can supply it."""
+    results_total: int = 0
+    """How many results the last run left; ``results`` holds at most RESULTS_SHOWN of them,
+    failures first. The counts always cover every result."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -638,6 +650,11 @@ class ConnectorService:
         account: str | None,
     ) -> ConnectionView:
         """Check the token against the provider, then store it encrypted."""
+        if provider == BUILT_IN:
+            raise InvalidInput(
+                "Verity's built in checks need no token: they are always on.",
+                detail="built-in provider on the token path",
+            )
         if provider not in PROVIDERS:
             raise InvalidInput(
                 "Verity cannot connect to that system yet. Request it and the team "
@@ -715,6 +732,48 @@ class ConnectorService:
         await session.refresh(row)
         return _connection_view(row, None, datetime.now(UTC))
 
+    async def ensure_built_in(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, actor: Actor
+    ) -> ConnectionView:
+        """Make sure the workspace has its built-in connection, and return it.
+
+        Verity is the always connected provider (ME-1): its checks read data the workspace
+        already keeps, so there is nothing to authorise and nothing to store. Idempotent:
+        the scheduled job calls this for every workspace before choosing what is due.
+        """
+        row = await session.scalar(
+            select(Connection).where(
+                Connection.tenant_id == tenant_id,
+                Connection.provider == BUILT_IN,
+                Connection.status == "active",
+            )
+        )
+        if row is None:
+            row = Connection(
+                id=uuid7(),
+                tenant_id=tenant_id,
+                provider=BUILT_IN,
+                account_login=_BUILT_IN_LOGIN,
+                account_type="organization",
+                display_name="Verity built in checks",
+                created_by_membership_id=actor.id if isinstance(actor, Membership) else None,
+            )
+            session.add(row)
+            await session.flush([row])
+            await self._audit.record(
+                session,
+                action="create",
+                object_type="connection",
+                object_id=row.id,
+                actor=actor,
+                tenant_id=tenant_id,
+                before=None,
+                after=AuditService.snapshot(row, fields=_CONNECTION_SNAPSHOT),
+            )
+            await session.refresh(row)
+        runs = await self._latest_runs(session, tenant_id, [row.id])
+        return _connection_view(row, runs.get(row.id), datetime.now(UTC))
+
     async def disconnect(
         self,
         session: AsyncSession,
@@ -726,6 +785,13 @@ class ConnectorService:
     ) -> ConnectionView:
         """Destroy the credential and stop the runs. History stays."""
         row = await self._load(session, tenant_id, connection_id)
+        if row.provider == BUILT_IN:
+            # Switching off a failing check to clear "failing" is what an auditor flags.
+            raise Conflict(
+                "Verity's built in checks cannot be switched off. Mark a control not "
+                "applicable, or disable it with a reason, to take it out of scope.",
+                detail="built-in provider",
+            )
         if row.status != "active":
             raise Conflict("This connection is already disconnected.", detail=str(connection_id))
         reason = reason.strip()
@@ -1039,7 +1105,11 @@ class ConnectorService:
         started = await self._start(tenant_id, connection_id, trigger, actor)
         if started is None:
             return None
-        run_id, login, account_type, token = started
+        run_id, provider, login, account_type, token = started
+        if provider == BUILT_IN:
+            await self._run_built_in(tenant_id, run_id, actor)
+            return run_id
+        assert token is not None  # noqa: S101 — _start refuses an active row without one
         name = _PROVIDER_NAMES["github"]
         snapshot: dict[str, Any] | None = None
         failure: str | None = None
@@ -1065,9 +1135,43 @@ class ConnectorService:
         await self._finish(tenant_id, run_id, snapshot, results, failure, actor)
         return run_id
 
+    async def _run_built_in(self, tenant_id: uuid.UUID, run_id: uuid.UUID, actor: Actor) -> None:
+        """Collect the workspace's own facts, judge them, and finish the run."""
+        now = datetime.now(UTC)
+        failure: str | None = None
+        data: dict[str, Any] | None = None
+        try:
+            templates = await self._check_templates(tenant_id, builtin.IMPLEMENTED)
+            async with session_scope(tenant_id) as session:
+                facts = await builtin.collect(
+                    session, tenant_id=tenant_id, now=now, check_templates=templates
+                )
+            results = builtin.evaluate(facts)
+            data = builtin.snapshot(facts)
+        except Exception:
+            logger.exception("connectors.built_in.crashed", run_id=str(run_id))
+            failure = "The built in checks stopped unexpectedly. The next run will try again."
+            results = builtin.unreachable(tenant_id, failure)
+        await self._finish(tenant_id, run_id, data, results, failure, actor)
+
+    async def _check_templates(
+        self, tenant_id: uuid.UUID, keys: Sequence[str]
+    ) -> dict[str, set[uuid.UUID]]:
+        """The control templates each check is mapped to, from the shipped catalogue."""
+        async with session_scope(tenant_id) as session:
+            rows = await session.execute(
+                select(Check.key, ControlTemplateCheck.template_id)
+                .join(ControlTemplateCheck, ControlTemplateCheck.check_id == Check.id)
+                .where(Check.key.in_(list(keys)))
+            )
+            out: dict[str, set[uuid.UUID]] = defaultdict(set)
+            for key, template_id in rows.tuples():
+                out[key].add(template_id)
+            return dict(out)
+
     async def _start(
         self, tenant_id: uuid.UUID, connection_id: uuid.UUID, trigger: str, actor: Actor
-    ) -> tuple[uuid.UUID, str, str, str] | None:
+    ) -> tuple[uuid.UUID, str, str, str, str | None] | None:
         now = datetime.now(UTC)
         async with session_scope(tenant_id) as session:
             # The row lock serialises two starts for one connection.
@@ -1079,7 +1183,7 @@ class ConnectorService:
             if (
                 connection is None
                 or connection.status != "active"
-                or not connection.credential_ciphertext
+                or (connection.provider != BUILT_IN and not connection.credential_ciphertext)
             ):
                 return None
             await session.execute(
@@ -1124,10 +1228,19 @@ class ConnectorService:
                 before=None,
                 after=AuditService.snapshot(run, fields=_RUN_SNAPSHOT),
             )
+            if connection.provider == BUILT_IN:
+                return run.id, BUILT_IN, connection.account_login, connection.account_type, None
+            assert connection.credential_ciphertext is not None  # noqa: S101 — checked above
             token = get_secret_box().decrypt(
                 connection.credential_ciphertext, aad=_aad(tenant_id, connection_id)
             )
-            return run.id, connection.account_login, connection.account_type, token
+            return (
+                run.id,
+                connection.provider,
+                connection.account_login,
+                connection.account_type,
+                token,
+            )
 
     async def _finish(  # noqa: PLR0913, PLR0917 — one run's whole outcome
         self,
@@ -1186,7 +1299,8 @@ class ConnectorService:
             run.error = failure
             run.results_digest = digest
             if snapshot is not None:
-                await self._sync_inventory(session, tenant_id, connection, snapshot, now)
+                if connection.provider != BUILT_IN:
+                    await self._sync_inventory(session, tenant_id, connection, snapshot, now)
                 # A run files one evidence item per check, so there is no single
                 # ``evidence_id`` to record on it: the items name the run they came from.
                 await self._evidence(
@@ -1265,7 +1379,8 @@ class ConnectorService:
             templates[check_id].add(template_id)
 
         name = _PROVIDER_NAMES.get(connection.provider, connection.provider)
-        inventory = snapshot.get("inventory") or []
+        built_in = connection.provider == BUILT_IN
+        inventory = [] if built_in else (snapshot.get("inventory") or [])
         # What the checks did not look at, and why. An auditor reading a clean result needs
         # to know the population it was clean over.
         scope = {
@@ -1306,6 +1421,13 @@ class ConnectorService:
             if not control_ids:
                 continue
             outcomes = [row.outcome for row in check_rows]
+            part = (
+                builtin.evidence_snapshot(
+                    check.key, snapshot, resource_ids={row.resource_id for row in check_rows}
+                )
+                if built_in
+                else github.evidence_snapshot(check.key, snapshot)
+            )
             document = {
                 "verity": {
                     "run_id": str(run.id),
@@ -1321,7 +1443,11 @@ class ConnectorService:
                         "name": check.name,
                         "description": check.description,
                     },
-                    "scope": scope,
+                    # A built-in check judges registers, not repositories: its scope is the
+                    # population each register was read over.
+                    "scope": (
+                        {"population": list(part["population"].values())} if built_in else scope
+                    ),
                     "results": [
                         {
                             "check": check.key,
@@ -1335,41 +1461,59 @@ class ConnectorService:
                         for row in check_rows
                     ],
                 },
-                "snapshot": github.evidence_snapshot(check.key, snapshot),
+                "snapshot": part,
             }
             data = json.dumps(document, indent=2, default=str).encode()
             resources = len({(row.resource_type, row.resource_id) for row in check_rows})
-            view = await evidence_service.add_file(
-                session,
-                tenant_id=tenant_id,
-                actor=actor,
-                # Named for what it evidences, where and when. The moment is in the title
-                # because a check whose results changed files again within the day, and a
-                # list of identical titles tells nobody which is which.
-                title=(
-                    f"{check.name}: {name} {connection.account_login}, "
-                    f"{now.day} {now:%b %Y %H:%M} UTC"
-                ),
-                filename=(
-                    f"{connection.provider}-{connection.account_login}-{_slug(check.key)}-"
-                    f"{now:%Y%m%dT%H%MZ}.json"
-                ),
-                data=data,
-                evidence_type="configuration_export",
-                collected_at=now.date(),
-                description=(
-                    f"{outcomes.count('pass')} passed, {outcomes.count('fail')} failed and "
-                    f"{outcomes.count('error')} could not be checked across {resources} "
-                    f"resources. Collected read only by the {name} connector."
-                ),
-                source_label=f"{name} connector",
-                owner_membership_id=connection.created_by_membership_id,
-                renewal_date=now.date() + timedelta(days=EVIDENCE_VALIDITY_DAYS),
-                control_ids=control_ids,
-                source=connection.provider,
-                external_id=_external_id(connection.id, check.key, digest, run.id),
-                synced_at=now,
-            )
+            try:
+                view = await evidence_service.add_file(
+                    session,
+                    tenant_id=tenant_id,
+                    actor=actor,
+                    # Named for what it evidences, where and when. The moment is in the title
+                    # because a check whose results changed files again within the day, and a
+                    # list of identical titles tells nobody which is which.
+                    title=(
+                        f"{check.name}: Verity check, {now.day} {now:%b %Y %H:%M} UTC"
+                        if built_in
+                        else f"{check.name}: {name} {connection.account_login}, "
+                        f"{now.day} {now:%b %Y %H:%M} UTC"
+                    ),
+                    filename=(
+                        f"{connection.provider}-{connection.account_login}-{_slug(check.key)}-"
+                        f"{now:%Y%m%dT%H%MZ}.json"
+                    ),
+                    data=data,
+                    evidence_type="configuration_export",
+                    collected_at=now.date(),
+                    description=(
+                        f"{outcomes.count('pass')} passed, {outcomes.count('fail')} failed and "
+                        f"{outcomes.count('error')} could not be checked across {resources} "
+                        + (
+                            "records. Checked by Verity over data kept in this workspace."
+                            if built_in
+                            else f"resources. Collected read only by the {name} connector."
+                        )
+                    ),
+                    source_label="Verity built in checks" if built_in else f"{name} connector",
+                    owner_membership_id=connection.created_by_membership_id,
+                    renewal_date=now.date() + timedelta(days=EVIDENCE_VALIDITY_DAYS),
+                    control_ids=control_ids,
+                    source=connection.provider,
+                    external_id=_external_id(connection.id, check.key, digest, run.id),
+                    synced_at=now,
+                )
+            except InvalidInput as exc:
+                if exc.code != FILE_TOO_LARGE_CODE:
+                    raise
+                # The results still stand; only this one report is not filed.
+                logger.warning(
+                    "connectors.evidence.too_large",
+                    check=check.key,
+                    run_id=str(run.id),
+                    bytes=len(data),
+                )
+                continue
             filed.append(view.id)
         return filed
 
@@ -1574,10 +1718,9 @@ class ConnectorService:
                             detail=row.detail,
                             observed_at=row.observed_at,
                         )
-                        for row in sorted(
-                            rows, key=lambda r: (order.get(r.outcome, 9), r.resource_name.lower())
-                        )
+                        for row in _shown(rows, order)
                     ],
+                    results_total=len(rows),
                     counts={o: sum(1 for row in rows if row.outcome == o) for o in order},
                     last_run_at=max((row.observed_at for row in rows), default=None),
                     rationale=rationale,
@@ -1599,7 +1742,7 @@ class ConnectorService:
                         name=option["name"],
                         status=option["status"],
                         phase=option["phase"],
-                        connected=option["key"] in connected,
+                        connected=comp.provider_state(option, connected) == "connected",
                         runs_check=any(
                             option["key"] in check.implementations
                             for check, _, _ in mapped
@@ -2016,6 +2159,14 @@ class ConnectorService:
             status=row.status,
             created_at=row.created_at,
         )
+
+
+def _shown(rows: list[CheckResult], order: dict[str, int]) -> list[CheckResult]:
+    """The results a control page receives: failures first, at most RESULTS_SHOWN of them,
+    plus every result a provider's plan rules out, which the page groups and counts."""
+    ordered = sorted(rows, key=lambda r: (order.get(r.outcome, 9), r.resource_name.lower()))
+    plan = [r for r in ordered if r.detail.get("reason") == "plan"]
+    return [r for r in ordered if r.detail.get("reason") != "plan"][:RESULTS_SHOWN] + plan
 
 
 connector_service = ConnectorService()

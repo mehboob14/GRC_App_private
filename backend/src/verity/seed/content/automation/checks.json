@@ -53,11 +53,9 @@
     "resource_type": "repository",
     "frequency": "daily",
     "remediation": "Add the test job as a required status check on the default branch.",
-    "controls": [{
-  "code": "SD-02",
-  "coverage": "partial",
-  "rationale": "Shows tests must pass before a change merges. It does not show the tests are meaningful or that they passed on each change."
-}],
+    "controls": [
+      {"code": "SD-02", "coverage": "partial", "rationale": "Shows tests must pass before a change merges. It does not show the tests are meaningful or that they passed on each change."}
+    ],
     "evidence_kinds": ["Required status check settings"]
   },
   {
@@ -69,11 +67,9 @@
     "resource_type": "repository",
     "frequency": "daily",
     "remediation": "Turn on secret scanning in the repository's security settings.",
-    "controls": [{
-  "code": "SD-11",
-  "coverage": "partial",
-  "rationale": "Shows scanning is switched on for each repository. Rotating an exposed secret is a separate step."
-}],
+    "controls": [
+      {"code": "SD-11", "coverage": "partial", "rationale": "Shows scanning is switched on for each repository. Rotating an exposed secret is a separate step."}
+    ],
     "evidence_kinds": ["Repository security settings"]
   },
   {
@@ -100,11 +96,9 @@
     "resource_type": "organization",
     "frequency": "daily",
     "remediation": "In the organisation's authentication security settings, require two factor authentication for everyone.",
-    "controls": [{
-  "code": "IAM-03",
-  "coverage": "partial",
-  "rationale": "Shows two factor is required in the source control organization. Other systems need their own checks."
-}],
+    "controls": [
+      {"code": "IAM-03", "coverage": "partial", "rationale": "Shows two factor is required in the source control organization. Other systems need their own checks."}
+    ],
     "evidence_kinds": ["Organization security settings"]
   },
   {
@@ -116,11 +110,9 @@
     "resource_type": "repository",
     "frequency": "daily",
     "remediation": "Turn on code scanning for each repository.",
-    "controls": [{
-  "code": "SD-05",
-  "coverage": "partial",
-  "rationale": "Static analysis catches some input validation flaws. It does not show inputs are complete and accurate."
-}],
+    "controls": [
+      {"code": "SD-05", "coverage": "partial", "rationale": "Static analysis catches some input validation flaws. It does not show inputs are complete and accurate."}
+    ],
     "evidence_kinds": ["Code scanning configuration", "Code scanning alerts"]
   },
   {
@@ -132,11 +124,9 @@
     "resource_type": "cloud_resource",
     "frequency": "daily",
     "remediation": "Turn on default encryption with a managed key for each resource.",
-    "controls": [{
-  "code": "NS-01",
-  "coverage": "full",
-  "rationale": "Shows every storage bucket, database, volume and snapshot in scope is encrypted, which is what the control states."
-}],
+    "controls": [
+      {"code": "NS-01", "coverage": "full", "rationale": "Shows every storage bucket, database, volume and snapshot in scope is encrypted, which is what the control states."}
+    ],
     "evidence_kinds": ["Encryption settings per storage resource"]
   },
   {
@@ -148,11 +138,9 @@
     "resource_type": "cloud_resource",
     "frequency": "daily",
     "remediation": "Set a TLS 1.2 minimum security policy on every listener and endpoint.",
-    "controls": [{
-  "code": "NS-02",
-  "coverage": "partial",
-  "rationale": "Shows public endpoints accept only current TLS. Internal service traffic needs its own evidence."
-}],
+    "controls": [
+      {"code": "NS-02", "coverage": "partial", "rationale": "Shows public endpoints accept only current TLS. Internal service traffic needs its own evidence."}
+    ],
     "evidence_kinds": ["Load balancer and endpoint TLS settings"]
   },
   {
@@ -164,11 +152,9 @@
     "resource_type": "cloud_resource",
     "frequency": "daily",
     "remediation": "Remove open inbound rules and allow only named sources and ports.",
-    "controls": [{
-  "code": "NS-03",
-  "coverage": "partial",
-  "rationale": "Shows inbound rules are limited to what a service needs. The owner and purpose of each rule are reviewed by people."
-}],
+    "controls": [
+      {"code": "NS-03", "coverage": "partial", "rationale": "Shows inbound rules are limited to what a service needs. The owner and purpose of each rule are reviewed by people."}
+    ],
     "evidence_kinds": ["Security group and firewall rules"]
   },
   {
@@ -195,11 +181,9 @@
     "resource_type": "cloud_account",
     "frequency": "daily",
     "remediation": "Fix the benchmark items listed on the result.",
-    "controls": [{
-  "code": "NS-04",
-  "coverage": "partial",
-  "rationale": "Shows cloud configuration meets a benchmark. Operating system and container hardening need their own evidence."
-}],
+    "controls": [
+      {"code": "NS-04", "coverage": "partial", "rationale": "Shows cloud configuration meets a benchmark. Operating system and container hardening need their own evidence."}
+    ],
     "evidence_kinds": ["CIS benchmark results"]
   },
   {
@@ -211,11 +195,9 @@
     "resource_type": "cloud_account",
     "frequency": "daily",
     "remediation": "Turn on the provider's threat detection service in every region in use.",
-    "controls": [{
-  "code": "NS-05",
-  "coverage": "partial",
-  "rationale": "Shows the detection service is on in every account and region. Routing and response are separate."
-}],
+    "controls": [
+      {"code": "NS-05", "coverage": "partial", "rationale": "Shows the detection service is on in every account and region. Routing and response are separate."}
+    ],
     "evidence_kinds": ["Threat detection service settings per account and region"]
   },
   {
@@ -227,11 +209,9 @@
     "resource_type": "cloud_resource",
     "frequency": "daily",
     "remediation": "Turn on automatic yearly rotation for each customer managed key.",
-    "controls": [{
-  "code": "NS-06",
-  "coverage": "partial",
-  "rationale": "Shows keys rotate. Who can use the keys and what happens on compromise need review."
-}],
+    "controls": [
+      {"code": "NS-06", "coverage": "partial", "rationale": "Shows keys rotate. Who can use the keys and what happens on compromise need review."}
+    ],
     "evidence_kinds": ["Key rotation settings and dates"]
   },
   {
@@ -243,11 +223,9 @@
     "resource_type": "cloud_resource",
     "frequency": "daily",
     "remediation": "Move production into its own network and restrict traffic between tiers.",
-    "controls": [{
-  "code": "NS-07",
-  "coverage": "partial",
-  "rationale": "Shows production sits in its own network. The rules between tiers are reviewed by people."
-}],
+    "controls": [
+      {"code": "NS-07", "coverage": "partial", "rationale": "Shows production sits in its own network. The rules between tiers are reviewed by people."}
+    ],
     "evidence_kinds": ["Network and routing configuration"]
   },
   {
@@ -259,11 +237,9 @@
     "resource_type": "cloud_resource",
     "frequency": "daily",
     "remediation": "Move the secret into the secrets manager and read it at runtime.",
-    "controls": [{
-  "code": "NS-09",
-  "coverage": "partial",
-  "rationale": "Shows secrets live in a secrets manager. Access to them and their rotation need their own evidence."
-}],
+    "controls": [
+      {"code": "NS-09", "coverage": "partial", "rationale": "Shows secrets live in a secrets manager. Access to them and their rotation need their own evidence."}
+    ],
     "evidence_kinds": ["Secrets manager inventory"]
   },
   {
@@ -275,11 +251,9 @@
     "resource_type": "cloud_resource",
     "frequency": "daily",
     "remediation": "Turn on automated backups and set retention to the policy period.",
-    "controls": [{
-  "code": "BC-01",
-  "coverage": "partial",
-  "rationale": "Shows automated backups with retention exist. Whether they succeed and are monitored is separate."
-}],
+    "controls": [
+      {"code": "BC-01", "coverage": "partial", "rationale": "Shows automated backups with retention exist. Whether they succeed and are monitored is separate."}
+    ],
     "evidence_kinds": ["Backup settings and retention per database"]
   },
   {
@@ -291,11 +265,9 @@
     "resource_type": "cloud_resource",
     "frequency": "daily",
     "remediation": "Add utilisation alarms that notify the on call rotation.",
-    "controls": [{
-  "code": "BC-04",
-  "coverage": "partial",
-  "rationale": "Shows alarms fire before capacity runs out. Forecasting and the actions taken are reviewed by people."
-}],
+    "controls": [
+      {"code": "BC-04", "coverage": "partial", "rationale": "Shows alarms fire before capacity runs out. Forecasting and the actions taken are reviewed by people."}
+    ],
     "evidence_kinds": ["Alarm configuration"]
   },
   {
@@ -307,11 +279,9 @@
     "resource_type": "cloud_account",
     "frequency": "daily",
     "remediation": "Turn on the audit trail in every region and store it where it cannot be altered.",
-    "controls": [{
-  "code": "LM-02",
-  "coverage": "partial",
-  "rationale": "Shows administrative activity is logged and kept. Application and sign in logs need their own check."
-}],
+    "controls": [
+      {"code": "LM-02", "coverage": "partial", "rationale": "Shows administrative activity is logged and kept. Application and sign in logs need their own check."}
+    ],
     "evidence_kinds": ["Audit log settings per account"]
   },
   {
@@ -323,11 +293,9 @@
     "resource_type": "cloud_account",
     "frequency": "daily",
     "remediation": "Turn on configuration recording and alert on changes to sensitive settings.",
-    "controls": [{
-  "code": "LM-03",
-  "coverage": "full",
-  "rationale": "Shows configuration changes are recorded and raise alerts, which is what the control states."
-}],
+    "controls": [
+      {"code": "LM-03", "coverage": "full", "rationale": "Shows configuration changes are recorded and raise alerts, which is what the control states."}
+    ],
     "evidence_kinds": ["Configuration change recorder settings and alerts"]
   },
   {
@@ -339,11 +307,9 @@
     "resource_type": "cloud_account",
     "frequency": "daily",
     "remediation": "Add a hardware or app based second factor to the root account and delete its keys.",
-    "controls": [{
-  "code": "IAM-03",
-  "coverage": "partial",
-  "rationale": "Shows the most powerful cloud accounts have two factor."
-}],
+    "controls": [
+      {"code": "IAM-03", "coverage": "partial", "rationale": "Shows the most powerful cloud accounts have two factor."}
+    ],
     "evidence_kinds": ["Root and break glass account settings"]
   },
   {
@@ -370,11 +336,9 @@
     "resource_type": "cloud_identity",
     "frequency": "daily",
     "remediation": "Rotate the key, or replace it with a short lived role.",
-    "controls": [{
-  "code": "IAM-10",
-  "coverage": "partial",
-  "rationale": "Shows machine credentials are rotated. Ownership and the inventory of accounts are separate."
-}],
+    "controls": [
+      {"code": "IAM-10", "coverage": "partial", "rationale": "Shows machine credentials are rotated. Ownership and the inventory of accounts are separate."}
+    ],
     "evidence_kinds": ["Access key and service account key ages"]
   },
   {
@@ -401,11 +365,9 @@
     "resource_type": "cloud_resource",
     "frequency": "daily",
     "remediation": "Turn on versioning or immutable tags for the store.",
-    "controls": [{
-  "code": "SD-07",
-  "coverage": "partial",
-  "rationale": "Shows build and pipeline storage keeps versions. Integrity checks between stages are separate."
-}],
+    "controls": [
+      {"code": "SD-07", "coverage": "partial", "rationale": "Shows build and pipeline storage keeps versions. Integrity checks between stages are separate."}
+    ],
     "evidence_kinds": ["Storage versioning settings"]
   },
   {
@@ -417,11 +379,9 @@
     "resource_type": "cloud_resource",
     "frequency": "weekly",
     "remediation": "Add a lifecycle rule that matches the retention schedule.",
-    "controls": [{
-  "code": "DM-16",
-  "coverage": "partial",
-  "rationale": "Shows storage deletes data when retention ends. Deletion from copies and vendors is separate."
-}],
+    "controls": [
+      {"code": "DM-16", "coverage": "partial", "rationale": "Shows storage deletes data when retention ends. Deletion from copies and vendors is separate."}
+    ],
     "evidence_kinds": ["Storage lifecycle rules"]
   },
   {
@@ -433,11 +393,9 @@
     "resource_type": "cloud_resource",
     "frequency": "daily",
     "remediation": "Add the resource to the asset register, or record why it is out of scope.",
-    "controls": [{
-  "code": "LM-01",
-  "coverage": "partial",
-  "rationale": "Shows discovered cloud resources are in the asset register. People, devices and SaaS need their own sources."
-}],
+    "controls": [
+      {"code": "LM-01", "coverage": "partial", "rationale": "Shows discovered cloud resources are in the asset register. People, devices and SaaS need their own sources."}
+    ],
     "evidence_kinds": ["Discovered resources compared with the asset register"]
   },
   {
@@ -463,11 +421,9 @@
     "resource_type": "application",
     "frequency": "daily",
     "remediation": "Connect the application to single sign on and turn off local passwords.",
-    "controls": [{
-  "code": "IAM-04",
-  "coverage": "full",
-  "rationale": "Shows applications authenticate through the identity provider, which is what the control states."
-}],
+    "controls": [
+      {"code": "IAM-04", "coverage": "full", "rationale": "Shows applications authenticate through the identity provider, which is what the control states."}
+    ],
     "evidence_kinds": ["Application authentication settings"]
   },
   {
@@ -479,11 +435,9 @@
     "resource_type": "policy",
     "frequency": "daily",
     "remediation": "Update the identity provider's password policy to the company standard.",
-    "controls": [{
-  "code": "IAM-06",
-  "coverage": "full",
-  "rationale": "Shows the identity provider enforces the password policy, which is what the control states."
-}],
+    "controls": [
+      {"code": "IAM-06", "coverage": "full", "rationale": "Shows the identity provider enforces the password policy, which is what the control states."}
+    ],
     "evidence_kinds": ["Password policy settings"]
   },
   {
@@ -495,11 +449,9 @@
     "resource_type": "policy",
     "frequency": "daily",
     "remediation": "Set idle and maximum session lengths in the identity provider.",
-    "controls": [{
-  "code": "IAM-11",
-  "coverage": "full",
-  "rationale": "Shows session lengths are set within policy, which is what the control states."
-}],
+    "controls": [
+      {"code": "IAM-11", "coverage": "full", "rationale": "Shows session lengths are set within policy, which is what the control states."}
+    ],
     "evidence_kinds": ["Session policy settings"]
   },
   {
@@ -511,11 +463,9 @@
     "resource_type": "user",
     "frequency": "daily",
     "remediation": "Remove administrator roles that have no recorded approval.",
-    "controls": [{
-  "code": "IAM-07",
-  "coverage": "partial",
-  "rationale": "Shows administrator roles are held by named, approved people. Reviewing that approval is separate."
-}],
+    "controls": [
+      {"code": "IAM-07", "coverage": "partial", "rationale": "Shows administrator roles are held by named, approved people. Reviewing that approval is separate."}
+    ],
     "evidence_kinds": ["Administrator role assignments"]
   },
   {
@@ -542,11 +492,9 @@
     "resource_type": "application",
     "frequency": "weekly",
     "remediation": "Move direct assignments into the role group that should hold them.",
-    "controls": [{
-  "code": "IAM-08",
-  "coverage": "partial",
-  "rationale": "Shows access comes from role groups. Whether the roles themselves are right is separate."
-}],
+    "controls": [
+      {"code": "IAM-08", "coverage": "partial", "rationale": "Shows access comes from role groups. Whether the roles themselves are right is separate."}
+    ],
     "evidence_kinds": ["Application access assignments"]
   },
   {
@@ -558,11 +506,9 @@
     "resource_type": "application",
     "frequency": "daily",
     "remediation": "Approve the application, or revoke its access.",
-    "controls": [{
-  "code": "BC-05",
-  "coverage": "partial",
-  "rationale": "Finds applications connected through the identity provider. Purchases made outside it need another source."
-}],
+    "controls": [
+      {"code": "BC-05", "coverage": "partial", "rationale": "Finds applications connected through the identity provider. Purchases made outside it need another source."}
+    ],
     "evidence_kinds": ["Connected application listing"]
   },
   {
@@ -589,11 +535,9 @@
     "resource_type": "person",
     "frequency": "daily",
     "remediation": "Start the onboarding checklist for the listed people.",
-    "controls": [{
-  "code": "HR-06",
-  "coverage": "partial",
-  "rationale": "Shows accounts follow the onboarding checklist. Whether each step was completed is checked by people."
-}],
+    "controls": [
+      {"code": "HR-06", "coverage": "partial", "rationale": "Shows accounts follow the onboarding checklist. Whether each step was completed is checked by people."}
+    ],
     "evidence_kinds": ["Joiners from the HR source", "Account creation dates"]
   },
   {
@@ -605,11 +549,9 @@
     "resource_type": "person",
     "frequency": "daily",
     "remediation": "Invite the listed people to the company password manager.",
-    "controls": [{
-  "code": "IAM-05",
-  "coverage": "full",
-  "rationale": "Shows every active employee has a company password manager account, which is what the control states."
-}],
+    "controls": [
+      {"code": "IAM-05", "coverage": "full", "rationale": "Shows every active employee has a company password manager account, which is what the control states."}
+    ],
     "evidence_kinds": ["Password manager member list"]
   },
   {
@@ -636,11 +578,9 @@
     "resource_type": "user",
     "frequency": "daily",
     "remediation": "Record the approval for the listed grants, or remove the access.",
-    "controls": [{
-  "code": "IAM-01",
-  "coverage": "full",
-  "rationale": "Shows new access matches an approved request, which is what the control states."
-}],
+    "controls": [
+      {"code": "IAM-01", "coverage": "full", "rationale": "Shows new access matches an approved request, which is what the control states."}
+    ],
     "evidence_kinds": ["Access requests and approvals", "Access grants"]
   },
   {
@@ -652,11 +592,9 @@
     "resource_type": "ticket",
     "frequency": "daily",
     "remediation": "Open or update the ticket and agree a date to close it.",
-    "controls": [{
-  "code": "GOV-08",
-  "coverage": "partial",
-  "rationale": "Shows failures open a ticket that closes in time. Telling the right people is separate."
-}],
+    "controls": [
+      {"code": "GOV-08", "coverage": "partial", "rationale": "Shows failures open a ticket that closes in time. Telling the right people is separate."}
+    ],
     "evidence_kinds": ["Remediation tickets and their closure dates"]
   },
   {
@@ -668,11 +606,9 @@
     "resource_type": "service",
     "frequency": "daily",
     "remediation": "Route the security alert source to an escalation policy.",
-    "controls": [{
-  "code": "LM-09",
-  "coverage": "partial",
-  "rationale": "Shows alerts go to an on call rotation. Tuning and acting on alerts are separate."
-}],
+    "controls": [
+      {"code": "LM-09", "coverage": "partial", "rationale": "Shows alerts go to an on call rotation. Tuning and acting on alerts are separate."}
+    ],
     "evidence_kinds": ["Alert routing and on call schedule"]
   },
   {
@@ -684,11 +620,9 @@
     "resource_type": "incident",
     "frequency": "daily",
     "remediation": "Review the missed alerts and adjust the rotation or escalation.",
-    "controls": [{
-  "code": "LM-04",
-  "coverage": "partial",
-  "rationale": "Shows alerts are picked up in time. The evaluation decision is recorded by people."
-}],
+    "controls": [
+      {"code": "LM-04", "coverage": "partial", "rationale": "Shows alerts are picked up in time. The evaluation decision is recorded by people."}
+    ],
     "evidence_kinds": ["Alert acknowledgement times"]
   },
   {
@@ -700,11 +634,9 @@
     "resource_type": "incident",
     "frequency": "daily",
     "remediation": "Add the owner and timeline to the listed incidents.",
-    "controls": [{
-  "code": "LM-06",
-  "coverage": "partial",
-  "rationale": "Shows incidents end with an owner and a timeline. The recovery steps themselves are separate."
-}],
+    "controls": [
+      {"code": "LM-06", "coverage": "partial", "rationale": "Shows incidents end with an owner and a timeline. The recovery steps themselves are separate."}
+    ],
     "evidence_kinds": ["Incident timelines and owners"]
   },
   {
@@ -731,11 +663,9 @@
     "resource_type": "device",
     "frequency": "daily",
     "remediation": "Put the system behind the zero trust network and remove public access.",
-    "controls": [{
-  "code": "NS-11",
-  "coverage": "full",
-  "rationale": "Shows internal systems are reachable only through the VPN or zero trust network, which is what the control states."
-}],
+    "controls": [
+      {"code": "NS-11", "coverage": "full", "rationale": "Shows internal systems are reachable only through the VPN or zero trust network, which is what the control states."}
+    ],
     "evidence_kinds": ["Access policy and device posture settings"]
   },
   {
@@ -747,11 +677,9 @@
     "resource_type": "zone",
     "frequency": "daily",
     "remediation": "Raise the zone's minimum TLS version and turn on HTTPS redirects.",
-    "controls": [{
-  "code": "NS-02",
-  "coverage": "partial",
-  "rationale": "Shows the edge refuses old TLS and redirects plain HTTP. Internal traffic is separate."
-}],
+    "controls": [
+      {"code": "NS-02", "coverage": "partial", "rationale": "Shows the edge refuses old TLS and redirects plain HTTP. Internal traffic is separate."}
+    ],
     "evidence_kinds": ["Edge TLS settings"]
   },
   {
@@ -763,11 +691,9 @@
     "resource_type": "log_index",
     "frequency": "daily",
     "remediation": "Raise retention to the policy period.",
-    "controls": [{
-  "code": "LM-02",
-  "coverage": "partial",
-  "rationale": "Shows logs are kept as long as policy says. Completeness of what is logged is separate."
-}],
+    "controls": [
+      {"code": "LM-02", "coverage": "partial", "rationale": "Shows logs are kept as long as policy says. Completeness of what is logged is separate."}
+    ],
     "evidence_kinds": ["Log retention settings"]
   },
   {
@@ -779,11 +705,9 @@
     "resource_type": "monitor",
     "frequency": "daily",
     "remediation": "Add monitors for the missing signals and route them to on call.",
-    "controls": [{
-  "code": "LM-09",
-  "coverage": "partial",
-  "rationale": "Shows monitors exist for the main anomaly types. Responding to them is separate."
-}],
+    "controls": [
+      {"code": "LM-09", "coverage": "partial", "rationale": "Shows monitors exist for the main anomaly types. Responding to them is separate."}
+    ],
     "evidence_kinds": ["Monitor definitions"]
   },
   {
@@ -795,11 +719,9 @@
     "resource_type": "monitor",
     "frequency": "daily",
     "remediation": "Add failure and lag alerts to the listed jobs.",
-    "controls": [{
-  "code": "SD-08",
-  "coverage": "partial",
-  "rationale": "Shows failed or late jobs raise alerts. Reconciling outputs to inputs is separate."
-}],
+    "controls": [
+      {"code": "SD-08", "coverage": "partial", "rationale": "Shows failed or late jobs raise alerts. Reconciling outputs to inputs is separate."}
+    ],
     "evidence_kinds": ["Job and pipeline monitors"]
   },
   {
@@ -811,11 +733,9 @@
     "resource_type": "monitor",
     "frequency": "weekly",
     "remediation": "Add utilisation monitors for the listed services.",
-    "controls": [{
-  "code": "BC-04",
-  "coverage": "partial",
-  "rationale": "Shows utilization is tracked. Acting before capacity runs out is reviewed by people."
-}],
+    "controls": [
+      {"code": "BC-04", "coverage": "partial", "rationale": "Shows utilization is tracked. Acting before capacity runs out is reviewed by people."}
+    ],
     "evidence_kinds": ["Utilization monitors and dashboards"]
   },
   {
@@ -842,11 +762,9 @@
     "resource_type": "device",
     "frequency": "daily",
     "remediation": "Enrol the listed laptops.",
-    "controls": [{
-  "code": "EP-03",
-  "coverage": "full",
-  "rationale": "Shows every company laptop is enrolled in device management, which is what the control states."
-}],
+    "controls": [
+      {"code": "EP-03", "coverage": "full", "rationale": "Shows every company laptop is enrolled in device management, which is what the control states."}
+    ],
     "evidence_kinds": ["Managed device list"]
   },
   {
@@ -858,11 +776,9 @@
     "resource_type": "device",
     "frequency": "daily",
     "remediation": "Turn on FileVault or BitLocker through device management.",
-    "controls": [{
-  "code": "EP-02",
-  "coverage": "full",
-  "rationale": "Shows every managed laptop has disk encryption on, which is what the control states."
-}],
+    "controls": [
+      {"code": "EP-02", "coverage": "full", "rationale": "Shows every managed laptop has disk encryption on, which is what the control states."}
+    ],
     "evidence_kinds": ["Device encryption status"]
   },
   {
@@ -874,11 +790,9 @@
     "resource_type": "device",
     "frequency": "daily",
     "remediation": "Push the screen lock profile to the listed laptops.",
-    "controls": [{
-  "code": "EP-06",
-  "coverage": "full",
-  "rationale": "Shows every managed laptop locks its screen after the set idle time, which is what the control states."
-}],
+    "controls": [
+      {"code": "EP-06", "coverage": "full", "rationale": "Shows every managed laptop locks its screen after the set idle time, which is what the control states."}
+    ],
     "evidence_kinds": ["Device screen lock settings"]
   },
   {
@@ -890,11 +804,9 @@
     "resource_type": "device",
     "frequency": "daily",
     "remediation": "Update the listed laptops.",
-    "controls": [{
-  "code": "EP-04",
-  "coverage": "partial",
-  "rationale": "Shows laptops run a supported operating system. Servers and applications need their own source."
-}],
+    "controls": [
+      {"code": "EP-04", "coverage": "partial", "rationale": "Shows laptops run a supported operating system. Servers and applications need their own source."}
+    ],
     "evidence_kinds": ["Operating system versions per device"]
   },
   {
@@ -906,11 +818,9 @@
     "resource_type": "device",
     "frequency": "daily",
     "remediation": "Re-enrol the listed laptops with remote wipe allowed.",
-    "controls": [{
-  "code": "EP-05",
-  "coverage": "partial",
-  "rationale": "Shows devices can be wiped. It does not show a wipe was done when a device was lost or a person left."
-}],
+    "controls": [
+      {"code": "EP-05", "coverage": "partial", "rationale": "Shows devices can be wiped. It does not show a wipe was done when a device was lost or a person left."}
+    ],
     "evidence_kinds": ["Device remote lock and wipe capability"]
   },
   {
@@ -922,11 +832,9 @@
     "resource_type": "device",
     "frequency": "daily",
     "remediation": "Install or repair the agent on the listed devices.",
-    "controls": [{
-  "code": "EP-01",
-  "coverage": "full",
-  "rationale": "Shows every laptop and server runs a healthy, current protection agent, which is what the control states."
-}],
+    "controls": [
+      {"code": "EP-01", "coverage": "full", "rationale": "Shows every laptop and server runs a healthy, current protection agent, which is what the control states."}
+    ],
     "evidence_kinds": ["Protection agent status per device"]
   },
   {
@@ -938,11 +846,9 @@
     "resource_type": "environment",
     "frequency": "daily",
     "remediation": "Deploy to production from the protected branch only, and require approval on the production environment.",
-    "controls": [{
-  "code": "SD-13",
-  "coverage": "partial",
-  "rationale": "Shows production releases follow a controlled path and need approval. Who is allowed to approve is reviewed by people."
-}],
+    "controls": [
+      {"code": "SD-13", "coverage": "partial", "rationale": "Shows production releases follow a controlled path and need approval. Who is allowed to approve is reviewed by people."}
+    ],
     "evidence_kinds": ["Environment protection rules", "Deployment history"]
   },
   {
@@ -969,11 +875,9 @@
     "resource_type": "repository",
     "frequency": "daily",
     "remediation": "Make the checks required, and stop merging while they fail.",
-    "controls": [{
-  "code": "SD-02",
-  "coverage": "partial",
-  "rationale": "Shows tests passed on each merged change, not only that they are required."
-}],
+    "controls": [
+      {"code": "SD-02", "coverage": "partial", "rationale": "Shows tests passed on each merged change, not only that they are required."}
+    ],
     "evidence_kinds": ["CI run results", "Merged pull requests"]
   },
   {
@@ -994,30 +898,28 @@
   {
     "key": "verity.assets.owner_assigned",
     "name": "Every active asset has an owner",
-    "description": "Every active asset in the Verity inventory has a primary owner.",
+    "description": "Every asset in service (active or in maintenance) has a primary owner who is an active member of the workspace.",
     "capabilities": ["verity_assets"],
-    "implementations": [],
+    "implementations": ["verity"],
     "resource_type": "asset",
     "frequency": "daily",
     "remediation": "Give each asset a primary owner in Assets.",
-    "controls": [{
-  "code": "LM-01",
-  "coverage": "partial",
-  "rationale": "Shows each asset has someone accountable for it."
-}],
+    "controls": [
+      {"code": "LM-01", "coverage": "partial", "rationale": "Shows each asset has someone accountable for it."}
+    ],
     "evidence_kinds": ["Asset inventory report"]
   },
   {
     "key": "verity.assets.classified",
-    "name": "Assets that hold data are classified",
-    "description": "Every active asset that stores or processes data has a data classification.",
+    "name": "Every asset in service is classified",
+    "description": "Every asset in service has a data classification. Verity does not record which assets hold data, so every asset in service is judged; one that holds nothing sensitive is classified public or internal.",
     "capabilities": ["verity_assets"],
-    "implementations": [],
+    "implementations": ["verity"],
     "resource_type": "asset",
     "frequency": "daily",
-    "remediation": "Set a classification on each asset that holds data.",
+    "remediation": "Set a data classification on every asset in service; use public or internal for one that holds nothing sensitive.",
     "controls": [
-      {"code": "LM-01", "coverage": "partial", "rationale": "Shows the inventory records what each asset holds."},
+      {"code": "LM-01", "coverage": "partial", "rationale": "Shows each asset in service carries a data classification. It does not show what data the asset holds or that the classification is right."},
       {"code": "DM-04", "coverage": "partial", "rationale": "Shows classification is applied to the systems that hold data."}
     ],
     "evidence_kinds": ["Asset inventory report"]
@@ -1025,93 +927,80 @@
   {
     "key": "verity.assets.reviewed",
     "name": "Assets were reviewed on schedule",
-    "description": "Every active asset was reviewed within the review cadence set in the asset settings.",
+    "description": "Every asset in service was reviewed within the window its criticality sets in the asset settings. An asset never reviewed fails.",
     "capabilities": ["verity_assets"],
-    "implementations": [],
+    "implementations": ["verity"],
     "resource_type": "asset",
     "frequency": "daily",
     "remediation": "Review each overdue asset and mark it reviewed.",
-    "controls": [{
-  "code": "LM-01",
-  "coverage": "partial",
-  "rationale": "Shows the inventory is kept current."
-}],
+    "controls": [
+      {"code": "LM-01", "coverage": "partial", "rationale": "Shows the inventory is kept current."}
+    ],
     "evidence_kinds": ["Asset inventory report"]
   },
   {
     "key": "verity.assets.disposal_recorded",
-    "name": "Retired assets have a disposal record",
-    "description": "Every retired asset has a decommission record with the method and sanitization.",
+    "name": "Assets taken out of service have a disposal record",
+    "description": "Every decommissioned or retired asset has a disposal record that says how it was disposed of, and an infrastructure, data or cloud asset records that its storage was wiped, or that the asset was physically destroyed. An asset retired before it was ever in service is not applicable.",
     "capabilities": ["verity_assets"],
-    "implementations": [],
+    "implementations": ["verity"],
     "resource_type": "asset",
     "frequency": "daily",
     "remediation": "Record how each retired asset was wiped or destroyed.",
-    "controls": [{
-  "code": "DM-16",
-  "coverage": "partial",
-  "rationale": "Shows retired assets were disposed of with a recorded method."
-}],
+    "controls": [
+      {"code": "DM-16", "coverage": "partial", "rationale": "Shows retired assets were disposed of with a recorded method."}
+    ],
     "evidence_kinds": ["Decommissioned assets report"]
   },
   {
     "key": "verity.vulns.within_sla",
     "name": "Vulnerabilities are fixed within the SLA",
-    "description": "No open critical or high finding is past its SLA without an unexpired risk acceptance.",
+    "description": "No open critical or high finding is past its SLA without a risk acceptance in force. A finding with no SLA date fails. A finding with an acceptance in force passes and is listed with its expiry.",
     "capabilities": ["verity_vulnerabilities"],
-    "implementations": [],
+    "implementations": ["verity"],
     "resource_type": "finding",
     "frequency": "daily",
     "remediation": "Fix the overdue findings, or accept the risk with a reason and an expiry.",
-    "controls": [{
-  "code": "LM-11",
-  "coverage": "partial",
-  "rationale": "Shows findings are remediated on time."
-}, {
-  "code": "EP-04",
-  "coverage": "partial",
-  "rationale": "Shows missing patches are closed within the SLA."
-}],
+    "controls": [
+      {"code": "LM-11", "coverage": "partial", "rationale": "Shows no open critical or high finding is past its SLA now. Findings fixed late are not judged."},
+      {"code": "EP-04", "coverage": "partial", "rationale": "Shows no open critical or high finding is past its SLA today without a risk acceptance in force. It does not show findings were fixed on time, and medium and low findings are not judged."}
+    ],
     "evidence_kinds": ["Vulnerability SLA report"]
   },
   {
     "key": "verity.vulns.kev_owned",
     "name": "Known exploited vulnerabilities have an owner",
-    "description": "Every open finding on a vulnerability listed as known exploited has an owner.",
+    "description": "Every open finding on a vulnerability listed as known exploited has an owner who is an active member. Known exploited status comes from the CISA catalogue, so it needs the feed to be reachable.",
     "capabilities": ["verity_vulnerabilities"],
-    "implementations": [],
+    "implementations": ["verity"],
     "resource_type": "finding",
     "frequency": "daily",
     "remediation": "Assign an owner to each known exploited finding.",
-    "controls": [{
-  "code": "LM-11",
-  "coverage": "partial",
-  "rationale": "Shows the most urgent findings are not unowned."
-}],
+    "controls": [
+      {"code": "LM-11", "coverage": "partial", "rationale": "Shows the most urgent findings are not unowned."}
+    ],
     "evidence_kinds": ["Vulnerability SLA report"]
   },
   {
     "key": "verity.risks.reviewed",
     "name": "Open risks are reviewed on schedule",
-    "description": "Every open risk was reviewed within its register's cadence.",
+    "description": "Every open risk in an active register has a next review date, and that date has not passed.",
     "capabilities": ["verity_risks"],
-    "implementations": [],
+    "implementations": ["verity"],
     "resource_type": "risk",
     "frequency": "daily",
     "remediation": "Review each overdue risk and record the outcome.",
-    "controls": [{
-  "code": "GOV-18",
-  "coverage": "partial",
-  "rationale": "Shows risks are reassessed through the year, not only at the annual assessment."
-}],
+    "controls": [
+      {"code": "GOV-18", "coverage": "partial", "rationale": "Shows risks are reassessed through the year, not only at the annual assessment."}
+    ],
     "evidence_kinds": ["Risk register report"]
   },
   {
     "key": "verity.risks.treated",
-    "name": "Risks above the acceptance band are treated",
-    "description": "Every risk above the register's acceptance band has an owner and a treatment decision.",
+    "name": "Risks outside appetite are owned and treated",
+    "description": "Every open risk outside its register's appetite for its category, or above the register's lowest band where no appetite is set, has an owner who is an active member and a treatment decision. A decision to accept needs an acceptance in force. An unscored risk fails.",
     "capabilities": ["verity_risks"],
-    "implementations": [],
+    "implementations": ["verity"],
     "resource_type": "risk",
     "frequency": "daily",
     "remediation": "Assign an owner and record a treatment decision for each risk above the band.",
@@ -1124,165 +1013,311 @@
   {
     "key": "verity.risks.controls_linked",
     "name": "Mitigated risks link to controls",
-    "description": "Every risk treated by mitigation has at least one linked control.",
+    "description": "Every open risk treated by mitigation links to at least one live control that is not marked not applicable.",
     "capabilities": ["verity_risks"],
-    "implementations": [],
+    "implementations": ["verity"],
     "resource_type": "risk",
     "frequency": "daily",
     "remediation": "Link each mitigated risk to the control that reduces it.",
-    "controls": [{
-  "code": "GOV-07",
-  "coverage": "partial",
-  "rationale": "Shows risks are mapped to the controls that mitigate them."
-}],
+    "controls": [
+      {"code": "GOV-07", "coverage": "partial", "rationale": "Shows risks are mapped to the controls that mitigate them."}
+    ],
     "evidence_kinds": ["Risk register report"]
   },
   {
     "key": "verity.risks.acceptance_current",
     "name": "Risk acceptances are current",
-    "description": "No accepted risk has an expired acceptance.",
+    "description": "Every accepted risk has an acceptance in force that has not expired.",
     "capabilities": ["verity_risks"],
-    "implementations": [],
+    "implementations": ["verity"],
     "resource_type": "risk",
     "frequency": "daily",
     "remediation": "Renew or reopen each expired acceptance.",
-    "controls": [{
-  "code": "GOV-19",
-  "coverage": "partial",
-  "rationale": "Shows accepted risks are still accepted by someone with authority."
-}],
+    "controls": [
+      {"code": "GOV-19", "coverage": "partial", "rationale": "Shows accepted risks are still accepted by someone with authority."}
+    ],
     "evidence_kinds": ["Risk register report"]
   },
   {
     "key": "verity.vendors.owner_and_tier",
     "name": "Vendors have an owner and a tier",
-    "description": "Every active vendor has a business owner and a tier.",
+    "description": "Every vendor that is not terminated or archived has a business owner who is an active member, a tier, and a tier on every live engagement.",
     "capabilities": ["verity_vendors"],
-    "implementations": [],
+    "implementations": ["verity"],
     "resource_type": "vendor",
     "frequency": "daily",
     "remediation": "Set an owner and a tier for each vendor.",
-    "controls": [{
-  "code": "BC-07",
-  "coverage": "partial",
-  "rationale": "Shows the vendor inventory records who owns each relationship and how critical it is."
-}],
+    "controls": [
+      {"code": "BC-07", "coverage": "partial", "rationale": "Shows the vendor inventory records who owns each relationship and how critical it is."}
+    ],
     "evidence_kinds": ["Vendor register report"]
   },
   {
     "key": "verity.vendors.assessed_in_cadence",
     "name": "Critical vendors are assessed on schedule",
-    "description": "Every active critical or high tier vendor was assessed within its tier's cadence.",
+    "description": "Every critical or high engagement in use was reviewed within its tier's cadence, and the vendor's next reassessment is booked and not overdue.",
     "capabilities": ["verity_vendors"],
-    "implementations": [],
+    "implementations": ["verity"],
     "resource_type": "vendor",
     "frequency": "daily",
     "remediation": "Run the overdue vendor assessments.",
-    "controls": [{
-  "code": "BC-08",
-  "coverage": "partial",
-  "rationale": "Shows due diligence is repeated at the cadence the tier sets."
-}],
+    "controls": [
+      {"code": "BC-08", "coverage": "partial", "rationale": "Shows due diligence is repeated at the cadence the tier sets."}
+    ],
     "evidence_kinds": ["Vendor register report"]
   },
   {
     "key": "verity.vendors.dpa_on_file",
     "name": "Vendors that hold personal data have a DPA",
-    "description": "Every active vendor that stores personal data has a linked data processing agreement.",
+    "description": "Every approved vendor marked as holding personal data has a data processing agreement in force, with a copy attached: a received document that has not expired, or an active contract that has not ended.",
     "capabilities": ["verity_vendors"],
-    "implementations": [],
+    "implementations": ["verity"],
     "resource_type": "vendor",
     "frequency": "daily",
     "remediation": "Attach the signed data processing agreement to each vendor.",
-    "controls": [{
-  "code": "DM-10",
-  "coverage": "partial",
-  "rationale": "Shows agreements are in place where personal data is shared."
-}],
+    "controls": [
+      {"code": "DM-10", "coverage": "partial", "rationale": "Shows agreements are in place where personal data is shared."}
+    ],
     "evidence_kinds": ["Vendor register report"]
   },
   {
     "key": "verity.policies.reviewed",
     "name": "Required policies are published and current",
-    "description": "Every required policy is published and was approved in the last 12 months.",
+    "description": "Every required document (started from a shipped template or linked to a live control) is published, was approved in the last 12 months, has a review date that has not passed, and has no placeholders left to fill.",
     "capabilities": ["verity_policies"],
-    "implementations": [],
+    "implementations": ["verity"],
     "resource_type": "document",
     "frequency": "daily",
     "remediation": "Review and re approve the overdue policies.",
     "controls": [
       {"code": "GOV-01", "coverage": "partial", "rationale": "Shows policies are reviewed each year."},
-      {"code": "GOV-17", "coverage": "partial", "rationale": "Shows the required policies exist and are in force."},
-      {"code": "SD-10", "coverage": "partial", "rationale": "Shows the secure development policy is published and current."}
+      {"code": "GOV-17", "coverage": "partial", "rationale": "Shows each policy in the library that was started from a template or linked to a control is published, approved in the last 12 months and current. It does not show the library holds every policy the programme needs."}
     ],
     "evidence_kinds": ["Policy register report"]
   },
   {
     "key": "verity.policies.acknowledged",
     "name": "Staff acknowledged current policies",
-    "description": "The target share of members acknowledged the current version of each required policy.",
+    "description": "Everyone asked to acknowledge a published required document has signed its current version or still has time to, and nobody whose due date has passed is unsigned. A signature given after the due date counts. The code of conduct, the acceptable use policy and any document linked to these controls bind all staff: every active member who is not a guest auditor must have signed the current version or been asked to.",
     "capabilities": ["verity_policies"],
-    "implementations": [],
+    "implementations": ["verity"],
     "resource_type": "document",
     "frequency": "daily",
     "remediation": "Send the acknowledgement campaign to the people who have not signed.",
-    "controls": [{
-  "code": "CS-04",
-  "coverage": "partial",
-  "rationale": "Shows policies reached staff and were acknowledged."
-}, {
-  "code": "GOV-04",
-  "coverage": "partial",
-  "rationale": "Shows staff acknowledged the code of conduct."
-}],
+    "controls": [
+      {"code": "CS-04", "coverage": "partial", "rationale": "Shows policies reached staff and were acknowledged."},
+      {"code": "GOV-04", "coverage": "partial", "rationale": "Shows all staff signed the current code of conduct or were asked to, and nobody asked is late."}
+    ],
     "evidence_kinds": ["Policy acknowledgements report"]
   },
   {
     "key": "verity.tasks.remediation_in_sla",
     "name": "Remediation tasks are within SLA",
-    "description": "No remediation task linked to a control, finding or risk is past its SLA.",
+    "description": "No active remediation task linked to a control, vulnerability or risk is past its SLA, or past its due date where no SLA is set. Blocking a task pauses its SLA, not its due date.",
     "capabilities": ["verity_tasks"],
-    "implementations": [],
+    "implementations": ["verity"],
     "resource_type": "task",
     "frequency": "daily",
     "remediation": "Close or re plan the overdue tasks.",
-    "controls": [{
-  "code": "GOV-08",
-  "coverage": "partial",
-  "rationale": "Shows deficiencies are corrected on time."
-}],
+    "controls": [
+      {"code": "GOV-08", "coverage": "partial", "rationale": "Shows no open remediation task is past its deadline now. Tasks closed late are not judged."}
+    ],
     "evidence_kinds": ["Remediation tasks report"]
   },
   {
     "key": "verity.controls.owned",
     "name": "Every control has an owner",
-    "description": "Every in scope control has an owner.",
+    "description": "Every live control relevant to a framework the workspace runs has an owner who is an active member.",
     "capabilities": ["verity_controls"],
-    "implementations": [],
+    "implementations": ["verity"],
     "resource_type": "control",
     "frequency": "daily",
     "remediation": "Assign an owner to each control without one.",
-    "controls": [{
-  "code": "GOV-09",
-  "coverage": "partial",
-  "rationale": "Shows each control has a named person accountable."
-}],
+    "controls": [
+      {"code": "GOV-09", "coverage": "partial", "rationale": "Shows each control has a named person accountable."}
+    ],
     "evidence_kinds": ["Control register"]
   },
   {
     "key": "verity.evidence.current",
     "name": "Controls rely on current evidence",
-    "description": "No in scope control relies only on expired evidence.",
+    "description": "Every implemented control relevant to a framework the workspace runs has evidence that has not passed its renewal date, or, where it has none, was collected in the last 12 months, and was not rejected. Reports Verity files itself are not counted.",
     "capabilities": ["verity_controls"],
-    "implementations": [],
+    "implementations": ["verity"],
     "resource_type": "control",
     "frequency": "daily",
     "remediation": "Replace the expired evidence with current evidence.",
-    "controls": [{
-  "code": "GOV-06",
-  "coverage": "partial",
-  "rationale": "Shows controls are backed by evidence from the period, not from last year."
-}],
+    "controls": [
+      {"code": "GOV-06", "coverage": "partial", "rationale": "Shows each implemented control has evidence that has not lapsed. An item with no renewal date counts for 12 months from collection."}
+    ],
     "evidence_kinds": ["Evidence register"]
+  },
+  {
+    "key": "verity.risks.assessed_in_12_months",
+    "name": "Risks were assessed in the last 12 months",
+    "description": "In every active register, each open risk is scored and was assessed (identified, scored or reviewed) in the last 12 months. A workspace with no open risk in any active register fails, because no assessment is recorded.",
+    "capabilities": ["verity_risks"],
+    "implementations": ["verity"],
+    "resource_type": "risk_register",
+    "frequency": "daily",
+    "remediation": "Score the open risks and review each one that has not been assessed this year.",
+    "controls": [
+      {"code": "GOV-18", "coverage": "partial", "rationale": "Shows the risk assessment was performed this year across every open risk. It does not show the method was followed or that the right risks were identified."}
+    ],
+    "evidence_kinds": ["Risk register report"]
+  },
+  {
+    "key": "verity.soa.complete",
+    "name": "Statement of Applicability is decided and reviewed",
+    "description": "When ISO 27001 is added, every Annex A requirement has a decision reviewed in the last 12 months, with the reason it was included or excluded.",
+    "capabilities": ["verity_frameworks"],
+    "implementations": ["verity"],
+    "resource_type": "requirement",
+    "frequency": "daily",
+    "remediation": "Open Frameworks, Applicability, and record and review a decision with its reason for each requirement listed.",
+    "controls": [
+      {"code": "GOV-27", "coverage": "partial", "rationale": "Shows every Annex A decision is recorded with its reason and was reviewed this year. It does not judge whether the decisions are right for the risks."}
+    ],
+    "evidence_kinds": ["Statement of Applicability"]
+  },
+  {
+    "key": "verity.isms.scope_recorded",
+    "name": "The management system scope is recorded",
+    "description": "When ISO 27001 is added, its audit is set up and the scope of the management system is written down.",
+    "capabilities": ["verity_frameworks"],
+    "implementations": ["verity"],
+    "resource_type": "framework",
+    "frequency": "daily",
+    "remediation": "Open Frameworks, Scope for ISO 27001, and write the scope statement.",
+    "controls": [
+      {"code": "GOV-23", "coverage": "partial", "rationale": "Shows the boundary of the management system is recorded. Leadership approval of the scope is shown by the scope document check."}
+    ],
+    "evidence_kinds": ["Management system scope"]
+  },
+  {
+    "key": "verity.isms.scope_documented",
+    "name": "A current scope statement is in force",
+    "description": "A document started from the ISMS scope statement template, or linked to the scope control, is published, approved in the last 12 months, within its review date and has no placeholders left.",
+    "capabilities": ["verity_policies"],
+    "implementations": ["verity"],
+    "resource_type": "control",
+    "frequency": "daily",
+    "remediation": "Start the ISMS Scope Statement from a template in Policies and Documents, fill it in and take it through approval.",
+    "controls": [
+      {"code": "GOV-23", "coverage": "partial", "rationale": "Shows the scope statement exists, was approved through the document workflow this year and is current. Whether the approvers are top management is not recorded."}
+    ],
+    "evidence_kinds": ["Approved scope statement"]
+  },
+  {
+    "key": "verity.context.documented",
+    "name": "The context of the organization is documented",
+    "description": "A document started from the context and interested parties template, or linked to the context control, is published, approved in the last 12 months, within its review date and has no placeholders left.",
+    "capabilities": ["verity_policies"],
+    "implementations": ["verity"],
+    "resource_type": "control",
+    "frequency": "daily",
+    "remediation": "Start the Context and Interested Parties Register from a template, fill it in and take it through approval.",
+    "controls": [
+      {"code": "GOV-24", "coverage": "partial", "rationale": "Shows the register of internal and external issues is documented and current. Whether its content is complete is a judgment for its reviewers."}
+    ],
+    "evidence_kinds": ["Approved context register"]
+  },
+  {
+    "key": "verity.interested_parties.documented",
+    "name": "Interested parties and their requirements are documented",
+    "description": "A document started from the context and interested parties template, or linked to the interested parties control, is published, approved in the last 12 months, within its review date and has no placeholders left.",
+    "capabilities": ["verity_policies"],
+    "implementations": ["verity"],
+    "resource_type": "control",
+    "frequency": "daily",
+    "remediation": "Record the interested parties and their requirements in the Context and Interested Parties Register and take it through approval.",
+    "controls": [
+      {"code": "GOV-25", "coverage": "partial", "rationale": "Shows the interested parties and their requirements are documented and current. A document linked only to the context control does not count here."}
+    ],
+    "evidence_kinds": ["Approved interested parties register"]
+  },
+  {
+    "key": "verity.objectives.documented",
+    "name": "Security objectives are documented",
+    "description": "A document started from the security objectives template, or linked to the objectives control, is published, approved in the last 12 months, within its review date and has no placeholders left.",
+    "capabilities": ["verity_policies"],
+    "implementations": ["verity"],
+    "resource_type": "control",
+    "frequency": "daily",
+    "remediation": "Start the Information Security Objectives and Plan from a template, set owners, targets and dates, and take it through approval.",
+    "controls": [
+      {"code": "GOV-26", "coverage": "partial", "rationale": "Shows the objectives and the plan to reach them are documented and current. Progress against each objective is shown by the measures and reviews, not by this check."}
+    ],
+    "evidence_kinds": ["Approved objectives plan"]
+  },
+  {
+    "key": "verity.communication.plan_documented",
+    "name": "A security communication plan is in force",
+    "description": "A document started from the security communication plan template, or linked to the communication plan control, is published, approved in the last 12 months, within its review date and has no placeholders left.",
+    "capabilities": ["verity_policies"],
+    "implementations": ["verity"],
+    "resource_type": "control",
+    "frequency": "daily",
+    "remediation": "Start the Security Communication Plan from a template, fill it in and take it through approval.",
+    "controls": [
+      {"code": "CS-06", "coverage": "partial", "rationale": "Shows the communication plan is documented and current. Messages sent under the plan are evidence a person files."}
+    ],
+    "evidence_kinds": ["Approved communication plan"]
+  },
+  {
+    "key": "verity.competence.documented",
+    "name": "Competence requirements are documented",
+    "description": "A document started from the competence and awareness template, or linked to the competence control, is published, approved in the last 12 months, within its review date and has no placeholders left.",
+    "capabilities": ["verity_policies"],
+    "implementations": ["verity"],
+    "resource_type": "control",
+    "frequency": "daily",
+    "remediation": "Start the Competence and Awareness Procedure from a template, fill it in and take it through approval.",
+    "controls": [
+      {"code": "HR-09", "coverage": "partial", "rationale": "Shows how competence is defined and evaluated is documented and current. The competence records for each person are evidence a person files."}
+    ],
+    "evidence_kinds": ["Approved competence procedure"]
+  },
+  {
+    "key": "verity.documents.controlled",
+    "name": "Published documents are controlled",
+    "description": "Every published document has an owner who is an active member, an approval on record for every tier that covers its current text and is no older than 12 months, and a review date that has not passed. Approval by the document's own author is reported but does not fail the check.",
+    "capabilities": ["verity_policies"],
+    "implementations": ["verity"],
+    "resource_type": "document",
+    "frequency": "daily",
+    "remediation": "Give each listed document an active owner, take it through approval again, or set its review date.",
+    "controls": [
+      {"code": "GOV-28", "coverage": "partial", "rationale": "Shows documented information is owned, approved before use and kept under review. Retention and access to the records are shown by the document control procedure."}
+    ],
+    "evidence_kinds": ["Document register"]
+  },
+  {
+    "key": "verity.audit.internal_in_12_months",
+    "name": "An internal audit was held in the last 12 months",
+    "description": "A person filed evidence on the internal audit control, other than a policy or procedure document, dated in the last 12 months, and it was not rejected. Reports Verity files itself are not counted.",
+    "capabilities": ["verity_controls"],
+    "implementations": ["verity"],
+    "resource_type": "control",
+    "frequency": "daily",
+    "remediation": "Run the internal audit and attach its report to the internal audit control.",
+    "controls": [
+      {"code": "GOV-13", "coverage": "partial", "rationale": "Shows evidence a person filed on the internal audit control is dated in the last 12 months and was not rejected. Whether it is the audit report, and whether the audit covered the programme and was objective, is shown by the file itself."}
+    ],
+    "evidence_kinds": ["Internal audit report"]
+  },
+  {
+    "key": "verity.management_review.in_12_months",
+    "name": "A management review was held in the last 12 months",
+    "description": "A person filed evidence on the management review control, other than a policy or procedure document, dated in the last 12 months, and it was not rejected. Reports Verity files itself are not counted. A workspace that runs reviews more often than yearly keeps its own cadence; this check is the floor.",
+    "capabilities": ["verity_controls"],
+    "implementations": ["verity"],
+    "resource_type": "control",
+    "frequency": "daily",
+    "remediation": "Hold the management review and attach its minutes and decisions to the management review control.",
+    "controls": [
+      {"code": "GOV-15", "coverage": "partial", "rationale": "Shows evidence a person filed on the management review control is dated in the last 12 months and was not rejected. Whether it is the management review minutes, and whether the review covered every required input, is shown by the file itself."}
+    ],
+    "evidence_kinds": ["Management review minutes"]
   }
 ]

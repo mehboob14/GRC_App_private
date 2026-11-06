@@ -24,25 +24,69 @@ because an auditor will ask what your policy said during the period under review
 
 ## Creating a document
 
-You have three ways in, all from **New** on the register.
+You have three ways in, all from the register.
 
-1. **From a template.** Verity ships a library of policy templates. Pick one and you
-   get a complete draft in your workspace's name, ready to edit. This is the fastest
-   route and the one most teams should use.
+1. **From a template.** Verity ships 30 templates. Pick one and you get a complete
+   draft in your workspace's name, ready to edit. This is the fastest route and the
+   one most teams should use.
 2. **From scratch.** A blank document with the same metadata.
 3. **Upload a file.** If your policy already exists as a PDF or Word file, upload it.
    Everything else (approval, publishing, acknowledgement) works the same way.
 
+### The templates
+
+![Choosing a template](images/template-picker-iso.png)
+
+Fifteen templates are open source, from the Openlane Policy Hub under the Apache 2.0
+licence. The other fifteen were written by Verity for ISO 27001 and good practice:
+
+- ISMS Scope Statement
+- Context and Interested Parties Register
+- Information Security Objectives and Plan
+- Risk Assessment and Treatment Methodology
+- Change Management Procedure
+- Document and Record Control Procedure
+- Internal Audit Procedure and Program
+- Management Review Procedure and Minutes
+- Corrective Action and Improvement Procedure
+- Acceptable Use Policy
+- Remote Working Policy
+- Competence and Awareness Procedure
+- Security Communication Plan
+- Cloud Services Security Policy
+- Operating Procedure Template
+
+Each card in **Start a draft from a template** tells you three things:
+
+- how many SOC 2 criteria and ISO 27001 requirements the template speaks to,
+- how many fields are left for you to fill,
+- where it came from: **Written by Verity** or **Open source, Apache-2.0**.
+
+A template is a starting draft, not your policy. Two things in its text need you.
+
+- **Prompts in angle brackets** mark the decisions only you can make: owners,
+  frequencies, thresholds. Replace each one with your answer.
+- **[Optional] paragraphs** are for regulated financial institutions, estates run on
+  premises, and card data environments. Keep the ones that describe you and delete the
+  rest.
+
+> **Clear every prompt before you publish.** A document started from a template that
+> still has placeholders in it fails a Verity built in check. See
+> [Connections](11-connections.md).
+
 ### Walkthrough: draft a policy from a template
 
-1. Go to **Policies and Documents** and click **New**.
-2. Choose the template, for example Access Control Policy.
+1. Go to **Policies and Documents** and click **Templates**.
+2. In **Start a draft from a template**, pick one, for example Access Control Policy.
+   The card shows its origin, what it maps to, and how many fields are left to fill.
 3. Set the **owner**: the person accountable for the content, not necessarily the
    author.
 4. Set the **classification** (internal, confidential, and so on). If you already
    know when it must next be revisited, pick a **next review** date. Leave it empty
    and Verity sets one when the document is published.
 5. Save. You now have a draft with its own code, for example POL-004.
+6. Open the editor. Replace every prompt in angle brackets, and keep or delete each
+   **[Optional]** paragraph.
 
 ## The editor
 

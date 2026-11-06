@@ -1,0 +1,36 @@
+{
+  "counts": {
+    "requirements": 123,
+    "control_templates": 17,
+    "template_requirements": 300
+  },
+  "generated": [
+    {
+      "path": "framework.json",
+      "sha256": "dc842e8d4505efd2421e128de99b7489345f9988a21fe2eadf42f56e79af654f"
+    },
+    {
+      "path": "requirements.json",
+      "sha256": "62fbee4965af6ddb2d6ace1e5462e23b85147ee4be42c0d36e0fbb237fd4d868"
+    },
+    {
+      "path": "control_templates.json",
+      "sha256": "452e2ef9334fdaec8dafdf21d433e85f5f7302f1ca6f3dd0a3e3682f29028b24"
+    },
+    {
+      "path": "template_requirements.json",
+      "sha256": "535d2b1d7e165ce37a69cf2103daf79cd5f41b015c4042840f406d9771cbcbf0"
+    }
+  ],
+  "note": "Authored by Verity on 2026-10-10 from the draft crosswalk in docs/product/iso27001-draft-crosswalk.csv. Requirement names and summaries are Verity's own words: the pack carries identifiers and no text of the standard (text policy id_only). The 123 identifiers match the ISO27001-2022 catalogue in Probo (MIT). The crosswalk is published but not yet reviewed by a second qualified person (FW-5, task A5): treat the mappings as unreviewed until it is. Edits are sealed with scripts/seal_content.py.",
+  "sources": [
+    {
+      "name": "Probo ISO27001-2022 framework catalogue",
+      "repository": "https://github.com/getprobo/probo",
+      "path": "apps/console/public/data/frameworks/ISO27001-2022.json",
+      "licence": "MIT",
+      "used_for": "requirement identifiers only"
+    }
+  ],
+  "text_policy": "id_only"
+}

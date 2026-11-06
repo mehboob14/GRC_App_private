@@ -27,7 +27,9 @@ from verity.modules.compliance.models import (
 
 class FrameworkRepository:
     async def list_frameworks(self, session: AsyncSession) -> list[Framework]:
-        result = await session.execute(select(Framework).order_by(Framework.code))
+        result = await session.execute(
+            select(Framework).order_by(Framework.position, Framework.code)
+        )
         return list(result.scalars())
 
     async def get(self, session: AsyncSession, framework_id: uuid.UUID) -> Framework | None:

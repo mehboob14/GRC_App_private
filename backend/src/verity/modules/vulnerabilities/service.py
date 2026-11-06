@@ -112,6 +112,33 @@ class TransitionView:
     occurred_at: datetime
 
 
+@dataclass(frozen=True, slots=True)
+class SlaFinding:
+    """One finding as Verity's built-in checks read it, judged on the module's own clock.
+
+    ``waiver_live`` is the daily sweep's predicate (an acceptance whose expiry has not
+    passed); ``effectively_open`` adds accepted findings whose waiver has lapsed but which
+    the sweep has not reopened yet; ``past_sla`` is the register's overdue rule over those.
+    """
+
+    instance_id: uuid.UUID
+    cve_id: str | None
+    title: str
+    severity: str
+    kev_flag: bool
+    state: str
+    asset_id: uuid.UUID
+    asset_name: str
+    locator: str
+    owner_membership_id: uuid.UUID | None
+    first_detected_at: datetime | None
+    sla_due_at: datetime | None
+    accepted_expires_at: datetime | None
+    waiver_live: bool
+    effectively_open: bool
+    past_sla: bool
+
+
 @dataclass(frozen=True)
 class InstanceView:
     id: uuid.UUID
@@ -541,6 +568,64 @@ class VulnerabilityService:
             detected_by=list(inst.detected_by or []),
         )
 
+    async def sla_findings(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, now: datetime
+    ) -> list[SlaFinding]:
+        """Every finding that is open or carries an acceptance, for the built-in checks.
+
+        Read only, no permission or object scope (the caller is the check runner inside a
+        tenant bound session). ``now`` is passed in so one run judges every finding at the
+        same instant.
+        """
+        rows = list(
+            (
+                await session.execute(
+                    select(VulnInstance, VulnDefinition)
+                    .join(VulnDefinition, VulnDefinition.id == VulnInstance.definition_id)
+                    .where(
+                        VulnInstance.tenant_id == tenant_id,
+                        VulnInstance.state.in_([*OPEN_STATES, "accepted"]),
+                    )
+                    .order_by(VulnInstance.id)
+                )
+            ).all()
+        )
+        refs = await self._asset_refs(session, tenant_id, list({inst.asset_id for inst, _ in rows}))
+        out: list[SlaFinding] = []
+        for inst, defn in rows:
+            waiver_live = (
+                inst.state == "accepted"
+                and inst.accepted_expires_at is not None
+                and not inst.accepted_expires_at < now
+            )
+            effectively_open = inst.state in OPEN_STATES or (
+                inst.state == "accepted" and not waiver_live
+            )
+            ref = refs.get(inst.asset_id)
+            out.append(
+                SlaFinding(
+                    instance_id=inst.id,
+                    cve_id=defn.cve_id,
+                    title=defn.title,
+                    severity=defn.severity,
+                    kev_flag=bool(defn.kev_flag),
+                    state=inst.state,
+                    asset_id=inst.asset_id,
+                    asset_name=ref.name if ref else "(unknown asset)",
+                    locator=inst.locator or "",
+                    owner_membership_id=inst.owner_membership_id,
+                    first_detected_at=inst.first_detected_at,
+                    sla_due_at=inst.sla_due_at,
+                    accepted_expires_at=inst.accepted_expires_at,
+                    waiver_live=waiver_live,
+                    effectively_open=effectively_open,
+                    past_sla=bool(
+                        effectively_open and inst.sla_due_at is not None and inst.sla_due_at < now
+                    ),
+                )
+            )
+        return out
+
     async def list_instances(  # noqa: PLR0913
         self,
         session: AsyncSession,
@@ -969,7 +1054,9 @@ class VulnerabilityService:
                 unmatched += 1
                 continue
 
-            defn = await self._upsert_definition(session, tenant_id, row)
+            defn, raised = await self._upsert_definition(session, tenant_id, row)
+            if raised:
+                await self._shorten_sla(session, tenant_id, defn, days, actor)
             touched_defs[defn.id] = defn
             counts[defn.severity] = counts.get(defn.severity, 0) + 1
 
@@ -2019,7 +2106,8 @@ class VulnerabilityService:
 
     async def _upsert_definition(
         self, session: AsyncSession, tenant_id: uuid.UUID, row: FindingRow
-    ) -> VulnDefinition:
+    ) -> tuple[VulnDefinition, bool]:
+        """The definition for a reported finding, and whether this report raised its severity."""
         key = _definition_key(row)
         defn = (
             await session.execute(
@@ -2045,14 +2133,80 @@ class VulnerabilityService:
             )
             session.add(defn)
             await session.flush()
-        else:
-            # Keep the strongest signal we've seen (higher CVSS/severity wins).
-            if row.cvss_score is not None and (defn.cvss_score or 0) < row.cvss_score:
-                defn.cvss_score = row.cvss_score
-                defn.cvss_vector = row.cvss_vector or defn.cvss_vector
-            if _SEVERITY_RANK.get(row.severity, 9) < _SEVERITY_RANK.get(defn.severity, 9):
-                defn.severity = row.severity
-        return defn
+            return defn, False
+        # Keep the strongest signal we've seen (higher CVSS/severity wins).
+        if row.cvss_score is not None and (defn.cvss_score or 0) < row.cvss_score:
+            defn.cvss_score = row.cvss_score
+            defn.cvss_vector = row.cvss_vector or defn.cvss_vector
+        raised = _SEVERITY_RANK.get(row.severity, 9) < _SEVERITY_RANK.get(defn.severity, 9)
+        if raised:
+            defn.severity = row.severity
+        return defn, raised
+
+    async def _shorten_sla(
+        self,
+        session: AsyncSession,
+        tenant_id: uuid.UUID,
+        defn: VulnDefinition,
+        days: dict[str, int | None],
+        actor: Actor,
+    ) -> None:
+        """Bring the SLA of open findings in line with a raised severity.
+
+        The clock runs from the start of the current detection (first detection, or the
+        last resurfacing, which restarted it) at the new severity's days. It only ever gets
+        shorter: a finding already due sooner keeps its date, so raising a severity never
+        buys time.
+        """
+        await session.flush()
+        instances = (
+            (
+                await session.execute(
+                    select(VulnInstance).where(
+                        VulnInstance.tenant_id == tenant_id,
+                        VulnInstance.definition_id == defn.id,
+                        VulnInstance.state.in_([*OPEN_STATES, "accepted"]),
+                    )
+                )
+            )
+            .scalars()
+            .all()
+        )
+        if not instances:
+            return
+        # The flush above makes resurfacings recorded earlier in this import visible.
+        resurfaced_at: dict[uuid.UUID, datetime] = dict(
+            (
+                await session.execute(
+                    select(VulnTransition.instance_id, func.max(VulnTransition.occurred_at))
+                    .where(
+                        VulnTransition.tenant_id == tenant_id,
+                        VulnTransition.instance_id.in_([i.id for i in instances]),
+                        VulnTransition.to_state == "resurfaced",
+                    )
+                    .group_by(VulnTransition.instance_id)
+                )
+            )
+            .tuples()
+            .all()
+        )
+        for inst in instances:
+            anchor = resurfaced_at.get(inst.id) or inst.first_detected_at or inst.created_at
+            due = self._sla_due(defn.severity, days, anchor)
+            if due is None or (inst.sla_due_at is not None and inst.sla_due_at <= due):
+                continue
+            before = AuditService.snapshot(inst, fields=_INSTANCE_SNAPSHOT)
+            inst.sla_due_at = due
+            await self._audit.record(
+                session,
+                action="update",
+                object_type="vuln_instance",
+                object_id=inst.id,
+                actor=actor,
+                tenant_id=tenant_id,
+                before=before,
+                after=AuditService.snapshot(inst, fields=_INSTANCE_SNAPSHOT),
+            )
 
     # -- enrichment + scoring ------------------------------------------------
 
@@ -2801,6 +2955,7 @@ class VulnerabilityService:
                     from_state=from_state,
                     to_state="accepted",
                     actor_membership_id=decider,
+                    occurred_at=now,
                     note=f"Exception approved for {row.duration_days} days"
                     + (f": {cleaned}" if cleaned else ""),
                 )

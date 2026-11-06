@@ -32,7 +32,8 @@ import { BAND_TONE, REGISTER_TYPE_LABEL } from "../tokens";
 import { BandLegend, Heatmap } from "./heatmap";
 import { useRisksOutlet } from "./risks-outlet";
 import { CustomFieldsCard } from "@/features/custom-fields/components/custom-fields-card";
-import { scoreOf } from "../scoring";
+import { useCustomFields } from "@/features/custom-fields/hooks";
+import { METHOD_META, scoreOf } from "../scoring";
 import { AppetiteCard, ScoringFormulaCard } from "./risk-settings-cards";
 import { SoonBadge } from "./soon";
 
@@ -43,6 +44,8 @@ export function RisksSettingsPage() {
   const { register, registers, selectRegister, canConfigure } = useRisksOutlet();
   const [editing, setEditing] = useState<Register | "new" | null>(null);
   const [taxonomy, setTaxonomy] = useState<Register | null>(null);
+  const [panel, setPanel] = useState<"formula" | "appetite" | "fields" | null>(null);
+  const customFields = useCustomFields("risks").data ?? [];
 
   return (
     <div className="space-y-5">
@@ -116,12 +119,52 @@ export function RisksSettingsPage() {
 
       <section>
         <h2 className="mb-3 font-display text-title-md text-text-primary">Scoring and fields</h2>
-        <div className="space-y-4">
-          <ScoringFormulaCard register={register} canEdit={canConfigure} />
-          <AppetiteCard register={register} canEdit={canConfigure} />
-          <CustomFieldsCard scope="risks" noun="risk" canEdit={canConfigure} />
+        <div className="divide-y divide-border rounded-lg border border-border bg-surface-primary">
+          <ConfigRow
+            icon="formula"
+            title="Scoring formula"
+            summary={`${METHOD_META[register.scoring_formula.method].label}, top score ${register.max_score}`}
+            onOpen={() => setPanel("formula")}
+          />
+          <ConfigRow
+            icon="target"
+            title="Risk appetite"
+            summary={
+              Object.keys(register.appetite).length
+                ? `${Object.keys(register.appetite).length} of ${register.categories.filter((c) => !c.archived).length} categories set`
+                : "Not set"
+            }
+            onOpen={() => setPanel("appetite")}
+          />
+          <ConfigRow
+            icon="textbox"
+            title="Custom fields"
+            summary={
+              customFields.length ? `${customFields.length} extra ${customFields.length === 1 ? "field" : "fields"} on every risk` : "None yet"
+            }
+            onOpen={() => setPanel("fields")}
+          />
         </div>
       </section>
+
+      <Dialog open={panel !== null} onOpenChange={(o) => !o && setPanel(null)}>
+        <DialogContent size="lg" scrollBody className="max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle>{panel === "formula" ? "Scoring formula" : panel === "appetite" ? "Risk appetite" : "Custom fields"}</DialogTitle>
+            <DialogDescription>{register.name}</DialogDescription>
+          </DialogHeader>
+          <DialogBody>
+            {panel === "formula" ? <ScoringFormulaCard bare register={register} canEdit={canConfigure} /> : null}
+            {panel === "appetite" ? <AppetiteCard bare register={register} canEdit={canConfigure} /> : null}
+            {panel === "fields" ? <CustomFieldsCard bare scope="risks" noun="risk" canEdit={canConfigure} /> : null}
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setPanel(null)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <section>
         <h2 className="mb-3 font-display text-title-md text-text-primary">More configuration</h2>
@@ -152,6 +195,35 @@ export function RisksSettingsPage() {
       />
       <TaxonomyDialog open={taxonomy !== null} onOpenChange={(o) => !o && setTaxonomy(null)} register={taxonomy} />
     </div>
+  );
+}
+
+function ConfigRow({
+  icon,
+  title,
+  summary,
+  onOpen,
+}: {
+  icon: "formula" | "target" | "textbox";
+  title: string;
+  summary: string;
+  onOpen: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-surface-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-action-accent"
+    >
+      <span className="grid size-8 place-items-center rounded-md bg-surface-sunken text-text-subtle">
+        <Icon name={icon} className="size-4" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-label-md text-text-primary">{title}</p>
+        <p className="truncate text-caption text-text-subtle">{summary}</p>
+      </div>
+      <Icon name="chevr" className="size-4 text-text-subtle" />
+    </button>
   );
 }
 

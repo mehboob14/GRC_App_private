@@ -51,6 +51,7 @@ import { VulnerabilitiesImportPage } from "@/features/vulnerabilities/components
 import { VulnerabilitiesSettingsPage } from "@/features/vulnerabilities/components/vulnerabilities-settings-page";
 import { VulnerabilityDetailPage } from "@/features/vulnerabilities/components/vulnerability-detail-page";
 import { ScopePage } from "@/features/compliance/components/scope-page";
+import { StatementPage } from "@/features/compliance/components/statement-page";
 import { CoveragePage } from "@/features/compliance/components/coverage-page";
 import { ComplianceDashboardPage } from "@/features/compliance/components/compliance-dashboard-page";
 import { FrameworksLayout } from "@/features/compliance/components/frameworks-layout";
@@ -155,6 +156,7 @@ export function AppRoutes() {
             <Route path="dashboard" element={<ComplianceDashboardPage />} />
             <Route path="list" element={<FrameworksPage />} />
             <Route path="scope" element={<ScopePage />} />
+            <Route path="soa" element={<StatementPage />} />
             <Route path="coverage" element={<CoveragePage />} />
           </Route>
           {/* Detail sits outside the tab strip: it is a drill-down, not a tab. */}

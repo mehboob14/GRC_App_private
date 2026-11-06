@@ -5,6 +5,7 @@ import {
   Badge,
   Button,
   Checkbox,
+  EmptyState,
   ErrorState,
   Icon,
   RadioGroup,
@@ -17,6 +18,8 @@ import { complianceApi, engagementApi } from "@/lib/api/endpoints";
 import { describeError, errorToast } from "@/lib/api/describe-error";
 import { useAuth } from "@/lib/auth/auth-context";
 import type { AuditType } from "@/lib/api/types";
+import { DEFAULT_FRAMEWORK, useSelectedFramework } from "../use-frameworks";
+import { ManagementSystemScope } from "./management-system-scope";
 
 /** The elective Trust Services Categories. Security is deliberately absent: it
  *  is the Common Criteria, always in scope, and cannot be elected away. */
@@ -27,8 +30,32 @@ const ELECTIVE_CATEGORIES = [
   "Privacy",
 ];
 
-/** Scope & coverage — elect what the audit covers, then see what is missing. */
+/** Scope for the framework the Frameworks screens are on. A framework that works by
+ *  applicability (ISO 27001) has a statement and a scope statement; one that works
+ *  by categories (SOC 2) elects Trust Services Categories. */
 export function ScopePage() {
+  const { selected, isLoading } = useSelectedFramework();
+  if (isLoading) return <Skeleton className="h-64 w-full rounded-lg" />;
+  if (selected && !selected.added) {
+    return (
+      <EmptyState
+        icon="shield"
+        title={`${selected.name} is not in your workspace yet`}
+        description="Add it from the Frameworks tab first. It reuses the controls you already run."
+        action={
+          <Link to="/frameworks/list" className="text-body-md font-semibold text-text-link">
+            Go to Frameworks
+          </Link>
+        }
+      />
+    );
+  }
+  if (selected?.scope_model === "applicability") return <ManagementSystemScope framework={selected} />;
+  return <CategoryScope />;
+}
+
+/** Scope & coverage — elect what the audit covers, then see what is missing. */
+function CategoryScope() {
   const { principal } = useAuth();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -44,7 +71,9 @@ export function ScopePage() {
   });
 
   const engagement = engagementQuery.data ?? null;
-  const currentVersion = frameworksQuery.data?.[0]?.versions.find((v) => v.is_current);
+  const currentVersion = frameworksQuery.data
+    ?.find((f) => f.code === DEFAULT_FRAMEWORK)
+    ?.versions.find((v) => v.is_current);
 
   const [name, setName] = useState("");
   const [auditType, setAuditType] = useState<AuditType>("type_2");

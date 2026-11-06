@@ -70,6 +70,29 @@ def review_status(renewal_date: date | None, today: date) -> ReviewStatus | None
     return None
 
 
+def currency_gap(
+    lifecycle: str, renewal_date: date | None, approved_at: datetime | None, today: date
+) -> str | None:
+    """Why a document is not in force today, or None when it is.
+
+    In force means published, carrying a review date that has not passed, and approved
+    within the review interval. The last clause matters because a review date can be
+    moved without a new approval: a policy whose approval is older than a year is not
+    current however far out its review date was pushed.
+    """
+    if lifecycle != "published":
+        return "not_published"
+    if renewal_date is None:
+        return "no_review_date"
+    if review_status(renewal_date, today) == "overdue":
+        return "review_overdue"
+    if approved_at is None:
+        return "no_approval"
+    if add_months(approved_at.astimezone(UTC).date(), REVIEW_INTERVAL_MONTHS) < today:
+        return "approval_older_than_interval"
+    return None
+
+
 def review_notice(renewal_date: date | None, today: date) -> ReviewNotice | None:
     """Which notice the owner is owed today: ``due`` from 14 days out up to and
     including the date itself, ``overdue`` once it has passed."""

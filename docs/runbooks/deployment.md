@@ -79,6 +79,7 @@ cp infra/docker/.env.production.example infra/docker/.env.production
 | `FRONTEND_BASE_URL` | your public URL, e.g. `https://app.example.com` — used in email links |
 | `SMTP_HOST/PORT/USER/PASSWORD/FROM_EMAIL` | outbound email (notifications, verification, invites) |
 | `LEADS_NOTIFY_EMAIL`, `LEADS_ALLOWED_ORIGINS`, `LEADS_CONFIRM_REQUESTER` | the website's demo-request form (`POST /api/v1/public/demo-requests`): where each request is mailed, which website origins may call it (a JSON list of exact origins, e.g. `["https://www.example.com"]`), and whether the visitor gets a receipt. Without working `SMTP_*` requests are stored and nothing is sent |
+| `AI_API_KEY`, `AI_MODEL`, `AI_PROVIDER` | optional: the model behind the evidence suggestions and the maturity check on the control page. `AI_PROVIDER` defaults to `openai`, `AI_MODEL` to `gpt-4o-mini` (set the one you use, for example `gpt-5.5`; reasoning models are called without a temperature). Without `AI_API_KEY` suggestions fall back to an offline matcher and the maturity check says it is unavailable. Model output is only ever a draft a person approves |
 
 The `:?` guards in the compose file mean a missing required secret **fails the command with a
 named error** rather than silently starting a mis-configured stack.
@@ -201,6 +202,14 @@ dc run --rm api python -m scripts.backfill_adopt_soc2  # only when the release a
   ```
 
   A workspace with no per-check evidence yet is skipped, so it is safe to run early.
+- **The release that adds ISO 27001** (2026-10-10) needs nothing beyond `deploy.sh`. The migration
+  adds how a framework chooses its scope, the frameworks a workspace has added and the Statement
+  of Applicability, and writes SOC 2 as the added framework of every existing workspace;
+  `seed-content` then loads the `iso27001` pack beside SOC 2. Nothing is adopted in any workspace
+  until someone there adds ISO 27001 from **Frameworks**, which shows what it would reuse first and
+  adopts only the controls it needs. No backfill is needed and SOC 2 numbers do not change. Later
+  releases that add controls to the pack reach the workspaces that added the framework through
+  `scripts.backfill_adopt_soc2`, which adopts the packs of the frameworks a workspace has added.
 - **A release that adds control templates** (2026-10-04 adds SD-13 and SD-14) needs the last line
   after `seed-content`, so existing workspaces adopt them. It is idempotent: a workspace that
   already holds a control gets nothing new. New workspaces adopt the whole library at signup.

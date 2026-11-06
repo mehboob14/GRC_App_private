@@ -1,0 +1,1109 @@
+[
+  {
+    "requirement_key": "ISO27001:4.1",
+    "code": "4.1",
+    "name": "Internal and external issues",
+    "description": "The organization works out which outside and inside factors affect whether its security management system can deliver its intended results, decides whether climate change is one of them, and keeps that view current.",
+    "category": "Clause 4 Context",
+    "trust_services_category": "Management system",
+    "is_always_in_scope": true
+  },
+  {
+    "requirement_key": "ISO27001:4.2",
+    "code": "4.2",
+    "name": "Stakeholders and their needs",
+    "description": "The organization identifies the people and bodies with a stake in its information security, such as customers, regulators and staff, and records which of their requirements the management system must address.",
+    "category": "Clause 4 Context",
+    "trust_services_category": "Management system",
+    "is_always_in_scope": true
+  },
+  {
+    "requirement_key": "ISO27001:4.3",
+    "code": "4.3",
+    "name": "Boundaries of the ISMS",
+    "description": "The organization sets and documents what the management system covers, taking account of its issues, stakeholder requirements, and dependencies on other parties. The written scope is available to those who need it.",
+    "category": "Clause 4 Context",
+    "trust_services_category": "Management system",
+    "is_always_in_scope": true
+  },
+  {
+    "requirement_key": "ISO27001:4.4",
+    "code": "4.4",
+    "name": "Running the ISMS as a whole",
+    "description": "The organization builds, runs, maintains and improves a security management system, including the processes it needs and how they connect to each other.",
+    "category": "Clause 4 Context",
+    "trust_services_category": "Management system",
+    "is_always_in_scope": true
+  },
+  {
+    "requirement_key": "ISO27001:5.1",
+    "code": "5.1",
+    "name": "Top management support",
+    "description": "Senior leaders visibly back the management system: they set direction, make sure it fits business processes, provide resources, explain why it matters, and support people who contribute to it.",
+    "category": "Clause 5 Leadership",
+    "trust_services_category": "Management system",
+    "is_always_in_scope": true
+  },
+  {
+    "requirement_key": "ISO27001:5.2",
+    "code": "5.2",
+    "name": "Security policy statement",
+    "description": "Top management issues a written security policy suited to the organization. It gives a framework for setting objectives, commits to meeting requirements and to improving, and reaches staff and, where fitting, outside parties.",
+    "category": "Clause 5 Leadership",
+    "trust_services_category": "Management system",
+    "is_always_in_scope": true
+  },
+  {
+    "requirement_key": "ISO27001:5.3",
+    "code": "5.3",
+    "name": "ISMS roles and authority",
+    "description": "Top management assigns and communicates security responsibilities and authority for the relevant roles, including who makes sure the system meets its requirements and who reports its performance to top management.",
+    "category": "Clause 5 Leadership",
+    "trust_services_category": "Management system",
+    "is_always_in_scope": true
+  },
+  {
+    "requirement_key": "ISO27001:6.1.1",
+    "code": "6.1.1",
+    "name": "Risk and opportunity planning",
+    "description": "When planning the management system, the organization weighs its issues and stakeholder requirements, decides which risks and opportunities need action, and plans how to act on them and check the actions worked.",
+    "category": "Clause 6 Planning",
+    "trust_services_category": "Management system",
+    "is_always_in_scope": true
+  },
+  {
+    "requirement_key": "ISO27001:6.1.2",
+    "code": "6.1.2",
+    "name": "Risk assessment method",
+    "description": "The organization defines a repeatable method for assessing security risk, with its own criteria for acceptable risk, and uses it to find, rate and rank risks and name an owner for each. Results are kept as records.",
+    "category": "Clause 6 Planning",
+    "trust_services_category": "Management system",
+    "is_always_in_scope": true
+  },
+  {
+    "requirement_key": "ISO27001:6.1.3",
+    "code": "6.1.3",
+    "name": "Risk treatment and control selection",
+    "description": "The organization chooses how to treat each risk, decides which controls it needs, checks that list against the standard's control set, writes a Statement of Applicability, and has risk owners approve the treatment plan and residual risk.",
+    "category": "Clause 6 Planning",
+    "trust_services_category": "Management system",
+    "is_always_in_scope": true
+  },
+  {
+    "requirement_key": "ISO27001:6.2",
+    "code": "6.2",
+    "name": "Security goals and plans",
+    "description": "The organization sets measurable security objectives that fit the policy and risk results, and plans who does what, with which resources, by when, and how results will be judged. Objectives are tracked, shared and updated.",
+    "category": "Clause 6 Planning",
+    "trust_services_category": "Management system",
+    "is_always_in_scope": true
+  },
+  {
+    "requirement_key": "ISO27001:6.3",
+    "code": "6.3",
+    "name": "Changes to the ISMS",
+    "description": "When the organization decides the management system needs to change, it plans and carries out the change in an orderly way rather than ad hoc.",
+    "category": "Clause 6 Planning",
+    "trust_services_category": "Management system",
+    "is_always_in_scope": true
+  },
+  {
+    "requirement_key": "ISO27001:7.1",
+    "code": "7.1",
+    "name": "People, time and budget",
+    "description": "The organization works out what staffing, time, money and tools the management system needs to be set up, run, maintained and improved, and then provides them.",
+    "category": "Clause 7 Support",
+    "trust_services_category": "Management system",
+    "is_always_in_scope": true
+  },
+  {
+    "requirement_key": "ISO27001:7.2",
+    "code": "7.2",
+    "name": "Skills for security roles",
+    "description": "The organization defines the skills that people doing security-relevant work need, confirms they have them through education, training or experience, acts on gaps, and keeps records as proof.",
+    "category": "Clause 7 Support",
+    "trust_services_category": "Management system",
+    "is_always_in_scope": true
+  },
+  {
+    "requirement_key": "ISO27001:7.3",
+    "code": "7.3",
+    "name": "Staff understanding of security duties",
+    "description": "Everyone working under the organization's control knows the security policy, how their own work helps the system succeed, and what follows if they do not comply.",
+    "category": "Clause 7 Support",
+    "trust_services_category": "Management system",
+    "is_always_in_scope": true
+  },
+  {
+    "requirement_key": "ISO27001:7.4",
+    "code": "7.4",
+    "name": "Internal and external messaging",
+    "description": "The organization decides what security matters to communicate inside and outside the business, when, to whom and by which means.",
+    "category": "Clause 7 Support",
+    "trust_services_category": "Management system",
+    "is_always_in_scope": true
+  },
+  {
+    "requirement_key": "ISO27001:7.5.1",
+    "code": "7.5.1",
+    "name": "Documents the ISMS must hold",
+    "description": "The management system holds the written records the standard calls for, plus any further documents the organization judges necessary for the system to work well.",
+    "category": "Clause 7 Support",
+    "trust_services_category": "Management system",
+    "is_always_in_scope": true
+  },
+  {
+    "requirement_key": "ISO27001:7.5.2",
+    "code": "7.5.2",
+    "name": "Document format and approval",
+    "description": "When documents are created or changed, they carry a clear identity such as title, date, author and reference, use a suitable format, and are reviewed and approved before use.",
+    "category": "Clause 7 Support",
+    "trust_services_category": "Management system",
+    "is_always_in_scope": true
+  },
+  {
+    "requirement_key": "ISO27001:7.5.3",
+    "code": "7.5.3",
+    "name": "Document handling and retention",
+    "description": "Required documents stay available where and when people need them and are protected from loss, misuse and tampering. The organization controls distribution, access, storage, versions, retention and disposal, including documents from outside sources.",
+    "category": "Clause 7 Support",
+    "trust_services_category": "Management system",
+    "is_always_in_scope": true
+  },
+  {
+    "requirement_key": "ISO27001:8.1",
+    "code": "8.1",
+    "name": "Planned operation of the ISMS",
+    "description": "The organization sets criteria for the processes that deliver its security plans, runs them to those criteria, keeps enough records to show they ran as planned, controls changes, and keeps outsourced work in check.",
+    "category": "Clause 8 Operation",
+    "trust_services_category": "Management system",
+    "is_always_in_scope": true
+  },
+  {
+    "requirement_key": "ISO27001:8.2",
+    "code": "8.2",
+    "name": "Scheduled risk assessments",
+    "description": "The organization repeats its security risk assessment at planned intervals and whenever significant changes are proposed or happen, using its set criteria, and keeps the results.",
+    "category": "Clause 8 Operation",
+    "trust_services_category": "Management system",
+    "is_always_in_scope": true
+  },
+  {
+    "requirement_key": "ISO27001:8.3",
+    "code": "8.3",
+    "name": "Carrying out risk treatment",
+    "description": "The organization carries out its risk treatment plan and keeps records of what was done and with what result.",
+    "category": "Clause 8 Operation",
+    "trust_services_category": "Management system",
+    "is_always_in_scope": true
+  },
+  {
+    "requirement_key": "ISO27001:9.1",
+    "code": "9.1",
+    "name": "Measuring security performance",
+    "description": "The organization decides what to measure about its security processes and controls, how, when and by whom, then analyzes the results to judge how well the system performs, and keeps evidence.",
+    "category": "Clause 9 Performance evaluation",
+    "trust_services_category": "Management system",
+    "is_always_in_scope": true
+  },
+  {
+    "requirement_key": "ISO27001:9.2.1",
+    "code": "9.2.1",
+    "name": "Regular internal audits",
+    "description": "The organization audits its management system internally at planned intervals to learn whether it meets the organization's own rules and the standard, and whether it is working in practice.",
+    "category": "Clause 9 Performance evaluation",
+    "trust_services_category": "Management system",
+    "is_always_in_scope": true
+  },
+  {
+    "requirement_key": "ISO27001:9.2.2",
+    "code": "9.2.2",
+    "name": "Audit plan, criteria and independence",
+    "description": "The organization runs a standing audit program with set frequency, methods and responsibilities, defines criteria and scope for each audit, picks impartial auditors, reports results to the right managers, and keeps the records.",
+    "category": "Clause 9 Performance evaluation",
+    "trust_services_category": "Management system",
+    "is_always_in_scope": true
+  },
+  {
+    "requirement_key": "ISO27001:9.3.1",
+    "code": "9.3.1",
+    "name": "Scheduled leadership review",
+    "description": "Top management reviews the management system at planned intervals to confirm it still fits the organization, covers what it needs to, and delivers results.",
+    "category": "Clause 9 Performance evaluation",
+    "trust_services_category": "Management system",
+    "is_always_in_scope": true
+  },
+  {
+    "requirement_key": "ISO27001:9.3.2",
+    "code": "9.3.2",
+    "name": "Topics covered in the review",
+    "description": "Each review looks at actions from earlier reviews, changes in issues and stakeholder needs, performance and audit results, objectives met, feedback from stakeholders, risk results and treatment status, and chances to improve.",
+    "category": "Clause 9 Performance evaluation",
+    "trust_services_category": "Management system",
+    "is_always_in_scope": true
+  },
+  {
+    "requirement_key": "ISO27001:9.3.3",
+    "code": "9.3.3",
+    "name": "Decisions from the review",
+    "description": "The review ends with recorded decisions on improvements and on any changes the management system needs, and the organization keeps that record.",
+    "category": "Clause 9 Performance evaluation",
+    "trust_services_category": "Management system",
+    "is_always_in_scope": true
+  },
+  {
+    "requirement_key": "ISO27001:10.1",
+    "code": "10.1",
+    "name": "Making the ISMS work better over time",
+    "description": "The organization works continuously to make the management system fit better, cover more of what matters and deliver better results, and can show the changes it made.",
+    "category": "Clause 10 Improvement",
+    "trust_services_category": "Management system",
+    "is_always_in_scope": true
+  },
+  {
+    "requirement_key": "ISO27001:10.2",
+    "code": "10.2",
+    "name": "Fixing failures and their causes",
+    "description": "When something fails to meet a requirement, the organization corrects it, handles the consequences, finds and removes the cause so it does not recur, checks the fix worked, and keeps records.",
+    "category": "Clause 10 Improvement",
+    "trust_services_category": "Management system",
+    "is_always_in_scope": true
+  },
+  {
+    "requirement_key": "ISO27001:A.5.1",
+    "code": "A.5.1",
+    "name": "Security policy set",
+    "description": "There is a top level security policy and a set of topic policies that leadership has signed off. Staff and the outside parties they affect can find them and have confirmed reading them, and each one is looked at again on a set cycle and after major change.",
+    "category": "Annex A Organizational",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.5.2",
+    "code": "A.5.2",
+    "name": "Security duties by role",
+    "description": "Each security responsibility, from running a single control to leading the program, sits with a named role chosen to fit how the organization works, so nobody is unsure what they answer for.",
+    "category": "Annex A Organizational",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.5.3",
+    "code": "A.5.3",
+    "name": "Separating conflicting duties",
+    "description": "Work is split so that no one person can both carry out a sensitive action and approve or hide it, and where the team is too small to split it, someone else checks the action afterwards.",
+    "category": "Annex A Organizational",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.5.4",
+    "code": "A.5.4",
+    "name": "Managers uphold security rules",
+    "description": "Managers make it clear that everyone who works for the organization is expected to follow its security policies and procedures, and they see that this happens in daily work.",
+    "category": "Annex A Organizational",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.5.5",
+    "code": "A.5.5",
+    "name": "Working links with authorities",
+    "description": "The organization knows which regulators, law enforcement bodies, emergency services and other authorities it may need, when and how to reach each one, and keeps those channels working.",
+    "category": "Annex A Organizational",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.5.6",
+    "code": "A.5.6",
+    "name": "Links to security forums and peers",
+    "description": "The organization takes part in security communities, industry groups and professional bodies that fit its technology and sector, to hear about threats early and draw on others' experience.",
+    "category": "Annex A Organizational",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.5.7",
+    "code": "A.5.7",
+    "name": "Tracking emerging threats",
+    "description": "The organization gathers information about security threats from reliable sources and analyzes it, so decisions about defenses rest on current knowledge of what attackers are doing.",
+    "category": "Annex A Organizational",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.5.8",
+    "code": "A.5.8",
+    "name": "Security steps in every project",
+    "description": "Security is built into project work from the start, so security risks are assessed and requirements are addressed in every project, whatever its type.",
+    "category": "Annex A Organizational",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.5.9",
+    "code": "A.5.9",
+    "name": "Asset register",
+    "description": "Every system, device, application and store of data the organization relies on is recorded with the person accountable for it, and the record is kept accurate as things are added and retired.",
+    "category": "Annex A Organizational",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.5.10",
+    "code": "A.5.10",
+    "name": "Rules for using company assets",
+    "description": "The organization writes down what people may and may not do with its information, devices and systems, and how each kind should be handled, and makes sure those rules are followed in daily work.",
+    "category": "Annex A Organizational",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.5.11",
+    "code": "A.5.11",
+    "name": "Handing back assets on exit",
+    "description": "When someone leaves, or their role or contract changes, they give back the organization's equipment, data, keys and other property. This applies to staff, contractors and other outside parties alike.",
+    "category": "Annex A Organizational",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.5.12",
+    "code": "A.5.12",
+    "name": "Data sensitivity levels",
+    "description": "Each kind of information is given a sensitivity level that reflects the harm if it were exposed, changed or lost, and any customer, legal or contract demands on it, so the level decides how it is protected.",
+    "category": "Annex A Organizational",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.5.13",
+    "code": "A.5.13",
+    "name": "Marking information by sensitivity",
+    "description": "Information is marked with its sensitivity level using a documented method that matches the organization's classification scheme.",
+    "category": "Annex A Organizational",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.5.14",
+    "code": "A.5.14",
+    "name": "Rules for sharing information",
+    "description": "Whenever information moves, inside the business or to and from customers, suppliers and others, by email, file share, network, physical media or conversation, there are set rules or agreed terms for doing it safely.",
+    "category": "Annex A Organizational",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.5.15",
+    "code": "A.5.15",
+    "name": "Rules for who gets access",
+    "description": "The organization decides, writes down and enforces who may use its information and systems and who may enter its premises, basing each decision on business need and the risk involved.",
+    "category": "Annex A Organizational",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.5.16",
+    "code": "A.5.16",
+    "name": "Identity lifecycle for people and systems",
+    "description": "The organization manages user and system identities through their whole life, from creation through changes to removal.",
+    "category": "Annex A Organizational",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.5.17",
+    "code": "A.5.17",
+    "name": "Passwords and credential handling",
+    "description": "Passwords, keys, tokens and other secrets that prove identity are issued, stored, changed and revoked under a defined process, and the people who hold them know how to keep them safe.",
+    "category": "Annex A Organizational",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.5.18",
+    "code": "A.5.18",
+    "name": "Granting, reviewing and removing access",
+    "description": "Access for every person and system is approved before it is granted, checked at set intervals, adjusted when duties change and taken away when no longer needed, all following the organization's access rules.",
+    "category": "Annex A Organizational",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.5.19",
+    "code": "A.5.19",
+    "name": "Managing supplier security risk",
+    "description": "Every supplier whose products or services touch the organization's information is known, the harm a failure on its side could cause is judged, and that judgement sets how closely it is checked from onboarding to exit.",
+    "category": "Annex A Organizational",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.5.20",
+    "code": "A.5.20",
+    "name": "Security terms in supplier contracts",
+    "description": "The agreement with each supplier spells out the security obligations it must meet, with stronger terms for suppliers that hold more data or more access.",
+    "category": "Annex A Organizational",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.5.21",
+    "code": "A.5.21",
+    "name": "Technology supply chain risk",
+    "description": "Risk is managed beyond the direct technology supplier, reaching the software components, hosting and other suppliers that a product or service depends on.",
+    "category": "Annex A Organizational",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.5.22",
+    "code": "A.5.22",
+    "name": "Ongoing supplier oversight",
+    "description": "Suppliers are watched after the contract is signed: their security and the service they actually deliver are checked over time, and changes on their side are assessed before they are accepted.",
+    "category": "Annex A Organizational",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.5.23",
+    "code": "A.5.23",
+    "name": "Cloud service security rules",
+    "description": "Cloud services are chosen, operated and eventually left under rules the organization sets, including who is responsible for which safeguards and how data comes back at the end.",
+    "category": "Annex A Organizational",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.5.24",
+    "code": "A.5.24",
+    "name": "Incident response preparation",
+    "description": "Before anything goes wrong, the organization has decided how it will run an incident, who leads and who helps, and made sure those people know their part.",
+    "category": "Annex A Organizational",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.5.25",
+    "code": "A.5.25",
+    "name": "Triage of security events",
+    "description": "Every reported or detected security event is looked at and labelled, so real incidents are escalated and false alarms are closed with a record.",
+    "category": "Annex A Organizational",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.5.26",
+    "code": "A.5.26",
+    "name": "Handling security incidents",
+    "description": "A confirmed incident is worked through the written playbook, with each person in their set role, from containment and fixing the cause to restoring service and keeping people informed, and the steps taken are recorded.",
+    "category": "Annex A Organizational",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.5.27",
+    "code": "A.5.27",
+    "name": "Lessons from incidents",
+    "description": "After an incident, its causes are worked out and controls and processes are changed so the same weakness is less likely to cause it again.",
+    "category": "Annex A Organizational",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.5.28",
+    "code": "A.5.28",
+    "name": "Preserving forensic evidence",
+    "description": "When an event could lead to disciplinary, legal or regulatory action, the material that shows what happened is captured without being altered and with a record of who handled it, so it will stand up later.",
+    "category": "Annex A Organizational",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.5.29",
+    "code": "A.5.29",
+    "name": "Keeping safeguards running through outages and crises",
+    "description": "The organization decides in advance how the safeguards that protect information keep working when an outage or crisis forces people onto workarounds, and how any temporary relaxation is approved and reversed afterwards.",
+    "category": "Annex A Organizational",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.5.30",
+    "code": "A.5.30",
+    "name": "Technology recovery readiness",
+    "description": "The systems and data behind critical services are kept ready to be brought back within the agreed recovery times, and tests prove it rather than assume it.",
+    "category": "Annex A Organizational",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.5.31",
+    "code": "A.5.31",
+    "name": "Legal and contractual duties",
+    "description": "The laws, regulations and contracts that place security duties on the organization are known, kept in one current list, and each is tied to the way it is satisfied.",
+    "category": "Annex A Organizational",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.5.32",
+    "code": "A.5.32",
+    "name": "Software licenses and IP ownership",
+    "description": "Software and other licensed material is used within its license terms, and the rights in what the organization and its staff create are protected.",
+    "category": "Annex A Organizational",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.5.33",
+    "code": "A.5.33",
+    "name": "Keeping records safe",
+    "description": "Records the organization must keep stay complete, unaltered and confidential for their whole retention period, and are disposed of only when that period ends.",
+    "category": "Annex A Organizational",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.5.34",
+    "code": "A.5.34",
+    "name": "Personal data privacy duties",
+    "description": "The privacy laws and contract terms that apply to the personal data the organization holds are known, and the way that data is handled shows they are kept.",
+    "category": "Annex A Organizational",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.5.35",
+    "code": "A.5.35",
+    "name": "Security review by someone outside the work",
+    "description": "Someone with no stake in the work examines how the security program is designed and run, on a set schedule and after big changes, and reports what they find.",
+    "category": "Annex A Organizational",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.5.36",
+    "code": "A.5.36",
+    "name": "Checking adherence to security rules",
+    "description": "Managers and reviewers check on a set cycle that daily practice matches what the security policies and standards say, and gaps are fixed at their cause.",
+    "category": "Annex A Organizational",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.5.37",
+    "code": "A.5.37",
+    "name": "Procedures for running systems",
+    "description": "The routine tasks that keep systems running, such as starting and stopping services, backups, monitoring and handling failures, are written down where the people doing them can find them.",
+    "category": "Annex A Organizational",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.6.1",
+    "code": "A.6.1",
+    "name": "Background checks for staff",
+    "description": "Check each person's background before they join, and again later where the role or the risk calls for it, to a depth that fits the role and the information it gives access to, and within what the law allows.",
+    "category": "Annex A People",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.6.2",
+    "code": "A.6.2",
+    "name": "Security duties in employment contracts",
+    "description": "Before someone starts work, the contract they sign makes clear what they must do to protect information and what the organization commits to in return.",
+    "category": "Annex A People",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.6.3",
+    "code": "A.6.3",
+    "name": "Staff security training",
+    "description": "All staff, and outside parties where relevant, receive security awareness and job-specific training, and are told when policies and procedures that affect them change.",
+    "category": "Annex A People",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.6.4",
+    "code": "A.6.4",
+    "name": "Sanctions for security breaches",
+    "description": "A formal process, known to staff in advance, sets out how the organization acts against anyone who breaks security policy, and it is applied consistently.",
+    "category": "Annex A People",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.6.5",
+    "code": "A.6.5",
+    "name": "Obligations after exit or role change",
+    "description": "Some duties, such as keeping information confidential, do not end when a person leaves or changes job. The person is reminded of them at that point, and the signed terms let the organization hold them to it.",
+    "category": "Annex A People",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.6.6",
+    "code": "A.6.6",
+    "name": "Signed secrecy agreements",
+    "description": "Staff, contractors and other outside parties who receive the organization's confidential information sign agreements that fit what needs protecting, and the agreement wording is reviewed on a schedule and whenever those needs change.",
+    "category": "Annex A People",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.6.7",
+    "code": "A.6.7",
+    "name": "Rules for working away from the office",
+    "description": "When people work from home or on the road, set rules and technical measures keep the organization's information safe wherever it is opened or kept.",
+    "category": "Annex A People",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.6.8",
+    "code": "A.6.8",
+    "name": "How staff report suspected incidents",
+    "description": "Anyone who notices something that looks like a security problem knows where to report it and does so straight away, without waiting to be sure.",
+    "category": "Annex A People",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.7.1",
+    "code": "A.7.1",
+    "name": "Boundaries around secure sites",
+    "description": "Barriers such as walls, fences and locked doors mark off the areas where information and systems are kept, and are maintained so they actually keep people out.",
+    "category": "Annex A Physical",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.7.2",
+    "code": "A.7.2",
+    "name": "Controlled entry to premises",
+    "description": "Entry points to secure areas are controlled so only authorized people get in, including how visitors and deliveries are handled.",
+    "category": "Annex A Physical",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.7.3",
+    "code": "A.7.3",
+    "name": "Shielding working areas from outsiders",
+    "description": "Offices, rooms and other facilities are laid out and fitted so that sensitive work cannot easily be seen or reached from outside.",
+    "category": "Annex A Physical",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.7.4",
+    "code": "A.7.4",
+    "name": "Surveillance of premises",
+    "description": "Cameras, alarms or guards make sure that anyone entering the site without permission is noticed and dealt with.",
+    "category": "Annex A Physical",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.7.5",
+    "code": "A.7.5",
+    "name": "Protection from fire, flood and similar hazards",
+    "description": "Facilities are protected against fire, flood, storms and deliberate attack, based on an assessment of the hazards at each site.",
+    "category": "Annex A Physical",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.7.6",
+    "code": "A.7.6",
+    "name": "Conduct rules inside restricted areas",
+    "description": "Rules for behavior in secure areas are set and followed, such as who may work there unsupervised and what may be brought in.",
+    "category": "Annex A Physical",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.7.7",
+    "code": "A.7.7",
+    "name": "Papers put away and screens locked",
+    "description": "Rules require papers and removable media to be put away and screens to be locked when people step away, and the rules are enforced.",
+    "category": "Annex A Physical",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.7.8",
+    "code": "A.7.8",
+    "name": "Safe placement of equipment",
+    "description": "Equipment is placed and protected so it is shielded from environmental hazards and from unauthorised access or viewing.",
+    "category": "Annex A Physical",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.7.9",
+    "code": "A.7.9",
+    "name": "Protecting equipment taken off site",
+    "description": "Equipment and media used or kept away from the organization's sites are protected, allowing for the different risks outside the premises.",
+    "category": "Annex A Physical",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.7.10",
+    "code": "A.7.10",
+    "name": "Handling of removable storage",
+    "description": "USB drives, external disks, tapes and other media holding company data are used only where allowed, protected to match the sensitivity of what they hold, moved securely, and destroyed safely when no longer needed.",
+    "category": "Annex A Physical",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.7.11",
+    "code": "A.7.11",
+    "name": "Power and cooling supply",
+    "description": "Power, cooling and similar services that equipment depends on are protected, so that a failure of a utility does not take systems down.",
+    "category": "Annex A Physical",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.7.12",
+    "code": "A.7.12",
+    "name": "Network and power cable protection",
+    "description": "Cabling is laid and guarded so that a cut, a tap or electrical interference cannot quietly take down or expose the services it carries.",
+    "category": "Annex A Physical",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.7.13",
+    "code": "A.7.13",
+    "name": "Servicing and repair of equipment",
+    "description": "Equipment is serviced on the schedule its maker or the site sets, only by approved engineers, and storage is protected or removed before anything leaves for repair, so faults do not cause outages or expose data.",
+    "category": "Annex A Physical",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.7.14",
+    "code": "A.7.14",
+    "name": "Clearing data from retired hardware",
+    "description": "Laptops, servers and drives are wiped or destroyed, and the result checked, before they are reused, sold, returned or scrapped, so no company data or licensed software survives on them.",
+    "category": "Annex A Physical",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.8.1",
+    "code": "A.8.1",
+    "name": "Protection of staff laptops and phones",
+    "description": "Laptops, phones and tablets used for work are managed to a set standard, so a lost, stolen or carelessly used device does not expose company data or the systems it connects to.",
+    "category": "Annex A Technological",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.8.2",
+    "code": "A.8.2",
+    "name": "Control of administrator access",
+    "description": "Administrator and other elevated rights go only to people who need them, are granted deliberately and are kept under control for as long as they exist.",
+    "category": "Annex A Technological",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.8.3",
+    "code": "A.8.3",
+    "name": "Limiting who can reach data",
+    "description": "People can open only the data and systems their work needs, as laid down in the access control policy, and nothing more.",
+    "category": "Annex A Technological",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.8.4",
+    "code": "A.8.4",
+    "name": "Who can read and change code",
+    "description": "Only approved people can view or change the organization's source code, the tools used to build it and the libraries it relies on.",
+    "category": "Annex A Technological",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.8.5",
+    "code": "A.8.5",
+    "name": "Strong sign-in checks",
+    "description": "Sign-in methods are strong enough for what they protect, using checks such as multi-factor authentication where the risk or the access policy calls for it.",
+    "category": "Annex A Technological",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.8.6",
+    "code": "A.8.6",
+    "name": "Keeping resources ahead of demand",
+    "description": "Teams track how much computing, storage and network capacity is in use and add more before demand outgrows it.",
+    "category": "Annex A Technological",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.8.7",
+    "code": "A.8.7",
+    "name": "Keeping malicious code out of systems",
+    "description": "Malicious software is prevented and detected on systems and devices, and people are taught how to avoid letting it in.",
+    "category": "Annex A Technological",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.8.8",
+    "code": "A.8.8",
+    "name": "Finding and fixing technical weaknesses",
+    "description": "Known security flaws in the software and equipment in use are tracked as they are published, ranked by how much they matter here, and fixed or otherwise dealt with on a set timetable.",
+    "category": "Annex A Technological",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.8.9",
+    "code": "A.8.9",
+    "name": "Baseline settings for systems",
+    "description": "Each kind of system, service and network device has an approved secure configuration on record. Systems are built from it, settings that drift away from it are caught and corrected, and the baseline is revisited as products and threats change.",
+    "category": "Annex A Technological",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.8.10",
+    "code": "A.8.10",
+    "name": "Erasing data no longer needed",
+    "description": "Once data has served its purpose it is erased wherever it is held, including copies and backups, and the erasure leaves nothing recoverable.",
+    "category": "Annex A Technological",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.8.11",
+    "code": "A.8.11",
+    "name": "Obscuring sensitive values in data",
+    "description": "Sensitive values are hidden or replaced, for example in test data or reports, where people need the shape of the data but not the real content.",
+    "category": "Annex A Technological",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.8.12",
+    "code": "A.8.12",
+    "name": "Stopping data from leaving unchecked",
+    "description": "Controls watch the routes data can leave by, such as email, uploads and removable drives, and stop or flag sensitive information going where it should not.",
+    "category": "Annex A Technological",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.8.13",
+    "code": "A.8.13",
+    "name": "Backups that can be restored",
+    "description": "Copies of data, software and the configuration needed to rebuild systems are taken on an agreed schedule and kept apart from the originals, and restores are tried to prove they work.",
+    "category": "Annex A Technological",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.8.14",
+    "code": "A.8.14",
+    "name": "Failover for critical systems",
+    "description": "Critical systems have enough duplicate capacity or failover that the failure of a single component does not break the availability the organization has promised.",
+    "category": "Annex A Technological",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.8.15",
+    "code": "A.8.15",
+    "name": "Recording and protecting activity logs",
+    "description": "Systems record who did what, when, and what went wrong, in logs that the people they record cannot alter, and the logs are reviewed for signs of trouble.",
+    "category": "Annex A Technological",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.8.16",
+    "code": "A.8.16",
+    "name": "Watching systems for unusual behavior",
+    "description": "Unusual activity, such as odd sign-ins, sudden privilege changes or strange traffic, is spotted as it happens across the estate and checked to see whether it is an incident.",
+    "category": "Annex A Technological",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.8.17",
+    "code": "A.8.17",
+    "name": "Consistent time across systems",
+    "description": "Every system takes its time from the same trusted sources, so event times line up when records from different systems are compared.",
+    "category": "Annex A Technological",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.8.18",
+    "code": "A.8.18",
+    "name": "Control of powerful system tools",
+    "description": "Admin consoles, debuggers and other tools that can switch off or get past normal protections are kept to a short list of approved people, and each use is logged and reviewed.",
+    "category": "Annex A Technological",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.8.19",
+    "code": "A.8.19",
+    "name": "Approved software only on live systems",
+    "description": "Installing or changing software on live systems follows set rules, so only approved and tested software goes on and a change can be undone.",
+    "category": "Annex A Technological",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.8.20",
+    "code": "A.8.20",
+    "name": "Protection of the network and its devices",
+    "description": "The network is designed in zones, its firewalls, routers and switches are hardened and kept current, and changes to it are watched, so traffic and the systems it links stay protected.",
+    "category": "Annex A Technological",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.8.21",
+    "code": "A.8.21",
+    "name": "Checking what network providers deliver",
+    "description": "For every network service in use, whether run in house or bought from a provider, the organization knows what security and service level it gets, states its own needs and checks they are met.",
+    "category": "Annex A Technological",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.8.22",
+    "code": "A.8.22",
+    "name": "Splitting networks into separate zones",
+    "description": "Production, development, office and guest networks, and the most sensitive systems within them, sit in separate zones with controlled paths between them, so a problem in one cannot spread freely.",
+    "category": "Annex A Technological",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.8.23",
+    "code": "A.8.23",
+    "name": "Blocking risky websites",
+    "description": "Browsing is filtered so staff cannot reach sites known to host malware, phishing or other harmful content.",
+    "category": "Annex A Technological",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.8.24",
+    "code": "A.8.24",
+    "name": "Encryption rules and key handling",
+    "description": "Rules say when and how encryption is used and how keys are made, stored, rotated and retired, and those rules are followed.",
+    "category": "Annex A Technological",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.8.25",
+    "code": "A.8.25",
+    "name": "Security rules for building software",
+    "description": "Engineering teams work to a written secure development standard, from design and coding through testing and release, and the way they work matches it.",
+    "category": "Annex A Technological",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.8.26",
+    "code": "A.8.26",
+    "name": "Stating security needs before building or buying",
+    "description": "Every new application, built or bought, has a short written list of the security it must provide, such as sign-in, access, logging and legal needs, agreed before work or purchase starts.",
+    "category": "Annex A Technological",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.8.27",
+    "code": "A.8.27",
+    "name": "Building security into system design",
+    "description": "The organization has a short list of design rules, such as least privilege and defense in depth, that every new system or major change is built to.",
+    "category": "Annex A Technological",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.8.28",
+    "code": "A.8.28",
+    "name": "Writing code that resists attack",
+    "description": "Developers follow secure coding practices and have tooling that catches common weaknesses, in new code and in reused code.",
+    "category": "Annex A Technological",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.8.29",
+    "code": "A.8.29",
+    "name": "Testing for weaknesses before release",
+    "description": "Security testing is built into development and acceptance, so systems are tested before release against the requirements set for them.",
+    "category": "Annex A Technological",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.8.30",
+    "code": "A.8.30",
+    "name": "Oversight of contracted developers",
+    "description": "When another company or contractor writes software for the organization, the organization sets the security expectations, watches progress and checks the result before use.",
+    "category": "Annex A Technological",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.8.31",
+    "code": "A.8.31",
+    "name": "Keeping test and live systems apart",
+    "description": "Work in progress is built and tried out in environments that cannot reach live systems or live data, and each environment has its own protection.",
+    "category": "Annex A Technological",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.8.32",
+    "code": "A.8.32",
+    "name": "Approval and control of changes",
+    "description": "Any change to a live system goes through a defined route of request, impact check, approval, testing and release, and a record of it is kept.",
+    "category": "Annex A Technological",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.8.33",
+    "code": "A.8.33",
+    "name": "Safe handling of test data",
+    "description": "Testing uses made-up or masked data wherever possible, and any real data used is approved, protected like production and removed once the test is done.",
+    "category": "Annex A Technological",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  },
+  {
+    "requirement_key": "ISO27001:A.8.34",
+    "code": "A.8.34",
+    "name": "Keeping audit tests from disrupting systems",
+    "description": "Before anyone tests live systems for audit or assurance purposes, the scope, timing and limits are settled with management so normal service is not harmed.",
+    "category": "Annex A Technological",
+    "trust_services_category": "Annex A controls",
+    "is_always_in_scope": false
+  }
+]

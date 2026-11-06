@@ -316,19 +316,28 @@ export const controlsApi = {
     `/api/v1/controls/report/export?format=${format}`,
 };
 
+/** `?framework=CODE`, or nothing for SOC 2, which is what every read answered before a
+ *  second framework existed. */
+const frameworkQuery = (framework?: string) =>
+  framework && framework !== "SOC2" ? `?framework=${encodeURIComponent(framework)}` : "";
+
 export const engagementApi = {
-  get: () => apiFetch<Engagement | null>("/engagement"),
+  get: (framework?: string) =>
+    apiFetch<Engagement | null>(`/engagement${frameworkQuery(framework)}`),
   put: (body: EngagementPut) =>
     apiFetch<Engagement>("/engagement", {
       method: "PUT",
       body: JSON.stringify(body),
     }),
-  scope: () => apiFetch<ScopeCriterion[]>("/engagement/scope"),
-  coverage: () => apiFetch<Coverage>("/engagement/coverage"),
-  dashboard: (range?: { from?: string; to?: string }) => {
+  scope: (framework?: string) =>
+    apiFetch<ScopeCriterion[]>(`/engagement/scope${frameworkQuery(framework)}`),
+  coverage: (framework?: string) =>
+    apiFetch<Coverage>(`/engagement/coverage${frameworkQuery(framework)}`),
+  dashboard: (range?: { from?: string; to?: string }, framework?: string) => {
     const params = new URLSearchParams();
     if (range?.from) params.set("from", range.from);
     if (range?.to) params.set("to", range.to);
+    if (framework && framework !== "SOC2") params.set("framework", framework);
     const qs = params.toString();
     return apiFetch<ComplianceDashboard>(
       `/engagement/dashboard${qs ? `?${qs}` : ""}`,

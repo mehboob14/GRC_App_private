@@ -30,6 +30,7 @@ Two shapes worth reading before adding to this file:
 
 from __future__ import annotations
 
+import re
 import uuid
 from datetime import date, datetime
 from decimal import Decimal
@@ -109,8 +110,29 @@ COVERAGE_FULL: Final = "full"
 _WEIGHT = Numeric(4, 3)
 
 
+def natural_key(code: str) -> list[str | int]:
+    """Sort ``A.5.2`` before ``A.5.10`` and ``4.1`` before ``10.1``.
+
+    Requirement codes are text, so a database ORDER BY puts ``10.1`` before ``4.1``. The
+    SOC 2 codes sort the same either way, which is why nothing needed this until a
+    second framework with two digit clause numbers arrived.
+    """
+    return [int(part) if part.isdigit() else part for part in re.split(r"(\d+)", code)]
+
+
+SCOPE_MODELS: Final[tuple[str, ...]] = ("categories", "applicability")
+"""How a framework's scope is chosen. ``categories``: the workspace elects groups of
+requirements (SOC 2 Trust Services Categories). ``applicability``: every requirement
+is in scope unless the workspace excludes it with a written reason (the ISO 27001
+Statement of Applicability); requirements marked always in scope cannot be excluded."""
+
+DEFAULT_FRAMEWORK: Final = "SOC2"
+"""The framework a workspace is on until it adds another, and the one every endpoint
+that predates multiple frameworks answers for."""
+
+
 class Framework(UUIDPrimaryKey, Timestamped, Base):
-    """A compliance framework — SOC 2 today, ISO 27001 as an ``INSERT`` later."""
+    """A compliance framework: SOC 2 and ISO 27001 are rows, the next one is a content pack."""
 
     __tablename__ = "frameworks"
 
@@ -118,6 +140,14 @@ class Framework(UUIDPrimaryKey, Timestamped, Base):
     name: Mapped[str]
     description: Mapped[str | None] = mapped_column(default=None)
     built_in: Mapped[bool] = mapped_column(server_default=text("true"), default=True)
+    scope_model: Mapped[str] = mapped_column(
+        server_default=text("'categories'"), default="categories"
+    )
+    # Display order, lowest first. SOC 2 keeps the default so every client that reads
+    # the first framework as SOC 2 keeps working when a second one is loaded.
+    position: Mapped[int] = mapped_column(server_default=text("100"), default=100)
+
+    __table_args__ = (status_check("frameworks", "scope_model", SCOPE_MODELS),)
 
     def __repr__(self) -> str:
         return f"Framework(id={self.id!r}, code={self.code!r})"
@@ -462,13 +492,104 @@ class ControlRequirement(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
 
 
 # ---------------------------------------------------------------------------
+# Frameworks a workspace has turned on, and what it decided about each requirement
+# ---------------------------------------------------------------------------
+
+TENANT_FRAMEWORK_STATUSES: Final[tuple[str, ...]] = ("active", "inactive")
+
+PROVIDED_BY: Final[tuple[str, ...]] = ("organization", "supplier")
+"""Who operates the measure behind a requirement. ``supplier`` is the usual answer for
+most physical controls of a cloud hosted company: the data centre operator runs them
+and the workspace holds that supplier's certificate."""
+
+
+class TenantFramework(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
+    """A framework a workspace has added, pinned to the version it was added at.
+
+    Every workspace holds SOC 2 from signup. Adding another framework adopts the
+    controls it needs and links the controls the workspace already runs to its
+    requirements, in one audited step. Never deleted (rule 6): turning a framework off
+    is a status, and the controls it brought stay in the one library.
+    """
+
+    __tablename__ = "tenant_frameworks"
+
+    framework_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("frameworks.id", ondelete="RESTRICT")
+    )
+    framework_version_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("framework_versions.id", ondelete="RESTRICT")
+    )
+    status: Mapped[str] = mapped_column(default="active", server_default=text("'active'"))
+    activated_by_membership_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("tenant_memberships.id", ondelete="SET NULL"), default=None
+    )
+
+    __table_args__ = (
+        status_check("tenant_frameworks", "status", TENANT_FRAMEWORK_STATUSES),
+        tenant_index("tenant_frameworks", "framework_id", unique=True),
+    )
+
+    def __repr__(self) -> str:
+        return f"TenantFramework(tenant_id={self.tenant_id!r}, framework_id={self.framework_id!r})"
+
+
+class RequirementApplicability(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
+    """One workspace decision about one requirement: the Statement of Applicability row.
+
+    No row means applicable and unreviewed. Excluding a requirement needs a written
+    reason (a database CHECK as well as the service), and a requirement the framework
+    marks always in scope cannot be excluded at all. Exclusion is per requirement,
+    never per control: a control shared with another framework keeps working there.
+    """
+
+    __tablename__ = "requirement_applicability"
+
+    requirement_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("requirements.id", ondelete="RESTRICT")
+    )
+    applicable: Mapped[bool] = mapped_column(default=True, server_default=text("true"))
+    justification: Mapped[str | None] = mapped_column(default=None)
+    provided_by: Mapped[str] = mapped_column(
+        default="organization", server_default=text("'organization'")
+    )
+    owner_membership_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("tenant_memberships.id", ondelete="SET NULL"), default=None
+    )
+    reviewed_at: Mapped[datetime | None] = mapped_column(default=None)
+
+    __table_args__ = (
+        status_check("requirement_applicability", "provided_by", PROVIDED_BY),
+        CheckConstraint(
+            "applicable OR (justification IS NOT NULL AND length(btrim(justification)) > 0)",
+            name=conv("ck_requirement_applicability__exclusion_justified"),
+        ),
+        tenant_index("requirement_applicability", "requirement_id", unique=True),
+    )
+
+    def __repr__(self) -> str:
+        return (
+            f"RequirementApplicability(tenant_id={self.tenant_id!r}, "
+            f"requirement_id={self.requirement_id!r}, applicable={self.applicable!r})"
+        )
+
+
+# ---------------------------------------------------------------------------
 # Engagement — the audit being prepared for, and what is in its scope
 # ---------------------------------------------------------------------------
 
-AUDIT_TYPES: Final[tuple[str, ...]] = ("type_1", "type_2")
+AUDIT_TYPES_BY_SCOPE_MODEL: Final[dict[str, tuple[str, ...]]] = {
+    "categories": ("type_1", "type_2"),
+    "applicability": ("initial_certification", "surveillance", "recertification"),
+}
 """SOC 2 Type I is a point in time; Type II is a period. The distinction is not
 cosmetic: Type II is what makes ``window_start``/``window_end`` an observation
-period evidence must fall inside."""
+period evidence must fall inside. A certification framework has an initial audit,
+yearly surveillance audits and a recertification audit instead."""
+
+AUDIT_TYPES: Final[tuple[str, ...]] = tuple(
+    t for types in AUDIT_TYPES_BY_SCOPE_MODEL.values() for t in types
+)
 
 ENGAGEMENT_STATUSES: Final[tuple[str, ...]] = ("draft", "active", "closed")
 
@@ -476,9 +597,10 @@ ENGAGEMENT_STATUSES: Final[tuple[str, ...]] = ("draft", "active", "closed")
 class Engagement(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
     """The audit a tenant is preparing for, and the scope it covers.
 
-    One per tenant for now — UNIQUE (tenant_id) — because "engagement setup" is
-    a settings screen, not a history. Keeping past engagements is a later change
-    that drops this constraint; nothing else here assumes singularity.
+    One per framework version for a tenant, because "engagement setup" is a
+    settings screen, not a history: a workspace preparing for SOC 2 and ISO 27001
+    has two, side by side, on the same controls. Keeping past engagements is a later
+    change that drops this constraint.
 
     ``categories_in_scope`` holds Trust Services Categories, not criteria. That
     is how SOC 2 scope is actually chosen: you elect Availability or
@@ -503,6 +625,11 @@ class Engagement(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
     categories_in_scope: Mapped[list[str]] = mapped_column(
         ARRAY(Text), server_default=text("'{}'"), default=list
     )
+    # Certification frameworks: the management system scope in the organisation's
+    # own words, who audits it and when.
+    scope_statement: Mapped[str | None] = mapped_column(default=None)
+    certification_body: Mapped[str | None] = mapped_column(default=None)
+    audit_on: Mapped[date | None] = mapped_column(default=None)
 
     __table_args__ = (
         status_check("engagements", "audit_type", AUDIT_TYPES),
@@ -517,7 +644,9 @@ class Engagement(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
             "window_end IS NULL OR window_start IS NULL OR window_end >= window_start",
             name=conv("ck_engagements__window_ordered"),
         ),
-        UniqueConstraint("tenant_id", name="uq_engagements__tenant"),
+        UniqueConstraint(
+            "tenant_id", "framework_version_id", name="uq_engagements__tenant_framework_version"
+        ),
     )
 
     def __repr__(self) -> str:

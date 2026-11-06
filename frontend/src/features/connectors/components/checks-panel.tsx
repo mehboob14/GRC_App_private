@@ -107,7 +107,8 @@ function PlanNotice({
           aria-expanded={listing}
           className="text-body-sm font-semibold text-action-accent hover:underline"
         >
-          {listing ? "Hide" : "Show"} the {count === 1 ? "repository" : `${count} repositories`}
+          {listing ? "Hide" : "Show"} the{" "}
+          {count === 1 ? "repository" : `${count} repositories`}
         </button>
       </div>
       {listing ? (
@@ -135,12 +136,12 @@ function headline(data: Automation): string {
         ? `${checks} ready. Connect any one system below to run ${data.tests_total === 1 ? "it" : "them"}.`
         : "None of these checks can run yet. They need systems that are planned. Request the one you use.";
     case "pending":
-      return "Collecting from the connected system now.";
+      return "Collecting now. Results appear when the run finishes.";
     case "stale":
       return `The last check was ${ago(data.last_run_at)}. Results older than two days are not counted until the checks run again.`;
     case "not_applicable":
       // Verified by nothing is not the same as passing: say so, and say what to do.
-      return "The checks found nothing to check on this account, so none of them proves the control. Provide the evidence yourself.";
+      return "The checks found nothing to check here, so none of them proves the control. Provide the evidence yourself.";
     default:
       return `${data.tests_running} of ${checks} running. Last run ${ago(data.last_run_at)}.`;
   }
@@ -148,7 +149,9 @@ function headline(data: Automation): string {
 
 function runningOn(test: AutomatedTest): string[] {
   return test.needs.flatMap((need) =>
-    need.providers.filter((p) => p.connected && p.runs_check).map((p) => p.name),
+    need.providers
+      .filter((p) => p.connected && p.runs_check)
+      .map((p) => p.name),
   );
 }
 
@@ -189,11 +192,18 @@ function CheckRow({
   const limited = planLimited(test);
   const limitedCount = limited.reduce((n, g) => n + g.names.length, 0);
   const rest = test.results.filter((r) => r.detail?.reason !== "plan");
-  const failing = rest.filter((r) => r.outcome === "fail").length;
+  const total = Math.max(test.results_total ?? 0, test.results.length);
+  const capped = total > test.results.length;
+  // Every plan-limited result is sent (and always fails), so the capped count is exact.
+  const failing = capped
+    ? Math.max(0, (test.counts.fail ?? 0) - limitedCount)
+    : rest.filter((r) => r.outcome === "fail").length;
   const marks = test.needs.flatMap((n) =>
     n.providers
       .filter((p) =>
-        test.availability === "running" ? p.connected && p.runs_check : p.runs_check || p.status !== "not_planned",
+        test.availability === "running"
+          ? p.connected && p.runs_check
+          : p.runs_check || p.status !== "not_planned",
       )
       .slice(0, 3),
   );
@@ -227,7 +237,7 @@ function CheckRow({
             </span>
             <span className="truncate">
               {test.results.length > 0
-                ? `${test.results.length} checked${failing ? `, ${failing} failing` : ""}${limitedCount ? `, ${limitedCount} not offered on the plan` : ""}. ${ago(test.last_run_at)}`
+                ? `${total} checked${failing ? `, ${failing} failing` : ""}${limitedCount ? `, ${limitedCount} not offered on the plan` : ""}. ${ago(test.last_run_at)}`
                 : runsOnLine(test)}
             </span>
           </span>
@@ -301,13 +311,17 @@ function CheckRow({
 
           {test.results.length > 0 ? (
             <div>
-              <p className="type-overline mb-1">Last result</p>
+              <p className="type-overline mb-1">
+                {capped
+                  ? `Last result, first ${rest.length} of ${total - limitedCount}, failures first`
+                  : "Last result"}
+              </p>
               <ul className="divide-y divide-border">
-                {rest.map((r) => {
+                {rest.map((r, i) => {
                   const icon = OUTCOME_ICON[r.outcome];
                   return (
                     <li
-                      key={`${r.connection_id}:${r.resource_name}`}
+                      key={`${r.connection_id}:${r.resource_name}:${i}`}
                       className="flex items-start gap-2.5 py-2"
                     >
                       <Icon
@@ -378,7 +392,8 @@ function evidenceDetail(
     case "platform":
       return (
         <>
-          Kept in <ModuleLink module={item.module} />. Verity does not check it yet.
+          Kept in <ModuleLink module={item.module} />. Verity does not check it
+          yet.
         </>
       );
     default:
@@ -419,7 +434,10 @@ function EvidenceRow({
             : "bg-surface-sunken text-text-secondary",
         )}
       >
-        <Icon name={item.source === "platform" ? "layers" : "doc"} className="size-4" />
+        <Icon
+          name={item.source === "platform" ? "layers" : "doc"}
+          className="size-4"
+        />
       </span>
       <span className="min-w-0 flex-1">
         <span className="block text-body-md font-semibold text-text-primary">
@@ -489,8 +507,10 @@ export function ChecksPanel({
     key: c.key,
     name: c.name,
   }));
+  // Verity's own registers are always connected: never a system to connect.
   const unconnected = data.capabilities.filter(
-    (c) => !c.providers.some((p) => p.connected),
+    (c) =>
+      !c.key.startsWith("verity_") && !c.providers.some((p) => p.connected),
   );
 
   return (
@@ -582,7 +602,9 @@ export function ChecksPanel({
             />
             <Stat
               label="Not running yet"
-              value={String(composition.checks_planned + composition.checks_ready)}
+              value={String(
+                composition.checks_planned + composition.checks_ready,
+              )}
               hint={
                 composition.checks_ready > 0
                   ? `${composition.checks_ready} ready to connect`
@@ -595,7 +617,9 @@ export function ChecksPanel({
             />
             <Stat
               label="You provide"
-              value={String(composition.items_manual + composition.items_planned)}
+              value={String(
+                composition.items_manual + composition.items_planned,
+              )}
             />
           </dl>
         </section>

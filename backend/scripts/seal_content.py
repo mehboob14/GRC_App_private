@@ -22,6 +22,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from verity.seed.loader import CONTENT_ROOT, content_digest, sealed_hashes
 
+FRAMEWORK_PACKS = ("soc2", "iso27001")
+
 
 def _json(pack: Path, name: str) -> list[dict]:
     return json.loads((pack / name).read_text(encoding="utf-8"))
@@ -30,7 +32,7 @@ def _json(pack: Path, name: str) -> list[dict]:
 def _counts(pack: Path) -> dict[str, int]:
     """The numbers a manifest states about its pack, where it states any."""
     out: dict[str, int] = {}
-    if pack.name == "soc2":
+    if pack.name in FRAMEWORK_PACKS:
         out = {
             "requirements": len(_json(pack, "requirements.json")),
             "control_templates": len(_json(pack, "control_templates.json")),
@@ -56,7 +58,7 @@ def seal(pack: Path) -> bool:
     if "sha256" in manifest:
         manifest["sha256"] = {name: content_digest(pack / name) for name in manifest["sha256"]}
     counts = _counts(pack)
-    if pack.name == "soc2":
+    if pack.name in FRAMEWORK_PACKS:
         manifest["counts"] = {**manifest.get("counts", {}), **counts}
     else:
         manifest.update({k: v for k, v in counts.items() if k in manifest})

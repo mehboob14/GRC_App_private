@@ -83,6 +83,57 @@ _RECIPIENT_SNAPSHOT: Final = (
 
 
 @dataclass(frozen=True, slots=True)
+class DocumentFacts:
+    """One document as Verity's built-in checks read it: plain data, no names resolved.
+
+    ``gap`` is ``schedule.currency_gap`` (None means in force). ``tiers`` are the
+    approval tiers as (tier, status, decided_at); ``approver_ids`` the people whose
+    decision was approve. ``open_placeholders`` counts unfilled fields and prompts in
+    authored content (0 for uploaded files, which Verity cannot read).
+    """
+
+    id: uuid.UUID
+    code: str
+    title: str
+    doc_type: str
+    lifecycle: str
+    template_key: str | None
+    owner_membership_id: uuid.UUID | None
+    renewal_date: date | None
+    approved_at: datetime | None
+    published_at: datetime | None
+    gap: str | None
+    current_version_no: str | None
+    current_version_created_at: datetime | None
+    current_version_author_id: uuid.UUID | None
+    control_ids: tuple[uuid.UUID, ...]
+    tiers: tuple[tuple[int, str, datetime | None], ...]
+    approver_ids: tuple[uuid.UUID, ...]
+    open_placeholders: int
+
+
+@dataclass(frozen=True, slots=True)
+class AckFacts:
+    """Who was asked to acknowledge a published document, who signed its current text,
+    and who is late (their campaign closed or is past its due day without them)."""
+
+    document_id: uuid.UUID
+    published_at: datetime | None
+    campaigns: int
+    #: Campaigns started since the document was last published: only these ask for the
+    #: current text, so only their recipients can be late for it.
+    campaigns_current: int
+    asked: frozenset[uuid.UUID]
+    #: Recipients of the campaigns that ask for the current text.
+    asked_current: frozenset[uuid.UUID]
+    signed_current: frozenset[uuid.UUID]
+    #: People who acknowledged the current version directly, campaign or not.
+    signed_direct: frozenset[uuid.UUID]
+    late: frozenset[uuid.UUID]
+    next_due_at: datetime | None
+
+
+@dataclass(frozen=True, slots=True)
 class PlaceholderView:
     """Something the reader still has to fill in, and how much text it affects."""
 
@@ -528,6 +579,211 @@ class DocumentService:
                 else schedule.review_status(doc.renewal_date, datetime.now(UTC).date())
             ),
         )
+
+    async def check_facts(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, today: date
+    ) -> list[DocumentFacts]:
+        """Every document that is not archived, for Verity's built-in checks. Read only,
+        no permission or object scope (the caller is the check runner), sorted by code."""
+        docs = list(
+            (
+                await session.execute(
+                    select(Document)
+                    .where(Document.tenant_id == tenant_id, Document.lifecycle != "archived")
+                    .order_by(Document.code)
+                )
+            ).scalars()
+        )
+        if not docs:
+            return []
+        version_ids = [d.current_version_id for d in docs if d.current_version_id]
+        versions: dict[uuid.UUID, DocumentVersion] = {}
+        if version_ids:
+            versions = {
+                v.id: v
+                for v in (
+                    await session.execute(
+                        select(DocumentVersion).where(
+                            DocumentVersion.tenant_id == tenant_id,
+                            DocumentVersion.id.in_(version_ids),
+                        )
+                    )
+                ).scalars()
+            }
+        _frameworks, controls = await self._links(session, tenant_id)
+        tiers: dict[uuid.UUID, list[tuple[int, str, datetime | None]]] = {}
+        approval_doc: dict[uuid.UUID, uuid.UUID] = {}
+        for row in (
+            await session.execute(
+                select(DocumentApproval)
+                .where(DocumentApproval.tenant_id == tenant_id)
+                .order_by(DocumentApproval.tier)
+            )
+        ).scalars():
+            tiers.setdefault(row.document_id, []).append((row.tier, row.status, row.decided_at))
+            approval_doc[row.id] = row.document_id
+        approvers: dict[uuid.UUID, set[uuid.UUID]] = {}
+        for approval_id, membership_id in (
+            await session.execute(
+                select(
+                    DocumentApprovalAssignee.approval_id, DocumentApprovalAssignee.membership_id
+                ).where(
+                    DocumentApprovalAssignee.tenant_id == tenant_id,
+                    DocumentApprovalAssignee.decision == "approved",
+                )
+            )
+        ).tuples():
+            doc_id = approval_doc.get(approval_id)
+            if doc_id is not None:
+                approvers.setdefault(doc_id, set()).add(membership_id)
+        out: list[DocumentFacts] = []
+        for d in docs:
+            version = versions.get(d.current_version_id) if d.current_version_id else None
+            html = version.content_html if version is not None else None
+            out.append(
+                DocumentFacts(
+                    id=d.id,
+                    code=d.code,
+                    title=d.title,
+                    doc_type=d.doc_type,
+                    lifecycle=d.lifecycle,
+                    template_key=d.template_key,
+                    owner_membership_id=d.owner_membership_id,
+                    renewal_date=d.renewal_date,
+                    approved_at=d.approved_at,
+                    published_at=d.published_at,
+                    gap=schedule.currency_gap(d.lifecycle, d.renewal_date, d.approved_at, today),
+                    current_version_no=version.version_no if version is not None else None,
+                    current_version_created_at=version.created_at if version is not None else None,
+                    current_version_author_id=(
+                        version.created_by_membership_id if version is not None else None
+                    ),
+                    control_ids=tuple(controls.get(d.id, [])),
+                    tiers=tuple(tiers.get(d.id, [])),
+                    approver_ids=tuple(sorted(approvers.get(d.id, set()), key=str)),
+                    open_placeholders=sum(
+                        p.count
+                        for p in placeholder_lib.find(html)
+                        if p.key not in placeholder_lib.AUTO_FILLED
+                    ),
+                )
+            )
+        return out
+
+    async def acknowledgement_facts(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, now: datetime
+    ) -> dict[uuid.UUID, AckFacts]:
+        """Acknowledgement state of every published document, for the built-in checks.
+
+        A signature counts for the current text only: a campaign acknowledgement given
+        after the document was last published, or a direct acknowledgement of the current
+        version. A recipient is late when their campaign is closed or past its due day
+        and they have not signed the current text.
+        """
+        docs = list(
+            (
+                await session.execute(
+                    select(Document).where(
+                        Document.tenant_id == tenant_id, Document.lifecycle == "published"
+                    )
+                )
+            ).scalars()
+        )
+        if not docs:
+            return {}
+        doc_ids = [d.id for d in docs]
+        campaigns = list(
+            (
+                await session.execute(
+                    select(DocumentAckCampaign).where(
+                        DocumentAckCampaign.tenant_id == tenant_id,
+                        DocumentAckCampaign.document_id.in_(doc_ids),
+                    )
+                )
+            ).scalars()
+        )
+        recipients: list[DocumentAckCampaignRecipient] = []
+        if campaigns:
+            recipients = list(
+                (
+                    await session.execute(
+                        select(DocumentAckCampaignRecipient).where(
+                            DocumentAckCampaignRecipient.tenant_id == tenant_id,
+                            DocumentAckCampaignRecipient.campaign_id.in_([c.id for c in campaigns]),
+                        )
+                    )
+                ).scalars()
+            )
+        direct: dict[uuid.UUID, dict[uuid.UUID, uuid.UUID]] = {}
+        for row in (
+            await session.execute(
+                select(DocumentAcknowledgement).where(
+                    DocumentAcknowledgement.tenant_id == tenant_id,
+                    DocumentAcknowledgement.document_id.in_(doc_ids),
+                )
+            )
+        ).scalars():
+            direct.setdefault(row.document_id, {})[row.membership_id] = row.version_id
+        campaign_of = {c.id: c for c in campaigns}
+        campaigns_by_doc: dict[uuid.UUID, list[DocumentAckCampaign]] = {}
+        for c in campaigns:
+            campaigns_by_doc.setdefault(c.document_id, []).append(c)
+        recipients_by_doc: dict[uuid.UUID, list[DocumentAckCampaignRecipient]] = {}
+        for r in recipients:
+            recipients_by_doc.setdefault(campaign_of[r.campaign_id].document_id, []).append(r)
+        out: dict[uuid.UUID, AckFacts] = {}
+        for doc in docs:
+            mine = campaigns_by_doc.get(doc.id, [])
+
+            def current(camp: DocumentAckCampaign, doc: Document = doc) -> bool:
+                return doc.published_at is None or camp.created_at >= doc.published_at
+
+            asked: set[uuid.UUID] = set()
+            asked_current: set[uuid.UUID] = set()
+            signed: set[uuid.UUID] = set()
+            due_or_closed: set[uuid.UUID] = set()
+            for r in recipients_by_doc.get(doc.id, []):
+                camp = campaign_of[r.campaign_id]
+                asked.add(r.membership_id)
+                if current(camp):
+                    asked_current.add(r.membership_id)
+                campaign_signature = (
+                    r.status == "acknowledged"
+                    and r.acknowledged_at is not None
+                    and (doc.published_at is None or r.acknowledged_at >= doc.published_at)
+                )
+                if campaign_signature:
+                    signed.add(r.membership_id)
+                # A campaign started before the current text was published asked for an
+                # earlier version: its recipients cannot be late for this one.
+                if current(camp) and (
+                    camp.status == "closed" or schedule.campaign_overdue(camp.due_at, now)
+                ):
+                    due_or_closed.add(r.membership_id)
+            direct_now = frozenset(
+                membership_id
+                for membership_id, version_id in direct.get(doc.id, {}).items()
+                if doc.current_version_id is not None and version_id == doc.current_version_id
+            )
+            signed |= direct_now & asked
+            open_due = [
+                c.due_at
+                for c in mine
+                if c.status == "active" and c.due_at is not None and current(c)
+            ]
+            out[doc.id] = AckFacts(
+                document_id=doc.id,
+                published_at=doc.published_at,
+                campaigns=len(mine),
+                campaigns_current=sum(1 for c in mine if current(c)),
+                asked=frozenset(asked),
+                asked_current=frozenset(asked_current),
+                signed_current=frozenset(signed),
+                signed_direct=direct_now,
+                late=frozenset(due_or_closed - signed),
+                next_due_at=min(open_due) if open_due else None,
+            )
+        return out
 
     async def list_documents(
         self, session: AsyncSession, *, tenant_id: uuid.UUID
@@ -1732,6 +1988,7 @@ class DocumentService:
         tenant_id: uuid.UUID,
         membership_id: uuid.UUID,
         document_id: uuid.UUID,
+        actor: Actor,
     ) -> None:
         doc = await self._load(session, tenant_id, document_id)
         if doc.lifecycle != "published":
@@ -1746,20 +2003,45 @@ class DocumentService:
                 "Ask the owner to add content and publish it.",
                 detail="this document has no current version",
             )
-        existing = (
-            await session.execute(
-                select(DocumentAcknowledgement.id).where(
-                    DocumentAcknowledgement.tenant_id == tenant_id,
-                    DocumentAcknowledgement.document_id == document_id,
-                    DocumentAcknowledgement.membership_id == membership_id,
-                )
+        existing = await session.scalar(
+            select(DocumentAcknowledgement).where(
+                DocumentAcknowledgement.tenant_id == tenant_id,
+                DocumentAcknowledgement.document_id == document_id,
+                DocumentAcknowledgement.membership_id == membership_id,
             )
-        ).first()
+        )
         if existing is not None:
+            # One row per person and document. Acknowledging the current version again is
+            # a no-op; acknowledging a newer version moves the row to it, so a policy
+            # republished with changes is signed again rather than read as already signed.
+            if existing.version_id != doc.current_version_id:
+                # The row holds the latest signature only; the audit trail keeps every one.
+                before = {
+                    "version_id": str(existing.version_id),
+                    "acknowledged_at": existing.acknowledged_at.isoformat(),
+                }
+                existing.version_id = doc.current_version_id
+                existing.acknowledged_at = datetime.now(UTC)
+                await session.flush()
+                await self._audit.record(
+                    session,
+                    action="update",
+                    object_type="document_acknowledgement",
+                    object_id=existing.id,
+                    actor=actor,
+                    tenant_id=tenant_id,
+                    before=before,
+                    after={
+                        "document_id": str(doc.id),
+                        "version_id": str(existing.version_id),
+                        "acknowledged_at": existing.acknowledged_at.isoformat(),
+                    },
+                )
             return
+        acknowledgement_id = uuid7()
         session.add(
             DocumentAcknowledgement(
-                id=uuid7(),
+                id=acknowledgement_id,
                 tenant_id=tenant_id,
                 document_id=doc.id,
                 version_id=doc.current_version_id,
@@ -1767,6 +2049,16 @@ class DocumentService:
             )
         )
         await session.flush()
+        await self._audit.record(
+            session,
+            action="create",
+            object_type="document_acknowledgement",
+            object_id=acknowledgement_id,
+            actor=actor,
+            tenant_id=tenant_id,
+            before=None,
+            after={"document_id": str(doc.id), "version_id": str(doc.current_version_id)},
+        )
 
     # -- acknowledgement campaigns -------------------------------------------
 

@@ -38,9 +38,13 @@ from verity.db.base import (
 )
 from verity.shared.ids import uuid7
 
-PROVIDERS: Final[tuple[str, ...]] = ("github",)
+PROVIDERS: Final[tuple[str, ...]] = ("github", "verity")
 """Providers a workspace can connect today. The catalogue lists many more; each
 joins this tuple when its collector ships."""
+
+BUILT_IN: Final = "verity"
+"""The built-in provider: checks over data the workspace already keeps in Verity. It reads
+no outside account, so its connection never holds a credential."""
 
 ACCOUNT_TYPES: Final[tuple[str, ...]] = ("organization", "user")
 CONNECTION_STATUSES: Final[tuple[str, ...]] = ("active", "disconnected")
@@ -167,9 +171,11 @@ class Connection(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
         status_check("connections", "provider", PROVIDERS),
         status_check("connections", "account_type", ACCOUNT_TYPES),
         status_check("connections", "status", CONNECTION_STATUSES),
-        # An active connection must hold its credential; a disconnected one never does.
+        # An active connection must hold its credential; a disconnected one never does. The
+        # built-in provider reads nothing outside Verity and never holds one.
         CheckConstraint(
-            "(status = 'active') = (credential_ciphertext IS NOT NULL)",
+            "CASE WHEN provider = 'verity' THEN credential_ciphertext IS NULL "
+            "ELSE (status = 'active') = (credential_ciphertext IS NOT NULL) END",
             name=conv("ck_connections__credential_only_while_active"),
         ),
         Index(

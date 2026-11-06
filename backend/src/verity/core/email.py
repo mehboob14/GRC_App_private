@@ -176,7 +176,7 @@ def render_email(
         {blocks}{button}{tail}
       </td></tr>
       <tr><td style="padding:20px 4px 0;font-size:12px;line-height:18px;color:{_MUTED};">
-        Verity &middot; SOC 2 compliance automation<br>
+        Verity &middot; Compliance automation<br>
         {escape(footer) if footer is not None else _DEFAULT_FOOTER}
       </td></tr>
     </table>

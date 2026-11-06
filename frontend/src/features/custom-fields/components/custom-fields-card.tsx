@@ -53,7 +53,10 @@ export function CustomFieldsCard({
   scope,
   noun,
   canEdit,
+  bare = false,
 }: {
+  /** Drop the card frame, for use inside a dialog. */
+  bare?: boolean;
   scope: CustomFieldScope;
   /** What the records are called, for the copy: "asset", "finding". */
   noun: string;
@@ -70,7 +73,7 @@ export function CustomFieldsCard({
   const archived = fields.filter((f) => f.archived);
 
   return (
-    <div className="rounded-lg border border-border bg-surface-primary p-5">
+    <div className={bare ? "" : "rounded-lg border border-border bg-surface-primary p-5"}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="font-display text-title-sm text-text-primary">Custom fields</h2>

@@ -502,7 +502,7 @@ def test_neither_message_contains_a_visible_dash() -> None:
 def test_the_default_footer_is_unchanged() -> None:
     html = render_email(heading="Hello", paragraphs=("Body.",))
     assert "You received this because this address was used on Verity." in html
-    assert "Verity &middot; SOC 2 compliance automation" in html
+    assert "Verity &middot; Compliance automation" in html
 
 
 def test_a_footer_replaces_the_reason_line_and_is_escaped() -> None:
@@ -512,7 +512,7 @@ def test_a_footer_replaces_the_reason_line_and_is_escaped() -> None:
     assert "Sent &lt;b&gt;because&lt;/b&gt; &amp; so on" in html
     assert "<b>because</b>" not in html
     assert "this address was used on Verity" not in html
-    assert "Verity &middot; SOC 2 compliance automation" in html
+    assert "Verity &middot; Compliance automation" in html
 
 
 def test_an_empty_footer_is_still_a_footer_and_not_the_default() -> None:

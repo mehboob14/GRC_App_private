@@ -104,8 +104,11 @@ export function historyKey(item: Evidence): string | null {
  * none and said so only in their label ("GitHub connector") and title together; a
  * label alone proves nothing, since anyone who manages evidence can type one.
  */
+/** How each system that files evidence is named to people. */
+export const PROVIDER_NAMES: Record<string, string> = { github: "GitHub", verity: "Verity" };
+
 export function automatedBy(item: Evidence): string | null {
-  if (item.source) return item.source === "github" ? "GitHub" : item.source;
+  if (item.source) return PROVIDER_NAMES[item.source] ?? item.source;
   const label = item.source_label;
   return label?.endsWith(CONNECTOR_SUFFIX) && item.title.includes(LEGACY_TITLE)
     ? label.slice(0, -CONNECTOR_SUFFIX.length)

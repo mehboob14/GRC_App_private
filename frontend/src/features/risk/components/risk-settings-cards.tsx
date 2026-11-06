@@ -35,7 +35,7 @@ const input =
   "tabular h-8 w-16 rounded-sm border border-border bg-surface-primary px-2 text-body-sm text-text-primary focus:border-action-accent focus:outline-none disabled:bg-surface-sunken";
 
 /** Product, additive or weighted. Saving rescores the register's risks and resets its bands. */
-export function ScoringFormulaCard({ register, canEdit }: { register: Register; canEdit: boolean }) {
+export function ScoringFormulaCard({ register, canEdit, bare = false }: { register: Register; canEdit: boolean; bare?: boolean }) {
   const [formula, setFormula] = useState<ScoringFormula>(register.scoring_formula);
   useEffect(() => setFormula(register.scoring_formula), [register.id, register.scoring_formula]);
   const save = useRegisterSave(register, "Scoring formula");
@@ -51,7 +51,7 @@ export function ScoringFormulaCard({ register, canEdit }: { register: Register; 
     setFormula(method === "weighted" ? { method, likelihood_weight: lw, impact_weight: iw } : { method });
 
   return (
-    <section className="rounded-lg border border-border bg-surface-primary p-5">
+    <section className={bare ? "" : "rounded-lg border border-border bg-surface-primary p-5"}>
       <h2 className="font-display text-title-sm text-text-primary">Scoring formula</h2>
       <p className="mt-1 text-body-sm text-text-secondary">How {register.name} turns likelihood and impact into a score.</p>
       <div className="mt-4 grid gap-2 md:grid-cols-3">
@@ -120,7 +120,7 @@ export function ScoringFormulaCard({ register, canEdit }: { register: Register; 
 type Row = { appetite: string; tolerance: string };
 
 /** Appetite and tolerance per top level category, in this register's score units. */
-export function AppetiteCard({ register, canEdit }: { register: Register; canEdit: boolean }) {
+export function AppetiteCard({ register, canEdit, bare = false }: { register: Register; canEdit: boolean; bare?: boolean }) {
   const categories = register.categories.filter((c) => !c.archived);
   const toRows = (): Record<string, Row> =>
     Object.fromEntries(
@@ -152,7 +152,7 @@ export function AppetiteCard({ register, canEdit }: { register: Register; canEdi
   const counts = summary.data?.by_appetite ?? {};
 
   return (
-    <section className="rounded-lg border border-border bg-surface-primary p-5">
+    <section className={bare ? "" : "rounded-lg border border-border bg-surface-primary p-5"}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="font-display text-title-sm text-text-primary">Risk appetite</h2>

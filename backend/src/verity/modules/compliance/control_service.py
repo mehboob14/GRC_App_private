@@ -21,13 +21,17 @@ from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from verity.core.errors import Conflict, InvalidInput, NotFound
-from verity.modules.audit.service import Actor, AuditService, audit_service
+from verity.modules.audit.service import Actor, AuditService, Membership, audit_service
 from verity.modules.compliance.models import (
+    DEFAULT_FRAMEWORK,
     Control,
     ControlRequirement,
     ControlTemplate,
+    Framework,
+    FrameworkVersion,
     Requirement,
     TemplateRequirementMap,
+    TenantFramework,
 )
 from verity.shared.ids import uuid7
 
@@ -154,9 +158,16 @@ class ControlService:
         from an operator's hand.
 
         ``requirement_ids`` narrows adoption to the templates that satisfy those
-        criteria — the scoping path. ``None`` adopts the whole library.
+        criteria — the scoping path. ``None`` adopts the library of the frameworks the
+        workspace has added (SOC 2 until it adds another), not every pack that is
+        loaded: a pack for a framework nobody added must not land in a workspace.
+
+        A workspace with no framework recorded is a SOC 2 workspace, and adopting the
+        library records that, so signup and the backfill script need no extra step.
         """
-        templates = await self._templates_for(session, requirement_ids)
+        await self._ensure_default_framework(session, tenant_id=tenant_id, actor=actor)
+        framework_ids, packs = await self._active_frameworks(session, tenant_id)
+        templates = await self._templates_for(session, requirement_ids, packs)
         existing = await session.execute(
             select(Control.template_id).where(
                 Control.tenant_id == tenant_id, Control.template_id.is_not(None)
@@ -164,7 +175,27 @@ class ControlService:
         )
         already = {row[0] for row in existing}
 
-        crosswalk = await self._crosswalk(session, [t.id for t in templates])
+        crosswalk = await self._crosswalk(session, [t.id for t in templates], framework_ids)
+
+        incoming = {t.code for t in templates if t.id not in already}
+        if incoming:
+            taken = sorted(
+                code
+                for (code,) in (
+                    await session.execute(
+                        select(Control.code).where(
+                            Control.tenant_id == tenant_id, Control.code.in_(incoming)
+                        )
+                    )
+                ).all()
+            )
+            if taken:
+                raise Conflict(
+                    f"Your workspace already has its own control coded {', '.join(taken)}, a "
+                    "code this framework brings in from the library. Control codes cannot be "
+                    "changed here, so contact support to recode yours, then add the framework.",
+                    detail=f"library codes already used by workspace controls: {taken}",
+                )
 
         created = 0
         mappings = 0
@@ -220,7 +251,10 @@ class ControlService:
         )
 
     async def _templates_for(
-        self, session: AsyncSession, requirement_ids: list[uuid.UUID] | None
+        self,
+        session: AsyncSession,
+        requirement_ids: list[uuid.UUID] | None,
+        packs: list[str] | None = None,
     ) -> list[ControlTemplate]:
         statement = select(ControlTemplate)
         if requirement_ids is not None:
@@ -231,23 +265,160 @@ class ControlService:
                     )
                 )
             )
+        elif packs is not None:
+            statement = statement.where(ControlTemplate.pack.in_(packs))
         result = await session.execute(statement.order_by(ControlTemplate.code))
         return list(result.scalars())
 
     async def _crosswalk(
-        self, session: AsyncSession, template_ids: list[uuid.UUID]
+        self,
+        session: AsyncSession,
+        template_ids: list[uuid.UUID],
+        framework_ids: list[uuid.UUID] | None = None,
     ) -> dict[uuid.UUID, list[uuid.UUID]]:
+        """Template to requirement ids, for the frameworks the workspace has added.
+
+        A control adopted today must not be linked to a framework the workspace has
+        not added, or it would show that framework's chip and count towards its
+        coverage before anyone chose it.
+        """
         if not template_ids:
             return {}
-        result = await session.execute(
-            select(TemplateRequirementMap.template_id, TemplateRequirementMap.requirement_id).where(
-                TemplateRequirementMap.template_id.in_(template_ids)
-            )
-        )
+        statement = select(
+            TemplateRequirementMap.template_id, TemplateRequirementMap.requirement_id
+        ).where(TemplateRequirementMap.template_id.in_(template_ids))
+        if framework_ids:
+            statement = statement.join(
+                Requirement, Requirement.id == TemplateRequirementMap.requirement_id
+            ).where(Requirement.framework_id.in_(framework_ids))
+        result = await session.execute(statement)
         crosswalk: dict[uuid.UUID, list[uuid.UUID]] = {}
         for template_id, requirement_id in result:
             crosswalk.setdefault(template_id, []).append(requirement_id)
         return crosswalk
+
+    async def _ensure_default_framework(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, actor: Actor
+    ) -> None:
+        """Record SOC 2 for a workspace that has no framework yet."""
+        present = (
+            await session.execute(
+                select(func.count())
+                .select_from(TenantFramework)
+                .where(TenantFramework.tenant_id == tenant_id)
+            )
+        ).scalar_one()
+        if present:
+            return
+        found = (
+            await session.execute(
+                select(Framework, FrameworkVersion)
+                .join(FrameworkVersion, FrameworkVersion.framework_id == Framework.id)
+                .where(Framework.code == DEFAULT_FRAMEWORK, FrameworkVersion.is_current.is_(True))
+            )
+        ).first()
+        if found is None:
+            # No content loaded (an empty database): there is nothing to record yet.
+            return
+        framework, version = found
+        row = TenantFramework(
+            id=uuid7(),
+            tenant_id=tenant_id,
+            framework_id=framework.id,
+            framework_version_id=version.id,
+            status="active",
+            activated_by_membership_id=actor.id if isinstance(actor, Membership) else None,
+        )
+        session.add(row)
+        await session.flush([row])
+        await self._audit.record(
+            session,
+            action="create",
+            object_type="tenant_framework",
+            object_id=row.id,
+            actor=actor,
+            tenant_id=tenant_id,
+            before=None,
+            after={"framework": framework.code, "version": version.version, "status": "active"},
+        )
+
+    async def _active_frameworks(
+        self, session: AsyncSession, tenant_id: uuid.UUID
+    ) -> tuple[list[uuid.UUID] | None, list[str]]:
+        """The frameworks a workspace runs, and the content packs that ship their controls.
+
+        ``None`` ids mean no framework is recorded, which keeps the old behaviour of
+        linking every mapping (only a database with no content reaches it).
+        """
+        rows = (
+            await session.execute(
+                select(Framework.id, Framework.code)
+                .join(TenantFramework, TenantFramework.framework_id == Framework.id)
+                .where(TenantFramework.tenant_id == tenant_id, TenantFramework.status == "active")
+            )
+        ).all()
+        if not rows:
+            return None, [DEFAULT_FRAMEWORK.lower()]
+        # A pack is named for its framework code: soc2 for SOC2, iso27001 for ISO27001.
+        return [r[0] for r in rows], [r[1].lower() for r in rows]
+
+    async def link_framework(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, framework_id: uuid.UUID
+    ) -> int:
+        """Link the workspace's controls to a framework's requirements, from the crosswalk.
+
+        Adoption links only the controls it creates. A framework added later also has
+        to reach the controls the workspace already runs (the point of one library), so
+        this adds every missing link, for disabled controls too. A link already there
+        is left alone, and nothing is ever removed. Returns how many links were added.
+        """
+        # Adoption just before this adds its links without flushing (autoflush is off), so
+        # the reads below would miss them and insert the same pair twice.
+        await session.flush()
+        wanted = (
+            await session.execute(
+                select(TemplateRequirementMap.template_id, TemplateRequirementMap.requirement_id)
+                .join(Requirement, Requirement.id == TemplateRequirementMap.requirement_id)
+                .where(Requirement.framework_id == framework_id)
+            )
+        ).all()
+        controls = {
+            row[0]: row[1]
+            for row in (
+                await session.execute(
+                    select(Control.template_id, Control.id).where(
+                        Control.tenant_id == tenant_id, Control.template_id.is_not(None)
+                    )
+                )
+            ).all()
+        }
+        existing = {
+            (row[0], row[1])
+            for row in (
+                await session.execute(
+                    select(ControlRequirement.control_id, ControlRequirement.requirement_id).where(
+                        ControlRequirement.tenant_id == tenant_id
+                    )
+                )
+            ).all()
+        }
+        created = 0
+        for template_id, requirement_id in wanted:
+            control_id = controls.get(template_id)
+            if control_id is None or (control_id, requirement_id) in existing:
+                continue
+            session.add(
+                ControlRequirement(
+                    id=uuid7(),
+                    tenant_id=tenant_id,
+                    control_id=control_id,
+                    requirement_id=requirement_id,
+                )
+            )
+            existing.add((control_id, requirement_id))
+            created += 1
+        await session.flush()
+        return created
 
     # -- reads --------------------------------------------------------------------
 
@@ -311,13 +482,15 @@ class ControlService:
     async def active_control_ids(
         self, session: AsyncSession, *, tenant_id: uuid.UUID
     ) -> set[uuid.UUID]:
-        """Ids of the controls not retired. The risk register counts only these as
-        mitigating, without paying for the full view build."""
+        """Ids of the controls that can mitigate: not retired and not marked not applicable.
+        The risk register counts only these, without paying for the full view build."""
         return set(
             (
                 await session.execute(
                     select(Control.id).where(
-                        Control.tenant_id == tenant_id, Control.disabled_at.is_(None)
+                        Control.tenant_id == tenant_id,
+                        Control.disabled_at.is_(None),
+                        Control.status != "not_applicable",
                     )
                 )
             ).scalars()
@@ -653,6 +826,15 @@ class ControlService:
             raise Conflict(
                 "Another control already uses this code. Pick a different one.",
                 detail=f"a control with code {resolved_code!r} already exists",
+            )
+        reserved = await session.execute(
+            select(ControlTemplate.id).where(ControlTemplate.code == resolved_code)
+        )
+        if reserved.first() is not None:
+            raise Conflict(
+                "This code belongs to a control in Verity's library. Leave the code empty "
+                "to get the next IC code, or pick one outside the library's codes.",
+                detail=f"{resolved_code!r} is a shipped control code",
             )
 
         control = Control(

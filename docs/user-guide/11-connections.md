@@ -11,12 +11,109 @@ own.
 
 ## What is available today
 
-**GitHub** is the first live connector. Later phases add identity providers, cloud
-accounts, device management and ticketing. Anything marked **Soon** on this page is
-not connected to real data yet.
+Two things run today.
+
+- **Verity built in checks** check the records you already keep in Verity. Every
+  workspace has them, with nothing to set up.
+- **GitHub** is the first live connector to an outside system.
+
+Later phases add identity providers, cloud accounts, device management and ticketing.
+Anything marked **Soon** on this page is not connected to real data yet.
 
 You can register interest in a system that is not there yet using the request
 option. It records what you need so it can be prioritised.
+
+## Verity's built in checks
+
+Verity checks the records your workspace already keeps in Verity, every day, the same
+way the GitHub connector checks repositories. An asset nobody owns, a vendor review that
+slipped, a policy past its review date: each shows up as a failed check on the controls
+it serves.
+
+![The built in checks on the Connections page](images/connections-built-in.png)
+
+- **Always on.** Every workspace has a **Verity built in checks** card on **Connections**,
+  under **Active**.
+- **No credential.** There is nothing to connect, and it cannot be disconnected.
+- **Runs daily.** **Run now** on the card runs it straight away. A new workspace gets
+  its daily schedule within an hour.
+- **Files evidence.** Each run files a report as evidence on the controls each check
+  serves. It is titled with the check's name, then "Verity check" and the date in UTC,
+  and it lists the population the check looked at.
+- **Can stop a control being ready.** An implemented control whose Verity check fails is
+  not counted as ready. As with every check, automation can only take readiness away,
+  never grant it. Reports Verity files itself never count as the evidence a check is
+  judging, so no check can pass on its own output.
+
+Each check gives a result for each record it looks at: **Passed**, **Failed** or **Not
+applicable**. **Could not check** appears only when the run itself failed.
+
+### What the built in checks look at
+
+There are 30 checks. Here is what passes, by the area whose records they read.
+
+- **Assets.** Every asset in service has an owner who is an active member, is
+  classified, and was reviewed within the window its criticality sets. An asset taken
+  out of service has a disposal record and, for infrastructure, data and cloud assets,
+  wiped storage or physical destruction.
+- **Vulnerabilities.** No open critical or high finding is past its SLA without a risk
+  acceptance in force. Known exploited findings have an owner who is an active member.
+- **Risks.** Open risks have a next review date that has not passed. Risks outside
+  appetite are owned and treated. Risks treated by mitigation link to a control.
+  Accepted risks have an acceptance in force. Every active register's open risks were
+  scored and assessed in the last 12 months, and a register with no assessment at all
+  fails.
+- **Vendors.** Vendors have an owner and a tier. Critical and high engagements were
+  reviewed within their tier's cadence and have a reassessment booked. Approved vendors
+  holding personal data have a data processing agreement in force, with a copy
+  attached.
+- **Documents.** Required documents, meaning those started from a template or linked to
+  a control, are published, approved in the last 12 months, within their review date,
+  and have no placeholders left. Everyone asked to acknowledge a document has signed
+  its current version or still has time to, and nobody past the due date is unsigned;
+  a late signature counts. The code of conduct and acceptable use policy bind
+  all staff: every active member who is not a guest auditor must have signed the
+  current version or been asked to. Published documents are owned, approved for their
+  current text in the last 12 months, and kept under review.
+- **ISO management system documents.** A current scope statement, context register,
+  interested parties register, security objectives, communication plan and competence
+  procedure. Each passes when a document started from the matching template, or linked
+  to the control, is in force.
+- **Tasks.** Remediation tasks linked to a control, a vulnerability or a risk keep to
+  their SLA or due date. Blocking a task pauses its SLA, not its due date.
+- **Controls.** Every live control of a framework you run has an owner who is an active
+  member. Implemented controls have evidence that has not expired and was not rejected.
+  Evidence with no renewal date counts for 12 months from collection. An internal audit
+  and a management review were filed as evidence, by a person, on GOV-13 and GOV-15 in
+  the last 12 months; a policy or procedure document does not count. This applies in
+  every workspace.
+- **ISO 27001.** Every Annex A decision was reviewed in the last 12 months, with its
+  reason. The management system scope is recorded.
+
+### Reading a failed built in check
+
+Open the control and go to its **Checks** tab. A Verity check sits there beside any other
+check on the control.
+
+![A control's Checks tab with a Verity check](images/control-checks-built-in.png)
+
+1. Read which check failed. Each result is about one record, such as one asset or one
+   vendor.
+2. Open the report it filed on the **Evidence** tab to see the population it looked at.
+3. Fix the record in its own module: give the asset an owner, book the vendor
+   reassessment, publish the reviewed policy. Nothing is fixed on the Connections page.
+4. Wait for the next daily run, or use **Run now** on the card to check again.
+
+**Could not check** says nothing about your records. It means the run failed. Use **Run
+now** to try again.
+
+> **An internal audit or management review must come from a person.** Verity's own
+> reports never count. File the internal audit report on control GOV-13 and the
+> management review minutes on GOV-15. The check only sees that a person filed evidence
+> on that control in the last 12 months. It cannot tell an audit report from any other
+> file, so file the record itself: what was audited or reviewed, who did it, when, the
+> findings or decisions, and who they were reported to. A readiness assessment or the
+> procedure document is not an internal audit.
 
 ## Walkthrough: connect GitHub
 

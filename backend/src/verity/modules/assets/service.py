@@ -153,6 +153,15 @@ def compute_hygiene(
     return score, missing, stale, days
 
 
+def _audit_value(value: object) -> object:
+    """A disposal field as the audit trail stores it: ids and times as text."""
+    if isinstance(value, uuid.UUID):
+        return str(value)
+    if isinstance(value, datetime):
+        return value.isoformat()
+    return value
+
+
 def _effective_tier(asset: Asset) -> str | None:
     return asset.tier_override or asset.tier
 
@@ -256,6 +265,43 @@ class AssetRef:
     confidentiality: int | None = None
     integrity: int | None = None
     availability: int | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class DisposalFacts:
+    """The disposal record of a decommissioned asset, for the built-in checks."""
+
+    disposal_method: str
+    media_sanitised: bool
+    evidence_ref: str | None
+    reason: str
+    decommissioned_by_membership_id: uuid.UUID | None
+    decommissioned_at: datetime
+
+
+@dataclass(frozen=True, slots=True)
+class AssetCheckFacts:
+    """One asset as Verity's built-in checks read it: plain data, no names resolved.
+
+    ``review_days`` is the window this asset is judged against (the inventory setting
+    for its effective tier); ``retired_from`` is the status it was retired from, which
+    tells an asset never put in service (planned) from one taken out of service.
+    """
+
+    id: uuid.UUID
+    name: str
+    host: str | None
+    asset_type: str
+    status: str
+    tier: str | None
+    data_classification: str | None
+    regulated_data_type: str | None
+    compliance_scope: tuple[str, ...]
+    primary_owner_membership_id: uuid.UUID | None
+    last_reviewed_at: datetime | None
+    review_days: int
+    disposal: DisposalFacts | None
+    retired_from: str | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -693,6 +739,74 @@ class AssetService:
             for a in rows
         }
 
+    async def check_facts(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID
+    ) -> list[AssetCheckFacts]:
+        """Every asset with what the built-in checks judge, in five reads, sorted by name.
+
+        No permission or object scope: the caller is the check runner, inside a tenant
+        bound session. Owner names and statuses are resolved by the caller once, through
+        iam, not here.
+        """
+        assets = list(
+            (
+                await session.execute(
+                    select(Asset).where(Asset.tenant_id == tenant_id).order_by(Asset.name, Asset.id)
+                )
+            ).scalars()
+        )
+        if not assets:
+            return []
+        cadence = await self.review_cadence(session, tenant_id=tenant_id)
+        disposals = {
+            row.asset_id: DisposalFacts(
+                disposal_method=row.disposal_method,
+                media_sanitised=row.media_sanitised,
+                evidence_ref=row.evidence_ref,
+                reason=row.reason,
+                decommissioned_by_membership_id=row.decommissioned_by_membership_id,
+                decommissioned_at=row.decommissioned_at,
+            )
+            for row in (
+                await session.execute(
+                    select(DecommissionRecord).where(DecommissionRecord.tenant_id == tenant_id)
+                )
+            ).scalars()
+        }
+        retired_from: dict[uuid.UUID, str | None] = {  # noqa: C416 — dict() would read a Result as a mapping
+            key: value
+            for key, value in (
+                await session.execute(
+                    select(AssetTransition.asset_id, AssetTransition.old_value)
+                    .where(
+                        AssetTransition.tenant_id == tenant_id,
+                        AssetTransition.field_changed == "status",
+                        AssetTransition.new_value == "retired",
+                    )
+                    .order_by(AssetTransition.occurred_at)
+                )
+            ).tuples()
+        }
+        return [
+            AssetCheckFacts(
+                id=a.id,
+                name=a.name,
+                host=a.hostname or a.fqdn or a.ip_address,
+                asset_type=a.asset_type,
+                status=a.status,
+                tier=_effective_tier(a),
+                data_classification=a.data_classification,
+                regulated_data_type=a.regulated_data_type,
+                compliance_scope=tuple(str(s) for s in (a.compliance_scope or [])),
+                primary_owner_membership_id=a.primary_owner_membership_id,
+                last_reviewed_at=a.last_reviewed_at,
+                review_days=review_days_for(a, cadence),
+                disposal=disposals.get(a.id),
+                retired_from=retired_from.get(a.id),
+            )
+            for a in assets
+        ]
+
     async def label(
         self, session: AsyncSession, *, tenant_id: uuid.UUID, asset_id: uuid.UUID
     ) -> tuple[str | None, str, str, str] | None:
@@ -1114,6 +1228,13 @@ class AssetService:
                 "Refresh the page to see the moves available.",
                 detail=f"cannot move a {asset.status} asset to {to_status}",
             )
+        if to_status == "decommissioned":
+            # Decommissioning always records how the asset was disposed of; a bare
+            # status change would leave equipment retired with no disposal record.
+            raise InvalidInput(
+                "Use Decommission on the asset's page, which records how it was disposed of.",
+                detail="decommissioning goes through the disposal record",
+            )
         old = asset.status
         asset.status = to_status
         await self._transition_row(session, asset, actor, "status", old, to_status, note)
@@ -1155,24 +1276,47 @@ class AssetService:
                 "Give a reason before decommissioning this asset.",
                 detail="a reason is required to decommission an asset",
             )
+        if not disposal_method.strip():
+            raise InvalidInput(
+                "Say how the asset was disposed of before decommissioning it.",
+                detail="a disposal method is required to decommission an asset",
+            )
         now = datetime.now(UTC)
         old = asset.status
         asset.status = "decommissioned"
         asset.replaced_by_asset_id = replacement_asset_id
-        session.add(
-            DecommissionRecord(
-                id=uuid7(),
-                tenant_id=tenant_id,
-                asset_id=asset.id,
-                disposal_method=disposal_method,
-                media_sanitised=media_sanitised,
-                replacement_asset_id=replacement_asset_id,
-                evidence_ref=evidence_ref,
-                reason=reason.strip(),
-                decommissioned_by_membership_id=self._actor_membership(actor),
-                decommissioned_at=now,
+        values = {
+            "disposal_method": disposal_method.strip(),
+            "media_sanitised": media_sanitised,
+            "replacement_asset_id": replacement_asset_id,
+            "evidence_ref": evidence_ref,
+            "reason": reason.strip(),
+            "decommissioned_by_membership_id": self._actor_membership(actor),
+            "decommissioned_at": now,
+        }
+        # One record per asset. An asset reactivated and decommissioned again gets its
+        # record rewritten with this disposal; the audit row below and the earlier one
+        # keep both.
+        record = await session.scalar(
+            select(DecommissionRecord).where(
+                DecommissionRecord.tenant_id == tenant_id,
+                DecommissionRecord.asset_id == asset.id,
             )
         )
+        # The audit row keeps the full disposal: a later decommission rewrites the one
+        # record per asset, and the earlier sanitisation and certificate must survive.
+        disposal_before = (
+            {field: _audit_value(getattr(record, field)) for field in values}
+            if record is not None
+            else None
+        )
+        if record is None:
+            session.add(
+                DecommissionRecord(id=uuid7(), tenant_id=tenant_id, asset_id=asset.id, **values)
+            )
+        else:
+            for field, value in values.items():
+                setattr(record, field, value)
         # Retiring the host removes the exposure, so its open vulnerabilities close
         # with a recorded reason (spec 123). Cross-module, service->service (rule 4).
         from verity.modules.vulnerabilities.service import (  # noqa: PLC0415
@@ -1192,8 +1336,11 @@ class AssetService:
             object_id=asset.id,
             actor=actor,
             tenant_id=tenant_id,
-            before={"status": old},
-            after={"status": "decommissioned", "disposal_method": disposal_method},
+            before={"status": old, "disposal": disposal_before},
+            after={
+                "status": "decommissioned",
+                "disposal": {field: _audit_value(value) for field, value in values.items()},
+            },
         )
         await session.flush()
         return await self.get_asset(session, tenant_id=tenant_id, asset_id=asset.id)

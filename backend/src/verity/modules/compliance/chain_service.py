@@ -22,7 +22,7 @@ from verity.modules.compliance.control_service import (
     RequirementView,
     control_service,
 )
-from verity.modules.compliance.readiness import control_ready, requirement_ready
+from verity.modules.compliance.readiness import BUILT_IN_SOURCE, control_ready, requirement_ready
 
 if TYPE_CHECKING:
     from verity.modules.connectors.service import ControlChain
@@ -64,7 +64,9 @@ class ChainService:
             tenant_id=tenant_id,
             controls=[(item.control.id, item.control.template_id) for item in found],
         )
-        with_current = await evidence_service.control_ids_with_current_evidence(session, tenant_id)
+        with_current = await evidence_service.control_ids_with_current_evidence(
+            session, tenant_id, exclude_source=BUILT_IN_SOURCE
+        )
 
         controls = []
         for item in found:

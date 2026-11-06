@@ -628,7 +628,8 @@ async def test_a_control_with_only_people_and_modules_is_manual_or_platform_not_
         gov01 = await _control(api, "GOV-01")  # policy review: Verity documents
         platform = (await api.get(f"/controls/{gov01}/automation")).json()
         [check] = platform["tests"]
-        assert (check["source"], check["availability"]) == ("platform", "planned")
+        # Verity's built-in checks run it, and they are always on: no connection to make.
+        assert (check["source"], check["availability"]) == ("platform", "running")
         assert platform["composition"]["sources"][0]["kind"] == "platform"
 
 
