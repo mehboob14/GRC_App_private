@@ -10,7 +10,8 @@ history and the owner's notes; commit hashes are real, dates are the days the wo
   setup guides, Go collectors in mind, competitors researched, and a further breakdown of the 133 controls.
 - Nine research agents, a merge agent and three verification agents wrote `docs/product/evidence-connectors/`
   and `openspec/changes/evidence-connectors-program/` (see STATE item 10). Generators in `tools/` reproduce
-  05 to 08 byte for byte. Documents only; nothing in content or code changed.
+  05 to 08 byte for byte. Documents only; nothing in content or code changed. Pushed to GitHub
+  `handoff/verity-dev` as 89282e4 (plan) and dada896 (notes copy); tip dada896dad824626fbcf8f1e2e72032227688ebb.
 
 ## 2026-11-23, handoff branch (Claude Code)
 - Owner moving machines: new GitHub branch `handoff/verity-dev` from the clean local c80ae7d with
