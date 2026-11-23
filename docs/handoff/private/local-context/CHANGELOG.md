@@ -4,14 +4,22 @@ The running record that replaces chat history. Add an entry at the top at the en
 changed, what was verified, commits if any. Keep entries short. Entries before 2026-10-11 were reconstructed from git
 history and the owner's notes; commit hashes are real, dates are the days the work landed.
 
+## 2026-11-23, evidence connectors plan (Claude Code)
+- Owner asked for R&D and a plan for every connector (identity providers first, MDM, then the rest of the
+  signed phases) mapped through assessment objectives to controls and both frameworks, with credentials, UI and
+  setup guides, Go collectors in mind, competitors researched, and a further breakdown of the 133 controls.
+- Nine research agents, a merge agent and three verification agents wrote `docs/product/evidence-connectors/`
+  and `openspec/changes/evidence-connectors-program/` (see STATE item 10). Generators in `tools/` reproduce
+  05 to 08 byte for byte. Documents only; nothing in content or code changed.
+
 ## 2026-11-23, handoff branch (Claude Code)
 - Owner moving machines: new GitHub branch `handoff/verity-dev` from the clean local c80ae7d with
   everything on disk: SSO (85bfb5e), guided onboarding and objectives (49caea2), website sources and
   specs (5ba06dc), AGENTS/README and other tools' product notes (a44b181), then the handoff guide
   `docs/handoff/README.md` and a scrubbed notes copy in `docs/handoff/private/` (local-context without
   session tokens, TOTP seed or browser profile; entry shims; the assistant's project memory;
-  push-gitlab.bat). Pushed to GitHub only (the tip hash is in the session report; verify clones
-  against it). GitLab untouched. Zip of the private notes copied to OneDrive.
+  push-gitlab.bat). Pushed to GitHub only, tip 77b2d3c4433a0081e4f081fc090c7e6cfa3ce075 (verify
+  clones against it; later pushes move it). GitLab untouched. Zip of the private notes copied to OneDrive.
 - `tools/commit_paths.py` gained `snapshot` and `refresh-notes` for the handoff branch, handles
   deletions, and keeps `docs/handoff/` off `feat/phase1-completion`.
 - Owner's standing rule: keep specs current and push each piece of work to `handoff/verity-dev`.

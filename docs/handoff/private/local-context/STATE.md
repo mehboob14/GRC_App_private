@@ -163,7 +163,18 @@ Remotes: `origin` is a private GitHub repo, `gitlab` is the client's. Recipes in
    controls (591), migration `20261123_1900_soc2_mapping_fixes.py`, Openlane rewrites and profile fields in the
    policies pack, `notifications` kind `library_update` (model and frontend type).
 
-`commit_paths.py candidates` printed items 1 to 3 when last run; items 4 to 9 are newer.
+10. **Evidence connectors research and plan** (2026-11-23, documents only, no code; on the GitHub handoff branch):
+   `docs/product/evidence-connectors/` (README, AUTHORING, 01 evidence model and Go collector architecture, 02
+   integration model, 03 market research, 04 phases and work packages, 05 check registry and `checks-proposed.json`,
+   06 control changes, 07 control matrix, 08 owner decisions curated and raw, mdm-and-endpoint-strategy, 33 connector
+   documents, coverage per family, verification logs, `tools/` generators) and `openspec/changes/evidence-connectors-program/`.
+   Findings: 11 control splits and 4 additions proposed (148 controls), 127 new checks, 24 coverage downgrades, only 3%
+   of artifact rows fully filled by a check by end of Phase 2 (93% partly), 768 provider facts checked (545 confirmed,
+   83 corrected, 136 still unverified with reasons). Defects to fix first: the shared device artifact, the 16 full check
+   mappings, GitHub not seeing direct pushes, the vulnerability module before scanners. Next: the 20 gating decisions
+   in `08-owner-decisions.md`, then P1 packages.
+
+`commit_paths.py candidates` printed items 1 to 3 when last run; items 4 to 10 are newer.
 
 ## Deployed state
 
