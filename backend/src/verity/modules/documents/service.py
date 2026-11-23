@@ -13,7 +13,7 @@ import uuid
 from collections import defaultdict
 from collections.abc import Sequence
 from dataclasses import dataclass, field
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 from typing import TYPE_CHECKING, Any, Final
 
 from sqlalchemy import delete, func, select
@@ -255,6 +255,8 @@ class DocumentView:
     controls: list[str] = field(default_factory=list)
     attestation_pct: float | None = None
     review_status: str | None = None
+    approved_elsewhere_on: date | None = None
+    approved_elsewhere_by_name: str | None = None
 
 
 @dataclass(frozen=True)
@@ -569,6 +571,12 @@ class DocumentService:
             published_at=doc.published_at,
             archived_at=doc.archived_at,
             updated_at=doc.updated_at,
+            approved_elsewhere_on=doc.approved_elsewhere_on,
+            approved_elsewhere_by_name=(
+                owners.get(doc.approved_elsewhere_by_membership_id)
+                if doc.approved_elsewhere_by_membership_id
+                else None
+            ),
             frameworks=sorted(fw_names[i] for i in fw_ids if i in fw_names),
             controls=sorted(ct_codes[i] for i in ct_ids if i in ct_codes),
             attestation_pct=self._attestation(attest),
@@ -1585,6 +1593,14 @@ class DocumentService:
                 "where it stands.",
                 detail=f"cannot assign a tier on a {doc.lifecycle} document",
             )
+        if tier == 1 and doc.current_version_id is not None:
+            version = await session.get(DocumentVersion, doc.current_version_id)
+            left = placeholder_lib.markers(version.content_html if version else None)
+            if left:
+                raise InvalidInput(
+                    f"Fill in {', '.join(left)} before sending this for approval.",
+                    detail=f"{len(left)} profile markers remain",
+                )
         if tier > 1:
             first = await self._tier_row(session, tenant_id, doc.id, 1)
             if first is None or not await self._tier_has_targets(session, tenant_id, first.id):
@@ -1953,6 +1969,123 @@ class DocumentService:
                 )
             )
         ).scalar_one()
+
+    async def owned_counts(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID
+    ) -> dict[uuid.UUID, int]:
+        """Live documents per owner, for finding work a disabled member leaves behind."""
+        rows = await session.execute(
+            select(Document.owner_membership_id, func.count())
+            .where(
+                Document.tenant_id == tenant_id,
+                Document.archived_at.is_(None),
+                Document.owner_membership_id.is_not(None),
+            )
+            .group_by(Document.owner_membership_id)
+        )
+        return {owner: int(n) for owner, n in rows if owner is not None}
+
+    async def approved_template_keys(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID
+    ) -> set[str]:
+        """Templates the workspace holds an approved or published, live document from."""
+        rows = await session.execute(
+            select(Document.template_key).where(
+                Document.tenant_id == tenant_id,
+                Document.template_key.is_not(None),
+                Document.archived_at.is_(None),
+                Document.lifecycle.in_(("approved", "published")),
+            )
+        )
+        return {k for k in rows.scalars() if k}
+
+    async def match_template(
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        document_id: uuid.UUID,
+        template_key: str,
+    ) -> DocumentView:
+        """Say an uploaded document is the workspace's version of a template's document, so
+        the Required documents list counts it (guided onboarding EX-3). Nothing is approved."""
+        exists = (
+            await session.execute(
+                select(DocumentTemplate.key).where(DocumentTemplate.key == template_key)
+            )
+        ).scalar_one_or_none()
+        if exists is None:
+            raise NotFound("That document type does not exist.", detail=template_key)
+        doc = await self._load(session, tenant_id, document_id)
+        before = AuditService.snapshot(doc, fields=_DOC_SNAPSHOT)
+        doc.template_key = template_key
+        await session.flush([doc])
+        await self._audit.record(
+            session,
+            action="update",
+            object_type="document",
+            object_id=doc.id,
+            actor=actor,
+            tenant_id=tenant_id,
+            before=before,
+            after={
+                **AuditService.snapshot(doc, fields=_DOC_SNAPSHOT),
+                "template_key": template_key,
+            },
+        )
+        return await self._one(session, tenant_id, doc.id)
+
+    async def confirm_approved_elsewhere(  # noqa: PLR0913 — who, which document, when, which row
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        membership_id: uuid.UUID,
+        document_id: uuid.UUID,
+        approved_on: date,
+        template_key: str | None,
+    ) -> DocumentView:
+        """Count a document approved before Verity (guided onboarding RD-4, decision D-11).
+
+        A member who may approve documents confirms, in Verity, that it was approved and when.
+        The origin and the confirming member are kept on the document, so it never reads as
+        approved through Verity's own workflow. ``template_key`` matches it to a Required
+        documents row when the person picks one (EX-3).
+        """
+        doc = await self._load(session, tenant_id, document_id)
+        if doc.lifecycle not in {"draft", "needs_approval"}:
+            raise Conflict(
+                "Only a draft can be confirmed as approved elsewhere.",
+                detail=f"document lifecycle {doc.lifecycle}",
+            )
+        if approved_on > datetime.now(UTC).date():
+            raise InvalidInput("The approval date cannot be in the future.", detail="date")
+        before = AuditService.snapshot(doc, fields=_DOC_SNAPSHOT)
+        if template_key and not doc.template_key:
+            doc.template_key = template_key
+        doc.approved_at = datetime.combine(approved_on, time.min, tzinfo=UTC)
+        doc.approved_elsewhere_on = approved_on
+        doc.approved_elsewhere_by_membership_id = membership_id
+        doc.lifecycle = "approved"
+        await session.flush([doc])
+        await self._audit.record(
+            session,
+            action="transition",
+            object_type="document",
+            object_id=doc.id,
+            actor=actor,
+            tenant_id=tenant_id,
+            before=before,
+            after={
+                **AuditService.snapshot(doc, fields=_DOC_SNAPSHOT),
+                "origin": "approved_outside_verity",
+                "approved_on": approved_on.isoformat(),
+                "template_key": doc.template_key,
+            },
+        )
+        return await self._one(session, tenant_id, doc.id)
 
     async def publish(
         self, session: AsyncSession, *, tenant_id: uuid.UUID, actor: Actor, document_id: uuid.UUID
@@ -3021,6 +3154,19 @@ class DocumentService:
         content = placeholder_lib.fill(
             template.content_html, {"company_name": tenant_name} if tenant_name else {}
         )
+        # Guided onboarding PR-8: profile facts fill their fields; a missing one shows a marker.
+        content = placeholder_lib.fill_profile(
+            content, await self._profile_values(session, tenant_id)
+        )
+        # Guided onboarding CL-4: the draft is linked to the controls its template supports, so
+        # nobody has to find them by hand. Codes the workspace does not run are skipped.
+        from verity.modules.compliance.control_service import control_service  # noqa: PLC0415
+        from verity.modules.documents.required_documents import (  # noqa: PLC0415
+            controls_for_template,
+        )
+
+        codes = controls_for_template(template.key)
+        linked = await control_service.ids_for_codes(session, tenant_id=tenant_id, codes=codes)
         view = await self.create_document(
             session,
             tenant_id=tenant_id,
@@ -3031,6 +3177,7 @@ class DocumentService:
             description=template.summary,
             content_html=content,
             owner_membership_id=owner_membership_id,
+            control_ids=list(linked.values()) or None,
         )
         # Record where it came from, for the attribution the licence requires
         # and so the picker can say a template has been used already.
@@ -3038,6 +3185,35 @@ class DocumentService:
         doc.template_key = template.key
         await session.flush()
         return view
+
+    async def _profile_values(
+        self, session: AsyncSession, tenant_id: uuid.UUID
+    ) -> dict[str, str | None]:
+        """The profile facts a template may name (PR-8), with the members holding the security
+        lead and executive sponsor functions."""
+        from verity.modules.iam.service import iam_service  # noqa: PLC0415
+        from verity.modules.onboarding.ownership_service import (  # noqa: PLC0415
+            ownership_service,
+        )
+        from verity.modules.tenancy.service import tenancy_service  # noqa: PLC0415
+
+        profile = await tenancy_service.get_own_company_profile(session, tenant_id)
+        holders = await ownership_service.function_members(session, tenant_id=tenant_id)
+        names = {
+            m.membership_id: m.full_name
+            for m in await iam_service.list_members(session, tenant_id=tenant_id)
+        }
+        return {
+            "legal_name": profile.legal_name,
+            "trading_name": profile.display_name,
+            "registered_address": profile.registered_address,
+            "security_lead": names.get(holders["security_lead"])
+            if "security_lead" in holders
+            else None,
+            "executive_sponsor": names.get(holders["executive_sponsor"])
+            if "executive_sponsor" in holders
+            else None,
+        }
 
     async def _tenant_name(self, session: AsyncSession, tenant_id: uuid.UUID) -> str | None:
         from verity.modules.tenancy.service import tenancy_service  # noqa: PLC0415

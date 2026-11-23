@@ -41,6 +41,7 @@ NOTIFICATION_KINDS: Final[tuple[str, ...]] = (
     "document_review_due",  # a document you own is due for review within two weeks
     "document_review_overdue",  # a document you own is past its review date
     "document_ack_reminder",  # you have not yet signed an acknowledgement you were asked for
+    "library_update",  # a shipped library change reached your controls (guided onboarding D-10)
 )
 
 _MEMBERSHIP_FK = "tenant_memberships.id"

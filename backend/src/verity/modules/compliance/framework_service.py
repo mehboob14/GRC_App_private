@@ -27,6 +27,7 @@ from verity.modules.audit.service import Actor, AuditService, Membership, audit_
 from verity.modules.compliance.control_service import control_service
 from verity.modules.compliance.engagement_service import engagement_service
 from verity.modules.compliance.models import (
+    ApplicabilityVersion,
     Control,
     ControlRequirement,
     ControlTemplate,
@@ -800,7 +801,20 @@ class FrameworkService:
     ) -> tuple[bytes, str]:
         """The Statement of Applicability as XLSX, and the file name to offer."""
         statement = await self.statement(session, tenant_id=tenant_id, framework_id=framework_id)
-        rows = [
+        rows = self._workbook_rows(statement)
+        today = datetime.now(UTC).date()
+        data = build_soa_workbook(
+            framework_name=statement.name,
+            version=statement.version,
+            scope_statement=statement.scope_statement,
+            generated_on=today,
+            rows=rows,
+        )
+        return data, f"statement-of-applicability-{statement.code.lower()}-{today.isoformat()}.xlsx"
+
+    @staticmethod
+    def _workbook_rows(statement: StatementView) -> list[dict[str, str]]:
+        return [
             {
                 "reference": row.code,
                 "title": row.name,
@@ -815,15 +829,93 @@ class FrameworkService:
             }
             for row in statement.rows
         ]
-        today = datetime.now(UTC).date()
-        data = build_soa_workbook(
-            framework_name=statement.name,
-            version=statement.version,
-            scope_statement=statement.scope_statement,
-            generated_on=today,
-            rows=rows,
+
+    # -- approved versions (guided onboarding SC-6, EN-11) ----------------------------
+
+    async def versions(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, framework_id: uuid.UUID
+    ) -> list[ApplicabilityVersion]:
+        return list(
+            (
+                await session.execute(
+                    select(ApplicabilityVersion)
+                    .where(
+                        ApplicabilityVersion.tenant_id == tenant_id,
+                        ApplicabilityVersion.framework_id == framework_id,
+                    )
+                    .order_by(ApplicabilityVersion.number.desc())
+                )
+            ).scalars()
         )
-        return data, f"statement-of-applicability-{statement.code.lower()}-{today.isoformat()}.xlsx"
+
+    async def approve_version(  # noqa: PLR0913 — who approves which statement, with a note
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        membership_id: uuid.UUID,
+        framework_id: uuid.UUID,
+        note: str | None,
+    ) -> ApplicabilityVersion:
+        """Freeze the statement as it stands as the next numbered, approved version. A
+        statement with decisions nobody reviewed cannot be approved."""
+        statement = await self.statement(session, tenant_id=tenant_id, framework_id=framework_id)
+        unreviewed = sum(1 for r in statement.rows if r.reviewed_at is None and not r.locked)
+        if unreviewed:
+            raise Conflict(
+                f"{unreviewed} decisions have not been reviewed. Review them, then approve.",
+                detail=f"{unreviewed} unreviewed applicability rows",
+            )
+        held = await self.versions(session, tenant_id=tenant_id, framework_id=framework_id)
+        row = ApplicabilityVersion(
+            id=uuid7(),
+            tenant_id=tenant_id,
+            framework_id=framework_id,
+            number=(held[0].number + 1) if held else 1,
+            framework_version=statement.version,
+            scope_statement=statement.scope_statement,
+            rows=self._workbook_rows(statement),
+            note=_clean(note),
+            approved_by_membership_id=membership_id,
+        )
+        session.add(row)
+        await session.flush([row])
+        await self._audit.record(
+            session,
+            action="create",
+            object_type="applicability_version",
+            object_id=row.id,
+            actor=actor,
+            tenant_id=tenant_id,
+            after={"framework": statement.code, "number": row.number, "rows": len(row.rows)},
+        )
+        return row
+
+    async def version_workbook(
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        framework_id: uuid.UUID,
+        number: int,
+    ) -> tuple[bytes, str]:
+        held = {
+            v.number: v
+            for v in await self.versions(session, tenant_id=tenant_id, framework_id=framework_id)
+        }
+        version = held.get(number)
+        if version is None:
+            raise NotFound("That version does not exist.", detail=f"version {number}")
+        framework = await self._framework(session, framework_id)
+        data = build_soa_workbook(
+            framework_name=framework.name,
+            version=f"{version.framework_version}, approved version {number}",
+            scope_statement=version.scope_statement,
+            generated_on=version.created_at.date(),
+            rows=version.rows,
+        )
+        return data, f"statement-of-applicability-{framework.code.lower()}-v{number}.xlsx"
 
 
 framework_service = FrameworkService()

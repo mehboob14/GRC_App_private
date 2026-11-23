@@ -1,15 +1,26 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Badge,
   Button,
   Card,
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   EmptyState,
   ErrorState,
   Icon,
   Skeleton,
+  TextArea,
+  useToast,
 } from "@/components/ui";
-import { describeError } from "@/lib/api/describe-error";
+import { engagementApi } from "@/lib/api/endpoints";
+import { describeError, errorToast } from "@/lib/api/describe-error";
 import { useAuth } from "@/lib/auth/auth-context";
 import type { WorkspaceFramework } from "../frameworks-api";
 import { frameworkSearch, useWorkspaceFrameworks } from "../use-frameworks";
@@ -19,10 +30,12 @@ function FrameworkCard({
   framework,
   canAdd,
   onAdd,
+  onTurnOff,
 }: {
   framework: WorkspaceFramework;
   canAdd: boolean;
   onAdd: (framework: WorkspaceFramework) => void;
+  onTurnOff: (framework: WorkspaceFramework) => void;
 }) {
   const unit = framework.scope_model === "applicability" ? "requirements" : "criteria";
 
@@ -55,12 +68,23 @@ function FrameworkCard({
         {unit}
         <span className="ml-auto">
           {framework.added ? (
-            <Link
-              to={`/frameworks/dashboard${frameworkSearch(framework.code)}`}
-              className="font-semibold text-text-link"
-            >
-              Open dashboard
-            </Link>
+            <span className="flex items-center gap-3">
+              {canAdd ? (
+                <button
+                  type="button"
+                  onClick={() => onTurnOff(framework)}
+                  className="text-body-sm text-text-subtle hover:text-text-primary"
+                >
+                  Turn off
+                </button>
+              ) : null}
+              <Link
+                to={`/frameworks/dashboard${frameworkSearch(framework.code)}`}
+                className="font-semibold text-text-link"
+              >
+                Open dashboard
+              </Link>
+            </span>
           ) : canAdd ? (
             <Button size="sm" onClick={() => onAdd(framework)}>
               <Icon name="plus" className="size-4" />
@@ -83,6 +107,20 @@ export function FrameworksPage() {
   const canAdd = Boolean(principal?.permissions.includes("controls:manage"));
   const query = useWorkspaceFrameworks();
   const [adding, setAdding] = useState<WorkspaceFramework | null>(null);
+  const [turningOff, setTurningOff] = useState<WorkspaceFramework | null>(null);
+  const [reason, setReason] = useState("");
+  const [onlyHere, setOnlyHere] = useState<string[] | null>(null);
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const turnOff = useMutation({
+    mutationFn: () => engagementApi.deactivateFramework(turningOff?.framework_id ?? "", reason.trim()),
+    onSuccess: async (result) => {
+      await queryClient.invalidateQueries();
+      setOnlyHere(result.controls_only_here);
+      setReason("");
+    },
+    onError: (error: unknown) => toast({ title: errorToast(error, "framework"), tone: "danger" }),
+  });
   const failure = query.isError ? describeError(query.error, "framework catalogue") : null;
 
   return (
@@ -109,11 +147,67 @@ export function FrameworksPage() {
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {(query.data ?? []).map((framework) => (
-            <FrameworkCard key={framework.framework_id} framework={framework} canAdd={canAdd} onAdd={setAdding} />
+            <FrameworkCard
+              key={framework.framework_id}
+              framework={framework}
+              canAdd={canAdd}
+              onAdd={setAdding}
+              onTurnOff={setTurningOff}
+            />
           ))}
         </div>
       )}
       <AddFrameworkDialog framework={adding} onClose={() => setAdding(null)} />
+      <Dialog
+        open={turningOff !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setTurningOff(null);
+            setOnlyHere(null);
+            setReason("");
+          }
+        }}
+      >
+        <DialogContent size="sm">
+          <DialogHeader>
+            <DialogTitle>{onlyHere ? `${turningOff?.name} is off` : `Turn off ${turningOff?.name}`}</DialogTitle>
+            <DialogDescription>
+              {onlyHere
+                ? "Nothing was deleted. You can add it again at any time."
+                : "Its records are kept and it disappears from your pages. Controls stay as they are."}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogBody>
+            {onlyHere ? (
+              onlyHere.length ? (
+                <p className="text-body-sm text-text-secondary">
+                  {onlyHere.length} controls were only needed by it: {onlyHere.slice(0, 12).join(", ")}
+                  {onlyHere.length > 12 ? ` and ${onlyHere.length - 12} more` : ""}. Decide on the
+                  Controls page whether to keep running them.
+                </p>
+              ) : (
+                <p className="text-body-sm text-text-secondary">Every control it used is still needed by another framework.</p>
+              )
+            ) : (
+              <TextArea label="Reason" rows={3} value={reason} onChange={(e) => setReason(e.target.value)} />
+            )}
+          </DialogBody>
+          <DialogFooter>
+            {onlyHere ? (
+              <Button onClick={() => setTurningOff(null)}>Done</Button>
+            ) : (
+              <>
+                <Button variant="secondary" onClick={() => setTurningOff(null)}>
+                  Cancel
+                </Button>
+                <Button disabled={!reason.trim()} loading={turnOff.isPending} onClick={() => turnOff.mutate()}>
+                  Turn off
+                </Button>
+              </>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

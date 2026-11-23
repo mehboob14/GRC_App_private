@@ -38,6 +38,7 @@ they name who is answerable for an area, and they start with read access.
 | Privacy Officer | Workspace, audit log, frameworks, vendors |
 | Engineering Lead | Workspace, frameworks, evidence |
 | Business Operations/Finance Lead | Workspace, frameworks, vendors |
+| Compliance Manager | Runs the programme: frameworks, controls, evidence, documents, risks, vendors, assets, tasks, connections. Cannot invite people, change roles or security settings, edit the company profile, or approve what management signs off |
 
 You can create roles of your own and choose exactly which permissions they carry.
 Permissions read as `module:action`, for example `vendors:manage` or

@@ -65,6 +65,14 @@ export async function listAssets(
   for (const c of filters.classifications ?? []) q.append("classifications", c);
   if (filters.exposure) q.set("exposure", filters.exposure);
   if (filters.owner) q.set("owner", filters.owner);
+  if (filters.in_scope_for) {
+    // The scope lives in compliance; ask it which assets, then list only those.
+    const scoped = await apiFetch<Record<string, string[]>>("/engagement/in-scope-for?ref_type=asset");
+    const ids = Object.entries(scoped)
+      .filter(([, codes]) => codes.includes(filters.in_scope_for as string))
+      .map(([id]) => id);
+    for (const id of ids.length ? ids : ["00000000-0000-0000-0000-000000000000"]) q.append("ids", id);
+  }
   q.set("page", String(page));
   q.set("page_size", String(pageSize));
   return apiFetch<AssetPage>(`/assets?${q.toString()}`);

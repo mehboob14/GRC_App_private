@@ -212,6 +212,32 @@ constraint as well as in the service. It carries `source`, `external_id` and `sy
 so it is also the natural feed for the asset inventory. Only in-scope resources are read, and
 every exclusion is printed on the evidence (AU-9).
 
+**Onboarding (guided onboarding, `openspec/changes/guided-onboarding/`).** Get Started stores no
+status: every step's state is computed per request from the records it counts, through each
+module's service. The one stored decision is `onboarding_step_skips` (tenant owned, forced RLS):
+`step_key` (with the framework code for a per framework step, `applicability:ISO27001`), a
+required `reason` (CHECK), who skipped it, and `reopened_at` / `reopened_by_membership_id`. One open
+skip per step (partial unique index on `(tenant_id, step_key)` where `reopened_at IS NULL`);
+reopening stamps the row and keeps it, so the app role has no DELETE. Later phases of the change add
+the engagement, scope and proposal tables listed in its `design.md`.
+
+**Company profile (phase 2 of the same change).** `company_profile` (one row per tenant, the PK is
+the tenant) gains `answers` (JSONB object of typed answers, validated against the question
+catalogue in `modules/tenancy/profile_questions.py`), `registered_address`, `status` (`draft`,
+`confirmed`), `version`, `confirmed_by_membership_id`, `confirmed_at`. Each confirmation freezes a
+copy in `company_profile_versions` (tenant owned, forced RLS, append only by revoked grant and
+trigger, unique on `(tenant_id, version)`). Countries are ISO 3166-1 alpha-2 codes plus the region
+codes `EU`, `EEA`, `GCC`, `WORLD` (`shared/countries.py`). The free text `industry`,
+`company_size`, `headquarters` and `regulatory_scope` columns stay, read only, as hints.
+
+**Scope (phase 3, decision D-6).** `scope_items` is one list per workspace (kind, name, optional
+link to an asset, vendor or group, `source`/`external_id`/`synced_at`, retired with a reason, never
+deleted). `scope_decisions` holds in or out and the reason per item per engagement, unique on
+`(tenant_id, scope_item_id, engagement_id)`; out needs a reason (CHECK). The flag is never shared
+between frameworks. `engagements` also gained `as_of_date` (Type 1 only, CHECK), `target_date`,
+`driver`, `live_date`, `assessor_state` and the auditor's accreditation body, contact and letter
+date; `certification_body` names the outside party for every framework.
+
 ## Conventions
 
 `id` is UUIDv7. `created_at` / `updated_at` on every table — append-only tables are the

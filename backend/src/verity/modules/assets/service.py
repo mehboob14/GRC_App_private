@@ -377,6 +377,9 @@ class AssetFilters:
     exposure: str | None = None  # "internet_facing" | "customer_facing"
     owner: str | None = None  # membership_id, "me", or "unassigned"
     needs_attention: bool = False
+    ids: tuple[uuid.UUID, ...] | None = None
+    """Only these assets, e.g. the ones a framework's scope holds (SC-4, read from
+    ``GET /engagement/in-scope-for``)."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -645,7 +648,23 @@ class AssetService:
 
     # -- reads ---------------------------------------------------------------
 
-    async def list_assets(  # noqa: PLR0913
+    async def scope_candidates(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID
+    ) -> list[tuple[uuid.UUID, str, str]]:
+        """Live assets as ``(id, name, asset_type)``, for scope suggestions (guided onboarding
+        SC-3). Third party assets are left out: vendors are suggested from the vendor register."""
+        rows = await session.execute(
+            select(Asset.id, Asset.name, Asset.asset_type)
+            .where(
+                Asset.tenant_id == tenant_id,
+                Asset.status.in_(("planned", "active", "in_maintenance")),
+                Asset.asset_type != "third_party",
+            )
+            .order_by(Asset.name)
+        )
+        return [(row[0], row[1], row[2]) for row in rows.all()]
+
+    async def list_assets(  # noqa: PLR0912, PLR0913 — one branch per filter
         self,
         session: AsyncSession,
         *,
@@ -668,6 +687,8 @@ class AssetService:
             stmt = stmt.where(Asset.environment.in_(list(filters.environments)))
         if filters.classifications:
             stmt = stmt.where(Asset.data_classification.in_(list(filters.classifications)))
+        if filters.ids is not None:
+            stmt = stmt.where(Asset.id.in_(list(filters.ids)))
         if filters.exposure == "internet_facing":
             stmt = stmt.where(Asset.internet_facing.is_(True))
         elif filters.exposure == "customer_facing":

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { InScopeChips } from "@/features/compliance/components/in-scope-chips";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -256,6 +257,7 @@ export function VendorDetailPage() {
               label={vendor.tier ? `${TIER_META[vendor.tier]?.label ?? vendor.tier} tier` : "Not tiered"}
             />
             <StatusPill status={status.family} label={status.label} kind="inline" />
+            <InScopeChips refType="vendor" id={vendor.id} />
             {vendor.current_grade ? (
               <Tooltip content={`Residual score ${vendor.current_residual_score ?? "not set"}`}>
                 <span>

@@ -336,6 +336,26 @@ class EvidenceService:
             row.content_type or "application/octet-stream",
         )
 
+    async def collected_by_control(
+        self, session: AsyncSession, tenant_id: uuid.UUID, start: date, end: date
+    ) -> dict[uuid.UUID, list[date]]:
+        """Collection dates of live evidence per control inside ``start`` to ``end``, for
+        planning periodic controls against an audit period (guided onboarding EN-8)."""
+        rows = await session.execute(
+            select(EvidenceControl.control_id, Evidence.collected_at)
+            .join(Evidence, Evidence.id == EvidenceControl.evidence_id)
+            .where(
+                EvidenceControl.tenant_id == tenant_id,
+                Evidence.review_status != "rejected",
+                Evidence.collected_at >= start,
+                Evidence.collected_at <= end,
+            )
+        )
+        out: dict[uuid.UUID, list[date]] = {}
+        for control_id, collected in rows:
+            out.setdefault(control_id, []).append(collected)
+        return out
+
     async def collected_dates(self, session: AsyncSession, tenant_id: uuid.UUID) -> list[date]:
         """Every evidence item's collection date, oldest first.
 
@@ -474,6 +494,29 @@ class EvidenceService:
             )
         rows = await session.execute(statement.distinct())
         return set(rows.scalars())
+
+    async def currency(
+        self, session: AsyncSession, tenant_id: uuid.UUID, evidence_ids: list[uuid.UUID]
+    ) -> dict[uuid.UUID, str]:
+        """For each evidence row: ``current`` (approved, not past its renewal date),
+        ``pending`` (not reviewed yet), or ``lapsed`` (rejected or past its renewal date).
+        Rows not found are left out. For assessment objectives, where only reviewed evidence
+        counts (owner decision, 2026-11-23)."""
+        if not evidence_ids:
+            return {}
+        today = datetime.now(UTC).date()
+        rows = await session.execute(
+            select(Evidence.id, Evidence.review_status, Evidence.renewal_date).where(
+                Evidence.tenant_id == tenant_id, Evidence.id.in_(evidence_ids)
+            )
+        )
+        out: dict[uuid.UUID, str] = {}
+        for eid, status, renewal in rows:
+            if status == "rejected" or (renewal is not None and renewal < today):
+                out[eid] = "lapsed"
+            else:
+                out[eid] = "current" if status == "approved" else "pending"
+        return out
 
     async def control_ids_with_current_evidence(
         self,

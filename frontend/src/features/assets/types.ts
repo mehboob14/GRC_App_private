@@ -269,6 +269,8 @@ export type AssetFilters = {
   /** Exposure facet — internet- or customer-facing, or either. */
   exposure: "internet_facing" | "customer_facing" | null;
   owner: string | null; // membership_id, "me", or "unassigned"
+  /** A framework code: only assets a scope item puts in its scope (SC-4). */
+  in_scope_for?: string | null;
 };
 
 // -- dashboard ---------------------------------------------------------------

@@ -1,0 +1,974 @@
+[
+  {
+    "key": "UK-01",
+    "jurisdiction": "GB",
+    "zone": null,
+    "short_name": "UK GDPR",
+    "official_name": "UK GDPR, Data Protection Act 2018 and Data (Use and Access) Act 2025",
+    "issuer": "UK Parliament",
+    "regulator": "Information Commission (took over the Information Commissioner's Office functions on 30 September 2026)",
+    "kinds": [
+      "privacy"
+    ],
+    "topic_column": "privacy",
+    "force": "law",
+    "state": "in_force",
+    "state_note": "In force. The Data (Use and Access) Act 2025 commenced in stages: most data protection changes on 5 February 2026, the complaints procedure duty on 19 June 2026 and regulator governance on 30 September 2026; the ICO has said all outstanding provisions are now in force.",
+    "tier": "most_should_know",
+    "applies_to": "Organisations established in the UK that process personal data, and organisations abroad that offer goods or services to, or monitor, people in the UK.",
+    "duties": [
+      {
+        "topic": "registration",
+        "text": "Pay the annual data protection fee to the regulator as a controller.",
+        "clock_hours": null
+      },
+      {
+        "topic": "breach_notice",
+        "text": "Notify the regulator within 72 hours of a qualifying personal data breach.",
+        "clock_hours": 72
+      },
+      {
+        "topic": "officer",
+        "text": "Appoint a data protection officer in the same cases as under the EU GDPR, and a UK representative if not established in the UK.",
+        "clock_hours": null
+      },
+      {
+        "topic": "transfers",
+        "text": "Send personal data abroad only under UK adequacy regulations, the International Data Transfer Agreement or the UK Addendum.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "Run a data protection complaints procedure and acknowledge each complaint within 30 days.",
+        "clock_hours": null
+      },
+      {
+        "topic": "penalties",
+        "text": "Fines reach GBP 17.5 million or 4 percent of turnover; the 2025 Act raised marketing and cookie (PECR) fines to the same scale.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "registration",
+      "note": "Controllers pay an annual data protection fee; approved certification schemes exist but are optional."
+    },
+    "iso27001": {
+      "relation": "helps_partially",
+      "note": "As for GDPR: supports the security principle, not proof of compliance."
+    },
+    "soc2": {
+      "relation": "helps_partially",
+      "note": "As for GDPR: supports the security principle, not proof of compliance."
+    },
+    "helps": [
+      "DM-07",
+      "DM-08",
+      "DM-12",
+      "DM-05",
+      "DM-03",
+      "DM-15",
+      "DM-11",
+      "DM-14",
+      "DM-16",
+      "DM-10",
+      "DM-17",
+      "BC-06",
+      "BC-08",
+      "DM-06",
+      "IAM-03",
+      "IAM-08",
+      "NS-01",
+      "NS-02",
+      "NS-06",
+      "BC-01",
+      "BC-02",
+      "LM-11",
+      "GOV-16",
+      "GOV-18",
+      "DM-01",
+      "DM-02",
+      "LM-07",
+      "CS-01",
+      "SD-10",
+      "DM-13",
+      "DM-18"
+    ],
+    "not_covered": [
+      "Lawful basis other than consent",
+      "Impact assessments",
+      "Data protection officer",
+      "Transfers outside the region",
+      "Representative",
+      "Automated decisions"
+    ],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2025-06-19",
+        "precision": "day",
+        "kind": "enacted",
+        "description": "Data (Use and Access) Act 2025 receives Royal Assent.",
+        "confirmed": true
+      },
+      {
+        "date": "2026-02-05",
+        "precision": "day",
+        "kind": "obligation_starts",
+        "description": "Most data protection changes of the 2025 Act commence.",
+        "confirmed": true
+      },
+      {
+        "date": "2026-06-19",
+        "precision": "day",
+        "kind": "obligation_starts",
+        "description": "Duty to run a data protection complaints procedure commences.",
+        "confirmed": true
+      },
+      {
+        "date": "2026-09-30",
+        "precision": "day",
+        "kind": "in_force",
+        "description": "The Information Commission takes over the Information Commissioner's functions.",
+        "confirmed": true
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.legislation.gov.uk/ukpga/2018/12/contents",
+        "publisher": "legislation.gov.uk (The National Archives)",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "known_not_opened"
+      },
+      {
+        "url": "https://www.legislation.gov.uk/ukpga/2025/18",
+        "publisher": "legislation.gov.uk (The National Archives)",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://legislation.gov.uk/uksi/2026/82",
+        "publisher": "legislation.gov.uk (The National Archives)",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      },
+      {
+        "url": "https://www.legislation.gov.uk/ukpga/2025/18/section/103",
+        "publisher": "legislation.gov.uk (The National Archives)",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      },
+      {
+        "url": "https://www.gov.uk/guidance/data-use-and-access-act-2025-plans-for-commencement",
+        "publisher": "GOV.UK",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      },
+      {
+        "url": "https://ico.org.uk/about-the-ico/media-centre/news-and-blogs/2026/06/new-data-protection-complaints-law-now-in-force/",
+        "publisher": "Information Commissioner's Office",
+        "kind": "regulator_guidance",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.gov.uk/government/news/information-commission-succeeds-the-ico-as-uks-data-protection-regulator",
+        "publisher": "GOV.UK",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://ico.org.uk/about-the-ico/what-we-do/legislation-we-cover/data-use-and-access-act-2025/the-data-use-and-access-act-2025-duaa-summary-of-the-changes/the-information-commission/",
+        "publisher": "Information Commissioner's Office",
+        "kind": "regulator_guidance",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "Whether the Information Commission still uses the ICO name in public is not confirmed; gov.uk does not say.",
+        "ico.org.uk refused automated reading.",
+        "Penalty figures to be checked against the primary text by the reviewer before display."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "GB"
+          }
+        ]
+      },
+      {
+        "confidence": "applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "GB"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "GB"
+            ]
+          },
+          {
+            "fact": "personal_data_role",
+            "op": "in",
+            "value": [
+              "controller",
+              "processor",
+              "both"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "GB"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "UK-02",
+    "jurisdiction": "GB",
+    "zone": null,
+    "short_name": "NIS Regulations",
+    "official_name": "Network and Information Systems Regulations 2018 (SI 2018/506) and the Cyber Security and Resilience (Network and Information Systems) Bill",
+    "issuer": "UK Parliament",
+    "regulator": "Sector regulators, and the ICO for digital service providers",
+    "kinds": [
+      "cybersecurity",
+      "critical_infrastructure"
+    ],
+    "topic_column": "security_baseline",
+    "force": "regulation",
+    "state": "in_force",
+    "state_note": "The 2018 Regulations are in force. The Cyber Security and Resilience Bill, introduced 12 November 2025, reportedly finished Lords report stage on 26 October 2026; no Royal Assent was confirmed by 21 November 2026 and most duties will need secondary legislation.",
+    "tier": "sector",
+    "applies_to": "Today, operators of essential services (energy, transport, health, water, digital infrastructure) and relevant digital service providers (online marketplaces, search engines, cloud services) above small business size. The Bill would add managed service providers, data centres and designated critical suppliers.",
+    "duties": [
+      {
+        "topic": "baseline",
+        "text": "Take appropriate and proportionate security measures; regulators assess them with the NCSC Cyber Assessment Framework.",
+        "clock_hours": null
+      },
+      {
+        "topic": "incident_reporting",
+        "text": "Report significant incidents within 72 hours.",
+        "clock_hours": 72
+      },
+      {
+        "topic": "penalties",
+        "text": "Fines reach GBP 17 million under the current Regulations.",
+        "clock_hours": null
+      },
+      {
+        "topic": "incident_reporting",
+        "text": "The Bill would require a 24 hour initial report and a 72 hour full report, customer notification, wider regulator powers and higher turnover-based penalties.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "none",
+      "note": "No certification; regulators use the NCSC Cyber Assessment Framework."
+    },
+    "iso27001": {
+      "relation": "helps_partially",
+      "note": "Not formally recognised; ISO 27001 maps reasonably to the Cyber Assessment Framework objectives."
+    },
+    "soc2": {
+      "relation": "helps_partially",
+      "note": "Not formally recognised by the regulators."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2025-11-12",
+        "precision": "day",
+        "kind": "proposed",
+        "description": "Cyber Security and Resilience Bill introduced to Parliament.",
+        "confirmed": true
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.legislation.gov.uk/uksi/2018/506",
+        "publisher": "legislation.gov.uk (The National Archives)",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "known_not_opened"
+      },
+      {
+        "url": "https://bills.parliament.uk/bills/4035",
+        "publisher": "UK Parliament",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.gov.uk/government/collections/cyber-security-and-resilience-bill",
+        "publisher": "GOV.UK",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.isaca.org/resources/news-and-trends/isaca-now-blog/2026/the-uks-cyber-security-and-resilience-nis-bill-five-key-takeaways-from-lords-report-stage",
+        "publisher": "ISACA",
+        "kind": "tracker",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.nccgroup.com/newsroom/expert-commentary-what-the-cyber-security-resilience-bill-means-for-organisations-today/",
+        "publisher": "NCC Group",
+        "kind": "tracker",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "Stage after Lords report and whether Royal Assent has happened not confirmed; forecasts range from end 2026 to early 2027 and the bill page refused automated reading.",
+        "Penalty figures to be checked against the primary text by the reviewer before display.",
+        "SOC 2 relation is inferred; the sources do not mention SOC 2."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "GB"
+          },
+          {
+            "fact": "critical_or_provider",
+            "op": "eq",
+            "value": "yes"
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "GB"
+            ]
+          },
+          {
+            "fact": "critical_or_provider",
+            "op": "eq",
+            "value": "yes"
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "GB"
+          },
+          {
+            "fact": "industry",
+            "op": "in",
+            "value": [
+              "energy_utilities",
+              "healthcare",
+              "telecom"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "GB"
+            ]
+          },
+          {
+            "fact": "industry",
+            "op": "in",
+            "value": [
+              "energy_utilities",
+              "healthcare",
+              "telecom"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "GB"
+            ]
+          },
+          {
+            "fact": "critical_or_provider",
+            "op": "eq",
+            "value": "yes"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "UK-03",
+    "jurisdiction": "GB",
+    "zone": null,
+    "short_name": "Cyber Essentials",
+    "official_name": "Cyber Essentials and Cyber Essentials Plus",
+    "issuer": "National Cyber Security Centre (NCSC)",
+    "regulator": "IASME, delivery partner for the NCSC",
+    "kinds": [
+      "cybersecurity"
+    ],
+    "topic_column": "security_baseline",
+    "force": "voluntary_framework",
+    "state": "voluntary",
+    "state_note": "Voluntary, but contractually required for many central government contracts and Ministry of Defence suppliers. Requirements v3.3 and the Danzell question set apply to assessment accounts created after 26 April 2026.",
+    "tier": "most_should_know",
+    "applies_to": "Any organisation. Expected of suppliers handling government personal data or certain ICT services, and widely asked for in UK supply chains and by insurers.",
+    "duties": [
+      {
+        "topic": "baseline",
+        "text": "Cover the five control themes: firewalls, secure configuration, security update management, user access control and malware protection.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "Turn on MFA wherever a cloud service offers it; missing MFA on a cloud service is an automatic fail.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "Install high and critical security updates within 14 days.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "Keep cloud services in scope; they cannot be scoped out.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "Renew every year; Cyber Essentials Plus adds an independent technical test.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "certification",
+      "note": "Cyber Essentials is a verified self-assessment and Cyber Essentials Plus adds an independent technical test; both renew annually."
+    },
+    "iso27001": {
+      "relation": "not_a_substitute",
+      "note": "Separate and much narrower; ISO 27001 does not exempt a supplier from a Cyber Essentials contract clause."
+    },
+    "soc2": {
+      "relation": "not_a_substitute",
+      "note": "A Cyber Essentials contract clause asks for the certificate itself."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2026-04-26",
+        "precision": "day",
+        "kind": "obligation_starts",
+        "description": "Requirements v3.3 and the Danzell question set apply to assessment accounts created after this date; earlier accounts have six months to finish under the old rules.",
+        "confirmed": true
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.ncsc.gov.uk/cyberessentials/overview",
+        "publisher": "National Cyber Security Centre",
+        "kind": "regulator_guidance",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      },
+      {
+        "url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf",
+        "publisher": "National Cyber Security Centre",
+        "kind": "regulator_guidance",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://iasme.co.uk/articles/important-update-changes-to-cyber-essentials-for-april-2026/",
+        "publisher": "IASME",
+        "kind": "regulator_guidance",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "The NCSC overview page carries no version number; the v3.3 date comes from IASME.",
+        "SOC 2 relation is inferred; the sources do not mention SOC 2."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "GB"
+          }
+        ]
+      },
+      {
+        "confidence": "applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "GB"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "GB"
+            ]
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "government"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "GB"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "UK-04",
+    "jurisdiction": "GB",
+    "zone": null,
+    "short_name": "FCA and PRA operational resilience",
+    "official_name": "FCA SYSC 15A (PS21/3), PRA SS1/21 and SS2/21, and related critical third party and incident reporting rules",
+    "issuer": "Financial Conduct Authority, Prudential Regulation Authority and Bank of England",
+    "regulator": "Financial Conduct Authority and Prudential Regulation Authority",
+    "kinds": [
+      "financial_sector",
+      "resilience"
+    ],
+    "topic_column": "sector",
+    "force": "regulator_rule",
+    "state": "in_force_phasing",
+    "state_note": "In force since 31 March 2022, and firms had to operate within impact tolerances by 31 March 2025. The critical third parties regime has applied since 1 January 2025, and new incident and third party reporting rules apply from 18 March 2027.",
+    "tier": "sector",
+    "applies_to": "Banks, building societies, PRA-designated investment firms, insurers, payment and e-money institutions and other in-scope FCA firms. Cloud and SaaS vendors feel it through outsourcing contract terms.",
+    "duties": [
+      {
+        "topic": "assessment",
+        "text": "Identify important business services, set impact tolerances and test them.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "Map the people, processes, technology and third parties behind each important business service.",
+        "clock_hours": null
+      },
+      {
+        "topic": "board_duty",
+        "text": "Have the board approve the self-assessment.",
+        "clock_hours": null
+      },
+      {
+        "topic": "third_parties",
+        "text": "Keep outsourcing registers and exit plans.",
+        "clock_hours": null
+      },
+      {
+        "topic": "incident_reporting",
+        "text": "From 18 March 2027, send standardised operational incident reports and notify material third party arrangements.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "none",
+      "note": "No certification."
+    },
+    "iso27001": {
+      "relation": "not_a_substitute",
+      "note": "Vendor assurance (SOC 2 Type II, ISO 27001, ISO 22301) is routinely requested but is not a regulatory substitute."
+    },
+    "soc2": {
+      "relation": "not_a_substitute",
+      "note": "SOC 2 Type II is routinely requested from vendors but is not a regulatory substitute."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2022-03-31",
+        "precision": "day",
+        "kind": "in_force",
+        "description": "Operational resilience rules apply.",
+        "confirmed": true
+      },
+      {
+        "date": "2025-01-01",
+        "precision": "day",
+        "kind": "obligation_starts",
+        "description": "Critical third parties regime applies.",
+        "confirmed": true
+      },
+      {
+        "date": "2025-03-31",
+        "precision": "day",
+        "kind": "deadline",
+        "description": "Firms must operate within impact tolerances.",
+        "confirmed": true
+      },
+      {
+        "date": "2026-03-18",
+        "precision": "day",
+        "kind": "enacted",
+        "description": "FCA PS26/2, PRA PS7/26 and SS1/26 published.",
+        "confirmed": true
+      },
+      {
+        "date": "2027-03-18",
+        "precision": "day",
+        "kind": "obligation_starts",
+        "description": "Operational incident and material third party reporting rules apply.",
+        "confirmed": true
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.fca.org.uk/publications/policy-statements/ps26-2-operational-incident-third-party-reporting",
+        "publisher": "Financial Conduct Authority",
+        "kind": "regulator_guidance",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.bankofengland.co.uk/prudential-regulation/publication/2026/march/operational-incident-and-third-party-reporting-policy-statement",
+        "publisher": "Bank of England (PRA)",
+        "kind": "regulator_guidance",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.fca.org.uk/firms/operational-resilience/reporting-operational-incidents",
+        "publisher": "Financial Conduct Authority",
+        "kind": "regulator_guidance",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": []
+    },
+    "triggers": [
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "GB"
+          },
+          {
+            "fact": "regulator_licences",
+            "op": "any_in",
+            "value": [
+              "financial",
+              "payments",
+              "insurance"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "GB"
+            ]
+          },
+          {
+            "fact": "regulator_licences",
+            "op": "any_in",
+            "value": [
+              "financial",
+              "payments",
+              "insurance"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "GB"
+          },
+          {
+            "fact": "industry",
+            "op": "in",
+            "value": [
+              "financial_services",
+              "payments",
+              "insurance"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "GB"
+            ]
+          },
+          {
+            "fact": "industry",
+            "op": "in",
+            "value": [
+              "financial_services",
+              "payments",
+              "insurance"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "GB"
+            ]
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "banks_insurers"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "UK-05",
+    "jurisdiction": "GB",
+    "zone": null,
+    "short_name": "PECR",
+    "official_name": "Privacy and Electronic Communications Regulations 2003 (SI 2003/2426)",
+    "issuer": "UK Government (statutory instrument)",
+    "regulator": "Information Commission (formerly the ICO)",
+    "kinds": [
+      "privacy",
+      "telecom_sector"
+    ],
+    "topic_column": "privacy",
+    "force": "regulation",
+    "state": "in_force",
+    "state_note": "In force, amended by the Data (Use and Access) Act 2025; its cookie, charity marketing and enforcement changes started on 5 February 2026.",
+    "tier": "most_should_know",
+    "applies_to": "Organisations that set cookies or similar technologies on users' devices in the UK or send electronic marketing to people in the UK.",
+    "duties": [
+      {
+        "topic": "consent",
+        "text": "Get consent for cookies and similar trackers, except the low-risk uses the 2025 Act now exempts.",
+        "clock_hours": null
+      },
+      {
+        "topic": "consent",
+        "text": "Follow the consent rules for electronic marketing.",
+        "clock_hours": null
+      },
+      {
+        "topic": "penalties",
+        "text": "Fines for marketing and cookie breaches now reach the UK GDPR scale (GBP 17.5 million or 4 percent of turnover).",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "none",
+      "note": "No certification."
+    },
+    "iso27001": {
+      "relation": "not_relevant",
+      "note": "Not relevant."
+    },
+    "soc2": {
+      "relation": "not_relevant",
+      "note": "Not relevant."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2026-02-05",
+        "precision": "day",
+        "kind": "obligation_starts",
+        "description": "2025 Act changes to cookies, charity marketing and enforcement (sections 112, 114, 115 and Schedule 13) commence.",
+        "confirmed": true
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.legislation.gov.uk/uksi/2003/2426/contents",
+        "publisher": "legislation.gov.uk (The National Archives)",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      },
+      {
+        "url": "https://legislation.gov.uk/uksi/2026/82",
+        "publisher": "legislation.gov.uk (The National Archives)",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "The catalogue holds PECR only as a one-line mention under key UK-05; these details come from the first tier check and UK-01. The other UK-05 mentions (Product Security and Telecommunications Infrastructure Act 2022, Online Safety Act 2023, Telecommunications (Security) Act 2021, NHS toolkit) have no entry of their own; the product security law is a sector item in section B and needs its own key.",
+        "Penalty figures to be checked against the primary text by the reviewer before display."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "GB"
+          }
+        ]
+      },
+      {
+        "confidence": "applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "GB"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "GB"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]

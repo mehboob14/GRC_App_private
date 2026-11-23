@@ -53,6 +53,7 @@ import {
   type RequirementState,
 } from "../frameworks-api";
 import { useSelectedFramework } from "../use-frameworks";
+import { StatementVersions } from "./statement-versions";
 
 const STATE: Record<RequirementState, { label: string; family: StatusFamily }> = {
   met: { label: "Implemented", family: "success" },
@@ -190,10 +191,16 @@ export function StatementPage() {
           />
         }
         actions={
-          <Button variant="secondary" size="sm" loading={exporting} onClick={() => void exportWorkbook()}>
-            <Icon name="download" className="size-4" />
-            Export XLSX
-          </Button>
+          <>
+            <StatementVersions
+              frameworkId={selected.framework_id}
+              canApprove={canManage}
+            />
+            <Button variant="secondary" size="sm" loading={exporting} onClick={() => void exportWorkbook()}>
+              <Icon name="download" className="size-4" />
+              Export XLSX
+            </Button>
+          </>
         }
       >
         <FilterFacet label="Section" options={sectionOptions} values={sections} onChange={setSections} />

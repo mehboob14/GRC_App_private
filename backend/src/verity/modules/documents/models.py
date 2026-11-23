@@ -109,6 +109,12 @@ class Document(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
     renewal_date: Mapped[date | None] = mapped_column(default=None)
 
     approved_at: Mapped[datetime | None] = mapped_column(default=None)
+    approved_elsewhere_on: Mapped[date | None] = mapped_column(default=None)
+    """Guided onboarding RD-4, D-11: approved before Verity, on this date, as a member with
+    the approve permission confirmed in Verity."""
+    approved_elsewhere_by_membership_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("tenant_memberships.id", ondelete="SET NULL"), default=None
+    )
     published_at: Mapped[datetime | None] = mapped_column(default=None)
     archived_at: Mapped[datetime | None] = mapped_column(default=None)
     archived_reason: Mapped[str | None] = mapped_column(default=None)

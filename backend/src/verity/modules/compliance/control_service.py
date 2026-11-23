@@ -479,6 +479,44 @@ class ControlService:
                 vocabulary.setdefault(category, []).append(sub_category)
         return vocabulary
 
+    async def owners_by_code(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID
+    ) -> list[tuple[uuid.UUID, str, uuid.UUID | None]]:
+        """Live controls as ``(id, code, owner)``, for proposing owners (guided onboarding OW-2)."""
+        rows = await session.execute(
+            select(Control.id, Control.code, Control.owner_membership_id)
+            .where(Control.tenant_id == tenant_id, Control.disabled_at.is_(None))
+            .order_by(Control.code)
+        )
+        return [(row[0], row[1], row[2]) for row in rows.all()]
+
+    async def states_by_code(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID
+    ) -> dict[str, tuple[uuid.UUID, str, str]]:
+        """Live controls by code as ``(id, status, name)``, for profile suggestions (CL-7)."""
+        rows = await session.execute(
+            select(Control.id, Control.code, Control.status, Control.name).where(
+                Control.tenant_id == tenant_id, Control.disabled_at.is_(None)
+            )
+        )
+        return {code: (cid, status, name) for cid, code, status, name in rows}
+
+    async def ids_for_codes(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, codes: list[str]
+    ) -> dict[str, uuid.UUID]:
+        """The tenant's live control for each code, for linking a document to the controls its
+        template supports (guided onboarding CL-4)."""
+        if not codes:
+            return {}
+        rows = await session.execute(
+            select(Control.code, Control.id).where(
+                Control.tenant_id == tenant_id,
+                Control.disabled_at.is_(None),
+                Control.code.in_(codes),
+            )
+        )
+        return {row[0]: row[1] for row in rows.all()}
+
     async def active_control_ids(
         self, session: AsyncSession, *, tenant_id: uuid.UUID
     ) -> set[uuid.UUID]:

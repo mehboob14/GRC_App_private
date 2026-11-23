@@ -30,6 +30,9 @@ from verity.modules.iam import models as _iam_models  # noqa: F401
 from verity.modules.leads import models as _leads_models  # noqa: F401
 from verity.modules.links import models as _links_models  # noqa: F401
 from verity.modules.notifications import models as _notifications_models  # noqa: F401
+from verity.modules.objectives import models as _objectives_models  # noqa: F401
+from verity.modules.onboarding import models as _onboarding_models  # noqa: F401
+from verity.modules.regulations import models as _regulations_models  # noqa: F401
 from verity.modules.risk import models as _risk_models  # noqa: F401
 from verity.modules.tasks import models as _tasks_models  # noqa: F401
 from verity.modules.tenancy import models as _tenancy_models  # noqa: F401

@@ -1,0 +1,1062 @@
+[
+  {
+    "key": "OM-01",
+    "jurisdiction": "OM",
+    "zone": null,
+    "short_name": "Oman PDPL",
+    "official_name": "Personal Data Protection Law (Royal Decree 6/2022, amended by Royal Decree 68/2026) and Executive Regulations (Ministerial Decision 34/2024)",
+    "issuer": "Sultanate of Oman (Royal Decree); MTCIT (Executive Regulations)",
+    "regulator": "Ministry of Transport, Communications and Information Technology (MTCIT)",
+    "kinds": [
+      "privacy"
+    ],
+    "topic_column": "privacy",
+    "force": "law",
+    "state": "in_force",
+    "state_note": "In force and in its enforcement phase since the two year compliance period ended on 5 February 2026. Royal Decree 68/2026, in force 7 September 2026, extended the law to processing of data about people in Oman wherever it happens.",
+    "tier": "most_should_know",
+    "applies_to": "Processing of personal data of natural persons in Oman, whether done inside or outside Oman, so foreign companies processing data of people in Oman are in scope. Excluded: national security and public interest processing, state bodies performing their legal functions, protecting the state's economic and financial interests, crime detection on a written request, purely personal or family use, and authorised research where no one can be identified.",
+    "duties": [
+      {
+        "topic": "consent",
+        "text": "Rely on explicit consent you can prove, including for direct marketing, unless one of the new grounds applies: a legal duty, lawfully public data, a vital interest or a contract the person is party to.",
+        "clock_hours": null
+      },
+      {
+        "topic": "registration",
+        "text": "Get an MTCIT permit before processing sensitive data such as health, biometric or genetic data, except the new cases for employee data and official security camera footage.",
+        "clock_hours": null
+      },
+      {
+        "topic": "officer",
+        "text": "Appoint a data protection officer and publish their contact details, and appoint a ministry-approved external auditor whose report reaches MTCIT within 60 days of appointment.",
+        "clock_hours": null
+      },
+      {
+        "topic": "breach_notice",
+        "text": "Notify MTCIT within 72 hours of learning of a breach that may threaten people's rights, notify the people affected within 72 hours where harm may be serious, and keep a breach record.",
+        "clock_hours": 72
+      },
+      {
+        "topic": "transfers",
+        "text": "Send data abroad only with explicit consent (limited exceptions), adequate protection and a documented transfer risk assessment.",
+        "clock_hours": null
+      },
+      {
+        "topic": "penalties",
+        "text": "Fines run from OMR 500 to 2,000 for consent breaches up to OMR 100,000 to 500,000 for unlawful cross-border transfer, with OMR 5,000 to 100,000 for legal persons.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "registration",
+      "note": "No certification; sensitive data needs an MTCIT permit lasting up to five years, and the ministry approves the external auditors who assess compliance."
+    },
+    "iso27001": {
+      "relation": "helps_partially",
+      "note": "Not referenced; supports the security and confidentiality duties."
+    },
+    "soc2": {
+      "relation": "helps_partially",
+      "note": "Not referenced; supports the security and confidentiality duties."
+    },
+    "helps": [
+      "DM-03",
+      "DM-15",
+      "DM-07",
+      "DM-12",
+      "DM-11",
+      "DM-05",
+      "DM-08",
+      "DM-16",
+      "DM-10",
+      "DM-06",
+      "DM-01",
+      "NS-01",
+      "NS-02",
+      "IAM-08"
+    ],
+    "not_covered": [
+      "Permits for sensitive data",
+      "Officer",
+      "Transfer conditions"
+    ],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2023-02-13",
+        "precision": "day",
+        "kind": "in_force",
+        "description": "Law in force (date not re-checked).",
+        "confirmed": false
+      },
+      {
+        "date": "2024-01-28",
+        "precision": "day",
+        "kind": "enacted",
+        "description": "Executive Regulations issued (Ministerial Decision 34/2024).",
+        "confirmed": true
+      },
+      {
+        "date": "2024-02-05",
+        "precision": "day",
+        "kind": "in_force",
+        "description": "Executive Regulations in force after Official Gazette No. 1531 of 4 February 2024.",
+        "confirmed": true
+      },
+      {
+        "date": "2025-01-14",
+        "precision": "day",
+        "kind": "enacted",
+        "description": "Ministerial Decision 6/2025 extends the compliance period to two years.",
+        "confirmed": true
+      },
+      {
+        "date": "2026-02-05",
+        "precision": "day",
+        "kind": "deadline",
+        "description": "Compliance period ends and the enforcement phase begins.",
+        "confirmed": true
+      },
+      {
+        "date": "2026-09-03",
+        "precision": "day",
+        "kind": "enacted",
+        "description": "Royal Decree 68/2026 amending the law issued (Official Gazette No. 1664 of 6 September 2026).",
+        "confirmed": true
+      },
+      {
+        "date": "2026-09-07",
+        "precision": "day",
+        "kind": "in_force",
+        "description": "Amendments in force.",
+        "confirmed": true
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.mjla.gov.om/decrees/ar/1/show/1463",
+        "publisher": "Ministry of Justice and Legal Affairs, Oman (official gazette)",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      },
+      {
+        "url": "https://www.mjla.gov.om/legislation/1",
+        "publisher": "Ministry of Justice and Legal Affairs, Oman (official gazette)",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      },
+      {
+        "url": "https://www.mjla.gov.om/decisions/ar/1085/show/1841",
+        "publisher": "Ministry of Justice and Legal Affairs, Oman (official gazette)",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      },
+      {
+        "url": "https://www.mjla.gov.om/decisions/ar/1085/show/1985",
+        "publisher": "Ministry of Justice and Legal Affairs, Oman (official gazette)",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      },
+      {
+        "url": "https://www.mjla.gov.om/decisions/1085",
+        "publisher": "Ministry of Justice and Legal Affairs, Oman (official gazette)",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      },
+      {
+        "url": "https://decree.om/2022/rd20220006/",
+        "publisher": "Decree.om (private legal publisher)",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      },
+      {
+        "url": "https://decree.om/2026/rd20260068/",
+        "publisher": "Decree.om (private legal publisher)",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      },
+      {
+        "url": "https://cms.law/en/omn/legal-updates/oman-personal-data-protection-law-entering-the-enforcement-phase",
+        "publisher": "CMS",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "In force date of the original law (13 February 2023) not re-checked.",
+        "Ministerial Decision 448/2025 on permit fees is listed but was not opened.",
+        "Regulations also allow administrative fines up to OMR 2,000 per violation, warnings and permit suspension or cancellation.",
+        "Penalty figures to be checked against the primary text by the reviewer before display."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "OM"
+          }
+        ]
+      },
+      {
+        "confidence": "applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "OM"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "OM",
+              "GCC"
+            ]
+          },
+          {
+            "fact": "personal_data_role",
+            "op": "in",
+            "value": [
+              "controller",
+              "processor",
+              "both"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "OM",
+              "GCC"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "OM-02",
+    "jurisdiction": "OM",
+    "zone": null,
+    "short_name": "Oman Cybercrime Law",
+    "official_name": "Law on Combating Information Technology Crimes (Royal Decree 61/2026)",
+    "issuer": "Sultanate of Oman (Royal Decree)",
+    "regulator": "Ministry of Transport, Communications and Information Technology (MTCIT), the ministry named in the law",
+    "kinds": [
+      "cybersecurity"
+    ],
+    "topic_column": "security_baseline",
+    "force": "law",
+    "state": "in_force",
+    "state_note": "In force since 8 June 2026, the day after publication in Official Gazette No. 1651. It repeals the 2011 law (Royal Decree 12/2011), so any content citing the old law is out of date.",
+    "tier": "most_should_know",
+    "applies_to": "Everyone in Oman, and offences touching Omani systems or interests.",
+    "duties": [
+      {
+        "topic": "baseline",
+        "text": "Know the offences for unauthorised access and data and system interference.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "Know the offences for misuse of electronic payment means and for unlawful content.",
+        "clock_hours": null
+      },
+      {
+        "topic": "incident_reporting",
+        "text": "Keep digital evidence intact after an incident, since the law protects it.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "none",
+      "note": "No certification."
+    },
+    "iso27001": {
+      "relation": "not_relevant",
+      "note": "Not relevant."
+    },
+    "soc2": {
+      "relation": "not_relevant",
+      "note": "Not relevant."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2026-06-01",
+        "precision": "day",
+        "kind": "enacted",
+        "description": "Royal Decree 61/2026 issued.",
+        "confirmed": true
+      },
+      {
+        "date": "2026-06-08",
+        "precision": "day",
+        "kind": "in_force",
+        "description": "Law in force after publication in Official Gazette No. 1651 of 7 June 2026.",
+        "confirmed": true
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.mjla.gov.om/decrees/ar/1/show/1456",
+        "publisher": "Ministry of Justice and Legal Affairs, Oman (official gazette)",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      },
+      {
+        "url": "https://www.mjla.gov.om/legislation/1",
+        "publisher": "Ministry of Justice and Legal Affairs, Oman (official gazette)",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      },
+      {
+        "url": "https://decree.om/2026/rd20260061/",
+        "publisher": "Decree.om (private legal publisher)",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      },
+      {
+        "url": "https://www.lexisnexis.com/blogs/ae-legal/b/insights/posts/oman-sultan-haitham-issues-new-cybercrime-law",
+        "publisher": "LexisNexis Middle East",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.zawya.com/en/economy/gcc/oman-motcit-law-on-combating-cybercrime-enhances-national-digital-security-e78yr2st",
+        "publisher": "Zawya",
+        "kind": "tracker",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://timesofoman.com//article/172462-new-cyberlaw-to-enhance-omans-digital-security",
+        "publisher": "Times of Oman",
+        "kind": "tracker",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "Service provider duties in the body of the law were not reviewed."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "OM"
+          }
+        ]
+      },
+      {
+        "confidence": "applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "OM"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "OM",
+              "GCC"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "OM-03",
+    "jurisdiction": "OM",
+    "zone": null,
+    "short_name": "Electronic Transactions Law",
+    "official_name": "Electronic Transactions Law (Royal Decree 39/2025)",
+    "issuer": "Sultanate of Oman (Royal Decree)",
+    "regulator": null,
+    "kinds": [
+      "identity"
+    ],
+    "topic_column": "sector",
+    "force": "law",
+    "state": "in_force",
+    "state_note": "In force since April 2025, replacing Royal Decree 69/2008.",
+    "tier": "sector",
+    "applies_to": "Electronic transactions and e-signatures, and providers of trust services and digital identity.",
+    "duties": [
+      {
+        "topic": "baseline",
+        "text": "Rely on the legal recognition of electronic records and signatures.",
+        "clock_hours": null
+      },
+      {
+        "topic": "registration",
+        "text": "As a trust service provider, get a licence.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "As a trust service or electronic identity provider, meet the duties the law sets for those services.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "registration",
+      "note": "Licensing for trust service providers."
+    },
+    "iso27001": {
+      "relation": "not_relevant",
+      "note": "Not reviewed in the sources."
+    },
+    "soc2": {
+      "relation": "not_relevant",
+      "note": "Not reviewed in the sources."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2025-04",
+        "precision": "month",
+        "kind": "in_force",
+        "description": "Law effective, replacing Royal Decree 69/2008.",
+        "confirmed": true
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://decree.om/2025/rd20250039/",
+        "publisher": "Decree.om (private legal publisher)",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://tamimi.com/news/oman-enacts-new-electronic-transactions-law-royal-decree-no-39-2025",
+        "publisher": "Al Tamimi and Company",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "ISO 27001 and SOC 2 relation not reviewed.",
+        "Regulator not named in the notes.",
+        "The profile has no trust service question, so the trigger only says check."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "OM"
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "OM"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "OM-04",
+    "jurisdiction": "OM",
+    "zone": null,
+    "short_name": "CBO cybersecurity framework",
+    "official_name": "Central Bank of Oman regulatory framework for cybersecurity and resilience (exact name not confirmed)",
+    "issuer": "Central Bank of Oman (CBO)",
+    "regulator": "Central Bank of Oman (CBO)",
+    "kinds": [
+      "financial_sector",
+      "cybersecurity",
+      "resilience"
+    ],
+    "topic_column": "sector",
+    "force": "regulator_rule",
+    "state": "unverified",
+    "state_note": "Reportedly issued in September 2023 and in force per press and vendor reports, but the official text, its exact name and its deadlines were not found.",
+    "tier": "sector",
+    "applies_to": "Banks, finance and leasing companies, payment service providers and money exchange companies licensed by CBO.",
+    "duties": [
+      {
+        "topic": "baseline",
+        "text": "Cover the reported pillars, including governance, risk management, incident response and resilience.",
+        "clock_hours": null
+      },
+      {
+        "topic": "third_parties",
+        "text": "Manage third party and supply chain risk.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "Run a maturity self-assessment.",
+        "clock_hours": null
+      },
+      {
+        "topic": "incident_reporting",
+        "text": "Report to CBO as the framework requires.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "none",
+      "note": "No certification."
+    },
+    "iso27001": {
+      "relation": "not_relevant",
+      "note": "Relation not confirmed."
+    },
+    "soc2": {
+      "relation": "not_relevant",
+      "note": "Relation not confirmed."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2023-09",
+        "precision": "month",
+        "kind": "enacted",
+        "description": "Framework reportedly issued.",
+        "confirmed": false
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.omanobserver.om/article/1143236/business/banking/oman-banks-financial-firms-mandated-to-strengthen-cyber-security",
+        "publisher": "Oman Observer",
+        "kind": "tracker",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://cbo.gov.om/Documents/OPRF/CBODataandInformationSecuritySpecification.pdf",
+        "publisher": "Central Bank of Oman",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://darkreading.com/dr-global/strengthening-omans-economic-backbone",
+        "publisher": "Dark Reading",
+        "kind": "tracker",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "Official text, name and deadlines not found; every detail is reported (unverified).",
+        "Related CBO instruments not reviewed: open banking framework with a data and information security specification, digital banks framework (effective 1 June 2025), outsourcing rules that allow cloud."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "OM"
+          },
+          {
+            "fact": "regulator_licences",
+            "op": "any_in",
+            "value": [
+              "financial",
+              "payments"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "OM"
+            ]
+          },
+          {
+            "fact": "regulator_licences",
+            "op": "any_in",
+            "value": [
+              "financial",
+              "payments"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "OM"
+          },
+          {
+            "fact": "industry",
+            "op": "in",
+            "value": [
+              "financial_services",
+              "payments"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "OM"
+            ]
+          },
+          {
+            "fact": "industry",
+            "op": "in",
+            "value": [
+              "financial_services",
+              "payments"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "OM-05",
+    "jurisdiction": "OM",
+    "zone": null,
+    "short_name": "Oman government security controls",
+    "official_name": "Cyber Defence Centre, National Cyber Security Strategy 2026 to 2030 and government Basic Security Controls",
+    "issuer": "Cyber Defence Centre (Royal Decree 64/2020, under the Internal Security Service); the 2017 controls came from the former Information Technology Authority",
+    "regulator": "Cyber Defence Centre",
+    "kinds": [
+      "cybersecurity",
+      "government_sector"
+    ],
+    "topic_column": "security_baseline",
+    "force": "regulator_rule",
+    "state": "unverified",
+    "state_note": "The Cyber Defence Centre is the national cyber authority and a strategy for 2026 to 2030 was launched in 2026. The only Basic Security Controls found are a 2017 guideline for government bodies, so whether current binding controls exist is unverified.",
+    "tier": "sector",
+    "applies_to": "Government entities and operators of critical national infrastructure; suppliers through contracts.",
+    "duties": [
+      {
+        "topic": "baseline",
+        "text": "Apply minimum security controls to government systems.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "Follow Cyber Defence Centre directions.",
+        "clock_hours": null
+      },
+      {
+        "topic": "incident_reporting",
+        "text": "Report incidents to the national CERT bodies (OCERT).",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "none",
+      "note": "No certification confirmed."
+    },
+    "iso27001": {
+      "relation": "helps_partially",
+      "note": "The government guidance drew on ISO 27001; not confirmed for current rules."
+    },
+    "soc2": {
+      "relation": "not_relevant",
+      "note": "Not mentioned."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [],
+    "sources": [
+      {
+        "url": "https://decree.om/2020/rd20200064/",
+        "publisher": "Decree.om (private legal publisher)",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.moheri.gov.om/userupload/Policy/Basic%20Security%20Controls%20Guidelines.pdf",
+        "publisher": "Omani government site (moheri.gov.om)",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://timesofoman.com/article/176173-oman-launches-national-cyber-security-strategy-20262030-to-strengthen-digital-resilience",
+        "publisher": "Times of Oman",
+        "kind": "tracker",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "Whether the Cyber Defence Centre has issued current binding controls for government is unverified; the controls found date from 2017."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "OM"
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "government"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "OM"
+            ]
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "government"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "OM"
+          },
+          {
+            "fact": "critical_or_provider",
+            "op": "eq",
+            "value": "yes"
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "OM"
+            ]
+          },
+          {
+            "fact": "critical_or_provider",
+            "op": "eq",
+            "value": "yes"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "OM-06",
+    "jurisdiction": "OM",
+    "zone": null,
+    "short_name": "TRA cloud and data centre regulation",
+    "official_name": "TRA Decision No. 1152/2/19/2024-20 regulating cloud computing and data centre services",
+    "issuer": "Telecommunications Regulatory Authority (TRA)",
+    "regulator": "Telecommunications Regulatory Authority (TRA)",
+    "kinds": [
+      "telecom_sector"
+    ],
+    "topic_column": "data_location",
+    "force": "regulation",
+    "state": "in_force",
+    "state_note": "Issued in September 2024 and in force according to law firm summaries.",
+    "tier": "sector",
+    "applies_to": "Anyone providing cloud or data centre services in Oman, and through them customers holding higher classified data.",
+    "duties": [
+      {
+        "topic": "registration",
+        "text": "Get a TRA permit, valid three years and renewable, before providing cloud or data centre services.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "Classify data into the four sensitivity levels.",
+        "clock_hours": null
+      },
+      {
+        "topic": "location",
+        "text": "Keep level 3 data (regulated private sector such as energy, utilities and insurance) and level 4 data (state and financial sector) in Oman unless TRA approves.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "Meet the customer protection and security duties.",
+        "clock_hours": null
+      },
+      {
+        "topic": "penalties",
+        "text": "Breaches can lead to permit suspension or cancellation.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "registration",
+      "note": "TRA permit, three years and renewable."
+    },
+    "iso27001": {
+      "relation": "not_relevant",
+      "note": "Relation not confirmed."
+    },
+    "soc2": {
+      "relation": "not_relevant",
+      "note": "Relation not confirmed."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2024-09",
+        "precision": "month",
+        "kind": "enacted",
+        "description": "TRA decision issued (law firm summaries).",
+        "confirmed": false
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.lexisnexis.com/blogs/ae-legal/b/insights/posts/oman-new-cloud-computing-services-regulatory-bylaw",
+        "publisher": "LexisNexis Middle East",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.mondaq.com/data-protection/1540350/navigating-the-new-telecommunications-regulatory-authority-tra-regulations-on-cloud-computing-and-data-centres-in-oman-legal-implications-and-subscriber-challenges",
+        "publisher": "Mondaq",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://tra.gov.om/En/GeneratedPage.jsp?menu=22",
+        "publisher": "Telecommunications Regulatory Authority",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "Known only through law firm summaries.",
+        "MTCIT cloud first and data classification policies for government were not found (unverified).",
+        "ISO 27001 and SOC 2 relation not confirmed."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "OM"
+          },
+          {
+            "fact": "critical_or_provider",
+            "op": "eq",
+            "value": "yes"
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "OM"
+            ]
+          },
+          {
+            "fact": "critical_or_provider",
+            "op": "eq",
+            "value": "yes"
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "OM"
+          },
+          {
+            "fact": "industry",
+            "op": "in",
+            "value": [
+              "energy_utilities",
+              "insurance",
+              "financial_services"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "OM"
+            ]
+          },
+          {
+            "fact": "industry",
+            "op": "in",
+            "value": [
+              "energy_utilities",
+              "insurance",
+              "financial_services"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "data_hosting_regions",
+            "op": "any_in",
+            "value": [
+              "OM",
+              "GCC"
+            ]
+          },
+          {
+            "fact": "industry",
+            "op": "in",
+            "value": [
+              "energy_utilities",
+              "insurance",
+              "financial_services"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]

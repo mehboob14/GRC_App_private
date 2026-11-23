@@ -87,7 +87,7 @@ function toCsv(controls: Control[]): string {
     "Design",
     "Status",
     "Owner",
-    "Criteria",
+    "Requirements",
   ];
   // Quote every field and double any embedded quote — a control description
   // routinely contains commas, and an export that corrupts on them is worse

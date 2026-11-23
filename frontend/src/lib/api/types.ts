@@ -10,7 +10,8 @@ export type BuiltInRoleName =
   | "Security Officer"
   | "Privacy Officer"
   | "Engineering Lead"
-  | "Business Operations/Finance Lead";
+  | "Business Operations/Finance Lead"
+  | "Compliance Manager";
 
 export const PERMISSION_KEYS = [
   "tenant:read",
@@ -326,9 +327,66 @@ export type CompanyProfile = {
   regulatory_scope: string | null;
   privacy_policy_url: string | null;
   terms_url: string | null;
+  registered_address: string | null;
+  /** Typed answers to the profile questions, keyed by question (guided onboarding PR-1). */
+  answers: ProfileAnswers;
+  status: "draft" | "confirmed";
+  version: number;
+  confirmed_by_membership_id: string | null;
+  confirmed_at: string | null;
+  core_answered: number;
+  core_total: number;
 };
 
-export type CompanyProfilePatch = Partial<Omit<CompanyProfile, "tenant_id">>;
+export type ProfileAnswer = string | number | string[];
+export type ProfileAnswers = Record<string, ProfileAnswer>;
+
+export type CompanyProfilePatch = Partial<
+  Omit<
+    CompanyProfile,
+    | "tenant_id"
+    | "answers"
+    | "status"
+    | "version"
+    | "confirmed_by_membership_id"
+    | "confirmed_at"
+    | "core_answered"
+    | "core_total"
+  >
+> & {
+  /** A patch: a key with null clears that answer; keys not sent are untouched. */
+  answers?: Record<string, ProfileAnswer | null>;
+};
+
+export type ProfileQuestionKind =
+  | "text"
+  | "one"
+  | "many"
+  | "tri"
+  | "country"
+  | "countries"
+  | "regions"
+  | "month";
+
+export type ProfileQuestion = {
+  key: string;
+  label: string;
+  kind: ProfileQuestionKind;
+  used_for: string;
+  core: boolean;
+  options: { value: string; label: string }[];
+  show_if: { key: string; equals: string[]; contains: string | null }[];
+};
+
+export type ProfileSection = { key: string; title: string; questions: ProfileQuestion[] };
+
+export type ProfileVersion = {
+  version: number;
+  answers: ProfileAnswers;
+  details: Record<string, string | null>;
+  confirmed_by_membership_id: string | null;
+  confirmed_at: string;
+};
 
 export type SmtpConfig = {
   host: string | null;
@@ -569,6 +627,17 @@ export type Engagement = {
   scope_statement: string | null;
   certification_body: string | null;
   audit_on: string | null;
+  as_of_date: string | null;
+  target_date: string | null;
+  driver: string | null;
+  live_date: string | null;
+  /** `chosen`, `undecided` (still deciding) or `unknown` (not answered). */
+  assessor: "chosen" | "undecided" | "unknown";
+  assessor_accreditation_body: string | null;
+  assessor_contact: string | null;
+  assessor_engaged_on: string | null;
+  scope_statement_ai?: boolean;
+  scope_statement_approved_at?: string | null;
 };
 
 export type EngagementPut = {
@@ -582,7 +651,85 @@ export type EngagementPut = {
   scope_statement?: string | null;
   certification_body?: string | null;
   audit_on?: string | null;
+  /** Not sent means unchanged on the server for these (EN-2, EN-3). */
+  as_of_date?: string | null;
+  target_date?: string | null;
+  driver?: string | null;
+  live_date?: string | null;
+  assessor?: "chosen" | "undecided";
+  assessor_accreditation_body?: string | null;
+  assessor_contact?: string | null;
+  assessor_engaged_on?: string | null;
 };
+
+export type ScopeItemKind =
+  | "service"
+  | "legal_entity"
+  | "site"
+  | "environment"
+  | "system"
+  | "vendor"
+  | "people_group"
+  | "data_type";
+
+/** A scope item shared by every framework; in or out is decided per framework (SC-0). */
+export type ScopeItem = {
+  id: string;
+  kind: ScopeItemKind;
+  name: string;
+  origin: "manual" | "suggested";
+  /** This framework's decision; null until someone decides. */
+  in_scope: boolean | null;
+  reason: string | null;
+  decided_at: string | null;
+  others: { framework_code: string; in_scope: boolean }[];
+};
+
+export type Milestone = {
+  kind: string;
+  label: string;
+  planned_on: string | null;
+  actual_on: string | null;
+  /** The date lives on the engagement and is edited in audit details. */
+  from_engagement: boolean;
+};
+
+export type EngagementCycle = {
+  id: string;
+  name: string;
+  audit_type: AuditType;
+  status: string;
+  is_current: boolean;
+  window_start: string | null;
+  window_end: string | null;
+  as_of_date: string | null;
+  audit_on: string | null;
+  certification_body: string | null;
+  created_at: string;
+};
+
+export type PeriodChange = { occurred_at: string; object_type: string; action: string; summary: string };
+
+export type CommitmentSource = "contract" | "service_levels" | "privacy_notice" | "website" | "other";
+
+export type Commitment = {
+  id: string;
+  statement: string;
+  source_kind: CommitmentSource;
+  source_ref: string | null;
+  points_at: string[];
+};
+
+export type EngagementVendor = {
+  vendor_id: string;
+  name: string;
+  tier: string | null;
+  role: "subservice" | "supplier";
+  method: "carve_out" | "included" | null;
+  note: string | null;
+};
+
+export type ScopeSuggestion = { ref_type: "asset" | "vendor"; ref_id: string; name: string; kind: ScopeItemKind };
 
 export type ScopeCriterion = {
   id: string;

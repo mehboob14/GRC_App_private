@@ -1,0 +1,1703 @@
+[
+  {
+    "key": "SA-01",
+    "jurisdiction": "SA",
+    "zone": null,
+    "short_name": "Saudi PDPL",
+    "official_name": "Personal Data Protection Law (Royal Decree M/19 of 2021, amended by M/148 of 2023), its Implementing Regulations and the Regulation on Personal Data Transfer outside the Kingdom",
+    "issuer": "Kingdom of Saudi Arabia (Royal Decree)",
+    "regulator": "Saudi Data and AI Authority (SDAIA)",
+    "kinds": [
+      "privacy"
+    ],
+    "topic_column": "privacy",
+    "force": "law",
+    "state": "in_force",
+    "state_note": "In force since 14 September 2023 and enforced since the grace period ended on 14 September 2024; SDAIA had announced 48 enforcement decisions by January 2026. Draft amendments to the Implementing Regulations published 6 October 2026 (consultation closed 5 November 2026) are not final.",
+    "tier": "most_should_know",
+    "applies_to": "Any processing of personal data that takes place in the Kingdom, and processing of Saudi residents' data by entities abroad.",
+    "duties": [
+      {
+        "topic": "registration",
+        "text": "Register on SDAIA's National Data Governance Platform if you are one of the defined controllers.",
+        "clock_hours": null
+      },
+      {
+        "topic": "consent",
+        "text": "Have a lawful basis, mainly consent, publish a privacy notice, honour data subject rights, keep records of processing and run impact assessments.",
+        "clock_hours": null
+      },
+      {
+        "topic": "officer",
+        "text": "Appoint a data protection officer in the defined cases: large scale or sensitive processing, regular monitoring, or a public body.",
+        "clock_hours": null
+      },
+      {
+        "topic": "breach_notice",
+        "text": "Notify SDAIA through the National Data Governance Platform within 72 hours of a breach that may harm people or their rights, and tell the people affected without undue delay.",
+        "clock_hours": 72
+      },
+      {
+        "topic": "transfers",
+        "text": "Send data abroad only under the transfer regulation: adequacy, or safeguards such as standard clauses or binding rules, with a risk assessment.",
+        "clock_hours": null
+      },
+      {
+        "topic": "penalties",
+        "text": "Fines reach SAR 5 million, doubled for repeat breaches, and unlawful disclosure of sensitive data can be a crime.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "registration",
+      "note": "Defined controllers register on the National Data Governance Platform; SDAIA can license accreditation bodies but there is no general certificate."
+    },
+    "iso27001": {
+      "relation": "helps_partially",
+      "note": "Not referenced; security controls also have to meet National Cybersecurity Authority rules where those apply."
+    },
+    "soc2": {
+      "relation": "helps_partially",
+      "note": "Not referenced; security controls also have to meet National Cybersecurity Authority rules where those apply."
+    },
+    "helps": [
+      "DM-03",
+      "DM-15",
+      "DM-07",
+      "DM-12",
+      "DM-11",
+      "DM-05",
+      "DM-08",
+      "DM-16",
+      "DM-10",
+      "DM-06",
+      "DM-01",
+      "NS-01",
+      "NS-02",
+      "IAM-08"
+    ],
+    "not_covered": [
+      "Transfer outside the Kingdom",
+      "Officer appointment where required",
+      "Impact assessment",
+      "Registration duties"
+    ],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2023-09-14",
+        "precision": "day",
+        "kind": "in_force",
+        "description": "Law effective.",
+        "confirmed": true
+      },
+      {
+        "date": "2024-09-14",
+        "precision": "day",
+        "kind": "deadline",
+        "description": "One year grace period ends.",
+        "confirmed": true
+      },
+      {
+        "date": "2026-10-06",
+        "precision": "day",
+        "kind": "proposed",
+        "description": "SDAIA publishes draft amendments to the Implementing Regulations.",
+        "confirmed": true
+      },
+      {
+        "date": "2026-11-05",
+        "precision": "day",
+        "kind": "consultation_closes",
+        "description": "Consultation on the draft amendments closes.",
+        "confirmed": true
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://sdaia.gov.sa/en/SDAIA/about/Pages/RegulationsAndPolicies.aspx",
+        "publisher": "SDAIA",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "known_not_opened"
+      },
+      {
+        "url": "https://www.dlapiperdataprotection.com/index.html?c=SA&t=law",
+        "publisher": "DLA Piper",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.clydeco.com/en/insights/2026/03/enforcement-of-the-saudi-pdp-law",
+        "publisher": "Clyde and Co",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      },
+      {
+        "url": "https://www.clydeco.com/en/insights/2026/10/sdaia-publishes-draft-amendments-to-the-pdpl",
+        "publisher": "Clyde and Co",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.akingump.com/en/insights/alerts/saudi-data-and-ai-authority-proposes-amendments-to-implementing-regulations-of-the-pdpl-10-key-proposed-changes",
+        "publisher": "Akin Gump",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "Draft amendments not final: they would fold the controller register rules into the regulations, remove the harm test so the 72 hour clock covers any breach, add a storage-in-Kingdom expectation and set a 20 business day deadline to answer SDAIA.",
+        "sdaia.gov.sa refused connection; status rests on law firm summaries.",
+        "SDAIA began sending compliance verification forms to registered controllers in July 2026.",
+        "Penalty figures to be checked against the primary text by the reviewer before display."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "SA"
+          }
+        ]
+      },
+      {
+        "confidence": "applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "SA"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "SA",
+              "GCC"
+            ]
+          },
+          {
+            "fact": "personal_data_role",
+            "op": "in",
+            "value": [
+              "controller",
+              "processor",
+              "both"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "SA",
+              "GCC"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "SA-02",
+    "jurisdiction": "SA",
+    "zone": null,
+    "short_name": "NCA ECC",
+    "official_name": "NCA Essential Cybersecurity Controls (ECC-2:2024)",
+    "issuer": "National Cybersecurity Authority (NCA)",
+    "regulator": "National Cybersecurity Authority (NCA)",
+    "kinds": [
+      "cybersecurity",
+      "government_sector",
+      "critical_infrastructure"
+    ],
+    "topic_column": "security_baseline",
+    "force": "regulator_rule",
+    "state": "in_force",
+    "state_note": "ECC-2:2024 replaced ECC-1:2018 and is in force for government bodies and critical national infrastructure.",
+    "tier": "sector",
+    "applies_to": "Government bodies and their affiliates, inside and outside the Kingdom, and private organisations that own, operate or host critical national infrastructure. Others are encouraged to follow it; non-critical private companies have their own set (SA-05).",
+    "duties": [
+      {
+        "topic": "baseline",
+        "text": "Apply controls across governance, defence, resilience, and third party and cloud security.",
+        "clock_hours": null
+      },
+      {
+        "topic": "officer",
+        "text": "Run a cybersecurity function independent of IT, with qualified Saudi staff in key roles.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "Assess compliance periodically and report it to NCA, which also audits.",
+        "clock_hours": null
+      },
+      {
+        "topic": "incident_reporting",
+        "text": "Report incidents to NCA.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "none",
+      "note": "No public certificate; NCA measures compliance through self-assessment and audits."
+    },
+    "iso27001": {
+      "relation": "helps_partially",
+      "note": "Structured on international standards; ISO 27001 helps but NCA assesses against ECC with its own tools, not an ISO mapping."
+    },
+    "soc2": {
+      "relation": "helps_partially",
+      "note": "Not named; NCA assesses against ECC itself."
+    },
+    "helps": [
+      "GOV-10",
+      "GOV-13",
+      "GOV-15",
+      "GOV-17",
+      "GOV-18",
+      "GOV-21",
+      "GOV-05",
+      "HR-01",
+      "HR-08",
+      "LM-01",
+      "IAM-*",
+      "EP-*",
+      "NS-*",
+      "LM-02",
+      "LM-09",
+      "LM-11",
+      "GOV-16",
+      "LM-07",
+      "PE-02",
+      "DM-04",
+      "BC-01",
+      "BC-03",
+      "BC-07",
+      "BC-08",
+      "PE-01"
+    ],
+    "not_covered": [
+      "Roles held by nationals",
+      "Hosting inside the Kingdom",
+      "Reporting to the authority"
+    ],
+    "framework_code": null,
+    "milestones": [],
+    "sources": [
+      {
+        "url": "https://nca.gov.sa/ecc-en.pdf",
+        "publisher": "National Cybersecurity Authority (NCA)",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.clydeco.com/en/insights/2025/01/saudi-arabia-essential-cybersecurity-controls",
+        "publisher": "Clyde and Co",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://nca.gov.sa/en/regulatory-documents/controls-list/",
+        "publisher": "National Cybersecurity Authority (NCA)",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "ECC-2:2024 control count and Saudisation wording not confirmed.",
+        "nca.gov.sa refused connection.",
+        "helps uses family wildcards (IAM-*, EP-*, NS-*) because the source table names whole families.",
+        "SOC 2 relation is inferred; the sources do not mention SOC 2."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "SA"
+          },
+          {
+            "fact": "critical_or_provider",
+            "op": "eq",
+            "value": "yes"
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "SA"
+            ]
+          },
+          {
+            "fact": "critical_or_provider",
+            "op": "eq",
+            "value": "yes"
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "SA"
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "government"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "SA"
+            ]
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "government"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "SA",
+              "GCC"
+            ]
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "government"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "SA-03",
+    "jurisdiction": "SA",
+    "zone": null,
+    "short_name": "NCA CCC",
+    "official_name": "NCA Cloud Cybersecurity Controls (CCC-2:2024)",
+    "issuer": "National Cybersecurity Authority (NCA)",
+    "regulator": "National Cybersecurity Authority (NCA)",
+    "kinds": [
+      "cybersecurity"
+    ],
+    "topic_column": "security_baseline",
+    "force": "regulator_rule",
+    "state": "in_force",
+    "state_note": "First issued in 2020; CCC-2:2024 is reported as the current version.",
+    "tier": "sector",
+    "applies_to": "Cloud service providers serving in-scope entities (government and critical infrastructure), and those entities as cloud tenants, with separate control tracks for each.",
+    "duties": [
+      {
+        "topic": "baseline",
+        "text": "Extend the ECC controls for cloud: tenant isolation, key management, logging and personnel vetting.",
+        "clock_hours": null
+      },
+      {
+        "topic": "location",
+        "text": "Host government data according to its classification, including the data location rules.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "As a provider, have compliance assessed for NCA.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "attestation",
+      "note": "Provider compliance is assessed for NCA and cloud vendors publish attestations."
+    },
+    "iso27001": {
+      "relation": "not_a_substitute",
+      "note": "Providers typically hold ISO 27001 and 27017 alongside; not a substitute."
+    },
+    "soc2": {
+      "relation": "not_a_substitute",
+      "note": "Providers typically hold SOC 2 alongside; not a substitute."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [],
+    "sources": [
+      {
+        "url": "https://nca.gov.sa/en/regulatory-documents/controls-list/",
+        "publisher": "National Cybersecurity Authority (NCA)",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://securitywall.co/blog/ccc-cloud-cybersecurity-controls-saudi-arabia",
+        "publisher": "SecurityWall (vendor blog)",
+        "kind": "tracker",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "Current version (CCC-2:2024) reported, not confirmed."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "SA"
+          },
+          {
+            "fact": "critical_or_provider",
+            "op": "eq",
+            "value": "yes"
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "government"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "SA"
+            ]
+          },
+          {
+            "fact": "critical_or_provider",
+            "op": "eq",
+            "value": "yes"
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "government"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "SA"
+          },
+          {
+            "fact": "critical_or_provider",
+            "op": "eq",
+            "value": "yes"
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "SA"
+            ]
+          },
+          {
+            "fact": "critical_or_provider",
+            "op": "eq",
+            "value": "yes"
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "SA",
+              "GCC"
+            ]
+          },
+          {
+            "fact": "critical_or_provider",
+            "op": "eq",
+            "value": "yes"
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "government"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "SA-04",
+    "jurisdiction": "SA",
+    "zone": null,
+    "short_name": "NCA topic controls",
+    "official_name": "NCA topic-specific controls: CSCC-1:2019, DCC-1:2022, OTCC-1:2022, TCC-1:2021 and OSMACC-1:2021",
+    "issuer": "National Cybersecurity Authority (NCA)",
+    "regulator": "National Cybersecurity Authority (NCA)",
+    "kinds": [
+      "cybersecurity"
+    ],
+    "topic_column": "security_baseline",
+    "force": "regulator_rule",
+    "state": "in_force",
+    "state_note": "In force as extensions of ECC. NCA updated supporting tools and annexes in 2025; no new versions were found.",
+    "tier": "sector",
+    "applies_to": "The ECC population, each set where relevant: critical systems, classified data handling, industrial control systems in critical facilities, remote work and official social media accounts.",
+    "duties": [
+      {
+        "topic": "baseline",
+        "text": "For critical systems (CSCC), apply tighter controls such as stronger review cycles.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "For classified data (DCC), protect data according to its classification.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "For operational technology (OTCC), segregate networks and apply safety-linked controls.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "For remote work (TCC) and official social media accounts (OSMACC), apply the matching control set.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "none",
+      "note": "No certificate; mandatory for in-scope entities as ECC extensions."
+    },
+    "iso27001": {
+      "relation": "not_a_substitute",
+      "note": "Not a substitute; the OT annex follows IEC 62443 style practice."
+    },
+    "soc2": {
+      "relation": "not_a_substitute",
+      "note": "Not a substitute."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [],
+    "sources": [
+      {
+        "url": "https://nca.gov.sa/en/regulatory-documents/controls-list/cscc/",
+        "publisher": "National Cybersecurity Authority (NCA)",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://nca.gov.sa/en/regulatory-documents/controls-list/dcc/",
+        "publisher": "National Cybersecurity Authority (NCA)",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://nca.gov.sa/en/regulatory-documents/controls-list/otcc/",
+        "publisher": "National Cybersecurity Authority (NCA)",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "SOC 2 relation is inferred; the sources do not mention SOC 2."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "SA"
+          },
+          {
+            "fact": "critical_or_provider",
+            "op": "eq",
+            "value": "yes"
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "SA"
+            ]
+          },
+          {
+            "fact": "critical_or_provider",
+            "op": "eq",
+            "value": "yes"
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "SA"
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "government"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "SA"
+            ]
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "government"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "SA-05",
+    "jurisdiction": "SA",
+    "zone": null,
+    "short_name": "NCNICC",
+    "official_name": "NCA Non-CNI Private Sector Entities Cybersecurity Controls (NCNICC-1:2025)",
+    "issuer": "National Cybersecurity Authority (NCA)",
+    "regulator": "National Cybersecurity Authority (NCA)",
+    "kinds": [
+      "cybersecurity"
+    ],
+    "topic_column": "security_baseline",
+    "force": "regulator_rule",
+    "state": "in_force",
+    "state_note": "Binding once NCA notifies an entity; other private entities are expected to use it as good practice. The text sets no compliance deadline and carries no adoption date, and who has been notified is not public.",
+    "tier": "most_should_know",
+    "applies_to": "Private companies in the Kingdom that are not critical infrastructure and that NCA notifies, in two size categories: A, large (more than 250 full-time staff or more than SAR 200 million revenue), and B, small and medium (6 to 249 staff or SAR 3 million to 200 million revenue). Micro entities, the non-governmental sector, government and critical infrastructure are excluded.",
+    "duties": [
+      {
+        "topic": "baseline",
+        "text": "Category B: apply the 26 binding Cybersecurity Defense controls, including asset management, MFA for remote access and email, malware protection, email filtering with SPF, DKIM and DMARC, encryption, tested backups, patching and logging.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "Category A: apply all 65 binding controls, adding policies, risk methodology, awareness, third party contract clauses, cloud and hosting rules, penetration testing and web application protection.",
+        "clock_hours": null
+      },
+      {
+        "topic": "officer",
+        "text": "Category A: run a cybersecurity function independent of IT that reports to the head of the entity, led and staffed in sensitive roles by full-time qualified Saudi nationals.",
+        "clock_hours": null
+      },
+      {
+        "topic": "third_parties",
+        "text": "Category A: subscribe to an NCA-licensed managed security operations centre.",
+        "clock_hours": null
+      },
+      {
+        "topic": "incident_reporting",
+        "text": "Report cybersecurity incidents to NCA and share threat information with it.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "Category A: have compliance reviewed independently as NCA approves; NCA can assess any notified entity by its own method and add controls.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "none",
+      "note": "No certificate."
+    },
+    "iso27001": {
+      "relation": "helps_partially",
+      "note": "Not referenced. Helps with governance and many technical controls, but not with Saudi staffing, NCA incident reporting, the NCA-licensed managed SOC or national cryptography standards."
+    },
+    "soc2": {
+      "relation": "helps_partially",
+      "note": "Not referenced; helps with technical controls but not with the Saudi-specific items."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2025-12-28",
+        "precision": "day",
+        "kind": "enacted",
+        "description": "Adoption date reported by law firms; it is not in the NCA text.",
+        "confirmed": false
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://cdn.nca.gov.sa/api/files/public/upload/721bed5c-5304-497c-a5ac-a92a049e6306_NCNICC-AR-.pdf",
+        "publisher": "National Cybersecurity Authority (NCA)",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      },
+      {
+        "url": "https://nca.gov.sa/en/regulatory-documents/controls-list/",
+        "publisher": "National Cybersecurity Authority (NCA)",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://cms.law/en/int/legal-updates/kingdom-of-saudi-arabia-issues-new-cybersecurity-controls-for-the-private-sector",
+        "publisher": "CMS",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://connectontech.bakermckenzie.com/saudi-arabia-cybersecurity-controls-for-private-entities/",
+        "publisher": "Baker McKenzie",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "Adoption date (28 December 2025) from law firms only.",
+        "Which companies NCA has notified is not public.",
+        "Arabic-reading counsel should confirm the exclusion wording for entities the text calls non-governmental (most likely the non-profit sector).",
+        "The code is sometimes misprinted as NCINCC.",
+        "Categories use full-time headcount and SAR revenue; the profile headcount bands only roughly match (201 to 500 straddles the 250 line, 1 to 10 includes micro entities).",
+        "SOC 2 relation is inferred; the sources do not mention SOC 2."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "SA"
+          },
+          {
+            "fact": "headcount_band",
+            "op": "in",
+            "value": [
+              "11_50",
+              "51_200",
+              "201_500",
+              "501_1000",
+              "over_1000"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "SA"
+            ]
+          },
+          {
+            "fact": "headcount_band",
+            "op": "in",
+            "value": [
+              "11_50",
+              "51_200",
+              "201_500",
+              "501_1000",
+              "over_1000"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "SA"
+          },
+          {
+            "fact": "headcount_band",
+            "op": "eq",
+            "value": "1_10"
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "SA"
+            ]
+          },
+          {
+            "fact": "headcount_band",
+            "op": "eq",
+            "value": "1_10"
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "SA",
+              "GCC"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "SA-06",
+    "jurisdiction": "SA",
+    "zone": null,
+    "short_name": "SAMA Cyber Security Framework",
+    "official_name": "SAMA Cyber Security Framework version 1.0 and related SAMA frameworks",
+    "issuer": "Saudi Central Bank (SAMA)",
+    "regulator": "Saudi Central Bank (SAMA)",
+    "kinds": [
+      "financial_sector",
+      "cybersecurity",
+      "resilience"
+    ],
+    "topic_column": "sector",
+    "force": "regulator_rule",
+    "state": "in_force",
+    "state_note": "Version 1.0 from May 2017 is in force and no version 2 was found. Related frameworks cover business continuity, IT governance, cyber resilience basics for newly licensed fintechs (2022) and counter-fraud.",
+    "tier": "sector",
+    "applies_to": "Banks, insurers and reinsurers, finance companies, credit bureaus and financial market infrastructure regulated by SAMA; fintechs through the Cyber Resilience Fundamental Requirements until they graduate to the full framework.",
+    "duties": [
+      {
+        "topic": "officer",
+        "text": "Set up cyber governance with a CISO role.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "Cover risk management, operations and technology controls, and third party security including cloud and outsourcing.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "Reach at least maturity level 3 on the 0 to 5 scale and submit periodic self-assessments, which are audited.",
+        "clock_hours": null
+      },
+      {
+        "topic": "incident_reporting",
+        "text": "Report incidents to SAMA.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "Test business continuity.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "Comply with PCI DSS and the SWIFT customer security controls where relevant.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "none",
+      "note": "No certificate; a maturity model with a required minimum of level 3."
+    },
+    "iso27001": {
+      "relation": "not_a_substitute",
+      "note": "Built on ISO 27001, NIST and PCI; ISO 27001 certification does not replace the SAMA self-assessment."
+    },
+    "soc2": {
+      "relation": "not_a_substitute",
+      "note": "Does not replace the SAMA self-assessment."
+    },
+    "helps": [
+      "GOV-02",
+      "GOV-10",
+      "GOV-17",
+      "GOV-21",
+      "HR-08",
+      "HR-09",
+      "GOV-05",
+      "GOV-06",
+      "GOV-13",
+      "GOV-18",
+      "GOV-19",
+      "GOV-20",
+      "IAM-*",
+      "SD-*",
+      "NS-*",
+      "EP-*",
+      "LM-*",
+      "BC-03",
+      "PE-02",
+      "PE-03",
+      "BC-05",
+      "BC-07",
+      "BC-08",
+      "PE-01"
+    ],
+    "not_covered": [
+      "Maturity level scoring",
+      "Payment system and electronic banking requirements",
+      "Regulator reporting"
+    ],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2017-05",
+        "precision": "month",
+        "kind": "enacted",
+        "description": "Cyber Security Framework version 1.0 issued.",
+        "confirmed": true
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.sama.gov.sa/en-US/Laws/FinanceRules/SAMA%20Cyber%20Security%20Framework%20v1.0%20final_updated.pdf",
+        "publisher": "Saudi Central Bank (SAMA)",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://rulebook.sama.gov.sa/en/entiresection/4498",
+        "publisher": "SAMA Rulebook",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://rulebook.sama.gov.sa/en/entiresection/3850",
+        "publisher": "SAMA Rulebook",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "helps uses family wildcards (IAM-*, SD-*, NS-*, EP-*, LM-*) because the source table names whole families.",
+        "SOC 2 relation is inferred; the sources do not mention SOC 2."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "SA"
+          },
+          {
+            "fact": "regulator_licences",
+            "op": "any_in",
+            "value": [
+              "financial",
+              "payments",
+              "insurance"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "SA"
+            ]
+          },
+          {
+            "fact": "regulator_licences",
+            "op": "any_in",
+            "value": [
+              "financial",
+              "payments",
+              "insurance"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "SA"
+          },
+          {
+            "fact": "industry",
+            "op": "in",
+            "value": [
+              "financial_services",
+              "payments",
+              "insurance"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "SA"
+            ]
+          },
+          {
+            "fact": "industry",
+            "op": "in",
+            "value": [
+              "financial_services",
+              "payments",
+              "insurance"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "SA",
+              "GCC"
+            ]
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "banks_insurers"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "SA-07",
+    "jurisdiction": "SA",
+    "zone": null,
+    "short_name": "CST cloud regulations",
+    "official_name": "CST Cloud Computing Services Provisioning Regulations (version 4)",
+    "issuer": "Communications, Space and Technology Commission (CST, formerly CITC)",
+    "regulator": "Communications, Space and Technology Commission (CST)",
+    "kinds": [],
+    "topic_column": "data_location",
+    "force": "regulation",
+    "state": "in_force",
+    "state_note": "Version 4 has been in force since 10 October 2023, replacing the Cloud Computing Regulatory Framework version 3 (2020).",
+    "tier": "sector",
+    "applies_to": "Cloud service providers offering services to customers in the Kingdom, and their customers when placing classified data.",
+    "duties": [
+      {
+        "topic": "registration",
+        "text": "Register with CST as a cloud provider; one qualifying category limits a provider to individuals and private sector customers.",
+        "clock_hours": null
+      },
+      {
+        "topic": "location",
+        "text": "Handle customer data under the national classification scheme, with government and sensitive classes kept on suitably registered in-Kingdom services.",
+        "clock_hours": null
+      },
+      {
+        "topic": "breach_notice",
+        "text": "Notify CST and customers of breaches.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "Meet the contract and content transparency duties.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "registration",
+      "note": "Provider registration with CST."
+    },
+    "iso27001": {
+      "relation": "not_relevant",
+      "note": "Relation not confirmed."
+    },
+    "soc2": {
+      "relation": "not_relevant",
+      "note": "Relation not confirmed."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2023-10-10",
+        "precision": "day",
+        "kind": "in_force",
+        "description": "Version 4 in force.",
+        "confirmed": true
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.cst.gov.sa/en/regulations-and-licenses/regulations/Document-1550",
+        "publisher": "Communications, Space and Technology Commission",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://cst.gov.sa/en/services/licensing/Documents/CCSPR2_En.pdf",
+        "publisher": "Communications, Space and Technology Commission",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://chambers.com/practice-guides/guides/cloud-computing-2026/saudi-arabia/trends-and-developments",
+        "publisher": "Chambers and Partners",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "No value in the kinds list fits a cloud provisioning rule, so kinds is empty.",
+        "ISO 27001 and SOC 2 relation not confirmed."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "SA"
+          },
+          {
+            "fact": "critical_or_provider",
+            "op": "eq",
+            "value": "yes"
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "SA"
+            ]
+          },
+          {
+            "fact": "critical_or_provider",
+            "op": "eq",
+            "value": "yes"
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "SA",
+              "GCC"
+            ]
+          },
+          {
+            "fact": "critical_or_provider",
+            "op": "eq",
+            "value": "yes"
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "data_hosting_regions",
+            "op": "any_in",
+            "value": [
+              "SA",
+              "GCC"
+            ]
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "government"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "SA-08",
+    "jurisdiction": "SA",
+    "zone": null,
+    "short_name": "NDMO standards",
+    "official_name": "NDMO National Data Management and Personal Data Protection Standards, National Data Governance Interim Regulations and data classification policy",
+    "issuer": "National Data Management Office (NDMO), part of SDAIA",
+    "regulator": "National Data Management Office (NDMO)",
+    "kinds": [
+      "government_sector",
+      "privacy"
+    ],
+    "topic_column": "sector",
+    "force": "regulator_rule",
+    "state": "in_force",
+    "state_note": "Standards from 2021 and interim regulations from 2020, in force for government.",
+    "tier": "sector",
+    "applies_to": "Public entities and business partners that handle government data.",
+    "duties": [
+      {
+        "topic": "baseline",
+        "text": "Cover the 15 data management domains, including governance, catalogue, quality, classification, sharing and privacy.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "Classify data as top secret, secret, confidential or public and protect it accordingly.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "Report an annual compliance assessment to NDMO.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "Meet the open data and freedom of information duties.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "none",
+      "note": "No certification."
+    },
+    "iso27001": {
+      "relation": "not_relevant",
+      "note": "Not referenced."
+    },
+    "soc2": {
+      "relation": "not_relevant",
+      "note": "Not referenced."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [],
+    "sources": [
+      {
+        "url": "https://sdaia.gov.sa/en/SDAIA/about/Pages/RegulationsAndPolicies.aspx",
+        "publisher": "SDAIA",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "known_not_opened"
+      },
+      {
+        "url": "https://cms.law/en/int/expert-guides/cms-expert-guide-to-data-protection-and-cyber-security-laws/saudi-arabia",
+        "publisher": "CMS",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.moh.gov.sa/Ministry/OpenData/Documents/Data-Governance-Policy.pdf",
+        "publisher": "Saudi Ministry of Health",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": []
+    },
+    "triggers": [
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "SA"
+          },
+          {
+            "fact": "sensitive_data",
+            "op": "any_in",
+            "value": [
+              "government_classified"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "SA"
+            ]
+          },
+          {
+            "fact": "sensitive_data",
+            "op": "any_in",
+            "value": [
+              "government_classified"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "SA"
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "government"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "SA"
+            ]
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "government"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "SA",
+              "GCC"
+            ]
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "government"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "SA-09",
+    "jurisdiction": "SA",
+    "zone": null,
+    "short_name": "Anti-Cyber Crime Law",
+    "official_name": "Anti-Cyber Crime Law (Royal Decree M/17 of 8/3/1428H)",
+    "issuer": "Kingdom of Saudi Arabia (Royal Decree)",
+    "regulator": null,
+    "kinds": [
+      "cybersecurity"
+    ],
+    "topic_column": "security_baseline",
+    "force": "law",
+    "state": "in_force",
+    "state_note": "Issued 26 March 2007 and in force 120 days after publication in the Official Gazette; Article 6 was amended by Royal Decree M/54 of 22/7/1436H (2015), according to the UN SHERLOC database.",
+    "tier": "most_should_know",
+    "applies_to": "Everyone in the Kingdom.",
+    "duties": [
+      {
+        "topic": "baseline",
+        "text": "Know the offences for unauthorised access, interception and data interference.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "Know the offences for fraud and unlawful content.",
+        "clock_hours": null
+      },
+      {
+        "topic": "penalties",
+        "text": "Penalties include fines and imprisonment.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "none",
+      "note": "No certification."
+    },
+    "iso27001": {
+      "relation": "not_relevant",
+      "note": "Not relevant."
+    },
+    "soc2": {
+      "relation": "not_relevant",
+      "note": "Not relevant."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2007-03-26",
+        "precision": "day",
+        "kind": "enacted",
+        "description": "Royal Decree M/17 issued; in force 120 days after gazette publication.",
+        "confirmed": true
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.wipo.int/wipolex/en/legislation/details/14570",
+        "publisher": "WIPO Lex (copy of the official translation)",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      },
+      {
+        "url": "https://www.cst.gov.sa/en/RulesandSystems/CITCSystem/Pages/CybercrimesAct.aspx",
+        "publisher": "Communications, Space and Technology Commission",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "known_not_opened"
+      },
+      {
+        "url": "https://laws.boe.gov.sa",
+        "publisher": "Saudi Bureau of Experts",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "known_not_opened"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "Saudi official sites refused connection; the law was checked only on WIPO's copy of the official translation.",
+        "The 2015 amendment rests on a summary of the UN SHERLOC database."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "SA"
+          }
+        ]
+      },
+      {
+        "confidence": "applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "SA"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "SA",
+              "GCC"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]

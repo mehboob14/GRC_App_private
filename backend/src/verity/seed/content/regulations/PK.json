@@ -1,0 +1,1464 @@
+[
+  {
+    "key": "PK-01",
+    "jurisdiction": "PK",
+    "zone": null,
+    "short_name": "PECA",
+    "official_name": "Prevention of Electronic Crimes Act 2016, as amended by the Prevention of Electronic Crimes (Amendment) Act 2025",
+    "issuer": "Parliament of Pakistan; Ministry of Information Technology and Telecommunication (MoITT)",
+    "regulator": "Pakistan Telecommunication Authority (content) and the National Cyber Crime Investigation Agency (investigations)",
+    "kinds": [
+      "cybersecurity",
+      "privacy"
+    ],
+    "topic_column": "security_baseline",
+    "force": "law",
+    "state": "in_force",
+    "state_note": "In force. The 2025 amendment (Act No. II of 2025, assented 29 January 2025) added a false information offence and a social media regulator structure; it faces court challenges, but in February 2026 the Islamabad High Court said it cannot be suspended by injunction (press).",
+    "tier": "most_should_know",
+    "applies_to": "Every person and organisation in Pakistan, and offences against Pakistani systems or people committed from abroad. Telecoms, hosting providers and platforms carry specific service provider duties.",
+    "duties": [
+      {
+        "topic": "baseline",
+        "text": "Know the criminal offences for unauthorised access, data interference, electronic fraud and identity misuse.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "As a service provider, retain traffic data for at least one year.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "As a service provider, cooperate with authorised requests from investigators and keep them confidential.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "Expect PTA orders to remove or block unlawful online content.",
+        "clock_hours": null
+      },
+      {
+        "topic": "consent",
+        "text": "Do not disclose identity or personal data without authorisation; it is an offence and the nearest thing to a privacy rule in force.",
+        "clock_hours": null
+      },
+      {
+        "topic": "penalties",
+        "text": "The new false information offence carries up to three years in prison and a fine up to PKR 2 million.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "none",
+      "note": "No certification."
+    },
+    "iso27001": {
+      "relation": "not_relevant",
+      "note": "Not referenced."
+    },
+    "soc2": {
+      "relation": "not_relevant",
+      "note": "Not referenced."
+    },
+    "helps": [
+      "LM-02",
+      "LM-07",
+      "CS-07",
+      "DM-09",
+      "GOV-05",
+      "IAM-08"
+    ],
+    "not_covered": [
+      "Service provider duties to keep traffic data and assist investigations, which need legal reading",
+      "General data protection, since this is a cybercrime law and no data protection statute is in force"
+    ],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2025-01-29",
+        "precision": "day",
+        "kind": "enacted",
+        "description": "Amendment Act No. II of 2025 assented and in force at once.",
+        "confirmed": true
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://na.gov.pk/uploads/documents/6791f889296d0_770.pdf",
+        "publisher": "National Assembly of Pakistan",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://na.gov.pk/uploads/documents/679b243193585_457.pdf",
+        "publisher": "National Assembly of Pakistan",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.dawn.com/news/1888590",
+        "publisher": "Dawn",
+        "kind": "tracker",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.legal500.com/firms/34834-yousaf-amanat-associates/c-pakistan/news-and-developments/prevention-of-the-electronic-crimes-act-amendment-act-2025",
+        "publisher": "Legal 500 (Yousaf Amanat and Associates)",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://nchr.gov.pk/wp-content/uploads/2026/02/NCHR-Report-on-PECA-and-the-2025-Amendments-Act.pdf",
+        "publisher": "National Commission for Human Rights",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "Whether the new social media authority has been set up is not confirmed.",
+        "The official PDF could not be opened (certificate error); details rest on summaries and press.",
+        "Challenges are pending in several High Courts.",
+        "Penalty figures to be checked against the primary text by the reviewer before display."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "PK"
+          }
+        ]
+      },
+      {
+        "confidence": "applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "PK"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "PK"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "PK-02",
+    "jurisdiction": "PK",
+    "zone": null,
+    "short_name": "Personal Data Protection Bill",
+    "official_name": "Personal Data Protection Bill (draft; 2023 version approved in principle by the Federal Cabinet)",
+    "issuer": "Ministry of Information Technology and Telecommunication (MoITT)",
+    "regulator": "None yet; the draft would create a national data protection commission",
+    "kinds": [
+      "privacy"
+    ],
+    "topic_column": "privacy",
+    "force": "law",
+    "state": "draft",
+    "state_note": "Not law. Drafts date from 2018 and the 2023 draft was approved in principle by the Federal Cabinet, but no source found it enacted as of late 2026. Shown as a watch item.",
+    "tier": "most_should_know",
+    "applies_to": "If enacted as drafted, controllers and processors handling personal data of people in Pakistan, including foreign entities.",
+    "duties": [
+      {
+        "topic": "consent",
+        "text": "Would require consent-led processing of personal data.",
+        "clock_hours": null
+      },
+      {
+        "topic": "breach_notice",
+        "text": "Would require breach notification to the national commission (72 hours in earlier drafts).",
+        "clock_hours": null
+      },
+      {
+        "topic": "location",
+        "text": "Would require local storage for critical personal data.",
+        "clock_hours": null
+      },
+      {
+        "topic": "registration",
+        "text": "Would require registration with the commission, backed by fines.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "none",
+      "note": "Not law."
+    },
+    "iso27001": {
+      "relation": "not_relevant",
+      "note": "Nothing binding; drafts referred to recognised security standards."
+    },
+    "soc2": {
+      "relation": "not_relevant",
+      "note": "Nothing binding."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2026-06",
+        "precision": "month",
+        "kind": "proposed",
+        "description": "MoITT publishes a separate draft Data Governance Policy for feedback.",
+        "confirmed": true
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://chambers.com/practice-guides/guides/data-protection-privacy-2026/pakistan/law-and-practice",
+        "publisher": "Chambers and Partners",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://tribune.com.pk/story/2625470/pakistan-can-no-longer-wait-for-personal-data-protection-law",
+        "publisher": "The Express Tribune",
+        "kind": "tracker",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://moitt.gov.pk/SiteImage/Policies/Data%20Governance%20Policy%20June%202026.pdf",
+        "publisher": "Ministry of IT and Telecommunication",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "Draft obligations may change; they are shown as would require, never as duties.",
+        "Dawn (7 August 2026) and the Chambers 2026 guide agree it is still a draft; the MoITT PDF could not be opened (certificate error)."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "PK"
+          }
+        ]
+      },
+      {
+        "confidence": "applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "PK"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "PK"
+            ]
+          },
+          {
+            "fact": "personal_data_role",
+            "op": "in",
+            "value": [
+              "controller",
+              "processor",
+              "both"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "PK-03",
+    "jurisdiction": "PK",
+    "zone": null,
+    "short_name": "SBP ETGRM framework",
+    "official_name": "State Bank of Pakistan Enterprise Technology Governance and Risk Management Framework (BPRD Circular No. 05 of 2017)",
+    "issuer": "State Bank of Pakistan",
+    "regulator": "State Bank of Pakistan",
+    "kinds": [
+      "financial_sector",
+      "cybersecurity",
+      "payments"
+    ],
+    "topic_column": "sector",
+    "force": "regulator_rule",
+    "state": "in_force",
+    "state_note": "In force since 30 May 2017, with later circulars layered on. A separate Technology Risk Management Framework for payment institutions was issued in 2025 (payments department circular 04 of 2025).",
+    "tier": "sector",
+    "applies_to": "Banks, development finance institutions and microfinance banks regulated by SBP; payment system operators, payment service providers and electronic money institutions under the 2025 framework.",
+    "duties": [
+      {
+        "topic": "board_duty",
+        "text": "Keep board-approved technology governance.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "Run an information security function with policies, and assess technology risk.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "Maintain IT service continuity and disaster recovery, plus change and project controls.",
+        "clock_hours": null
+      },
+      {
+        "topic": "incident_reporting",
+        "text": "Report significant incidents to SBP.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "Run periodic IT audits.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "none",
+      "note": "No certificate; SBP inspects."
+    },
+    "iso27001": {
+      "relation": "helps_partially",
+      "note": "The framework points to international standards such as the ISO 27000 family and COBIT; ISO 27001 certification is common among banks but not mandated as far as confirmed."
+    },
+    "soc2": {
+      "relation": "helps_partially",
+      "note": "Not named by SBP; useful only as general evidence of security controls."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2017-05-30",
+        "precision": "day",
+        "kind": "enacted",
+        "description": "ETGRM framework issued.",
+        "confirmed": true
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.sbp.org.pk/bprd/2017/C5.htm",
+        "publisher": "State Bank of Pakistan",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.sbp.org.pk/press/2017/Pr-Ent-Risk-Govr-30-May-17.pdf",
+        "publisher": "State Bank of Pakistan",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.sbp.org.pk/psd/2025/C4.htm",
+        "publisher": "State Bank of Pakistan",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "SBP payment card rules are said to expect PCI DSS for card data; not re-verified.",
+        "A 2026 SBP cyber circular was seen only as a fragment.",
+        "SOC 2 relation is inferred; the sources do not mention SOC 2."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "PK"
+          },
+          {
+            "fact": "regulator_licences",
+            "op": "any_in",
+            "value": [
+              "financial",
+              "payments"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "PK"
+            ]
+          },
+          {
+            "fact": "regulator_licences",
+            "op": "any_in",
+            "value": [
+              "financial",
+              "payments"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "PK"
+          },
+          {
+            "fact": "industry",
+            "op": "in",
+            "value": [
+              "financial_services",
+              "payments"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "PK"
+            ]
+          },
+          {
+            "fact": "industry",
+            "op": "in",
+            "value": [
+              "financial_services",
+              "payments"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "PK-04",
+    "jurisdiction": "PK",
+    "zone": null,
+    "short_name": "SBP cloud outsourcing framework",
+    "official_name": "State Bank of Pakistan Framework on Outsourcing to Cloud Service Providers (BPRD Circular No. 01 of 2023) and Framework for Risk Management in Outsourcing Arrangements",
+    "issuer": "State Bank of Pakistan",
+    "regulator": "State Bank of Pakistan",
+    "kinds": [
+      "financial_sector"
+    ],
+    "topic_column": "sector",
+    "force": "regulator_rule",
+    "state": "in_force",
+    "state_note": "In force since 16 January 2023, building on the 2019 outsourcing framework and a 2020 cloud circular; existing arrangements had to comply by 31 December 2023.",
+    "tier": "sector",
+    "applies_to": "SBP-regulated entities that use cloud (SaaS, PaaS or IaaS, domestic or offshore) and, through contracts, their cloud and technology vendors.",
+    "duties": [
+      {
+        "topic": "assessment",
+        "text": "Classify each workload as material or non-material by risk.",
+        "clock_hours": null
+      },
+      {
+        "topic": "location",
+        "text": "Keep core banking systems out of offshore outsourcing.",
+        "clock_hours": null
+      },
+      {
+        "topic": "board_duty",
+        "text": "Do due diligence and get board approval for cloud outsourcing.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "Encrypt and segregate data.",
+        "clock_hours": null
+      },
+      {
+        "topic": "third_parties",
+        "text": "Write SBP access and audit rights and an exit plan into the contract.",
+        "clock_hours": null
+      },
+      {
+        "topic": "registration",
+        "text": "Get SBP approval or notify SBP, depending on materiality.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "none",
+      "note": "No certification."
+    },
+    "iso27001": {
+      "relation": "helps_partially",
+      "note": "Vendor certifications and independent audit reports are expected as due diligence evidence; check the framework for the exact list."
+    },
+    "soc2": {
+      "relation": "helps_partially",
+      "note": "Independent audit reports are expected as due diligence evidence; check the framework for the exact list."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2023-01-16",
+        "precision": "day",
+        "kind": "enacted",
+        "description": "Cloud outsourcing framework issued.",
+        "confirmed": true
+      },
+      {
+        "date": "2023-12-31",
+        "precision": "day",
+        "kind": "deadline",
+        "description": "Existing arrangements must comply.",
+        "confirmed": true
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.sbp.org.pk/bprd/2023/C1.htm",
+        "publisher": "State Bank of Pakistan",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.brecorder.com/news/40220652/sbp-issues-framework-on-outsourcing-to-csps",
+        "publisher": "Business Recorder",
+        "kind": "tracker",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.ibanet.org/outsourcing-IT-services-in-the-financial-sector",
+        "publisher": "International Bar Association",
+        "kind": "tracker",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "Exact data residency wording not opened.",
+        "Which vendor certifications count as due diligence evidence not checked."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "PK"
+          },
+          {
+            "fact": "regulator_licences",
+            "op": "any_in",
+            "value": [
+              "financial",
+              "payments"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "PK"
+            ]
+          },
+          {
+            "fact": "regulator_licences",
+            "op": "any_in",
+            "value": [
+              "financial",
+              "payments"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "PK"
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "banks_insurers"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "PK"
+            ]
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "banks_insurers"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "PK"
+            ]
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "banks_insurers"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "PK-05",
+    "jurisdiction": "PK",
+    "zone": null,
+    "short_name": "SECP insurance cyber guidelines",
+    "official_name": "SECP Guidelines on Cybersecurity Framework for the Insurance Sector (2020)",
+    "issuer": "Securities and Exchange Commission of Pakistan (SECP)",
+    "regulator": "Securities and Exchange Commission of Pakistan (SECP)",
+    "kinds": [
+      "financial_sector",
+      "cybersecurity"
+    ],
+    "topic_column": "sector",
+    "force": "regulator_rule",
+    "state": "in_force",
+    "state_note": "Issued 17 March 2020 and effective 1 July 2020 as guidelines, so treat them as expected practice. Cloud Adoption Guidelines published as a draft in 2021 were never found in final form.",
+    "tier": "sector",
+    "applies_to": "Insurers and takaful operators registered under the Insurance Ordinance 2000.",
+    "duties": [
+      {
+        "topic": "board_duty",
+        "text": "Keep a board-approved cyber policy.",
+        "clock_hours": null
+      },
+      {
+        "topic": "officer",
+        "text": "Appoint a chief information security officer.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "Run an annual cyber risk assessment and report it to SECP.",
+        "clock_hours": null
+      },
+      {
+        "topic": "incident_reporting",
+        "text": "Keep incident response and reporting arrangements.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "Run security awareness training.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "none",
+      "note": "No certification."
+    },
+    "iso27001": {
+      "relation": "helps_partially",
+      "note": "The guidelines point to recognised standards such as NIST CSF as a starting point."
+    },
+    "soc2": {
+      "relation": "helps_partially",
+      "note": "Not named; the guidelines point to recognised standards such as NIST CSF."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2020-03-17",
+        "precision": "day",
+        "kind": "enacted",
+        "description": "Guidelines issued.",
+        "confirmed": true
+      },
+      {
+        "date": "2020-07-01",
+        "precision": "day",
+        "kind": "in_force",
+        "description": "Guidelines effective.",
+        "confirmed": true
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.secp.gov.pk/wp-content/uploads/2020/03/Press-Release-March-17-SECP-Introduces-Cyber-Security-Framework-for-Insurance-Sector.pdf",
+        "publisher": "SECP",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.dawn.com/news/1638408",
+        "publisher": "Dawn",
+        "kind": "tracker",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "Whether SECP has binding cyber rules for brokers and non-bank finance companies is unverified.",
+        "SOC 2 relation is inferred; the sources do not mention SOC 2."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "PK"
+          },
+          {
+            "fact": "regulator_licences",
+            "op": "any_in",
+            "value": [
+              "insurance"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "PK"
+            ]
+          },
+          {
+            "fact": "regulator_licences",
+            "op": "any_in",
+            "value": [
+              "insurance"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "PK"
+          },
+          {
+            "fact": "industry",
+            "op": "eq",
+            "value": "insurance"
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "PK"
+            ]
+          },
+          {
+            "fact": "industry",
+            "op": "eq",
+            "value": "insurance"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "PK-06",
+    "jurisdiction": "PK",
+    "zone": null,
+    "short_name": "PTA CTDISR",
+    "official_name": "Critical Telecom Data and Infrastructure Security Regulations 2020 (CTDISR)",
+    "issuer": "Pakistan Telecommunication Authority (PTA)",
+    "regulator": "Pakistan Telecommunication Authority (PTA)",
+    "kinds": [
+      "telecom_sector",
+      "cybersecurity",
+      "critical_infrastructure"
+    ],
+    "topic_column": "sector",
+    "force": "regulation",
+    "state": "in_force",
+    "state_note": "The 2020 Regulations are in force. A revised CTDISR 2025 was consulted on from August to November 2025 and PTA describes it as replacing the 2020 text, but no gazette notification or start date was confirmed.",
+    "tier": "sector",
+    "applies_to": "PTA licensees (mobile, fixed, internet and infrastructure providers) and their critical data and systems.",
+    "duties": [
+      {
+        "topic": "baseline",
+        "text": "Apply baseline security controls across governance, access control, monitoring and incident response.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "Pass an annual compliance audit by a PTA-approved auditor under PTA's Cyber Security Framework.",
+        "clock_hours": null
+      },
+      {
+        "topic": "incident_reporting",
+        "text": "Report incidents to the telecom CERT; the 2025 draft would require a first report within 24 hours and a detailed report in five working days.",
+        "clock_hours": null
+      },
+      {
+        "topic": "location",
+        "text": "The 2025 draft would require local hosting of critical data unless PTA approves a transfer.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "The 2025 draft would add zero trust access, cloud and supply chain controls and a connection to the national telecom security operations centre.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "attestation",
+      "note": "Annual compliance audits by PTA-approved auditors; no certificate."
+    },
+    "iso27001": {
+      "relation": "not_a_substitute",
+      "note": "The regulations were modelled on international standards; certification does not replace the PTA audit."
+    },
+    "soc2": {
+      "relation": "not_a_substitute",
+      "note": "Does not replace the PTA audit."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2025-11",
+        "precision": "month",
+        "kind": "consultation_closes",
+        "description": "Consultation on CTDISR 2025 ends (it ran from August to November 2025).",
+        "confirmed": true
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.pta.gov.pk/assets/media/2025-10-16-CS-Annual-Report-2024-25.pdf",
+        "publisher": "Pakistan Telecommunication Authority",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://propakistani.pk/2025/11/04/pta-to-enforce-data-localization-and-stricter-cybersecurity-for-telcos/",
+        "publisher": "ProPakistani",
+        "kind": "tracker",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://pta.gov.pk/category/pta-formulates-cyber-security-framework-758783286-2023-06-01",
+        "publisher": "Pakistan Telecommunication Authority",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "CTDISR 2025 gazette notification and effective date not confirmed (unverified); its duties are shown as would require."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "PK"
+          },
+          {
+            "fact": "regulator_licences",
+            "op": "any_in",
+            "value": [
+              "telecom"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "PK"
+            ]
+          },
+          {
+            "fact": "regulator_licences",
+            "op": "any_in",
+            "value": [
+              "telecom"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "PK"
+          },
+          {
+            "fact": "industry",
+            "op": "eq",
+            "value": "telecom"
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "PK"
+            ]
+          },
+          {
+            "fact": "industry",
+            "op": "eq",
+            "value": "telecom"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "PK-07",
+    "jurisdiction": "PK",
+    "zone": null,
+    "short_name": "PISF-2026 and CERT Rules",
+    "official_name": "National Cyber Security Policy 2021, Computer Emergency Response Team Rules 2023 and Pakistan Information Security Framework 2026 (PISF-2026)",
+    "issuer": "Ministry of Information Technology and Telecommunication (policy and notification); PKCERT (framework)",
+    "regulator": "National CERT (PKCERT) and sectoral CERTs",
+    "kinds": [
+      "cybersecurity",
+      "government_sector",
+      "critical_infrastructure"
+    ],
+    "topic_column": "security_baseline",
+    "force": "regulation",
+    "state": "in_force_phasing",
+    "state_note": "The policy and the CERT Rules (SRO 1394(I)/2023) are in force. MoITT's notification of 13 October 2026 made PISF-2026, approved by the Federal Cabinet on 10 August 2026, binding on the bodies in its scope, with 12, 15 or 18 month timelines whose start date is not stated.",
+    "tier": "most_should_know",
+    "applies_to": "Federal and provincial ministries, divisions and departments, autonomous bodies, state corporations, CERTs and designated critical information infrastructure. Private companies are not in scope unless designated as critical information infrastructure; suppliers are reached only through the supply chain controls of those bodies.",
+    "duties": [
+      {
+        "topic": "baseline",
+        "text": "Cover the 13 PISF control documents, from governance, asset and risk management and identity and access to incident response, supply chain and audit, plus critical infrastructure protection where designated.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "Self-assess maturity on eight parameters scored 0 to 3; the total sets a timeline of 12 months (Established), 15 months (Developing) or 18 months (Foundational).",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "Large or constrained bodies may extend by three to six months on formal justification approved by their own executive authority, not by PKCERT.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "Record risk acceptance and target dates for deferred controls, and reassess gap closure and maturity periodically.",
+        "clock_hours": null
+      },
+      {
+        "topic": "incident_reporting",
+        "text": "Report incidents to the relevant CERT under the CERT Rules 2023.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "none",
+      "note": "No certification scheme; bodies without in-house capacity may use PKCERT-authorised firms and accredited consultants."
+    },
+    "iso27001": {
+      "relation": "helps_partially",
+      "note": "Annex II counts formal adoption of ISO/IEC 27001 toward the maturity score, so it helps reach a shorter timeline tier; it does not replace the PISF controls."
+    },
+    "soc2": {
+      "relation": "not_relevant",
+      "note": "Not mentioned in PISF."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2023-10-03",
+        "precision": "day",
+        "kind": "enacted",
+        "description": "CERT Rules 2023 published in the gazette.",
+        "confirmed": true
+      },
+      {
+        "date": "2026-08-10",
+        "precision": "day",
+        "kind": "enacted",
+        "description": "Federal Cabinet approves PISF-2026 as the national baseline information security standard.",
+        "confirmed": true
+      },
+      {
+        "date": "2026-10-13",
+        "precision": "day",
+        "kind": "obligation_starts",
+        "description": "MoITT notification makes the PISF implementation timeline binding on bodies in scope; when the 12 to 18 month clock starts is not stated.",
+        "confirmed": true
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://pkcert.gov.pk/grc-policies",
+        "publisher": "PKCERT",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      },
+      {
+        "url": "https://pkcert.gov.pk/uploads/2026/03/PISF%20NOTIFICATION.pdf",
+        "publisher": "PKCERT",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      },
+      {
+        "url": "https://pkcert.gov.pk/uploads/2026/03/PISF-Introduction.pdf",
+        "publisher": "PKCERT",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      },
+      {
+        "url": "https://pkcert.gov.pk/uploads/2026/03/PISF%20ANNEX%20II.pdf",
+        "publisher": "PKCERT",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      },
+      {
+        "url": "https://moitt.gov.pk/SiteImage/Misc/files/National%20Cyber%20Security%20Policy%202021%20Final.pdf",
+        "publisher": "Ministry of IT and Telecommunication",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://pkcert.gov.pk/wp-content/uploads/2023/10/GAZETTE-CERT-Rules-2023.pdf",
+        "publisher": "PKCERT",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.moitt.gov.pk/Legislations",
+        "publisher": "Ministry of IT and Telecommunication",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://propakistani.pk/2026/08/11/pakistan-gets-cybersecurity-boost-with-new-framework-approval/",
+        "publisher": "ProPakistani",
+        "kind": "tracker",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.dawn.com/news/1958092",
+        "publisher": "Dawn",
+        "kind": "tracker",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "Start date of the 12, 15 or 18 month clock is not stated; if it runs from 13 October 2026 the earliest end would be about October 2027 (a reading, not the text). Show it undated until confirmed.",
+        "Publication of the notification in the Gazette of Pakistan Part I not confirmed.",
+        "The ministry has said PISF may extend to the private sector (press only, not an obligation).",
+        "A July 2026 PKCERT call for private security operations centres is not shown because no legal basis was cited.",
+        "A National Cyber Security Act creating a cybersecurity authority is a draft; reports that it passed conflict with later ministerial statements.",
+        "The gazette copy of the CERT Rules now returns 404."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "PK"
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "government"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "PK"
+            ]
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "government"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "PK"
+          },
+          {
+            "fact": "industry",
+            "op": "eq",
+            "value": "government_supplier"
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "PK"
+            ]
+          },
+          {
+            "fact": "industry",
+            "op": "eq",
+            "value": "government_supplier"
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "PK"
+          },
+          {
+            "fact": "critical_or_provider",
+            "op": "eq",
+            "value": "yes"
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "PK"
+            ]
+          },
+          {
+            "fact": "critical_or_provider",
+            "op": "eq",
+            "value": "yes"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "PK-08",
+    "jurisdiction": "PK",
+    "zone": null,
+    "short_name": "Cloud First Policy",
+    "official_name": "Pakistan Cloud First Policy 2022",
+    "issuer": "Ministry of Information Technology and Telecommunication (MoITT)",
+    "regulator": "MoITT; a Cloud Office is meant to accredit providers",
+    "kinds": [
+      "government_sector"
+    ],
+    "topic_column": "sector",
+    "force": "regulator_rule",
+    "state": "unverified",
+    "state_note": "Approved in 2022 and described as in force as government policy, but the policy text was not found, so its details are unverified.",
+    "tier": "sector",
+    "applies_to": "Public sector entities buying ICT, and cloud providers that want to serve them.",
+    "duties": [
+      {
+        "topic": "baseline",
+        "text": "Expect public sector buyers to prefer cloud for new ICT.",
+        "clock_hours": null
+      },
+      {
+        "topic": "location",
+        "text": "Expect data to be classified and placed on a matching cloud tier, with sensitive classes on government or locally hosted cloud.",
+        "clock_hours": null
+      },
+      {
+        "topic": "registration",
+        "text": "Expect provider accreditation by the Cloud Office before serving public bodies.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "registration",
+      "note": "A Cloud Office is meant to accredit providers."
+    },
+    "iso27001": {
+      "relation": "helps_partially",
+      "note": "Accreditation criteria reportedly use international certifications; not confirmed."
+    },
+    "soc2": {
+      "relation": "helps_partially",
+      "note": "Accreditation criteria reportedly use international certifications; not confirmed."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [],
+    "sources": [
+      {
+        "url": "https://moitt.gov.pk",
+        "publisher": "Ministry of IT and Telecommunication",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "known_not_opened"
+      },
+      {
+        "url": "https://www.dawn.com/news/1958092",
+        "publisher": "Dawn",
+        "kind": "tracker",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "The policy text was not found; every detail here is unverified."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "PK"
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "government"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "PK"
+            ]
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "government"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "PK"
+          },
+          {
+            "fact": "industry",
+            "op": "eq",
+            "value": "government_supplier"
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "PK"
+            ]
+          },
+          {
+            "fact": "industry",
+            "op": "eq",
+            "value": "government_supplier"
+          }
+        ]
+      }
+    ]
+  }
+]

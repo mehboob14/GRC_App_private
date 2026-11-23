@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useWorkspaceFrameworks } from "@/features/compliance/use-frameworks";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -94,6 +95,7 @@ export function AssetsRegisterPage() {
   const queryClient = useQueryClient();
   const { addAsset, registerView } = useAssetsOutlet();
   const [filters, setFilters] = useEntryState<AssetFilters>("assets.filters", EMPTY);
+  const scopeFrameworks = (useWorkspaceFrameworks().data ?? []).filter((f) => f.added);
   const [page, setPage] = useEntryState("assets.page", 1);
   // Add asset lives in the layout; edit needs the row, so its drawer stays here.
   const [editingId, setEditingId] = useState<string | undefined>(undefined);
@@ -217,6 +219,14 @@ export function AssetsRegisterPage() {
           values={filters.environments}
           onChange={(v) => set("environments", v as Environment[])}
         />
+        {scopeFrameworks.length ? (
+          <FilterFacet
+            label="In scope for"
+            options={scopeFrameworks.map((f) => ({ value: f.code, label: f.name }))}
+            values={filters.in_scope_for ? [filters.in_scope_for] : []}
+            onChange={(v) => set("in_scope_for", v[v.length - 1] ?? null)}
+          />
+        ) : null}
         <FilterFacet
           label="Classification"
           options={DATA_CLASSIFICATIONS.map((c) => ({ value: c, label: CLASSIFICATION_META[c].label }))}

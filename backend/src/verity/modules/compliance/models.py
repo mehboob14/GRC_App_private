@@ -52,9 +52,11 @@ from sqlalchemy.sql.elements import conv
 
 from verity.db.base import (
     Base,
+    Integratable,
     TenantScoped,
     Timestamped,
     UUIDPrimaryKey,
+    integration_unique,
     status_check,
     tenant_index,
 )
@@ -524,6 +526,11 @@ class TenantFramework(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
     activated_by_membership_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("tenant_memberships.id", ondelete="SET NULL"), default=None
     )
+    deactivated_reason: Mapped[str | None] = mapped_column(default=None)
+    deactivated_at: Mapped[datetime | None] = mapped_column(default=None)
+    deactivated_by_membership_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("tenant_memberships.id", ondelete="SET NULL"), default=None
+    )
 
     __table_args__ = (
         status_check("tenant_frameworks", "status", TENANT_FRAMEWORK_STATUSES),
@@ -572,6 +579,33 @@ class RequirementApplicability(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
             f"RequirementApplicability(tenant_id={self.tenant_id!r}, "
             f"requirement_id={self.requirement_id!r}, applicable={self.applicable!r})"
         )
+
+
+class ApplicabilityVersion(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
+    """An approved, frozen Statement of Applicability (guided onboarding SC-6, EN-11).
+
+    Approving freezes the statement as it stands, numbered per framework, so the auditor can be
+    shown the version that was in force on a date. Append only: a later change is a new version.
+    """
+
+    __tablename__ = "applicability_versions"
+
+    framework_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("frameworks.id", ondelete="RESTRICT")
+    )
+    number: Mapped[int]
+    framework_version: Mapped[str]
+    scope_statement: Mapped[str | None] = mapped_column(default=None)
+    rows: Mapped[list[dict[str, Any]]] = mapped_column(postgresql.JSONB())
+    note: Mapped[str | None] = mapped_column(default=None)
+    approved_by_membership_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("tenant_memberships.id", ondelete="SET NULL"), default=None
+    )
+
+    __table_args__ = (
+        CheckConstraint("number > 0", name=conv("ck_applicability_versions__number_positive")),
+        tenant_index("applicability_versions", "framework_id", "number", unique=True),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -629,10 +663,44 @@ class Engagement(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
     # own words, who audits it and when.
     scope_statement: Mapped[str | None] = mapped_column(default=None)
     certification_body: Mapped[str | None] = mapped_column(default=None)
+    """The outside party: the certification body, or the CPA firm for SOC 2."""
     audit_on: Mapped[date | None] = mapped_column(default=None)
+    # Guided onboarding EN-2, EN-3 (migration 6b8df681a7aa).
+    as_of_date: Mapped[date | None] = mapped_column(default=None)
+    """SOC 2 Type 1 only: the date the opinion is given as of."""
+    target_date: Mapped[date | None] = mapped_column(default=None)
+    driver: Mapped[str | None] = mapped_column(default=None)
+    live_date: Mapped[date | None] = mapped_column(default=None)
+    """Certification frameworks: the day the management system went live."""
+    assessor_state: Mapped[str] = mapped_column(default="unknown", server_default=text("'unknown'"))
+    assessor_accreditation_body: Mapped[str | None] = mapped_column(default=None)
+    assessor_contact: Mapped[str | None] = mapped_column(default=None)
+    assessor_engaged_on: Mapped[date | None] = mapped_column(default=None)
+    is_current: Mapped[bool] = mapped_column(default=True, server_default=text("true"))
+    """False for an earlier cycle kept as history (EN-1)."""
+    scope_statement_ai: Mapped[bool] = mapped_column(default=False, server_default=text("false"))
+    """The scope statement started as an AI draft (AI-2); shown until it is approved."""
+    scope_statement_approved_at: Mapped[datetime | None] = mapped_column(default=None)
+    scope_statement_approved_by_membership_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("tenant_memberships.id", ondelete="SET NULL"), default=None
+    )
+    """EN-11: a scope statement counts once a named member approved this wording."""
+
+    @property
+    def assessor(self) -> str:
+        """``chosen``, ``undecided`` or ``unknown``. A body named before the state existed
+        counts as chosen."""
+        if self.assessor_state == "unknown" and (self.certification_body or "").strip():
+            return "chosen"
+        return self.assessor_state
 
     __table_args__ = (
         status_check("engagements", "audit_type", AUDIT_TYPES),
+        status_check("engagements", "assessor_state", ("unknown", "undecided", "chosen")),
+        CheckConstraint(
+            "audit_type = 'type_1' OR as_of_date IS NULL",
+            name=conv("ck_engagements__as_of_only_type_1"),
+        ),
         status_check("engagements", "status", ENGAGEMENT_STATUSES),
         # Type II observes a period, so it needs both bounds; Type I is a point
         # in time and needs neither. A half-specified window is a bug.
@@ -644,10 +712,288 @@ class Engagement(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
             "window_end IS NULL OR window_start IS NULL OR window_end >= window_start",
             name=conv("ck_engagements__window_ordered"),
         ),
-        UniqueConstraint(
-            "tenant_id", "framework_version_id", name="uq_engagements__tenant_framework_version"
+        # One current engagement per framework version; earlier cycles stay as history (EN-1).
+        Index(
+            "uq_engagements__tenant_id_framework_version_id_current",
+            "tenant_id",
+            "framework_version_id",
+            unique=True,
+            postgresql_where=text("is_current"),
         ),
     )
 
     def __repr__(self) -> str:
         return f"Engagement(tenant_id={self.tenant_id!r}, audit_type={self.audit_type!r})"
+
+
+SCOPE_ITEM_KINDS: Final[tuple[str, ...]] = (
+    "service",
+    "legal_entity",
+    "site",
+    "environment",
+    "system",
+    "vendor",
+    "people_group",
+    "data_type",
+)
+SCOPE_REF_TYPES: Final[tuple[str, ...]] = ("asset", "vendor", "group")
+
+
+class ScopeItem(UUIDPrimaryKey, TenantScoped, Timestamped, Integratable, Base):
+    """One thing that may be in an audit's scope, shared by every framework (decision D-6).
+
+    The list is the workspace's; whether an item is in or out is decided per framework in
+    ``ScopeDecision`` and is never one shared flag, because SOC 2 describes one system and an
+    ISO 27001 scope is often wider (guided onboarding SC-0). Retired with a reason, never
+    deleted (rule 4).
+    """
+
+    __tablename__ = "scope_items"
+
+    kind: Mapped[str]
+    name: Mapped[str]
+    ref_type: Mapped[str | None] = mapped_column(default=None)
+    """The record this item stands for, when it is one: an asset, a vendor or a group."""
+    ref_id: Mapped[uuid.UUID | None] = mapped_column(default=None)
+    origin: Mapped[str] = mapped_column(default="manual", server_default=text("'manual'"))
+    retired_at: Mapped[datetime | None] = mapped_column(default=None)
+    retired_reason: Mapped[str | None] = mapped_column(default=None)
+
+    __table_args__ = (
+        status_check("scope_items", "kind", SCOPE_ITEM_KINDS),
+        CheckConstraint(
+            "ref_type IS NULL OR ref_type IN ('asset', 'vendor', 'group')",
+            name=conv("ck_scope_items__ref_type_valid"),
+        ),
+        CheckConstraint(
+            "(ref_type IS NULL) = (ref_id IS NULL)", name=conv("ck_scope_items__ref_pair")
+        ),
+        CheckConstraint(
+            "retired_at IS NULL OR length(btrim(coalesce(retired_reason, ''))) > 0",
+            name=conv("ck_scope_items__retired_with_reason"),
+        ),
+        status_check("scope_items", "origin", ("manual", "suggested")),
+        Index(
+            "uq_scope_items__tenant_id_ref_type_ref_id",
+            "tenant_id",
+            "ref_type",
+            "ref_id",
+            unique=True,
+            postgresql_where=text("ref_id IS NOT NULL"),
+        ),
+        integration_unique("scope_items"),
+    )
+
+    def __repr__(self) -> str:
+        return f"ScopeItem(tenant_id={self.tenant_id!r}, kind={self.kind!r})"
+
+
+class ScopeDecision(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
+    """In or out, and why, for one scope item in one framework's audit (SC-0, SC-2)."""
+
+    __tablename__ = "scope_decisions"
+
+    scope_item_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("scope_items.id", ondelete="RESTRICT")
+    )
+    engagement_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("engagements.id", ondelete="RESTRICT")
+    )
+    in_scope: Mapped[bool]
+    reason: Mapped[str | None] = mapped_column(default=None)
+    decided_by_membership_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("tenant_memberships.id", ondelete="SET NULL"), default=None
+    )
+    decided_at: Mapped[datetime]
+
+    __table_args__ = (
+        CheckConstraint(
+            "in_scope OR length(btrim(coalesce(reason, ''))) > 0",
+            name=conv("ck_scope_decisions__out_needs_reason"),
+        ),
+        tenant_index("scope_decisions", "scope_item_id", "engagement_id", unique=True),
+        tenant_index("scope_decisions", "engagement_id"),
+    )
+
+    def __repr__(self) -> str:
+        return f"ScopeDecision(tenant_id={self.tenant_id!r}, in_scope={self.in_scope!r})"
+
+
+COMMITMENT_SOURCES: Final[tuple[str, ...]] = (
+    "contract",
+    "service_levels",
+    "privacy_notice",
+    "website",
+    "other",
+)
+
+
+class Commitment(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
+    """Something the company promises customers, and where it is written (SC-8).
+
+    One register for the workspace: the SOC 2 description reads it as the principal service
+    commitments and system requirements, the ISO context register as requirements of interested
+    parties. ``points_at`` names the SOC 2 categories or requirement keys it bears on.
+    """
+
+    __tablename__ = "commitments"
+
+    statement: Mapped[str]
+    source_kind: Mapped[str]
+    source_ref: Mapped[str | None] = mapped_column(default=None)
+    points_at: Mapped[list[str]] = mapped_column(
+        postgresql.JSONB(), default=list, server_default=text("'[]'::jsonb")
+    )
+    owner_membership_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("tenant_memberships.id", ondelete="SET NULL"), default=None
+    )
+    retired_at: Mapped[datetime | None] = mapped_column(default=None)
+    retired_reason: Mapped[str | None] = mapped_column(default=None)
+
+    __table_args__ = (
+        status_check("commitments", "source_kind", COMMITMENT_SOURCES),
+        CheckConstraint(
+            "jsonb_typeof(points_at) = 'array'", name=conv("ck_commitments__points_at_array")
+        ),
+        CheckConstraint(
+            "retired_at IS NULL OR length(btrim(coalesce(retired_reason, ''))) > 0",
+            name=conv("ck_commitments__retired_with_reason"),
+        ),
+        tenant_index("commitments", "created_at"),
+    )
+
+
+class EngagementVendor(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
+    """A vendor that counts for one audit (SC-9): a SOC 2 subservice organisation with its
+    method, or an ISO supplier inside the scope's dependencies. Removed with a reason."""
+
+    __tablename__ = "engagement_vendors"
+
+    engagement_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("engagements.id", ondelete="RESTRICT")
+    )
+    vendor_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("vendors.id", ondelete="RESTRICT"))
+    role: Mapped[str]
+    method: Mapped[str | None] = mapped_column(default=None)
+    note: Mapped[str | None] = mapped_column(default=None)
+    removed_at: Mapped[datetime | None] = mapped_column(default=None)
+    removed_reason: Mapped[str | None] = mapped_column(default=None)
+
+    __table_args__ = (
+        status_check("engagement_vendors", "role", ("subservice", "supplier")),
+        CheckConstraint(
+            "method IS NULL OR method IN ('carve_out', 'included')",
+            name=conv("ck_engagement_vendors__method_valid"),
+        ),
+        CheckConstraint(
+            "(role = 'subservice') = (method IS NOT NULL)",
+            name=conv("ck_engagement_vendors__method_for_subservice"),
+        ),
+        tenant_index("engagement_vendors", "engagement_id", "vendor_id", unique=True),
+    )
+
+
+class EngagementMilestone(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
+    """One dated step in an audit's plan, planned and actual (EN-4). Dates that already live
+    on the engagement (period, as of date, go live, audit date) are never copied here."""
+
+    __tablename__ = "engagement_milestones"
+
+    engagement_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("engagements.id", ondelete="RESTRICT")
+    )
+    kind: Mapped[str]
+    planned_on: Mapped[date | None] = mapped_column(default=None)
+    actual_on: Mapped[date | None] = mapped_column(default=None)
+
+    __table_args__ = (tenant_index("engagement_milestones", "engagement_id", "kind", unique=True),)
+
+
+# ---------------------------------------------------------------------------
+# Assurance records (guided onboarding EN-9, EN-10, CN-5, EX-2, EX-4)
+# ---------------------------------------------------------------------------
+
+ASSURANCE_KINDS: Final[tuple[str, ...]] = (
+    "internal_audit",
+    "management_review",
+    "external_stage",
+    "prior_report",
+    "prior_certificate",
+)
+ASSURANCE_STATUSES: Final[tuple[str, ...]] = ("planned", "held", "closed")
+FINDING_GRADES: Final[tuple[str, ...]] = ("major", "minor", "observation", "exception")
+
+
+class AssuranceRecord(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
+    """An internal audit, a management review, an outside audit stage, or a report or
+    certificate the company already holds. Closed, never deleted."""
+
+    __tablename__ = "assurance_records"
+
+    engagement_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("engagements.id", ondelete="RESTRICT")
+    )
+    kind: Mapped[str]
+    label: Mapped[str]
+    starts_on: Mapped[date | None] = mapped_column(default=None)
+    ends_on: Mapped[date | None] = mapped_column(default=None)
+    """For a certificate, its expiry; for a report, the end of the period it covers."""
+    performed_by_membership_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("tenant_memberships.id", ondelete="SET NULL"), default=None
+    )
+    performed_by_name: Mapped[str | None] = mapped_column(default=None)
+    performed_by_firm: Mapped[str | None] = mapped_column(default=None)
+    independence_confirmed_by_membership_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("tenant_memberships.id", ondelete="SET NULL"), default=None
+    )
+    scope_note: Mapped[str | None] = mapped_column(default=None)
+    document_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("documents.id", ondelete="SET NULL"), default=None
+    )
+    inputs: Mapped[dict[str, Any]] = mapped_column(
+        postgresql.JSONB(), default=dict, server_default=text("'{}'::jsonb")
+    )
+    status: Mapped[str] = mapped_column(default="planned", server_default=text("'planned'"))
+
+    __table_args__ = (
+        status_check("assurance_records", "kind", ASSURANCE_KINDS),
+        status_check("assurance_records", "status", ASSURANCE_STATUSES),
+        tenant_index("assurance_records", "engagement_id", "kind"),
+    )
+
+
+class AssuranceFinding(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
+    """What an auditor or reviewer found. The task carries the work; this carries what was said,
+    the response, the closure evidence and, for an outside body, when it verified the fix."""
+
+    __tablename__ = "assurance_findings"
+
+    record_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("assurance_records.id", ondelete="RESTRICT")
+    )
+    grade: Mapped[str]
+    summary: Mapped[str]
+    due_on: Mapped[date | None] = mapped_column(default=None)
+    owner_membership_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("tenant_memberships.id", ondelete="SET NULL"), default=None
+    )
+    response: Mapped[str | None] = mapped_column(default=None)
+    task_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("tasks.id", ondelete="SET NULL"), default=None
+    )
+    closed_on: Mapped[date | None] = mapped_column(default=None)
+    closure_evidence_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("evidence.id", ondelete="SET NULL"), default=None
+    )
+    verified_on: Mapped[date | None] = mapped_column(default=None)
+    verified_by_membership_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("tenant_memberships.id", ondelete="SET NULL"), default=None
+    )
+
+    __table_args__ = (
+        status_check("assurance_findings", "grade", FINDING_GRADES),
+        CheckConstraint(
+            "length(btrim(summary)) > 0", name=conv("ck_assurance_findings__summary_present")
+        ),
+        tenant_index("assurance_findings", "record_id"),
+    )

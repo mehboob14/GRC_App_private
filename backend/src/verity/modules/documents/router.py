@@ -27,6 +27,7 @@ from verity.modules.documents.models import CLASSIFICATIONS, DOC_TYPES, LIFECYCL
 from verity.modules.documents.schemas import (
     AcknowledgeCampaignRequest,
     ApprovalDecision,
+    ApprovedElsewhereRequest,
     ArchiveRequest,
     AssignApprovalRequest,
     CampaignCommentCreate,
@@ -41,6 +42,7 @@ from verity.modules.documents.schemas import (
     DocumentOut,
     DocumentUpdate,
     DocumentVocabularyOut,
+    MatchTemplateRequest,
     PendingApprovalOut,
     PendingCampaignOut,
     ReminderOut,
@@ -672,6 +674,53 @@ async def publish_document(
 ) -> DocumentOut:
     view = await document_service.publish(
         session, tenant_id=context.tenant_id, actor=_actor(principal), document_id=document_id
+    )
+    return DocumentOut.model_validate(view)
+
+
+@documents_router.post(
+    "/{document_id}/match-template",
+    response_model=DocumentOut,
+    summary="Match an uploaded document to a required document",
+)
+async def match_template(
+    document_id: uuid.UUID,
+    body: MatchTemplateRequest,
+    principal: Annotated[Principal, Depends(require_manage)],
+    context: Annotated[TenantContext, Depends(get_tenant_context)],
+    session: Annotated[AsyncSession, Depends(get_tenant_session)],
+) -> DocumentOut:
+    view = await document_service.match_template(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(principal),
+        document_id=document_id,
+        template_key=body.template_key,
+    )
+    return DocumentOut.model_validate(view)
+
+
+@documents_router.post(
+    "/{document_id}/approved-elsewhere",
+    response_model=DocumentOut,
+    summary="Confirm a document was approved before Verity, and when",
+)
+async def confirm_approved_elsewhere(
+    document_id: uuid.UUID,
+    body: ApprovedElsewhereRequest,
+    principal: Annotated[Principal, Depends(require_approve)],
+    context: Annotated[TenantContext, Depends(get_tenant_context)],
+    session: Annotated[AsyncSession, Depends(get_tenant_session)],
+) -> DocumentOut:
+    assert principal.membership_id is not None  # noqa: S101
+    view = await document_service.confirm_approved_elsewhere(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(principal),
+        membership_id=principal.membership_id,
+        document_id=document_id,
+        approved_on=body.approved_on,
+        template_key=body.template_key,
     )
     return DocumentOut.model_validate(view)
 

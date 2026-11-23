@@ -24,6 +24,12 @@ type SearchableSelectProps = {
   /** Custom row body, so callers can add avatars without a second component. */
   renderOption?: (option: SearchableOption) => ReactNode;
   align?: "start" | "end";
+  /** Replaces the plain "contains" search, e.g. a ranked or spelling tolerant one. */
+  filter?: (options: SearchableOption[], query: string) => SearchableOption[];
+  /** Shown when the search finds nothing; defaults to a plain "No matches" line. */
+  renderNoMatch?: (query: string) => ReactNode;
+  /** Keep the list open after a pick, for choosing several in a row. */
+  keepOpen?: boolean;
   disabled?: boolean;
   className?: string;
   contentClassName?: string;
@@ -49,6 +55,9 @@ export function SearchableSelect({
   renderValue,
   renderOption,
   align = "start",
+  filter,
+  renderNoMatch,
+  keepOpen = false,
   disabled,
   className,
   contentClassName,
@@ -69,6 +78,7 @@ export function SearchableSelect({
   const selected = options.find((option) => option.value === value) ?? null;
 
   const filtered = useMemo(() => {
+    if (filter) return filter(options, query);
     const q = query.trim().toLowerCase();
     if (!q) return options;
     return options.filter(
@@ -76,7 +86,7 @@ export function SearchableSelect({
         option.label.toLowerCase().includes(q) ||
         (option.sublabel ?? "").toLowerCase().includes(q),
     );
-  }, [options, query]);
+  }, [options, query, filter]);
 
   return (
     <DropdownMenuPrimitive.Root
@@ -169,16 +179,23 @@ export function SearchableSelect({
             ) : null}
 
             {filtered.length === 0 ? (
-              <p className="px-2.5 py-4 text-center text-caption text-text-subtle">
-                {options.length === 0
-                  ? "Nothing to choose from."
-                  : `No matches for “${query}”.`}
-              </p>
+              renderNoMatch && options.length > 0 ? (
+                renderNoMatch(query)
+              ) : (
+                <p className="px-2.5 py-4 text-center text-caption text-text-subtle">
+                  {options.length === 0
+                    ? "Nothing to choose from."
+                    : `No matches for “${query}”.`}
+                </p>
+              )
             ) : (
               filtered.map((option) => (
                 <DropdownMenuPrimitive.Item
                   key={option.value}
-                  onSelect={() => onChange(option.value)}
+                  onSelect={(event) => {
+                    if (keepOpen) event.preventDefault();
+                    onChange(option.value);
+                  }}
                   className={cn(
                     "flex cursor-pointer select-none items-center gap-2 rounded-xs px-2.5 py-1.5 text-body-md outline-none",
                     "data-[highlighted]:bg-surface-hover",

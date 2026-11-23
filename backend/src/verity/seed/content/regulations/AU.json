@@ -1,0 +1,2323 @@
+[
+  {
+    "key": "AU-01",
+    "jurisdiction": "AU",
+    "zone": null,
+    "short_name": "Privacy Act",
+    "official_name": "Privacy Act 1988 (Cth), Australian Privacy Principles and Notifiable Data Breaches scheme",
+    "issuer": "Parliament of Australia",
+    "regulator": "Office of the Australian Information Commissioner (OAIC)",
+    "kinds": [
+      "privacy"
+    ],
+    "topic_column": "privacy",
+    "force": "law",
+    "state": "in_force_phasing",
+    "state_note": "In force. The 2024 amending Act added new penalty tiers, a privacy tort from 10 June 2025 and automated decision disclosures from 10 December 2026; a second reform round (Tranche 2) is only an exposure draft.",
+    "tier": "most_should_know",
+    "applies_to": "Australian Government agencies and private organisations with annual turnover above AUD 3 million, plus some smaller ones whatever their size (health service providers, businesses that trade in personal information, credit reporting, Commonwealth contractors). It also reaches overseas entities that carry on business in Australia. Private employers' employee records are exempt today.",
+    "duties": [
+      {
+        "topic": "baseline",
+        "text": "Follow the 13 Australian Privacy Principles, including notice, purpose limits, access and correction, and accountability for personal information sent overseas.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "Take reasonable technical and organisational steps to secure personal information, and destroy or de-identify it once it is no longer needed.",
+        "clock_hours": null
+      },
+      {
+        "topic": "breach_notice",
+        "text": "Assess a suspected data breach within 30 days and, when serious harm is likely, notify the OAIC and the people affected as soon as practicable.",
+        "clock_hours": null
+      },
+      {
+        "topic": "consent",
+        "text": "Publish a privacy policy; from 10 December 2026 it has to describe automated decisions that significantly affect people.",
+        "clock_hours": null
+      },
+      {
+        "topic": "penalties",
+        "text": "Serious or repeated interferences with privacy can draw penalties up to the greater of AUD 50 million, three times the benefit, or 30 percent of adjusted turnover; lower tiers and infringement notices cover lesser breaches.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "none",
+      "note": "No certification exists under the Act, and no privacy officer is required by statute today."
+    },
+    "iso27001": {
+      "relation": "helps_partially",
+      "note": "Not referenced in the Act. OAIC guidance treats recognised standards as evidence of reasonable security steps, so it helps with APP 11 but not with the other principles; ISO/IEC 27701 is the closer fit."
+    },
+    "soc2": {
+      "relation": "helps_partially",
+      "note": "As for ISO 27001: evidence for the security principle (APP 11), not for the other privacy principles."
+    },
+    "helps": [
+      "DM-15",
+      "DM-07",
+      "DM-12",
+      "DM-09",
+      "DM-05",
+      "DM-11",
+      "DM-08",
+      "DM-16",
+      "IAM-08",
+      "NS-01",
+      "NS-02",
+      "DM-01",
+      "DM-02",
+      "LM-07"
+    ],
+    "not_covered": [
+      "Overseas disclosure accountability",
+      "Anonymity option",
+      "Direct marketing rules"
+    ],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2018-02-22",
+        "precision": "day",
+        "kind": "obligation_starts",
+        "description": "Notifiable Data Breaches scheme starts.",
+        "confirmed": true
+      },
+      {
+        "date": "2024-12-10",
+        "precision": "day",
+        "kind": "enacted",
+        "description": "Privacy and Other Legislation Amendment Act 2024 (Tranche 1) receives Royal Assent.",
+        "confirmed": true
+      },
+      {
+        "date": "2025-06-10",
+        "precision": "day",
+        "kind": "in_force",
+        "description": "Statutory tort for serious invasions of privacy commences.",
+        "confirmed": true
+      },
+      {
+        "date": "2026-06-05",
+        "precision": "day",
+        "kind": "consultation_closes",
+        "description": "Consultation on the Children's Online Privacy Code exposure draft closes.",
+        "confirmed": false
+      },
+      {
+        "date": "2026-09-18",
+        "precision": "day",
+        "kind": "consultation_closes",
+        "description": "Consultation on the Tranche 2 exposure draft (Privacy Amendment (Personal Data Protection) Bill 2026) closes.",
+        "confirmed": true
+      },
+      {
+        "date": "2026-12-10",
+        "precision": "day",
+        "kind": "obligation_starts",
+        "description": "Privacy policies have to disclose automated decisions that significantly affect people.",
+        "confirmed": true
+      },
+      {
+        "date": "2026-12-10",
+        "precision": "day",
+        "kind": "deadline",
+        "description": "OAIC due to register a Children's Online Privacy Code; no final registration found yet.",
+        "confirmed": true
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.legislation.gov.au/C2004A03712/latest/text",
+        "publisher": "Federal Register of Legislation",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "known_not_opened"
+      },
+      {
+        "url": "https://legislation.gov.au/C2024A00128/asmade/2024-12-10/text/original/epub/OEBPS/document_1/document_1.html",
+        "publisher": "Federal Register of Legislation",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      },
+      {
+        "url": "https://consultations.ag.gov.au/rights-and-protections/privacy-reform/",
+        "publisher": "Attorney-General's Department",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      },
+      {
+        "url": "https://www.oaic.gov.au/privacy/australian-privacy-principles",
+        "publisher": "OAIC",
+        "kind": "regulator_guidance",
+        "accessed_at": "2026-11-21",
+        "verified": "known_not_opened"
+      },
+      {
+        "url": "https://www.oaic.gov.au/privacy/notifiable-data-breaches",
+        "publisher": "OAIC",
+        "kind": "regulator_guidance",
+        "accessed_at": "2026-11-21",
+        "verified": "known_not_opened"
+      },
+      {
+        "url": "https://www.oaic.gov.au/privacy/privacy-registers/privacy-codes/childrens-online-privacy-code",
+        "publisher": "OAIC",
+        "kind": "regulator_guidance",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.allens.com.au/insights-news/insights/2026/09/a-new-era-for-privacy-what-the-proposed-privacy-act-reforms-mean-in-practice/",
+        "publisher": "Allens",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.bakermckenzie.com/en/insight/publications/2026/09/australia-privacy-reform-a-significant-expansion-of-privacy-framework",
+        "publisher": "Baker McKenzie",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.minterellison.com/articles/draft-tranche-2-privacy-reforms-what-they-mean-for-businesses",
+        "publisher": "MinterEllison",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "The 30 day assessment rule for suspected breaches rests on OAIC search summaries only; oaic.gov.au refused automated reading.",
+        "Children's Online Privacy Code: final registration and commencement date not found.",
+        "Tranche 2 is an exposure draft (consultation closed 18 September 2026) and would change exemptions, including employee records; not introduced or passed as far as found.",
+        "Penalty figures to be checked against the primary text by the reviewer before display.",
+        "The turnover test is in AUD and the revenue bands are in US dollars; the 1 to 10 million band cannot settle it, so that band only gives check."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "AU"
+          },
+          {
+            "fact": "revenue_band",
+            "op": "in",
+            "value": [
+              "10m_50m",
+              "50m_250m",
+              "over_250m"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AU"
+            ]
+          },
+          {
+            "fact": "revenue_band",
+            "op": "in",
+            "value": [
+              "10m_50m",
+              "50m_250m",
+              "over_250m"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "AU"
+          },
+          {
+            "fact": "industry",
+            "op": "eq",
+            "value": "healthcare"
+          }
+        ]
+      },
+      {
+        "confidence": "applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AU"
+            ]
+          },
+          {
+            "fact": "industry",
+            "op": "eq",
+            "value": "healthcare"
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "AU"
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "government"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AU"
+            ]
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "government"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "AU"
+          },
+          {
+            "fact": "revenue_band",
+            "op": "in",
+            "value": [
+              "under_1m",
+              "1m_10m"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AU"
+            ]
+          },
+          {
+            "fact": "revenue_band",
+            "op": "in",
+            "value": [
+              "under_1m",
+              "1m_10m"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "AU"
+            ]
+          },
+          {
+            "fact": "personal_data_role",
+            "op": "in",
+            "value": [
+              "controller",
+              "processor",
+              "both"
+            ]
+          },
+          {
+            "fact": "revenue_band",
+            "op": "in",
+            "value": [
+              "10m_50m",
+              "50m_250m",
+              "over_250m"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "AU"
+            ]
+          },
+          {
+            "fact": "personal_data_role",
+            "op": "in",
+            "value": [
+              "controller",
+              "processor",
+              "both"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "AU-02",
+    "jurisdiction": "AU",
+    "zone": null,
+    "short_name": "SOCI Act",
+    "official_name": "Security of Critical Infrastructure Act 2018 (Cth)",
+    "issuer": "Parliament of Australia",
+    "regulator": "Department of Home Affairs, Cyber and Infrastructure Security Centre (CISC)",
+    "kinds": [
+      "cybersecurity",
+      "critical_infrastructure",
+      "resilience"
+    ],
+    "topic_column": "sector",
+    "force": "law",
+    "state": "in_force_phasing",
+    "state_note": "In force and amended in 2021, 2022 and 2024. Enhanced risk management program rules reportedly took effect 10 June 2026 with 12 to 24 month grace periods; a further reform round (SOCI Act 2.0) is only a consultation paper.",
+    "tier": "sector",
+    "applies_to": "Responsible entities and direct interest holders for critical infrastructure assets in 11 sectors: communications, data storage or processing, financial services and markets, water and sewerage, energy, health care and medical, higher education and research, food and grocery, transport, space technology and defence industry. Data storage or processing covers providers serving government or other critical infrastructure customers.",
+    "duties": [
+      {
+        "topic": "registration",
+        "text": "Register the asset and its ownership details with the government.",
+        "clock_hours": null
+      },
+      {
+        "topic": "incident_reporting",
+        "text": "Report a cyber incident with a significant impact within 12 hours.",
+        "clock_hours": 12
+      },
+      {
+        "topic": "incident_reporting",
+        "text": "Report a cyber incident with a relevant impact within 72 hours.",
+        "clock_hours": 72
+      },
+      {
+        "topic": "baseline",
+        "text": "Keep a written risk management program covering cyber, personnel, supply chain and physical hazards, and meet one named cyber framework such as ISO/IEC 27001 or Essential Eight maturity level one.",
+        "clock_hours": null
+      },
+      {
+        "topic": "board_duty",
+        "text": "Have the board approve and sign the annual report on the risk management program.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "As a System of National Significance, also keep incident response plans, run exercises and vulnerability assessments, and provide system information.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "attestation",
+      "note": "No certification; the board signs an annual attestation of the risk management program."
+    },
+    "iso27001": {
+      "relation": "referenced_or_accepted",
+      "note": "ISO/IEC 27001 is one of the named frameworks the risk management rules accept, alongside Essential Eight maturity level one, NIST CSF, C2M2 and AESCSF."
+    },
+    "soc2": {
+      "relation": "not_a_substitute",
+      "note": "SOC 2 is not among the accepted frameworks."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2025-04-04",
+        "precision": "day",
+        "kind": "obligation_starts",
+        "description": "Rules confirming that data storage systems holding business critical data are part of the asset commence.",
+        "confirmed": false
+      },
+      {
+        "date": "2026-06-10",
+        "precision": "day",
+        "kind": "obligation_starts",
+        "description": "Enhanced risk management program rules reportedly take effect, with grace periods of 12 to 24 months per measure.",
+        "confirmed": false
+      },
+      {
+        "date": "2026-07-31",
+        "precision": "day",
+        "kind": "consultation_closes",
+        "description": "Submissions close on the SOCI Act 2.0 consultation paper (21 measures, including data centres and direct duties on managed service providers).",
+        "confirmed": true
+      },
+      {
+        "date": "2027-06",
+        "precision": "month",
+        "kind": "deadline",
+        "description": "Earliest grace periods for the enhanced rules end, inferred from 12 months after 10 June 2026; check the rules.",
+        "confirmed": false
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.cisc.gov.au/legislation-regulation-and-compliance/cyber-security-legislative-reforms",
+        "publisher": "Cyber and Infrastructure Security Centre",
+        "kind": "regulator_guidance",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.cisc.gov.au/resources-subsite/Documents/enhanced-cirmp-implementation-factsheet.pdf",
+        "publisher": "Cyber and Infrastructure Security Centre",
+        "kind": "regulator_guidance",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.legislation.gov.au/F2025L00324/asmade/2025-03-13/text/original/pdf",
+        "publisher": "Federal Register of Legislation",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.allens.com.au/insights-news/insights/2026/07/soci-act-2-0-sweeping-reforms-proposed-to-australias-critical-infrastructure-framework/",
+        "publisher": "Allens",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      },
+      {
+        "url": "https://www.homeaffairs.gov.au/help-and-support/how-to-engage-us/consultations/proposed-amendments-to-streamline-and-modernise-the-soci-act-2018",
+        "publisher": "Department of Home Affairs",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "Exact commencement dates of each enhanced risk management measure not confirmed.",
+        "Status of any SOCI reform bill unknown; SOCI Act 2.0 is a draft.",
+        "homeaffairs.gov.au refused automated reading; dates rest on summaries."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "AU"
+          },
+          {
+            "fact": "critical_or_provider",
+            "op": "eq",
+            "value": "yes"
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AU"
+            ]
+          },
+          {
+            "fact": "critical_or_provider",
+            "op": "eq",
+            "value": "yes"
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "AU"
+          },
+          {
+            "fact": "industry",
+            "op": "in",
+            "value": [
+              "energy_utilities",
+              "telecom",
+              "financial_services",
+              "healthcare",
+              "education"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AU"
+            ]
+          },
+          {
+            "fact": "industry",
+            "op": "in",
+            "value": [
+              "energy_utilities",
+              "telecom",
+              "financial_services",
+              "healthcare",
+              "education"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "AU"
+            ]
+          },
+          {
+            "fact": "critical_or_provider",
+            "op": "eq",
+            "value": "yes"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "AU-03",
+    "jurisdiction": "AU",
+    "zone": null,
+    "short_name": "Cyber Security Act 2024",
+    "official_name": "Cyber Security Act 2024 (Cth)",
+    "issuer": "Parliament of Australia",
+    "regulator": "Department of Home Affairs",
+    "kinds": [
+      "cybersecurity",
+      "product_security"
+    ],
+    "topic_column": "breach_clock",
+    "force": "law",
+    "state": "in_force",
+    "state_note": "In force since Royal Assent on 29 November 2024. Ransomware payment reporting applies from 30 May 2025 (law firm summaries) and smart device standards apply to products made on or after 4 March 2026.",
+    "tier": "most_should_know",
+    "applies_to": "Businesses carrying on business in Australia with annual turnover above AUD 3 million, and responsible entities for critical infrastructure assets, when they make a ransomware payment or learn one was made for them; Commonwealth and State bodies fall outside this part. Separately, makers and suppliers of consumer internet-connectable products sold in Australia.",
+    "duties": [
+      {
+        "topic": "incident_reporting",
+        "text": "Report a ransomware or extortion payment through the cyber.gov.au portal within 72 hours of making it or of learning it was made.",
+        "clock_hours": 72
+      },
+      {
+        "topic": "baseline",
+        "text": "For consumer smart devices made on or after 4 March 2026, ship with no universal default passwords, publish a way to report vulnerabilities and state the security update period.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "Supply a statement of compliance for each smart device; no third party certificate is needed.",
+        "clock_hours": null
+      },
+      {
+        "topic": "incident_reporting",
+        "text": "Information shared voluntarily with the National Cyber Security Coordinator or ASD during an incident has limited use protection, which makes early engagement safer.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "none",
+      "note": "No certification; smart devices need a supplier statement of compliance, not a third party certificate."
+    },
+    "iso27001": {
+      "relation": "not_relevant",
+      "note": "Not referenced. The smart device rules track ETSI EN 303 645."
+    },
+    "soc2": {
+      "relation": "not_relevant",
+      "note": "Not referenced."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2024-11-29",
+        "precision": "day",
+        "kind": "enacted",
+        "description": "Royal Assent.",
+        "confirmed": true
+      },
+      {
+        "date": "2025-05-30",
+        "precision": "day",
+        "kind": "obligation_starts",
+        "description": "Ransomware payment reporting applies (date from law firm summaries).",
+        "confirmed": false
+      },
+      {
+        "date": "2026-03-04",
+        "precision": "day",
+        "kind": "obligation_starts",
+        "description": "Smart device security standards apply to products manufactured on or after this date.",
+        "confirmed": false
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.homeaffairs.gov.au/about-us/our-portfolios/cyber-security/cyber-security-act",
+        "publisher": "Department of Home Affairs",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://legislation.gov.au/C2024A00098/asmade/2024-11-29/text/original/epub/OEBPS/document_1/document_1.html",
+        "publisher": "Federal Register of Legislation",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      },
+      {
+        "url": "https://www.legislation.gov.au/F2025L00278/asmade/2025-03-03/text/original/pdf",
+        "publisher": "Federal Register of Legislation",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      },
+      {
+        "url": "https://legislation.gov.au/C2024A00098/latest",
+        "publisher": "Federal Register of Legislation",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.legislation.gov.au/F2025L00276",
+        "publisher": "Federal Register of Legislation",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.homeaffairs.gov.au/about-us/our-portfolios/cyber-security/security-standards-for-smart-devices",
+        "publisher": "Department of Home Affairs",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "Ransomware reporting start date of 30 May 2025 comes from law firm summaries; the Act's backstop puts it about six months after assent.",
+        "Smart device start date comes from a summary.",
+        "The turnover test is in AUD and the revenue bands are in US dollars; the 1 to 10 million band only gives check."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "AU"
+          },
+          {
+            "fact": "revenue_band",
+            "op": "in",
+            "value": [
+              "10m_50m",
+              "50m_250m",
+              "over_250m"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AU"
+            ]
+          },
+          {
+            "fact": "revenue_band",
+            "op": "in",
+            "value": [
+              "10m_50m",
+              "50m_250m",
+              "over_250m"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "AU"
+          },
+          {
+            "fact": "critical_or_provider",
+            "op": "eq",
+            "value": "yes"
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AU"
+            ]
+          },
+          {
+            "fact": "critical_or_provider",
+            "op": "eq",
+            "value": "yes"
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "AU"
+          },
+          {
+            "fact": "connected_products",
+            "op": "eq",
+            "value": "yes"
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AU"
+            ]
+          },
+          {
+            "fact": "connected_products",
+            "op": "eq",
+            "value": "yes"
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "AU"
+          },
+          {
+            "fact": "revenue_band",
+            "op": "eq",
+            "value": "1m_10m"
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AU"
+            ]
+          },
+          {
+            "fact": "revenue_band",
+            "op": "eq",
+            "value": "1m_10m"
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "AU"
+            ]
+          },
+          {
+            "fact": "connected_products",
+            "op": "eq",
+            "value": "yes"
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "consumers"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "AU"
+            ]
+          },
+          {
+            "fact": "revenue_band",
+            "op": "in",
+            "value": [
+              "10m_50m",
+              "50m_250m",
+              "over_250m"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "AU-04",
+    "jurisdiction": "AU",
+    "zone": null,
+    "short_name": "CPS 234",
+    "official_name": "APRA Prudential Standard CPS 234 Information Security",
+    "issuer": "Australian Prudential Regulation Authority (APRA)",
+    "regulator": "Australian Prudential Regulation Authority (APRA)",
+    "kinds": [
+      "financial_sector",
+      "cybersecurity"
+    ],
+    "topic_column": "sector",
+    "force": "regulator_rule",
+    "state": "in_force",
+    "state_note": "In force since 1 July 2019.",
+    "tier": "sector",
+    "applies_to": "APRA-regulated entities: banks and other authorised deposit-taking institutions, general, life and private health insurers, and superannuation trustees. Their service providers are reached through contracts.",
+    "duties": [
+      {
+        "topic": "board_duty",
+        "text": "Make the board ultimately responsible for information security.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "Keep security capability and controls in proportion to threats, including for information assets that third parties manage.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "Test controls systematically and cover information security in internal audit.",
+        "clock_hours": null
+      },
+      {
+        "topic": "incident_reporting",
+        "text": "Notify APRA no later than 72 hours after becoming aware of a material information security incident.",
+        "clock_hours": 72
+      },
+      {
+        "topic": "incident_reporting",
+        "text": "Notify APRA within 10 business days of a material control weakness that cannot be fixed in time.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "Test incident response plans every year.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "none",
+      "note": "No certificate; APRA has required independent tripartite assessments."
+    },
+    "iso27001": {
+      "relation": "helps_partially",
+      "note": "Not required. APRA guidance CPG 234 is compatible with ISO 27001 and many entities use it as third party assurance; no official mapping found."
+    },
+    "soc2": {
+      "relation": "helps_partially",
+      "note": "Not required; many entities use SOC 2 reports as third party assurance from vendors."
+    },
+    "helps": [
+      "GOV-02",
+      "GOV-10",
+      "GOV-21",
+      "HR-09",
+      "GOV-26",
+      "GOV-17",
+      "LM-01",
+      "DM-04",
+      "DM-06",
+      "BC-08",
+      "PE-01",
+      "LM-07",
+      "LM-10",
+      "GOV-06",
+      "GOV-16",
+      "GOV-13"
+    ],
+    "not_covered": [
+      "Notification to the regulator within the set periods as a tracked control"
+    ],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2019-07-01",
+        "precision": "day",
+        "kind": "in_force",
+        "description": "CPS 234 applies.",
+        "confirmed": true
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://handbook.apra.gov.au/standard/cps-234",
+        "publisher": "APRA",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "known_not_opened"
+      },
+      {
+        "url": "https://www.apra.gov.au/information-security",
+        "publisher": "APRA",
+        "kind": "regulator_guidance",
+        "accessed_at": "2026-11-21",
+        "verified": "known_not_opened"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "Sources are cited from prior knowledge and were not opened in this session."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "AU"
+          },
+          {
+            "fact": "regulator_licences",
+            "op": "any_in",
+            "value": [
+              "financial",
+              "insurance"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AU"
+            ]
+          },
+          {
+            "fact": "regulator_licences",
+            "op": "any_in",
+            "value": [
+              "financial",
+              "insurance"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "AU"
+          },
+          {
+            "fact": "industry",
+            "op": "in",
+            "value": [
+              "financial_services",
+              "insurance"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AU"
+            ]
+          },
+          {
+            "fact": "industry",
+            "op": "in",
+            "value": [
+              "financial_services",
+              "insurance"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "AU"
+            ]
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "banks_insurers"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "AU-05",
+    "jurisdiction": "AU",
+    "zone": null,
+    "short_name": "CPS 230",
+    "official_name": "APRA Prudential Standard CPS 230 Operational Risk Management",
+    "issuer": "Australian Prudential Regulation Authority (APRA)",
+    "regulator": "Australian Prudential Regulation Authority (APRA)",
+    "kinds": [
+      "financial_sector",
+      "resilience"
+    ],
+    "topic_column": "sector",
+    "force": "regulator_rule",
+    "state": "in_force_phasing",
+    "state_note": "In force since 1 July 2025. Pre-existing service provider contracts had to comply from their next renewal or 1 July 2026 at the latest, and smaller entities had some transition relief.",
+    "tier": "sector",
+    "applies_to": "The same APRA-regulated entities as CPS 234. Technology and cloud vendors are affected as material service providers.",
+    "duties": [
+      {
+        "topic": "assessment",
+        "text": "Identify critical operations and set tolerance levels for disruption.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "Keep a business continuity plan and test it at least once a year.",
+        "clock_hours": null
+      },
+      {
+        "topic": "third_parties",
+        "text": "Keep a register of material service providers for APRA, with required contract terms and due diligence that extends to fourth parties.",
+        "clock_hours": null
+      },
+      {
+        "topic": "incident_reporting",
+        "text": "Notify APRA within 72 hours of a material operational risk incident.",
+        "clock_hours": 72
+      },
+      {
+        "topic": "incident_reporting",
+        "text": "Notify APRA within 24 hours of a disruption that goes outside tolerance.",
+        "clock_hours": 24
+      },
+      {
+        "topic": "board_duty",
+        "text": "Keep the board accountable for operational risk, supported by a risk profile assessment.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "none",
+      "note": "No certification."
+    },
+    "iso27001": {
+      "relation": "not_a_substitute",
+      "note": "Not referenced; the sources point to ISO 22301 and SOC 2 availability reports as the useful vendor evidence."
+    },
+    "soc2": {
+      "relation": "helps_partially",
+      "note": "Not referenced; SOC 2 reports that cover availability help vendors evidence resilience."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2023-07",
+        "precision": "month",
+        "kind": "enacted",
+        "description": "Standard finalised.",
+        "confirmed": true
+      },
+      {
+        "date": "2025-07-01",
+        "precision": "day",
+        "kind": "in_force",
+        "description": "CPS 230 applies.",
+        "confirmed": true
+      },
+      {
+        "date": "2026-07-01",
+        "precision": "day",
+        "kind": "deadline",
+        "description": "Latest date for pre-existing service provider contracts to comply.",
+        "confirmed": true
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.apra.gov.au/news-and-publications/apras-new-prudential-standard-operational-risk-management-comes-force",
+        "publisher": "APRA",
+        "kind": "regulator_guidance",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://handbook.apra.gov.au/standard/cps-230",
+        "publisher": "APRA",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "known_not_opened"
+      },
+      {
+        "url": "https://legislation.gov.au/F2023L01242/asmade/2023-09-14/text/original/pdf",
+        "publisher": "Federal Register of Legislation",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": []
+    },
+    "triggers": [
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "AU"
+          },
+          {
+            "fact": "regulator_licences",
+            "op": "any_in",
+            "value": [
+              "financial",
+              "insurance"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AU"
+            ]
+          },
+          {
+            "fact": "regulator_licences",
+            "op": "any_in",
+            "value": [
+              "financial",
+              "insurance"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "AU"
+          },
+          {
+            "fact": "industry",
+            "op": "in",
+            "value": [
+              "financial_services",
+              "insurance"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AU"
+            ]
+          },
+          {
+            "fact": "industry",
+            "op": "in",
+            "value": [
+              "financial_services",
+              "insurance"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "AU"
+            ]
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "banks_insurers"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "AU-06",
+    "jurisdiction": "AU",
+    "zone": null,
+    "short_name": "Essential Eight",
+    "official_name": "ASD Essential Eight Maturity Model",
+    "issuer": "Australian Signals Directorate (ASD), through the Australian Cyber Security Centre",
+    "regulator": "Australian Signals Directorate (ASD)",
+    "kinds": [
+      "cybersecurity"
+    ],
+    "topic_column": "security_baseline",
+    "force": "voluntary_framework",
+    "state": "voluntary",
+    "state_note": "Mandatory at maturity level two for non-corporate Commonwealth entities and voluntary for everyone else. ASD consulted in mid 2026 on evolving it into a broader Essentials series, but the November 2023 model still applies; treat it as changing soon.",
+    "tier": "most_should_know",
+    "applies_to": "Required of non-corporate Commonwealth entities under the Protective Security Policy Framework. Widely asked for by government buyers, insurers and state governments, and one of the accepted frameworks under the critical infrastructure risk management rules.",
+    "duties": [
+      {
+        "topic": "baseline",
+        "text": "Patch applications and operating systems, and use multi-factor authentication.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "Restrict administrative privileges, use application control and restrict Office macros.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "Harden user applications and keep regular backups.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "Assess maturity from level zero to three with ASD's assessment guide; a level counts only when all eight strategies reach it.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "none",
+      "note": "No official certification; assessments follow ASD's assessment guide."
+    },
+    "iso27001": {
+      "relation": "not_a_substitute",
+      "note": "Much narrower than ISO 27001, and holding ISO 27001 does not show Essential Eight maturity. ASD maps it to the ISM, not to ISO 27001."
+    },
+    "soc2": {
+      "relation": "not_a_substitute",
+      "note": "Not mentioned by ASD; a SOC 2 report does not state an Essential Eight maturity level."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2023-11",
+        "precision": "month",
+        "kind": "in_force",
+        "description": "Current maturity model published.",
+        "confirmed": true
+      },
+      {
+        "date": "2026-07-12",
+        "precision": "day",
+        "kind": "consultation_closes",
+        "description": "ASD consultation on evolving the Essential Eight into an Essentials series closes.",
+        "confirmed": true
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.cyber.gov.au/business-government/asds-cyber-security-frameworks/essential-eight/essential-eight-maturity-model-and-ism-mapping",
+        "publisher": "Australian Signals Directorate",
+        "kind": "regulator_guidance",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.cyber.gov.au/about-us/view-all-content/news/consultation-on-evolution-of-essential-eight",
+        "publisher": "Australian Signals Directorate",
+        "kind": "regulator_guidance",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://itwire.com/business-it-news/security/essential-eight-maturity-model-what-applies-now-and-what-asd-is-changing",
+        "publisher": "iTWire",
+        "kind": "tracker",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "Press reports conflict on whether the Essentials series has replaced the Essential Eight; the careful reports say no replacement text is published and ASD has signalled a transition of about two years.",
+        "Cite the PSPF without a policy number; the number has moved over time.",
+        "cyber.gov.au timed out; status confirmed by summaries only.",
+        "SOC 2 relation is inferred; the sources do not mention SOC 2."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "AU"
+          }
+        ]
+      },
+      {
+        "confidence": "applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AU"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "AU"
+            ]
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "government"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "AU-07",
+    "jurisdiction": "AU",
+    "zone": null,
+    "short_name": "ISM and IRAP",
+    "official_name": "Information Security Manual (ISM), Protective Security Policy Framework (PSPF) and Infosec Registered Assessors Program (IRAP)",
+    "issuer": "Australian Signals Directorate (ISM and IRAP); Department of Home Affairs (PSPF)",
+    "regulator": "Australian Signals Directorate; each agency makes its own authorisation decision",
+    "kinds": [
+      "cybersecurity",
+      "government_sector"
+    ],
+    "topic_column": "sector",
+    "force": "regulator_rule",
+    "state": "in_force",
+    "state_note": "Mandatory for Australian Government entities through the PSPF and voluntary for others. ASD updates the ISM quarterly and the IRAP policy documents were updated in 2026.",
+    "tier": "sector",
+    "applies_to": "Australian Government entities, and in practice cloud, SaaS and managed service providers that sell to them. Agencies expect an IRAP assessment against the ISM at the right classification, commonly OFFICIAL: Sensitive or PROTECTED.",
+    "duties": [
+      {
+        "topic": "baseline",
+        "text": "Implement the ISM controls that apply to the classification of data you will handle.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "Keep a system security plan and annex, an incident response plan and a continuous monitoring plan.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "Get an independent IRAP assessment by an ASD-endorsed assessor, refreshed about every 24 months or on major change.",
+        "clock_hours": null
+      },
+      {
+        "topic": "location",
+        "text": "Expect data sovereignty and personnel clearance requirements for PROTECTED workloads.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "attestation",
+      "note": "IRAP gives an assessment report by an ASD-endorsed assessor, not a certificate; ASD does not certify clouds."
+    },
+    "iso27001": {
+      "relation": "not_a_substitute",
+      "note": "Helpful groundwork, not a substitute. No official ISO mapping found."
+    },
+    "soc2": {
+      "relation": "not_a_substitute",
+      "note": "Helpful groundwork, not a substitute."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [],
+    "sources": [
+      {
+        "url": "https://www.cyber.gov.au/ism/archived-ism-releases",
+        "publisher": "Australian Signals Directorate",
+        "kind": "regulator_guidance",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.cyber.gov.au/sites/default/files/2026-05/IRAP%20Policy%20%26%20Procedures%202026.pdf",
+        "publisher": "Australian Signals Directorate",
+        "kind": "regulator_guidance",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.cyber.gov.au/sites/default/files/2025-04/IRAP%20common%20assessment%20framework.pdf",
+        "publisher": "Australian Signals Directorate",
+        "kind": "regulator_guidance",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.protectivesecurity.gov.au",
+        "publisher": "Department of Home Affairs",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "known_not_opened"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "Latest ISM release month not confirmed (a September 2026 release was listed)."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "AU"
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "government"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AU"
+            ]
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "government"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "AU"
+          },
+          {
+            "fact": "industry",
+            "op": "eq",
+            "value": "government_supplier"
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AU"
+            ]
+          },
+          {
+            "fact": "industry",
+            "op": "eq",
+            "value": "government_supplier"
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "AU"
+            ]
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "government"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "AU-08",
+    "jurisdiction": "AU",
+    "zone": null,
+    "short_name": "Consumer Data Right",
+    "official_name": "Consumer Data Right (Part IVD of the Competition and Consumer Act 2010 and the CDR Rules)",
+    "issuer": "Parliament of Australia; Treasury sets policy",
+    "regulator": "ACCC (accreditation and enforcement) and OAIC (privacy)",
+    "kinds": [
+      "privacy",
+      "financial_sector"
+    ],
+    "topic_column": "sector",
+    "force": "law",
+    "state": "in_force_phasing",
+    "state_note": "Live for banking since 2020 and energy since 2022. Non-bank lenders joined in 2026: product data from 13 July 2026, consumer data from 9 November 2026 for the largest lenders and 10 May 2027 for others.",
+    "tier": "sector",
+    "applies_to": "Designated data holders (banks, energy retailers, larger non-bank lenders) and any business that wants to receive CDR data, as an accredited data recipient or under a sponsored or representative model.",
+    "duties": [
+      {
+        "topic": "baseline",
+        "text": "As a data holder, share data through the standard APIs when a consumer asks.",
+        "clock_hours": null
+      },
+      {
+        "topic": "consent",
+        "text": "Follow the 13 CDR privacy safeguards, which are stricter than the Australian Privacy Principles, plus the consent, dashboard, deletion and de-identification rules.",
+        "clock_hours": null
+      },
+      {
+        "topic": "registration",
+        "text": "Get accreditation before receiving CDR data, or use a sponsored or representative model.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "As an accredited recipient, meet the Schedule 2 information security controls.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "As an accredited recipient, provide periodic independent assurance.",
+        "clock_hours": null
+      },
+      {
+        "topic": "penalties",
+        "text": "Civil penalties apply.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "registration",
+      "note": "Accreditation by the ACCC is a precondition for data recipients."
+    },
+    "iso27001": {
+      "relation": "helps_partially",
+      "note": "ACCC accreditation guidance has treated ISO 27001 as supporting evidence; current acceptance rules not checked."
+    },
+    "soc2": {
+      "relation": "helps_partially",
+      "note": "ACCC accreditation guidance has accepted independent assurance reports; current acceptance rules not checked."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2026-07-13",
+        "precision": "day",
+        "kind": "obligation_starts",
+        "description": "Non-bank lenders share product data.",
+        "confirmed": true
+      },
+      {
+        "date": "2026-11-09",
+        "precision": "day",
+        "kind": "obligation_starts",
+        "description": "Largest non-bank lenders share consumer data.",
+        "confirmed": true
+      },
+      {
+        "date": "2027-05-10",
+        "precision": "day",
+        "kind": "obligation_starts",
+        "description": "Remaining non-bank lenders share consumer data.",
+        "confirmed": true
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.cdr.gov.au/rollout",
+        "publisher": "Consumer Data Right (Australian Government)",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.cdr.gov.au/rollout/cdr-non-bank-lenders-sector",
+        "publisher": "Consumer Data Right (Australian Government)",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://ministers.treasury.gov.au/ministers/daniel-mulino-2025/media-releases/non-bank-lenders-begin-sharing-consumer-data-right",
+        "publisher": "Treasury ministers",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.legislation.gov.au/F2025L00272/asmade/2025-03-03/es/1/pdf",
+        "publisher": "Federal Register of Legislation",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "Which assurance reports the ACCC accepts for accreditation was not checked (unverified detail)."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "AU"
+          },
+          {
+            "fact": "regulator_licences",
+            "op": "any_in",
+            "value": [
+              "financial"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AU"
+            ]
+          },
+          {
+            "fact": "regulator_licences",
+            "op": "any_in",
+            "value": [
+              "financial"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "AU"
+          },
+          {
+            "fact": "industry",
+            "op": "in",
+            "value": [
+              "financial_services",
+              "energy_utilities"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AU"
+            ]
+          },
+          {
+            "fact": "industry",
+            "op": "in",
+            "value": [
+              "financial_services",
+              "energy_utilities"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "AU"
+          },
+          {
+            "fact": "industry",
+            "op": "eq",
+            "value": "software"
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "banks_insurers"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AU"
+            ]
+          },
+          {
+            "fact": "industry",
+            "op": "eq",
+            "value": "software"
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "banks_insurers"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "AU-09",
+    "jurisdiction": "AU",
+    "zone": null,
+    "short_name": "ASIC licence duties (s912A)",
+    "official_name": "Corporations Act 2001 (Cth) section 912A, general obligations of financial services licensees",
+    "issuer": "Parliament of Australia",
+    "regulator": "Australian Securities and Investments Commission (ASIC)",
+    "kinds": [
+      "financial_sector",
+      "cybersecurity"
+    ],
+    "topic_column": "sector",
+    "force": "law",
+    "state": "in_force",
+    "state_note": "In force. Not a cyber statute, but courts have found licensees in breach for poor cyber controls: RI Advice (2022), FIIG Securities (13 February 2026) and Fortnum Private Wealth (October 2026, reported).",
+    "tier": "sector",
+    "applies_to": "Australian financial services licensees and credit licensees; company directors more broadly through their duties of care.",
+    "duties": [
+      {
+        "topic": "baseline",
+        "text": "Keep adequate risk management systems and adequate technology and people, which courts read as cyber controls in proportion to the business.",
+        "clock_hours": null
+      },
+      {
+        "topic": "third_parties",
+        "text": "Oversee authorised representatives.",
+        "clock_hours": null
+      },
+      {
+        "topic": "incident_reporting",
+        "text": "Report breaches to ASIC on time under the reportable situations regime.",
+        "clock_hours": null
+      },
+      {
+        "topic": "board_duty",
+        "text": "Treat cyber risk as part of directors' duties of care.",
+        "clock_hours": null
+      },
+      {
+        "topic": "penalties",
+        "text": "Courts have ordered penalties and compliance programs for cyber failures, for example AUD 2.5 million against FIIG Securities in 2026.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "none",
+      "note": "No certification."
+    },
+    "iso27001": {
+      "relation": "helps_partially",
+      "note": "Not referenced; ASIC points to recognised frameworks such as NIST CSF, Essential Eight and ISO 27001 as good practice."
+    },
+    "soc2": {
+      "relation": "helps_partially",
+      "note": "Not named by ASIC, which cites NIST CSF, Essential Eight and ISO 27001."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [],
+    "sources": [
+      {
+        "url": "https://www.asic.gov.au/about-asic/news-centre/find-a-media-release/2026-releases/26-021mr-asic-action-sees-fiig-securities-ordered-to-pay-25-million-over-cyber-security-failures",
+        "publisher": "ASIC",
+        "kind": "regulator_guidance",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.judgments.fedcourt.gov.au/judgments/Judgments/fca/single/2026/2026fca0092",
+        "publisher": "Federal Court of Australia",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.allens.com.au/insights-news/insights/2026/10/asic-secures-second-cybersecurity-penalty-in-eight-months-as-Fortnum-is-ordered-to-pay-135-million/",
+        "publisher": "Allens",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "The Fortnum penalty (AUD 1.35 million, October 2026) is reported, not checked against the judgment.",
+        "Penalty figures to be checked against the primary text by the reviewer before display.",
+        "SOC 2 relation is inferred; the sources do not mention SOC 2."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "AU"
+          },
+          {
+            "fact": "regulator_licences",
+            "op": "any_in",
+            "value": [
+              "financial"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AU"
+            ]
+          },
+          {
+            "fact": "regulator_licences",
+            "op": "any_in",
+            "value": [
+              "financial"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "AU"
+          },
+          {
+            "fact": "industry",
+            "op": "in",
+            "value": [
+              "financial_services",
+              "payments",
+              "insurance"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AU"
+            ]
+          },
+          {
+            "fact": "industry",
+            "op": "in",
+            "value": [
+              "financial_services",
+              "payments",
+              "insurance"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "AU-10",
+    "jurisdiction": "AU",
+    "zone": null,
+    "short_name": "Health records laws",
+    "official_name": "My Health Records Act 2012 (Cth) and state health records laws (NSW, Victoria, ACT)",
+    "issuer": "Parliament of Australia and the NSW, Victorian and ACT parliaments",
+    "regulator": "OAIC, the My Health Record system operator and state privacy regulators",
+    "kinds": [
+      "privacy",
+      "health_sector"
+    ],
+    "topic_column": "sector",
+    "force": "law",
+    "state": "in_force",
+    "state_note": "In force: the My Health Records Act 2012, the Health Records and Information Privacy Act 2002 (NSW), the Health Records Act 2001 (Vic) and the Health Records (Privacy and Access) Act 1997 (ACT). Other states rely on the Privacy Act for the private sector.",
+    "tier": "sector",
+    "applies_to": "Anyone handling health information in New South Wales, Victoria and the ACT, public or private, and participants in the national My Health Record system. Health service providers are covered by the Privacy Act whatever their turnover.",
+    "duties": [
+      {
+        "topic": "consent",
+        "text": "Follow the state health privacy principles on collection, use, access and transfer of health information.",
+        "clock_hours": null
+      },
+      {
+        "topic": "location",
+        "text": "Keep My Health Record data in Australia, as a general rule.",
+        "clock_hours": null
+      },
+      {
+        "topic": "breach_notice",
+        "text": "Report My Health Record breaches to the system operator and the OAIC.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "none",
+      "note": "No certification."
+    },
+    "iso27001": {
+      "relation": "not_relevant",
+      "note": "Not referenced."
+    },
+    "soc2": {
+      "relation": "not_relevant",
+      "note": "Not referenced."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [],
+    "sources": [
+      {
+        "url": "https://www.oaic.gov.au/privacy/privacy-legislation/state-and-territory-privacy-legislation",
+        "publisher": "OAIC",
+        "kind": "regulator_guidance",
+        "accessed_at": "2026-11-21",
+        "verified": "known_not_opened"
+      },
+      {
+        "url": "https://www.legislation.gov.au/C2012A00063/latest/text",
+        "publisher": "Federal Register of Legislation",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "known_not_opened"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "Details were not re-verified in this session, including the state law specifics.",
+        "Sources are cited from prior knowledge and were not opened in this session."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "AU"
+          },
+          {
+            "fact": "sensitive_data",
+            "op": "any_in",
+            "value": [
+              "health"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AU"
+            ]
+          },
+          {
+            "fact": "sensitive_data",
+            "op": "any_in",
+            "value": [
+              "health"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "AU"
+          },
+          {
+            "fact": "industry",
+            "op": "eq",
+            "value": "healthcare"
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AU"
+            ]
+          },
+          {
+            "fact": "industry",
+            "op": "eq",
+            "value": "healthcare"
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "AU"
+            ]
+          },
+          {
+            "fact": "sensitive_data",
+            "op": "any_in",
+            "value": [
+              "health"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]

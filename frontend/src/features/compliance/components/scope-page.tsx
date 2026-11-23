@@ -20,6 +20,9 @@ import { useAuth } from "@/lib/auth/auth-context";
 import type { AuditType } from "@/lib/api/types";
 import { DEFAULT_FRAMEWORK, useSelectedFramework } from "../use-frameworks";
 import { ManagementSystemScope } from "./management-system-scope";
+import { AuditDetailsCard } from "./audit-details-card";
+import { ChangesCard, CommitmentsCard, PlanCard, VendorsCard } from "./programme-cards";
+import { ScopeItemsSection } from "./scope-items-section";
 
 /** The elective Trust Services Categories. Security is deliberately absent: it
  *  is the Common Criteria, always in scope, and cannot be elected away. */
@@ -276,6 +279,39 @@ function CategoryScope() {
         </div>
       )}
 
+      {engagement ? (
+        <div className="mt-4">
+          <AuditDetailsCard
+            engagement={engagement}
+            frameworkName="SOC 2 report"
+            certification={false}
+            canManage={canManage}
+          />
+        </div>
+      ) : null}
+
+      {engagement ? (
+        <div className="mt-4">
+          <PlanCard
+            frameworkCode={DEFAULT_FRAMEWORK}
+            scopeModel="categories"
+            engagement={engagement}
+            canManage={canManage}
+          />
+        </div>
+      ) : null}
+
+      <div className="mt-4 space-y-4">
+        <ScopeItemsSection frameworkCode={DEFAULT_FRAMEWORK} hasEngagement={Boolean(engagement)} canManage={canManage} />
+        <VendorsCard
+          frameworkCode={DEFAULT_FRAMEWORK}
+          scopeModel="categories"
+          hasEngagement={Boolean(engagement)}
+          canManage={canManage}
+        />
+        <CommitmentsCard canManage={canManage} />
+        <ChangesCard frameworkCode={DEFAULT_FRAMEWORK} />
+      </div>
 
       {/* Coverage moved to its own tab. Scope is a form you complete once;
           coverage is a report you return to, and pairing them meant the

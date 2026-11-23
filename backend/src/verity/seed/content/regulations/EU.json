@@ -1,0 +1,3494 @@
+[
+  {
+    "key": "EU-01",
+    "jurisdiction": "EU",
+    "zone": null,
+    "short_name": "GDPR",
+    "official_name": "Regulation (EU) 2016/679, General Data Protection Regulation",
+    "issuer": "European Parliament and Council of the EU",
+    "regulator": "National data protection authorities, coordinated by the European Data Protection Board",
+    "kinds": [
+      "privacy"
+    ],
+    "topic_column": "privacy",
+    "force": "law",
+    "state": "in_force",
+    "state_note": "Applies since 25 May 2018. Amendments proposed in the Digital Omnibus are a draft: the Council agreed its negotiating mandate in October 2026, the Parliament has no position and trilogues have not started.",
+    "tier": "most_should_know",
+    "applies_to": "Organisations established in the EU or EEA that process personal data, and organisations outside it that offer goods or services to people there or monitor their behaviour.",
+    "duties": [
+      {
+        "topic": "consent",
+        "text": "Have a lawful basis for each use of personal data, be transparent and honour data subject rights.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "Keep records of processing, run impact assessments for high risk processing and build privacy in by design.",
+        "clock_hours": null
+      },
+      {
+        "topic": "breach_notice",
+        "text": "Notify the supervisory authority within 72 hours of becoming aware of a personal data breach, and tell the people affected when the risk to them is high.",
+        "clock_hours": 72
+      },
+      {
+        "topic": "officer",
+        "text": "Appoint a data protection officer when core activities involve large scale monitoring or special category data, and an EU representative if not established in the EU.",
+        "clock_hours": null
+      },
+      {
+        "topic": "transfers",
+        "text": "Send personal data outside the EEA only under an adequacy decision or safeguards such as standard contractual clauses with a transfer assessment.",
+        "clock_hours": null
+      },
+      {
+        "topic": "penalties",
+        "text": "Fines reach EUR 20 million or 4 percent of worldwide turnover.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "certification",
+      "note": "Optional Article 42 certifications exist, for example Europrivacy, but they are not a safe harbour."
+    },
+    "iso27001": {
+      "relation": "helps_partially",
+      "note": "Not named. Good evidence for Article 32 security and for processor due diligence under Article 28, and ISO/IEC 27701 carries a GDPR mapping annex; it does not prove GDPR compliance."
+    },
+    "soc2": {
+      "relation": "helps_partially",
+      "note": "Not named. Good evidence for security of processing and processor due diligence; it does not prove GDPR compliance."
+    },
+    "helps": [
+      "DM-07",
+      "DM-08",
+      "DM-12",
+      "DM-05",
+      "DM-03",
+      "DM-15",
+      "DM-11",
+      "DM-14",
+      "DM-16",
+      "DM-10",
+      "DM-17",
+      "BC-06",
+      "BC-08",
+      "DM-06",
+      "IAM-03",
+      "IAM-08",
+      "NS-01",
+      "NS-02",
+      "NS-06",
+      "BC-01",
+      "BC-02",
+      "LM-11",
+      "GOV-16",
+      "GOV-18",
+      "DM-01",
+      "DM-02",
+      "LM-07",
+      "CS-01",
+      "SD-10",
+      "DM-13",
+      "DM-18"
+    ],
+    "not_covered": [
+      "Lawful basis other than consent",
+      "Impact assessments",
+      "Data protection officer",
+      "Transfers outside the region",
+      "Representative",
+      "Automated decisions"
+    ],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2018-05-25",
+        "precision": "day",
+        "kind": "obligation_starts",
+        "description": "GDPR applies.",
+        "confirmed": true
+      },
+      {
+        "date": "2025-11-19",
+        "precision": "day",
+        "kind": "proposed",
+        "description": "Commission proposes the Digital Omnibus, including GDPR amendments.",
+        "confirmed": true
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://eur-lex.europa.eu/eli/reg/2016/679/oj",
+        "publisher": "EUR-Lex (Publications Office of the EU)",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      },
+      {
+        "url": "https://www.edpb.europa.eu",
+        "publisher": "European Data Protection Board",
+        "kind": "regulator_guidance",
+        "accessed_at": "2026-11-21",
+        "verified": "known_not_opened"
+      },
+      {
+        "url": "https://iapp.org/news/a/eu-member-states-finalize-digital-omnibus-negotiating-stance",
+        "publisher": "IAPP",
+        "kind": "tracker",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.cuatrecasas.com/en/global/intellectual-property/art/digital-omnibus-eu-council-establishes-position",
+        "publisher": "Cuatrecasas",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.europarl.europa.eu/legislative-train/theme-a-new-plan-for-europe-s-sustainable-prosperity-and-competitiveness/file-digital-package",
+        "publisher": "European Parliament",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "Digital Omnibus GDPR changes: Council mandate approved by Coreper on 21 October 2026 (law firm); Parliament position not fixed.",
+        "Penalty figures to be checked against the primary text by the reviewer before display."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "in",
+            "value": [
+              "AT",
+              "BE",
+              "BG",
+              "CY",
+              "CZ",
+              "DE",
+              "DK",
+              "EE",
+              "ES",
+              "FI",
+              "FR",
+              "GR",
+              "HR",
+              "HU",
+              "IE",
+              "IT",
+              "LT",
+              "LU",
+              "LV",
+              "MT",
+              "NL",
+              "PL",
+              "PT",
+              "RO",
+              "SE",
+              "SI",
+              "SK",
+              "IS",
+              "LI",
+              "NO"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AT",
+              "BE",
+              "BG",
+              "CY",
+              "CZ",
+              "DE",
+              "DK",
+              "EE",
+              "ES",
+              "FI",
+              "FR",
+              "GR",
+              "HR",
+              "HU",
+              "IE",
+              "IT",
+              "LT",
+              "LU",
+              "LV",
+              "MT",
+              "NL",
+              "PL",
+              "PT",
+              "RO",
+              "SE",
+              "SI",
+              "SK",
+              "IS",
+              "LI",
+              "NO"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "EU",
+              "EEA",
+              "AT",
+              "BE",
+              "BG",
+              "CY",
+              "CZ",
+              "DE",
+              "DK",
+              "EE",
+              "ES",
+              "FI",
+              "FR",
+              "GR",
+              "HR",
+              "HU",
+              "IE",
+              "IT",
+              "LT",
+              "LU",
+              "LV",
+              "MT",
+              "NL",
+              "PL",
+              "PT",
+              "RO",
+              "SE",
+              "SI",
+              "SK",
+              "IS",
+              "LI",
+              "NO"
+            ]
+          },
+          {
+            "fact": "personal_data_role",
+            "op": "in",
+            "value": [
+              "controller",
+              "processor",
+              "both"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "EU",
+              "EEA",
+              "AT",
+              "BE",
+              "BG",
+              "CY",
+              "CZ",
+              "DE",
+              "DK",
+              "EE",
+              "ES",
+              "FI",
+              "FR",
+              "GR",
+              "HR",
+              "HU",
+              "IE",
+              "IT",
+              "LT",
+              "LU",
+              "LV",
+              "MT",
+              "NL",
+              "PL",
+              "PT",
+              "RO",
+              "SE",
+              "SI",
+              "SK",
+              "IS",
+              "LI",
+              "NO"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "EU-02",
+    "jurisdiction": "EU",
+    "zone": null,
+    "short_name": "ePrivacy Directive",
+    "official_name": "Directive 2002/58/EC on privacy and electronic communications, as amended by Directive 2009/136/EC",
+    "issuer": "European Parliament and Council of the EU",
+    "regulator": "National authorities under each member state's transposing law",
+    "kinds": [
+      "privacy",
+      "telecom_sector"
+    ],
+    "topic_column": "privacy",
+    "force": "law",
+    "state": "in_force",
+    "state_note": "In force through national laws. The planned ePrivacy Regulation was withdrawn (Official Journal, 6 October 2025, summary); Digital Omnibus changes to the cookie rules are a draft.",
+    "tier": "most_should_know",
+    "applies_to": "Anyone who stores or reads information on a user's device (cookies, SDKs, pixels) or sends electronic marketing to people in the EU; telecom and messaging providers for confidentiality of communications.",
+    "duties": [
+      {
+        "topic": "consent",
+        "text": "Get prior consent before setting non-essential cookies or trackers on a user's device.",
+        "clock_hours": null
+      },
+      {
+        "topic": "consent",
+        "text": "Get opt-in consent for most electronic direct marketing.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "As a telecom or messaging provider, keep communications and traffic data confidential.",
+        "clock_hours": null
+      },
+      {
+        "topic": "breach_notice",
+        "text": "As a telecom provider, notify personal data breaches under the national rules.",
+        "clock_hours": null
+      },
+      {
+        "topic": "penalties",
+        "text": "Enforcement and fines are set by each member state.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "none",
+      "note": "No certification."
+    },
+    "iso27001": {
+      "relation": "not_relevant",
+      "note": "Not relevant."
+    },
+    "soc2": {
+      "relation": "not_relevant",
+      "note": "Not relevant."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2025-11-19",
+        "precision": "day",
+        "kind": "proposed",
+        "description": "Digital Omnibus proposal, which would change the cookie consent rules.",
+        "confirmed": true
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://eur-lex.europa.eu/eli/dir/2002/58/oj",
+        "publisher": "EUR-Lex (Publications Office of the EU)",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "known_not_opened"
+      },
+      {
+        "url": "https://www.cuatrecasas.com/en/global/intellectual-property/art/digital-omnibus-eu-council-establishes-position",
+        "publisher": "Cuatrecasas",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      },
+      {
+        "url": "https://edri.org/wp-content/uploads/2026/11/Digital-Omnibus-on-Data-EDRi-guide.pdf",
+        "publisher": "EDRi",
+        "kind": "tracker",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "Draft only: the Council mandate (October 2026) keeps the cookie rule in Article 5(3) but adds consent exemptions for audience measurement, a four month wait before asking again after a refusal, and drops the browser signal duty; the Parliament has no position.",
+        "The EUR-Lex page returned empty in the 2026-11-21 check.",
+        "National transpositions differ; member state variations are not modelled."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "in",
+            "value": [
+              "AT",
+              "BE",
+              "BG",
+              "CY",
+              "CZ",
+              "DE",
+              "DK",
+              "EE",
+              "ES",
+              "FI",
+              "FR",
+              "GR",
+              "HR",
+              "HU",
+              "IE",
+              "IT",
+              "LT",
+              "LU",
+              "LV",
+              "MT",
+              "NL",
+              "PL",
+              "PT",
+              "RO",
+              "SE",
+              "SI",
+              "SK"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AT",
+              "BE",
+              "BG",
+              "CY",
+              "CZ",
+              "DE",
+              "DK",
+              "EE",
+              "ES",
+              "FI",
+              "FR",
+              "GR",
+              "HR",
+              "HU",
+              "IE",
+              "IT",
+              "LT",
+              "LU",
+              "LV",
+              "MT",
+              "NL",
+              "PL",
+              "PT",
+              "RO",
+              "SE",
+              "SI",
+              "SK"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "EU",
+              "EEA",
+              "AT",
+              "BE",
+              "BG",
+              "CY",
+              "CZ",
+              "DE",
+              "DK",
+              "EE",
+              "ES",
+              "FI",
+              "FR",
+              "GR",
+              "HR",
+              "HU",
+              "IE",
+              "IT",
+              "LT",
+              "LU",
+              "LV",
+              "MT",
+              "NL",
+              "PL",
+              "PT",
+              "RO",
+              "SE",
+              "SI",
+              "SK"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "EU-03",
+    "jurisdiction": "EU",
+    "zone": null,
+    "short_name": "NIS2",
+    "official_name": "Directive (EU) 2022/2555 on a high common level of cybersecurity (NIS2)",
+    "issuer": "European Parliament and Council of the EU",
+    "regulator": "National competent authorities in each member state",
+    "kinds": [
+      "cybersecurity",
+      "critical_infrastructure",
+      "resilience"
+    ],
+    "topic_column": "security_baseline",
+    "force": "law",
+    "state": "in_force_phasing",
+    "state_note": "In force since 16 January 2023 with a transposition deadline of 17 October 2024. Most member states have transposed it, but on 8 July 2026 the Commission referred Ireland, Spain, France and the Netherlands to the Court of Justice; duties and regulators follow each national law.",
+    "tier": "most_should_know",
+    "applies_to": "Essential and important entities in 18 sectors, generally with 50 or more staff or more than EUR 10 million turnover, and some regardless of size. Directly relevant to cloud providers, data centres, managed service and managed security service providers, DNS, online marketplaces, search engines and social platforms.",
+    "duties": [
+      {
+        "topic": "registration",
+        "text": "Register with the national authority in each member state where the national law requires it.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "Put risk management measures in place across ten areas, including supply chain security, incident handling, business continuity, MFA and cryptography.",
+        "clock_hours": null
+      },
+      {
+        "topic": "incident_reporting",
+        "text": "Send an early warning within 24 hours of becoming aware of a significant incident.",
+        "clock_hours": 24
+      },
+      {
+        "topic": "incident_reporting",
+        "text": "Follow with an incident notification within 72 hours and a final report within one month.",
+        "clock_hours": 72
+      },
+      {
+        "topic": "board_duty",
+        "text": "Have management approve the measures and take training; managers can be held liable.",
+        "clock_hours": null
+      },
+      {
+        "topic": "penalties",
+        "text": "Fines reach EUR 10 million or 2 percent of turnover for essential entities and EUR 7 million or 1.4 percent for important ones.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "none",
+      "note": "No EU-wide certificate; some states accept evidence, for example Belgium recognises ISO 27001 or its CyFun scheme as a route to presumed conformity."
+    },
+    "iso27001": {
+      "relation": "helps_partially",
+      "note": "Not named, but ENISA's guidance maps the measures to ISO 27001. It covers a large part, not registration, reporting timelines or management liability."
+    },
+    "soc2": {
+      "relation": "helps_partially",
+      "note": "Not named; helps evidence the risk management measures, not registration, reporting timelines or management liability."
+    },
+    "helps": [
+      "GOV-17",
+      "GOV-18",
+      "LM-04",
+      "LM-07",
+      "BC-01",
+      "BC-02",
+      "BC-03",
+      "BC-06",
+      "BC-07",
+      "BC-08",
+      "SD-10",
+      "LM-11",
+      "SD-03",
+      "GOV-06",
+      "GOV-13",
+      "GOV-16",
+      "HR-08",
+      "NS-01",
+      "NS-02",
+      "NS-06",
+      "HR-01",
+      "HR-05",
+      "IAM-*",
+      "LM-01",
+      "IAM-03",
+      "NS-11",
+      "GOV-02"
+    ],
+    "not_covered": [
+      "Staged incident reporting deadlines",
+      "Registration",
+      "National differences"
+    ],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2023-01-16",
+        "precision": "day",
+        "kind": "in_force",
+        "description": "NIS2 enters into force.",
+        "confirmed": true
+      },
+      {
+        "date": "2024-10-17",
+        "precision": "day",
+        "kind": "deadline",
+        "description": "Transposition deadline for member states.",
+        "confirmed": true
+      },
+      {
+        "date": "2026-01",
+        "precision": "month",
+        "kind": "proposed",
+        "description": "Commission package proposes targeted NIS2 simplifications.",
+        "confirmed": true
+      },
+      {
+        "date": "2026-08-15",
+        "precision": "day",
+        "kind": "in_force",
+        "description": "Dutch transposition law reportedly enters into force.",
+        "confirmed": false
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32022L2555",
+        "publisher": "EUR-Lex (Publications Office of the EU)",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      },
+      {
+        "url": "https://digital-strategy.ec.europa.eu/en/news/commission-refers-ireland-spain-france-and-netherlands-court-justice-failing-transpose-rules",
+        "publisher": "European Commission",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      },
+      {
+        "url": "https://digital-strategy.ec.europa.eu/en/policies/nis-transposition",
+        "publisher": "European Commission",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      },
+      {
+        "url": "https://www.lawsociety.ie/gazette/top-stories/2026/july/ireland-referred-to-cjeu-over-cyber-bill/",
+        "publisher": "Law Society of Ireland Gazette",
+        "kind": "tracker",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://therecord.media/eu-cyber-filing-ireland-spain-france-netherlands-nis2",
+        "publisher": "The Record",
+        "kind": "tracker",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.cullen-international.com/news/2026/05/How-are-EU-member-states-transposing-NIS2-.html",
+        "publisher": "Cullen International",
+        "kind": "tracker",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://ecs-org.eu/media_tag/nis2-directive/",
+        "publisher": "European Cyber Security Organisation",
+        "kind": "tracker",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "Exact count and list of member states still not transposed in November 2026 not confirmed; trackers differ because some count only primary law.",
+        "The Commission transposition page was last updated 1 July 2025; do not cite it for a current count.",
+        "Ireland was expected to notify by end 2026 and France was still pending in September 2026.",
+        "Penalty figures to be checked against the primary text by the reviewer before display.",
+        "The size test is matched on headcount bands; EUR 10 million turnover sits inside the 10 to 50 million US dollar band.",
+        "SOC 2 relation is inferred; the sources do not mention SOC 2."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "in",
+            "value": [
+              "AT",
+              "BE",
+              "BG",
+              "CY",
+              "CZ",
+              "DE",
+              "DK",
+              "EE",
+              "ES",
+              "FI",
+              "FR",
+              "GR",
+              "HR",
+              "HU",
+              "IE",
+              "IT",
+              "LT",
+              "LU",
+              "LV",
+              "MT",
+              "NL",
+              "PL",
+              "PT",
+              "RO",
+              "SE",
+              "SI",
+              "SK"
+            ]
+          },
+          {
+            "fact": "critical_or_provider",
+            "op": "eq",
+            "value": "yes"
+          },
+          {
+            "fact": "headcount_band",
+            "op": "in",
+            "value": [
+              "51_200",
+              "201_500",
+              "501_1000",
+              "over_1000"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AT",
+              "BE",
+              "BG",
+              "CY",
+              "CZ",
+              "DE",
+              "DK",
+              "EE",
+              "ES",
+              "FI",
+              "FR",
+              "GR",
+              "HR",
+              "HU",
+              "IE",
+              "IT",
+              "LT",
+              "LU",
+              "LV",
+              "MT",
+              "NL",
+              "PL",
+              "PT",
+              "RO",
+              "SE",
+              "SI",
+              "SK"
+            ]
+          },
+          {
+            "fact": "critical_or_provider",
+            "op": "eq",
+            "value": "yes"
+          },
+          {
+            "fact": "headcount_band",
+            "op": "in",
+            "value": [
+              "51_200",
+              "201_500",
+              "501_1000",
+              "over_1000"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "in",
+            "value": [
+              "AT",
+              "BE",
+              "BG",
+              "CY",
+              "CZ",
+              "DE",
+              "DK",
+              "EE",
+              "ES",
+              "FI",
+              "FR",
+              "GR",
+              "HR",
+              "HU",
+              "IE",
+              "IT",
+              "LT",
+              "LU",
+              "LV",
+              "MT",
+              "NL",
+              "PL",
+              "PT",
+              "RO",
+              "SE",
+              "SI",
+              "SK"
+            ]
+          },
+          {
+            "fact": "critical_or_provider",
+            "op": "eq",
+            "value": "yes"
+          },
+          {
+            "fact": "revenue_band",
+            "op": "in",
+            "value": [
+              "50m_250m",
+              "over_250m"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AT",
+              "BE",
+              "BG",
+              "CY",
+              "CZ",
+              "DE",
+              "DK",
+              "EE",
+              "ES",
+              "FI",
+              "FR",
+              "GR",
+              "HR",
+              "HU",
+              "IE",
+              "IT",
+              "LT",
+              "LU",
+              "LV",
+              "MT",
+              "NL",
+              "PL",
+              "PT",
+              "RO",
+              "SE",
+              "SI",
+              "SK"
+            ]
+          },
+          {
+            "fact": "critical_or_provider",
+            "op": "eq",
+            "value": "yes"
+          },
+          {
+            "fact": "revenue_band",
+            "op": "in",
+            "value": [
+              "50m_250m",
+              "over_250m"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "in",
+            "value": [
+              "AT",
+              "BE",
+              "BG",
+              "CY",
+              "CZ",
+              "DE",
+              "DK",
+              "EE",
+              "ES",
+              "FI",
+              "FR",
+              "GR",
+              "HR",
+              "HU",
+              "IE",
+              "IT",
+              "LT",
+              "LU",
+              "LV",
+              "MT",
+              "NL",
+              "PL",
+              "PT",
+              "RO",
+              "SE",
+              "SI",
+              "SK"
+            ]
+          },
+          {
+            "fact": "critical_or_provider",
+            "op": "eq",
+            "value": "yes"
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AT",
+              "BE",
+              "BG",
+              "CY",
+              "CZ",
+              "DE",
+              "DK",
+              "EE",
+              "ES",
+              "FI",
+              "FR",
+              "GR",
+              "HR",
+              "HU",
+              "IE",
+              "IT",
+              "LT",
+              "LU",
+              "LV",
+              "MT",
+              "NL",
+              "PL",
+              "PT",
+              "RO",
+              "SE",
+              "SI",
+              "SK"
+            ]
+          },
+          {
+            "fact": "critical_or_provider",
+            "op": "eq",
+            "value": "yes"
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "in",
+            "value": [
+              "AT",
+              "BE",
+              "BG",
+              "CY",
+              "CZ",
+              "DE",
+              "DK",
+              "EE",
+              "ES",
+              "FI",
+              "FR",
+              "GR",
+              "HR",
+              "HU",
+              "IE",
+              "IT",
+              "LT",
+              "LU",
+              "LV",
+              "MT",
+              "NL",
+              "PL",
+              "PT",
+              "RO",
+              "SE",
+              "SI",
+              "SK"
+            ]
+          },
+          {
+            "fact": "industry",
+            "op": "in",
+            "value": [
+              "software",
+              "telecom",
+              "energy_utilities",
+              "healthcare"
+            ]
+          },
+          {
+            "fact": "headcount_band",
+            "op": "in",
+            "value": [
+              "51_200",
+              "201_500",
+              "501_1000",
+              "over_1000"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AT",
+              "BE",
+              "BG",
+              "CY",
+              "CZ",
+              "DE",
+              "DK",
+              "EE",
+              "ES",
+              "FI",
+              "FR",
+              "GR",
+              "HR",
+              "HU",
+              "IE",
+              "IT",
+              "LT",
+              "LU",
+              "LV",
+              "MT",
+              "NL",
+              "PL",
+              "PT",
+              "RO",
+              "SE",
+              "SI",
+              "SK"
+            ]
+          },
+          {
+            "fact": "industry",
+            "op": "in",
+            "value": [
+              "software",
+              "telecom",
+              "energy_utilities",
+              "healthcare"
+            ]
+          },
+          {
+            "fact": "headcount_band",
+            "op": "in",
+            "value": [
+              "51_200",
+              "201_500",
+              "501_1000",
+              "over_1000"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "EU",
+              "EEA",
+              "AT",
+              "BE",
+              "BG",
+              "CY",
+              "CZ",
+              "DE",
+              "DK",
+              "EE",
+              "ES",
+              "FI",
+              "FR",
+              "GR",
+              "HR",
+              "HU",
+              "IE",
+              "IT",
+              "LT",
+              "LU",
+              "LV",
+              "MT",
+              "NL",
+              "PL",
+              "PT",
+              "RO",
+              "SE",
+              "SI",
+              "SK"
+            ]
+          },
+          {
+            "fact": "critical_or_provider",
+            "op": "eq",
+            "value": "yes"
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "EU",
+              "EEA",
+              "AT",
+              "BE",
+              "BG",
+              "CY",
+              "CZ",
+              "DE",
+              "DK",
+              "EE",
+              "ES",
+              "FI",
+              "FR",
+              "GR",
+              "HR",
+              "HU",
+              "IE",
+              "IT",
+              "LT",
+              "LU",
+              "LV",
+              "MT",
+              "NL",
+              "PL",
+              "PT",
+              "RO",
+              "SE",
+              "SI",
+              "SK"
+            ]
+          },
+          {
+            "fact": "industry",
+            "op": "eq",
+            "value": "software"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "EU-04",
+    "jurisdiction": "EU",
+    "zone": null,
+    "short_name": "DORA",
+    "official_name": "Regulation (EU) 2022/2554, Digital Operational Resilience Act",
+    "issuer": "European Parliament and Council of the EU",
+    "regulator": "National financial supervisors and the European Supervisory Authorities (EBA, ESMA, EIOPA)",
+    "kinds": [
+      "financial_sector",
+      "resilience"
+    ],
+    "topic_column": "sector",
+    "force": "law",
+    "state": "in_force",
+    "state_note": "Applies since 17 January 2025.",
+    "tier": "sector",
+    "applies_to": "About 20 kinds of EU financial entities (banks, insurers, investment firms, payment and e-money institutions, crypto-asset service providers and more) and, through contracts and direct oversight, their ICT third party providers. Providers designated critical are overseen directly by the ESAs.",
+    "duties": [
+      {
+        "topic": "board_duty",
+        "text": "Keep a board-owned ICT risk management framework.",
+        "clock_hours": null
+      },
+      {
+        "topic": "incident_reporting",
+        "text": "Classify major ICT incidents and send an initial report within 4 hours of classification and no later than 24 hours after becoming aware.",
+        "clock_hours": 4
+      },
+      {
+        "topic": "incident_reporting",
+        "text": "Send an intermediate report within 72 hours and a final report within one month.",
+        "clock_hours": 72
+      },
+      {
+        "topic": "assessment",
+        "text": "Run resilience testing, with threat-led penetration tests at least every three years for significant entities.",
+        "clock_hours": null
+      },
+      {
+        "topic": "third_parties",
+        "text": "Keep a register of all ICT third party arrangements and put the mandatory audit, exit and subcontracting clauses in the contracts.",
+        "clock_hours": null
+      },
+      {
+        "topic": "penalties",
+        "text": "Member states set penalties; critical ICT providers face periodic penalty payments.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "none",
+      "note": "No certification."
+    },
+    "iso27001": {
+      "relation": "not_a_substitute",
+      "note": "Helpful but not sufficient; financial customers ask vendors for ISO 27001 or SOC 2 plus DORA contract terms. No official mapping."
+    },
+    "soc2": {
+      "relation": "not_a_substitute",
+      "note": "Helpful but not sufficient; financial customers ask vendors for ISO 27001 or SOC 2 plus DORA contract terms."
+    },
+    "helps": [
+      "GOV-02",
+      "GOV-17",
+      "GOV-18",
+      "GOV-19",
+      "LM-04",
+      "LM-05",
+      "LM-07",
+      "DM-01",
+      "GOV-16",
+      "BC-02",
+      "LM-10",
+      "BC-06",
+      "BC-07",
+      "BC-08",
+      "CS-07",
+      "LM-12"
+    ],
+    "not_covered": [
+      "Register of contractual arrangements in the prescribed form",
+      "Mandatory contract clauses",
+      "Threat led testing",
+      "Major incident classification",
+      "Concentration risk"
+    ],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2025-01-17",
+        "precision": "day",
+        "kind": "obligation_starts",
+        "description": "DORA applies.",
+        "confirmed": true
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://eur-lex.europa.eu/eli/reg/2022/2554/oj",
+        "publisher": "EUR-Lex (Publications Office of the EU)",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "known_not_opened"
+      },
+      {
+        "url": "https://www.eiopa.europa.eu/digital-operational-resilience-act-dora_en",
+        "publisher": "EIOPA",
+        "kind": "regulator_guidance",
+        "accessed_at": "2026-11-21",
+        "verified": "known_not_opened"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "Sources are cited from prior knowledge and were not opened in this session."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "in",
+            "value": [
+              "AT",
+              "BE",
+              "BG",
+              "CY",
+              "CZ",
+              "DE",
+              "DK",
+              "EE",
+              "ES",
+              "FI",
+              "FR",
+              "GR",
+              "HR",
+              "HU",
+              "IE",
+              "IT",
+              "LT",
+              "LU",
+              "LV",
+              "MT",
+              "NL",
+              "PL",
+              "PT",
+              "RO",
+              "SE",
+              "SI",
+              "SK"
+            ]
+          },
+          {
+            "fact": "regulator_licences",
+            "op": "any_in",
+            "value": [
+              "financial",
+              "payments",
+              "insurance"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AT",
+              "BE",
+              "BG",
+              "CY",
+              "CZ",
+              "DE",
+              "DK",
+              "EE",
+              "ES",
+              "FI",
+              "FR",
+              "GR",
+              "HR",
+              "HU",
+              "IE",
+              "IT",
+              "LT",
+              "LU",
+              "LV",
+              "MT",
+              "NL",
+              "PL",
+              "PT",
+              "RO",
+              "SE",
+              "SI",
+              "SK"
+            ]
+          },
+          {
+            "fact": "regulator_licences",
+            "op": "any_in",
+            "value": [
+              "financial",
+              "payments",
+              "insurance"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "in",
+            "value": [
+              "AT",
+              "BE",
+              "BG",
+              "CY",
+              "CZ",
+              "DE",
+              "DK",
+              "EE",
+              "ES",
+              "FI",
+              "FR",
+              "GR",
+              "HR",
+              "HU",
+              "IE",
+              "IT",
+              "LT",
+              "LU",
+              "LV",
+              "MT",
+              "NL",
+              "PL",
+              "PT",
+              "RO",
+              "SE",
+              "SI",
+              "SK"
+            ]
+          },
+          {
+            "fact": "industry",
+            "op": "in",
+            "value": [
+              "financial_services",
+              "payments",
+              "insurance"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AT",
+              "BE",
+              "BG",
+              "CY",
+              "CZ",
+              "DE",
+              "DK",
+              "EE",
+              "ES",
+              "FI",
+              "FR",
+              "GR",
+              "HR",
+              "HU",
+              "IE",
+              "IT",
+              "LT",
+              "LU",
+              "LV",
+              "MT",
+              "NL",
+              "PL",
+              "PT",
+              "RO",
+              "SE",
+              "SI",
+              "SK"
+            ]
+          },
+          {
+            "fact": "industry",
+            "op": "in",
+            "value": [
+              "financial_services",
+              "payments",
+              "insurance"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "EU",
+              "EEA",
+              "AT",
+              "BE",
+              "BG",
+              "CY",
+              "CZ",
+              "DE",
+              "DK",
+              "EE",
+              "ES",
+              "FI",
+              "FR",
+              "GR",
+              "HR",
+              "HU",
+              "IE",
+              "IT",
+              "LT",
+              "LU",
+              "LV",
+              "MT",
+              "NL",
+              "PL",
+              "PT",
+              "RO",
+              "SE",
+              "SI",
+              "SK"
+            ]
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "banks_insurers"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "EU-05",
+    "jurisdiction": "EU",
+    "zone": null,
+    "short_name": "Cyber Resilience Act",
+    "official_name": "Regulation (EU) 2024/2847, Cyber Resilience Act",
+    "issuer": "European Parliament and Council of the EU",
+    "regulator": null,
+    "kinds": [
+      "cybersecurity",
+      "product_security"
+    ],
+    "topic_column": "sector",
+    "force": "law",
+    "state": "in_force_phasing",
+    "state_note": "In force since 10 December 2024. Vulnerability and incident reporting applies from 11 September 2026 and all remaining duties from 11 December 2027.",
+    "tier": "sector",
+    "applies_to": "Manufacturers, importers and distributors of products with digital elements placed on the EU market, hardware and software including standalone software. Pure SaaS is generally outside unless it is a remote data processing part of a product; open source stewards have lighter duties.",
+    "duties": [
+      {
+        "topic": "baseline",
+        "text": "Make products secure by design and by default.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "Handle vulnerabilities for the support period, five years as a rule, with free security updates.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "Keep a software bill of materials and a technical file, and complete conformity assessment and CE marking.",
+        "clock_hours": null
+      },
+      {
+        "topic": "incident_reporting",
+        "text": "Send an early warning within 24 hours about an actively exploited vulnerability or severe incident, then a notification within 72 hours.",
+        "clock_hours": 24
+      },
+      {
+        "topic": "incident_reporting",
+        "text": "Send the final report within 14 days for vulnerabilities or one month for incidents.",
+        "clock_hours": null
+      },
+      {
+        "topic": "penalties",
+        "text": "Fines reach EUR 15 million or 2.5 percent of turnover.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "certification",
+      "note": "CE marking; self-assessment for most products, third party assessment or EU certification for important and critical classes."
+    },
+    "iso27001": {
+      "relation": "not_a_substitute",
+      "note": "Organisational certificates do not show product conformity; harmonised product standards are being drafted and EUCC certificates can support conformity."
+    },
+    "soc2": {
+      "relation": "not_a_substitute",
+      "note": "Organisational reports do not show product conformity."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2024-12-10",
+        "precision": "day",
+        "kind": "in_force",
+        "description": "Cyber Resilience Act enters into force.",
+        "confirmed": true
+      },
+      {
+        "date": "2026-06-11",
+        "precision": "day",
+        "kind": "obligation_starts",
+        "description": "Rules on conformity assessment bodies apply.",
+        "confirmed": true
+      },
+      {
+        "date": "2026-09-11",
+        "precision": "day",
+        "kind": "obligation_starts",
+        "description": "Vulnerability and incident reporting applies; ENISA's Single Reporting Platform goes live.",
+        "confirmed": true
+      },
+      {
+        "date": "2027-12-11",
+        "precision": "day",
+        "kind": "obligation_starts",
+        "description": "All remaining obligations apply.",
+        "confirmed": true
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://eur-lex.europa.eu/eli/reg/2024/2847/oj",
+        "publisher": "EUR-Lex (Publications Office of the EU)",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "known_not_opened"
+      },
+      {
+        "url": "https://digital-strategy.ec.europa.eu/en/policies/cra-reporting",
+        "publisher": "European Commission",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.enisa.europa.eu/news/the-cra-single-reporting-platform-is-launched",
+        "publisher": "ENISA",
+        "kind": "regulator_guidance",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "The enforcing authorities are not named in the notes.",
+        "Penalty figures to be checked against the primary text by the reviewer before display."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "in",
+            "value": [
+              "AT",
+              "BE",
+              "BG",
+              "CY",
+              "CZ",
+              "DE",
+              "DK",
+              "EE",
+              "ES",
+              "FI",
+              "FR",
+              "GR",
+              "HR",
+              "HU",
+              "IE",
+              "IT",
+              "LT",
+              "LU",
+              "LV",
+              "MT",
+              "NL",
+              "PL",
+              "PT",
+              "RO",
+              "SE",
+              "SI",
+              "SK"
+            ]
+          },
+          {
+            "fact": "connected_products",
+            "op": "eq",
+            "value": "yes"
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AT",
+              "BE",
+              "BG",
+              "CY",
+              "CZ",
+              "DE",
+              "DK",
+              "EE",
+              "ES",
+              "FI",
+              "FR",
+              "GR",
+              "HR",
+              "HU",
+              "IE",
+              "IT",
+              "LT",
+              "LU",
+              "LV",
+              "MT",
+              "NL",
+              "PL",
+              "PT",
+              "RO",
+              "SE",
+              "SI",
+              "SK"
+            ]
+          },
+          {
+            "fact": "connected_products",
+            "op": "eq",
+            "value": "yes"
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "EU",
+              "EEA",
+              "AT",
+              "BE",
+              "BG",
+              "CY",
+              "CZ",
+              "DE",
+              "DK",
+              "EE",
+              "ES",
+              "FI",
+              "FR",
+              "GR",
+              "HR",
+              "HU",
+              "IE",
+              "IT",
+              "LT",
+              "LU",
+              "LV",
+              "MT",
+              "NL",
+              "PL",
+              "PT",
+              "RO",
+              "SE",
+              "SI",
+              "SK"
+            ]
+          },
+          {
+            "fact": "connected_products",
+            "op": "eq",
+            "value": "yes"
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "in",
+            "value": [
+              "AT",
+              "BE",
+              "BG",
+              "CY",
+              "CZ",
+              "DE",
+              "DK",
+              "EE",
+              "ES",
+              "FI",
+              "FR",
+              "GR",
+              "HR",
+              "HU",
+              "IE",
+              "IT",
+              "LT",
+              "LU",
+              "LV",
+              "MT",
+              "NL",
+              "PL",
+              "PT",
+              "RO",
+              "SE",
+              "SI",
+              "SK"
+            ]
+          },
+          {
+            "fact": "industry",
+            "op": "in",
+            "value": [
+              "manufacturing_devices",
+              "software"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AT",
+              "BE",
+              "BG",
+              "CY",
+              "CZ",
+              "DE",
+              "DK",
+              "EE",
+              "ES",
+              "FI",
+              "FR",
+              "GR",
+              "HR",
+              "HU",
+              "IE",
+              "IT",
+              "LT",
+              "LU",
+              "LV",
+              "MT",
+              "NL",
+              "PL",
+              "PT",
+              "RO",
+              "SE",
+              "SI",
+              "SK"
+            ]
+          },
+          {
+            "fact": "industry",
+            "op": "in",
+            "value": [
+              "manufacturing_devices",
+              "software"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "EU",
+              "EEA",
+              "AT",
+              "BE",
+              "BG",
+              "CY",
+              "CZ",
+              "DE",
+              "DK",
+              "EE",
+              "ES",
+              "FI",
+              "FR",
+              "GR",
+              "HR",
+              "HU",
+              "IE",
+              "IT",
+              "LT",
+              "LU",
+              "LV",
+              "MT",
+              "NL",
+              "PL",
+              "PT",
+              "RO",
+              "SE",
+              "SI",
+              "SK"
+            ]
+          },
+          {
+            "fact": "industry",
+            "op": "in",
+            "value": [
+              "manufacturing_devices",
+              "software"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "EU-06",
+    "jurisdiction": "EU",
+    "zone": null,
+    "short_name": "EU AI Act",
+    "official_name": "Regulation (EU) 2024/1689 on artificial intelligence, as amended by Regulation (EU) 2026/1744 (Digital Omnibus on AI)",
+    "issuer": "European Parliament and Council of the EU",
+    "regulator": "European AI Office and national market surveillance authorities",
+    "kinds": [
+      "ai"
+    ],
+    "topic_column": "ai",
+    "force": "law",
+    "state": "in_force_phasing",
+    "state_note": "In force since 1 August 2024 and phasing in. After the 2026 amendment, transparency duties apply from 2 August 2026, stand-alone high-risk systems from 2 December 2027 and high-risk AI in regulated products from 2 August 2028.",
+    "tier": "most_should_know",
+    "applies_to": "Providers, deployers, importers and distributors of AI systems placed on the market or used in the EU, including providers outside the EU whose output is used there. Duties scale with the risk class.",
+    "duties": [
+      {
+        "topic": "baseline",
+        "text": "Do not use prohibited AI practices; since the 2026 amendment these include systems that generate non-consensual intimate imagery or child sexual abuse material.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "Tell people when they interact with AI and label synthetic content.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "For high-risk systems, run risk management, data governance, logging, human oversight, accuracy and cybersecurity controls under a quality management system.",
+        "clock_hours": null
+      },
+      {
+        "topic": "registration",
+        "text": "Register high-risk systems and monitor them after they reach the market.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "As a deployer of a high-risk system, use it as instructed, keep human oversight and run impact assessments where required.",
+        "clock_hours": null
+      },
+      {
+        "topic": "penalties",
+        "text": "Fines reach EUR 35 million or 7 percent of turnover for prohibited practices.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "certification",
+      "note": "Conformity assessment and CE marking for high-risk systems; voluntary codes of practice for general purpose models."
+    },
+    "iso27001": {
+      "relation": "not_a_substitute",
+      "note": "Not recognised under the Act. ISO/IEC 42001 is useful groundwork but is not a harmonised standard, and CEN-CENELEC standards are in development."
+    },
+    "soc2": {
+      "relation": "not_a_substitute",
+      "note": "Not recognised under the Act."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2024-08-01",
+        "precision": "day",
+        "kind": "in_force",
+        "description": "AI Act enters into force.",
+        "confirmed": true
+      },
+      {
+        "date": "2025-02-02",
+        "precision": "day",
+        "kind": "obligation_starts",
+        "description": "Prohibited practices and AI literacy apply.",
+        "confirmed": true
+      },
+      {
+        "date": "2025-08-02",
+        "precision": "day",
+        "kind": "obligation_starts",
+        "description": "General purpose AI model duties, governance and penalties apply.",
+        "confirmed": true
+      },
+      {
+        "date": "2026-07-27",
+        "precision": "day",
+        "kind": "in_force",
+        "description": "Amending Regulation (EU) 2026/1744 enters into force (published 24 July 2026).",
+        "confirmed": true
+      },
+      {
+        "date": "2026-08-02",
+        "precision": "day",
+        "kind": "obligation_starts",
+        "description": "Transparency duties (Article 50) apply.",
+        "confirmed": true
+      },
+      {
+        "date": "2026-12-02",
+        "precision": "day",
+        "kind": "deadline",
+        "description": "Grace period ends for marking outputs of generative systems already on the market.",
+        "confirmed": true
+      },
+      {
+        "date": "2027-12-02",
+        "precision": "day",
+        "kind": "obligation_starts",
+        "description": "Stand-alone high-risk system (Annex III) duties apply.",
+        "confirmed": true
+      },
+      {
+        "date": "2028-08-02",
+        "precision": "day",
+        "kind": "obligation_starts",
+        "description": "Duties for high-risk AI embedded in regulated products (Annex I) apply.",
+        "confirmed": true
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://eur-lex.europa.eu/eli/reg/2024/1689/oj",
+        "publisher": "EUR-Lex (Publications Office of the EU)",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "known_not_opened"
+      },
+      {
+        "url": "https://eur-lex.europa.eu/eli/reg/2026/1744/oj",
+        "publisher": "EUR-Lex (Publications Office of the EU)",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      },
+      {
+        "url": "https://www.cuatrecasas.com/en/portugal/intellectual-property/art/digital-omnibus-ai-has-been-published",
+        "publisher": "Cuatrecasas",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.gibsondunn.com/eu-ai-act-omnibus-agreement",
+        "publisher": "Gibson Dunn",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      },
+      {
+        "url": "https://www.orrick.com/en/Insights/2026/05/EUs-Digital-Omnibus-on-AI-7-Key-Changes-You-Need-to-Know",
+        "publisher": "Orrick",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.dlapiper.com/en/insights/publications/law-in-tech/2026/digital-omnibus-on-ai",
+        "publisher": "DLA Piper",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "Section D of the notes also gives 2 December 2026 as the end of the transition for the new prohibited practice; the entry body does not state it, so check before showing.",
+        "The 2026 amendment softened the AI literacy duty; the new wording was not summarised.",
+        "Penalty figures to be checked against the primary text by the reviewer before display."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "in",
+            "value": [
+              "AT",
+              "BE",
+              "BG",
+              "CY",
+              "CZ",
+              "DE",
+              "DK",
+              "EE",
+              "ES",
+              "FI",
+              "FR",
+              "GR",
+              "HR",
+              "HU",
+              "IE",
+              "IT",
+              "LT",
+              "LU",
+              "LV",
+              "MT",
+              "NL",
+              "PL",
+              "PT",
+              "RO",
+              "SE",
+              "SI",
+              "SK"
+            ]
+          },
+          {
+            "fact": "ai_use",
+            "op": "in",
+            "value": [
+              "product_affects_people",
+              "builds_ai"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AT",
+              "BE",
+              "BG",
+              "CY",
+              "CZ",
+              "DE",
+              "DK",
+              "EE",
+              "ES",
+              "FI",
+              "FR",
+              "GR",
+              "HR",
+              "HU",
+              "IE",
+              "IT",
+              "LT",
+              "LU",
+              "LV",
+              "MT",
+              "NL",
+              "PL",
+              "PT",
+              "RO",
+              "SE",
+              "SI",
+              "SK"
+            ]
+          },
+          {
+            "fact": "ai_use",
+            "op": "in",
+            "value": [
+              "product_affects_people",
+              "builds_ai"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "in",
+            "value": [
+              "AT",
+              "BE",
+              "BG",
+              "CY",
+              "CZ",
+              "DE",
+              "DK",
+              "EE",
+              "ES",
+              "FI",
+              "FR",
+              "GR",
+              "HR",
+              "HU",
+              "IE",
+              "IT",
+              "LT",
+              "LU",
+              "LV",
+              "MT",
+              "NL",
+              "PL",
+              "PT",
+              "RO",
+              "SE",
+              "SI",
+              "SK"
+            ]
+          },
+          {
+            "fact": "ai_use",
+            "op": "eq",
+            "value": "staff_tools"
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AT",
+              "BE",
+              "BG",
+              "CY",
+              "CZ",
+              "DE",
+              "DK",
+              "EE",
+              "ES",
+              "FI",
+              "FR",
+              "GR",
+              "HR",
+              "HU",
+              "IE",
+              "IT",
+              "LT",
+              "LU",
+              "LV",
+              "MT",
+              "NL",
+              "PL",
+              "PT",
+              "RO",
+              "SE",
+              "SI",
+              "SK"
+            ]
+          },
+          {
+            "fact": "ai_use",
+            "op": "eq",
+            "value": "staff_tools"
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "EU",
+              "EEA",
+              "AT",
+              "BE",
+              "BG",
+              "CY",
+              "CZ",
+              "DE",
+              "DK",
+              "EE",
+              "ES",
+              "FI",
+              "FR",
+              "GR",
+              "HR",
+              "HU",
+              "IE",
+              "IT",
+              "LT",
+              "LU",
+              "LV",
+              "MT",
+              "NL",
+              "PL",
+              "PT",
+              "RO",
+              "SE",
+              "SI",
+              "SK"
+            ]
+          },
+          {
+            "fact": "ai_use",
+            "op": "in",
+            "value": [
+              "product_affects_people",
+              "builds_ai"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "EU-07",
+    "jurisdiction": "EU",
+    "zone": null,
+    "short_name": "EU Cybersecurity Act",
+    "official_name": "Regulation (EU) 2019/881, EU Cybersecurity Act and certification schemes",
+    "issuer": "European Parliament and Council of the EU",
+    "regulator": "ENISA, with accredited certification bodies",
+    "kinds": [
+      "cybersecurity"
+    ],
+    "topic_column": "security_baseline",
+    "force": "law",
+    "state": "voluntary",
+    "state_note": "The regulation has been in force since 2019, but certifying under its schemes is voluntary unless another law requires it. EUCC applies since February 2025, the cloud scheme EUCS is not adopted, and a full revision proposed on 20 January 2026 is a draft.",
+    "tier": "sector",
+    "applies_to": "Vendors that choose to certify ICT products, services or processes; relevant to cloud providers once a cloud scheme exists.",
+    "duties": [
+      {
+        "topic": "assessment",
+        "text": "If you choose to certify, do it under an EU scheme at basic, substantial or high assurance level through an accredited body.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "For ICT products, use the EUCC scheme, based on Common Criteria, which has applied since February 2025.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "For cloud services, rely on national schemes such as Germany C5, France SecNumCloud and Spain ENS until the EU cloud scheme is adopted.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "certification",
+      "note": "EUCC certification exists for ICT products; the cloud scheme EUCS is not adopted and EU5G is in preparation."
+    },
+    "iso27001": {
+      "relation": "helps_partially",
+      "note": "The draft cloud scheme drew on ISO 27001, ISO 27017, C5 and SecNumCloud."
+    },
+    "soc2": {
+      "relation": "not_relevant",
+      "note": "Not a basis of the EU schemes described in the sources."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2025-02",
+        "precision": "month",
+        "kind": "obligation_starts",
+        "description": "EUCC scheme applicable.",
+        "confirmed": true
+      },
+      {
+        "date": "2026-01-20",
+        "precision": "day",
+        "kind": "proposed",
+        "description": "Commission proposes a revised Cybersecurity Act (procedure 2026/0011(COD)).",
+        "confirmed": true
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://eur-lex.europa.eu/eli/reg/2019/881/oj",
+        "publisher": "EUR-Lex (Publications Office of the EU)",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "known_not_opened"
+      },
+      {
+        "url": "https://digital-strategy.ec.europa.eu/en/policies/cybersecurity-act",
+        "publisher": "European Commission",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://digital-strategy.ec.europa.eu/en/faqs/cybersecurity-package-questions-answers",
+        "publisher": "European Commission",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://oeil.europarl.europa.eu/oeil/en/document-summary?id=1884092",
+        "publisher": "European Parliament Legislative Observatory",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "Current legislative stage of the Cybersecurity Act revision and of the cloud scheme (EUCS) not confirmed.",
+        "SOC 2 relation is inferred; the sources do not mention SOC 2."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "in",
+            "value": [
+              "AT",
+              "BE",
+              "BG",
+              "CY",
+              "CZ",
+              "DE",
+              "DK",
+              "EE",
+              "ES",
+              "FI",
+              "FR",
+              "GR",
+              "HR",
+              "HU",
+              "IE",
+              "IT",
+              "LT",
+              "LU",
+              "LV",
+              "MT",
+              "NL",
+              "PL",
+              "PT",
+              "RO",
+              "SE",
+              "SI",
+              "SK"
+            ]
+          },
+          {
+            "fact": "critical_or_provider",
+            "op": "eq",
+            "value": "yes"
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AT",
+              "BE",
+              "BG",
+              "CY",
+              "CZ",
+              "DE",
+              "DK",
+              "EE",
+              "ES",
+              "FI",
+              "FR",
+              "GR",
+              "HR",
+              "HU",
+              "IE",
+              "IT",
+              "LT",
+              "LU",
+              "LV",
+              "MT",
+              "NL",
+              "PL",
+              "PT",
+              "RO",
+              "SE",
+              "SI",
+              "SK"
+            ]
+          },
+          {
+            "fact": "critical_or_provider",
+            "op": "eq",
+            "value": "yes"
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "in",
+            "value": [
+              "AT",
+              "BE",
+              "BG",
+              "CY",
+              "CZ",
+              "DE",
+              "DK",
+              "EE",
+              "ES",
+              "FI",
+              "FR",
+              "GR",
+              "HR",
+              "HU",
+              "IE",
+              "IT",
+              "LT",
+              "LU",
+              "LV",
+              "MT",
+              "NL",
+              "PL",
+              "PT",
+              "RO",
+              "SE",
+              "SI",
+              "SK"
+            ]
+          },
+          {
+            "fact": "connected_products",
+            "op": "eq",
+            "value": "yes"
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AT",
+              "BE",
+              "BG",
+              "CY",
+              "CZ",
+              "DE",
+              "DK",
+              "EE",
+              "ES",
+              "FI",
+              "FR",
+              "GR",
+              "HR",
+              "HU",
+              "IE",
+              "IT",
+              "LT",
+              "LU",
+              "LV",
+              "MT",
+              "NL",
+              "PL",
+              "PT",
+              "RO",
+              "SE",
+              "SI",
+              "SK"
+            ]
+          },
+          {
+            "fact": "connected_products",
+            "op": "eq",
+            "value": "yes"
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "EU",
+              "EEA",
+              "AT",
+              "BE",
+              "BG",
+              "CY",
+              "CZ",
+              "DE",
+              "DK",
+              "EE",
+              "ES",
+              "FI",
+              "FR",
+              "GR",
+              "HR",
+              "HU",
+              "IE",
+              "IT",
+              "LT",
+              "LU",
+              "LV",
+              "MT",
+              "NL",
+              "PL",
+              "PT",
+              "RO",
+              "SE",
+              "SI",
+              "SK"
+            ]
+          },
+          {
+            "fact": "critical_or_provider",
+            "op": "eq",
+            "value": "yes"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "EU-08",
+    "jurisdiction": "EU",
+    "zone": null,
+    "short_name": "Data Act",
+    "official_name": "Regulation (EU) 2023/2854, Data Act",
+    "issuer": "European Parliament and Council of the EU",
+    "regulator": "National authorities in each member state",
+    "kinds": [],
+    "topic_column": "sector",
+    "force": "law",
+    "state": "in_force_phasing",
+    "state_note": "Applies since 12 September 2025. The connected product design duty covers products placed on the market after 12 September 2026, cloud switching charges end on 12 January 2027 and unfair term rules reach older contracts from 12 September 2027.",
+    "tier": "sector",
+    "applies_to": "Manufacturers of connected products and providers of related services, holders of that data, and providers of data processing services (cloud, including SaaS, PaaS and IaaS) serving EU customers. It is not a privacy law.",
+    "duties": [
+      {
+        "topic": "baseline",
+        "text": "Give users access to the data their connected products generate and let them share it with third parties.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "As a cloud provider, remove technical, contractual and commercial barriers to switching, with a maximum notice period and transition period written into contracts.",
+        "clock_hours": null
+      },
+      {
+        "topic": "transfers",
+        "text": "Put safeguards in place against unlawful access by non-EU governments to non-personal data.",
+        "clock_hours": null
+      },
+      {
+        "topic": "third_parties",
+        "text": "Keep business to business data sharing terms fair.",
+        "clock_hours": null
+      },
+      {
+        "topic": "penalties",
+        "text": "Penalties are set nationally.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "none",
+      "note": "No certification."
+    },
+    "iso27001": {
+      "relation": "not_relevant",
+      "note": "Not relevant."
+    },
+    "soc2": {
+      "relation": "not_relevant",
+      "note": "Not relevant."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2024-01-11",
+        "precision": "day",
+        "kind": "in_force",
+        "description": "Data Act enters into force.",
+        "confirmed": true
+      },
+      {
+        "date": "2025-09-12",
+        "precision": "day",
+        "kind": "obligation_starts",
+        "description": "Data Act applies.",
+        "confirmed": true
+      },
+      {
+        "date": "2026-09-12",
+        "precision": "day",
+        "kind": "obligation_starts",
+        "description": "Design duty for connected products placed on the market after this date.",
+        "confirmed": true
+      },
+      {
+        "date": "2027-01-12",
+        "precision": "day",
+        "kind": "deadline",
+        "description": "Cloud switching charges fully abolished.",
+        "confirmed": true
+      },
+      {
+        "date": "2027-09-12",
+        "precision": "day",
+        "kind": "obligation_starts",
+        "description": "Unfair contract term rules reach certain older contracts.",
+        "confirmed": true
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://eur-lex.europa.eu/eli/reg/2023/2854/oj",
+        "publisher": "EUR-Lex (Publications Office of the EU)",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "known_not_opened"
+      },
+      {
+        "url": "https://www.mccannfitzgerald.com/knowledge/data-privacy-and-cyber-risk/data-act-developments-2026-and-beyond",
+        "publisher": "McCann FitzGerald",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.goodwinlaw.com/en/insights/publications/2025/10/alerts-technology-dpc-navigating-the-eu-data-act-key-obligations",
+        "publisher": "Goodwin",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "No value in the kinds list fits a data sharing and cloud switching law, so kinds is empty.",
+        "The Digital Omnibus proposes changes (draft)."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "in",
+            "value": [
+              "AT",
+              "BE",
+              "BG",
+              "CY",
+              "CZ",
+              "DE",
+              "DK",
+              "EE",
+              "ES",
+              "FI",
+              "FR",
+              "GR",
+              "HR",
+              "HU",
+              "IE",
+              "IT",
+              "LT",
+              "LU",
+              "LV",
+              "MT",
+              "NL",
+              "PL",
+              "PT",
+              "RO",
+              "SE",
+              "SI",
+              "SK"
+            ]
+          },
+          {
+            "fact": "connected_products",
+            "op": "eq",
+            "value": "yes"
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AT",
+              "BE",
+              "BG",
+              "CY",
+              "CZ",
+              "DE",
+              "DK",
+              "EE",
+              "ES",
+              "FI",
+              "FR",
+              "GR",
+              "HR",
+              "HU",
+              "IE",
+              "IT",
+              "LT",
+              "LU",
+              "LV",
+              "MT",
+              "NL",
+              "PL",
+              "PT",
+              "RO",
+              "SE",
+              "SI",
+              "SK"
+            ]
+          },
+          {
+            "fact": "connected_products",
+            "op": "eq",
+            "value": "yes"
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "EU",
+              "EEA",
+              "AT",
+              "BE",
+              "BG",
+              "CY",
+              "CZ",
+              "DE",
+              "DK",
+              "EE",
+              "ES",
+              "FI",
+              "FR",
+              "GR",
+              "HR",
+              "HU",
+              "IE",
+              "IT",
+              "LT",
+              "LU",
+              "LV",
+              "MT",
+              "NL",
+              "PL",
+              "PT",
+              "RO",
+              "SE",
+              "SI",
+              "SK"
+            ]
+          },
+          {
+            "fact": "connected_products",
+            "op": "eq",
+            "value": "yes"
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "EU",
+              "EEA",
+              "AT",
+              "BE",
+              "BG",
+              "CY",
+              "CZ",
+              "DE",
+              "DK",
+              "EE",
+              "ES",
+              "FI",
+              "FR",
+              "GR",
+              "HR",
+              "HU",
+              "IE",
+              "IT",
+              "LT",
+              "LU",
+              "LV",
+              "MT",
+              "NL",
+              "PL",
+              "PT",
+              "RO",
+              "SE",
+              "SI",
+              "SK"
+            ]
+          },
+          {
+            "fact": "critical_or_provider",
+            "op": "eq",
+            "value": "yes"
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "in",
+            "value": [
+              "AT",
+              "BE",
+              "BG",
+              "CY",
+              "CZ",
+              "DE",
+              "DK",
+              "EE",
+              "ES",
+              "FI",
+              "FR",
+              "GR",
+              "HR",
+              "HU",
+              "IE",
+              "IT",
+              "LT",
+              "LU",
+              "LV",
+              "MT",
+              "NL",
+              "PL",
+              "PT",
+              "RO",
+              "SE",
+              "SI",
+              "SK"
+            ]
+          },
+          {
+            "fact": "industry",
+            "op": "eq",
+            "value": "software"
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AT",
+              "BE",
+              "BG",
+              "CY",
+              "CZ",
+              "DE",
+              "DK",
+              "EE",
+              "ES",
+              "FI",
+              "FR",
+              "GR",
+              "HR",
+              "HU",
+              "IE",
+              "IT",
+              "LT",
+              "LU",
+              "LV",
+              "MT",
+              "NL",
+              "PL",
+              "PT",
+              "RO",
+              "SE",
+              "SI",
+              "SK"
+            ]
+          },
+          {
+            "fact": "industry",
+            "op": "eq",
+            "value": "software"
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "EU",
+              "EEA",
+              "AT",
+              "BE",
+              "BG",
+              "CY",
+              "CZ",
+              "DE",
+              "DK",
+              "EE",
+              "ES",
+              "FI",
+              "FR",
+              "GR",
+              "HR",
+              "HU",
+              "IE",
+              "IT",
+              "LT",
+              "LU",
+              "LV",
+              "MT",
+              "NL",
+              "PL",
+              "PT",
+              "RO",
+              "SE",
+              "SI",
+              "SK"
+            ]
+          },
+          {
+            "fact": "industry",
+            "op": "eq",
+            "value": "software"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "EU-09",
+    "jurisdiction": "EU",
+    "zone": null,
+    "short_name": "eIDAS 2",
+    "official_name": "Regulation (EU) 2024/1183 amending Regulation (EU) No 910/2014 (European Digital Identity Framework)",
+    "issuer": "European Parliament and Council of the EU",
+    "regulator": "National supervisory bodies, with conformity assessment bodies auditing qualified providers",
+    "kinds": [
+      "identity"
+    ],
+    "topic_column": "sector",
+    "force": "law",
+    "state": "in_force_phasing",
+    "state_note": "In force since 20 May 2024. Member states must offer a digital identity wallet by about 24 December 2026, and certain regulated private services must accept wallets from about December 2027.",
+    "tier": "sector",
+    "applies_to": "Trust service providers (e-signatures, seals, timestamps, certificates), public bodies, and private services that must use strong user authentication, such as banks, telecoms and very large platforms.",
+    "duties": [
+      {
+        "topic": "baseline",
+        "text": "Accept the EU Digital Identity Wallet where the rules require it, from about December 2027 for regulated private relying parties.",
+        "clock_hours": null
+      },
+      {
+        "topic": "registration",
+        "text": "Register as a relying party before accepting wallets.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "As a qualified trust service provider, pass a conformity assessment every two years.",
+        "clock_hours": null
+      },
+      {
+        "topic": "incident_reporting",
+        "text": "As a qualified trust service provider, notify incidents; these providers also fall under NIS2.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "certification",
+      "note": "Qualified trust service providers are audited by conformity assessment bodies every two years and supervised."
+    },
+    "iso27001": {
+      "relation": "not_a_substitute",
+      "note": "ETSI standards govern; ISO 27001 is commonly held but is not the test."
+    },
+    "soc2": {
+      "relation": "not_a_substitute",
+      "note": "ETSI standards govern trust services."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2024-05-20",
+        "precision": "day",
+        "kind": "in_force",
+        "description": "eIDAS 2 enters into force.",
+        "confirmed": true
+      },
+      {
+        "date": "2026-12-24",
+        "precision": "day",
+        "kind": "deadline",
+        "description": "Member states due to offer at least one wallet (approximate; readiness is uneven and Germany reportedly plans 2 January 2027).",
+        "confirmed": false
+      },
+      {
+        "date": "2027-12",
+        "precision": "month",
+        "kind": "obligation_starts",
+        "description": "Regulated private relying parties must accept wallets (approximate).",
+        "confirmed": false
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://eur-lex.europa.eu/eli/reg/2024/1183/oj",
+        "publisher": "EUR-Lex (Publications Office of the EU)",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "known_not_opened"
+      },
+      {
+        "url": "https://www.arthurcox.com/knowledge/the-eu-digital-identity-wallet-what-companies-need-to-know/",
+        "publisher": "Arthur Cox",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.ria.ee/en/state-information-system/electronic-identity-eid-and-trust-services/eudi-wallet",
+        "publisher": "Estonian Information System Authority (RIA)",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": []
+    },
+    "triggers": [
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "in",
+            "value": [
+              "AT",
+              "BE",
+              "BG",
+              "CY",
+              "CZ",
+              "DE",
+              "DK",
+              "EE",
+              "ES",
+              "FI",
+              "FR",
+              "GR",
+              "HR",
+              "HU",
+              "IE",
+              "IT",
+              "LT",
+              "LU",
+              "LV",
+              "MT",
+              "NL",
+              "PL",
+              "PT",
+              "RO",
+              "SE",
+              "SI",
+              "SK"
+            ]
+          },
+          {
+            "fact": "regulator_licences",
+            "op": "any_in",
+            "value": [
+              "financial",
+              "payments",
+              "telecom"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AT",
+              "BE",
+              "BG",
+              "CY",
+              "CZ",
+              "DE",
+              "DK",
+              "EE",
+              "ES",
+              "FI",
+              "FR",
+              "GR",
+              "HR",
+              "HU",
+              "IE",
+              "IT",
+              "LT",
+              "LU",
+              "LV",
+              "MT",
+              "NL",
+              "PL",
+              "PT",
+              "RO",
+              "SE",
+              "SI",
+              "SK"
+            ]
+          },
+          {
+            "fact": "regulator_licences",
+            "op": "any_in",
+            "value": [
+              "financial",
+              "payments",
+              "telecom"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "in",
+            "value": [
+              "AT",
+              "BE",
+              "BG",
+              "CY",
+              "CZ",
+              "DE",
+              "DK",
+              "EE",
+              "ES",
+              "FI",
+              "FR",
+              "GR",
+              "HR",
+              "HU",
+              "IE",
+              "IT",
+              "LT",
+              "LU",
+              "LV",
+              "MT",
+              "NL",
+              "PL",
+              "PT",
+              "RO",
+              "SE",
+              "SI",
+              "SK"
+            ]
+          },
+          {
+            "fact": "industry",
+            "op": "in",
+            "value": [
+              "financial_services",
+              "payments",
+              "telecom"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AT",
+              "BE",
+              "BG",
+              "CY",
+              "CZ",
+              "DE",
+              "DK",
+              "EE",
+              "ES",
+              "FI",
+              "FR",
+              "GR",
+              "HR",
+              "HU",
+              "IE",
+              "IT",
+              "LT",
+              "LU",
+              "LV",
+              "MT",
+              "NL",
+              "PL",
+              "PT",
+              "RO",
+              "SE",
+              "SI",
+              "SK"
+            ]
+          },
+          {
+            "fact": "industry",
+            "op": "in",
+            "value": [
+              "financial_services",
+              "payments",
+              "telecom"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]

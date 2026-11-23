@@ -1,0 +1,17 @@
+{
+  "pack": "regulations",
+  "source": "Drafted for Verity with AI from official and law firm sources listed per entry, 2026-11-21. Not reviewed by a lawyer (decision D-8). Read into memory at start; never written to the database. Entries show only when reviewed, unless REGULATIONS_SHOW_DRAFTS is on.",
+  "version": "2026.11-draft",
+  "entries": 83,
+  "sha256": {
+    "AU.json": "292aefba2ed36eab90bbb1c70f71cf89509a64617acb4489b7044dd94c20584e",
+    "EU.json": "d9c45dc964cb999b064ca4c6f302ee1aba3ec4dd7c0af9e16817fba7036d8153",
+    "GB.json": "9526506d94e90ab41d4c3dde991dec9f5364522fc07b5bb3d667d6c32ca77693",
+    "PK.json": "de078d1667bd80600ef055531531c2030c8d71ee0f9751f10d7c3e5c3bff4fcd",
+    "AE.json": "55aee9d9709151090036fe8f1b0690fdfb8193e3b3e38046f52aa4b55fda21a9",
+    "OM.json": "de5888980028b0b9f226f15921d3ae528194c506a917db387171cdb079e606aa",
+    "SA.json": "d9790ff43a7f6f04db21ea0c78679a4b5c6338e0f87157ae53c02e3ef6c54d0d",
+    "US.json": "36ecd360ca33ea90c2b57170fce9cc24e13e463cd10d63f92370d6201e4753e3",
+    "GLOBAL.json": "e83702ede5ea8ea3030d5814df0293fa566fc1afd9ee2b2af78b8346b052ce0c"
+  }
+}

@@ -288,6 +288,12 @@ class ExpectedEvidenceView:
     state: str
     """automatic, when_connected, planned, platform or manual."""
     automated_by: list[CheckRef] = field(default_factory=list)
+    # Guided onboarding CL-9: what the record is, where a small company finds it, what a good
+    # one shows, and what to file when nothing happened. Read from the template.
+    what: str | None = None
+    where: str | None = None
+    shows: str | None = None
+    if_none: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -611,6 +617,31 @@ class ConnectorService:
             .order_by(CheckRun.connection_id, CheckRun.started_at.desc())
         )
         return {run.connection_id: run for run in rows.scalars()}
+
+    async def connected_count(self, session: AsyncSession, *, tenant_id: uuid.UUID) -> int:
+        """Active connections to outside systems. Verity's own built-in provider is not one."""
+        return int(
+            (
+                await session.execute(
+                    select(func.count())
+                    .select_from(Connection)
+                    .where(
+                        Connection.tenant_id == tenant_id,
+                        Connection.status == "active",
+                        Connection.provider != BUILT_IN,
+                    )
+                )
+            ).scalar_one()
+        )
+
+    async def connected_keys(self, session: AsyncSession, *, tenant_id: uuid.UUID) -> set[str]:
+        """Provider keys with an active connection (guided onboarding PL-10)."""
+        rows = await session.execute(
+            select(Connection.provider).where(
+                Connection.tenant_id == tenant_id, Connection.status == "active"
+            )
+        )
+        return set(rows.scalars())
 
     async def list_connections(
         self, session: AsyncSession, *, tenant_id: uuid.UUID
@@ -1609,6 +1640,10 @@ class ConnectorService:
                     for k in item.get("automated_by", [])
                     if k in checks
                 ],
+                what=item.get("what"),
+                where=item.get("where"),
+                shows=item.get("shows"),
+                if_none=item.get("if_none"),
             )
             for item in items
         ]
@@ -2033,6 +2068,33 @@ class ConnectorService:
             if status in ("passing", "failing", "error", "stale", "not_applicable"):
                 statuses[control_id] = status
         return statuses
+
+    async def check_states(self, session: AsyncSession, *, tenant_id: uuid.UUID) -> dict[str, str]:
+        """Each check's status by key, with the rules ``automation_statuses`` applies per test:
+        pass, fail, error, stale, not_applicable, pending, not_connected or not_available.
+        For assessment objectives, whose artifacts name checks, not controls."""
+        connections = list(
+            (
+                await session.execute(
+                    select(Connection).where(
+                        Connection.tenant_id == tenant_id, Connection.status == "active"
+                    )
+                )
+            ).scalars()
+        )
+        outcomes = await self._outcomes_by_check(session, tenant_id, connections)
+        providers = {c.provider for c in connections}
+        rows = (await session.execute(select(Check.id, Check.key, Check.implementations))).all()
+        return {
+            key: _test_status(
+                implemented=bool(implementations),
+                runners=bool(providers & set(implementations)),
+                outcomes=outcomes.by_check.get(check_id, []),
+                stale=outcomes.stale(implementations),
+                ran=outcomes.ran(implementations),
+            )
+            for check_id, key, implementations in rows
+        }
 
     async def _latest_finished(
         self, session: AsyncSession, tenant_id: uuid.UUID, connection_ids: list[uuid.UUID]

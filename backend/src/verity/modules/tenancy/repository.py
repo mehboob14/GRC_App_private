@@ -16,6 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from verity.modules.tenancy.models import (
     PROVISIONING_STEPS,
     CompanyProfile,
+    CompanyProfileVersion,
     PlatformAdmin,
     Tenant,
     TenantBranding,
@@ -37,6 +38,20 @@ class CompanyProfileRepository:
     async def add(self, session: AsyncSession, profile: CompanyProfile) -> None:
         session.add(profile)
         await session.flush([profile])
+
+
+class CompanyProfileVersionRepository:
+    """Frozen confirmations of the profile. Append only; RLS bounds every read."""
+
+    async def add(self, session: AsyncSession, version: CompanyProfileVersion) -> None:
+        session.add(version)
+        await session.flush([version])
+
+    async def list(self, session: AsyncSession) -> list[CompanyProfileVersion]:
+        rows = await session.execute(
+            select(CompanyProfileVersion).order_by(CompanyProfileVersion.version.desc())
+        )
+        return list(rows.scalars())
 
 
 class TenantSmtpRepository:

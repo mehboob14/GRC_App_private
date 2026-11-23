@@ -27,8 +27,10 @@ from verity.core.middleware import (
 )
 from verity.modules.assets.router import assets_router
 from verity.modules.audit.router import router as audit_router
+from verity.modules.compliance.assurance_router import assurance_router
 from verity.modules.compliance.control_router import controls_router
 from verity.modules.compliance.engagement_router import engagement_router
+from verity.modules.compliance.programme_router import programme_router
 from verity.modules.compliance.router import (
     frameworks_router,
     requirements_router,
@@ -52,6 +54,9 @@ from verity.modules.iam.router import provider_router as iam_provider_router
 from verity.modules.leads.router import DEMO_REQUESTS_PATH, leads_router
 from verity.modules.linkage.router import linkage_router
 from verity.modules.notifications.router import notifications_router
+from verity.modules.objectives.router import objectives_router
+from verity.modules.onboarding.router import onboarding_router
+from verity.modules.regulations.router import regulations_router
 from verity.modules.risk.router import risks_router
 from verity.modules.tasks.router import tasks_router
 from verity.modules.tenancy.provider_auth import router as provider_auth_router
@@ -157,10 +162,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(requirements_router, prefix=API_PREFIX)
     app.include_router(controls_router, prefix=API_PREFIX)
     app.include_router(engagement_router, prefix=API_PREFIX)
+    app.include_router(programme_router, prefix=API_PREFIX)
+    app.include_router(assurance_router, prefix=API_PREFIX)
     app.include_router(evidence_router, prefix=API_PREFIX)
     app.include_router(documents_router, prefix=API_PREFIX)
     app.include_router(tasks_router, prefix=API_PREFIX)
     app.include_router(notifications_router, prefix=API_PREFIX)
+    app.include_router(onboarding_router, prefix=API_PREFIX)
+    app.include_router(regulations_router, prefix=API_PREFIX)
+    app.include_router(objectives_router, prefix=API_PREFIX)
     app.include_router(assets_router, prefix=API_PREFIX)
     app.include_router(vulnerabilities_router, prefix=API_PREFIX)
     app.include_router(vendors_router, prefix=API_PREFIX)

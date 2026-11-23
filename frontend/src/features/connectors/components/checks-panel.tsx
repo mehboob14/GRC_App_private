@@ -461,6 +461,31 @@ function EvidenceRow({
             ))}
           </span>
         ) : null}
+        {item.where || item.shows || item.if_none ? (
+          <details className="mt-2 text-body-sm text-text-secondary">
+            <summary className="cursor-pointer text-text-link">How to get this</summary>
+            <dl className="mt-1.5 grid gap-1">
+              {item.where ? (
+                <div>
+                  <dt className="inline font-semibold text-text-primary">Where: </dt>
+                  <dd className="inline">{item.where}</dd>
+                </div>
+              ) : null}
+              {item.shows ? (
+                <div>
+                  <dt className="inline font-semibold text-text-primary">A good one shows: </dt>
+                  <dd className="inline">{item.shows}</dd>
+                </div>
+              ) : null}
+              {item.if_none ? (
+                <div>
+                  <dt className="inline font-semibold text-text-primary">If nothing happened: </dt>
+                  <dd className="inline">{item.if_none}</dd>
+                </div>
+              ) : null}
+            </dl>
+          </details>
+        ) : null}
       </span>
       <StatusPill
         status={state.family}

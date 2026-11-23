@@ -1,4 +1,5 @@
 import { useDeferredValue, useState } from "react";
+import { InScopeChips } from "@/features/compliance/components/in-scope-chips";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -167,6 +168,7 @@ export function AssetDetailPage() {
         chips={
           <>
             <Badge variant="neutral">{ASSET_TYPE_META[a.asset_type].label}</Badge>
+            <InScopeChips refType="asset" id={a.id} />
             {a.environment ? <Badge variant="neutral">{ENVIRONMENT_LABEL[a.environment]}</Badge> : null}
             {a.internet_facing ? (
               <span className="inline-flex items-center gap-1 text-caption text-status-warning-text">

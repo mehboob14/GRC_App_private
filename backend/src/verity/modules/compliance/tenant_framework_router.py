@@ -26,6 +26,8 @@ from verity.modules.compliance.framework_service import framework_service
 from verity.modules.compliance.schemas import (
     ApplicabilityPut,
     ApplicabilityRowOut,
+    ApplicabilityVersionOut,
+    ApproveVersionIn,
     FrameworkAdd,
     FrameworkAddedOut,
     OverlapOut,
@@ -162,6 +164,69 @@ async def download_statement(
 ) -> Response:
     data, filename = await framework_service.statement_workbook(
         session, tenant_id=context.tenant_id, framework_id=framework_id
+    )
+    return Response(
+        content=data,
+        media_type=XLSX,
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+# -- approved versions of the statement (guided onboarding SC-6, EN-11) ----------------
+
+
+@framework_scope_router.get(
+    "/{framework_id}/applicability/versions", response_model=list[ApplicabilityVersionOut]
+)
+async def list_statement_versions(
+    framework_id: uuid.UUID,
+    _principal: Annotated[Principal, Depends(require_read)],
+    context: _Ctx,
+    session: _Db,
+) -> list[ApplicabilityVersionOut]:
+    rows = await framework_service.versions(
+        session, tenant_id=context.tenant_id, framework_id=framework_id
+    )
+    return [ApplicabilityVersionOut.model_validate(r) for r in rows]
+
+
+@framework_scope_router.post(
+    "/{framework_id}/applicability/versions",
+    response_model=ApplicabilityVersionOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="Approve the statement as it stands as the next frozen version",
+)
+async def approve_statement_version(
+    framework_id: uuid.UUID,
+    body: ApproveVersionIn,
+    principal: Annotated[Principal, Depends(require_manage)],
+    context: _Ctx,
+    session: _Db,
+) -> ApplicabilityVersionOut:
+    assert principal.membership_id is not None  # noqa: S101 — tenant route
+    row = await framework_service.approve_version(
+        session,
+        tenant_id=context.tenant_id,
+        actor=_actor(principal),
+        membership_id=principal.membership_id,
+        framework_id=framework_id,
+        note=body.note,
+    )
+    return ApplicabilityVersionOut.model_validate(row)
+
+
+@framework_scope_router.get(
+    "/{framework_id}/applicability/versions/{number}.xlsx", response_class=Response
+)
+async def download_statement_version(
+    framework_id: uuid.UUID,
+    number: int,
+    _principal: Annotated[Principal, Depends(require_read)],
+    context: _Ctx,
+    session: _Db,
+) -> Response:
+    data, filename = await framework_service.version_workbook(
+        session, tenant_id=context.tenant_id, framework_id=framework_id, number=number
     )
     return Response(
         content=data,

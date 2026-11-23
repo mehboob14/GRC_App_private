@@ -20,21 +20,33 @@
         "automated_by": [
           "verity.isms.scope_documented",
           "verity.isms.scope_recorded"
-        ]
+        ],
+        "what": "ISMS scope statement",
+        "where": "Documents module.",
+        "shows": "Products, teams, sites, systems and suppliers in scope, what is out and why, and leadership approval with date.",
+        "if_none": null
       },
       {
         "key": "map-of-the-management-processes-and",
         "name": "Map of the management processes and how they connect",
         "assurance": "design",
         "cadence": "annual",
-        "source": "upload"
+        "source": "upload",
+        "what": "Map of management processes",
+        "where": "A diagram or table in the shared drive.",
+        "shows": "Each management process such as risk, audit and review, its owner, and its inputs and outputs.",
+        "if_none": null
       },
       {
         "key": "scope-review-after-changes-to-products",
         "name": "Scope review after changes to products, sites or suppliers",
         "assurance": "operating",
         "cadence": "on_change",
-        "source": "upload"
+        "source": "upload",
+        "what": "Scope review after a change",
+        "where": "A dated note or new document version after a new product, site or supplier.",
+        "shows": "The change, date, whether scope changed, and approval.",
+        "if_none": "A dated note that no product, site or supplier change happened in [period]."
       }
     ]
   },
@@ -58,14 +70,22 @@
         "module": "documents",
         "automated_by": [
           "verity.context.documented"
-        ]
+        ],
+        "what": "Internal and external factors register",
+        "where": "Documents module.",
+        "shows": "Factors such as market, law, customers, technology, staff and funding, and how each affects security.",
+        "if_none": null
       },
       {
         "key": "yearly-review-notes-and-decisions-taken",
         "name": "Yearly review notes and decisions taken",
         "assurance": "operating",
         "cadence": "annual",
-        "source": "upload"
+        "source": "upload",
+        "what": "Annual review of the factors register",
+        "where": "Leadership meeting notes or a dated document version.",
+        "shows": "Date, who reviewed, factors added or changed, and decisions taken.",
+        "if_none": null
       }
     ]
   },
@@ -89,14 +109,22 @@
         "module": "documents",
         "automated_by": [
           "verity.interested_parties.documented"
-        ]
+        ],
+        "what": "Interested parties register",
+        "where": "Documents module.",
+        "shows": "Each party such as customers, staff, regulators, investors and suppliers, and what each requires on security.",
+        "if_none": null
       },
       {
         "key": "review-record-covering-new-contracts-and",
         "name": "Review record covering new contracts and regulatory changes",
         "assurance": "operating",
         "cadence": "annual",
-        "source": "upload"
+        "source": "upload",
+        "what": "Annual review of interested party requirements",
+        "where": "A dated note or document version.",
+        "shows": "Date, new contracts and regulatory changes checked, and the changes made.",
+        "if_none": null
       }
     ]
   },
@@ -120,21 +148,33 @@
         "module": "tasks",
         "automated_by": [
           "verity.objectives.documented"
-        ]
+        ],
+        "what": "Security objectives",
+        "where": "Tasks module, one task per objective with its target.",
+        "shows": "Each objective with its measure, target, owner and due date.",
+        "if_none": null
       },
       {
         "key": "measures-and-results-compared-with-targets",
         "name": "Measures and results compared with targets",
         "assurance": "operating",
         "cadence": "quarterly",
-        "source": "upload"
+        "source": "upload",
+        "what": "Quarterly results compared with security objectives",
+        "where": "A dashboard or sheet reviewed at the management review.",
+        "shows": "Each objective, target, actual result, and actions where it is off track.",
+        "if_none": null
       },
       {
         "key": "resourcing-decisions-for-the-security-program",
         "name": "Resourcing decisions for the security program",
         "assurance": "operating",
         "cadence": "annual",
-        "source": "upload"
+        "source": "upload",
+        "what": "Security budget and staffing decisions",
+        "where": "Leadership minutes or the budget sheet.",
+        "shows": "Date, the people, tools and budget approved for security, and requests turned down with the reason.",
+        "if_none": null
       }
     ]
   },
@@ -158,14 +198,22 @@
         "module": "controls",
         "automated_by": [
           "verity.soa.complete"
-        ]
+        ],
+        "what": "Statement of Applicability",
+        "where": "Controls module, built from the applicability decision on each control.",
+        "shows": "Every Annex A control, included or not, the reason, and its implementation status.",
+        "if_none": null
       },
       {
         "key": "approval-of-each-version-by-risk",
         "name": "Approval of each version by risk owners and leadership",
         "assurance": "operating",
         "cadence": "on_change",
-        "source": "upload"
+        "source": "upload",
+        "what": "Approval of each Statement of Applicability version",
+        "where": "Email, signed note or minutes from risk owners and leadership.",
+        "shows": "Version, date, approvers, and what changed.",
+        "if_none": "A dated note that the Statement of Applicability did not change in [period]."
       },
       {
         "key": "supplier-certificates-behind-inherited-controls",
@@ -173,7 +221,11 @@
         "assurance": "operating",
         "cadence": "annual",
         "source": "platform",
-        "module": "vendors"
+        "module": "vendors",
+        "what": "Supplier certificates for inherited controls",
+        "where": "Vendors module, with certificates attached to each supplier.",
+        "shows": "Supplier, certificate type, scope, expiry date, and the controls inherited.",
+        "if_none": null
       }
     ]
   },
@@ -194,7 +246,11 @@
         "assurance": "design",
         "cadence": "annual",
         "source": "platform",
-        "module": "documents"
+        "module": "documents",
+        "what": "Document control procedure",
+        "where": "Documents module.",
+        "shows": "How documents are written, approved, versioned, shared, kept and retired.",
+        "if_none": null
       },
       {
         "key": "version-history-and-approval-record-for",
@@ -205,14 +261,22 @@
         "module": "documents",
         "automated_by": [
           "verity.documents.controlled"
-        ]
+        ],
+        "what": "Version history and approvals for each document",
+        "where": "Documents module version history.",
+        "shows": "Each version with date, author, approver and a summary of the change.",
+        "if_none": null
       },
       {
         "key": "access-and-retention-settings-for-the",
         "name": "Access and retention settings for the document store",
         "assurance": "design",
         "cadence": "annual",
-        "source": "upload"
+        "source": "upload",
+        "what": "Document store access and retention settings",
+        "where": "Screenshot or export of sharing and retention settings in the shared drive or Documents module.",
+        "shows": "Who can read and edit, the retention period, and deletion rules.",
+        "if_none": null
       }
     ]
   },
@@ -233,21 +297,33 @@
         "assurance": "design",
         "cadence": "annual",
         "source": "platform",
-        "module": "documents"
+        "module": "documents",
+        "what": "Security operating plan",
+        "where": "Documents module.",
+        "shows": "A yearly calendar of security activities such as reviews, tests, training and audits, each with owner and date.",
+        "if_none": null
       },
       {
         "key": "records-showing-planned-activities-were-completed",
         "name": "Records showing planned activities were completed",
         "assurance": "operating",
         "cadence": "quarterly",
-        "source": "upload"
+        "source": "upload",
+        "what": "Quarterly check that planned activities were done",
+        "where": "The operating plan with status marked, and a link to each record.",
+        "shows": "Each activity due in the quarter, owner, date done, link to the record, and the reason for any slip.",
+        "if_none": null
       },
       {
         "key": "review-of-planned-changes-and-outsourced",
         "name": "Review of planned changes and outsourced work",
         "assurance": "operating",
         "cadence": "on_change",
-        "source": "upload"
+        "source": "upload",
+        "what": "Review of planned changes and outsourced work",
+        "where": "A ticket or note made before a major change or new outsourcing.",
+        "shows": "The change or supplier, date, the security risks considered, and approval.",
+        "if_none": "A dated note that no major changes or new outsourcing happened in [period]."
       }
     ]
   },
@@ -268,7 +344,11 @@
         "assurance": "design",
         "cadence": "annual",
         "source": "platform",
-        "module": "documents"
+        "module": "documents",
+        "what": "Improvement procedure",
+        "where": "Documents module.",
+        "shows": "How anyone raises an improvement, who decides, and how it is tracked.",
+        "if_none": null
       },
       {
         "key": "improvement-log-with-owners-decisions-and",
@@ -276,14 +356,22 @@
         "assurance": "operating",
         "cadence": "ongoing",
         "source": "platform",
-        "module": "tasks"
+        "module": "tasks",
+        "what": "Improvement log",
+        "where": "Tasks module, one task per improvement.",
+        "shows": "Each improvement with source, owner, decision, due date and date closed.",
+        "if_none": "A dated note that no improvements were raised in [period]."
       },
       {
         "key": "review-of-completed-improvements-and-their",
         "name": "Review of completed improvements and their effect",
         "assurance": "operating",
         "cadence": "annual",
-        "source": "upload"
+        "source": "upload",
+        "what": "Annual review of improvements and their effect",
+        "where": "Management review minutes or a dated note.",
+        "shows": "Each completed improvement, whether it worked, and any follow up.",
+        "if_none": "A dated note that no improvements were completed in [period]."
       }
     ]
   },
@@ -306,21 +394,33 @@
         "source": "upload",
         "automated_by": [
           "verity.competence.documented"
-        ]
+        ],
+        "what": "Competence requirements for security roles",
+        "where": "A short document per role, kept with the role descriptions.",
+        "shows": "Skills, knowledge, experience or certifications needed for each security role.",
+        "if_none": null
       },
       {
         "key": "competence-record-for-each-person-in",
         "name": "Competence record for each person in a security role",
         "assurance": "operating",
         "cadence": "annual",
-        "source": "upload"
+        "source": "upload",
+        "what": "Competence record for each person in a security role",
+        "where": "CV, certificates and training records, kept in the HR tool.",
+        "shows": "Person, role, how they meet each requirement, and any gaps found.",
+        "if_none": null
       },
       {
         "key": "training-or-other-actions-taken-to",
         "name": "Training or other actions taken to close gaps",
         "assurance": "operating",
         "cadence": "annual",
-        "source": "upload"
+        "source": "upload",
+        "what": "Actions taken to close competence gaps",
+        "where": "Training records, course certificates or mentoring plans.",
+        "shows": "Person, gap, action, date and result.",
+        "if_none": "A dated note that no competence gaps were found in [period]."
       }
     ]
   },
@@ -344,14 +444,22 @@
         "module": "documents",
         "automated_by": [
           "verity.communication.plan_documented"
-        ]
+        ],
+        "what": "Security communication plan",
+        "where": "Documents module.",
+        "shows": "What is communicated, to whom, when, by whom and through which channel.",
+        "if_none": null
       },
       {
         "key": "sample-of-messages-sent-under-the",
-        "name": "Sample of messages sent under the plan",
+        "name": "List of all security messages sent under the plan in the period, with date, audience, channel and topic. The auditor chooses the sample from it.",
         "assurance": "operating",
         "cadence": "quarterly",
-        "source": "upload"
+        "source": "upload",
+        "what": "List of security messages sent in the period",
+        "where": "Slack or email messages, newsletters and all hands slides.",
+        "shows": "Every message in the period with date, audience, channel and topic.",
+        "if_none": null
       }
     ]
   },
@@ -371,21 +479,33 @@
         "name": "Contact list for authorities and security communities",
         "assurance": "design",
         "cadence": "annual",
-        "source": "upload"
+        "source": "upload",
+        "what": "Contact list for authorities and security groups",
+        "where": "A page in the incident runbook.",
+        "shows": "Police cyber unit, data protection regulator, national CERT and cloud provider support, with contact details.",
+        "if_none": null
       },
       {
         "key": "memberships-or-subscriptions-to-security-communities",
         "name": "Memberships or subscriptions to security communities",
         "assurance": "operating",
         "cadence": "annual",
-        "source": "upload"
+        "source": "upload",
+        "what": "Security community memberships and subscriptions",
+        "where": "Receipts, sign up emails, or a list of feeds followed.",
+        "shows": "Each group or feed, such as a CERT advisory list or vendor security bulletin, and who follows it.",
+        "if_none": null
       },
       {
         "key": "yearly-check-that-contact-details-still",
         "name": "Yearly check that contact details still work",
         "assurance": "operating",
         "cadence": "annual",
-        "source": "upload"
+        "source": "upload",
+        "what": "Annual check of the contact list",
+        "where": "A dated note or document version.",
+        "shows": "Date, who checked, and each contact confirmed or updated.",
+        "if_none": null
       }
     ]
   },
@@ -405,14 +525,22 @@
         "name": "Threat sources and the routine for reviewing them",
         "assurance": "design",
         "cadence": "annual",
-        "source": "upload"
+        "source": "upload",
+        "what": "Threat sources and review routine",
+        "where": "A short document or runbook section.",
+        "shows": "Feeds followed such as the CISA known exploited list and vendor advisories, who reads them, and how often.",
+        "if_none": null
       },
       {
         "key": "log-of-threats-reviewed-and-actions",
         "name": "Log of threats reviewed and actions taken",
         "assurance": "operating",
         "cadence": "ongoing",
-        "source": "upload"
+        "source": "upload",
+        "what": "Threat review log",
+        "where": "A sheet, a Slack channel or tickets.",
+        "shows": "Date, threat, whether it affects us, the action and owner.",
+        "if_none": "A dated note that no relevant threats were found in [period], with the sources checked."
       },
       {
         "key": "actively-exploited-vulnerabilities-and-time-taken",
@@ -420,7 +548,11 @@
         "assurance": "operating",
         "cadence": "ongoing",
         "source": "platform",
-        "module": "vulnerabilities"
+        "module": "vulnerabilities",
+        "what": "Actively exploited vulnerabilities and response time",
+        "where": "Vulnerabilities module, findings marked as known exploited.",
+        "shows": "Each finding with date published, date found in our systems, date fixed, and days taken.",
+        "if_none": "A dated note that no known exploited vulnerability affected our systems in [period]."
       }
     ]
   },
@@ -441,14 +573,22 @@
         "assurance": "design",
         "cadence": "annual",
         "source": "platform",
-        "module": "documents"
+        "module": "documents",
+        "what": "Masking standard",
+        "where": "Documents module.",
+        "shows": "Each sensitive field, its masking method, and where masking applies, such as test, support and analytics.",
+        "if_none": null
       },
       {
         "key": "sample-of-masked-data-in-test",
-        "name": "Sample of masked data in test, support or analytics use",
+        "name": "List of all data sets used for test, support or analytics in the period, with owner, masking method and date checked. The auditor chooses the sample from it.",
         "assurance": "operating",
         "cadence": "annual",
-        "source": "upload"
+        "source": "upload",
+        "what": "Data sets used for test, support or analytics, with masking method",
+        "where": "Test databases, support tools and analytics exports.",
+        "shows": "Every such data set in the period, its owner, the masking method, and a screenshot of masked fields.",
+        "if_none": "A dated note that no data was copied for test, support or analytics use in [period]."
       }
     ]
   },
@@ -468,14 +608,22 @@
         "name": "Leakage prevention and sharing settings in email, chat and file tools",
         "assurance": "design",
         "cadence": "annual",
-        "source": "upload"
+        "source": "upload",
+        "what": "Data sharing and leak prevention settings",
+        "where": "Admin settings screenshots from Google Workspace or Microsoft 365, Slack and file tools.",
+        "shows": "External sharing limits, data loss prevention rules, and who can change them.",
+        "if_none": null
       },
       {
         "key": "alerts-and-exceptions-that-were-reviewed",
         "name": "Alerts and exceptions that were reviewed and followed up",
         "assurance": "operating",
         "cadence": "quarterly",
-        "source": "upload"
+        "source": "upload",
+        "what": "Data leak alerts and exceptions reviewed",
+        "where": "Data loss prevention alerts or sharing reports from the admin console, with review notes.",
+        "shows": "Each alert or exception with date, user, file, decision and follow up.",
+        "if_none": "A dated note: \"no data leak alerts or exceptions in [period]\", with the empty report."
       }
     ]
   },
@@ -495,14 +643,22 @@
         "name": "Trusted time sources and how systems use them",
         "assurance": "design",
         "cadence": "annual",
-        "source": "upload"
+        "source": "upload",
+        "what": "Time source standard",
+        "where": "A short engineering note or runbook section.",
+        "shows": "The time source used, such as the cloud provider time service, and how servers and services use it.",
+        "if_none": null
       },
       {
         "key": "clock-check-across-a-sample-of",
-        "name": "Clock check across a sample of systems",
+        "name": "List of all in scope systems in the period, with time source, measured clock offset and date checked. The auditor chooses the sample from it.",
         "assurance": "operating",
         "cadence": "quarterly",
-        "source": "upload"
+        "source": "upload",
+        "what": "List of systems with clock check results",
+        "where": "A command or monitoring view that shows clock offset on each system.",
+        "shows": "Every in scope system, its time source, the offset found and the date checked.",
+        "if_none": null
       }
     ]
   },
@@ -523,14 +679,22 @@
         "assurance": "design",
         "cadence": "annual",
         "source": "platform",
-        "module": "documents"
+        "module": "documents",
+        "what": "Web filtering standard",
+        "where": "Documents module.",
+        "shows": "Blocked categories such as malware and phishing sites, the tool used, and how exceptions are approved.",
+        "if_none": null
       },
       {
         "key": "report-of-filter-coverage-and-blocked",
         "name": "Report of filter coverage and blocked activity",
         "assurance": "operating",
         "cadence": "quarterly",
-        "source": "upload"
+        "source": "upload",
+        "what": "Web filter coverage and block report",
+        "where": "Exported from the filtering tool, such as Cloudflare Gateway, or from the endpoint tool.",
+        "shows": "Devices covered compared with the device list, blocked requests, and exceptions.",
+        "if_none": null
       }
     ]
   },
@@ -550,28 +714,44 @@
         "name": "Hazard assessment and protections for each site",
         "assurance": "design",
         "cadence": "annual",
-        "source": "upload"
+        "source": "upload",
+        "what": "Hazard assessment for each site",
+        "where": "A short document per office or site.",
+        "shows": "Hazards such as fire, flood and power loss, and the protections in place.",
+        "if_none": null
       },
       {
         "key": "service-and-fault-records-for-site",
         "name": "Service and fault records for site equipment",
         "assurance": "operating",
         "cadence": "annual",
-        "source": "upload"
+        "source": "upload",
+        "what": "Site equipment service and fault records",
+        "where": "Service reports from the landlord or contractors.",
+        "shows": "Equipment, service date, faults found and fixes.",
+        "if_none": "A dated note that no site equipment needed service and no faults were reported in [period]."
       },
       {
         "key": "power-alarm-and-suppression-test-results",
         "name": "Power, alarm and suppression test results",
         "assurance": "operating",
         "cadence": "annual",
-        "source": "upload"
+        "source": "upload",
+        "what": "Power, alarm and fire suppression test results",
+        "where": "Test reports from the landlord or contractors.",
+        "shows": "Date, system tested, result and fixes.",
+        "if_none": null
       },
       {
         "key": "payment-device-list-and-tamper-inspections",
         "name": "Where payment devices are used: device list with locations, tamper inspection records and site staff training",
         "assurance": "operating",
         "cadence": "ongoing",
-        "source": "upload"
+        "source": "upload",
+        "what": "Payment device list with tamper checks and staff training",
+        "where": "A sheet kept by the site lead.",
+        "shows": "Each device with location and serial number, inspection dates and results, and training dates for site staff.",
+        "if_none": "A dated note that no payment devices are used at any site."
       }
     ]
   }

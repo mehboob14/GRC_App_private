@@ -1,0 +1,1971 @@
+[
+  {
+    "key": "AE-01",
+    "jurisdiction": "AE",
+    "zone": "onshore",
+    "short_name": "UAE PDPL",
+    "official_name": "Federal Decree-Law No. 45 of 2021 on the Protection of Personal Data",
+    "issuer": "UAE federal government",
+    "regulator": "UAE Data Office, being taken over by the Artificial Intelligence and Data Authority approved on 14 June 2026",
+    "kinds": [
+      "privacy"
+    ],
+    "topic_column": "privacy",
+    "force": "law",
+    "state": "in_force",
+    "state_note": "In force since 2 January 2022, but the Executive Regulations had still not been issued by mid 2026, so the compliance period that runs from them has not started and enforcement is unclear.",
+    "tier": "most_should_know",
+    "applies_to": "Controllers and processors in the UAE outside the DIFC and ADGM, and those abroad processing personal data of people in the UAE. Excludes government data and entities, health and banking or credit data already governed by a sector law, and free zone companies under their own data protection law.",
+    "duties": [
+      {
+        "topic": "consent",
+        "text": "Rely on consent as the default lawful basis unless a listed exception applies.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "Keep records of processing and appropriate security measures.",
+        "clock_hours": null
+      },
+      {
+        "topic": "officer",
+        "text": "Appoint a data protection officer and run impact assessments for high-risk or large scale sensitive processing.",
+        "clock_hours": null
+      },
+      {
+        "topic": "breach_notice",
+        "text": "Report breaches to the regulator and, where needed, to individuals; the deadline is left to the Executive Regulations, which are not issued.",
+        "clock_hours": null
+      },
+      {
+        "topic": "transfers",
+        "text": "Send data abroad only to approved countries or with safeguards.",
+        "clock_hours": null
+      },
+      {
+        "topic": "penalties",
+        "text": "Penalties are to be set by cabinet decision.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "none",
+      "note": "No certification."
+    },
+    "iso27001": {
+      "relation": "helps_partially",
+      "note": "Not referenced; useful for the security duty."
+    },
+    "soc2": {
+      "relation": "helps_partially",
+      "note": "Not referenced; useful for the security duty."
+    },
+    "helps": [
+      "DM-03",
+      "DM-15",
+      "DM-07",
+      "DM-12",
+      "DM-11",
+      "DM-05",
+      "DM-08",
+      "DM-16",
+      "DM-10",
+      "DM-06",
+      "DM-01",
+      "NS-01",
+      "NS-02",
+      "IAM-08"
+    ],
+    "not_covered": [
+      "Officer",
+      "Impact assessment",
+      "Cross border transfer conditions"
+    ],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2021-09",
+        "precision": "month",
+        "kind": "enacted",
+        "description": "Decree-law issued.",
+        "confirmed": true
+      },
+      {
+        "date": "2022-01-02",
+        "precision": "day",
+        "kind": "in_force",
+        "description": "Decree-law in force.",
+        "confirmed": true
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://u.ae/en/about-the-uae/digital-uae/data/data-protection-laws",
+        "publisher": "UAE Government portal (u.ae)",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      },
+      {
+        "url": "https://mediaoffice.ae/en/news/2026/june/14-06/mohammed-bin-rashid-approves-establishing-artificial-intelligence-and-data-authority",
+        "publisher": "Dubai Media Office",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      },
+      {
+        "url": "https://www.morganlewis.com/pubs/2026/06/uae-establishes-federal-authority-for-artificial-intelligence-and-data",
+        "publisher": "Morgan Lewis",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      },
+      {
+        "url": "https://cms.law/en/int/legal-updates/middle-east-tmt-2025-in-review",
+        "publisher": "CMS",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://practiceguides.chambers.com/practice-guides/tmt-2026/uae/trends-and-developments",
+        "publisher": "Chambers and Partners",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "Executive Regulations not issued as far as found; vendor claims that they have been are unverified.",
+        "Legal instrument and operating status of the new AI and Data Authority not confirmed; its stated mandate covers government data and says nothing about personal data rules."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "AE"
+          },
+          {
+            "fact": "uae_zones",
+            "op": "any_in",
+            "value": [
+              "onshore"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AE"
+            ]
+          },
+          {
+            "fact": "uae_zones",
+            "op": "any_in",
+            "value": [
+              "onshore"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "AE",
+              "GCC"
+            ]
+          },
+          {
+            "fact": "personal_data_role",
+            "op": "in",
+            "value": [
+              "controller",
+              "processor",
+              "both"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "AE-02",
+    "jurisdiction": "AE",
+    "zone": "difc",
+    "short_name": "DIFC Data Protection Law",
+    "official_name": "DIFC Law No. 5 of 2020 (Data Protection Law) and the Data Protection Regulations",
+    "issuer": "DIFC Authority",
+    "regulator": "DIFC Commissioner of Data Protection",
+    "kinds": [
+      "privacy",
+      "ai"
+    ],
+    "topic_column": "privacy",
+    "force": "law",
+    "state": "in_force",
+    "state_note": "In force since 1 July 2020 and amended in 2022 and by Amendment Law No. 1 of 2025 (in force 15 July 2025), which added a private right of action in the DIFC Courts and wider reach. Proposed changes to the Regulations, consulted on until 18 July 2026, are not enacted.",
+    "tier": "most_should_know",
+    "applies_to": "Entities registered in the DIFC, and anyone processing personal data in the DIFC as part of stable arrangements, including through vendors.",
+    "duties": [
+      {
+        "topic": "registration",
+        "text": "File a notification of processing with the Commissioner within 30 days of starting, renew it on every anniversary and update it within 30 days of a change; a fee applies.",
+        "clock_hours": null
+      },
+      {
+        "topic": "officer",
+        "text": "Appoint a data protection officer where high-risk processing is systematic or regular, and submit an Annual Assessment of processing to the Commissioner.",
+        "clock_hours": null
+      },
+      {
+        "topic": "breach_notice",
+        "text": "Notify the Commissioner as soon as practicable after a breach that compromises a person's confidentiality, security or privacy, and tell the people affected as soon as practicable when the risk to them is high; there is no fixed hour count.",
+        "clock_hours": null
+      },
+      {
+        "topic": "transfers",
+        "text": "Send data only to adequate jurisdictions or under DIFC standard clauses.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "For autonomous and semi-autonomous systems (Regulation 10), give notices, set human-defined purposes, keep a register of uses and appoint an Autonomous Systems Officer for high-risk use.",
+        "clock_hours": null
+      },
+      {
+        "topic": "penalties",
+        "text": "Fines apply, including for failing to notify a breach, and people can claim damages in the DIFC Courts.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "registration",
+      "note": "Controllers and processors register by filing a notification of processing; a certification framework for AI systems is foreseen."
+    },
+    "iso27001": {
+      "relation": "helps_partially",
+      "note": "Not referenced by name; recognised certifications help show accountability."
+    },
+    "soc2": {
+      "relation": "helps_partially",
+      "note": "Not referenced by name; recognised certifications help show accountability."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2020-07-01",
+        "precision": "day",
+        "kind": "in_force",
+        "description": "Law commences under Article 4 (the DIFC database page shows 1 June 2020; the law text governs).",
+        "confirmed": true
+      },
+      {
+        "date": "2023-09-01",
+        "precision": "day",
+        "kind": "in_force",
+        "description": "Data Protection Regulations Consolidated Version No. 2 in force.",
+        "confirmed": true
+      },
+      {
+        "date": "2025-07-08",
+        "precision": "day",
+        "kind": "enacted",
+        "description": "DIFC Amendment Law No. 1 of 2025 enacted.",
+        "confirmed": true
+      },
+      {
+        "date": "2025-07-15",
+        "precision": "day",
+        "kind": "in_force",
+        "description": "Amendment Law No. 1 of 2025 in force.",
+        "confirmed": true
+      },
+      {
+        "date": "2026-01",
+        "precision": "month",
+        "kind": "obligation_starts",
+        "description": "Full enforcement of Regulation 10 on autonomous systems (reported by law firms).",
+        "confirmed": false
+      },
+      {
+        "date": "2026-07-18",
+        "precision": "day",
+        "kind": "consultation_closes",
+        "description": "Consultation on proposed changes to the Regulations closes.",
+        "confirmed": true
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.difc.com/business/laws-and-regulations/legal-database/difc-laws/data-protection-law-difc-law-no-5-2020",
+        "publisher": "Dubai International Financial Centre",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      },
+      {
+        "url": "https://edge.sitecorecloud.io/dubaiintern0078-difcexperie96c5-production-3253/media/project/difcexperiences/difc/difcwebsite/documents/laws--regulations/data-protection-law.pdf",
+        "publisher": "Dubai International Financial Centre",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      },
+      {
+        "url": "https://edge.sitecorecloud.io/dubaiintern0078-difcexperie96c5-production-3253/media/project/difcexperiences/difc/difcwebsite/documents/laws--regulations/data-protection-regulation.pdf",
+        "publisher": "Dubai International Financial Centre",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      },
+      {
+        "url": "https://edge.sitecorecloud.io/dubaiintern0078-difcexperie96c5-production-3253/media/project/difcexperiences/difc/difcwebsite/documents/laws--regulations/difc-laws-amendment-law-no-1-of-2025.pdf",
+        "publisher": "Dubai International Financial Centre",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      },
+      {
+        "url": "https://www.difc.com/business/registrars-and-commissioners/commissioner-of-data-protection",
+        "publisher": "DIFC Commissioner of Data Protection",
+        "kind": "regulator_guidance",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      },
+      {
+        "url": "https://mediaoffice.ae/en/news/2025/july/16-07/difc-announces-enactment-of-amendments-to-select-difc-legislation-through-difc-law-amendment-law",
+        "publisher": "Dubai Media Office",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.twobirds.com/en/insights/2025/united-arab-emirates/difc-enacts-amendments-to-data-protection-law",
+        "publisher": "Bird and Bird",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.clydeco.com/en/insights/2026/01/regulation-10-of-the-difc-data-protection-law",
+        "publisher": "Clyde and Co",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://hadefpartners.com/news-insights/insights/ai-and-data-privacy-proposed-changes-to-the-difc-data-protection-regulations/",
+        "publisher": "Hadef and Partners",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "Full enforcement of Regulation 10 from January 2026 is reported by law firms only.",
+        "Whether the 2026 proposed changes to the Regulations (a refined Regulation 10, accreditation and certification rules) are enacted not confirmed."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "applies",
+        "all": [
+          {
+            "fact": "uae_zones",
+            "op": "any_in",
+            "value": [
+              "difc"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "AE-03",
+    "jurisdiction": "AE",
+    "zone": "adgm",
+    "short_name": "ADGM Data Protection Regulations",
+    "official_name": "ADGM Data Protection Regulations 2021",
+    "issuer": "ADGM Board",
+    "regulator": "ADGM Office of Data Protection",
+    "kinds": [
+      "privacy"
+    ],
+    "topic_column": "privacy",
+    "force": "regulation",
+    "state": "in_force",
+    "state_note": "Enacted 11 February 2021 and published 14 February 2021, then applied after a transition: from 14 August 2021 for entities set up after 14 February 2021 and from 14 February 2022 for existing entities. No 2026 change found.",
+    "tier": "most_should_know",
+    "applies_to": "Entities established in ADGM that process personal data, wherever the processing happens.",
+    "duties": [
+      {
+        "topic": "registration",
+        "text": "Register with the Office of Data Protection and pay the annual fee.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "Follow principles and rights close to the UK and EU GDPR, keep records and run impact assessments.",
+        "clock_hours": null
+      },
+      {
+        "topic": "officer",
+        "text": "Appoint a data protection officer in the defined cases.",
+        "clock_hours": null
+      },
+      {
+        "topic": "breach_notice",
+        "text": "Notify the Office of Data Protection within 72 hours of a breach.",
+        "clock_hours": 72
+      },
+      {
+        "topic": "transfers",
+        "text": "Send data abroad under the transfer rules, for example with ADGM standard clauses.",
+        "clock_hours": null
+      },
+      {
+        "topic": "penalties",
+        "text": "Fines reach USD 28 million (cap not re-checked).",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "registration",
+      "note": "Registration and annual fee with the Office of Data Protection."
+    },
+    "iso27001": {
+      "relation": "helps_partially",
+      "note": "As for GDPR: supports security, does not prove compliance."
+    },
+    "soc2": {
+      "relation": "helps_partially",
+      "note": "As for GDPR: supports security, does not prove compliance."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2021-02-11",
+        "precision": "day",
+        "kind": "enacted",
+        "description": "Regulations enacted (published 14 February 2021).",
+        "confirmed": true
+      },
+      {
+        "date": "2021-08-14",
+        "precision": "day",
+        "kind": "obligation_starts",
+        "description": "Regulations apply to entities set up after 14 February 2021.",
+        "confirmed": true
+      },
+      {
+        "date": "2022-02-14",
+        "precision": "day",
+        "kind": "obligation_starts",
+        "description": "Regulations apply to entities that already existed.",
+        "confirmed": true
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.adgm.com/operating-in-adgm/office-of-data-protection/guidance",
+        "publisher": "ADGM Office of Data Protection",
+        "kind": "regulator_guidance",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      },
+      {
+        "url": "https://www.adgm.com/media/announcements/adgm-enacts-new-substantial-public-interest-rules-under-data-protection-regulations-2021",
+        "publisher": "ADGM",
+        "kind": "regulator_guidance",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://assets.adgm.com/download/assets/ADGM+Data+Protection+Regulations+2021+Updated.pdf/146aa34858b011efb99a36e29b0f3a63",
+        "publisher": "ADGM",
+        "kind": "regulator_guidance",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "The USD 28 million fine cap was not re-checked against the regulation text.",
+        "Substantial Public Interest Rules were reported as enacted in 2025; not re-checked.",
+        "The ADGM PDF read is a briefing deck, not the regulation text.",
+        "Penalty figures to be checked against the primary text by the reviewer before display."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "applies",
+        "all": [
+          {
+            "fact": "uae_zones",
+            "op": "any_in",
+            "value": [
+              "adgm"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "AE-04",
+    "jurisdiction": "AE",
+    "zone": null,
+    "short_name": "UAE IA Standard",
+    "official_name": "UAE Information Assurance Regulation / Standard (formerly NESA IAS)",
+    "issuer": "UAE Cybersecurity Council (originally NESA, then the Telecommunications and Digital Government Regulatory Authority)",
+    "regulator": "UAE Cybersecurity Council and sector regulators",
+    "kinds": [
+      "cybersecurity",
+      "government_sector",
+      "critical_infrastructure"
+    ],
+    "topic_column": "security_baseline",
+    "force": "regulation",
+    "state": "in_force",
+    "state_note": "In force as UAE IA Regulation v1.1 (2020). One advisory source reports a v2.1 released in November 2025 that replaces it and another refers to v2.0; the current version and its timeline are unverified.",
+    "tier": "sector",
+    "applies_to": "Federal government entities and organisations designated as operating critical information infrastructure (energy, finance, telecom, transport, health, water and others), plus their key suppliers. Other organisations are encouraged to adopt it.",
+    "duties": [
+      {
+        "topic": "baseline",
+        "text": "Apply the risk-based set of management and technical controls (188 controls in 15 families in v1.1) by priority tier.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "Run a risk assessment and report on compliance to the sector regulator or the Council.",
+        "clock_hours": null
+      },
+      {
+        "topic": "incident_reporting",
+        "text": "Report incidents to the national CERT.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "none",
+      "note": "No public certificate; sector regulators and the Council assess compliance."
+    },
+    "iso27001": {
+      "relation": "helps_partially",
+      "note": "Built on ISO 27001 and NIST with a mapping annex in v1.1; ISO 27001 certification covers part of it but not the UAE-specific controls."
+    },
+    "soc2": {
+      "relation": "helps_partially",
+      "note": "Not named; useful only as general evidence of security controls."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2025-11",
+        "precision": "month",
+        "kind": "enacted",
+        "description": "Version 2.1 reportedly released, replacing v1.1.",
+        "confirmed": false
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://u.ae/en/information-and-services/justice-safety-and-the-law/cyber-safety-and-digital-security/uae-information-assurance-regulation",
+        "publisher": "UAE Government portal (u.ae)",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://kpmg.com/ae/en/insights/ai-and-technology/a-bold-step-towards-cyber-resilience.html",
+        "publisher": "KPMG",
+        "kind": "tracker",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://u.ae/en/about-the-uae/strategies-initiatives-and-awards/strategies-plans-and-visions/Cypersecurity/National-Cyber-Security-Governance-Framework",
+        "publisher": "UAE Government portal (u.ae)",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "Current version (v2.0 or v2.1), date, scope and compliance timeline unverified; the official text was not found and the KPMG page failed to load.",
+        "SOC 2 relation is inferred; the sources do not mention SOC 2."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "AE"
+          },
+          {
+            "fact": "critical_or_provider",
+            "op": "eq",
+            "value": "yes"
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AE"
+            ]
+          },
+          {
+            "fact": "critical_or_provider",
+            "op": "eq",
+            "value": "yes"
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "AE"
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "government"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AE"
+            ]
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "government"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "AE"
+          },
+          {
+            "fact": "industry",
+            "op": "in",
+            "value": [
+              "energy_utilities",
+              "telecom",
+              "financial_services",
+              "healthcare"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AE"
+            ]
+          },
+          {
+            "fact": "industry",
+            "op": "in",
+            "value": [
+              "energy_utilities",
+              "telecom",
+              "financial_services",
+              "healthcare"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "AE-05",
+    "jurisdiction": "AE",
+    "zone": null,
+    "short_name": "Dubai ISR and DESC cloud standard",
+    "official_name": "Dubai Information Security Regulation (ISR) and DESC Cloud Service Provider Security Standard",
+    "issuer": "Dubai Electronic Security Center (DESC)",
+    "regulator": "Dubai Electronic Security Center (DESC)",
+    "kinds": [
+      "cybersecurity",
+      "government_sector"
+    ],
+    "topic_column": "sector",
+    "force": "regulator_rule",
+    "state": "in_force",
+    "state_note": "ISR version 2 (2017) and the CSP Security Standard are in force, and DESC is now governed by Dubai Law No. 15 of 2024. An ISR version 3 was reported but its final text and date are not confirmed.",
+    "tier": "sector",
+    "applies_to": "ISR: Dubai government and semi-government entities and, under the 2024 law, designated critical non-government entities. CSP standard: cloud providers that host or process data for those entities.",
+    "duties": [
+      {
+        "topic": "baseline",
+        "text": "Apply the ISR domains (governance, classification, access, operations, continuity and compliance) and expect DESC assessment.",
+        "clock_hours": null
+      },
+      {
+        "topic": "location",
+        "text": "Expect restrictions on holding critical Dubai government information outside the UAE.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "As a cloud provider, get DESC CSP certification through an accredited body before hosting Dubai government workloads.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "certification",
+      "note": "DESC CSP certification is issued through accredited certification bodies."
+    },
+    "iso27001": {
+      "relation": "referenced_or_accepted",
+      "note": "The CSP standard builds on ISO/IEC 27001, 27002 and 27017 plus the CSA Cloud Controls Matrix; an accredited ISO 27001 certificate is accepted for that part and only the extra controls are audited."
+    },
+    "soc2": {
+      "relation": "not_a_substitute",
+      "note": "Not part of the CSP certification basis."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [],
+    "sources": [
+      {
+        "url": "https://dlp.dubai.gov.ae/Legislation%20Reference/2024/Law%20No.%20(15)%20of%202024%20Concerning%20the%20Dubai%20Electronic%20Security%20Centre.html",
+        "publisher": "Dubai Legislation Portal",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://learn.microsoft.com/en-us/azure/compliance/offerings/offering-uae-desc",
+        "publisher": "Microsoft",
+        "kind": "tracker",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://aws.amazon.com/compliance/desc_csp_security_standard/",
+        "publisher": "Amazon Web Services",
+        "kind": "tracker",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://desc.dubai.ae",
+        "publisher": "Dubai Electronic Security Center",
+        "kind": "regulator_guidance",
+        "accessed_at": "2026-11-21",
+        "verified": "known_not_opened"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "ISR version 3 status unverified.",
+        "SOC 2 relation is inferred; the sources do not mention SOC 2."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "AE"
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "government"
+            ]
+          },
+          {
+            "fact": "critical_or_provider",
+            "op": "eq",
+            "value": "yes"
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AE"
+            ]
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "government"
+            ]
+          },
+          {
+            "fact": "critical_or_provider",
+            "op": "eq",
+            "value": "yes"
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "AE"
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "government"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AE"
+            ]
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "government"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "AE",
+              "GCC"
+            ]
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "government"
+            ]
+          },
+          {
+            "fact": "critical_or_provider",
+            "op": "eq",
+            "value": "yes"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "AE-06",
+    "jurisdiction": "AE",
+    "zone": null,
+    "short_name": "ADHICS",
+    "official_name": "Abu Dhabi Healthcare Information and Cyber Security Standard (ADHICS) version 2",
+    "issuer": "Department of Health Abu Dhabi (DoH)",
+    "regulator": "Department of Health Abu Dhabi (DoH)",
+    "kinds": [
+      "health_sector",
+      "cybersecurity",
+      "privacy"
+    ],
+    "topic_column": "sector",
+    "force": "regulator_rule",
+    "state": "in_force",
+    "state_note": "Version 2 was published in May 2024 and took effect in August 2024; the next revision is due in 2027.",
+    "tier": "sector",
+    "applies_to": "Any healthcare facility, insurer, professional or supplier that creates, accesses, stores or transmits health information in Abu Dhabi, including technology vendors and those connecting to the Malaffi health information exchange.",
+    "duties": [
+      {
+        "topic": "officer",
+        "text": "Set up security governance with named security roles.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "Apply the control domains for access, operations, third parties, privacy and continuity, tiered by entity type.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "Self-assess periodically and expect DoH audits under its AAMEN programme.",
+        "clock_hours": null
+      },
+      {
+        "topic": "location",
+        "text": "Keep health data in the UAE (see the ICT Health Law, AE-07).",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "none",
+      "note": "Mandatory as a licensing condition; DoH audits, and there is no public certificate."
+    },
+    "iso27001": {
+      "relation": "helps_partially",
+      "note": "Aligned to the ISO 27001 structure; certification helps but DoH audits against ADHICS itself."
+    },
+    "soc2": {
+      "relation": "helps_partially",
+      "note": "Not named; DoH audits against ADHICS itself."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2024-05",
+        "precision": "month",
+        "kind": "enacted",
+        "description": "Version 2 published.",
+        "confirmed": true
+      },
+      {
+        "date": "2024-08",
+        "precision": "month",
+        "kind": "in_force",
+        "description": "Version 2 effective.",
+        "confirmed": true
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.doh.gov.ae/en/programs-initiatives/Aamen",
+        "publisher": "Department of Health Abu Dhabi",
+        "kind": "regulator_guidance",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.doh.gov.ae/-/media/78A323607B4C4ACAA58D0C9ACCFB3D59.ashx",
+        "publisher": "Department of Health Abu Dhabi",
+        "kind": "regulator_guidance",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "The profile cannot tell Abu Dhabi from other emirates, so every trigger says check.",
+        "SOC 2 relation is inferred; the sources do not mention SOC 2."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "AE"
+          },
+          {
+            "fact": "sensitive_data",
+            "op": "any_in",
+            "value": [
+              "health"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AE"
+            ]
+          },
+          {
+            "fact": "sensitive_data",
+            "op": "any_in",
+            "value": [
+              "health"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "AE"
+          },
+          {
+            "fact": "industry",
+            "op": "eq",
+            "value": "healthcare"
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AE"
+            ]
+          },
+          {
+            "fact": "industry",
+            "op": "eq",
+            "value": "healthcare"
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "AE",
+              "GCC"
+            ]
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "healthcare_providers"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "AE-07",
+    "jurisdiction": "AE",
+    "zone": null,
+    "short_name": "ICT Health Law",
+    "official_name": "Federal Law No. 2 of 2019 on the Use of ICT in Health Fields",
+    "issuer": "UAE federal government",
+    "regulator": "Ministry of Health and Prevention with the emirate health authorities",
+    "kinds": [
+      "health_sector",
+      "privacy"
+    ],
+    "topic_column": "data_location",
+    "force": "law",
+    "state": "in_force",
+    "state_note": "In force since 2019, including in the free zones; Ministerial Decision No. 51 of 2021 lists the exceptions to the localisation rule.",
+    "tier": "sector",
+    "applies_to": "Anyone using ICT to handle health information relating to health services delivered in the UAE: providers, insurers, health IT and cloud vendors.",
+    "duties": [
+      {
+        "topic": "location",
+        "text": "Keep health data in the UAE unless one of the ten listed exceptions applies; several need patient consent or authority approval.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "Keep health information confidential and accurate.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "Retain health records for 25 years from the last procedure.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "Use the central health information exchange where required.",
+        "clock_hours": null
+      },
+      {
+        "topic": "penalties",
+        "text": "Fines apply for unlawful transfer.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "none",
+      "note": "No certification."
+    },
+    "iso27001": {
+      "relation": "not_relevant",
+      "note": "Not referenced."
+    },
+    "soc2": {
+      "relation": "not_relevant",
+      "note": "Not referenced."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [],
+    "sources": [
+      {
+        "url": "https://cms.law/en/are/legal-updates/uae-health-data-new-data-transfer-permissions",
+        "publisher": "CMS",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://insightplus.bakermckenzie.com/bm/data-technology/united-arab-emirates-health-data-law-permitted-transfers-of-health-data",
+        "publisher": "Baker McKenzie",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.trade.gov/market-intelligence/united-arab-emirates-regulations-limit-cross-border-health-data-flows",
+        "publisher": "US International Trade Administration",
+        "kind": "tracker",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": []
+    },
+    "triggers": [
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "AE"
+          },
+          {
+            "fact": "sensitive_data",
+            "op": "any_in",
+            "value": [
+              "health"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AE"
+            ]
+          },
+          {
+            "fact": "sensitive_data",
+            "op": "any_in",
+            "value": [
+              "health"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "AE"
+          },
+          {
+            "fact": "industry",
+            "op": "eq",
+            "value": "healthcare"
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AE"
+            ]
+          },
+          {
+            "fact": "industry",
+            "op": "eq",
+            "value": "healthcare"
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "AE",
+              "GCC"
+            ]
+          },
+          {
+            "fact": "sensitive_data",
+            "op": "any_in",
+            "value": [
+              "health"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "AE",
+              "GCC"
+            ]
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "healthcare_providers"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "AE-08",
+    "jurisdiction": "AE",
+    "zone": "onshore",
+    "short_name": "CBUAE rules",
+    "official_name": "Federal Decree-Law No. 6 of 2025 (CBUAE Law), Consumer Protection Regulation and Standards, and Outsourcing Regulation for Banks",
+    "issuer": "Central Bank of the UAE (CBUAE)",
+    "regulator": "Central Bank of the UAE (CBUAE)",
+    "kinds": [
+      "financial_sector",
+      "payments",
+      "privacy"
+    ],
+    "topic_column": "sector",
+    "force": "law",
+    "state": "in_force",
+    "state_note": "The new CBUAE Law has been in force since 16 September 2025, replacing the 2018 law; its one year transition for technology providers inside the wider licensing perimeter ended 16 September 2026. Implementing rules were still expected.",
+    "tier": "sector",
+    "applies_to": "Banks, finance companies, insurers, exchange houses and payment and stored value providers licensed by CBUAE, and fintech or platform providers whose service falls inside the new perimeter. Purely technical software and infrastructure suppliers are not the target, per CBUAE statements. Not DIFC or ADGM firms regulated by their own authorities.",
+    "duties": [
+      {
+        "topic": "consent",
+        "text": "Protect customer data and follow the consent duties in the consumer protection standards.",
+        "clock_hours": null
+      },
+      {
+        "topic": "breach_notice",
+        "text": "Notify CBUAE and customers of breaches under the consumer protection standards.",
+        "clock_hours": null
+      },
+      {
+        "topic": "third_parties",
+        "text": "Assess outsourcing risk, put contract controls in place and get central bank non-objection for material arrangements.",
+        "clock_hours": null
+      },
+      {
+        "topic": "location",
+        "text": "Keep customer data accessible in the UAE, with limits on offshore transfer.",
+        "clock_hours": null
+      },
+      {
+        "topic": "registration",
+        "text": "Check whether a technology service now needs a CBUAE licence under the wider perimeter.",
+        "clock_hours": null
+      },
+      {
+        "topic": "penalties",
+        "text": "The new law brings higher penalties and published enforcement.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "none",
+      "note": "No certification."
+    },
+    "iso27001": {
+      "relation": "not_a_substitute",
+      "note": "Not mandated by name; payment rules point to PCI DSS for card data instead."
+    },
+    "soc2": {
+      "relation": "not_a_substitute",
+      "note": "Not mandated by name."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2025-09-16",
+        "precision": "day",
+        "kind": "in_force",
+        "description": "CBUAE Law (Federal Decree-Law No. 6 of 2025) in force.",
+        "confirmed": true
+      },
+      {
+        "date": "2026-09-16",
+        "precision": "day",
+        "kind": "deadline",
+        "description": "One year transition ends for providers inside the new licensing perimeter.",
+        "confirmed": true
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.centralbank.ae/en/legislation/",
+        "publisher": "Central Bank of the UAE",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.whitecase.com/insight-alert/uae-enacts-new-cbuae-law-which-repeals-and-replaces-2018-law",
+        "publisher": "White and Case",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://cms.law/en/are/legal-updates/the-new-uae-central-bank-law-expanding-the-regulatory-perimeter-for-a-digital-era",
+        "publisher": "CMS",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.pinsentmasons.com/out-law/news/cbuae-guidance-technology-firms-regulation-shift",
+        "publisher": "Pinsent Masons",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "Exact data location wording not re-verified.",
+        "Implementing rules under the 2025 law not yet seen.",
+        "The PCI DSS reference in payment rules was not re-verified."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "AE"
+          },
+          {
+            "fact": "uae_zones",
+            "op": "any_in",
+            "value": [
+              "onshore"
+            ]
+          },
+          {
+            "fact": "regulator_licences",
+            "op": "any_in",
+            "value": [
+              "financial",
+              "payments",
+              "insurance"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AE"
+            ]
+          },
+          {
+            "fact": "uae_zones",
+            "op": "any_in",
+            "value": [
+              "onshore"
+            ]
+          },
+          {
+            "fact": "regulator_licences",
+            "op": "any_in",
+            "value": [
+              "financial",
+              "payments",
+              "insurance"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "AE"
+          },
+          {
+            "fact": "industry",
+            "op": "in",
+            "value": [
+              "financial_services",
+              "payments",
+              "insurance"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AE"
+            ]
+          },
+          {
+            "fact": "industry",
+            "op": "in",
+            "value": [
+              "financial_services",
+              "payments",
+              "insurance"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "AE",
+              "GCC"
+            ]
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "banks_insurers"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "AE-09",
+    "jurisdiction": "AE",
+    "zone": null,
+    "short_name": "UAE Cybercrime Law",
+    "official_name": "Federal Decree-Law No. 34 of 2021 on Countering Rumours and Cybercrimes",
+    "issuer": "UAE federal government",
+    "regulator": null,
+    "kinds": [
+      "cybersecurity"
+    ],
+    "topic_column": "security_baseline",
+    "force": "law",
+    "state": "in_force",
+    "state_note": "In force since 2 January 2022, replacing the 2012 law, and amended in April 2024 by Federal Decree-Law No. 5 of 2024. Dates rest on summaries because the federal legislation site is blocked.",
+    "tier": "most_should_know",
+    "applies_to": "Everyone in the UAE, and offences affecting UAE systems or interests from abroad.",
+    "duties": [
+      {
+        "topic": "baseline",
+        "text": "Know the offences for unauthorised access, data and system interference, and attacks on government and critical sector systems.",
+        "clock_hours": null
+      },
+      {
+        "topic": "consent",
+        "text": "Do not collect or disclose personal or health data unlawfully; it is a crime under this law.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "Know that spreading false information online is an offence.",
+        "clock_hours": null
+      },
+      {
+        "topic": "penalties",
+        "text": "Penalties include heavy fines and imprisonment, and company managers can be liable.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "none",
+      "note": "No certification."
+    },
+    "iso27001": {
+      "relation": "not_relevant",
+      "note": "Not relevant."
+    },
+    "soc2": {
+      "relation": "not_relevant",
+      "note": "Not relevant."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2022-01-02",
+        "precision": "day",
+        "kind": "in_force",
+        "description": "Decree-law in force, replacing the 2012 law (summary).",
+        "confirmed": false
+      },
+      {
+        "date": "2024-04",
+        "precision": "month",
+        "kind": "enacted",
+        "description": "Amended by Federal Decree-Law No. 5 of 2024 (summary).",
+        "confirmed": false
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://uaelegislation.gov.ae/en/legislations/1526",
+        "publisher": "UAE Legislation",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://u.ae/en/information-and-services/social-affairs/Priority-groups/children/Childrens-digital-safety",
+        "publisher": "UAE Government portal (u.ae)",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      },
+      {
+        "url": "https://u.ae/en/information-and-services/justice-safety-and-the-law/cyber-safety-and-digital-security",
+        "publisher": "UAE Government portal (u.ae)",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "known_not_opened"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "Scope of the 2024 amendment not verified.",
+        "uaelegislation.gov.ae refused automated and browser access."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "AE"
+          }
+        ]
+      },
+      {
+        "confidence": "applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AE"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "AE",
+              "GCC"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "AE-10",
+    "jurisdiction": "AE",
+    "zone": null,
+    "short_name": "Child Digital Safety Law",
+    "official_name": "Federal Decree-Law No. 26 of 2025 on Child Digital Safety",
+    "issuer": "UAE federal government",
+    "regulator": null,
+    "kinds": [
+      "privacy"
+    ],
+    "topic_column": "privacy",
+    "force": "law",
+    "state": "in_force_phasing",
+    "state_note": "In force since 1 January 2026 with a grace period to 1 January 2027. Cabinet Resolution No. 106 of 2026 on children's social media access took effect 30 June 2026 and gives platforms until 30 June 2027; these dates come from law firms.",
+    "tier": "most_should_know",
+    "applies_to": "Digital platforms and internet service providers operating in the UAE or targeting users there, wherever they are established.",
+    "duties": [
+      {
+        "topic": "assessment",
+        "text": "Classify the platform by risk, which sets the age groups, age verification methods and duties that apply.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "Under Cabinet Resolution 106 of 2026, stop under-15s creating or running personal social media accounts or using interactive features such as posting, commenting, sharing or joining public groups, and use age checks stronger than self-declaration.",
+        "clock_hours": null
+      },
+      {
+        "topic": "consent",
+        "text": "Do not collect or use personal data of children under 13 except under strict conditions, including withdrawable parental consent and no targeted advertising.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "Offer parental control tools and a way to report harmful content.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "none",
+      "note": "No certification."
+    },
+    "iso27001": {
+      "relation": "not_relevant",
+      "note": "Not relevant."
+    },
+    "soc2": {
+      "relation": "not_relevant",
+      "note": "Not relevant."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2026-01-01",
+        "precision": "day",
+        "kind": "in_force",
+        "description": "Decree-law in force (law firms).",
+        "confirmed": false
+      },
+      {
+        "date": "2026-06-17",
+        "precision": "day",
+        "kind": "enacted",
+        "description": "Cabinet Resolution No. 106 of 2026 issued (law firms).",
+        "confirmed": false
+      },
+      {
+        "date": "2026-06-30",
+        "precision": "day",
+        "kind": "in_force",
+        "description": "Cabinet Resolution No. 106 of 2026 in effect (law firms).",
+        "confirmed": false
+      },
+      {
+        "date": "2027-01-01",
+        "precision": "day",
+        "kind": "deadline",
+        "description": "Grace period for in-scope entities ends (law firms).",
+        "confirmed": false
+      },
+      {
+        "date": "2027-06-30",
+        "precision": "day",
+        "kind": "deadline",
+        "description": "Platforms must comply with Cabinet Resolution No. 106 of 2026 (law firms).",
+        "confirmed": false
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://u.ae/en/information-and-services/social-affairs/Priority-groups/children/Childrens-digital-safety",
+        "publisher": "UAE Government portal (u.ae)",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      },
+      {
+        "url": "https://uaelegislation.gov.ae/en/news/uae-government-issues-a-federal-decree-law-on-child-digital-safety",
+        "publisher": "UAE Legislation",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.lw.com/en/insights/UAEs-Child-Digital-Safety-Law-What-Every-Digital-Platform-and-ISP-Should-Know",
+        "publisher": "Latham and Watkins",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      },
+      {
+        "url": "https://www.bakermckenzie.com/en/insight/publications/2026/01/uae-issues-new-child-digital-safety-law",
+        "publisher": "Baker McKenzie",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "Official dates for the decree-law and Resolution 106 not confirmed; uaelegislation.gov.ae blocks access and the portal gives no dates (it lists the resolution as Arabic only).",
+        "Limits on accounts for 15 year olds and the stronger age checks come from law firms.",
+        "A detailed penalty list is still to come."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "AE"
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "consumers"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AE"
+            ]
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "consumers"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "AE"
+          },
+          {
+            "fact": "sensitive_data",
+            "op": "any_in",
+            "value": [
+              "children"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "AE"
+            ]
+          },
+          {
+            "fact": "sensitive_data",
+            "op": "any_in",
+            "value": [
+              "children"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "AE",
+              "GCC"
+            ]
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "consumers"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "AE",
+              "GCC"
+            ]
+          },
+          {
+            "fact": "sensitive_data",
+            "op": "any_in",
+            "value": [
+              "children"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]

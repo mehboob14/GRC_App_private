@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -5,11 +6,6 @@ import {
   ErrorBanner,
   ErrorState,
   Icon,
-  Select,
-  SelectContent,
-  SelectField,
-  SelectItem,
-  SelectTrigger,
   Skeleton,
   TextField,
   useToast,
@@ -18,33 +14,19 @@ import { tenantApi } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/auth-context";
 import { useAlertFocus } from "@/features/iam/hooks/use-alert-focus";
+import { ProfileQuestions } from "@/features/tenancy/profile-questions";
 import { SmtpSettings } from "@/features/tenancy/smtp-settings";
 import type { CompanyProfile } from "@/lib/api/types";
 
-const INDUSTRIES = [
-  "Financial Services",
-  "Healthcare",
-  "Technology",
-  "Manufacturing",
-  "Retail",
-  "Energy",
-  "Government",
-  "Education",
-  "Other",
-];
-const COMPANY_SIZES = ["1-50", "51-200", "201-500", "501-1000", "1000+"];
-
+// Industry, size, headquarters and "frameworks in scope" moved to the typed questions below
+// (guided onboarding PR-1). Their old free text values show there as hints until answered.
 type FormValues = {
   legal_name: string;
   display_name: string;
   registration_number: string;
-  industry: string;
-  company_size: string;
+  registered_address: string;
   domain: string;
   website: string;
-  headquarters: string;
-  description: string;
-  regulatory_scope: string;
   privacy_policy_url: string;
   terms_url: string;
 };
@@ -53,13 +35,9 @@ const FIELDS = Object.keys({
   legal_name: 0,
   display_name: 0,
   registration_number: 0,
-  industry: 0,
-  company_size: 0,
+  registered_address: 0,
   domain: 0,
   website: 0,
-  headquarters: 0,
-  description: 0,
-  regulatory_scope: 0,
   privacy_policy_url: 0,
   terms_url: 0,
 } satisfies Record<keyof FormValues, number>) as (keyof FormValues)[];
@@ -128,20 +106,25 @@ export function CompanyProfilePage() {
     );
   }
 
-  const industry = form.watch("industry");
-  const companySize = form.watch("company_size");
-  const textareaClass =
-    "w-full rounded-sm border border-border bg-surface-primary px-3 py-2 text-body-md text-text-primary outline-none transition-colors placeholder:text-text-subtle focus:border-action-accent focus:ring-2 focus:ring-action-accent/15 disabled:cursor-not-allowed disabled:opacity-60";
-
   return (
     <div className="max-w-[820px]">
       <h2 className="font-display text-heading-sm text-text-primary">
         Company profile
       </h2>
       <p className="mb-5 mt-1 text-body-md text-text-secondary">
-        Tell us about your organisation. These details feed reports, evidence
-        and generated documents going forward.
+        Answer once. Your scope, documents and the rules we show you read from here.{" "}
+        <Link to="/regulations" className="text-text-link">
+          See which laws may apply
+        </Link>
       </p>
+
+      {query.data ? (
+        <div className="mb-8">
+          <ProfileQuestions profile={query.data} canManage={Boolean(canManage)} />
+        </div>
+      ) : null}
+
+      <h3 className="mb-3 font-display text-title-md text-text-primary">Legal details</h3>
 
       <form
         onSubmit={(e) =>
@@ -181,43 +164,11 @@ export function CompanyProfilePage() {
             placeholder="e.g. 12345678"
             {...form.register("registration_number")}
           />
-          <SelectField label="Industry" optional>
-            <Select
-              value={industry}
-              onValueChange={(v) => form.setValue("industry", v)}
-              disabled={!canManage}
-            >
-              <SelectTrigger aria-label="Industry" />
-              <SelectContent>
-                {INDUSTRIES.map((option) => (
-                  <SelectItem key={option} value={option}>
-                    {option}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </SelectField>
-          <SelectField label="Company size" optional>
-            <Select
-              value={companySize}
-              onValueChange={(v) => form.setValue("company_size", v)}
-              disabled={!canManage}
-            >
-              <SelectTrigger aria-label="Company size" />
-              <SelectContent>
-                {COMPANY_SIZES.map((option) => (
-                  <SelectItem key={option} value={option}>
-                    {option} employees
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </SelectField>
           <TextField
-            label="Headquarters"
+            label="Registered address"
             optional
-            placeholder="City, Country"
-            {...form.register("headquarters")}
+            placeholder="Street, city, postcode, country"
+            {...form.register("registered_address")}
           />
           <TextField
             label="Primary domain"
@@ -232,30 +183,6 @@ export function CompanyProfilePage() {
             placeholder="https://acme.com"
             {...form.register("website")}
           />
-          <div className="sm:col-span-2">
-            <label
-              htmlFor="description"
-              className="mb-1 block font-sans text-label-sm text-text-secondary"
-            >
-              What you do{" "}
-              <span className="text-text-subtle">(optional)</span>
-            </label>
-            <textarea
-              id="description"
-              rows={3}
-              className={textareaClass}
-              placeholder="A short description of your business and what you sell."
-              {...form.register("description")}
-            />
-          </div>
-          <div className="sm:col-span-2">
-            <TextField
-              label="Frameworks in scope"
-              optional
-              placeholder="SOC 2, ISO 27001, GDPR"
-              {...form.register("regulatory_scope")}
-            />
-          </div>
           <TextField
             label="Privacy policy URL"
             optional
@@ -264,7 +191,7 @@ export function CompanyProfilePage() {
             {...form.register("privacy_policy_url")}
           />
           <TextField
-            label="Terms & conditions URL"
+            label="Terms and conditions URL"
             optional
             type="url"
             placeholder="https://acme.com/terms"
@@ -280,7 +207,7 @@ export function CompanyProfilePage() {
               loading={mutation.isPending}
               disabled={!form.formState.isDirty}
             >
-              Save profile
+              Save details
               <Icon name="check" className="size-4" />
             </Button>
           </div>

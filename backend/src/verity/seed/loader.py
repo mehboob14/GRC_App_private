@@ -30,7 +30,6 @@ checkout that converts them still matches.
 
 from __future__ import annotations
 
-import hashlib
 import json
 import uuid
 from collections.abc import Sequence
@@ -56,44 +55,16 @@ from verity.modules.connectors.models import Check, ControlTemplateCheck, Integr
 from verity.modules.documents.models import DocumentTemplate
 from verity.modules.risk.models import RiskTemplate
 from verity.modules.vendors.models import QuestionnaireQuestion, QuestionnaireTemplate
+from verity.seed.seal import (
+    CONTENT_ROOT,
+    ContentError,
+    verify_pack,
+)
 from verity.shared.ids import uuid7
 
 logger = get_logger(__name__)
 
-CONTENT_ROOT = Path(__file__).parent / "content"
-
 COVERAGE_VALUES = ("full", "partial")
-
-
-class ContentError(ValueError):
-    """A content pack that must not be loaded: it does not match what was reviewed."""
-
-
-def content_digest(path: Path) -> str:
-    """SHA256 of a content file with line endings normalised to LF."""
-    return hashlib.sha256(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
-
-
-def sealed_hashes(pack: Path) -> dict[str, str]:
-    """The file hashes a pack's manifest vouches for: ``{file name: sha256}``."""
-    manifest_path = pack / "MANIFEST.json"
-    if not manifest_path.exists():
-        return {}
-    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    sealed = {item["path"]: item["sha256"] for item in manifest.get("generated", [])}
-    sealed.update(manifest.get("sha256", {}))
-    return sealed
-
-
-def verify_pack(pack: Path) -> None:
-    """Refuse a pack whose files differ from the bytes its manifest sealed."""
-    for name, expected in sealed_hashes(pack).items():
-        if not (pack / name).exists() or content_digest(pack / name) != expected:
-            raise ContentError(
-                f"{pack.name}/{name} does not match its MANIFEST.json hash. "
-                "Content changes are sealed in the same reviewed change "
-                "(python scripts/seal_content.py)."
-            )
 
 
 @dataclass

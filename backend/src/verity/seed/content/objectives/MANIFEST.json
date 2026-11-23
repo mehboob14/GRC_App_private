@@ -1,0 +1,13 @@
+{
+  "pack": "objectives",
+  "text_policy": "own_words",
+  "source": "Written for Verity in its own words (guided onboarding part 5 section 8, report of 2026-10-30). No ISO, AICPA, PCI or SCF text. Optional NIST SP 800-53A origins are identifiers only.",
+  "review_status": "draft_unreviewed",
+  "version": "2026.11-all",
+  "wave": "all",
+  "controls_pending": [],
+  "sha256": {
+    "artifacts.json": "42568644ad64b940863f4ac8b8e818ba0810539a7a52d38fcef25f08192cf4d4",
+    "objectives.json": "58fa26a66b22d3316236e9bd743a66c551223a8bb4e8b48fcad875b9f6431dd4"
+  }
+}

@@ -23,6 +23,11 @@ export function FrameworksLayout() {
     ...(selected?.added && selected.scope_model === "applicability"
       ? [{ id: `/frameworks/soa${search}`, label: "Applicability", end: false }]
       : []),
+    { id: `/frameworks/objectives${search}`, label: "Objectives", end: false },
+    ...(selected?.added ? [{ id: `/frameworks/assurance${search}`, label: "Audits", end: false }] : []),
+    ...(selected?.added && selected.scope_model === "categories"
+      ? [{ id: `/frameworks/description${search}`, label: "Description", end: false }]
+      : []),
   ];
 
   return (

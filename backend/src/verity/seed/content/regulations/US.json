@@ -1,0 +1,2920 @@
+[
+  {
+    "key": "US-01",
+    "jurisdiction": "US",
+    "zone": null,
+    "short_name": "HIPAA",
+    "official_name": "Health Insurance Portability and Accountability Act (Privacy, Security and Breach Notification Rules), with HITECH",
+    "issuer": "US Congress; Department of Health and Human Services (HHS)",
+    "regulator": "HHS Office for Civil Rights (OCR), plus state attorneys general",
+    "kinds": [
+      "health_sector",
+      "privacy",
+      "cybersecurity"
+    ],
+    "topic_column": "sector",
+    "force": "law",
+    "state": "in_force",
+    "state_note": "In force, with rules at 45 CFR Parts 160 and 164. The proposed Security Rule overhaul is not final (now targeted for July 2027), so the existing Security Rule applies; a final Privacy Rule update was issued 16 November 2026 with compliance dates not confirmed.",
+    "tier": "sector",
+    "applies_to": "Covered entities (health plans, clearinghouses, most providers) and business associates: any vendor that creates, receives, stores or transmits protected health information for them, including SaaS and cloud providers.",
+    "duties": [
+      {
+        "topic": "third_parties",
+        "text": "Sign business associate agreements all the way down the chain.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "Document a risk analysis and put administrative, physical and technical safeguards in place.",
+        "clock_hours": null
+      },
+      {
+        "topic": "consent",
+        "text": "Use only the minimum necessary information and honour patient rights.",
+        "clock_hours": null
+      },
+      {
+        "topic": "breach_notice",
+        "text": "Notify affected individuals within 60 days of a breach, HHS immediately for 500 or more people or yearly for smaller breaches, and sometimes the media.",
+        "clock_hours": null
+      },
+      {
+        "topic": "penalties",
+        "text": "Civil penalties apply per violation tier with annual caps, plus state attorney general enforcement.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "none",
+      "note": "No official certification; HITRUST or SOC 2 reports with a HIPAA mapping are market practice only."
+    },
+    "iso27001": {
+      "relation": "helps_partially",
+      "note": "Not recognised by OCR, but helps evidence safeguards. NIST publishes a Security Rule guide (SP 800-66 revision 2) and a crosswalk to the NIST CSF."
+    },
+    "soc2": {
+      "relation": "helps_partially",
+      "note": "Not recognised by OCR, but helps evidence safeguards."
+    },
+    "helps": [
+      "GOV-18",
+      "GOV-19",
+      "GOV-20",
+      "GOV-11",
+      "GOV-10",
+      "HR-01",
+      "HR-05",
+      "HR-08",
+      "IAM-01",
+      "IAM-08",
+      "LM-04",
+      "LM-07",
+      "BC-01",
+      "BC-02",
+      "BC-03",
+      "GOV-13",
+      "DM-10",
+      "BC-08",
+      "PE-01",
+      "PE-02",
+      "EP-05",
+      "DM-16",
+      "IAM-03",
+      "IAM-04",
+      "IAM-11",
+      "NS-01",
+      "NS-02",
+      "LM-02",
+      "DM-01",
+      "DM-02"
+    ],
+    "not_covered": [
+      "Business associate terms",
+      "Minimum necessary rule",
+      "Emergency access",
+      "The required or addressable decision for each specification"
+    ],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2025-01",
+        "precision": "month",
+        "kind": "proposed",
+        "description": "Proposed Security Rule overhaul published.",
+        "confirmed": true
+      },
+      {
+        "date": "2026-11-16",
+        "precision": "day",
+        "kind": "enacted",
+        "description": "HHS issues a final Privacy Rule update on access rights, fees and care coordination (Federal Register publication scheduled for 19 November 2026).",
+        "confirmed": true
+      },
+      {
+        "date": "2027-07",
+        "precision": "month",
+        "kind": "proposed",
+        "description": "Target for final action on the Security Rule overhaul (target only).",
+        "confirmed": false
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.hhs.gov/hipaa/index.html",
+        "publisher": "US Department of Health and Human Services",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "known_not_opened"
+      },
+      {
+        "url": "https://www.hhs.gov/hipaa/for-professionals/privacy/2026-privacy-final-rule/index.html",
+        "publisher": "US Department of Health and Human Services",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.hklaw.com/en/insights/publications/2026/07/hipaa-security-rule-amendments-now-projected-for-july-2027",
+        "publisher": "Holland and Knight",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.alston.com/en/insights/publications/2026/07/hhs-delays-hipaa-security-rule-2027",
+        "publisher": "Alston and Bird",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.hklaw.com/en/insights/publications/2026/11/at-last-final-hipaa-rules-to-promote-coordinated-care",
+        "publisher": "Holland and Knight",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "Compliance dates of the 16 November 2026 Privacy Rule update not confirmed; one source gave an impossible date."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "US"
+          },
+          {
+            "fact": "sensitive_data",
+            "op": "any_in",
+            "value": [
+              "health"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "US"
+            ]
+          },
+          {
+            "fact": "sensitive_data",
+            "op": "any_in",
+            "value": [
+              "health"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "US"
+          },
+          {
+            "fact": "industry",
+            "op": "eq",
+            "value": "healthcare"
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "US"
+            ]
+          },
+          {
+            "fact": "industry",
+            "op": "eq",
+            "value": "healthcare"
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "US"
+            ]
+          },
+          {
+            "fact": "sensitive_data",
+            "op": "any_in",
+            "value": [
+              "health"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "US"
+            ]
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "healthcare_providers"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "US-02",
+    "jurisdiction": "US",
+    "zone": null,
+    "short_name": "GLBA Safeguards Rule",
+    "official_name": "Gramm-Leach-Bliley Act and the FTC Safeguards Rule (16 CFR Part 314)",
+    "issuer": "US Congress; Federal Trade Commission",
+    "regulator": "FTC for non-bank financial institutions; banking agencies for banks",
+    "kinds": [
+      "financial_sector",
+      "privacy",
+      "cybersecurity"
+    ],
+    "topic_column": "sector",
+    "force": "law",
+    "state": "in_force",
+    "state_note": "In force. The Safeguards Rule amendments have been fully effective since 9 June 2023 and the FTC breach notification amendment since 13 May 2024.",
+    "tier": "sector",
+    "applies_to": "Financial institutions in the broad GLBA sense: lenders, mortgage brokers, tax preparers, collection agencies, auto dealers that finance, fintechs, and some payment and account aggregation services. Service providers are bound by contract.",
+    "duties": [
+      {
+        "topic": "officer",
+        "text": "Run a written information security program led by a named qualified individual.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "Write a risk assessment, and run a yearly penetration test and six-monthly vulnerability scans, or monitor continuously.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "Apply access control, encryption, multi-factor authentication, logging, secure development and data disposal.",
+        "clock_hours": null
+      },
+      {
+        "topic": "third_parties",
+        "text": "Oversee service providers and keep a written incident response plan.",
+        "clock_hours": null
+      },
+      {
+        "topic": "board_duty",
+        "text": "Report to the board every year.",
+        "clock_hours": null
+      },
+      {
+        "topic": "breach_notice",
+        "text": "Notify the FTC within 30 days of an event affecting unencrypted data of 500 or more consumers.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "none",
+      "note": "No certification."
+    },
+    "iso27001": {
+      "relation": "helps_partially",
+      "note": "Not referenced; maps well to the required program elements."
+    },
+    "soc2": {
+      "relation": "helps_partially",
+      "note": "Not referenced; maps well to the required program elements."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2023-06-09",
+        "precision": "day",
+        "kind": "obligation_starts",
+        "description": "Safeguards Rule amendments fully effective.",
+        "confirmed": true
+      },
+      {
+        "date": "2024-05-13",
+        "precision": "day",
+        "kind": "obligation_starts",
+        "description": "FTC breach notification amendment effective.",
+        "confirmed": true
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.ecfr.gov/current/title-16/part-314",
+        "publisher": "eCFR",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "known_not_opened"
+      },
+      {
+        "url": "https://www.federalregister.gov/documents/2023/11/13/2023-24412/standards-for-safeguarding-customer-information",
+        "publisher": "Federal Register",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.ftc.gov/business-guidance/resources/ftc-safeguards-rule-what-your-business-needs-know",
+        "publisher": "Federal Trade Commission",
+        "kind": "regulator_guidance",
+        "accessed_at": "2026-11-21",
+        "verified": "known_not_opened"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "The GLBA Privacy Rule also requires privacy notices and opt-outs; not summarised as a duty here."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "US"
+          },
+          {
+            "fact": "regulator_licences",
+            "op": "any_in",
+            "value": [
+              "financial",
+              "payments"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "US"
+            ]
+          },
+          {
+            "fact": "regulator_licences",
+            "op": "any_in",
+            "value": [
+              "financial",
+              "payments"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "US"
+          },
+          {
+            "fact": "industry",
+            "op": "in",
+            "value": [
+              "financial_services",
+              "payments"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "US"
+            ]
+          },
+          {
+            "fact": "industry",
+            "op": "in",
+            "value": [
+              "financial_services",
+              "payments"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "US"
+            ]
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "banks_insurers"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "US-03",
+    "jurisdiction": "US",
+    "zone": null,
+    "short_name": "SOX section 404",
+    "official_name": "Sarbanes-Oxley Act of 2002, section 404 (internal control over financial reporting)",
+    "issuer": "US Congress",
+    "regulator": "Securities and Exchange Commission and the Public Company Accounting Oversight Board",
+    "kinds": [],
+    "topic_column": "sector",
+    "force": "law",
+    "state": "in_force",
+    "state_note": "In force since 2002.",
+    "tier": "sector",
+    "applies_to": "Companies with securities registered in the United States, including foreign private issuers, and indirectly their service providers whose systems affect financial reporting.",
+    "duties": [
+      {
+        "topic": "assessment",
+        "text": "Document and test internal controls over financial reporting, including access, change management and operations controls on financial systems.",
+        "clock_hours": null
+      },
+      {
+        "topic": "board_duty",
+        "text": "Have the CEO and CFO certify, and disclose material weaknesses.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "Expect an external auditor attestation each year as a larger filer.",
+        "clock_hours": null
+      },
+      {
+        "topic": "third_parties",
+        "text": "As a vendor whose product feeds customers' books, expect requests for a SOC 1 Type II report.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "attestation",
+      "note": "Management assesses each year; larger filers also get an external auditor attestation."
+    },
+    "iso27001": {
+      "relation": "not_relevant",
+      "note": "Not the relevant report for financial reporting controls."
+    },
+    "soc2": {
+      "relation": "not_a_substitute",
+      "note": "The relevant vendor report is SOC 1, not SOC 2."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [],
+    "sources": [
+      {
+        "url": "https://www.sec.gov/about/laws/soa2002.pdf",
+        "publisher": "US Securities and Exchange Commission",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "known_not_opened"
+      },
+      {
+        "url": "https://pcaobus.org/oversight/standards/auditing-standards",
+        "publisher": "PCAOB",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "known_not_opened"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "No value in the kinds list fits financial reporting law, so kinds is empty.",
+        "The vendor reach (SOC 1) would need the profile answer affects_customer_financial_reporting, which is not an allowed trigger key.",
+        "Sources are cited from prior knowledge and were not opened in this session."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "applies",
+        "all": [
+          {
+            "fact": "listed_us",
+            "op": "eq",
+            "value": "yes"
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "listed_us",
+            "op": "eq",
+            "value": "not_sure"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "US-04",
+    "jurisdiction": "US",
+    "zone": null,
+    "short_name": "US state privacy laws",
+    "official_name": "State comprehensive consumer privacy laws (CCPA/CPRA and the others)",
+    "issuer": "State legislatures",
+    "regulator": "State attorneys general; in California also the California Privacy Protection Agency",
+    "kinds": [
+      "privacy"
+    ],
+    "topic_column": "privacy",
+    "force": "law",
+    "state": "in_force_phasing",
+    "state_note": "As of 21 November 2026, 20 states have a law in force if Florida's narrow law is counted (19 without it), and 4 more start later: Oklahoma and Louisiana on 1 January 2027, Alabama on 1 May 2027 and Vermont on 1 January 2028.",
+    "tier": "most_should_know",
+    "applies_to": "For-profit businesses that serve residents of a state and cross its size threshold. California: revenue above about USD 25 million (indexed), data of 100,000 or more consumers or households, or half of revenue from selling or sharing data; it also covers employee and business contact data. Most other states use data of 100,000 residents, or a lower count plus revenue from data sales. Data already under HIPAA or GLBA is mostly exempt.",
+    "duties": [
+      {
+        "topic": "consent",
+        "text": "Publish a privacy notice and honour consumer rights: access, delete, correct, portability, and opt out of sale, targeted advertising and profiling.",
+        "clock_hours": null
+      },
+      {
+        "topic": "consent",
+        "text": "Honour browser opt-out signals in the states that require it, and get opt-in consent for sensitive data in most states (Maryland sets tight limits).",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "Run data protection assessments for higher risk processing.",
+        "clock_hours": null
+      },
+      {
+        "topic": "third_parties",
+        "text": "Put processor contracts in place.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "Keep reasonable security; only California gives people a private right of action for data breaches.",
+        "clock_hours": null
+      },
+      {
+        "topic": "penalties",
+        "text": "Penalties apply per violation.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "none",
+      "note": "No certification."
+    },
+    "iso27001": {
+      "relation": "helps_partially",
+      "note": "Not referenced by most laws. California's audit regulation lets a business rely on an existing independent audit that covers the listed components, so ISO 27001 work can be reused after checking the list."
+    },
+    "soc2": {
+      "relation": "helps_partially",
+      "note": "Not referenced by most laws. California's audit regulation lets a business rely on an existing independent audit that covers the listed components, so SOC 2 work can be reused after checking the list."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2026-01-01",
+        "precision": "day",
+        "kind": "in_force",
+        "description": "Indiana, Kentucky and Rhode Island laws in force.",
+        "confirmed": true
+      },
+      {
+        "date": "2026-01-01",
+        "precision": "day",
+        "kind": "obligation_starts",
+        "description": "California regulations on cybersecurity audits, risk assessments and automated decision technology take effect, with phased deadlines to 2030 (not re-verified).",
+        "confirmed": false
+      },
+      {
+        "date": "2026-03-20",
+        "precision": "day",
+        "kind": "enacted",
+        "description": "Oklahoma law signed.",
+        "confirmed": true
+      },
+      {
+        "date": "2026-04-16",
+        "precision": "day",
+        "kind": "enacted",
+        "description": "Alabama law signed.",
+        "confirmed": true
+      },
+      {
+        "date": "2026-10-01",
+        "precision": "day",
+        "kind": "obligation_starts",
+        "description": "Connecticut amendments apply.",
+        "confirmed": true
+      },
+      {
+        "date": "2027-01-01",
+        "precision": "day",
+        "kind": "in_force",
+        "description": "Oklahoma and Louisiana laws take effect.",
+        "confirmed": true
+      },
+      {
+        "date": "2027-05-01",
+        "precision": "day",
+        "kind": "in_force",
+        "description": "Alabama law takes effect.",
+        "confirmed": true
+      },
+      {
+        "date": "2028-01-01",
+        "precision": "day",
+        "kind": "in_force",
+        "description": "Vermont law takes effect.",
+        "confirmed": true
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://iapp.org/resources/article/us-state-privacy-legislation-tracker/",
+        "publisher": "IAPP",
+        "kind": "tracker",
+        "accessed_at": "2026-11-21",
+        "verified": "known_not_opened"
+      },
+      {
+        "url": "https://cppa.ca.gov/regulations/",
+        "publisher": "California Privacy Protection Agency",
+        "kind": "regulator_guidance",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      },
+      {
+        "url": "https://www.okhouse.gov/posts/news-20260323_2",
+        "publisher": "Oklahoma House of Representatives",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      },
+      {
+        "url": "https://www.multistate.us/insider/2026/10/28/twenty-four-states-now-have-comprehensive-consumer-privacy-laws",
+        "publisher": "MultiState",
+        "kind": "tracker",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      },
+      {
+        "url": "https://www.venable.com/insights/publications/2026/07/2026-mid-year-state-privacy-law-update",
+        "publisher": "Venable",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      },
+      {
+        "url": "https://perkinscoie.com/insights/blog/oklahoma-and-alabama-headline-busy-spring-privacy-legislation",
+        "publisher": "Perkins Coie",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.mayerbrown.com/en/insights/resource-centers/cybersecurity-and-data-privacy-resource-center/state-privacy-law-tracker",
+        "publisher": "Mayer Brown",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "The 20 in force and 24 enacted counts were not re-counted.",
+        "California regulation phase-in dates not re-verified; the CPPA page lists the package as complete without dates.",
+        "Texas and Nebraska exempt small businesses by federal size definitions instead of a count threshold.",
+        "2026 amendments also include New Jersey's sensitive data sale ban and Virginia and Maryland geolocation changes.",
+        "Revenue bands are in US dollars; the California threshold (about USD 25 million) sits inside the 10 to 50 million band, so only 50 million and above gives likely applies."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "US"
+          },
+          {
+            "fact": "revenue_band",
+            "op": "in",
+            "value": [
+              "50m_250m",
+              "over_250m"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "US"
+            ]
+          },
+          {
+            "fact": "revenue_band",
+            "op": "in",
+            "value": [
+              "50m_250m",
+              "over_250m"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "US"
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "US"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "US"
+            ]
+          },
+          {
+            "fact": "personal_data_role",
+            "op": "in",
+            "value": [
+              "controller",
+              "processor",
+              "both"
+            ]
+          },
+          {
+            "fact": "revenue_band",
+            "op": "in",
+            "value": [
+              "50m_250m",
+              "over_250m"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "US"
+            ]
+          },
+          {
+            "fact": "personal_data_role",
+            "op": "in",
+            "value": [
+              "controller",
+              "processor",
+              "both"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "US-05",
+    "jurisdiction": "US",
+    "zone": null,
+    "short_name": "State breach notification laws",
+    "official_name": "State data breach notification and data security laws",
+    "issuer": "State legislatures (all 50 states, the District of Columbia, Puerto Rico, Guam and the Virgin Islands)",
+    "regulator": "State attorneys general",
+    "kinds": [
+      "privacy",
+      "cybersecurity"
+    ],
+    "topic_column": "breach_clock",
+    "force": "law",
+    "state": "in_force",
+    "state_note": "In force everywhere since 2003 onward and frequently amended. California set 30 and 15 day limits from 1 January 2026, New York a 30 day limit in December 2024, and Oklahoma rewrote its law from 1 January 2026 (law firm summaries).",
+    "tier": "most_should_know",
+    "applies_to": "Any organisation, wherever located, that holds defined personal information about a resident of the state.",
+    "duties": [
+      {
+        "topic": "breach_notice",
+        "text": "Notify affected residents of a breach of defined data (a name plus identifiers such as social security, account or health details) without unreasonable delay, and within the fixed 30 to 60 day limit many states set.",
+        "clock_hours": null
+      },
+      {
+        "topic": "breach_notice",
+        "text": "Notify the state attorney general when a breach passes the state's threshold, and the credit bureaus for large events.",
+        "clock_hours": null
+      },
+      {
+        "topic": "breach_notice",
+        "text": "For California residents, notify within 30 days, and the Attorney General within 15 days when more than 500 residents are affected.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "Meet affirmative security duties where a state adds them, for example New York's SHIELD Act and the Massachusetts written information security program regulation.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "none",
+      "note": "No certification."
+    },
+    "iso27001": {
+      "relation": "helps_partially",
+      "note": "A few states (for example Ohio, Utah and Connecticut) give a litigation safe harbour to organisations that follow a recognised framework such as NIST CSF, ISO 27001 or CIS Controls; not re-verified."
+    },
+    "soc2": {
+      "relation": "not_a_substitute",
+      "note": "Not among the frameworks the safe harbour states name in the sources (NIST CSF, ISO 27001, CIS Controls)."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2024-12",
+        "precision": "month",
+        "kind": "obligation_starts",
+        "description": "New York sets a 30 day notice limit (law firm summary).",
+        "confirmed": false
+      },
+      {
+        "date": "2026-01-01",
+        "precision": "day",
+        "kind": "obligation_starts",
+        "description": "California 30 day resident and 15 day Attorney General limits apply, and Oklahoma's rewritten law applies (law firm summaries).",
+        "confirmed": false
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.ncsl.org/technology-and-communication/security-breach-notification-laws",
+        "publisher": "National Conference of State Legislatures",
+        "kind": "tracker",
+        "accessed_at": "2026-11-21",
+        "verified": "known_not_opened"
+      },
+      {
+        "url": "https://iapp.org/resources/article/state-data-breach-notification-chart/",
+        "publisher": "IAPP",
+        "kind": "tracker",
+        "accessed_at": "2026-11-21",
+        "verified": "known_not_opened"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "Check the exact trigger for California's 15 day Attorney General notice.",
+        "Recent changes come from law firm summaries; NCSL and the California Attorney General refused automated reading.",
+        "State safe harbour laws not re-verified."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "US"
+          }
+        ]
+      },
+      {
+        "confidence": "applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "US"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "US"
+            ]
+          },
+          {
+            "fact": "personal_data_role",
+            "op": "in",
+            "value": [
+              "controller",
+              "processor",
+              "both"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "US"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "US-06",
+    "jurisdiction": "US",
+    "zone": null,
+    "short_name": "NYDFS Part 500",
+    "official_name": "NYDFS Cybersecurity Regulation (23 NYCRR Part 500)",
+    "issuer": "New York State Department of Financial Services",
+    "regulator": "New York State Department of Financial Services",
+    "kinds": [
+      "financial_sector",
+      "cybersecurity"
+    ],
+    "topic_column": "sector",
+    "force": "regulation",
+    "state": "in_force",
+    "state_note": "In force in full: the second amendment adopted 1 November 2023 phased in through 1 November 2025, ending with MFA for everyone accessing information systems and an asset inventory.",
+    "tier": "sector",
+    "applies_to": "Entities licensed or registered under New York banking, insurance or financial services law (banks, insurers, money transmitters, mortgage and virtual currency businesses), with limited exemptions for small ones. Larger Class A companies have extra duties; vendors are reached through third party service provider policies.",
+    "duties": [
+      {
+        "topic": "officer",
+        "text": "Run a cybersecurity program with a CISO and board oversight.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "Run a risk assessment, an annual penetration test, vulnerability management and an asset inventory.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "Apply MFA for all users, privileged access management and encryption.",
+        "clock_hours": null
+      },
+      {
+        "topic": "incident_reporting",
+        "text": "Notify the regulator within 72 hours of a qualifying incident.",
+        "clock_hours": 72
+      },
+      {
+        "topic": "incident_reporting",
+        "text": "Notify the regulator within 24 hours of an extortion payment.",
+        "clock_hours": 24
+      },
+      {
+        "topic": "board_duty",
+        "text": "Certify material compliance, or acknowledge gaps, by 15 April each year, signed by the CEO and the CISO.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "attestation",
+      "note": "Annual certification of material compliance, or acknowledgment of gaps, by 15 April, signed by the CEO and the CISO."
+    },
+    "iso27001": {
+      "relation": "not_a_substitute",
+      "note": "Not referenced; helps but does not replace the certification."
+    },
+    "soc2": {
+      "relation": "not_a_substitute",
+      "note": "Not referenced; helps but does not replace the certification."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2023-11-01",
+        "precision": "day",
+        "kind": "enacted",
+        "description": "Second amendment adopted.",
+        "confirmed": true
+      },
+      {
+        "date": "2025-11-01",
+        "precision": "day",
+        "kind": "obligation_starts",
+        "description": "Final phase: MFA for everyone and asset inventory.",
+        "confirmed": true
+      },
+      {
+        "date": "2027-04-15",
+        "precision": "day",
+        "kind": "deadline",
+        "description": "Annual certification covering 2026.",
+        "confirmed": true
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.dfs.ny.gov/industry_guidance/cybersecurity",
+        "publisher": "New York State Department of Financial Services",
+        "kind": "regulator_guidance",
+        "accessed_at": "2026-11-21",
+        "verified": "known_not_opened"
+      },
+      {
+        "url": "https://www.hoganlovells.com/en/publications/nydfs-final-set-of-cybersecurity-requirements-under-amended-part-500-take-effect-november-1-2025",
+        "publisher": "Hogan Lovells",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://ropesgray.com/en/insights/alerts/2026/01/nydfs-regulated-entities-face-stronger-cybersecurity-regulations",
+        "publisher": "Ropes and Gray",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "The profile does not record the US state of a licence, so every trigger says check."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "US"
+          },
+          {
+            "fact": "regulator_licences",
+            "op": "any_in",
+            "value": [
+              "financial",
+              "insurance",
+              "payments"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "US"
+            ]
+          },
+          {
+            "fact": "regulator_licences",
+            "op": "any_in",
+            "value": [
+              "financial",
+              "insurance",
+              "payments"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "US"
+          },
+          {
+            "fact": "industry",
+            "op": "in",
+            "value": [
+              "financial_services",
+              "insurance",
+              "payments"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "US"
+            ]
+          },
+          {
+            "fact": "industry",
+            "op": "in",
+            "value": [
+              "financial_services",
+              "insurance",
+              "payments"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "US"
+            ]
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "banks_insurers"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "US-07",
+    "jurisdiction": "US",
+    "zone": null,
+    "short_name": "SEC cyber disclosure and Regulation S-P",
+    "official_name": "SEC cybersecurity disclosure rules (2023) and Regulation S-P amendments (2024)",
+    "issuer": "US Securities and Exchange Commission (SEC)",
+    "regulator": "US Securities and Exchange Commission (SEC)",
+    "kinds": [
+      "financial_sector",
+      "cybersecurity"
+    ],
+    "topic_column": "sector",
+    "force": "regulation",
+    "state": "in_force",
+    "state_note": "Disclosure rules effective December 2023 (smaller companies June 2024); industry groups petitioned to rescind them, but no final SEC action was found. Regulation S-P compliance dates were 3 December 2025 for larger firms and 3 June 2026 for smaller ones.",
+    "tier": "sector",
+    "applies_to": "Disclosure rules: public companies reporting to the SEC, including foreign private issuers. Regulation S-P: broker-dealers, investment companies, registered investment advisers, funding portals and transfer agents.",
+    "duties": [
+      {
+        "topic": "incident_reporting",
+        "text": "As a public company, report a material cybersecurity incident on Form 8-K (Item 1.05) within four business days of deciding it is material.",
+        "clock_hours": null
+      },
+      {
+        "topic": "board_duty",
+        "text": "As a public company, describe cyber risk management, strategy and governance every year (Regulation S-K Item 106).",
+        "clock_hours": null
+      },
+      {
+        "topic": "incident_reporting",
+        "text": "As a Regulation S-P firm, keep a written incident response program.",
+        "clock_hours": null
+      },
+      {
+        "topic": "breach_notice",
+        "text": "As a Regulation S-P firm, notify affected customers within 30 days.",
+        "clock_hours": null
+      },
+      {
+        "topic": "third_parties",
+        "text": "As a Regulation S-P firm, oversee service providers, who have to tell the firm of a breach within 72 hours.",
+        "clock_hours": 72
+      }
+    ],
+    "assurance": {
+      "kind": "none",
+      "note": "No certification."
+    },
+    "iso27001": {
+      "relation": "helps_partially",
+      "note": "Not referenced; companies often name the frameworks they follow in annual disclosures."
+    },
+    "soc2": {
+      "relation": "helps_partially",
+      "note": "Not referenced; companies often name the frameworks they follow in annual disclosures."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2023-07",
+        "precision": "month",
+        "kind": "enacted",
+        "description": "Disclosure rules adopted.",
+        "confirmed": true
+      },
+      {
+        "date": "2023-12",
+        "precision": "month",
+        "kind": "obligation_starts",
+        "description": "Disclosure rules effective.",
+        "confirmed": true
+      },
+      {
+        "date": "2024-06",
+        "precision": "month",
+        "kind": "obligation_starts",
+        "description": "Disclosure rules apply to smaller companies.",
+        "confirmed": true
+      },
+      {
+        "date": "2024-05",
+        "precision": "month",
+        "kind": "enacted",
+        "description": "Regulation S-P amendments adopted.",
+        "confirmed": true
+      },
+      {
+        "date": "2025-12-03",
+        "precision": "day",
+        "kind": "obligation_starts",
+        "description": "Regulation S-P compliance date for larger firms.",
+        "confirmed": true
+      },
+      {
+        "date": "2026-06-03",
+        "precision": "day",
+        "kind": "obligation_starts",
+        "description": "Regulation S-P compliance date for smaller firms.",
+        "confirmed": true
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.sec.gov/newsroom/press-releases/2023-139",
+        "publisher": "US Securities and Exchange Commission",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "known_not_opened"
+      },
+      {
+        "url": "https://www.sec.gov/comments/4-856/4-856.htm",
+        "publisher": "US Securities and Exchange Commission",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://bpi.com/wp-content/uploads/2026/04/Joint-Financial-Trades-Reg-S-K-Cyber-Comment-Letter-4.10.26.pdf",
+        "publisher": "Bank Policy Institute",
+        "kind": "tracker",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "No rescission found, but sec.gov was not checked directly; industry groups commented again in April 2026 and the current chair has voiced doubts."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "applies",
+        "all": [
+          {
+            "fact": "listed_us",
+            "op": "eq",
+            "value": "yes"
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "listed_us",
+            "op": "eq",
+            "value": "not_sure"
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "US"
+          },
+          {
+            "fact": "regulator_licences",
+            "op": "any_in",
+            "value": [
+              "financial"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "US"
+            ]
+          },
+          {
+            "fact": "regulator_licences",
+            "op": "any_in",
+            "value": [
+              "financial"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "US"
+          },
+          {
+            "fact": "industry",
+            "op": "eq",
+            "value": "financial_services"
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "US"
+            ]
+          },
+          {
+            "fact": "industry",
+            "op": "eq",
+            "value": "financial_services"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "US-08",
+    "jurisdiction": "US",
+    "zone": null,
+    "short_name": "FedRAMP",
+    "official_name": "Federal Risk and Authorization Management Program (FedRAMP), codified by the FedRAMP Authorization Act (2022)",
+    "issuer": "General Services Administration (GSA)",
+    "regulator": "General Services Administration (FedRAMP)",
+    "kinds": [
+      "government_sector"
+    ],
+    "topic_column": "sector",
+    "force": "regulator_rule",
+    "state": "in_force_phasing",
+    "state_note": "In force and in transition. The Consolidated Rules for 2026 rename outcomes as certification classes: Class A from 3 August 2026, Classes B and C from 31 August 2026, and Class D piloting with availability planned for early 2027; limited temporary Rev5 pipelines remain.",
+    "tier": "sector",
+    "applies_to": "Cloud service providers selling to US federal agencies.",
+    "duties": [
+      {
+        "topic": "baseline",
+        "text": "Implement the NIST SP 800-53 revision 5 baseline controls, or the key security indicators on the 20x path.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "Get an independent assessment by a third party assessment organisation (3PAO).",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "Monitor continuously and report, with machine readable evidence on the 20x path.",
+        "clock_hours": null
+      },
+      {
+        "topic": "incident_reporting",
+        "text": "Report incidents to agencies and CISA.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "certification",
+      "note": "Authorization or certification listed on the FedRAMP Marketplace, assessed by independent 3PAOs."
+    },
+    "iso27001": {
+      "relation": "not_a_substitute",
+      "note": "Not a substitute for the higher classes."
+    },
+    "soc2": {
+      "relation": "referenced_or_accepted",
+      "note": "Under the 2026 rules a SOC 2 Type II or readiness report can support a Class A application; it is not enough for higher classes."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2026-08-03",
+        "precision": "day",
+        "kind": "obligation_starts",
+        "description": "Class A (entry level, replaces FedRAMP Ready) opens.",
+        "confirmed": true
+      },
+      {
+        "date": "2026-08-31",
+        "precision": "day",
+        "kind": "obligation_starts",
+        "description": "Class B (former Low) and Class C (former Moderate) open.",
+        "confirmed": true
+      },
+      {
+        "date": "2027-Q1",
+        "precision": "quarter",
+        "kind": "obligation_starts",
+        "description": "Class D (former High) availability planned for early 2027.",
+        "confirmed": false
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.fedramp.gov/2026-07-30-fedramp-certification-paths-are-heating-up/",
+        "publisher": "FedRAMP (GSA)",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      },
+      {
+        "url": "https://www.fedramp.gov/20x",
+        "publisher": "FedRAMP (GSA)",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://fedramp.gov/20x/phases/2/",
+        "publisher": "FedRAMP (GSA)",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "Terminology is changing fast; check fedramp.gov before publishing.",
+        "Early 2027 for Class D is shown as the first quarter of 2027."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "US"
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "government"
+            ]
+          },
+          {
+            "fact": "critical_or_provider",
+            "op": "eq",
+            "value": "yes"
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "US"
+            ]
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "government"
+            ]
+          },
+          {
+            "fact": "critical_or_provider",
+            "op": "eq",
+            "value": "yes"
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "US"
+          },
+          {
+            "fact": "industry",
+            "op": "eq",
+            "value": "government_supplier"
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "US"
+            ]
+          },
+          {
+            "fact": "industry",
+            "op": "eq",
+            "value": "government_supplier"
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "US"
+            ]
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "government"
+            ]
+          },
+          {
+            "fact": "critical_or_provider",
+            "op": "eq",
+            "value": "yes"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "US-09",
+    "jurisdiction": "US",
+    "zone": null,
+    "short_name": "FISMA",
+    "official_name": "Federal Information Security Modernization Act of 2014",
+    "issuer": "US Congress",
+    "regulator": "Office of Management and Budget, CISA and NIST",
+    "kinds": [
+      "government_sector",
+      "cybersecurity"
+    ],
+    "topic_column": "sector",
+    "force": "law",
+    "state": "in_force",
+    "state_note": "In force; first enacted in 2002 and updated in 2014.",
+    "tier": "sector",
+    "applies_to": "Federal agencies and contractors that operate information systems on an agency's behalf.",
+    "duties": [
+      {
+        "topic": "assessment",
+        "text": "Categorise systems under FIPS 199.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "Apply the NIST SP 800-53 controls.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "Assess and authorise systems, then monitor them continuously.",
+        "clock_hours": null
+      },
+      {
+        "topic": "incident_reporting",
+        "text": "Report incidents, and report yearly to OMB.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "certification",
+      "note": "Authorization to operate granted by the agency; no third party certificate."
+    },
+    "iso27001": {
+      "relation": "not_a_substitute",
+      "note": "Not accepted in place of NIST controls."
+    },
+    "soc2": {
+      "relation": "not_a_substitute",
+      "note": "Not accepted in place of NIST controls."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [],
+    "sources": [
+      {
+        "url": "https://www.cisa.gov/topics/cyber-threats-and-advisories/federal-information-security-modernization-act",
+        "publisher": "CISA",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "known_not_opened"
+      },
+      {
+        "url": "https://csrc.nist.gov/projects/risk-management",
+        "publisher": "NIST",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "known_not_opened"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "Sources are cited from prior knowledge and were not opened in this session."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "US"
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "government"
+            ]
+          },
+          {
+            "fact": "industry",
+            "op": "eq",
+            "value": "government_supplier"
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "US"
+            ]
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "government"
+            ]
+          },
+          {
+            "fact": "industry",
+            "op": "eq",
+            "value": "government_supplier"
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "US"
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "government"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "US"
+            ]
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "government"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "US"
+            ]
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "government"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "US-10",
+    "jurisdiction": "US",
+    "zone": null,
+    "short_name": "CMMC and DFARS 7012",
+    "official_name": "CMMC 2.0 (32 CFR Part 170), DFARS 252.204-7012 and NIST SP 800-171",
+    "issuer": "Department of Defense (also styled Department of War)",
+    "regulator": "Department of Defense",
+    "kinds": [
+      "government_sector",
+      "cybersecurity"
+    ],
+    "topic_column": "sector",
+    "force": "regulation",
+    "state": "in_force_phasing",
+    "state_note": "Phase 1 self-assessments started 10 November 2025. Phase 2, third party Level 2 certification due from 10 November 2026, was suspended on 13 July 2026 pending a 60 day review with no announced outcome; the DFARS and self-assessment duties still apply.",
+    "tier": "sector",
+    "applies_to": "Companies in the defence supply chain that handle federal contract information or controlled unclassified information, including subcontractors and their cloud providers.",
+    "duties": [
+      {
+        "topic": "baseline",
+        "text": "Implement the 110 requirements of NIST SP 800-171 revision 2 for controlled unclassified information.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "Keep a system security plan and an action plan, post your self-assessment score to the supplier risk system and affirm it every year.",
+        "clock_hours": null
+      },
+      {
+        "topic": "incident_reporting",
+        "text": "Report cyber incidents within 72 hours.",
+        "clock_hours": 72
+      },
+      {
+        "topic": "third_parties",
+        "text": "Use cloud services with FedRAMP Moderate or equivalent for controlled unclassified information.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "Expect prime contractors to demand certification by contract even while Phase 2 is paused.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "certification",
+      "note": "Level 1 self, Level 2 self or third party assessor, Level 3 government; third party and government assessments are currently paused."
+    },
+    "iso27001": {
+      "relation": "not_a_substitute",
+      "note": "Not accepted as equivalent."
+    },
+    "soc2": {
+      "relation": "not_a_substitute",
+      "note": "Not accepted as equivalent."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2024-12-16",
+        "precision": "day",
+        "kind": "in_force",
+        "description": "CMMC program rule (32 CFR Part 170) effective.",
+        "confirmed": true
+      },
+      {
+        "date": "2025-11-10",
+        "precision": "day",
+        "kind": "obligation_starts",
+        "description": "Acquisition rule effective; Phase 1 self-assessments start.",
+        "confirmed": true
+      },
+      {
+        "date": "2026-07-13",
+        "precision": "day",
+        "kind": "suspended",
+        "description": "Phase 2 (third party Level 2 certification from 10 November 2026) suspended pending a 60 day review.",
+        "confirmed": true
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://dodcio.defense.gov/CMMC/About/",
+        "publisher": "DoD Chief Information Officer",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.skadden.com/insights/publications/2026/07/dow-suspends-cmmc-phase-ii",
+        "publisher": "Skadden",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.morganlewis.com/pubs/2026/07/department-of-war-suspends-cmmc-phase-ii-requirements-but-cybersecurity-obligations-remain",
+        "publisher": "Morgan Lewis",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.csis.org/analysis/what-cmmc-pause-means-defense-industrial-base",
+        "publisher": "CSIS",
+        "kind": "tracker",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "Outcome of the 60 day review and any new Phase 2 date not found."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "US"
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "government"
+            ]
+          },
+          {
+            "fact": "sensitive_data",
+            "op": "any_in",
+            "value": [
+              "government_classified"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "US"
+            ]
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "government"
+            ]
+          },
+          {
+            "fact": "sensitive_data",
+            "op": "any_in",
+            "value": [
+              "government_classified"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "US"
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "government"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "US"
+            ]
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "government"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "US"
+            ]
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "government"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "US-11",
+    "jurisdiction": "US",
+    "zone": null,
+    "short_name": "COPPA",
+    "official_name": "Children's Online Privacy Protection Act and Rule (16 CFR Part 312)",
+    "issuer": "US Congress; Federal Trade Commission",
+    "regulator": "Federal Trade Commission",
+    "kinds": [
+      "privacy"
+    ],
+    "topic_column": "privacy",
+    "force": "law",
+    "state": "in_force",
+    "state_note": "In force in amended form: the amended rule took effect 23 June 2025 with a compliance deadline of 22 April 2026.",
+    "tier": "sector",
+    "applies_to": "Operators of websites, apps and connected services directed to children under 13, or that knowingly collect their personal information.",
+    "duties": [
+      {
+        "topic": "consent",
+        "text": "Get verifiable parental consent before collecting children's data, with separate consent for disclosure to third parties for advertising.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "Keep a written information security program.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "Set a data retention policy and keep data only as long as needed.",
+        "clock_hours": null
+      },
+      {
+        "topic": "consent",
+        "text": "Give clear notices.",
+        "clock_hours": null
+      },
+      {
+        "topic": "penalties",
+        "text": "Civil penalties apply per violation.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "certification",
+      "note": "FTC-approved safe harbour programs exist."
+    },
+    "iso27001": {
+      "relation": "not_relevant",
+      "note": "Not referenced."
+    },
+    "soc2": {
+      "relation": "not_relevant",
+      "note": "Not referenced."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2025-06-23",
+        "precision": "day",
+        "kind": "in_force",
+        "description": "Amended rule effective.",
+        "confirmed": true
+      },
+      {
+        "date": "2026-04-22",
+        "precision": "day",
+        "kind": "deadline",
+        "description": "Compliance deadline for the amended rule.",
+        "confirmed": true
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.federalregister.gov/documents/2025/04/22/2025-05904/childrens-online-privacy-protection-rule",
+        "publisher": "Federal Register",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.hunton.com/privacy-and-cybersecurity-law-blog/coppa-rule-amendment-compliance-deadline-approaches",
+        "publisher": "Hunton",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": []
+    },
+    "triggers": [
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "US"
+          },
+          {
+            "fact": "sensitive_data",
+            "op": "any_in",
+            "value": [
+              "children"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "US"
+            ]
+          },
+          {
+            "fact": "sensitive_data",
+            "op": "any_in",
+            "value": [
+              "children"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "US"
+            ]
+          },
+          {
+            "fact": "sensitive_data",
+            "op": "any_in",
+            "value": [
+              "children"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "US-12",
+    "jurisdiction": "US",
+    "zone": null,
+    "short_name": "CIRCIA",
+    "official_name": "Cyber Incident Reporting for Critical Infrastructure Act of 2022",
+    "issuer": "US Congress",
+    "regulator": "Cybersecurity and Infrastructure Security Agency (CISA)",
+    "kinds": [
+      "cybersecurity",
+      "critical_infrastructure"
+    ],
+    "topic_column": "breach_clock",
+    "force": "law",
+    "state": "passed_not_in_force",
+    "state_note": "Passed in March 2022, but reporting duties start only on the date the final rule sets, at least 60 days after publication. The final rule went to the White House budget office on 1 October 2026 and was not published as of 21 November 2026.",
+    "tier": "sector",
+    "applies_to": "As proposed, entities in the 16 critical infrastructure sectors above small business size, plus listed sector criteria. Scope may change in the final rule.",
+    "duties": [
+      {
+        "topic": "incident_reporting",
+        "text": "Would require reporting covered cyber incidents to CISA within 72 hours.",
+        "clock_hours": null
+      },
+      {
+        "topic": "incident_reporting",
+        "text": "Would require reporting ransom payments within 24 hours.",
+        "clock_hours": null
+      },
+      {
+        "topic": "incident_reporting",
+        "text": "Would require supplemental reports and preservation of data.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "none",
+      "note": "Will be mandatory once the final rule applies; no certification."
+    },
+    "iso27001": {
+      "relation": "not_relevant",
+      "note": "Not relevant."
+    },
+    "soc2": {
+      "relation": "not_relevant",
+      "note": "Not relevant."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2022-03",
+        "precision": "month",
+        "kind": "enacted",
+        "description": "CIRCIA passed.",
+        "confirmed": true
+      },
+      {
+        "date": "2024-04",
+        "precision": "month",
+        "kind": "proposed",
+        "description": "Proposed rule published.",
+        "confirmed": true
+      },
+      {
+        "date": "2026-10-01",
+        "precision": "day",
+        "kind": "proposed",
+        "description": "Final rule sent to the White House budget office for review.",
+        "confirmed": true
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.cisa.gov/circia",
+        "publisher": "CISA",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.insideprivacy.com/critical-infrastructure/cisa-submits-final-circia-rule-for-omb-review/",
+        "publisher": "Inside Privacy (Covington)",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.federalregister.gov/documents/2024/04/04/2024-06526/cyber-incident-reporting-for-critical-infrastructure-act-circia-reporting-requirements",
+        "publisher": "Federal Register",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "No final rule publication found after the 1 October 2026 OMB submission; the rule missed targets in October 2025, May 2026 and September 2026."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "US"
+          },
+          {
+            "fact": "critical_or_provider",
+            "op": "eq",
+            "value": "yes"
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "US"
+            ]
+          },
+          {
+            "fact": "critical_or_provider",
+            "op": "eq",
+            "value": "yes"
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "US"
+          },
+          {
+            "fact": "industry",
+            "op": "in",
+            "value": [
+              "energy_utilities",
+              "telecom",
+              "healthcare",
+              "financial_services"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "US"
+            ]
+          },
+          {
+            "fact": "industry",
+            "op": "in",
+            "value": [
+              "energy_utilities",
+              "telecom",
+              "healthcare",
+              "financial_services"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "US"
+            ]
+          },
+          {
+            "fact": "critical_or_provider",
+            "op": "eq",
+            "value": "yes"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "US-13",
+    "jurisdiction": "US",
+    "zone": null,
+    "short_name": "NIST CSF 2.0",
+    "official_name": "NIST Cybersecurity Framework 2.0",
+    "issuer": "National Institute of Standards and Technology (NIST)",
+    "regulator": null,
+    "kinds": [
+      "cybersecurity"
+    ],
+    "topic_column": "security_baseline",
+    "force": "voluntary_framework",
+    "state": "voluntary",
+    "state_note": "Voluntary. Version 2.0, dated 26 February 2024, is current; 2026 activity was quick start guides and new informative references only.",
+    "tier": "most_should_know",
+    "applies_to": "Any organisation; often named in contracts, cyber insurance questionnaires, state safe harbour laws and regulator guidance.",
+    "duties": [
+      {
+        "topic": "baseline",
+        "text": "Organise the security program around the six functions: Govern, Identify, Protect, Detect, Respond and Recover.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "Use profiles and tiers to set and track your target state.",
+        "clock_hours": null
+      },
+      {
+        "topic": "third_parties",
+        "text": "Expect customers, insurers and regulators to name it in contracts and questionnaires.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "none",
+      "note": "No official certification."
+    },
+    "iso27001": {
+      "relation": "helps_partially",
+      "note": "NIST publishes informative references mapping CSF 2.0 to ISO 27001 and SP 800-53 through its online reference tool."
+    },
+    "soc2": {
+      "relation": "helps_partially",
+      "note": "Not mapped by NIST in the sources; covers similar ground."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2024-02-26",
+        "precision": "day",
+        "kind": "enacted",
+        "description": "Version 2.0 published.",
+        "confirmed": true
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.nist.gov/cyberframework",
+        "publisher": "NIST",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "SOC 2 relation is inferred; the sources do not mention SOC 2."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "US"
+          }
+        ]
+      },
+      {
+        "confidence": "applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "US"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "US"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "US-14",
+    "jurisdiction": "US",
+    "zone": null,
+    "short_name": "US state AI laws",
+    "official_name": "State AI laws (Colorado SB 26-189, Texas Responsible AI Governance Act, California SB 53) and the federal posture",
+    "issuer": "State legislatures",
+    "regulator": "State attorneys general",
+    "kinds": [
+      "ai"
+    ],
+    "topic_column": "ai",
+    "force": "law",
+    "state": "in_force_phasing",
+    "state_note": "Texas's law has applied since 1 January 2026, and California's frontier model law (SB 53) reportedly from the same date. Colorado replaced its 2024 AI Act with SB 26-189, effective 1 January 2027, and a December 2025 executive order set up a Justice Department task force to challenge state AI laws; there is no federal AI statute.",
+    "tier": "sector",
+    "applies_to": "Developers and deployers of AI used for consequential decisions about residents, such as employment, lending, housing, health and education, depending on the state.",
+    "duties": [
+      {
+        "topic": "consent",
+        "text": "Give notice when automated tools make consequential decisions about people.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "Offer an explanation and an appeal route for consequential automated decisions.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "Avoid prohibited manipulative or discriminatory AI uses.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "Keep records, and follow a recognised risk framework, which the Texas and earlier Colorado texts give weight to.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "none",
+      "note": "No certification."
+    },
+    "iso27001": {
+      "relation": "not_relevant",
+      "note": "Not relevant; NIST AI Risk Management Framework and ISO/IEC 42001 are the frameworks states point to."
+    },
+    "soc2": {
+      "relation": "not_relevant",
+      "note": "Not relevant."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2026-01-01",
+        "precision": "day",
+        "kind": "in_force",
+        "description": "Texas Responsible AI Governance Act applies.",
+        "confirmed": true
+      },
+      {
+        "date": "2026-01-01",
+        "precision": "day",
+        "kind": "in_force",
+        "description": "California frontier model transparency law (SB 53) applies (not re-verified).",
+        "confirmed": false
+      },
+      {
+        "date": "2026-05-14",
+        "precision": "day",
+        "kind": "enacted",
+        "description": "Colorado SB 26-189 signed.",
+        "confirmed": true
+      },
+      {
+        "date": "2027-01-01",
+        "precision": "day",
+        "kind": "in_force",
+        "description": "Colorado SB 26-189 takes effect (court challenge and enforcement stay reported).",
+        "confirmed": false
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.gtlaw.com/en/insights/2026/5/colorado-repeals-and-replaces-the-colorado-ai-act",
+        "publisher": "Greenberg Traurig",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.skadden.com/insights/publications/2026/06/colorado-repeals-and-replaces-its-ai-act",
+        "publisher": "Skadden",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.texasattorneygeneral.gov/consumer-protection/file-consumer-complaint/consumer-ai-rights",
+        "publisher": "Texas Attorney General",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.kslaw.com/insights/articles/new-state-ai-laws-are-effective-on-january-1-2026-but-a-new-executive-order-signals-disruption",
+        "publisher": "King and Spalding",
+        "kind": "law_firm",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "A court challenge and an enforcement stay of the Colorado law were reported.",
+        "California SB 53 start date not re-verified.",
+        "State laws remain enforceable unless a court or Congress intervenes."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "US"
+          },
+          {
+            "fact": "ai_use",
+            "op": "in",
+            "value": [
+              "product_affects_people",
+              "builds_ai"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "US"
+            ]
+          },
+          {
+            "fact": "ai_use",
+            "op": "in",
+            "value": [
+              "product_affects_people",
+              "builds_ai"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "US"
+            ]
+          },
+          {
+            "fact": "ai_use",
+            "op": "in",
+            "value": [
+              "product_affects_people",
+              "builds_ai"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "US-15",
+    "jurisdiction": "US",
+    "zone": null,
+    "short_name": "FTC Act section 5",
+    "official_name": "Federal Trade Commission Act, section 5 (15 U.S.C. 45)",
+    "issuer": "US Congress (Federal Trade Commission Act 1914)",
+    "regulator": "Federal Trade Commission",
+    "kinds": [
+      "privacy",
+      "cybersecurity"
+    ],
+    "topic_column": "security_baseline",
+    "force": "law",
+    "state": "in_force",
+    "state_note": "In force. No data security statute or general FTC data security rule sits behind it; the FTC applies the general ban on unfair or deceptive practices to privacy and security, with cases listed through 10 November 2026.",
+    "tier": "most_should_know",
+    "applies_to": "Most businesses in or affecting US commerce, wherever established. Excluded: banks, savings and loan institutions and federal credit unions, common carriers under the federal communications and commerce acts, air carriers, and Packers and Stockyards businesses to that extent; non-profits are generally outside the FTC's reach.",
+    "duties": [
+      {
+        "topic": "baseline",
+        "text": "Make sure security and privacy claims in your privacy policy, trust page and sales material are true; a misleading statement or omission counts as deception.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "Keep security reasonable; substantial consumer injury that people cannot reasonably avoid and that benefits do not outweigh counts as unfair.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "Use the FTC guidance (Start with Security, Protecting Personal Information, Data Breach Response) as the benchmark for reasonable security.",
+        "clock_hours": null
+      },
+      {
+        "topic": "penalties",
+        "text": "Expect consent orders that impose a security program and assessments for many years; civil penalties apply for breaking a final order or a trade regulation rule, or knowingly repeating conduct already found unlawful, not for a first violation alone.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "none",
+      "note": "No certification."
+    },
+    "iso27001": {
+      "relation": "helps_partially",
+      "note": "Not referenced; useful evidence of a reasonable program and of truthful security claims, but not a safe harbour."
+    },
+    "soc2": {
+      "relation": "helps_partially",
+      "note": "Not referenced; useful evidence of a reasonable program and of truthful security claims, but not a safe harbour."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [],
+    "sources": [
+      {
+        "url": "https://www.ftc.gov/about-ftc/mission/enforcement-authority",
+        "publisher": "Federal Trade Commission",
+        "kind": "regulator_guidance",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      },
+      {
+        "url": "https://www.ftc.gov/news-events/topics/protecting-consumer-privacy-security/privacy-security-enforcement",
+        "publisher": "Federal Trade Commission",
+        "kind": "regulator_guidance",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      },
+      {
+        "url": "https://www.ftc.gov/business-guidance/privacy-security/data-security",
+        "publisher": "Federal Trade Commission",
+        "kind": "regulator_guidance",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      },
+      {
+        "url": "https://www.law.cornell.edu/uscode/text/15/45",
+        "publisher": "Cornell Legal Information Institute (unofficial mirror)",
+        "kind": "tracker",
+        "accessed_at": "2026-11-21",
+        "verified": "fetched"
+      },
+      {
+        "url": "https://uscode.house.gov",
+        "publisher": "Office of the Law Revision Counsel",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "known_not_opened"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "Wyndham (3d Cir. 2015) and LabMD (11th Cir. 2018) are cited from prior knowledge, not re-checked.",
+        "The statutory exclusions were read from an unofficial mirror; the official code site returned 404."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "applies",
+        "all": [
+          {
+            "fact": "hq_country",
+            "op": "eq",
+            "value": "US"
+          }
+        ]
+      },
+      {
+        "confidence": "applies",
+        "all": [
+          {
+            "fact": "operating_countries",
+            "op": "any_in",
+            "value": [
+              "US"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "US"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]

@@ -29,7 +29,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import date, datetime
-from typing import Final
+from typing import Any, Final
 
 from sqlalchemy import BigInteger, CheckConstraint, ForeignKey, Index, UniqueConstraint, text
 from sqlalchemy.dialects.postgresql import JSONB
@@ -200,9 +200,53 @@ class CompanyProfile(Timestamped, Base):
     regulatory_scope: Mapped[str | None] = mapped_column(default=None)
     privacy_policy_url: Mapped[str | None] = mapped_column(default=None)
     terms_url: Mapped[str | None] = mapped_column(default=None)
+    registered_address: Mapped[str | None] = mapped_column(default=None)
+    # Guided onboarding (PR-1 to PR-3): typed answers to the profile questions in
+    # ``profile_questions.py``, and whether an admin has confirmed them. Editing a confirmed
+    # profile returns it to draft; confirming again writes the next version.
+    answers: Mapped[dict[str, Any]] = mapped_column(
+        JSONB(), default=dict, server_default=text("'{}'::jsonb")
+    )
+    answers_schema: Mapped[int] = mapped_column(default=1, server_default=text("1"))
+    status: Mapped[str] = mapped_column(default="draft", server_default=text("'draft'"))
+    version: Mapped[int] = mapped_column(default=0, server_default=text("0"))
+    confirmed_by_membership_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("tenant_memberships.id", ondelete="SET NULL"), default=None
+    )
+    confirmed_at: Mapped[datetime | None] = mapped_column(default=None)
+
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('draft', 'confirmed')", name=conv("ck_company_profile__status_valid")
+        ),
+        CheckConstraint(
+            "jsonb_typeof(answers) = 'object'", name=conv("ck_company_profile__answers_object")
+        ),
+    )
 
     def __repr__(self) -> str:
         return f"CompanyProfile(tenant_id={self.tenant_id!r})"
+
+
+class CompanyProfileVersion(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
+    """A confirmed company profile, frozen. Append only: a later confirmation adds a row,
+    it never changes one (PR-3). The live profile is ``company_profile``."""
+
+    __tablename__ = "company_profile_versions"
+
+    version: Mapped[int]
+    answers: Mapped[dict[str, Any]] = mapped_column(JSONB())
+    details: Mapped[dict[str, Any]] = mapped_column(JSONB())
+    """The legal details as they were (names, registration number, address, website)."""
+    confirmed_by_membership_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("tenant_memberships.id", ondelete="SET NULL"), default=None
+    )
+    confirmed_at: Mapped[datetime]
+
+    __table_args__ = (tenant_index("company_profile_versions", "version", unique=True),)
+
+    def __repr__(self) -> str:
+        return f"CompanyProfileVersion(tenant_id={self.tenant_id!r}, version={self.version})"
 
 
 class TenantSmtp(Timestamped, Base):

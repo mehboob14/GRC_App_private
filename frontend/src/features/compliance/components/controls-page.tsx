@@ -1,3 +1,4 @@
+import { apiFetch } from "@/lib/api/client";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -382,7 +383,7 @@ function ControlDetailDialog({
               </div>
 
               <div>
-                <p className="type-overline mb-1.5">Mapped criteria</p>
+                <p className="type-overline mb-1.5">Mapped requirements</p>
                 {control.requirement_keys.length ? (
                   <div className="flex flex-wrap gap-1">
                     {control.requirement_keys.map((key) => (
@@ -390,7 +391,7 @@ function ControlDetailDialog({
                         key={key}
                         className="rounded-xs bg-action-accent-tint px-1.5 py-0.5 font-display text-caption font-bold text-text-link"
                       >
-                        {key.replace("SOC2:", "")}
+                        {key.replace(/^[A-Z0-9]+:/, "")}
                       </span>
                     ))}
                   </div>
@@ -560,6 +561,9 @@ function ControlDetailDialog({
   );
 }
 
+/** Requirement chips per register row before "+N more". */
+const REQUIREMENTS_SHOWN = 3;
+
 /** Columns the reader can hide. "Control" (identity) and the action/selection
  *  columns are structural and always shown. Choice persists per browser. */
 const TOGGLEABLE_COLUMNS = [
@@ -567,7 +571,7 @@ const TOGGLEABLE_COLUMNS = [
   { key: "subtype", label: "Sub-type" },
   { key: "description", label: "Description" },
   { key: "trust", label: "Trust services" },
-  { key: "criteria", label: "Criteria" },
+  { key: "criteria", label: "Requirements" },
   { key: "frameworks", label: "Frameworks" },
   { key: "owner", label: "Owner" },
   { key: "evidencedBy", label: "Evidenced by" },
@@ -629,6 +633,13 @@ export function ControlsPage() {
   // stay the owner of the filter afterwards, and Clear still clears it.
   const [params] = useSearchParams();
   const [search, setSearch] = useEntryState("controls.search", "");
+  // Guided onboarding CL-7: controls no requirement in the current scope needs.
+  const [scopeFilter, setScopeFilter] = useEntryState<string[]>("controls.scope", []);
+  const scopeNotes = useQuery({
+    queryKey: ["scope-notes", principal?.tenant_id],
+    queryFn: () => apiFetch<string[]>("/onboarding/scope-notes"),
+  });
+  const notNeeded = useMemo(() => new Set(scopeNotes.data ?? []), [scopeNotes.data]);
   /** Type is the domain (`category`); Design is Preventive, Detective… */
   const [types, setTypes] = useEntryState<string[]>("controls.types", () => params.getAll("type"));
   const [subTypes, setSubTypes] = useEntryState<string[]>("controls.subTypes", () =>
@@ -807,6 +818,8 @@ export function ControlsPage() {
     return controls.filter(
       (control) =>
         evidencedAs(control.id) &&
+        (scopeFilter.length === 0 ||
+          scopeFilter.includes(notNeeded.has(control.code) ? "not_needed" : "needed")) &&
         (types.length === 0 || types.includes(control.category)) &&
         (subTypes.length === 0 ||
           (control.sub_category != null &&
@@ -851,6 +864,8 @@ export function ControlsPage() {
     );
   }, [
     controls,
+    scopeFilter,
+    notNeeded,
     search,
     types,
     subTypes,
@@ -1181,6 +1196,17 @@ export function ControlsPage() {
               values={frameworkFilter}
               onChange={setFrameworkFilter}
             />
+            {notNeeded.size ? (
+              <FilterFacet
+                label="Scope"
+                options={[
+                  { value: "needed", label: "Needed for your scope" },
+                  { value: "not_needed", label: `Not needed (${notNeeded.size})` },
+                ]}
+                values={scopeFilter}
+                onChange={setScopeFilter}
+              />
+            ) : null}
             <FilterFacet
               label="Trust Services"
               options={TRUST_SERVICES.map((v) => ({ value: v, label: v }))}
@@ -1372,7 +1398,7 @@ export function ControlsPage() {
               ) : null}
               {cols.isVisible("description") ? <TH>Description</TH> : null}
               {cols.isVisible("trust") ? <TH>Trust services</TH> : null}
-              {cols.isVisible("criteria") ? <TH>Criteria</TH> : null}
+              {cols.isVisible("criteria") ? <TH>Requirements</TH> : null}
               {cols.isVisible("frameworks") ? <TH>Frameworks</TH> : null}
               {cols.isVisible("owner") ? (
                 <TH {...thProps("owner")}>Owner</TH>
@@ -1526,14 +1552,35 @@ export function ControlsPage() {
                     <TD>
                       <div className="flex max-w-[140px] flex-wrap gap-1">
                         {control.requirement_keys.length ? (
-                          control.requirement_keys.map((key) => (
-                            <span
-                              key={key}
-                              className="rounded-xs bg-surface-sunken px-1.5 py-0.5 text-caption font-medium text-text-secondary"
-                            >
-                              {key.replace(/^[A-Z0-9]+:/, "")}
-                            </span>
-                          ))
+                          <>
+                            {/* A few keep every row one height; the rest are one
+                                click away on the control's Requirements tab. */}
+                            {control.requirement_keys.slice(0, REQUIREMENTS_SHOWN).map((key) => (
+                              <span
+                                key={key}
+                                className="rounded-xs bg-surface-sunken px-1.5 py-0.5 text-caption font-medium text-text-secondary"
+                              >
+                                {key.replace(/^[A-Z0-9]+:/, "")}
+                              </span>
+                            ))}
+                            {control.requirement_keys.length > REQUIREMENTS_SHOWN ? (
+                              <button
+                                type="button"
+                                className="rounded-xs px-1 py-0.5 text-caption font-semibold text-text-link hover:underline"
+                                title={control.requirement_keys
+                                  .map((key) => key.replace(/^[A-Z0-9]+:/, ""))
+                                  .join(", ")}
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  navigate(`/controls/${control.id}`, {
+                                    state: { tab: "requirements" },
+                                  });
+                                }}
+                              >
+                                +{control.requirement_keys.length - REQUIREMENTS_SHOWN} more
+                              </button>
+                            ) : null}
+                          </>
                         ) : (
                           <span className="text-caption text-status-warning-text">
                             None

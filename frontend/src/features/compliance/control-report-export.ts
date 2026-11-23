@@ -129,7 +129,7 @@ export function printControlReport(
     ${kpiCard("With an owner", `${k.controls_owned} (${pctOf(k.controls_owned)}%)`)}
     ${kpiCard("Ready for audit", `${k.controls_ready} (${pctOf(k.controls_ready)}%)`)}
     ${kpiCard("Failing an automated test", k.controls_failing_automation)}
-    ${kpiCard("Criteria mapped", k.criteria_mapped)}
+    ${kpiCard("Requirements mapped", k.criteria_mapped)}
     ${kpiCard("Disabled", k.controls_disabled)}
   </div>
 
@@ -140,7 +140,7 @@ export function printControlReport(
   <table>
     <thead><tr>
       <th>Code</th><th>Control</th><th>Type</th><th>Sub-type</th><th>Design</th>
-      <th>Status</th><th>Owner</th><th>Framework</th><th>Criteria</th><th>Evidence</th>
+      <th>Status</th><th>Owner</th><th>Framework</th><th>Requirements</th><th>Evidence</th>
     </tr></thead>
     <tbody>${bodyRows}</tbody>
   </table>

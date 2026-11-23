@@ -1,0 +1,5666 @@
+[
+  {
+    "key": "charter-of-the-board-or-executive",
+    "code": "AR-GOV-01",
+    "name": "Charter of the board or executive committee covering security oversight",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-02:charter-of-the-board-or-executive",
+    "what": "Terms of reference for security oversight",
+    "where": "A board resolution or a one page terms of reference for the leadership team, kept in the shared drive."
+  },
+  {
+    "key": "minutes-showing-security-was-discussed-and",
+    "code": "AR-GOV-02",
+    "name": "Minutes showing security was discussed and challenged",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-02:minutes-showing-security-was-discussed-and",
+    "what": "Board or leadership minutes with a security item",
+    "where": "Minutes from the board or leadership meeting each quarter, kept in the shared drive."
+  },
+  {
+    "key": "record-of-who-sits-on-the",
+    "code": "AR-GOV-03",
+    "name": "Record of who sits on the body and their independence",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-02:record-of-who-sits-on-the",
+    "what": "List of members of the oversight body",
+    "where": "The board register, or a short list kept with the terms of reference."
+  },
+  {
+    "key": "approved-code-of-conduct",
+    "code": "AR-GOV-04",
+    "name": "Approved code of conduct",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-04:approved-code-of-conduct",
+    "what": "Approved code of conduct",
+    "where": "Written in the Documents module from the code of conduct template and approved by the CEO or a founder."
+  },
+  {
+    "key": "acknowledgement-from-every-member-of-staff",
+    "code": "AR-GOV-05",
+    "name": "Acknowledgement from every member of staff",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "check",
+        "checks": [
+          "verity.policies.acknowledged"
+        ]
+      }
+    ],
+    "evidence_item": "GOV-04:acknowledgement-from-every-member-of-staff",
+    "what": "Signed acknowledgement of the code from each person",
+    "where": "Sent from the Documents module as an acknowledgement campaign at hire and once a year."
+  },
+  {
+    "key": "record-of-breaches-and-the-action",
+    "code": "AR-GOV-06",
+    "name": "Record of breaches and the action taken",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-04:record-of-breaches-and-the-action",
+    "what": "Log of code of conduct breaches and the action taken",
+    "where": "A private sheet or HR tool note kept by the CEO or HR lead, with the case notes filed against each entry."
+  },
+  {
+    "key": "log-of-control-deficiencies-with-owner",
+    "code": "AR-GOV-07",
+    "name": "Log of control deficiencies with owner, due date and closure",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "check",
+        "checks": [
+          "tickets.remediation_tracked",
+          "verity.tasks.remediation_in_sla"
+        ]
+      }
+    ],
+    "evidence_item": "GOV-08:log-of-control-deficiencies-with-owner",
+    "what": "Control deficiency log",
+    "where": "Tasks module, with each deficiency raised as a task, or the ticket tracker such as Jira or Linear."
+  },
+  {
+    "key": "communication-of-deficiencies-to-the-people",
+    "code": "AR-GOV-08",
+    "name": "Communication of deficiencies to the people responsible",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-08:communication-of-deficiencies-to-the-people",
+    "what": "Notice of each deficiency to the people responsible",
+    "where": "The email, Slack message or meeting note that told the owner and leadership."
+  },
+  {
+    "key": "control-ownership-register",
+    "code": "AR-GOV-09",
+    "name": "Control ownership register",
+    "category": "document",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "check",
+        "checks": [
+          "verity.controls.owned"
+        ]
+      }
+    ],
+    "evidence_item": "GOV-09:control-ownership-register",
+    "what": "Control ownership register",
+    "where": "The Controls module, where each control has a named owner."
+  },
+  {
+    "key": "updated-ownership-when-roles-change",
+    "code": "AR-GOV-10",
+    "name": "Updated ownership when roles change",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-09:updated-ownership-when-roles-change",
+    "what": "Owner changes made after a leaver or role change",
+    "where": "The Controls module history when an owner is changed."
+  },
+  {
+    "key": "appointment-or-role-charter-naming-the",
+    "code": "AR-GOV-11",
+    "name": "Appointment or role charter naming the security officer",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-10:appointment-or-role-charter-naming-the",
+    "what": "Appointment letter or role charter for the security officer",
+    "where": "An email or short memo from the CEO, or a signed role charter in the shared drive."
+  },
+  {
+    "key": "report-or-briefing-from-the-security",
+    "code": "AR-GOV-12",
+    "name": "Report or briefing from the security officer to leadership",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-10:report-or-briefing-from-the-security",
+    "what": "Quarterly security briefing to leadership",
+    "where": "Slides or a written update shared at a leadership meeting, filed with the meeting notes."
+  },
+  {
+    "key": "internal-audit-program-setting-frequency-methods",
+    "code": "AR-GOV-13",
+    "name": "Internal audit program setting frequency, methods, responsibilities and criteria",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-13:internal-audit-program-setting-frequency-methods",
+    "what": "Internal audit program",
+    "where": "Documents module, written by the security lead or an outside reviewer."
+  },
+  {
+    "key": "internal-audit-or-readiness-assessment-report",
+    "code": "AR-GOV-14",
+    "name": "Internal audit report with scope, criteria, evidence examined and findings",
+    "category": "configuration",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "check",
+        "checks": [
+          "verity.audit.internal_in_12_months"
+        ]
+      },
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-13:internal-audit-or-readiness-assessment-report",
+    "what": "Internal audit report",
+    "where": "Written by an outside reviewer, or by a staff member who does not own the controls audited."
+  },
+  {
+    "key": "remediation-plan-for-the-gaps-found",
+    "code": "AR-GOV-15",
+    "name": "Remediation plan for the gaps found",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-13:remediation-plan-for-the-gaps-found",
+    "what": "Remediation plan for internal audit findings",
+    "where": "Tasks module, one task per finding."
+  },
+  {
+    "key": "management-review-agenda-and-minutes",
+    "code": "AR-GOV-16",
+    "name": "Management review agenda and minutes",
+    "category": "configuration",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "check",
+        "checks": [
+          "verity.management_review.in_12_months"
+        ]
+      },
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-15:management-review-agenda-and-minutes",
+    "what": "Management review minutes",
+    "where": "Notes from the quarterly leadership meeting where security is reviewed, uploaded after each meeting."
+  },
+  {
+    "key": "actions-raised-in-the-review-and",
+    "code": "AR-GOV-17",
+    "name": "Actions raised in the review and their closure",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-15:actions-raised-in-the-review-and",
+    "what": "Management review actions tracked to closure",
+    "where": "Tasks module, one task per action raised in the review."
+  },
+  {
+    "key": "published-security-policies-covering-each-required",
+    "code": "AR-GOV-18",
+    "name": "Published security policies covering each required topic",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "check",
+        "checks": [
+          "verity.policies.reviewed"
+        ]
+      }
+    ],
+    "evidence_item": "GOV-17:published-security-policies-covering-each-required",
+    "what": "Set of published security policies",
+    "where": "Documents module, written from the policy templates and published to staff."
+  },
+  {
+    "key": "approval-record-for-each-policy",
+    "code": "AR-GOV-19",
+    "name": "Approval record for each policy",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-17:approval-record-for-each-policy",
+    "what": "Approval record for each policy",
+    "where": "The approval step in the Documents module."
+  },
+  {
+    "key": "risk-assessment-report-with-method-and",
+    "code": "AR-GOV-20",
+    "name": "Risk assessment report with method and scope",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "check",
+        "checks": [
+          "verity.risks.assessed_in_12_months"
+        ]
+      }
+    ],
+    "evidence_item": "GOV-18:risk-assessment-report-with-method-and",
+    "what": "Annual risk assessment report",
+    "where": "The Risks module, run once a year using the written risk method, with the report exported."
+  },
+  {
+    "key": "management-sign-off-on-the-assessment",
+    "code": "AR-GOV-21",
+    "name": "Management sign off on the assessment",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-18:management-sign-off-on-the-assessment",
+    "what": "Leadership sign off on the risk assessment",
+    "where": "A signed memo, email or meeting minute from the CEO approving the assessment."
+  },
+  {
+    "key": "risk-register-with-owners-ratings-and",
+    "code": "AR-GOV-22",
+    "name": "Risk register with owners, ratings and treatment decisions",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "check",
+        "checks": [
+          "verity.risks.treated"
+        ]
+      }
+    ],
+    "evidence_item": "GOV-19:risk-register-with-owners-ratings-and",
+    "what": "Risk register",
+    "where": "The Risks module register, kept current through the year."
+  },
+  {
+    "key": "approval-of-each-accepted-risk",
+    "code": "AR-GOV-23",
+    "name": "Approval of each accepted risk",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-19:approval-of-each-accepted-risk",
+    "what": "Approval record for each accepted risk",
+    "where": "The acceptance step in the Risks module, approved by someone other than the person asking."
+  },
+  {
+    "key": "treatment-plan-with-owners-and-due",
+    "code": "AR-GOV-24",
+    "name": "Treatment plan with owners and due dates",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-20:treatment-plan-with-owners-and-due",
+    "what": "Risk treatment plan",
+    "where": "The Risks module, where each treated risk lists its planned actions."
+  },
+  {
+    "key": "evidence-that-treatments-were-completed",
+    "code": "AR-GOV-25",
+    "name": "Completed risk treatment tasks with proof of each change",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-20:evidence-that-treatments-were-completed",
+    "what": "Closed treatment tasks with proof of each change",
+    "where": "Tasks module, one task per treatment action, closed with a screenshot, ticket or setting change attached."
+  },
+  {
+    "key": "risk-owner-acceptance-of-the-remaining",
+    "code": "AR-GOV-26",
+    "name": "Risk owner acceptance of the remaining risk after treatment",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-20:risk-owner-acceptance-of-the-remaining",
+    "what": "Risk owner acceptance of the remaining risk",
+    "where": "The acceptance step on each risk in the Risks module once treatment is done."
+  },
+  {
+    "key": "risk-owner-approval-of-each-treatment-plan",
+    "code": "AR-GOV-27",
+    "name": "Risk owner approval of each treatment plan",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-20:risk-owner-approval-of-each-treatment-plan",
+    "what": "Risk owner approval of each treatment plan",
+    "where": "An email, ticket comment or signed note from the risk owner, uploaded against the plan."
+  },
+  {
+    "key": "background-check-policy",
+    "code": "AR-HR-01",
+    "name": "Background check policy stating the scope for each role and the recheck interval",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "HR-01:background-check-policy",
+    "what": "Background check policy",
+    "where": "Documents module, usually a section of the HR or personnel security policy."
+  },
+  {
+    "key": "completed-background-checks-for-a-sample",
+    "code": "AR-HR-02",
+    "name": "List of all hires, role changes and rechecks in the period, with name, role, start date, check type, date the check finished and result. The auditor chooses the sample from it.",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "HR-01:completed-background-checks-for-a-sample",
+    "what": "List of hires, role changes and rechecks with check dates",
+    "where": "Exported from the HR tool and the background check provider such as Checkr or Certn."
+  },
+  {
+    "key": "offboarding-checklist",
+    "code": "AR-HR-03",
+    "name": "Offboarding checklist",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "HR-05:offboarding-checklist",
+    "what": "Offboarding checklist template",
+    "where": "A checklist in the HR tool, a ticket template or a shared doc."
+  },
+  {
+    "key": "completed-offboarding-records-for-leavers-in",
+    "code": "AR-HR-04",
+    "name": "Completed offboarding records for leavers in the period",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "HR-05:completed-offboarding-records-for-leavers-in",
+    "what": "Completed offboarding record for each leaver",
+    "where": "The checklist or ticket closed for each leaver."
+  },
+  {
+    "key": "roster-of-joiners-and-leavers-with",
+    "code": "AR-HR-05",
+    "name": "Roster of joiners and leavers with dates",
+    "category": "configuration",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "check",
+        "checks": [
+          "people.leavers_deprovisioned"
+        ]
+      },
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "HR-05:roster-of-joiners-and-leavers-with",
+    "what": "Joiner and leaver list with dates",
+    "where": "Exported from the HR tool or payroll."
+  },
+  {
+    "key": "onboarding-checklist",
+    "code": "AR-HR-06",
+    "name": "Onboarding checklist",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "HR-06:onboarding-checklist",
+    "what": "Onboarding checklist template",
+    "where": "A checklist in the HR tool, a ticket template or a shared doc."
+  },
+  {
+    "key": "completed-checklists-for-a-sample-of",
+    "code": "AR-HR-07",
+    "name": "List of all new joiners in the period, with name, role, start date and checklist completion date. The auditor chooses the sample from it.",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "HR-06:completed-checklists-for-a-sample-of",
+    "what": "List of new joiners with checklist completion dates",
+    "where": "HR tool export of joiners, with the completed checklist or ticket for each."
+  },
+  {
+    "key": "training-content-and-schedule",
+    "code": "AR-HR-08",
+    "name": "Training content and schedule",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "HR-08:training-content-and-schedule",
+    "what": "Security awareness training content and schedule",
+    "where": "The course list in the training platform, or the slide deck used, with the yearly plan."
+  },
+  {
+    "key": "completion-records-for-all-staff",
+    "code": "AR-HR-09",
+    "name": "Completion records for all staff",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "HR-08:completion-records-for-all-staff",
+    "what": "Training completion report for all staff",
+    "where": "Exported from the training platform, or a sign off sheet for a session run in house."
+  },
+  {
+    "key": "access-request-and-approval-procedure",
+    "code": "AR-IAM-01",
+    "name": "Access request and approval procedure",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "IAM-01:access-request-and-approval-procedure",
+    "what": "Access request and approval procedure",
+    "where": "Documents module, in the access control policy."
+  },
+  {
+    "key": "approved-requests-for-a-sample-of",
+    "code": "AR-IAM-02",
+    "name": "List of all access granted in the period, with requester, approver, date and system. The auditor chooses the sample from it.",
+    "category": "configuration",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "check",
+        "checks": [
+          "tickets.access_requests_approved"
+        ]
+      },
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "IAM-01:approved-requests-for-a-sample-of",
+    "what": "List of access granted with requester and approver",
+    "where": "The ticket tracker or access request tool, exported for the period."
+  },
+  {
+    "key": "access-review-procedure",
+    "code": "AR-IAM-03",
+    "name": "Access review procedure",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "IAM-02:access-review-procedure",
+    "what": "Access review procedure",
+    "where": "Shared drive, or the Documents module with the access control policy."
+  },
+  {
+    "key": "completed-access-reviews-with-reviewer-sign",
+    "code": "AR-IAM-04",
+    "name": "Completed access reviews with reviewer sign off",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "IAM-02:completed-access-reviews-with-reviewer-sign",
+    "what": "Completed access review with sign off",
+    "where": "The user export from each system, marked up and signed by the reviewer."
+  },
+  {
+    "key": "access-changes-made-as-a-result",
+    "code": "AR-IAM-05",
+    "name": "Access changes made as a result of the review",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "IAM-02:access-changes-made-as-a-result",
+    "what": "Access changes made after the review",
+    "where": "Tickets or a change log for each removal or reduction."
+  },
+  {
+    "key": "access-policy-requiring-multi-factor-authentication",
+    "code": "AR-IAM-06",
+    "name": "Access policy requiring multi factor authentication",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "IAM-03:access-policy-requiring-multi-factor-authentication",
+    "what": "Access policy requiring a second factor",
+    "where": "Documents module, in the access control policy."
+  },
+  {
+    "key": "approved-exceptions-to-multi-factor-authentication",
+    "code": "AR-IAM-07",
+    "name": "Approved exceptions to multi factor authentication",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "IAM-03:approved-exceptions-to-multi-factor-authentication",
+    "what": "Approved exceptions to multi factor authentication",
+    "where": "A sheet kept by the IT lead, with an approval for each account."
+  },
+  {
+    "key": "second-factor-enforcement-and-enrolled-users",
+    "code": "AR-IAM-08",
+    "name": "Sign in policy export showing the second factor is required, and the list of users with an enrolled factor",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "IAM-03:second-factor-enforcement-and-enrolled-users",
+    "what": "Second factor enforcement setting and enrolled user list",
+    "where": "Exported from the identity provider such as Google Workspace, Microsoft Entra or Okta. Upload it until a connector collects it."
+  },
+  {
+    "key": "list-of-privileged-accounts-with-approval",
+    "code": "AR-IAM-09",
+    "name": "List of privileged accounts and powerful tools with approval and need",
+    "category": "configuration",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "check",
+        "checks": [
+          "idp.admins_limited",
+          "cloud.least_privilege"
+        ]
+      },
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "IAM-07:list-of-privileged-accounts-with-approval",
+    "what": "Admin account and powerful tool list with approval",
+    "where": "Exported from the identity provider and the cloud console admin roles."
+  },
+  {
+    "key": "review-of-privileged-access",
+    "code": "AR-IAM-10",
+    "name": "Review of privileged access",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "IAM-07:review-of-privileged-access",
+    "what": "Quarterly review of admin access",
+    "where": "The admin list, marked up and signed by the reviewer."
+  },
+  {
+    "key": "privileged-elevation-and-break-glass-log",
+    "code": "AR-IAM-11",
+    "name": "Log of privileged elevations, use of the listed tools and break glass check-outs, with the alerts they raised",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "IAM-07:privileged-elevation-and-break-glass-log",
+    "what": "Log of admin elevations and break glass use",
+    "where": "Cloud audit logs such as AWS CloudTrail, the identity provider log, and the password manager vault log."
+  },
+  {
+    "key": "asset-inventory",
+    "code": "AR-LM-01",
+    "name": "Asset inventory",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "check",
+        "checks": [
+          "verity.assets.owner_assigned",
+          "assets.resources_registered"
+        ]
+      }
+    ],
+    "evidence_item": "LM-01:asset-inventory",
+    "what": "Asset inventory",
+    "where": "Assets module, filled from the cloud console, device tool and app list."
+  },
+  {
+    "key": "review-that-the-inventory-is-complete",
+    "code": "AR-LM-02",
+    "name": "Review that the inventory is complete",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "check",
+        "checks": [
+          "verity.assets.reviewed"
+        ]
+      }
+    ],
+    "evidence_item": "LM-01:review-that-the-inventory-is-complete",
+    "what": "Quarterly asset inventory completeness review",
+    "where": "The review step in the Assets module, made by comparing with the cloud console, device tool and vendor list."
+  },
+  {
+    "key": "incident-response-plan",
+    "code": "AR-LM-03",
+    "name": "Incident response plan",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "LM-07:incident-response-plan",
+    "what": "Incident response plan",
+    "where": "Documents module, written from the incident response plan template."
+  },
+  {
+    "key": "roles-and-contact-list",
+    "code": "AR-LM-04",
+    "name": "Roles and contact list",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "LM-07:roles-and-contact-list",
+    "what": "Incident roles and contact list",
+    "where": "A page in the runbook or wiki, kept current."
+  },
+  {
+    "key": "security-incident-register",
+    "code": "AR-LM-05",
+    "name": "Register of all security incidents in the period, including a nil return",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "LM-07:security-incident-register",
+    "what": "Security incident register",
+    "where": "Tasks module, one task per incident, filtered and exported for the quarter."
+  },
+  {
+    "key": "business-continuity-and-disaster-recovery-plan",
+    "code": "AR-BC-01",
+    "name": "Business continuity and disaster recovery plan",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "BC-03:business-continuity-and-disaster-recovery-plan",
+    "what": "Business continuity and disaster recovery plan",
+    "where": "Documents module."
+  },
+  {
+    "key": "exercise-or-test-report",
+    "code": "AR-BC-02",
+    "name": "Exercise or test report",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "BC-03:exercise-or-test-report",
+    "what": "Continuity or disaster recovery test report",
+    "where": "Written after a yearly test, such as a restore into another region or a tabletop."
+  },
+  {
+    "key": "vendor-inventory-with-owner-data-and",
+    "code": "AR-BC-03",
+    "name": "Vendor inventory with owner, data and criticality",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "check",
+        "checks": [
+          "verity.vendors.owner_and_tier"
+        ]
+      }
+    ],
+    "evidence_item": "BC-07:vendor-inventory-with-owner-data-and",
+    "what": "Vendor inventory",
+    "where": "Vendors module."
+  },
+  {
+    "key": "security-assessment-for-each-critical-vendor",
+    "code": "AR-BC-04",
+    "name": "Security assessment for each critical vendor",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "check",
+        "checks": [
+          "verity.vendors.assessed_in_cadence"
+        ]
+      }
+    ],
+    "evidence_item": "BC-08:security-assessment-for-each-critical-vendor",
+    "what": "Security review of each critical vendor",
+    "where": "Vendors module review for each critical vendor."
+  },
+  {
+    "key": "vendor-assurance-reports-that-were-reviewed",
+    "code": "AR-BC-05",
+    "name": "Vendor assurance reports that were reviewed such as SOC 2 or ISO 27001",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "BC-08:vendor-assurance-reports-that-were-reviewed",
+    "what": "Reviewed vendor SOC 2 or ISO 27001 reports",
+    "where": "Vendors module, with each report attached and a short review note."
+  },
+  {
+    "key": "security-terms-agreed-in-each-vendor",
+    "code": "AR-BC-06",
+    "name": "Security terms agreed in each vendor contract",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "BC-08:security-terms-agreed-in-each-vendor",
+    "what": "Security terms in each new vendor contract",
+    "where": "Vendors module, with the contract or DPA attached."
+  },
+  {
+    "key": "cloud-provider-assurance-report-that-was",
+    "code": "AR-PE-01",
+    "name": "Cloud provider assurance report that was reviewed such as SOC 2 or ISO 27001",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "PE-01:cloud-provider-assurance-report-that-was",
+    "what": "Reviewed cloud provider SOC 2 or ISO 27001 report",
+    "where": "Downloaded from AWS Artifact or the Google Cloud or Azure compliance portal, attached in the Vendors module."
+  },
+  {
+    "key": "review-of-the-carve-out-and",
+    "code": "AR-PE-02",
+    "name": "Review of the provider's scope and the controls the entity must add",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "PE-01:review-of-the-carve-out-and",
+    "what": "Review of the provider's scope and our own controls",
+    "where": "A short note or sheet written after reading the provider report."
+  },
+  {
+    "key": "change-management-policy",
+    "code": "AR-SD-01",
+    "name": "Change management policy",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "SD-01:change-management-policy",
+    "what": "Change management policy",
+    "where": "Documents module."
+  },
+  {
+    "key": "change-requests-with-approval-for-a",
+    "code": "AR-SD-02",
+    "name": "List of all changes released in the period, with ticket, approver, approval date and release date. The auditor chooses the sample from it.",
+    "category": "configuration",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "check",
+        "checks": [
+          "tickets.changes_linked",
+          "vcs.merged_changes_reviewed"
+        ]
+      },
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "SD-01:change-requests-with-approval-for-a",
+    "what": "List of released changes with approval",
+    "where": "Tickets in Jira or Linear linked to pull requests, exported for the period."
+  },
+  {
+    "key": "peer-review-standard-in-the-development",
+    "code": "AR-SD-03",
+    "name": "Peer review standard in the development policy",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "SD-06:peer-review-standard-in-the-development",
+    "what": "Peer review standard",
+    "where": "Documents module, in the secure development policy."
+  },
+  {
+    "key": "sample-of-reviewed-changes",
+    "code": "AR-SD-04",
+    "name": "List of all changes merged to the main branch in the period, with author, reviewer, approval date and merge date. The auditor chooses the sample from it.",
+    "category": "configuration",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "check",
+        "checks": [
+          "vcs.merged_changes_reviewed"
+        ]
+      },
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "SD-06:sample-of-reviewed-changes",
+    "what": "List of merged pull requests with reviewers",
+    "where": "Exported from GitHub or GitLab for the main branch."
+  },
+  {
+    "key": "system-description-covering-boundary-services-infrastructure",
+    "code": "AR-GOV-28",
+    "name": "System description covering boundary, services, infrastructure, people and data",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-22:system-description-covering-boundary-services-infrastructure",
+    "what": "System description",
+    "where": "A document written by the CTO or a founder, usually in the shared drive, and reused in the audit report."
+  },
+  {
+    "key": "service-commitments-and-system-requirements-shared",
+    "code": "AR-GOV-29",
+    "name": "Customer commitments and the requirements the system must meet",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-22:service-commitments-and-system-requirements-shared",
+    "what": "List of customer commitments and the system requirements behind them",
+    "where": "Taken from the terms of service, standard contract, SLA and security page, summarized in one document."
+  },
+  {
+    "key": "published-security-availability-and-privacy-commitments",
+    "code": "AR-CS-01",
+    "name": "Published security, availability and privacy commitments",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "CS-02:published-security-availability-and-privacy-commitments",
+    "what": "Published security, availability and privacy commitments",
+    "where": "The security page, terms of service, SLA, privacy policy and standard customer contract."
+  },
+  {
+    "key": "check-that-the-commitments-match-actual",
+    "code": "AR-CS-02",
+    "name": "Check that the commitments match actual practice",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "CS-02:check-that-the-commitments-match-actual",
+    "what": "Annual check that public promises match practice",
+    "where": "A sheet by the security lead comparing each promise with how the system really works."
+  },
+  {
+    "key": "scope-statement-approved-by-leadership",
+    "code": "AR-GOV-30",
+    "name": "Scope statement approved by leadership",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "check",
+        "checks": [
+          "verity.isms.scope_documented",
+          "verity.isms.scope_recorded"
+        ]
+      }
+    ],
+    "evidence_item": "GOV-23:scope-statement-approved-by-leadership",
+    "what": "ISMS scope statement",
+    "where": "Documents module."
+  },
+  {
+    "key": "map-of-the-management-processes-and",
+    "code": "AR-GOV-31",
+    "name": "Map of the management processes and how they connect",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-23:map-of-the-management-processes-and",
+    "what": "Map of management processes",
+    "where": "A diagram or table in the shared drive."
+  },
+  {
+    "key": "scope-review-after-changes-to-products",
+    "code": "AR-GOV-32",
+    "name": "Scope review after changes to products, sites or suppliers",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-23:scope-review-after-changes-to-products",
+    "what": "Scope review after a change",
+    "where": "A dated note or new document version after a new product, site or supplier."
+  },
+  {
+    "key": "register-of-external-and-internal-factors",
+    "code": "AR-GOV-33",
+    "name": "Register of external and internal factors",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "check",
+        "checks": [
+          "verity.context.documented"
+        ]
+      }
+    ],
+    "evidence_item": "GOV-24:register-of-external-and-internal-factors",
+    "what": "Internal and external factors register",
+    "where": "Documents module."
+  },
+  {
+    "key": "yearly-review-notes-and-decisions-taken",
+    "code": "AR-GOV-34",
+    "name": "Yearly review notes and decisions taken",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-24:yearly-review-notes-and-decisions-taken",
+    "what": "Annual review of the factors register",
+    "where": "Leadership meeting notes or a dated document version."
+  },
+  {
+    "key": "register-of-interested-parties-and-what",
+    "code": "AR-GOV-35",
+    "name": "Register of interested parties and what each requires",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "check",
+        "checks": [
+          "verity.interested_parties.documented"
+        ]
+      }
+    ],
+    "evidence_item": "GOV-25:register-of-interested-parties-and-what",
+    "what": "Interested parties register",
+    "where": "Documents module."
+  },
+  {
+    "key": "review-record-covering-new-contracts-and",
+    "code": "AR-GOV-36",
+    "name": "Review record covering new contracts and regulatory changes",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-25:review-record-covering-new-contracts-and",
+    "what": "Annual review of interested party requirements",
+    "where": "A dated note or document version."
+  },
+  {
+    "key": "security-objectives-with-owners-targets-and",
+    "code": "AR-GOV-37",
+    "name": "Security objectives with owners, targets and due dates",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "check",
+        "checks": [
+          "verity.objectives.documented"
+        ]
+      }
+    ],
+    "evidence_item": "GOV-26:security-objectives-with-owners-targets-and",
+    "what": "Security objectives",
+    "where": "Tasks module, one task per objective with its target."
+  },
+  {
+    "key": "measures-and-results-compared-with-targets",
+    "code": "AR-GOV-38",
+    "name": "Measures and results compared with targets",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-26:measures-and-results-compared-with-targets",
+    "what": "Quarterly results compared with security objectives",
+    "where": "A dashboard or sheet reviewed at the management review."
+  },
+  {
+    "key": "resourcing-decisions-for-the-security-program",
+    "code": "AR-GOV-39",
+    "name": "Resourcing decisions for the security program",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-26:resourcing-decisions-for-the-security-program",
+    "what": "Security budget and staffing decisions",
+    "where": "Leadership minutes or the budget sheet."
+  },
+  {
+    "key": "statement-of-applicability-showing-every-decision",
+    "code": "AR-GOV-40",
+    "name": "Statement of Applicability showing every decision and reason",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "check",
+        "checks": [
+          "verity.soa.complete"
+        ]
+      }
+    ],
+    "evidence_item": "GOV-27:statement-of-applicability-showing-every-decision",
+    "what": "Statement of Applicability",
+    "where": "Controls module, built from the applicability decision on each control."
+  },
+  {
+    "key": "approval-of-each-version-by-risk",
+    "code": "AR-GOV-41",
+    "name": "Approval of each version by risk owners and leadership",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-27:approval-of-each-version-by-risk",
+    "what": "Approval of each Statement of Applicability version",
+    "where": "Email, signed note or minutes from risk owners and leadership."
+  },
+  {
+    "key": "supplier-certificates-behind-inherited-controls",
+    "code": "AR-GOV-42",
+    "name": "Supplier certificates behind inherited controls",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-27:supplier-certificates-behind-inherited-controls",
+    "what": "Supplier certificates for inherited controls",
+    "where": "Vendors module, with certificates attached to each supplier."
+  },
+  {
+    "key": "document-control-procedure-covering-approval-versions",
+    "code": "AR-GOV-43",
+    "name": "Document control procedure covering approval, versions and retention",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-28:document-control-procedure-covering-approval-versions",
+    "what": "Document control procedure",
+    "where": "Documents module."
+  },
+  {
+    "key": "version-history-and-approval-record-for",
+    "code": "AR-GOV-44",
+    "name": "Version history and approval record for each document",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "check",
+        "checks": [
+          "verity.documents.controlled"
+        ]
+      }
+    ],
+    "evidence_item": "GOV-28:version-history-and-approval-record-for",
+    "what": "Version history and approvals for each document",
+    "where": "Documents module version history."
+  },
+  {
+    "key": "access-and-retention-settings-for-the",
+    "code": "AR-GOV-45",
+    "name": "Access and retention settings for the document store",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-28:access-and-retention-settings-for-the",
+    "what": "Document store access and retention settings",
+    "where": "Screenshot or export of sharing and retention settings in the shared drive or Documents module."
+  },
+  {
+    "key": "doc-acceptable-use-policy",
+    "code": "AR-DOC-01",
+    "name": "Acceptable use policy",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "document",
+        "template": "acceptable-use-policy"
+      }
+    ],
+    "evidence_item": null,
+    "what": "Acceptable use policy, approved",
+    "where": "Policies and documents, started from its template or uploaded and approved"
+  },
+  {
+    "key": "doc-access-control-policy",
+    "code": "AR-DOC-02",
+    "name": "Access control policy",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "document",
+        "template": "access-control-policy"
+      }
+    ],
+    "evidence_item": null,
+    "what": "Access control policy, approved",
+    "where": "Policies and documents, started from its template or uploaded and approved"
+  },
+  {
+    "key": "doc-asset-management-policy",
+    "code": "AR-DOC-03",
+    "name": "Asset management policy and register",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "document",
+        "template": "asset-management-policy"
+      }
+    ],
+    "evidence_item": null,
+    "what": "Asset management policy and register, approved",
+    "where": "Policies and documents, started from its template or uploaded and approved"
+  },
+  {
+    "key": "doc-business-continuity-and-disaster-recovery-plan",
+    "code": "AR-DOC-04",
+    "name": "Continuity and recovery plan, with test report",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "document",
+        "template": "business-continuity-and-disaster-recovery-plan"
+      }
+    ],
+    "evidence_item": null,
+    "what": "Continuity and recovery plan, with test report, approved",
+    "where": "Policies and documents, started from its template or uploaded and approved"
+  },
+  {
+    "key": "doc-business-impact-analysis",
+    "code": "AR-DOC-05",
+    "name": "Business impact analysis",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "document",
+        "template": "business-impact-analysis"
+      }
+    ],
+    "evidence_item": null,
+    "what": "Business impact analysis, approved",
+    "where": "Policies and documents, started from its template or uploaded and approved"
+  },
+  {
+    "key": "doc-change-management-procedure",
+    "code": "AR-DOC-06",
+    "name": "Change management procedure",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "document",
+        "template": "change-management-procedure"
+      }
+    ],
+    "evidence_item": null,
+    "what": "Change management procedure, approved",
+    "where": "Policies and documents, started from its template or uploaded and approved"
+  },
+  {
+    "key": "doc-cloud-services-security-policy",
+    "code": "AR-DOC-07",
+    "name": "Cloud services policy and provider assurance review",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "document",
+        "template": "cloud-services-security-policy"
+      }
+    ],
+    "evidence_item": null,
+    "what": "Cloud services policy and provider assurance review, approved",
+    "where": "Policies and documents, started from its template or uploaded and approved"
+  },
+  {
+    "key": "doc-code-of-conduct",
+    "code": "AR-DOC-08",
+    "name": "Code of conduct with acknowledgements",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "document",
+        "template": "code-of-conduct"
+      }
+    ],
+    "evidence_item": null,
+    "what": "Code of conduct with acknowledgements, approved",
+    "where": "Policies and documents, started from its template or uploaded and approved"
+  },
+  {
+    "key": "doc-competence-and-awareness-procedure",
+    "code": "AR-DOC-09",
+    "name": "Competence requirements and records, awareness programme",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "document",
+        "template": "competence-and-awareness-procedure"
+      }
+    ],
+    "evidence_item": null,
+    "what": "Competence requirements and records, awareness programme, approved",
+    "where": "Policies and documents, started from its template or uploaded and approved"
+  },
+  {
+    "key": "doc-context-and-interested-parties",
+    "code": "AR-DOC-10",
+    "name": "Context, interested parties and obligations register",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "document",
+        "template": "context-and-interested-parties"
+      }
+    ],
+    "evidence_item": null,
+    "what": "Context, interested parties and obligations register, approved",
+    "where": "Policies and documents, started from its template or uploaded and approved"
+  },
+  {
+    "key": "doc-corrective-action-procedure",
+    "code": "AR-DOC-11",
+    "name": "Corrective action procedure and log",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "document",
+        "template": "corrective-action-procedure"
+      }
+    ],
+    "evidence_item": null,
+    "what": "Corrective action procedure and log, approved",
+    "where": "Policies and documents, started from its template or uploaded and approved"
+  },
+  {
+    "key": "doc-document-control-procedure",
+    "code": "AR-DOC-12",
+    "name": "Document and record control procedure",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "document",
+        "template": "document-control-procedure"
+      }
+    ],
+    "evidence_item": null,
+    "what": "Document and record control procedure, approved",
+    "where": "Policies and documents, started from its template or uploaded and approved"
+  },
+  {
+    "key": "doc-engineering-security-standard",
+    "code": "AR-DOC-13",
+    "name": "Engineering security standard",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "document",
+        "template": "engineering-security-standard"
+      }
+    ],
+    "evidence_item": null,
+    "what": "Engineering security standard, approved",
+    "where": "Policies and documents, started from its template or uploaded and approved"
+  },
+  {
+    "key": "doc-human-resource-security-policy",
+    "code": "AR-DOC-14",
+    "name": "People security policy (screening, terms, discipline, leaving)",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "document",
+        "template": "human-resource-security-policy"
+      }
+    ],
+    "evidence_item": null,
+    "what": "People security policy (screening, terms, discipline, leaving), approved",
+    "where": "Policies and documents, started from its template or uploaded and approved"
+  },
+  {
+    "key": "doc-incident-response-plan",
+    "code": "AR-DOC-15",
+    "name": "Incident response plan with notification steps",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "document",
+        "template": "incident-response-plan"
+      }
+    ],
+    "evidence_item": null,
+    "what": "Incident response plan with notification steps, approved",
+    "where": "Policies and documents, started from its template or uploaded and approved"
+  },
+  {
+    "key": "doc-information-security-policy",
+    "code": "AR-DOC-16",
+    "name": "Staff security policy",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "document",
+        "template": "information-security-policy"
+      }
+    ],
+    "evidence_item": null,
+    "what": "Staff security policy, approved",
+    "where": "Policies and documents, started from its template or uploaded and approved"
+  },
+  {
+    "key": "doc-information-security-policy-statement",
+    "code": "AR-DOC-17",
+    "name": "Policy statement by top management",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "document",
+        "template": "information-security-policy-statement"
+      }
+    ],
+    "evidence_item": null,
+    "what": "Policy statement by top management, approved",
+    "where": "Policies and documents, started from its template or uploaded and approved"
+  },
+  {
+    "key": "doc-information-security-roles-and-responsibilities",
+    "code": "AR-DOC-18",
+    "name": "Roles and responsibilities, organisation chart, security officer appointment",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "document",
+        "template": "information-security-roles-and-responsibilities"
+      }
+    ],
+    "evidence_item": null,
+    "what": "Roles and responsibilities, organisation chart, security officer appointment, approved",
+    "where": "Policies and documents, started from its template or uploaded and approved"
+  },
+  {
+    "key": "doc-internal-audit-procedure",
+    "code": "AR-DOC-19",
+    "name": "Internal audit procedure, programme, reports",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "document",
+        "template": "internal-audit-procedure"
+      }
+    ],
+    "evidence_item": null,
+    "what": "Internal audit procedure, programme, reports, approved",
+    "where": "Policies and documents, started from its template or uploaded and approved"
+  },
+  {
+    "key": "doc-isms-scope-statement",
+    "code": "AR-DOC-20",
+    "name": "ISMS scope statement",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "document",
+        "template": "isms-scope-statement"
+      }
+    ],
+    "evidence_item": null,
+    "what": "ISMS scope statement, approved",
+    "where": "Policies and documents, started from its template or uploaded and approved"
+  },
+  {
+    "key": "doc-joiner-mover-leaver-checklists",
+    "code": "AR-DOC-21",
+    "name": "Joiner, mover and leaver checklists",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "document",
+        "template": "joiner-mover-leaver-checklists"
+      }
+    ],
+    "evidence_item": null,
+    "what": "Joiner, mover and leaver checklists, approved",
+    "where": "Policies and documents, started from its template or uploaded and approved"
+  },
+  {
+    "key": "doc-management-review-procedure",
+    "code": "AR-DOC-22",
+    "name": "Management review procedure and minutes",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "document",
+        "template": "management-review-procedure"
+      }
+    ],
+    "evidence_item": null,
+    "what": "Management review procedure and minutes, approved",
+    "where": "Policies and documents, started from its template or uploaded and approved"
+  },
+  {
+    "key": "doc-operating-procedure-template",
+    "code": "AR-DOC-23",
+    "name": "Operating procedures, one per routine task",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "document",
+        "template": "operating-procedure-template"
+      }
+    ],
+    "evidence_item": null,
+    "what": "Operating procedures, one per routine task, approved",
+    "where": "Policies and documents, started from its template or uploaded and approved"
+  },
+  {
+    "key": "doc-oversight-body-charter",
+    "code": "AR-DOC-24",
+    "name": "Oversight body charter and minutes",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "document",
+        "template": "oversight-body-charter"
+      }
+    ],
+    "evidence_item": null,
+    "what": "Oversight body charter and minutes, approved",
+    "where": "Policies and documents, started from its template or uploaded and approved"
+  },
+  {
+    "key": "doc-remote-working-policy",
+    "code": "AR-DOC-25",
+    "name": "Remote working policy",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "document",
+        "template": "remote-working-policy"
+      }
+    ],
+    "evidence_item": null,
+    "what": "Remote working policy, approved",
+    "where": "Policies and documents, started from its template or uploaded and approved"
+  },
+  {
+    "key": "doc-risk-assessment-methodology",
+    "code": "AR-DOC-26",
+    "name": "Risk assessment and treatment method",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "document",
+        "template": "risk-assessment-methodology"
+      }
+    ],
+    "evidence_item": null,
+    "what": "Risk assessment and treatment method, approved",
+    "where": "Policies and documents, started from its template or uploaded and approved"
+  },
+  {
+    "key": "doc-risk-management-policy",
+    "code": "AR-DOC-27",
+    "name": "Risk management policy",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "document",
+        "template": "risk-management-policy"
+      }
+    ],
+    "evidence_item": null,
+    "what": "Risk management policy, approved",
+    "where": "Policies and documents, started from its template or uploaded and approved"
+  },
+  {
+    "key": "doc-security-objectives-plan",
+    "code": "AR-DOC-28",
+    "name": "Security objectives and measurement plan, with results",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "document",
+        "template": "security-objectives-plan"
+      }
+    ],
+    "evidence_item": null,
+    "what": "Security objectives and measurement plan, with results, approved",
+    "where": "Policies and documents, started from its template or uploaded and approved"
+  },
+  {
+    "key": "doc-soc2-system-description",
+    "code": "AR-DOC-29",
+    "name": "SOC 2 system description",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "document",
+        "template": "soc2-system-description"
+      }
+    ],
+    "evidence_item": null,
+    "what": "SOC 2 system description, approved",
+    "where": "Policies and documents, started from its template or uploaded and approved"
+  },
+  {
+    "key": "doc-third-party-management-policy",
+    "code": "AR-DOC-30",
+    "name": "Supplier security policy, vendor register, assessments, contract terms",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "document",
+        "template": "third-party-management-policy"
+      }
+    ],
+    "evidence_item": null,
+    "what": "Supplier security policy, vendor register, assessments, contract terms, approved",
+    "where": "Policies and documents, started from its template or uploaded and approved"
+  },
+  {
+    "key": "branch-protection-settings",
+    "name": "Branch protection settings on default branches",
+    "category": "configuration",
+    "sources": [
+      {
+        "kind": "check",
+        "checks": [
+          "vcs.default_branch_protected",
+          "vcs.review_required"
+        ]
+      }
+    ],
+    "what": "Default branch protection and required review on each in scope repository",
+    "where": "A connected version control system, checked daily",
+    "code": "AR-CHK-01",
+    "validity_days": 92,
+    "combine": "any",
+    "evidence_item": null
+  },
+  {
+    "key": "unreviewed-merge-log",
+    "name": "Log of merges without review, with their follow up",
+    "category": "record",
+    "sources": [
+      {
+        "kind": "check",
+        "checks": [
+          "vcs.unreviewed_merges_recorded"
+        ]
+      },
+      {
+        "kind": "person"
+      }
+    ],
+    "what": "Every merge that skipped review, and the review done afterwards",
+    "where": "A connected version control system, or an uploaded override log",
+    "code": "AR-CHK-02",
+    "validity_days": 92,
+    "combine": "any",
+    "evidence_item": null
+  },
+  {
+    "key": "account-list-export",
+    "name": "Account list exported from the system itself",
+    "category": "population",
+    "sources": [
+      {
+        "kind": "check",
+        "checks": [
+          "idp.access_list_exported"
+        ]
+      },
+      {
+        "kind": "person"
+      }
+    ],
+    "what": "Complete account list with its extraction date",
+    "where": "A connected identity provider, or an export uploaded with the steps used",
+    "code": "AR-CHK-03",
+    "validity_days": 92,
+    "combine": "any",
+    "evidence_item": null
+  },
+  {
+    "key": "doc-data-management-policy",
+    "code": "AR-DOC-31",
+    "name": "Data management policy",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "document",
+        "template": "data-management-policy"
+      }
+    ],
+    "evidence_item": null,
+    "what": "Data management policy, approved",
+    "where": "Policies and documents, started from its template or uploaded and approved"
+  },
+  {
+    "key": "doc-secure-development-policy",
+    "code": "AR-DOC-32",
+    "name": "Secure development policy",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "document",
+        "template": "secure-development-policy"
+      }
+    ],
+    "evidence_item": null,
+    "what": "Secure development policy, approved",
+    "where": "Policies and documents, started from its template or uploaded and approved"
+  },
+  {
+    "key": "backup-policy-covering-scope-frequency-and",
+    "code": "AR-BC-07",
+    "name": "Backup policy covering scope, frequency and retention",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "BC-01:backup-policy-covering-scope-frequency-and",
+    "what": "Backup policy",
+    "where": "Documents module."
+  },
+  {
+    "key": "backup-failure-alerts-and-follow-up",
+    "code": "AR-BC-08",
+    "name": "Backup failure alerts and follow up",
+    "category": "record",
+    "validity_days": 31,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "BC-01:backup-failure-alerts-and-follow-up",
+    "what": "Backup failure alerts and follow up",
+    "where": "Backup tool or cloud backup job history, with a ticket for each failure."
+  },
+  {
+    "key": "restore-test-plan-and-results",
+    "code": "AR-BC-09",
+    "name": "Restore test plan and results",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "BC-02:restore-test-plan-and-results",
+    "what": "Restore test plan and results",
+    "where": "Written by engineering after a yearly restore from backup into a test environment."
+  },
+  {
+    "key": "measured-recovery-time-against-the-target",
+    "code": "AR-BC-10",
+    "name": "Measured recovery time against the target",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "BC-02:measured-recovery-time-against-the-target",
+    "what": "Measured recovery time compared with the target",
+    "where": "Part of the restore test report."
+  },
+  {
+    "key": "capacity-review",
+    "code": "AR-BC-11",
+    "name": "Capacity review",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "BC-04:capacity-review",
+    "what": "Quarterly capacity review record",
+    "where": "Monitoring dashboards such as CloudWatch or Datadog, with a short review note."
+  },
+  {
+    "key": "capacity-actions-that-were-taken",
+    "code": "AR-BC-12",
+    "name": "Capacity actions that were taken",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "BC-04:capacity-actions-that-were-taken",
+    "what": "Capacity changes made after the review",
+    "where": "Tickets or infrastructure changes such as scaling up or raising quotas."
+  },
+  {
+    "key": "review-of-newly-discovered-applications",
+    "code": "AR-BC-13",
+    "name": "Review of newly discovered applications",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "BC-05:review-of-newly-discovered-applications",
+    "what": "Review of newly found applications",
+    "where": "Apps connected to Google Workspace or Microsoft 365, expense reports and the single sign on app list, reviewed each quarter."
+  },
+  {
+    "key": "decision-to-approve-or-remove-each",
+    "code": "AR-BC-14",
+    "name": "Decision to approve or remove each one",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "BC-05:decision-to-approve-or-remove-each",
+    "what": "Decision on each new application",
+    "where": "Vendors module, with each app approved and added, or marked for removal."
+  },
+  {
+    "key": "subprocessor-list-shared-with-customers",
+    "code": "AR-BC-15",
+    "name": "Subprocessor list shared with customers",
+    "category": "document",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "BC-06:subprocessor-list-shared-with-customers",
+    "what": "Published subprocessor list",
+    "where": "Vendors module, published on the website or trust page."
+  },
+  {
+    "key": "notices-to-customers-of-subprocessor-changes",
+    "code": "AR-BC-16",
+    "name": "Notices to customers of subprocessor changes",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "BC-06:notices-to-customers-of-subprocessor-changes",
+    "what": "Customer notices of subprocessor changes",
+    "where": "The email or trust page update sent to customers."
+  },
+  {
+    "key": "customer-contract-terms-on-breach-notification",
+    "code": "AR-CS-03",
+    "name": "Customer contract terms on breach notification",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "CS-01:customer-contract-terms-on-breach-notification",
+    "what": "Breach notice clause in the customer contract",
+    "where": "The standard customer agreement or data processing agreement."
+  },
+  {
+    "key": "incident-procedure-showing-the-notification-timeframes",
+    "code": "AR-CS-04",
+    "name": "Incident procedure showing the notification timeframes",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "CS-01:incident-procedure-showing-the-notification-timeframes",
+    "what": "Incident procedure with customer notice timeframes",
+    "where": "The incident response plan in the Documents module."
+  },
+  {
+    "key": "published-reporting-channel-for-staff-and",
+    "code": "AR-CS-05",
+    "name": "Published reporting channel for staff and customers",
+    "category": "document",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "CS-03:published-reporting-channel-for-staff-and",
+    "what": "Published security reporting channel",
+    "where": "The security page on the website, a security.txt file, and the staff handbook or wiki."
+  },
+  {
+    "key": "sample-of-reports-received-and-how",
+    "code": "AR-CS-06",
+    "name": "List of all security reports received in the period, with date, source, summary, decision and date closed. The auditor chooses the sample from it.",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "CS-03:sample-of-reports-received-and-how",
+    "what": "List of security reports received in the period",
+    "where": "The shared inbox behind security@, or the tickets created from it."
+  },
+  {
+    "key": "policy-portal-showing-current-policies-available",
+    "code": "AR-CS-07",
+    "name": "Policy portal showing current policies available to staff",
+    "category": "document",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "CS-04:policy-portal-showing-current-policies-available",
+    "what": "Screenshot of the staff policy portal",
+    "where": "The Documents module staff view, or the shared drive or wiki page where policies are published."
+  },
+  {
+    "key": "staff-acknowledgement-of-current-policies",
+    "code": "AR-CS-08",
+    "name": "Staff acknowledgement of current policies",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "check",
+        "checks": [
+          "verity.policies.acknowledged"
+        ]
+      }
+    ],
+    "evidence_item": "CS-04:staff-acknowledgement-of-current-policies",
+    "what": "Staff acknowledgement of current policies",
+    "where": "Documents module acknowledgement campaign, sent at hire and once a year."
+  },
+  {
+    "key": "description-of-the-confidential-reporting-mechanism",
+    "code": "AR-CS-09",
+    "name": "Description of the confidential reporting mechanism",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "CS-05:description-of-the-confidential-reporting-mechanism",
+    "what": "Description of the confidential reporting channel",
+    "where": "A section of the employee handbook, or the page of an outside hotline service."
+  },
+  {
+    "key": "anonymized-log-of-reports-received-and",
+    "code": "AR-CS-10",
+    "name": "Anonymized log of reports received and outcomes",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "CS-05:anonymized-log-of-reports-received-and",
+    "what": "Anonymized log of ethics reports and outcomes",
+    "where": "Kept by the person who receives reports, or exported from the hotline service."
+  },
+  {
+    "key": "security-communication-plan",
+    "code": "AR-CS-11",
+    "name": "Security communication plan",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "check",
+        "checks": [
+          "verity.communication.plan_documented"
+        ]
+      }
+    ],
+    "evidence_item": "CS-06:security-communication-plan",
+    "what": "Security communication plan",
+    "where": "Documents module."
+  },
+  {
+    "key": "sample-of-messages-sent-under-the",
+    "code": "AR-CS-12",
+    "name": "List of all security messages sent under the plan in the period, with date, audience, channel and topic. The auditor chooses the sample from it.",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "CS-06:sample-of-messages-sent-under-the",
+    "what": "List of security messages sent in the period",
+    "where": "Slack or email messages, newsletters and all hands slides."
+  },
+  {
+    "key": "contact-list-for-authorities-and-security",
+    "code": "AR-CS-13",
+    "name": "Contact list for authorities and security communities",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "CS-07:contact-list-for-authorities-and-security",
+    "what": "Contact list for authorities and security groups",
+    "where": "A page in the incident runbook."
+  },
+  {
+    "key": "memberships-or-subscriptions-to-security-communities",
+    "code": "AR-CS-14",
+    "name": "Memberships or subscriptions to security communities",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "CS-07:memberships-or-subscriptions-to-security-communities",
+    "what": "Security community memberships and subscriptions",
+    "where": "Receipts, sign up emails, or a list of feeds followed."
+  },
+  {
+    "key": "yearly-check-that-contact-details-still",
+    "code": "AR-CS-15",
+    "name": "Yearly check that contact details still work",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "CS-07:yearly-check-that-contact-details-still",
+    "what": "Annual check of the contact list",
+    "where": "A dated note or document version."
+  },
+  {
+    "key": "breach-notification-procedure-and-templates",
+    "code": "AR-DM-01",
+    "name": "Breach notification procedure and templates",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "DM-01:breach-notification-procedure-and-templates",
+    "what": "Breach notification procedure and templates",
+    "where": "Documents module, as part of the incident response plan."
+  },
+  {
+    "key": "notification-decisions-for-each-incident-including",
+    "code": "AR-DM-02",
+    "name": "Notification decisions for each incident, including decisions not to notify",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "DM-01:notification-decisions-for-each-incident-including",
+    "what": "Notice decision for each incident",
+    "where": "A section in each incident record or postmortem."
+  },
+  {
+    "key": "register-of-unauthorized-disclosures-including-near",
+    "code": "AR-DM-03",
+    "name": "Register of unauthorized disclosures including near misses",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "DM-02:register-of-unauthorized-disclosures-including-near",
+    "what": "Register of unauthorized disclosures and near misses",
+    "where": "A sheet kept by the privacy or security lead, fed from incidents."
+  },
+  {
+    "key": "consent-records-showing-when-what-and",
+    "code": "AR-DM-04",
+    "name": "Consent records showing when, what and which notice version",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "DM-03:consent-records-showing-when-what-and",
+    "what": "Consent records",
+    "where": "Product database or consent tool such as a cookie banner provider, exported for the period."
+  },
+  {
+    "key": "consent-withdrawal-process-and-records",
+    "code": "AR-DM-05",
+    "name": "Consent withdrawal process and records",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "DM-03:consent-withdrawal-process-and-records",
+    "what": "Consent withdrawal steps and log of withdrawals",
+    "where": "Product settings or support tickets where users withdrew consent, with the written steps."
+  },
+  {
+    "key": "data-classification-policy",
+    "code": "AR-DM-06",
+    "name": "Data classification policy",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "DM-04:data-classification-policy",
+    "what": "Data classification policy",
+    "where": "Documents module."
+  },
+  {
+    "key": "classification-applied-to-systems-and-data",
+    "code": "AR-DM-07",
+    "name": "Classification applied to systems and data stores",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "check",
+        "checks": [
+          "verity.assets.classified"
+        ]
+      }
+    ],
+    "evidence_item": "DM-04:classification-applied-to-systems-and-data",
+    "what": "Classification set on each system and data store",
+    "where": "Assets module, with a classification on each asset."
+  },
+  {
+    "key": "correction-procedure",
+    "code": "AR-DM-08",
+    "name": "Correction procedure",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "DM-05:correction-procedure",
+    "what": "Personal data correction procedure",
+    "where": "Shared drive, or the support runbook."
+  },
+  {
+    "key": "log-of-corrections-and-how-third",
+    "code": "AR-DM-09",
+    "name": "Log of corrections and how third parties were told",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "DM-05:log-of-corrections-and-how-third",
+    "what": "Correction log with third party notices",
+    "where": "A sheet, or a support ticket tag."
+  },
+  {
+    "key": "data-inventory-and-data-map",
+    "code": "AR-DM-10",
+    "name": "Data inventory and data map",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "DM-06:data-inventory-and-data-map",
+    "what": "Data inventory and data map",
+    "where": "Assets module, or a sheet of data stores with a flow diagram."
+  },
+  {
+    "key": "dm-06-review-that-the-inventory-is-complete",
+    "code": "AR-DM-11",
+    "name": "Review that the inventory is complete",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "DM-06:review-that-the-inventory-is-complete",
+    "what": "Annual data inventory completeness review",
+    "where": "A dated review note, made by comparing the inventory with the cloud console, app list and vendor list."
+  },
+  {
+    "key": "review-of-each-collection-point-against",
+    "code": "AR-DM-12",
+    "name": "Review of each collection point against what is needed",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "DM-07:review-of-each-collection-point-against",
+    "what": "Data minimization review of each collection point",
+    "where": "A sheet listing every form, API and import that collects personal data, reviewed once a year."
+  },
+  {
+    "key": "data-retention-schedule",
+    "code": "AR-DM-13",
+    "name": "Data retention schedule",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "DM-08:data-retention-schedule",
+    "what": "Data retention schedule",
+    "where": "Documents module."
+  },
+  {
+    "key": "evidence-data-was-deleted-when-retention",
+    "code": "AR-DM-14",
+    "name": "Deletion records for data past its retention period",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "DM-08:evidence-data-was-deleted-when-retention",
+    "what": "Deletion records for data past its retention period",
+    "where": "Logs from the scheduled deletion job, or a ticket for each manual deletion."
+  },
+  {
+    "key": "register-of-authorized-disclosures-to-third",
+    "code": "AR-DM-15",
+    "name": "Register of authorized disclosures to third parties",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "DM-09:register-of-authorized-disclosures-to-third",
+    "what": "Register of third parties that receive personal data",
+    "where": "Vendors module, with the data each vendor receives."
+  },
+  {
+    "key": "consent-or-lawful-basis-for-each",
+    "code": "AR-DM-16",
+    "name": "Consent or lawful basis for each disclosure",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "DM-09:consent-or-lawful-basis-for-each",
+    "what": "Consent or lawful basis for each new disclosure",
+    "where": "The contract, consent record or legal note for each new third party that receives data."
+  },
+  {
+    "key": "executed-data-processing-agreements-for-vendors",
+    "code": "AR-DM-17",
+    "name": "Executed data processing agreements for vendors that handle personal information",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "check",
+        "checks": [
+          "verity.vendors.dpa_on_file"
+        ]
+      }
+    ],
+    "evidence_item": "DM-10:executed-data-processing-agreements-for-vendors",
+    "what": "Signed data processing agreements",
+    "where": "Vendors module, with the signed DPA attached to each vendor that handles personal data."
+  },
+  {
+    "key": "access-request-procedure",
+    "code": "AR-DM-18",
+    "name": "Access request procedure",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "DM-11:access-request-procedure",
+    "what": "Data subject access request procedure",
+    "where": "Shared drive, or the support runbook."
+  },
+  {
+    "key": "log-of-requests-with-dates-and",
+    "code": "AR-DM-19",
+    "name": "Log of requests with dates and outcomes",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "DM-11:log-of-requests-with-dates-and",
+    "what": "Data subject request log",
+    "where": "A sheet, or a support ticket tag for privacy requests."
+  },
+  {
+    "key": "sample-responses-that-include-disclosure-accounting",
+    "code": "AR-DM-20",
+    "name": "List of all access requests answered in the period, with date received, date answered and the disclosures listed in each answer. The auditor chooses the sample from it.",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "DM-11:sample-responses-that-include-disclosure-accounting",
+    "what": "List of answered access requests with the disclosures listed",
+    "where": "Support tickets tagged for privacy requests, with the answer sent."
+  },
+  {
+    "key": "register-of-the-purposes-personal-information",
+    "code": "AR-DM-21",
+    "name": "Register of the purposes personal information is used for",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "DM-12:register-of-the-purposes-personal-information",
+    "what": "Register of purposes for personal data",
+    "where": "A sheet or the data inventory, kept by the privacy owner."
+  },
+  {
+    "key": "review-of-new-uses-against-the",
+    "code": "AR-DM-22",
+    "name": "Review of new uses against the stated purposes",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "DM-12:review-of-new-uses-against-the",
+    "what": "Review of new uses of personal data",
+    "where": "A dated note or ticket for each feature that uses personal data in a new way."
+  },
+  {
+    "key": "policy-against-production-data-in-lower",
+    "code": "AR-DM-23",
+    "name": "Policy against production data in lower environments",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "DM-13:policy-against-production-data-in-lower",
+    "what": "Policy against production data in test and dev",
+    "where": "Documents module, in the secure development or data policy."
+  },
+  {
+    "key": "evidence-test-data-is-masked-or",
+    "code": "AR-DM-24",
+    "name": "Test data generation method with a screenshot of fake or masked records",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "DM-13:evidence-test-data-is-masked-or",
+    "what": "Test data method with a screenshot of fake or masked records",
+    "where": "The seed or masking script in the code repository, plus a screenshot of a test database."
+  },
+  {
+    "key": "privacy-inquiry-and-complaint-procedure",
+    "code": "AR-DM-25",
+    "name": "Privacy inquiry and complaint procedure",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "DM-14:privacy-inquiry-and-complaint-procedure",
+    "what": "Privacy inquiry and complaint procedure",
+    "where": "Shared drive, or the support runbook."
+  },
+  {
+    "key": "log-of-inquiries-with-resolution-times",
+    "code": "AR-DM-26",
+    "name": "Log of inquiries with resolution times",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "DM-14:log-of-inquiries-with-resolution-times",
+    "what": "Privacy inquiry and complaint log",
+    "where": "A sheet, or a support ticket tag."
+  },
+  {
+    "key": "current-privacy-notice",
+    "code": "AR-DM-27",
+    "name": "Current privacy notice",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "DM-15:current-privacy-notice",
+    "what": "Current privacy notice",
+    "where": "The privacy policy page on the website."
+  },
+  {
+    "key": "notice-change-history-and-how-data",
+    "code": "AR-DM-28",
+    "name": "Notice change history and how data subjects were told",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "DM-15:notice-change-history-and-how-data",
+    "what": "Privacy notice change history and how people were told",
+    "where": "Past versions of the page, with the email or banner that announced each change."
+  },
+  {
+    "key": "secure-disposal-procedure",
+    "code": "AR-DM-29",
+    "name": "Secure disposal procedure",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "DM-16:secure-disposal-procedure",
+    "what": "Secure disposal procedure",
+    "where": "Documents module."
+  },
+  {
+    "key": "disposal-records-or-certificates",
+    "code": "AR-DM-30",
+    "name": "Disposal records or certificates",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "check",
+        "checks": [
+          "verity.assets.disposal_recorded"
+        ]
+      }
+    ],
+    "evidence_item": "DM-16:disposal-records-or-certificates",
+    "what": "Disposal records or certificates",
+    "where": "Disposal entries in the Assets module, with the recycler's certificate attached."
+  },
+  {
+    "key": "vendor-contract-terms-with-the-breach",
+    "code": "AR-DM-31",
+    "name": "Vendor contract terms with the breach notification timeframe",
+    "category": "document",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "DM-17:vendor-contract-terms-with-the-breach",
+    "what": "Vendor breach notice terms",
+    "where": "Vendors module, holding the clause from each critical vendor's contract or DPA."
+  },
+  {
+    "key": "record-of-vendor-notifications-received-and",
+    "code": "AR-DM-32",
+    "name": "Record of vendor notifications received and acted on",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "DM-17:record-of-vendor-notifications-received-and",
+    "what": "Log of vendor breach notices and the action taken",
+    "where": "The emails received from vendors, logged in a sheet or ticket."
+  },
+  {
+    "key": "masking-standard-listing-fields-methods-and",
+    "code": "AR-DM-33",
+    "name": "Masking standard listing fields, methods and where applied",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "DM-18:masking-standard-listing-fields-methods-and",
+    "what": "Masking standard",
+    "where": "Documents module."
+  },
+  {
+    "key": "sample-of-masked-data-in-test",
+    "code": "AR-DM-34",
+    "name": "List of all data sets used for test, support or analytics in the period, with owner, masking method and date checked. The auditor chooses the sample from it.",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "DM-18:sample-of-masked-data-in-test",
+    "what": "Data sets used for test, support or analytics, with masking method",
+    "where": "Test databases, support tools and analytics exports."
+  },
+  {
+    "key": "leakage-prevention-and-sharing-settings-in",
+    "code": "AR-DM-35",
+    "name": "Leakage prevention and sharing settings in email, chat and file tools",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "DM-19:leakage-prevention-and-sharing-settings-in",
+    "what": "Data sharing and leak prevention settings",
+    "where": "Admin settings screenshots from Google Workspace or Microsoft 365, Slack and file tools."
+  },
+  {
+    "key": "alerts-and-exceptions-that-were-reviewed",
+    "code": "AR-DM-36",
+    "name": "Alerts and exceptions that were reviewed and followed up",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "DM-19:alerts-and-exceptions-that-were-reviewed",
+    "what": "Data leak alerts and exceptions reviewed",
+    "where": "Data loss prevention alerts or sharing reports from the admin console, with review notes."
+  },
+  {
+    "key": "endpoint-protection-standard",
+    "code": "AR-EP-01",
+    "name": "Endpoint protection standard",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "EP-01:endpoint-protection-standard",
+    "what": "Endpoint protection standard",
+    "where": "Documents module, in the endpoint policy."
+  },
+  {
+    "key": "alerts-that-were-reviewed-and-acted",
+    "code": "AR-EP-02",
+    "name": "Alerts that were reviewed and acted on",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "EP-01:alerts-that-were-reviewed-and-acted",
+    "what": "Endpoint alerts and the action taken",
+    "where": "Exported from the endpoint tool such as CrowdStrike, SentinelOne or Microsoft Defender."
+  },
+  {
+    "key": "endpoint-encryption-policy",
+    "code": "AR-EP-03",
+    "name": "Endpoint encryption policy",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "EP-02:endpoint-encryption-policy",
+    "what": "Endpoint encryption policy",
+    "where": "Documents module, in the endpoint or acceptable use policy."
+  },
+  {
+    "key": "approved-exceptions",
+    "code": "AR-EP-04",
+    "name": "Approved exceptions",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "EP-02:approved-exceptions",
+    "what": "Approved exceptions to disk encryption",
+    "where": "A sheet kept by the IT lead and approved by the security lead."
+  },
+  {
+    "key": "device-management-policy",
+    "code": "AR-EP-05",
+    "name": "Device management policy",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "EP-03:device-management-policy",
+    "what": "Device management policy",
+    "where": "Documents module, in the endpoint policy."
+  },
+  {
+    "key": "inventory-of-company-devices",
+    "code": "AR-EP-06",
+    "name": "Inventory of company devices",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "check",
+        "checks": [
+          "devices.enrolled"
+        ]
+      }
+    ],
+    "evidence_item": "EP-03:inventory-of-company-devices",
+    "what": "Company device inventory",
+    "where": "Assets module, filled from the device management tool such as Jamf, Kandji or Intune."
+  },
+  {
+    "key": "patch-management-policy-with-timeframes",
+    "code": "AR-EP-07",
+    "name": "Patch management policy with timeframes",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "EP-04:patch-management-policy-with-timeframes",
+    "what": "Patch management policy",
+    "where": "Documents module, in the vulnerability or operations policy."
+  },
+  {
+    "key": "patch-compliance-report",
+    "code": "AR-EP-08",
+    "name": "Patch compliance report",
+    "category": "configuration",
+    "validity_days": 31,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "check",
+        "checks": [
+          "devices.os_current",
+          "scanner.scans_current"
+        ]
+      },
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "EP-04:patch-compliance-report",
+    "what": "Monthly patch report",
+    "where": "Exported from the device management tool and the server patching or scanning tool."
+  },
+  {
+    "key": "procedure-for-lost-devices-and-offboarding",
+    "code": "AR-EP-09",
+    "name": "Procedure for lost devices and offboarding",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "EP-05:procedure-for-lost-devices-and-offboarding",
+    "what": "Lost device and leaver wipe procedure",
+    "where": "Shared drive, or the offboarding checklist."
+  },
+  {
+    "key": "wipe-confirmations-for-recovered-or-lost",
+    "code": "AR-EP-10",
+    "name": "Wipe confirmations for recovered or lost devices",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "EP-05:wipe-confirmations-for-recovered-or-lost",
+    "what": "Device wipe confirmations",
+    "where": "Wipe history in the device management tool, or a reset certificate from the recycler."
+  },
+  {
+    "key": "screen-lock-standard",
+    "code": "AR-EP-11",
+    "name": "Screen lock standard",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "EP-06:screen-lock-standard",
+    "what": "Screen lock standard",
+    "where": "Documents module, in the endpoint policy."
+  },
+  {
+    "key": "screen-lock-setting-report",
+    "code": "AR-EP-12",
+    "name": "Device management report showing the screen lock setting for each device",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "EP-06:screen-lock-setting-report",
+    "what": "Screen lock setting report for each device",
+    "where": "The compliance or profile report in the device management tool, such as Jamf, Kandji or Intune."
+  },
+  {
+    "key": "web-filtering-standard-covering-blocked-categories",
+    "code": "AR-EP-13",
+    "name": "Web filtering standard covering blocked categories and exceptions",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "EP-07:web-filtering-standard-covering-blocked-categories",
+    "what": "Web filtering standard",
+    "where": "Documents module."
+  },
+  {
+    "key": "report-of-filter-coverage-and-blocked",
+    "code": "AR-EP-14",
+    "name": "Report of filter coverage and blocked activity",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "EP-07:report-of-filter-coverage-and-blocked",
+    "what": "Web filter coverage and block report",
+    "where": "Exported from the filtering tool, such as Cloudflare Gateway, or from the endpoint tool."
+  },
+  {
+    "key": "review-and-re-approval-record-for",
+    "code": "AR-GOV-46",
+    "name": "Review and re approval record for each policy",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "check",
+        "checks": [
+          "verity.policies.reviewed"
+        ]
+      }
+    ],
+    "evidence_item": "GOV-01:review-and-re-approval-record-for",
+    "what": "Annual review and re approval of each policy",
+    "where": "The review step in the Documents module, done once a year for each policy."
+  },
+  {
+    "key": "procedure-listing-what-triggers-a-risk",
+    "code": "AR-GOV-47",
+    "name": "Procedure listing what triggers a risk review",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-03:procedure-listing-what-triggers-a-risk",
+    "what": "Procedure for risk reviews after a change",
+    "where": "A section of the risk method, kept in the Documents module."
+  },
+  {
+    "key": "risk-reviews-done-after-significant-changes",
+    "code": "AR-GOV-48",
+    "name": "Risk reviews done after significant changes",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-03:risk-reviews-done-after-significant-changes",
+    "what": "Risk reviews done after significant changes",
+    "where": "Risks module entries updated after each trigger, with the change noted."
+  },
+  {
+    "key": "register-of-contractual-regulatory-and-certification",
+    "code": "AR-GOV-49",
+    "name": "Register of contractual, regulatory and certification obligations",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-05:register-of-contractual-regulatory-and-certification",
+    "what": "Compliance obligations register",
+    "where": "A sheet kept by the security lead or a founder, built from contracts, laws and certifications."
+  },
+  {
+    "key": "review-of-the-register-for-new",
+    "code": "AR-GOV-50",
+    "name": "Review of the register for new obligations",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-05:review-of-the-register-for-new",
+    "what": "Annual review of the obligations register",
+    "where": "A dated review note, or the change history of the register sheet."
+  },
+  {
+    "key": "control-test-results-across-the-observation",
+    "code": "AR-GOV-51",
+    "name": "Control test results across the period under review",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-06:control-test-results-across-the-observation",
+    "what": "Control check results for the period",
+    "where": "The Controls module check history, kept across the whole audit period."
+  },
+  {
+    "key": "exceptions-found-by-monitoring-and-how",
+    "code": "AR-GOV-52",
+    "name": "Exceptions found by monitoring and how they were resolved",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-06:exceptions-found-by-monitoring-and-how",
+    "what": "Failed checks and how they were fixed",
+    "where": "Tasks module, one task per failed check, raised from the control page."
+  },
+  {
+    "key": "risks-linked-to-the-controls-that",
+    "code": "AR-GOV-53",
+    "name": "Risks linked to the controls that mitigate them",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "check",
+        "checks": [
+          "verity.risks.controls_linked"
+        ]
+      }
+    ],
+    "evidence_item": "GOV-07:risks-linked-to-the-controls-that",
+    "what": "Risks linked to their controls",
+    "where": "Risks module, where each risk lists the controls that reduce it."
+  },
+  {
+    "key": "disciplinary-procedure",
+    "code": "AR-GOV-54",
+    "name": "Disciplinary procedure",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-11:disciplinary-procedure",
+    "what": "Disciplinary procedure",
+    "where": "Usually a section of the employee handbook, kept in the Documents module and approved by the CEO."
+  },
+  {
+    "key": "sample-of-cases-showing-the-procedure",
+    "code": "AR-GOV-55",
+    "name": "List of all disciplinary cases in the period, with date opened, issue, steps taken, outcome and date closed. The auditor chooses the sample from it.",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-11:sample-of-cases-showing-the-procedure",
+    "what": "List of disciplinary cases in the period",
+    "where": "Kept by HR or the founder who handles people matters, in the HR tool or a private sheet."
+  },
+  {
+    "key": "fraud-risk-assessment-covering-insider-misuse",
+    "code": "AR-GOV-56",
+    "name": "Fraud risk assessment covering insider misuse and management override",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-12:fraud-risk-assessment-covering-insider-misuse",
+    "what": "Fraud and insider misuse risks in the risk assessment",
+    "where": "Risks module, as a set of fraud risks added during the annual risk assessment."
+  },
+  {
+    "key": "actions-taken-on-the-fraud-risks",
+    "code": "AR-GOV-57",
+    "name": "Actions taken on the fraud risks found",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-12:actions-taken-on-the-fraud-risks",
+    "what": "Actions taken on fraud risks",
+    "where": "Tickets or tasks closed for each fraud risk, with proof attached, such as the two person payment approval setting."
+  },
+  {
+    "key": "inventory-of-in-scope-systems-and",
+    "code": "AR-GOV-58",
+    "name": "Inventory of in scope systems and the general controls over each",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-14:inventory-of-in-scope-systems-and",
+    "what": "In scope system list with the controls over each",
+    "where": "A sheet or Assets module export of production systems, each mapped to its access, change and operations controls."
+  },
+  {
+    "key": "review-that-every-system-is-covered",
+    "code": "AR-GOV-59",
+    "name": "Review that every system is covered by access, change and operations controls",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-14:review-that-every-system-is-covered",
+    "what": "Annual coverage review of in scope systems",
+    "where": "A dated review sheet completed by the security lead against the system list."
+  },
+  {
+    "key": "penetration-test-report-from-an-independent",
+    "code": "AR-GOV-60",
+    "name": "Penetration test report from an independent tester",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-16:penetration-test-report-from-an-independent",
+    "what": "Penetration test report",
+    "where": "Delivered by the outside testing firm, usually as a PDF."
+  },
+  {
+    "key": "remediation-of-findings-with-retest-evidence",
+    "code": "AR-GOV-61",
+    "name": "Remediation of findings, with retest evidence",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-16:remediation-of-findings-with-retest-evidence",
+    "what": "Pen test findings fixed and retested",
+    "where": "Vulnerabilities module, one entry per finding, closed with the tester's retest letter or report."
+  },
+  {
+    "key": "rules-of-engagement-agreed-in-writing",
+    "code": "AR-GOV-62",
+    "name": "Rules of engagement agreed in writing before each test",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-16:rules-of-engagement-agreed-in-writing",
+    "what": "Signed rules of engagement for the pen test",
+    "where": "The scope letter or statement of work signed with the testing firm before testing starts."
+  },
+  {
+    "key": "current-organization-chart-with-reporting-lines",
+    "code": "AR-GOV-63",
+    "name": "Current organization chart with reporting lines",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-21:current-organization-chart-with-reporting-lines",
+    "what": "Organization chart with reporting lines",
+    "where": "Exported from the HR tool such as Rippling, Gusto or BambooHR, or a slide kept by the CEO."
+  },
+  {
+    "key": "role-descriptions-for-security-and-compliance",
+    "code": "AR-GOV-64",
+    "name": "Role descriptions for security and compliance roles",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-21:role-descriptions-for-security-and-compliance",
+    "what": "Role descriptions for security and compliance roles",
+    "where": "A short document per role, kept with the job descriptions in the HR tool or shared drive."
+  },
+  {
+    "key": "minutes-where-the-board-or-leadership",
+    "code": "AR-GOV-65",
+    "name": "Minutes where the board or leadership reviewed the structure",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-21:minutes-where-the-board-or-leadership",
+    "what": "Leadership minutes reviewing the org structure",
+    "where": "Notes from a leadership or board meeting, kept in the shared drive or meeting notes tool."
+  },
+  {
+    "key": "operating-plan-listing-activities-owners-and",
+    "code": "AR-GOV-66",
+    "name": "Operating plan listing activities, owners and schedule",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-29:operating-plan-listing-activities-owners-and",
+    "what": "Security operating plan",
+    "where": "Documents module."
+  },
+  {
+    "key": "records-showing-planned-activities-were-completed",
+    "code": "AR-GOV-67",
+    "name": "Records showing planned activities were completed",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-29:records-showing-planned-activities-were-completed",
+    "what": "Quarterly check that planned activities were done",
+    "where": "The operating plan with status marked, and a link to each record."
+  },
+  {
+    "key": "review-of-planned-changes-and-outsourced",
+    "code": "AR-GOV-68",
+    "name": "Review of planned changes and outsourced work",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-29:review-of-planned-changes-and-outsourced",
+    "what": "Review of planned changes and outsourced work",
+    "where": "A ticket or note made before a major change or new outsourcing."
+  },
+  {
+    "key": "procedure-for-raising-and-deciding-improvements",
+    "code": "AR-GOV-69",
+    "name": "Procedure for raising and deciding improvements",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-30:procedure-for-raising-and-deciding-improvements",
+    "what": "Improvement procedure",
+    "where": "Documents module."
+  },
+  {
+    "key": "improvement-log-with-owners-decisions-and",
+    "code": "AR-GOV-70",
+    "name": "Improvement log with owners, decisions and closure",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-30:improvement-log-with-owners-decisions-and",
+    "what": "Improvement log",
+    "where": "Tasks module, one task per improvement."
+  },
+  {
+    "key": "review-of-completed-improvements-and-their",
+    "code": "AR-GOV-71",
+    "name": "Review of completed improvements and their effect",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "GOV-30:review-of-completed-improvements-and-their",
+    "what": "Annual review of improvements and their effect",
+    "where": "Management review minutes or a dated note."
+  },
+  {
+    "key": "confidentiality-and-ip-agreement-template",
+    "code": "AR-HR-10",
+    "name": "Confidentiality and IP agreement, non-disclosure agreement and contract security clause templates, with the record of their annual review",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "HR-02:confidentiality-and-ip-agreement-template",
+    "what": "Confidentiality, IP and NDA templates with their annual review",
+    "where": "Documents module, holding the templates kept by a founder or the company lawyer."
+  },
+  {
+    "key": "signed-agreements-for-a-sample-of",
+    "code": "AR-HR-11",
+    "name": "List of all staff, contractors and outside parties who started in the period, with name, agreement type and date signed. The auditor chooses the sample from it.",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "HR-02:signed-agreements-for-a-sample-of",
+    "what": "List of people and outside parties with signed agreements",
+    "where": "HR tool export of people, with signed agreements from the signing tool such as DocuSign."
+  },
+  {
+    "key": "contractor-onboarding-and-offboarding-procedure",
+    "code": "AR-HR-12",
+    "name": "Contractor onboarding and offboarding procedure",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "HR-03:contractor-onboarding-and-offboarding-procedure",
+    "what": "Contractor onboarding and offboarding procedure",
+    "where": "Shared drive, often part of the onboarding and offboarding checklists."
+  },
+  {
+    "key": "contractor-register-with-start-and-end",
+    "code": "AR-HR-13",
+    "name": "Contractor register with start and end dates and access",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "HR-03:contractor-register-with-start-and-end",
+    "what": "Contractor register",
+    "where": "A sheet or HR tool list kept by operations."
+  },
+  {
+    "key": "job-descriptions-that-state-security-responsibilities",
+    "code": "AR-HR-14",
+    "name": "Job descriptions that state security responsibilities",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "HR-04:job-descriptions-that-state-security-responsibilities",
+    "what": "Job descriptions with security duties",
+    "where": "The HR tool or shared drive, often the same text used in job posts."
+  },
+  {
+    "key": "performance-review-process",
+    "code": "AR-HR-15",
+    "name": "Performance review process",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "HR-07:performance-review-process",
+    "what": "Performance review process",
+    "where": "Guidance for managers in the HR tool or shared drive."
+  },
+  {
+    "key": "completed-reviews-showing-control-responsibilities-were",
+    "code": "AR-HR-16",
+    "name": "Completed reviews showing control responsibilities were assessed",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "HR-07:completed-reviews-showing-control-responsibilities-were",
+    "what": "Completed performance reviews that cover security duties",
+    "where": "Exported from the HR tool, or the review form for each person."
+  },
+  {
+    "key": "competence-requirements-for-each-security-role",
+    "code": "AR-HR-17",
+    "name": "Competence requirements for each security role",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "check",
+        "checks": [
+          "verity.competence.documented"
+        ]
+      },
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "HR-09:competence-requirements-for-each-security-role",
+    "what": "Competence requirements for security roles",
+    "where": "A short document per role, kept with the role descriptions."
+  },
+  {
+    "key": "competence-record-for-each-person-in",
+    "code": "AR-HR-18",
+    "name": "Competence record for each person in a security role",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "HR-09:competence-record-for-each-person-in",
+    "what": "Competence record for each person in a security role",
+    "where": "CV, certificates and training records, kept in the HR tool."
+  },
+  {
+    "key": "training-or-other-actions-taken-to",
+    "code": "AR-HR-19",
+    "name": "Training or other actions taken to close gaps",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "HR-09:training-or-other-actions-taken-to",
+    "what": "Actions taken to close competence gaps",
+    "where": "Training records, course certificates or mentoring plans."
+  },
+  {
+    "key": "approved-exceptions-for-applications-outside-single",
+    "code": "AR-IAM-12",
+    "name": "Approved exceptions for applications outside single sign on",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "IAM-04:approved-exceptions-for-applications-outside-single",
+    "what": "Approved list of applications outside single sign on",
+    "where": "A sheet kept by the IT lead, with an approval for each app that cannot use single sign on."
+  },
+  {
+    "key": "applications-inside-and-outside-single-sign-on",
+    "code": "AR-IAM-13",
+    "name": "Export of applications behind single sign on, and of applications outside it",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "IAM-04:applications-inside-and-outside-single-sign-on",
+    "what": "List of applications inside and outside single sign on",
+    "where": "The app list from the identity provider, compared with the app list in the Vendors module. Upload it until a connector collects it."
+  },
+  {
+    "key": "policy-requiring-a-password-manager-for",
+    "code": "AR-IAM-14",
+    "name": "Policy requiring a password manager for shared credentials",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "IAM-05:policy-requiring-a-password-manager-for",
+    "what": "Policy requiring the company password manager",
+    "where": "Documents module, in the access control or acceptable use policy."
+  },
+  {
+    "key": "password-manager-members-against-staff-list",
+    "code": "AR-IAM-15",
+    "name": "Password manager member list compared with the staff list",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "IAM-05:password-manager-members-against-staff-list",
+    "what": "Password manager members compared with the staff list",
+    "where": "Member export from the password manager admin console, such as 1Password or Bitwarden, next to the staff list from the HR tool."
+  },
+  {
+    "key": "password-policy",
+    "code": "AR-IAM-16",
+    "name": "Password policy",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "IAM-06:password-policy",
+    "what": "Password policy",
+    "where": "Documents module, often part of the access control policy."
+  },
+  {
+    "key": "identity-provider-password-settings",
+    "code": "AR-IAM-17",
+    "name": "Password settings export from the identity provider",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "IAM-06:identity-provider-password-settings",
+    "what": "Password settings screenshot or export from the identity provider",
+    "where": "The password and lockout settings page in the identity provider admin console, such as Google Workspace or Microsoft Entra."
+  },
+  {
+    "key": "role-and-access-matrix",
+    "code": "AR-IAM-18",
+    "name": "Role and access matrix",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "IAM-08:role-and-access-matrix",
+    "what": "Role and access matrix",
+    "where": "A sheet kept by the IT or engineering lead."
+  },
+  {
+    "key": "role-definitions-approved-by-their-owners",
+    "code": "AR-IAM-19",
+    "name": "Role definitions approved by their owners",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "IAM-08:role-definitions-approved-by-their-owners",
+    "what": "Approval of role definitions by system owners",
+    "where": "An email, ticket or signed sheet from each system owner."
+  },
+  {
+    "key": "group-and-role-membership-export",
+    "code": "AR-IAM-20",
+    "name": "Export of groups or roles and their members for each in scope system",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "IAM-08:group-and-role-membership-export",
+    "what": "Group and role membership export for each in scope system",
+    "where": "Exported from the identity provider, the cloud console, source control and the product admin panel."
+  },
+  {
+    "key": "matrix-of-conflicting-duties",
+    "code": "AR-IAM-21",
+    "name": "Matrix of conflicting duties",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "IAM-09:matrix-of-conflicting-duties",
+    "what": "Conflicting duties matrix",
+    "where": "A short sheet kept by the security lead."
+  },
+  {
+    "key": "review-of-people-who-hold-conflicting",
+    "code": "AR-IAM-22",
+    "name": "Review of people who hold conflicting access",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "IAM-09:review-of-people-who-hold-conflicting",
+    "what": "Review of people holding conflicting access",
+    "where": "A sheet comparing the matrix with current access, signed by the reviewer."
+  },
+  {
+    "key": "inventory-of-service-accounts-and-keys",
+    "code": "AR-IAM-23",
+    "name": "Inventory of service accounts and keys with owners",
+    "category": "configuration",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "check",
+        "checks": [
+          "cloud.machine_credentials_rotated"
+        ]
+      },
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "IAM-10:inventory-of-service-accounts-and-keys",
+    "what": "Service account and API key inventory",
+    "where": "Exported from the cloud console, identity provider and CI settings."
+  },
+  {
+    "key": "records-of-rotation-or-review",
+    "code": "AR-IAM-24",
+    "name": "Records of rotation or review",
+    "category": "configuration",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "check",
+        "checks": [
+          "cloud.machine_credentials_rotated"
+        ]
+      },
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "IAM-10:records-of-rotation-or-review",
+    "what": "Service account rotation or review record",
+    "where": "The key age report from the cloud console, or a reviewed sheet."
+  },
+  {
+    "key": "session-timeout-standard",
+    "code": "AR-IAM-25",
+    "name": "Session timeout standard",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "IAM-11:session-timeout-standard",
+    "what": "Session timeout standard",
+    "where": "Documents module, in the access control policy."
+  },
+  {
+    "key": "session-limit-settings-export",
+    "code": "AR-IAM-26",
+    "name": "Session limit settings export",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "IAM-11:session-limit-settings-export",
+    "what": "Session timeout settings screenshot or export",
+    "where": "Session settings in the identity provider and cloud console, and the session setting in the product's configuration."
+  },
+  {
+    "key": "access-removal-procedure-with-the-timeframe",
+    "code": "AR-IAM-27",
+    "name": "Access removal procedure with the timeframe",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "IAM-12:access-removal-procedure-with-the-timeframe",
+    "what": "Access removal procedure with timeframe",
+    "where": "Shared drive, or the offboarding checklist."
+  },
+  {
+    "key": "removal-records-for-a-sample-of",
+    "code": "AR-IAM-28",
+    "name": "List of all leavers in the period, with last working day, systems held, date each access was removed and who removed it. The auditor chooses the sample from it.",
+    "category": "configuration",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "check",
+        "checks": [
+          "people.leavers_deprovisioned"
+        ]
+      },
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "IAM-12:removal-records-for-a-sample-of",
+    "what": "List of leavers with access removal dates",
+    "where": "HR tool export of leavers, compared with the identity provider log of disabled accounts."
+  },
+  {
+    "key": "logging-and-retention-standard",
+    "code": "AR-LM-06",
+    "name": "Logging and retention standard",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "LM-02:logging-and-retention-standard",
+    "what": "Logging and retention standard",
+    "where": "Documents module, in the operations or logging policy."
+  },
+  {
+    "key": "evidence-logs-are-reviewed",
+    "code": "AR-LM-07",
+    "name": "Monthly log review record with reviewer, date and findings",
+    "category": "record",
+    "validity_days": 31,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "LM-02:evidence-logs-are-reviewed",
+    "what": "Monthly log review record",
+    "where": "The ticket or checklist the reviewer completes, with the saved search or alert report attached."
+  },
+  {
+    "key": "approved-configuration-baseline",
+    "code": "AR-LM-08",
+    "name": "Approved configuration baseline",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "LM-03:approved-configuration-baseline",
+    "what": "Approved configuration baseline",
+    "where": "Infrastructure as code in the repository, or a baseline document approved by the engineering lead."
+  },
+  {
+    "key": "alerts-on-drift-that-were-investigated",
+    "code": "AR-LM-09",
+    "name": "Alerts on drift that were investigated",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "LM-03:alerts-on-drift-that-were-investigated",
+    "what": "Configuration drift alerts and their investigation",
+    "where": "Exported from AWS Config, the infrastructure as code drift check or a cloud security tool, with tickets."
+  },
+  {
+    "key": "event-triage-procedure",
+    "code": "AR-LM-10",
+    "name": "Event triage procedure",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "LM-04:event-triage-procedure",
+    "what": "Security event triage procedure",
+    "where": "Shared drive, or the on call runbook."
+  },
+  {
+    "key": "sample-of-evaluated-events-with-the",
+    "code": "AR-LM-11",
+    "name": "List of all security events evaluated in the period, with date, source, evaluator and the decision taken. The auditor chooses the sample from it.",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "LM-04:sample-of-evaluated-events-with-the",
+    "what": "List of security events evaluated in the period",
+    "where": "The alert or ticket queue where events are triaged."
+  },
+  {
+    "key": "postmortem-for-each-significant-incident",
+    "code": "AR-LM-12",
+    "name": "Postmortem for each significant incident",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "LM-05:postmortem-for-each-significant-incident",
+    "what": "Postmortem for each significant incident",
+    "where": "Written in the wiki or incident tool after each incident."
+  },
+  {
+    "key": "corrective-actions-tracked-to-closure",
+    "code": "AR-LM-13",
+    "name": "Corrective actions tracked to closure",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "LM-05:corrective-actions-tracked-to-closure",
+    "what": "Postmortem actions tracked to closure",
+    "where": "Tasks module, one task per action from each postmortem."
+  },
+  {
+    "key": "recovery-procedures",
+    "code": "AR-LM-14",
+    "name": "Recovery procedures",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "LM-06:recovery-procedures",
+    "what": "Incident recovery procedures",
+    "where": "Documents module, holding a runbook for restoring each key system."
+  },
+  {
+    "key": "recovery-records-for-incidents",
+    "code": "AR-LM-15",
+    "name": "Recovery records for incidents",
+    "category": "configuration",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "check",
+        "checks": [
+          "alerts.incidents_resolved"
+        ]
+      },
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "LM-06:recovery-records-for-incidents",
+    "what": "Recovery records for incidents",
+    "where": "The incident record or ticket, with a timeline of restore steps."
+  },
+  {
+    "key": "on-call-schedule",
+    "code": "AR-LM-16",
+    "name": "On call schedule",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "LM-08:on-call-schedule",
+    "what": "On call schedule",
+    "where": "Exported from PagerDuty, Opsgenie or the team calendar."
+  },
+  {
+    "key": "escalation-policy",
+    "code": "AR-LM-17",
+    "name": "Escalation policy",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "LM-08:escalation-policy",
+    "what": "Escalation policy",
+    "where": "PagerDuty or Opsgenie settings, or the runbook."
+  },
+  {
+    "key": "alerting-standard",
+    "code": "AR-LM-18",
+    "name": "Alerting standard",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "LM-09:alerting-standard",
+    "what": "Alerting standard",
+    "where": "Shared drive, or the on call runbook."
+  },
+  {
+    "key": "review-of-alert-tuning",
+    "code": "AR-LM-19",
+    "name": "Review of alert tuning",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "LM-09:review-of-alert-tuning",
+    "what": "Quarterly alert tuning review",
+    "where": "A review note or ticket by the on call lead, with the alert list attached."
+  },
+  {
+    "key": "tabletop-exercise-plan-and-report",
+    "code": "AR-LM-20",
+    "name": "Tabletop exercise plan and report",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "LM-10:tabletop-exercise-plan-and-report",
+    "what": "Tabletop exercise plan and report",
+    "where": "Written by the security lead after a one or two hour session with the incident team."
+  },
+  {
+    "key": "actions-from-the-exercise",
+    "code": "AR-LM-21",
+    "name": "Actions from the exercise",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "LM-10:actions-from-the-exercise",
+    "what": "Actions from the tabletop exercise",
+    "where": "Tasks module, one task per gap found."
+  },
+  {
+    "key": "vulnerability-management-policy-with-timeframes",
+    "code": "AR-LM-22",
+    "name": "Vulnerability management policy with timeframes",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "LM-11:vulnerability-management-policy-with-timeframes",
+    "what": "Vulnerability management policy",
+    "where": "Documents module."
+  },
+  {
+    "key": "scan-reports",
+    "code": "AR-LM-23",
+    "name": "Scan reports",
+    "category": "configuration",
+    "validity_days": 31,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "check",
+        "checks": [
+          "scanner.scans_current"
+        ]
+      },
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "LM-11:scan-reports",
+    "what": "Monthly vulnerability scan reports",
+    "where": "Exported from the scanner such as AWS Inspector, Qualys or Tenable."
+  },
+  {
+    "key": "vulnerability-register-with-remediation-and-accepted",
+    "code": "AR-LM-24",
+    "name": "Vulnerability register with remediation and accepted risks",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "check",
+        "checks": [
+          "verity.vulns.within_sla"
+        ]
+      }
+    ],
+    "evidence_item": "LM-11:vulnerability-register-with-remediation-and-accepted",
+    "what": "Vulnerability register",
+    "where": "Vulnerabilities module."
+  },
+  {
+    "key": "threat-sources-and-the-routine-for",
+    "code": "AR-LM-25",
+    "name": "Threat sources and the routine for reviewing them",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "LM-12:threat-sources-and-the-routine-for",
+    "what": "Threat sources and review routine",
+    "where": "A short document or runbook section."
+  },
+  {
+    "key": "log-of-threats-reviewed-and-actions",
+    "code": "AR-LM-26",
+    "name": "Log of threats reviewed and actions taken",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "LM-12:log-of-threats-reviewed-and-actions",
+    "what": "Threat review log",
+    "where": "A sheet, a Slack channel or tickets."
+  },
+  {
+    "key": "actively-exploited-vulnerabilities-and-time-taken",
+    "code": "AR-LM-27",
+    "name": "Actively exploited vulnerabilities and time taken to respond",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "LM-12:actively-exploited-vulnerabilities-and-time-taken",
+    "what": "Actively exploited vulnerabilities and response time",
+    "where": "Vulnerabilities module, findings marked as known exploited."
+  },
+  {
+    "key": "encryption-standard-stating-what-is-encrypted",
+    "code": "AR-NS-01",
+    "name": "Encryption standard stating what is encrypted and how",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "NS-01:encryption-standard-stating-what-is-encrypted",
+    "what": "Encryption at rest standard",
+    "where": "Documents module, in the cryptography or encryption policy."
+  },
+  {
+    "key": "data-store-encryption-settings",
+    "code": "AR-NS-02",
+    "name": "Encryption setting for every data store, exported from the cloud console",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "NS-01:data-store-encryption-settings",
+    "what": "Encryption setting for every data store",
+    "where": "Cloud console or CLI export for databases, storage buckets, disks and backups, such as AWS RDS, S3 and EBS."
+  },
+  {
+    "key": "encryption-in-transit-standard",
+    "code": "AR-NS-03",
+    "name": "Encryption in transit standard",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "NS-02:encryption-in-transit-standard",
+    "what": "Encryption in transit standard",
+    "where": "Documents module, in the cryptography or encryption policy."
+  },
+  {
+    "key": "public-endpoint-tls-scan",
+    "code": "AR-NS-04",
+    "name": "Scan result for each public endpoint showing protocol version, and the load balancer settings",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "NS-02:public-endpoint-tls-scan",
+    "what": "TLS scan of each public endpoint with load balancer settings",
+    "where": "A free TLS scanner such as SSL Labs or testssl.sh, plus the TLS policy on the load balancer from the cloud console."
+  },
+  {
+    "key": "firewall-rule-register-with-owner-and",
+    "code": "AR-NS-05",
+    "name": "Firewall rule register with owner and purpose for each rule",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "NS-03:firewall-rule-register-with-owner-and",
+    "what": "Firewall rule register",
+    "where": "Export of security groups or firewall rules, with an owner and purpose added for each."
+  },
+  {
+    "key": "periodic-review-of-firewall-rules",
+    "code": "AR-NS-06",
+    "name": "Periodic review of firewall rules",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "NS-03:periodic-review-of-firewall-rules",
+    "what": "Quarterly firewall rule review",
+    "where": "The rule register, marked up and signed by the reviewer."
+  },
+  {
+    "key": "hardening-standard-such-as-cis-or",
+    "code": "AR-NS-07",
+    "name": "Hardening standard such as CIS or equivalent",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "NS-04:hardening-standard-such-as-cis-or",
+    "what": "Hardening standard",
+    "where": "Documents module, pointing to the CIS benchmark or the cloud provider's baseline."
+  },
+  {
+    "key": "approved-exceptions-to-the-standard",
+    "code": "AR-NS-08",
+    "name": "Approved exceptions to the standard",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "NS-04:approved-exceptions-to-the-standard",
+    "what": "Approved exceptions to the hardening standard",
+    "where": "A sheet kept by engineering and approved by the security lead."
+  },
+  {
+    "key": "procedure-for-responding-to-threat-detection",
+    "code": "AR-NS-09",
+    "name": "Procedure for responding to threat detection alerts",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "NS-05:procedure-for-responding-to-threat-detection",
+    "what": "Threat detection alert procedure",
+    "where": "Shared drive, or the on call runbook."
+  },
+  {
+    "key": "sample-of-alerts-that-were-investigated",
+    "code": "AR-NS-10",
+    "name": "List of all threat detection alerts in the period, with date, severity, investigator, decision and date closed. The auditor chooses the sample from it.",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "NS-05:sample-of-alerts-that-were-investigated",
+    "what": "List of threat detection alerts in the period",
+    "where": "Exported from the detection tool such as AWS GuardDuty or Google Security Command Center."
+  },
+  {
+    "key": "key-management-policy",
+    "code": "AR-NS-11",
+    "name": "Key management policy",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "NS-06:key-management-policy",
+    "what": "Key management policy",
+    "where": "Documents module, in the cryptography policy."
+  },
+  {
+    "key": "review-of-who-can-use-and",
+    "code": "AR-NS-12",
+    "name": "Review of who can use and manage keys",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "NS-06:review-of-who-can-use-and",
+    "what": "Review of who can use and manage keys",
+    "where": "Export of KMS key policies or roles from the cloud console, reviewed and signed."
+  },
+  {
+    "key": "key-rotation-records",
+    "code": "AR-NS-13",
+    "name": "Key rotation records",
+    "category": "configuration",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "check",
+        "checks": [
+          "cloud.key_rotation"
+        ]
+      },
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "NS-06:key-rotation-records",
+    "what": "Key rotation records",
+    "where": "Cloud KMS key settings or rotation history export."
+  },
+  {
+    "key": "network-diagram-showing-segments-and-allowed",
+    "code": "AR-NS-14",
+    "name": "Network diagram showing segments and allowed paths",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "NS-07:network-diagram-showing-segments-and-allowed",
+    "what": "Network diagram with segments and allowed paths",
+    "where": "Drawn by engineering from the cloud network setup, kept in the wiki or shared drive."
+  },
+  {
+    "key": "review-of-the-rules-between-segments",
+    "code": "AR-NS-15",
+    "name": "Review of the rules between segments",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "NS-07:review-of-the-rules-between-segments",
+    "what": "Quarterly review of rules between segments",
+    "where": "Export of security groups or network rules, reviewed and signed."
+  },
+  {
+    "key": "segmentation-test-results",
+    "code": "AR-NS-16",
+    "name": "Segmentation test results",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "NS-07:segmentation-test-results",
+    "what": "Segmentation test results",
+    "where": "A section of the pen test report, or a scan run from one segment toward another."
+  },
+  {
+    "key": "approved-exceptions-for-exposed-management-access",
+    "code": "AR-NS-17",
+    "name": "Approved exceptions for exposed management access",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "NS-08:approved-exceptions-for-exposed-management-access",
+    "what": "Approved exceptions for admin ports open to the internet",
+    "where": "A sheet kept by engineering and approved by the security lead."
+  },
+  {
+    "key": "inbound-rules-export-admin-ports",
+    "code": "AR-NS-18",
+    "name": "Export of inbound rules showing no admin port open to the internet",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "NS-08:inbound-rules-export-admin-ports",
+    "what": "Inbound rule export showing admin ports closed to the internet",
+    "where": "Security group or firewall export from the cloud console, or a report from a cloud security tool."
+  },
+  {
+    "key": "secrets-management-standard",
+    "code": "AR-NS-19",
+    "name": "Secrets management standard",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "NS-09:secrets-management-standard",
+    "what": "Secrets management standard",
+    "where": "Documents module, in the cryptography or secure development policy."
+  },
+  {
+    "key": "secret-store-rotation-list",
+    "code": "AR-NS-20",
+    "name": "List of secrets in the secret store with last rotation date, values not included",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "NS-09:secret-store-rotation-list",
+    "what": "Secret store list with last rotation dates",
+    "where": "Exported from the secret store, such as AWS Secrets Manager, Vault or Doppler. Never include secret values."
+  },
+  {
+    "key": "review-of-web-application-firewall-rules",
+    "code": "AR-NS-21",
+    "name": "Review of web application firewall rules and alerts",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "NS-10:review-of-web-application-firewall-rules",
+    "what": "Quarterly WAF rules and alerts review",
+    "where": "The WAF console such as Cloudflare or AWS WAF, with a short review note."
+  },
+  {
+    "key": "remote-access-standard",
+    "code": "AR-NS-22",
+    "name": "Remote access standard",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "NS-11:remote-access-standard",
+    "what": "Remote access standard",
+    "where": "Documents module, in the access control or network policy."
+  },
+  {
+    "key": "remote-access-settings-and-members",
+    "code": "AR-NS-23",
+    "name": "Remote access settings and the member list",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "NS-11:remote-access-settings-and-members",
+    "what": "Remote access settings and member list",
+    "where": "Admin console of the VPN or zero trust tool, such as Tailscale, Cloudflare Access or the cloud VPN."
+  },
+  {
+    "key": "trusted-time-sources-and-how-systems",
+    "code": "AR-NS-24",
+    "name": "Trusted time sources and how systems use them",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "NS-12:trusted-time-sources-and-how-systems",
+    "what": "Time source standard",
+    "where": "A short engineering note or runbook section."
+  },
+  {
+    "key": "clock-check-across-a-sample-of",
+    "code": "AR-NS-25",
+    "name": "List of all in scope systems in the period, with time source, measured clock offset and date checked. The auditor chooses the sample from it.",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "NS-12:clock-check-across-a-sample-of",
+    "what": "List of systems with clock check results",
+    "where": "A command or monitoring view that shows clock offset on each system."
+  },
+  {
+    "key": "physical-access-policy-for-offices",
+    "code": "AR-PE-03",
+    "name": "Physical access policy for offices and secure areas",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "PE-02:physical-access-policy-for-offices",
+    "what": "Office physical access policy",
+    "where": "Documents module."
+  },
+  {
+    "key": "access-list-and-badge-records",
+    "code": "AR-PE-04",
+    "name": "Access list and badge records with the quarterly reconciliation",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "PE-02:access-list-and-badge-records",
+    "what": "Badge access list with quarterly reconciliation",
+    "where": "Exported from the badge system or building management, compared with the staff list."
+  },
+  {
+    "key": "visitor-log",
+    "code": "AR-PE-05",
+    "name": "Visitor log",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "PE-02:visitor-log",
+    "what": "Visitor log",
+    "where": "Sign in book, visitor app or building reception record."
+  },
+  {
+    "key": "alarm-or-camera-review-or-the",
+    "code": "AR-PE-06",
+    "name": "Alarm or camera review, or the building's monitoring arrangement",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "PE-02:alarm-or-camera-review-or-the",
+    "what": "Alarm and camera review, or the building monitoring arrangement",
+    "where": "Alarm company reports, a camera system review, or the lease section on building security."
+  },
+  {
+    "key": "desk-and-secure-area-walk-through",
+    "code": "AR-PE-07",
+    "name": "Desk and secure area walk-through record",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "PE-02:desk-and-secure-area-walk-through",
+    "what": "Desk and secure area walk through record",
+    "where": "A short checklist filled in by the office lead each quarter."
+  },
+  {
+    "key": "hazard-assessment-and-protections-for-each",
+    "code": "AR-PE-08",
+    "name": "Hazard assessment and protections for each site",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "PE-03:hazard-assessment-and-protections-for-each",
+    "what": "Hazard assessment for each site",
+    "where": "A short document per office or site."
+  },
+  {
+    "key": "service-and-fault-records-for-site",
+    "code": "AR-PE-09",
+    "name": "Service and fault records for site equipment",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "PE-03:service-and-fault-records-for-site",
+    "what": "Site equipment service and fault records",
+    "where": "Service reports from the landlord or contractors."
+  },
+  {
+    "key": "power-alarm-and-suppression-test-results",
+    "code": "AR-PE-10",
+    "name": "Power, alarm and suppression test results",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "PE-03:power-alarm-and-suppression-test-results",
+    "what": "Power, alarm and fire suppression test results",
+    "where": "Test reports from the landlord or contractors."
+  },
+  {
+    "key": "payment-device-list-and-tamper-inspections",
+    "code": "AR-PE-11",
+    "name": "Where payment devices are used: device list with locations, tamper inspection records and site staff training",
+    "category": "record",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "PE-03:payment-device-list-and-tamper-inspections",
+    "what": "Payment device list with tamper checks and staff training",
+    "where": "A sheet kept by the site lead."
+  },
+  {
+    "key": "testing-standard-stating-what-must-pass",
+    "code": "AR-SD-05",
+    "name": "Testing standard stating what must pass before merge",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "SD-02:testing-standard-stating-what-must-pass",
+    "what": "Testing standard",
+    "where": "Documents module, in the secure development policy."
+  },
+  {
+    "key": "test-run-results-for-a-sample",
+    "code": "AR-SD-06",
+    "name": "List of all changes merged in the period, with commit, required checks, result and run date. The auditor chooses the sample from it.",
+    "category": "configuration",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "check",
+        "checks": [
+          "ci.required_checks_passed"
+        ]
+      },
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "SD-02:test-run-results-for-a-sample",
+    "what": "List of merged changes with their CI results",
+    "where": "Exported from the CI tool such as GitHub Actions or GitLab CI."
+  },
+  {
+    "key": "dependency-vulnerability-triage-standard-with-timeframes",
+    "code": "AR-SD-07",
+    "name": "Dependency vulnerability triage standard with timeframes",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "SD-03:dependency-vulnerability-triage-standard-with-timeframes",
+    "what": "Dependency vulnerability triage standard",
+    "where": "Documents module, in the vulnerability management policy."
+  },
+  {
+    "key": "open-alerts-triaged-within-the-timeframe",
+    "code": "AR-SD-08",
+    "name": "Open alerts triaged within the timeframe",
+    "category": "record",
+    "validity_days": 31,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "SD-03:open-alerts-triaged-within-the-timeframe",
+    "what": "Dependency and image alerts with triage dates",
+    "where": "Vulnerabilities module, filled from the scanner."
+  },
+  {
+    "key": "emergency-change-procedure",
+    "code": "AR-SD-09",
+    "name": "Emergency change procedure",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "SD-04:emergency-change-procedure",
+    "what": "Emergency change procedure",
+    "where": "Documents module, in the change management policy."
+  },
+  {
+    "key": "emergency-changes-with-their-after-the",
+    "code": "AR-SD-10",
+    "name": "Emergency changes with their after the fact review",
+    "category": "configuration",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "check",
+        "checks": [
+          "vcs.unreviewed_merges_recorded"
+        ]
+      },
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "SD-04:emergency-changes-with-their-after-the",
+    "what": "Emergency changes with their later review",
+    "where": "Pull requests merged without review, each with a ticket or note reviewed afterwards."
+  },
+  {
+    "key": "input-validation-standard",
+    "code": "AR-SD-11",
+    "name": "Input validation standard",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "SD-05:input-validation-standard",
+    "what": "Input validation standard",
+    "where": "Documents module, in the secure development policy."
+  },
+  {
+    "key": "evidence-validation-was-tested",
+    "code": "AR-SD-12",
+    "name": "Input validation test results from tests, scans or the pen test",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "SD-05:evidence-validation-was-tested",
+    "what": "Input validation test results",
+    "where": "Automated tests in the code repository, a section of the pen test, or a scanner report such as OWASP ZAP."
+  },
+  {
+    "key": "pipeline-storage-design-showing-stages-and",
+    "code": "AR-SD-13",
+    "name": "Pipeline storage design showing stages and integrity checks",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "SD-07:pipeline-storage-design-showing-stages-and",
+    "what": "Data pipeline design with integrity checks",
+    "where": "Engineering design doc or diagram in the wiki."
+  },
+  {
+    "key": "integrity-check-results",
+    "code": "AR-SD-14",
+    "name": "Integrity check results",
+    "category": "record",
+    "validity_days": 31,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "SD-07:integrity-check-results",
+    "what": "Monthly integrity check results",
+    "where": "Job logs or a monitoring dashboard export."
+  },
+  {
+    "key": "reconciliation-procedure",
+    "code": "AR-SD-15",
+    "name": "Reconciliation procedure",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "SD-08:reconciliation-procedure",
+    "what": "Reconciliation procedure",
+    "where": "Engineering runbook or wiki."
+  },
+  {
+    "key": "reconciliation-results-and-how-exceptions-were",
+    "code": "AR-SD-16",
+    "name": "Reconciliation results and how exceptions were resolved",
+    "category": "record",
+    "validity_days": 31,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "SD-08:reconciliation-results-and-how-exceptions-were",
+    "what": "Monthly reconciliation results and fixes",
+    "where": "Output of the reconciliation job, a dashboard or report, with tickets for mismatches."
+  },
+  {
+    "key": "processing-specifications-covering-inputs-outputs-and",
+    "code": "AR-SD-17",
+    "name": "Processing specifications covering inputs, outputs and accuracy",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "SD-09:processing-specifications-covering-inputs-outputs-and",
+    "what": "Processing specifications",
+    "where": "Product or engineering docs in the wiki, one for each key data flow."
+  },
+  {
+    "key": "review-of-specifications-after-change",
+    "code": "AR-SD-18",
+    "name": "Review of specifications after change",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "SD-09:review-of-specifications-after-change",
+    "what": "Review of processing specifications after a change",
+    "where": "The pull request or doc review made when a process changes."
+  },
+  {
+    "key": "secure-development-lifecycle-policy",
+    "code": "AR-SD-19",
+    "name": "Secure development lifecycle policy",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "SD-10:secure-development-lifecycle-policy",
+    "what": "Secure development policy",
+    "where": "Documents module."
+  },
+  {
+    "key": "evidence-security-was-considered-in-the",
+    "code": "AR-SD-20",
+    "name": "Design review or threat model records with a security section",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "SD-10:evidence-security-was-considered-in-the",
+    "what": "Design reviews or threat models for work in the period",
+    "where": "Design docs, RFCs or tickets with a security section, in the wiki or tracker."
+  },
+  {
+    "key": "secure-coding-training-completion-for-developers",
+    "code": "AR-SD-21",
+    "name": "Secure coding training completion for developers",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "SD-10:secure-coding-training-completion-for-developers",
+    "what": "Secure coding training completion for developers",
+    "where": "Exported from the training platform, or a sign off sheet for a session run in house."
+  },
+  {
+    "key": "approved-security-requirements-for-a-sample",
+    "code": "AR-SD-22",
+    "name": "List of all new applications and acquired systems in the period, with owner, security requirements, approver and approval date. The auditor chooses the sample from it.",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "SD-10:approved-security-requirements-for-a-sample",
+    "what": "New applications and acquired systems with approved security requirements",
+    "where": "Tickets or design docs for each new app, and vendor reviews for systems bought in."
+  },
+  {
+    "key": "procedure-for-rotating-exposed-secrets",
+    "code": "AR-SD-23",
+    "name": "Procedure for rotating exposed secrets",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "SD-11:procedure-for-rotating-exposed-secrets",
+    "what": "Exposed secret rotation procedure",
+    "where": "Documents module, in the secrets or incident procedure."
+  },
+  {
+    "key": "records-of-exposed-secrets-that-were",
+    "code": "AR-SD-24",
+    "name": "Records of exposed secrets that were rotated",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "SD-11:records-of-exposed-secrets-that-were",
+    "what": "Log of exposed secrets and their rotation",
+    "where": "Secret scanning alerts in GitHub or GitLab, with the ticket for each rotation."
+  },
+  {
+    "key": "environment-architecture-showing-separation",
+    "code": "AR-SD-25",
+    "name": "Environment architecture showing separation",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "SD-12:environment-architecture-showing-separation",
+    "what": "Environment diagram showing separation",
+    "where": "Drawn by engineering and kept in the wiki or shared drive."
+  },
+  {
+    "key": "cloud-accounts-and-production-access",
+    "code": "AR-SD-26",
+    "name": "List of cloud accounts or projects for each environment and who can reach production",
+    "category": "record",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "SD-12:cloud-accounts-and-production-access",
+    "what": "Cloud accounts by environment with the production access list",
+    "where": "The account or project list from the cloud organization, such as AWS Organizations or Google Cloud, plus the members of production."
+  },
+  {
+    "key": "deployment-procedure-stating-who-may-release",
+    "code": "AR-SD-27",
+    "name": "Deployment procedure stating who may release to production",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "SD-13:deployment-procedure-stating-who-may-release",
+    "what": "Production deployment procedure",
+    "where": "Documents module, in the change management policy."
+  },
+  {
+    "key": "deployment-history-for-a-sample-of",
+    "code": "AR-SD-28",
+    "name": "List of all production deployments in the period, with commit, approver, deployer and time. The auditor chooses the sample from it.",
+    "category": "configuration",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "check",
+        "checks": [
+          "ci.deployment_history_recorded"
+        ]
+      },
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "SD-13:deployment-history-for-a-sample-of",
+    "what": "Production deployment history for the period",
+    "where": "Exported from the CI or deployment tool such as GitHub Actions or Argo CD."
+  },
+  {
+    "key": "change-records-linking-request-review-and",
+    "code": "AR-SD-29",
+    "name": "List of all changes released in the period, with ticket, pull request, reviewer and release. The auditor chooses the sample from it.",
+    "category": "configuration",
+    "validity_days": 92,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "check",
+        "checks": [
+          "tickets.changes_linked",
+          "ci.deployment_history_recorded"
+        ]
+      },
+      {
+        "kind": "person"
+      }
+    ],
+    "evidence_item": "SD-14:change-records-linking-request-review-and",
+    "what": "Change records linking ticket, review and release",
+    "where": "Ticket tracker export joined with pull requests and deployments."
+  },
+  {
+    "key": "doc-cryptography-policy",
+    "code": "AR-DOC-33",
+    "name": "Encryption and key rules",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "document",
+        "template": "cryptography-policy"
+      }
+    ],
+    "evidence_item": null,
+    "what": "Encryption and key rules, approved",
+    "where": "Policies and documents, started from its template or uploaded and approved"
+  },
+  {
+    "key": "doc-operations-security-policy",
+    "code": "AR-DOC-34",
+    "name": "Operations security policy",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "document",
+        "template": "operations-security-policy"
+      }
+    ],
+    "evidence_item": null,
+    "what": "Operations security policy, approved",
+    "where": "Policies and documents, started from its template or uploaded and approved"
+  },
+  {
+    "key": "doc-infrastructure-security-standard",
+    "code": "AR-DOC-35",
+    "name": "Infrastructure security standard",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "document",
+        "template": "infrastructure-security-standard"
+      }
+    ],
+    "evidence_item": null,
+    "what": "Infrastructure security standard, approved",
+    "where": "Policies and documents, started from its template or uploaded and approved"
+  },
+  {
+    "key": "doc-endpoint-security-standard",
+    "code": "AR-DOC-36",
+    "name": "Endpoint security standard",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "document",
+        "template": "endpoint-security-standard"
+      }
+    ],
+    "evidence_item": null,
+    "what": "Endpoint security standard, approved",
+    "where": "Policies and documents, started from its template or uploaded and approved"
+  },
+  {
+    "key": "doc-physical-security-policy",
+    "code": "AR-DOC-37",
+    "name": "Physical security policy for offices",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "document",
+        "template": "physical-security-policy"
+      }
+    ],
+    "evidence_item": null,
+    "what": "Physical security policy for offices, approved",
+    "where": "Policies and documents, started from its template or uploaded and approved"
+  },
+  {
+    "key": "doc-site-and-equipment-protection-standard",
+    "code": "AR-DOC-38",
+    "name": "Site and equipment protection standard",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "document",
+        "template": "site-and-equipment-protection-standard"
+      }
+    ],
+    "evidence_item": null,
+    "what": "Site and equipment protection standard, approved",
+    "where": "Policies and documents, started from its template or uploaded and approved"
+  },
+  {
+    "key": "doc-security-communication-plan",
+    "code": "AR-DOC-39",
+    "name": "Communication plan and contact list for authorities",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "document",
+        "template": "security-communication-plan"
+      }
+    ],
+    "evidence_item": null,
+    "what": "Communication plan and contact list for authorities, approved",
+    "where": "Policies and documents, started from its template or uploaded and approved"
+  },
+  {
+    "key": "doc-isms-operating-plan",
+    "code": "AR-DOC-40",
+    "name": "Security program operating plan",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "document",
+        "template": "isms-operating-plan"
+      }
+    ],
+    "evidence_item": null,
+    "what": "Security program operating plan, approved",
+    "where": "Policies and documents, started from its template or uploaded and approved"
+  },
+  {
+    "key": "doc-privacy-notice-outline",
+    "code": "AR-DOC-41",
+    "name": "Privacy notice",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "document",
+        "template": "privacy-notice-outline"
+      }
+    ],
+    "evidence_item": null,
+    "what": "Privacy notice, approved",
+    "where": "Policies and documents, started from its template or uploaded and approved"
+  },
+  {
+    "key": "doc-privacy-requests-and-complaints-procedure",
+    "code": "AR-DOC-42",
+    "name": "Privacy requests and complaints procedure",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "document",
+        "template": "privacy-requests-and-complaints-procedure"
+      }
+    ],
+    "evidence_item": null,
+    "what": "Privacy requests and complaints procedure, approved",
+    "where": "Policies and documents, started from its template or uploaded and approved"
+  },
+  {
+    "key": "doc-personal-data-handling-procedure",
+    "code": "AR-DOC-43",
+    "name": "Personal data handling procedure and registers",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "document",
+        "template": "personal-data-handling-procedure"
+      }
+    ],
+    "evidence_item": null,
+    "what": "Personal data handling procedure and registers, approved",
+    "where": "Policies and documents, started from its template or uploaded and approved"
+  },
+  {
+    "key": "doc-processing-integrity-procedure",
+    "code": "AR-DOC-44",
+    "name": "Processing integrity procedure and specifications",
+    "category": "document",
+    "validity_days": 365,
+    "combine": "any",
+    "sources": [
+      {
+        "kind": "document",
+        "template": "processing-integrity-procedure"
+      }
+    ],
+    "evidence_item": null,
+    "what": "Processing integrity procedure and specifications, approved",
+    "where": "Policies and documents, started from its template or uploaded and approved"
+  }
+]

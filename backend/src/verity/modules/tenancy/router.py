@@ -32,15 +32,22 @@ from verity.core.deps import (
 )
 from verity.modules.tenancy.models import (
     PROVISIONING_STATUS_PENDING,
+    CompanyProfile,
     Tenant,
     TenantProvisioningStep,
     TenantSmtp,
 )
+from verity.modules.tenancy.profile_questions import QUESTIONS, SECTIONS, core_progress
 from verity.modules.tenancy.schemas import (
     BrandingPut,
     BrandingResponse,
     CompanyProfileResponse,
     CompanyProfileUpdate,
+    ProfileOptionOut,
+    ProfileQuestionOut,
+    ProfileSectionOut,
+    ProfileShowIfOut,
+    ProfileVersionOut,
     ProvisioningResponse,
     ProvisioningStepResponse,
     SmtpConfigResponse,
@@ -358,7 +365,85 @@ async def read_own_company_profile(
     session: Annotated[AsyncSession, Depends(get_tenant_session)],
 ) -> CompanyProfileResponse:
     profile = await tenancy_service.get_own_company_profile(session, context.tenant_id)
-    return CompanyProfileResponse.model_validate(profile)
+    return _profile_out(profile)
+
+
+def _profile_out(profile: CompanyProfile) -> CompanyProfileResponse:
+    answered, total = core_progress(profile.answers or {})
+    return CompanyProfileResponse.model_validate(
+        {
+            **{
+                name: getattr(profile, name)
+                for name in CompanyProfileResponse.model_fields
+                if name not in {"core_answered", "core_total"}
+            },
+            "core_answered": answered,
+            "core_total": total,
+        }
+    )
+
+
+@tenant_router.get(
+    "/profile/questions",
+    response_model=list[ProfileSectionOut],
+    summary="The company profile questions, grouped, with what each answer is used for",
+    dependencies=[Depends(require_tenant_read)],
+)
+async def read_profile_questions() -> list[ProfileSectionOut]:
+    return [
+        ProfileSectionOut(
+            key=key,
+            title=title,
+            questions=[
+                ProfileQuestionOut(
+                    key=q.key,
+                    label=q.label,
+                    kind=q.kind,
+                    used_for=q.used_for,
+                    core=q.core,
+                    options=[ProfileOptionOut(value=v, label=label) for v, label in q.options],
+                    show_if=[
+                        ProfileShowIfOut(key=r.key, equals=list(r.equals), contains=r.contains)
+                        for r in q.show_if
+                    ],
+                )
+                for q in QUESTIONS
+                if q.section == key
+            ],
+        )
+        for key, title in SECTIONS
+    ]
+
+
+@tenant_router.post(
+    "/profile/confirm",
+    response_model=CompanyProfileResponse,
+    summary="Confirm the company profile: freeze the next version (Admin)",
+)
+async def confirm_own_company_profile(
+    principal: Annotated[Principal, Depends(require_tenant_manage)],
+    context: Annotated[TenantContext, Depends(get_tenant_context)],
+    session: Annotated[AsyncSession, Depends(get_tenant_session)],
+) -> CompanyProfileResponse:
+    assert principal.membership_id is not None  # noqa: S101 — tenant plane always has one
+    profile = await tenancy_service.confirm_own_company_profile(
+        session, tenant_id=context.tenant_id, actor_membership_id=principal.membership_id
+    )
+    return _profile_out(profile)
+
+
+@tenant_router.get(
+    "/profile/versions",
+    response_model=list[ProfileVersionOut],
+    summary="Every confirmed version of the company profile, newest first",
+    dependencies=[Depends(require_tenant_read)],
+)
+async def read_profile_versions(
+    context: Annotated[TenantContext, Depends(get_tenant_context)],
+    session: Annotated[AsyncSession, Depends(get_tenant_session)],
+) -> list[ProfileVersionOut]:
+    versions = await tenancy_service.list_company_profile_versions(session, context.tenant_id)
+    return [ProfileVersionOut.model_validate(v) for v in versions]
 
 
 @tenant_router.patch(
@@ -379,7 +464,7 @@ async def update_own_company_profile(
         actor_membership_id=principal.membership_id,
         changes=body,
     )
-    return CompanyProfileResponse.model_validate(profile)
+    return _profile_out(profile)
 
 
 def _smtp_response(smtp: TenantSmtp | None) -> SmtpConfigResponse:

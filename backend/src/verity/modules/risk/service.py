@@ -475,6 +475,28 @@ class RiskService:
 
     # -- cross-module resolution (rule 4) -------------------------------------
 
+    async def assessment_counts(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID
+    ) -> tuple[int, int]:
+        """Risks not closed, and how many of them have an owner, a rating and a treatment.
+
+        Get Started's risk step counts these; a risk with no inherent rating or no
+        treatment decision has been listed, not assessed.
+        """
+        rows = (
+            await session.execute(
+                select(Risk.owner_membership_id, Risk.inherent_score, Risk.treatment).where(
+                    Risk.tenant_id == tenant_id, Risk.status != "closed"
+                )
+            )
+        ).all()
+        assessed = sum(
+            1
+            for owner, score, treatment in rows
+            if owner is not None and score is not None and treatment is not None
+        )
+        return len(rows), assessed
+
     async def _member_names(
         self, session: AsyncSession, tenant_id: uuid.UUID
     ) -> dict[uuid.UUID, str]:

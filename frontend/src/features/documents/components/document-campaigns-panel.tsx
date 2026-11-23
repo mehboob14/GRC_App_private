@@ -37,13 +37,16 @@ export function DocumentCampaignsPanel({
   documentId,
   documentTitle,
   canManage,
+  startOpen = false,
 }: {
   documentId: string;
   documentTitle: string;
   canManage: boolean;
+  /** Opened from a "send for acknowledgement" next step (guided onboarding RD-8). */
+  startOpen?: boolean;
 }) {
   const navigate = useNavigate();
-  const [creating, setCreating] = useState(false);
+  const [creating, setCreating] = useState(startOpen && canManage);
 
   const campaignsQuery = useQuery({
     queryKey: ["document-campaigns", documentId],

@@ -1,0 +1,1268 @@
+[
+  {
+    "key": "GL-01",
+    "jurisdiction": "GLOBAL",
+    "zone": null,
+    "short_name": "PCI DSS",
+    "official_name": "Payment Card Industry Data Security Standard (PCI DSS) v4.0.1",
+    "issuer": "PCI Security Standards Council",
+    "regulator": "Card brands and acquiring banks, by contract",
+    "kinds": [
+      "payments"
+    ],
+    "topic_column": "sector",
+    "force": "contract_standard",
+    "state": "in_force",
+    "state_note": "Contractual standard. v4.0.1 has been the only active version since 31 December 2024 and its future-dated requirements became mandatory on 31 March 2025; the Council consulted on the next version in mid 2026 and none is announced.",
+    "tier": "sector",
+    "applies_to": "Any entity that stores, processes or transmits payment card account data or can affect its security: merchants, service providers and payment SaaS.",
+    "duties": [
+      {
+        "topic": "baseline",
+        "text": "Meet the 12 requirement families, and shrink scope with tokenisation or hosted payment pages.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "Use MFA for all access to the cardholder data environment and manage scripts on payment pages.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "Run targeted risk analyses and annual penetration tests.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "Validate by self-assessment questionnaire or, for larger volumes and service providers, a Report on Compliance by a Qualified Security Assessor with an Attestation of Compliance.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "Get quarterly external scans from an approved scanning vendor.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "attestation",
+      "note": "Self-assessment questionnaire or a Report on Compliance by a Qualified Security Assessor, with an Attestation of Compliance."
+    },
+    "iso27001": {
+      "relation": "not_a_substitute",
+      "note": "Not a substitute. The Council publishes a mapping of PCI DSS v4.0.1 to NIST CSF 2.0."
+    },
+    "soc2": {
+      "relation": "not_a_substitute",
+      "note": "Not a substitute."
+    },
+    "helps": [
+      "NS-03",
+      "NS-07",
+      "NS-08",
+      "NS-10",
+      "NS-04",
+      "NS-01",
+      "NS-06",
+      "DM-08",
+      "DM-18",
+      "NS-02",
+      "EP-01",
+      "SD-01",
+      "SD-03",
+      "SD-05",
+      "SD-06",
+      "SD-10",
+      "SD-12",
+      "LM-11",
+      "EP-04",
+      "IAM-01",
+      "IAM-03",
+      "IAM-06",
+      "IAM-07",
+      "IAM-08",
+      "IAM-10",
+      "IAM-11",
+      "PE-01",
+      "PE-02",
+      "PE-03",
+      "DM-16",
+      "LM-02",
+      "LM-09",
+      "NS-12",
+      "GOV-16",
+      "NS-05",
+      "LM-03",
+      "GOV-17",
+      "GOV-18",
+      "GOV-23",
+      "HR-01",
+      "HR-08",
+      "LM-07",
+      "BC-07",
+      "BC-08"
+    ],
+    "not_covered": [
+      "Cardholder data environment scoping",
+      "The standard's fixed parameters and frequencies",
+      "Targeted risk analyses",
+      "Customised approach",
+      "External scans by an approved vendor"
+    ],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2024-06",
+        "precision": "month",
+        "kind": "enacted",
+        "description": "v4.0.1 published.",
+        "confirmed": true
+      },
+      {
+        "date": "2024-12-31",
+        "precision": "day",
+        "kind": "deadline",
+        "description": "v4.0 retired; v4.0.1 becomes the only active version.",
+        "confirmed": true
+      },
+      {
+        "date": "2025-03-31",
+        "precision": "day",
+        "kind": "obligation_starts",
+        "description": "Future-dated requirements become mandatory.",
+        "confirmed": true
+      },
+      {
+        "date": "2026-07-20",
+        "precision": "day",
+        "kind": "consultation_closes",
+        "description": "Request for comments on v4.0.1 closes (opened 3 June 2026).",
+        "confirmed": true
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.pcisecuritystandards.org/document_library/",
+        "publisher": "PCI Security Standards Council",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "known_not_opened"
+      },
+      {
+        "url": "https://blog.pcisecuritystandards.org/just-published-pci-dss-v4-0-1",
+        "publisher": "PCI Security Standards Council",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.pcisecuritystandards.org/rfc_instructions_pci-dss-v4-0-1-june2026/",
+        "publisher": "PCI Security Standards Council",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "Next PCI DSS version and date unknown.",
+        "No PCI licence is held, so control references stay as numbers only and no standard text is reproduced.",
+        "Some regulators point to it, for example SAMA (SA-06) and SBP (PK-03)."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "applies",
+        "all": [
+          {
+            "fact": "sensitive_data",
+            "op": "any_in",
+            "value": [
+              "card_stored"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "industry",
+            "op": "eq",
+            "value": "payments"
+          }
+        ]
+      },
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "regulator_licences",
+            "op": "any_in",
+            "value": [
+              "payments"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "sensitive_data",
+            "op": "any_in",
+            "value": [
+              "card_outsourced"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "GL-02",
+    "jurisdiction": "GLOBAL",
+    "zone": null,
+    "short_name": "SWIFT CSCF",
+    "official_name": "SWIFT Customer Security Controls Framework (Customer Security Programme)",
+    "issuer": "SWIFT",
+    "regulator": "SWIFT",
+    "kinds": [
+      "financial_sector",
+      "payments"
+    ],
+    "topic_column": "sector",
+    "force": "contract_standard",
+    "state": "in_force",
+    "state_note": "Contractual for SWIFT users. CSCF v2026 is the version to attest against by 31 December 2026; v2027 was published in mid 2026 for attestation in 2027.",
+    "tier": "sector",
+    "applies_to": "Every organisation connected to the SWIFT network: banks, some corporates and service bureaus.",
+    "duties": [
+      {
+        "topic": "baseline",
+        "text": "Secure and segregate the SWIFT environment and reduce its attack surface.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "Manage credentials and privileges, and detect anomalous activity.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "Secure back office data flows, which are becoming mandatory in phases.",
+        "clock_hours": null
+      },
+      {
+        "topic": "incident_reporting",
+        "text": "Plan and run incident response for the SWIFT environment.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "Attest every year in the KYC Security Attestation application, backed by an independent internal or external assessment; counterparties and regulators can see non-compliance.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "attestation",
+      "note": "Annual attestation supported by an independent internal or external assessment."
+    },
+    "iso27001": {
+      "relation": "not_a_substitute",
+      "note": "SWIFT maps the controls to ISO 27002, NIST and PCI DSS in the framework annex; certification alone does not satisfy the attestation."
+    },
+    "soc2": {
+      "relation": "not_a_substitute",
+      "note": "Does not satisfy the attestation."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2026-12-31",
+        "precision": "day",
+        "kind": "deadline",
+        "description": "Attestation deadline for CSCF v2026.",
+        "confirmed": true
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.swift.com/myswift/customer-security-programme-csp",
+        "publisher": "SWIFT",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "known_not_opened"
+      },
+      {
+        "url": "https://www.bdo.be/en-gb/insights/articles/2026/swift-customer-security-programme-v2026",
+        "publisher": "BDO",
+        "kind": "tracker",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.usd.de/en/swift-cscfv2026-assessment-changes/",
+        "publisher": "usd AG",
+        "kind": "tracker",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "v2026 control counts (32 controls, about 25 or 26 mandatory) come from third parties.",
+        "The profile has no SWIFT question, so the triggers use financial and payments answers and only say check."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "regulator_licences",
+            "op": "any_in",
+            "value": [
+              "financial",
+              "payments"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "industry",
+            "op": "in",
+            "value": [
+              "financial_services",
+              "payments"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "GL-03",
+    "jurisdiction": "GLOBAL",
+    "zone": null,
+    "short_name": "ISO/IEC 27001",
+    "official_name": "ISO/IEC 27001:2022 Information security management systems",
+    "issuer": "ISO and IEC",
+    "regulator": null,
+    "kinds": [
+      "cybersecurity"
+    ],
+    "topic_column": "security_baseline",
+    "force": "voluntary_framework",
+    "state": "voluntary",
+    "state_note": "Voluntary and certifiable. The 2022 edition, with a 2024 climate amendment, is the only valid one since the transition from the 2013 edition ended on 31 October 2025.",
+    "tier": "sector",
+    "applies_to": "Any organisation. The most widely recognised security certification outside North America, and referenced or reused by the Australian critical infrastructure rules (AU-02), the Dubai cloud standard (AE-05) and several national schemes.",
+    "duties": [
+      {
+        "topic": "baseline",
+        "text": "Run a management system that meets clauses 4 to 10.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "Assess and treat information security risks.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "Keep a Statement of Applicability against the 93 Annex A controls.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "Hold a three year certificate from an accredited certification body, with surveillance audits every year.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "certification",
+      "note": "Three year certificate from an accredited certification body with annual surveillance audits."
+    },
+    "iso27001": {
+      "relation": "referenced_or_accepted",
+      "note": "This entry is ISO 27001 itself."
+    },
+    "soc2": {
+      "relation": "not_a_substitute",
+      "note": "A separate assurance route; which one enterprise buyers ask for first depends on the region."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2025-10-31",
+        "precision": "day",
+        "kind": "deadline",
+        "description": "Transition from the 2013 edition ends; only 2022 certificates are valid.",
+        "confirmed": true
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.iso.org/standard/27001",
+        "publisher": "International Organization for Standardization (ISO)",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "known_not_opened"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "Set framework_code once the Verity framework code for ISO 27001 is confirmed.",
+        "Sources are cited from prior knowledge and were not opened in this session."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "businesses",
+              "banks_insurers",
+              "healthcare_providers",
+              "government"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "GL-04",
+    "jurisdiction": "GLOBAL",
+    "zone": null,
+    "short_name": "ISO/IEC 27701",
+    "official_name": "ISO/IEC 27701:2025 Privacy information management systems",
+    "issuer": "ISO and IEC",
+    "regulator": null,
+    "kinds": [
+      "privacy"
+    ],
+    "topic_column": "privacy",
+    "force": "voluntary_framework",
+    "state": "voluntary",
+    "state_note": "Published 14 October 2025, replacing the 2019 edition. It is now a standalone management system standard, so ISO 27001 certification is no longer a prerequisite.",
+    "tier": "also_know",
+    "applies_to": "Controllers and processors of personal data.",
+    "duties": [
+      {
+        "topic": "baseline",
+        "text": "Run a privacy information management system for your role as controller, processor or both.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "Certify if you choose; an ISO 27001 certificate is no longer needed first.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "Check the transition rules for existing 2019 certificates with your certification body; they were still being settled.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "Use its mapping annexes to GDPR and other privacy frameworks.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "certification",
+      "note": "Certifiable."
+    },
+    "iso27001": {
+      "relation": "not_a_substitute",
+      "note": "Since the 2025 edition, ISO 27001 certification is no longer a prerequisite for ISO 27701."
+    },
+    "soc2": {
+      "relation": "not_relevant",
+      "note": "Not discussed in the sources."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2025-10-14",
+        "precision": "day",
+        "kind": "enacted",
+        "description": "2025 edition published.",
+        "confirmed": true
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.iso.org/standard/27701",
+        "publisher": "International Organization for Standardization (ISO)",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "known_not_opened"
+      },
+      {
+        "url": "https://www.dnv.com/news/2025/iso-iec-27701-standard-update-release/",
+        "publisher": "DNV",
+        "kind": "tracker",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "Transition rules for existing certificates not confirmed.",
+        "SOC 2 relation is inferred; the sources do not mention SOC 2."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "personal_data_role",
+            "op": "in",
+            "value": [
+              "controller",
+              "processor",
+              "both"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "GL-05",
+    "jurisdiction": "GLOBAL",
+    "zone": null,
+    "short_name": "ISO/IEC 27017 and 27018",
+    "official_name": "ISO/IEC 27017:2015 (cloud security) and ISO/IEC 27018 (personal data in public clouds)",
+    "issuer": "ISO and IEC",
+    "regulator": null,
+    "kinds": [
+      "cybersecurity",
+      "privacy"
+    ],
+    "topic_column": "security_baseline",
+    "force": "voluntary_framework",
+    "state": "voluntary",
+    "state_note": "Codes of practice that extend ISO 27002 for cloud services and cloud processors of personal data. 27017 is the 2015 edition; a 2025 edition of 27018 was reported but not verified.",
+    "tier": "also_know",
+    "applies_to": "Cloud service providers and their customers. ISO 27017 is part of the Dubai cloud standard base (AE-05).",
+    "duties": [
+      {
+        "topic": "baseline",
+        "text": "Apply the cloud-specific security controls of ISO 27017 on top of ISO 27002.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "As a cloud processor of personal data, apply the ISO 27018 controls.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "Have them assessed as extensions to an ISO 27001 certificate.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "certification",
+      "note": "Assessed as extensions to an ISO 27001 certificate."
+    },
+    "iso27001": {
+      "relation": "referenced_or_accepted",
+      "note": "Assessed as extensions to an ISO 27001 certificate."
+    },
+    "soc2": {
+      "relation": "not_relevant",
+      "note": "Not discussed in the sources."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [],
+    "sources": [
+      {
+        "url": "https://www.iso.org/standard/43757.html",
+        "publisher": "International Organization for Standardization (ISO)",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "known_not_opened"
+      },
+      {
+        "url": "https://www.iso.org/standard/27018",
+        "publisher": "International Organization for Standardization (ISO)",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "known_not_opened"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "ISO/IEC 27018 2025 edition not verified.",
+        "SOC 2 relation is inferred; the sources do not mention SOC 2.",
+        "Sources are cited from prior knowledge and were not opened in this session."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "critical_or_provider",
+            "op": "eq",
+            "value": "yes"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "GL-06",
+    "jurisdiction": "GLOBAL",
+    "zone": null,
+    "short_name": "ISO/IEC 42001",
+    "official_name": "ISO/IEC 42001:2023 Artificial intelligence management system",
+    "issuer": "ISO and IEC",
+    "regulator": null,
+    "kinds": [
+      "ai"
+    ],
+    "topic_column": "ai",
+    "force": "voluntary_framework",
+    "state": "voluntary",
+    "state_note": "Published December 2023; voluntary and certifiable. It is not a harmonised standard under the EU AI Act.",
+    "tier": "sector",
+    "applies_to": "Organisations that develop, provide or use AI systems.",
+    "duties": [
+      {
+        "topic": "baseline",
+        "text": "Run an AI management system for the AI you develop, provide or use.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "Certify if you choose.",
+        "clock_hours": null
+      },
+      {
+        "topic": "baseline",
+        "text": "Treat it as groundwork for the EU AI Act, not proof of conformity, since it is not a harmonised standard.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "Expect US state AI laws to point to it, with the NIST AI Risk Management Framework, as a recognised risk framework.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "certification",
+      "note": "Certifiable."
+    },
+    "iso27001": {
+      "relation": "not_a_substitute",
+      "note": "A separate standard; holding ISO 27001 does not give ISO 42001."
+    },
+    "soc2": {
+      "relation": "not_relevant",
+      "note": "Not discussed in the sources."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2023-12",
+        "precision": "month",
+        "kind": "enacted",
+        "description": "Published.",
+        "confirmed": true
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.iso.org/standard/42001",
+        "publisher": "International Organization for Standardization (ISO)",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "known_not_opened"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "SOC 2 relation is inferred; the sources do not mention SOC 2.",
+        "Sources are cited from prior knowledge and were not opened in this session."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "ai_use",
+            "op": "in",
+            "value": [
+              "product_affects_people",
+              "builds_ai"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "ai_use",
+            "op": "eq",
+            "value": "staff_tools"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "GL-07",
+    "jurisdiction": "GLOBAL",
+    "zone": null,
+    "short_name": "ISO 22301",
+    "official_name": "ISO 22301:2019 Business continuity management systems",
+    "issuer": "ISO",
+    "regulator": null,
+    "kinds": [
+      "resilience"
+    ],
+    "topic_column": "security_baseline",
+    "force": "voluntary_framework",
+    "state": "voluntary",
+    "state_note": "2019 edition; voluntary and certifiable.",
+    "tier": "also_know",
+    "applies_to": "Any organisation; useful evidence for operational resilience regimes such as APRA CPS 230, DORA, UK operational resilience and SAMA business continuity.",
+    "duties": [
+      {
+        "topic": "baseline",
+        "text": "Run a business continuity management system.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "Certify if you choose.",
+        "clock_hours": null
+      },
+      {
+        "topic": "third_parties",
+        "text": "Offer it to regulated financial customers as evidence for resilience regimes such as CPS 230, DORA, UK operational resilience and SAMA business continuity.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "certification",
+      "note": "Certifiable."
+    },
+    "iso27001": {
+      "relation": "not_a_substitute",
+      "note": "A separate standard for business continuity."
+    },
+    "soc2": {
+      "relation": "helps_partially",
+      "note": "SOC 2 reports covering availability are also used by vendors as resilience evidence."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [],
+    "sources": [
+      {
+        "url": "https://www.iso.org/standard/75106.html",
+        "publisher": "International Organization for Standardization (ISO)",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "known_not_opened"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "Sources are cited from prior knowledge and were not opened in this session."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "banks_insurers"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "regulator_licences",
+            "op": "any_in",
+            "value": [
+              "financial",
+              "insurance",
+              "payments"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "GL-08",
+    "jurisdiction": "GLOBAL",
+    "zone": null,
+    "short_name": "SOC 1, SOC 2 and SOC 3",
+    "official_name": "AICPA SOC 1, SOC 2 and SOC 3 reports",
+    "issuer": "American Institute of Certified Public Accountants (AICPA)",
+    "regulator": null,
+    "kinds": [
+      "cybersecurity",
+      "privacy"
+    ],
+    "topic_column": "security_baseline",
+    "force": "voluntary_framework",
+    "state": "voluntary",
+    "state_note": "Voluntary attestation reports by a CPA firm, not certifications. SOC 2 uses the 2017 Trust Services Criteria with revised points of focus from 2022.",
+    "tier": "sector",
+    "applies_to": "Service organisations. The default vendor assurance in North America, and now a possible starting point for FedRAMP Class A (US-08).",
+    "duties": [
+      {
+        "topic": "assessment",
+        "text": "Pick the report: SOC 1 for controls relevant to customers' financial reporting, SOC 2 for security, availability, processing integrity, confidentiality and privacy, SOC 3 as a public summary.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "Pick the type: Type I covers a point in time, Type II covers a period.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "Engage a CPA firm to examine the controls and issue the report; the result is an attestation, not a certificate.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "attestation",
+      "note": "An attestation report by a CPA firm, not a certification."
+    },
+    "iso27001": {
+      "relation": "not_a_substitute",
+      "note": "A separate assurance route; which one enterprise buyers ask for first depends on the region."
+    },
+    "soc2": {
+      "relation": "referenced_or_accepted",
+      "note": "This entry covers SOC 2 itself."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [],
+    "sources": [
+      {
+        "url": "https://www.aicpa-cima.com/topic/audit-assurance/audit-and-assurance-greater-than-soc-2",
+        "publisher": "AICPA and CIMA",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "known_not_opened"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "Set framework_code once the Verity framework code for SOC 2 is confirmed.",
+        "Sources are cited from prior knowledge and were not opened in this session."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "US",
+              "CA"
+            ]
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "businesses",
+              "banks_insurers",
+              "healthcare_providers",
+              "government"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "businesses",
+              "banks_insurers",
+              "healthcare_providers",
+              "government"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "GL-09",
+    "jurisdiction": "GLOBAL",
+    "zone": null,
+    "short_name": "CSA STAR",
+    "official_name": "Cloud Security Alliance STAR programme (Cloud Controls Matrix version 4)",
+    "issuer": "Cloud Security Alliance",
+    "regulator": null,
+    "kinds": [
+      "cybersecurity"
+    ],
+    "topic_column": "security_baseline",
+    "force": "voluntary_framework",
+    "state": "voluntary",
+    "state_note": "Voluntary, based on the Cloud Controls Matrix version 4.",
+    "tier": "also_know",
+    "applies_to": "Cloud service providers.",
+    "duties": [
+      {
+        "topic": "assessment",
+        "text": "Level 1: publish a self-assessment.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "Level 2: get STAR Certification on top of an ISO 27001 certificate.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "Level 2 alternative: get STAR Attestation on top of a SOC 2 report.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "certification",
+      "note": "Level 2 STAR Certification (on ISO 27001) or STAR Attestation (on SOC 2)."
+    },
+    "iso27001": {
+      "relation": "referenced_or_accepted",
+      "note": "STAR Certification builds on ISO 27001."
+    },
+    "soc2": {
+      "relation": "referenced_or_accepted",
+      "note": "STAR Attestation builds on SOC 2."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [],
+    "sources": [
+      {
+        "url": "https://cloudsecurityalliance.org/star",
+        "publisher": "Cloud Security Alliance",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "known_not_opened"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "Sources are cited from prior knowledge and were not opened in this session."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "critical_or_provider",
+            "op": "eq",
+            "value": "yes"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "GL-10",
+    "jurisdiction": "GLOBAL",
+    "zone": null,
+    "short_name": "HITRUST CSF",
+    "official_name": "HITRUST CSF (version 11 family)",
+    "issuer": "HITRUST Alliance",
+    "regulator": null,
+    "kinds": [
+      "health_sector",
+      "cybersecurity"
+    ],
+    "topic_column": "sector",
+    "force": "voluntary_framework",
+    "state": "voluntary",
+    "state_note": "v11.8 was released in May 2026 and v11.9 reported later in 2026; versions 11.0 to 11.3.2 cannot be used for new assessments after 31 December 2026.",
+    "tier": "sector",
+    "applies_to": "Mostly US healthcare organisations and their vendors; used as evidence for HIPAA.",
+    "duties": [
+      {
+        "topic": "assessment",
+        "text": "Pick the assessment level: e1, i1 or r2.",
+        "clock_hours": null
+      },
+      {
+        "topic": "assessment",
+        "text": "Start new assessments after 31 December 2026 on a version later than 11.3.2.",
+        "clock_hours": null
+      },
+      {
+        "topic": "third_parties",
+        "text": "Expect US health buyers to ask for it as HIPAA evidence.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "certification",
+      "note": "Certifiable through e1, i1 and r2 assessments."
+    },
+    "iso27001": {
+      "relation": "not_a_substitute",
+      "note": "US health buyers who ask for HITRUST want HITRUST itself."
+    },
+    "soc2": {
+      "relation": "helps_partially",
+      "note": "SOC 2 with a HIPAA mapping is another market practice report used as HIPAA evidence."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [
+      {
+        "date": "2026-05",
+        "precision": "month",
+        "kind": "enacted",
+        "description": "Version 11.8 released.",
+        "confirmed": true
+      },
+      {
+        "date": "2026-12-31",
+        "precision": "day",
+        "kind": "deadline",
+        "description": "Versions 11.0 to 11.3.2 retired for new assessments.",
+        "confirmed": true
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://hitrustalliance.net/advisories/haa-2026-002-csf-version-11.8.0-release",
+        "publisher": "HITRUST Alliance",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      },
+      {
+        "url": "https://www.schellman.com/blog/hitrust-releases-csf-version-11.9.0-and-decommissions-versions-11.0-11.3.2-what-this-means",
+        "publisher": "Schellman",
+        "kind": "tracker",
+        "accessed_at": "2026-11-21",
+        "verified": "snippet_only"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "v11.9 release reported, not confirmed.",
+        "ISO 27001 relation is inferred; the sources do not discuss it."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "US"
+            ]
+          },
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "healthcare_providers"
+            ]
+          }
+        ]
+      },
+      {
+        "confidence": "check",
+        "all": [
+          {
+            "fact": "customer_regions",
+            "op": "any_in",
+            "value": [
+              "US"
+            ]
+          },
+          {
+            "fact": "sensitive_data",
+            "op": "any_in",
+            "value": [
+              "health"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "GL-11",
+    "jurisdiction": "GLOBAL",
+    "zone": null,
+    "short_name": "TISAX",
+    "official_name": "TISAX assessment (based on the German automotive association's Information Security Assessment catalogue)",
+    "issuer": "ENX Association",
+    "regulator": null,
+    "kinds": [
+      "cybersecurity"
+    ],
+    "topic_column": "sector",
+    "force": "contract_standard",
+    "state": "voluntary",
+    "state_note": "Voluntary in law, but required by most European car makers of their suppliers. Version details not re-verified.",
+    "tier": "sector",
+    "applies_to": "Suppliers and service providers to the automotive industry, including software vendors handling prototype or confidential data.",
+    "duties": [
+      {
+        "topic": "assessment",
+        "text": "Get assessed against the Information Security Assessment catalogue (version 6 family) at the level your customer asks for.",
+        "clock_hours": null
+      },
+      {
+        "topic": "third_parties",
+        "text": "Share the resulting label with car makers through the ENX portal.",
+        "clock_hours": null
+      },
+      {
+        "topic": "third_parties",
+        "text": "Expect car makers to require a TISAX label from suppliers.",
+        "clock_hours": null
+      }
+    ],
+    "assurance": {
+      "kind": "attestation",
+      "note": "Assessment levels and labels exchanged through the ENX portal."
+    },
+    "iso27001": {
+      "relation": "not_a_substitute",
+      "note": "Car makers ask for a TISAX label itself."
+    },
+    "soc2": {
+      "relation": "not_a_substitute",
+      "note": "Car makers ask for a TISAX label itself."
+    },
+    "helps": [],
+    "not_covered": [],
+    "framework_code": null,
+    "milestones": [],
+    "sources": [
+      {
+        "url": "https://enx.com/en-US/TISAX/",
+        "publisher": "ENX Association",
+        "kind": "official",
+        "accessed_at": "2026-11-21",
+        "verified": "known_not_opened"
+      }
+    ],
+    "review": {
+      "status": "ai_drafted",
+      "reviewed_by": null,
+      "reviewed_on": null,
+      "next_review_due": null,
+      "open_points": [
+        "TISAX catalogue version not re-verified.",
+        "ISO 27001 and SOC 2 relation is inferred; the sources do not discuss it.",
+        "Sources are cited from prior knowledge and were not opened in this session."
+      ]
+    },
+    "triggers": [
+      {
+        "confidence": "likely_applies",
+        "all": [
+          {
+            "fact": "customer_types",
+            "op": "any_in",
+            "value": [
+              "car_makers"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]

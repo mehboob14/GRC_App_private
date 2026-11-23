@@ -75,6 +75,19 @@ ALLOWED_TRANSITIONS: Final[dict[str, tuple[str, ...]]] = {
 
 _ACTIVE: Final = ("open", "in_progress", "blocked", "under_review")
 
+
+@dataclass(frozen=True, slots=True)
+class PlannedTask:
+    """One item of an approved plan, raised as a task by ``raise_planned``."""
+
+    key: str
+    title: str
+    description: str | None
+    owner_membership_id: uuid.UUID | None
+    due_at: datetime | None
+    control_id: uuid.UUID | None
+
+
 # CAPA action lifecycle — the legal moves, served to the client, never hardcoded there.
 _CAPA_TRANSITIONS: Final[dict[str, tuple[str, ...]]] = {
     "planned": ("in_progress", "cancelled"),
@@ -2386,6 +2399,82 @@ class TaskService:
             email=True,
         )
         return child
+
+    async def existing_keys(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, source: str, keys: list[str]
+    ) -> set[str]:
+        """Which of these ``(source, external_id)`` keys already have a task."""
+        if not keys:
+            return set()
+        found = await session.execute(
+            select(Task.external_id).where(
+                Task.tenant_id == tenant_id,
+                Task.source == source,
+                Task.external_id.in_(keys),
+            )
+        )
+        return {k for k in found.scalars() if k is not None}
+
+    async def task_ids_for_keys(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, source: str, keys: list[str]
+    ) -> dict[str, uuid.UUID]:
+        """``{external_id: task id}`` for tasks raised under ``source``."""
+        if not keys:
+            return {}
+        rows = await session.execute(
+            select(Task.external_id, Task.id).where(
+                Task.tenant_id == tenant_id, Task.source == source, Task.external_id.in_(keys)
+            )
+        )
+        return {k: tid for k, tid in rows if k is not None}
+
+    async def raise_planned(
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        source: str,
+        items: Sequence[PlannedTask],
+    ) -> int:
+        """Create one task per planned item, keyed on ``(source, key)`` so approving a plan
+        twice makes nothing new (guided onboarding PL-7). Each task links to its control."""
+        have = await self.existing_keys(
+            session, tenant_id=tenant_id, source=source, keys=[i.key for i in items]
+        )
+        made = 0
+        for item in items:
+            if item.key in have:
+                continue
+            task = await self._create(
+                session,
+                tenant_id=tenant_id,
+                actor=actor,
+                task_kind="task",
+                title=item.title[:300],
+                description=item.description,
+                priority="medium",
+                category="regulatory",
+                sla_level=None,
+                owner_membership_id=item.owner_membership_id,
+                assignee_ids=[item.owner_membership_id] if item.owner_membership_id else [],
+                due_at=item.due_at,
+                raised_from_type=None,
+                source=source,
+                external_id=item.key,
+            )
+            if item.control_id is not None:
+                await link_service.create(
+                    session,
+                    tenant_id=tenant_id,
+                    from_type="task",
+                    from_id=task.id,
+                    to_type="control",
+                    to_id=item.control_id,
+                )
+            made += 1
+        await session.flush()
+        return made
 
     async def raise_evidence_renewals(self, session: AsyncSession, *, tenant_id: uuid.UUID) -> int:
         """Raise one renewal task for each evidence item past its validity, as the system.

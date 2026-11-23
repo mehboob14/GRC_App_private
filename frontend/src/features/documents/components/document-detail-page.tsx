@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   Avatar,
   Badge,
@@ -31,6 +31,7 @@ import { VersionHistory } from "./version-history";
 import type { ApprovalTier, Document } from "@/features/documents/types";
 import { DocumentContentViewer } from "./document-content-viewer";
 import { DocumentCampaignsPanel } from "./document-campaigns-panel";
+import { TailorDocument } from "./tailor-document";
 import { DocumentFormDialog } from "./document-form-dialog";
 import { LinkControlsDialog } from "./link-controls-dialog";
 import { ReviewDate } from "./review-date";
@@ -89,7 +90,8 @@ export function DocumentDetailPage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { principal } = useAuth();
-  const [tab, setTab] = useEntryState<TabId>("detail.tab", "overview");
+  const startCampaign = new URLSearchParams(useLocation().search).get("campaign") === "new";
+  const [tab, setTab] = useEntryState<TabId>("detail.tab", startCampaign ? "workflows" : "overview");
   const linksQuery = useLinkedRecords("document", documentId);
   const [editing, setEditing] = useState(false);
   const [mapping, setMapping] = useState(false);
@@ -168,6 +170,9 @@ export function DocumentDetailPage() {
                 <Icon name="check" className="size-4" />
                 Acknowledge
               </Button>
+            ) : null}
+            {canManage && doc.content_format === "html" && doc.lifecycle === "draft" ? (
+              <TailorDocument documentId={doc.id} />
             ) : null}
             <Button variant="secondary" onClick={() => setEditing(true)}>
               <Icon name="edit" className="size-4" />
@@ -342,6 +347,7 @@ export function DocumentDetailPage() {
               documentId={doc.id}
               documentTitle={doc.title}
               canManage={canManage}
+              startOpen={startCampaign}
             />
           </div>
         ) : null}

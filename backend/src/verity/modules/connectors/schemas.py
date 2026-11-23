@@ -189,6 +189,10 @@ class ExpectedEvidenceOut(_Response):
     module: str | None
     state: str
     automated_by: list[CheckRefOut]
+    what: str | None = None
+    where: str | None = None
+    shows: str | None = None
+    if_none: str | None = None
 
 
 class SourceOut(_Response):

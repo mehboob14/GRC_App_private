@@ -55,6 +55,18 @@ _TAG: Final = re.compile(r"<[^>]+>")
 #: created. Everything else is a judgement the customer has to make.
 AUTO_FILLED: Final[frozenset[str]] = frozenset({"company_name"})
 
+#: Profile facts a template may name (guided onboarding PR-8). A missing one renders as a
+#: visible marker, never a guess, and the draft cannot go for approval while a marker remains.
+PROFILE_FIELDS: Final[dict[str, str]] = {
+    "company_name": "company name",
+    "legal_name": "registered company name",
+    "trading_name": "trading name",
+    "registered_address": "registered address",
+    "security_lead": "security lead",
+    "executive_sponsor": "executive sponsor",
+}
+MARKER: Final = re.compile(r"\[Add your [a-z ]{3,60}\]")
+
 #: A human label for the ones we ship, so the editor's checklist reads as a
 #: question rather than a variable name.
 LABELS: Final[dict[str, str]] = {
@@ -125,3 +137,21 @@ def fill(content_html: str, values: dict[str, str]) -> str:
         return lowered.get(match.group(1).lower(), match.group(0))
 
     return PLACEHOLDER.sub(swap, content_html)
+
+
+def fill_profile(content_html: str, values: dict[str, str | None]) -> str:
+    """Fill the profile fields a template names; a field with no value becomes a visible
+    marker such as ``[Add your registered address]`` (PR-8). Other placeholders stay."""
+
+    def swap(match: re.Match[str]) -> str:
+        key = match.group(1).lower()
+        if key not in PROFILE_FIELDS:
+            return match.group(0)
+        return values.get(key) or f"[Add your {PROFILE_FIELDS[key]}]"
+
+    return PLACEHOLDER.sub(swap, content_html)
+
+
+def markers(content_html: str | None) -> list[str]:
+    """The ``[Add your ...]`` markers still in a draft."""
+    return sorted(set(MARKER.findall(content_html or "")))

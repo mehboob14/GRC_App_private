@@ -23,7 +23,7 @@ from __future__ import annotations
 import uuid
 from collections import defaultdict
 from dataclasses import dataclass, field
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -59,7 +59,30 @@ _ENGAGEMENT_SNAPSHOT = (
     "scope_statement",
     "certification_body",
     "audit_on",
+    "as_of_date",
+    "target_date",
+    "driver",
+    "live_date",
+    "assessor_state",
+    "assessor_accreditation_body",
+    "assessor_contact",
+    "assessor_engaged_on",
+    "scope_statement_ai",
+    "scope_statement_approved_at",
 )
+
+DETAIL_FIELDS: tuple[str, ...] = (
+    "as_of_date",
+    "target_date",
+    "driver",
+    "live_date",
+    "assessor",
+    "assessor_accreditation_body",
+    "assessor_contact",
+    "assessor_engaged_on",
+    "scope_statement_ai",
+)
+"""Engagement fields a save leaves untouched unless it sends them (EN-2, EN-3)."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -244,6 +267,51 @@ class DashboardReport:
     automation_error: int = 0
 
 
+@dataclass(frozen=True, slots=True)
+class FrameworkFigures:
+    """One framework's counts for Get Started. Separate figures, never one blended score."""
+
+    code: str
+    name: str
+    scope_model: str
+    scope_set: bool
+    audit_type: str | None
+    window_start: date | None
+    window_end: date | None
+    audit_on: date | None
+    certification_body: str | None
+    scope_statement_set: bool
+    as_of_date: date | None
+    target_date: date | None
+    live_date: date | None
+    assessor: str
+    """``chosen``, ``undecided`` or ``unknown`` (Engagement.assessor)."""
+    requirements_total: int
+    requirements_supported: int
+    """In scope requirements with at least one live control mapped."""
+    requirements_met: int
+    controls_total: int
+    controls_owned: int
+    controls_evidenced: int
+    """Controls with evidence that still counts (not rejected, not past renewal)."""
+    checks_passing: int
+    checks_failing: int
+    decisions_total: int
+    """Applicability frameworks only: requirements a workspace may decide on."""
+    decisions_reviewed: int
+    scope_statement_approved: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class ProgramFigures:
+    frameworks: list[FrameworkFigures]
+    controls_total: int
+    controls_owned: int
+    controls_evidenced: int
+    controls_started: int
+    checks_failing: int
+
+
 class EngagementService:
     def __init__(self, audit: AuditService | None = None) -> None:
         self._audit = audit or audit_service
@@ -271,7 +339,9 @@ class EngagementService:
                 select(Engagement)
                 .join(FrameworkVersion, FrameworkVersion.id == Engagement.framework_version_id)
                 .where(
-                    Engagement.tenant_id == tenant_id, FrameworkVersion.framework_id == framework.id
+                    Engagement.tenant_id == tenant_id,
+                    FrameworkVersion.framework_id == framework.id,
+                    Engagement.is_current.is_(True),
                 )
                 .order_by(Engagement.created_at.desc())
                 .limit(1)
@@ -320,7 +390,7 @@ class EngagementService:
         )
         return ctx.engagement if ctx else None
 
-    async def upsert(  # noqa: PLR0913 — the engagement's own fields
+    async def upsert(  # noqa: PLR0912, PLR0913, PLR0915 — the engagement's own fields
         self,
         session: AsyncSession,
         *,
@@ -336,6 +406,8 @@ class EngagementService:
         scope_statement: str | None = None,
         certification_body: str | None = None,
         audit_on: date | None = None,
+        sent: set[str] | None = None,
+        details: dict[str, object] | None = None,
     ) -> Engagement:
         version = await session.get(FrameworkVersion, framework_version_id)
         if version is None:
@@ -367,9 +439,6 @@ class EngagementService:
                     f"Add {framework.name} to your workspace before setting up its audit.",
                     detail=f"engagement for {framework.code} before it was added",
                 )
-        else:
-            scope_statement = certification_body = None
-            audit_on = None
 
         # Enforced here as well as by the CHECK so the client gets a typed
         # message instead of a constraint-violation surfaced as a 500.
@@ -394,6 +463,14 @@ class EngagementService:
 
         existing = await self.get(session, tenant_id=tenant_id, framework_code=framework.code)
         before = AuditService.snapshot(existing, fields=_ENGAGEMENT_SNAPSHOT) if existing else None
+        # A SOC 2 form written before SOC 2 could carry a scope statement and an audit firm
+        # does not send them; not sending keeps what is stored (SC-1, EN-3).
+        scope_statement, certification_body, audit_on = self._kept(
+            existing, sent, scope_statement, certification_body, audit_on
+        )
+        details = self._check_details(
+            details or {}, audit_type=audit_type, scope_model=framework.scope_model
+        )
 
         if existing is None:
             engagement = Engagement(
@@ -410,6 +487,7 @@ class EngagementService:
                 certification_body=(certification_body or "").strip() or None,
                 audit_on=audit_on,
             )
+            self._apply_details(engagement, details, audit_type=audit_type)
             session.add(engagement)
             await session.flush([engagement])
         else:
@@ -420,9 +498,18 @@ class EngagementService:
             engagement.window_start = window_start
             engagement.window_end = window_end
             engagement.categories_in_scope = categories_in_scope
-            engagement.scope_statement = (scope_statement or "").strip() or None
+            new_statement = (scope_statement or "").strip() or None
+            if new_statement != engagement.scope_statement:
+                # New wording needs its own approval (EN-11); an AI mark is kept only when the
+                # same save says the text came from a draft.
+                engagement.scope_statement_approved_at = None
+                engagement.scope_statement_approved_by_membership_id = None
+                if "scope_statement_ai" not in details:
+                    engagement.scope_statement_ai = False
+            engagement.scope_statement = new_statement
             engagement.certification_body = (certification_body or "").strip() or None
             engagement.audit_on = audit_on
+            self._apply_details(engagement, details, audit_type=audit_type)
             if status is not None:
                 engagement.status = status
 
@@ -437,6 +524,167 @@ class EngagementService:
             after=AuditService.snapshot(engagement, fields=_ENGAGEMENT_SNAPSHOT),
         )
         return engagement
+
+    async def plan_from_certificate(  # noqa: PLR0913 — who, which framework, the two dates
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        framework_code: str,
+        issued_on: date | None,
+        expires_on: date | None,
+    ) -> str | None:
+        """Plan the next audit date from a certificate already held (guided onboarding EX-2):
+        a surveillance audit about a year after issue, a recertification audit three months
+        before expiry. Only fills an empty date; returns what it did, for the person to see."""
+        engagement = await self.get(session, tenant_id=tenant_id, framework_code=framework_code)
+        if engagement is None:
+            return None
+        if engagement.audit_type == "surveillance" and issued_on is not None:
+            planned = issued_on + timedelta(days=365)
+            label = "Surveillance audit"
+        elif engagement.audit_type == "recertification" and expires_on is not None:
+            planned = expires_on - timedelta(days=90)
+            label = "Recertification audit"
+        else:
+            return (
+                "Set this audit to surveillance or recertification to plan its date from the "
+                "certificate."
+            )
+        if engagement.audit_on is not None:
+            return f"{label} already planned for {engagement.audit_on.isoformat()}."
+        before = AuditService.snapshot(engagement, fields=_ENGAGEMENT_SNAPSHOT)
+        engagement.audit_on = planned
+        await session.flush([engagement])
+        await self._audit.record(
+            session,
+            action="update",
+            object_type="engagement",
+            object_id=engagement.id,
+            actor=actor,
+            tenant_id=tenant_id,
+            before=before,
+            after=AuditService.snapshot(engagement, fields=_ENGAGEMENT_SNAPSHOT),
+        )
+        return f"{label} planned for {planned.isoformat()} from the certificate."
+
+    async def approve_scope_statement(
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor: Actor,
+        membership_id: uuid.UUID,
+        framework_code: str,
+    ) -> Engagement:
+        """A named member approves the scope statement as written (EN-11)."""
+        engagement = await self.get(session, tenant_id=tenant_id, framework_code=framework_code)
+        if engagement is None or not (engagement.scope_statement or "").strip():
+            raise Conflict(
+                "Write the scope statement first, then approve it.", detail="no scope statement"
+            )
+        before = AuditService.snapshot(engagement, fields=_ENGAGEMENT_SNAPSHOT)
+        engagement.scope_statement_approved_at = datetime.now(UTC)
+        engagement.scope_statement_approved_by_membership_id = membership_id
+        await session.flush([engagement])
+        await self._audit.record(
+            session,
+            action="approve",
+            object_type="engagement",
+            object_id=engagement.id,
+            actor=actor,
+            tenant_id=tenant_id,
+            before=before,
+            after=AuditService.snapshot(engagement, fields=_ENGAGEMENT_SNAPSHOT),
+        )
+        return engagement
+
+    async def add_category(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, actor: Actor, category: str
+    ) -> Engagement:
+        """Add one Trust Services Category to the SOC 2 scope (guided onboarding SC-5)."""
+        engagement = await self.get(session, tenant_id=tenant_id, framework_code="SOC2")
+        if engagement is None:
+            raise Conflict(
+                "Set up your SOC 2 report first, then add categories to it.",
+                detail="category added before the SOC 2 engagement exists",
+            )
+        if category in engagement.categories_in_scope:
+            return engagement
+        before = AuditService.snapshot(engagement, fields=_ENGAGEMENT_SNAPSHOT)
+        engagement.categories_in_scope = [*engagement.categories_in_scope, category]
+        await session.flush([engagement])
+        await self._audit.record(
+            session,
+            action="update",
+            object_type="engagement",
+            object_id=engagement.id,
+            actor=actor,
+            tenant_id=tenant_id,
+            before=before,
+            after=AuditService.snapshot(engagement, fields=_ENGAGEMENT_SNAPSHOT),
+        )
+        return engagement
+
+    @staticmethod
+    def _kept(
+        existing: Engagement | None,
+        sent: set[str] | None,
+        scope_statement: str | None,
+        certification_body: str | None,
+        audit_on: date | None,
+    ) -> tuple[str | None, str | None, date | None]:
+        """The three shared fields, with any the save did not send kept as stored."""
+        if existing is None or sent is None:
+            return scope_statement, certification_body, audit_on
+        return (
+            scope_statement if "scope_statement" in sent else existing.scope_statement,
+            certification_body if "certification_body" in sent else existing.certification_body,
+            audit_on if "audit_on" in sent else existing.audit_on,
+        )
+
+    @staticmethod
+    def _check_details(
+        details: dict[str, object], *, audit_type: str, scope_model: str
+    ) -> dict[str, object]:
+        """Refuse a date that does not belong to this kind of audit, in plain words."""
+        if details.get("as_of_date") is not None and audit_type != "type_1":
+            raise InvalidInput(
+                "Only a Type 1 report has an as of date. Remove it, or choose Type 1.",
+                detail=f"as_of_date on a {audit_type} engagement",
+            )
+        if details.get("live_date") is not None and scope_model != "applicability":
+            raise InvalidInput(
+                "A go live date belongs to a management system, not to this framework.",
+                detail="live_date on a category framework",
+            )
+        cleaned = dict(details)
+        for name in ("driver", "assessor_accreditation_body", "assessor_contact"):
+            if name in cleaned:
+                cleaned[name] = (str(cleaned[name] or "")).strip() or None
+        return cleaned
+
+    @staticmethod
+    def _apply_details(
+        engagement: Engagement, details: dict[str, object], *, audit_type: str
+    ) -> None:
+        for name, value in details.items():
+            if name == "assessor":
+                engagement.assessor_state = str(value) if value else "unknown"
+            else:
+                setattr(engagement, name, value)
+        # Changing away from Type 1 drops its as of date rather than failing the CHECK.
+        if audit_type != "type_1":
+            engagement.as_of_date = None
+        # Naming the firm is choosing it; clearing the name without saying "still deciding"
+        # returns the state to not answered.
+        if (engagement.certification_body or "").strip():
+            # Naming the firm is choosing it, unless this save said otherwise in the same breath.
+            if "assessor" not in details:
+                engagement.assessor_state = "chosen"
+        elif engagement.assessor_state == "chosen":
+            engagement.assessor_state = "unknown"
 
     # -- scope -------------------------------------------------------------------
 
@@ -893,6 +1141,141 @@ class EngagementService:
             criteria_uncovered=criteria_total - criteria_covered,
             controls_unmapped=sum(1 for c in live if c.id not in mapped_control_ids),
             controls_no_evidence=len(live) - controls_evidenced,
+        )
+
+    # -- the programme at a glance (Get Started) ---------------------------------
+
+    async def program_figures(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, framework_codes: list[str]
+    ) -> ProgramFigures:
+        """The counts Get Started shows, for every framework the workspace runs, in one read.
+
+        The same rules as the dashboard (readiness.py, ``_is_relevant``), but the controls,
+        evidence and automation states are loaded once for all frameworks, so the cost
+        does not grow with the number of controls or frameworks beyond one scope read each.
+        """
+        from verity.modules.connectors.service import connector_service  # noqa: PLC0415
+        from verity.modules.evidence.service import evidence_service  # noqa: PLC0415
+
+        controls = list(
+            (await session.execute(select(Control).where(Control.tenant_id == tenant_id))).scalars()
+        )
+        live = [c for c in controls if c.disabled_at is None]
+        by_framework = await self._control_frameworks(session, tenant_id)
+        with_current = await evidence_service.control_ids_with_current_evidence(
+            session, tenant_id, exclude_source=BUILT_IN_SOURCE
+        )
+        automation = await connector_service.automation_statuses(session, tenant_id=tenant_id)
+        mapped_rows = (
+            await session.execute(
+                select(ControlRequirement.requirement_id, ControlRequirement.control_id)
+                .join(Control, Control.id == ControlRequirement.control_id)
+                .where(ControlRequirement.tenant_id == tenant_id, Control.disabled_at.is_(None))
+            )
+        ).all()
+
+        def _ready(control: Control) -> bool:
+            return control_ready(
+                status=control.status,
+                has_current_evidence=control.id in with_current,
+                automation=automation.get(control.id),
+            )
+
+        out: list[FrameworkFigures] = []
+        for code in framework_codes:
+            ctx = await self.context(session, tenant_id=tenant_id, framework_code=code)
+            if ctx is None:
+                continue
+            relevant = {
+                c.id: c for c in live if self._is_relevant(c.id, ctx.framework.id, by_framework)
+            }
+            per_requirement: dict[uuid.UUID, list[Control]] = defaultdict(list)
+            for requirement_id, control_id in mapped_rows:
+                if control_id in relevant:
+                    per_requirement[requirement_id].append(relevant[control_id])
+            in_scope = await self._in_scope(session, tenant_id=tenant_id, ctx=ctx)
+            decisions_total = decisions_reviewed = 0
+            if ctx.scope_model == "applicability" and ctx.version is not None:
+                decidable = {
+                    r.id
+                    for r in (
+                        await session.execute(
+                            select(Requirement)
+                            .join(
+                                FrameworkVersionRequirement,
+                                FrameworkVersionRequirement.requirement_id == Requirement.id,
+                            )
+                            .where(
+                                FrameworkVersionRequirement.framework_version_id == ctx.version.id
+                            )
+                        )
+                    ).scalars()
+                    if not r.is_always_in_scope
+                }
+                reviewed = set(
+                    (
+                        await session.execute(
+                            select(RequirementApplicability.requirement_id).where(
+                                RequirementApplicability.tenant_id == tenant_id,
+                                RequirementApplicability.reviewed_at.is_not(None),
+                            )
+                        )
+                    ).scalars()
+                )
+                decisions_total = len(decidable)
+                decisions_reviewed = len(decidable & reviewed)
+            states = [automation.get(cid) for cid in relevant]
+            out.append(
+                FrameworkFigures(
+                    code=ctx.framework.code,
+                    name=ctx.framework.name,
+                    scope_model=ctx.scope_model,
+                    scope_set=ctx.scope_set,
+                    audit_type=ctx.engagement.audit_type if ctx.engagement else None,
+                    window_start=ctx.engagement.window_start if ctx.engagement else None,
+                    window_end=ctx.engagement.window_end if ctx.engagement else None,
+                    audit_on=ctx.engagement.audit_on if ctx.engagement else None,
+                    certification_body=(
+                        ctx.engagement.certification_body if ctx.engagement else None
+                    ),
+                    as_of_date=ctx.engagement.as_of_date if ctx.engagement else None,
+                    target_date=ctx.engagement.target_date if ctx.engagement else None,
+                    live_date=ctx.engagement.live_date if ctx.engagement else None,
+                    assessor=ctx.engagement.assessor if ctx.engagement else "unknown",
+                    scope_statement_set=bool(
+                        ctx.engagement and (ctx.engagement.scope_statement or "").strip()
+                    ),
+                    scope_statement_approved=bool(
+                        ctx.engagement and ctx.engagement.scope_statement_approved_at
+                    ),
+                    requirements_total=len(in_scope),
+                    requirements_supported=sum(1 for r in in_scope if per_requirement.get(r.id)),
+                    requirements_met=sum(
+                        1
+                        for r in in_scope
+                        if requirement_ready((c.status, _ready(c)) for c in per_requirement[r.id])
+                    ),
+                    controls_total=len(relevant),
+                    controls_owned=sum(
+                        1 for c in relevant.values() if c.owner_membership_id is not None
+                    ),
+                    controls_evidenced=sum(1 for cid in relevant if cid in with_current),
+                    checks_passing=states.count("passing"),
+                    checks_failing=states.count("failing"),
+                    decisions_total=decisions_total,
+                    decisions_reviewed=decisions_reviewed,
+                )
+            )
+        live_ids = {c.id for c in live}
+        return ProgramFigures(
+            frameworks=out,
+            controls_total=len(live),
+            controls_owned=sum(1 for c in live if c.owner_membership_id is not None),
+            controls_evidenced=sum(1 for c in live if c.id in with_current),
+            controls_started=sum(1 for c in live if c.status != "not_started"),
+            checks_failing=sum(
+                1 for cid, state in automation.items() if cid in live_ids and state == "failing"
+            ),
         )
 
 

@@ -36,9 +36,9 @@ def _shipped() -> dict[str, set[str]]:
     return by_template
 
 
-def _migration() -> ModuleType:
-    path = next(_MIGRATIONS.glob("*_soc2_mapping_corrections.py"))
-    spec = importlib.util.spec_from_file_location("soc2_mapping_corrections", path)
+def _migration(pattern: str = "*_soc2_mapping_corrections.py") -> ModuleType:
+    path = next(_MIGRATIONS.glob(pattern))
+    spec = importlib.util.spec_from_file_location(path.stem, path)
     assert spec is not None
     assert spec.loader is not None
     module = importlib.util.module_from_spec(spec)
@@ -65,9 +65,22 @@ def test_the_mapping_has_no_duplicates() -> None:
 
 
 def test_the_migration_carries_exactly_what_the_pack_ships() -> None:
+    """Each mapping migration carries its correction; the latest one for a control must end
+    where the pack now is."""
     shipped = _shipped()
-    for code, (_before, after) in _migration().CHANGES.items():
+    latest: dict[str, tuple[str, ...]] = {}
+    for module in (_migration(), _migration("*_soc2_mapping_fixes.py")):
+        for code, (_before, after) in module.CHANGES.items():
+            latest[code] = after
+    for code, after in latest.items():
         assert shipped[code] == set(after), code
+
+
+def test_each_mapping_migration_starts_where_the_previous_ended() -> None:
+    first, second = _migration(), _migration("*_soc2_mapping_fixes.py")
+    for code, (before, _after) in second.CHANGES.items():
+        if code in first.CHANGES:
+            assert set(before) == set(first.CHANGES[code][1]), code
 
 
 @pytest.mark.parametrize(

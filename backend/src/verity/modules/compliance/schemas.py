@@ -213,6 +213,17 @@ class EngagementOut(_Response):
     scope_statement: str | None = None
     certification_body: str | None = None
     audit_on: date | None = None
+    as_of_date: date | None = None
+    target_date: date | None = None
+    driver: str | None = None
+    live_date: date | None = None
+    assessor: str = "unknown"
+    assessor_accreditation_body: str | None = None
+    assessor_contact: str | None = None
+    assessor_engaged_on: date | None = None
+    scope_statement_ai: bool = False
+    scope_statement_approved_at: UtcDateTime | None = None
+    scope_statement_approved_by_membership_id: uuid.UUID | None = None
 
 
 class EngagementPut(_Request):
@@ -228,6 +239,59 @@ class EngagementPut(_Request):
     scope_statement: str | None = Field(default=None, max_length=8000)
     certification_body: str | None = Field(default=None, max_length=200)
     audit_on: date | None = None
+    # Guided onboarding EN-2, EN-3. Each of these is left as it is when not sent, so a
+    # form that does not know about them never clears them.
+    as_of_date: date | None = None
+    target_date: date | None = None
+    driver: str | None = Field(default=None, max_length=300)
+    live_date: date | None = None
+    assessor: str | None = Field(default=None, pattern="^(undecided|chosen)$")
+    assessor_accreditation_body: str | None = Field(default=None, max_length=200)
+    assessor_contact: str | None = Field(default=None, max_length=300)
+    assessor_engaged_on: date | None = None
+    scope_statement_ai: bool | None = None
+    """True when the scope statement text came from an AI draft (AI-2)."""
+
+
+class ScopeOtherDecisionOut(_Response):
+    framework_code: str
+    in_scope: bool
+
+
+class ScopeItemOut(_Response):
+    id: uuid.UUID
+    kind: str
+    name: str
+    origin: str
+    in_scope: bool | None
+    reason: str | None
+    decided_at: UtcDateTime | None
+    others: list[ScopeOtherDecisionOut]
+
+
+class ScopeItemIn(_Request):
+    kind: str = Field(
+        pattern="^(service|legal_entity|site|environment|system|vendor|people_group|data_type)$"
+    )
+    name: str = Field(min_length=1, max_length=200)
+
+
+class ScopeDecisionIn(_Request):
+    in_scope: bool
+    reason: str | None = Field(default=None, max_length=1000)
+
+
+class ScopeDecisionOut(_Response):
+    item: ScopeItemOut
+    notices: list[str]
+
+
+class ScopeRetireIn(_Request):
+    reason: str = Field(min_length=1, max_length=1000)
+
+
+class ScopeRetireOut(_Response):
+    notices: list[str]
 
 
 class CriterionCoverageOut(_Response):
@@ -551,3 +615,16 @@ class ApplicabilityPut(_Request):
     owner_membership_id: uuid.UUID | None = None
     # Stamp the row as reviewed now, so a decision shows who last confirmed it and when.
     reviewed: bool = False
+
+
+class ApplicabilityVersionOut(_Response):
+    id: uuid.UUID
+    number: int
+    framework_version: str
+    note: str | None
+    approved_by_membership_id: uuid.UUID | None
+    created_at: UtcDateTime
+
+
+class ApproveVersionIn(_Request):
+    note: str | None = Field(default=None, max_length=1000)

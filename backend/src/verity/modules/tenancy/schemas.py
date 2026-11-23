@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import UTC, date, datetime
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal
 
 from pydantic import (
     BaseModel,
@@ -249,11 +249,18 @@ class _CompanyProfileFields(_Request):
     regulatory_scope: str | None = Field(default=None, max_length=500)
     privacy_policy_url: str | None = Field(default=None, max_length=300)
     terms_url: str | None = Field(default=None, max_length=300)
+    registered_address: str | None = Field(default=None, max_length=500)
 
 
 class CompanyProfileUpdate(_CompanyProfileFields):
     """Patch semantics: only fields present are written; the rest are untouched.
-    Send an explicit empty string to clear a field."""
+    Send an explicit empty string to clear a field.
+
+    ``answers`` is a patch too: a question key sent with null clears that answer, any other
+    value replaces it, and keys not sent are untouched. Values are checked against the
+    question catalogue (``profile_questions.py``)."""
+
+    answers: dict[str, Any] | None = None
 
 
 class CompanyProfileResponse(_Response):
@@ -270,6 +277,49 @@ class CompanyProfileResponse(_Response):
     regulatory_scope: str | None
     privacy_policy_url: str | None
     terms_url: str | None
+    registered_address: str | None
+    answers: dict[str, Any]
+    status: str
+    version: int
+    confirmed_by_membership_id: uuid.UUID | None
+    confirmed_at: UtcDateTime | None
+    core_answered: int
+    core_total: int
+
+
+class ProfileOptionOut(BaseModel):
+    value: str
+    label: str
+
+
+class ProfileShowIfOut(BaseModel):
+    key: str
+    equals: list[str]
+    contains: str | None
+
+
+class ProfileQuestionOut(BaseModel):
+    key: str
+    label: str
+    kind: str
+    used_for: str
+    core: bool
+    options: list[ProfileOptionOut]
+    show_if: list[ProfileShowIfOut]
+
+
+class ProfileSectionOut(BaseModel):
+    key: str
+    title: str
+    questions: list[ProfileQuestionOut]
+
+
+class ProfileVersionOut(_Response):
+    version: int
+    answers: dict[str, Any]
+    details: dict[str, Any]
+    confirmed_by_membership_id: uuid.UUID | None
+    confirmed_at: UtcDateTime
 
 
 # ---------------------------------------------------------------------------

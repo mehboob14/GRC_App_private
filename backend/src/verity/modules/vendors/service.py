@@ -1767,6 +1767,35 @@ class VendorService:
 
     # -- reads -----------------------------------------------------------------
 
+    async def names(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, vendor_ids: Sequence[uuid.UUID]
+    ) -> dict[uuid.UUID, tuple[str, str | None]]:
+        """``{id: (name, tier)}`` for the given vendors, for other modules' labels."""
+        if not vendor_ids:
+            return {}
+        rows = await session.execute(
+            select(Vendor.id, Vendor.name, Vendor.tier).where(
+                Vendor.tenant_id == tenant_id, Vendor.id.in_(list(vendor_ids))
+            )
+        )
+        return {row[0]: (row[1], row[2]) for row in rows.all()}
+
+    async def scope_candidates(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID
+    ) -> list[tuple[uuid.UUID, str]]:
+        """Critical and high tier vendors still in use, as ``(id, name)``, for scope suggestions
+        (guided onboarding SC-3). These are the ones an auditor asks about first."""
+        rows = await session.execute(
+            select(Vendor.id, Vendor.name)
+            .where(
+                Vendor.tenant_id == tenant_id,
+                Vendor.lifecycle_status.not_in(("archived", "terminated")),
+                Vendor.tier.in_(("critical", "high")),
+            )
+            .order_by(Vendor.name)
+        )
+        return [(row[0], row[1]) for row in rows.all()]
+
     async def list_vendors(  # noqa: PLR0912, PLR0913 — one branch per filter
         self,
         session: AsyncSession,

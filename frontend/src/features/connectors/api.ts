@@ -196,6 +196,11 @@ export type ExpectedEvidence = {
   module: string | null;
   state: EvidenceState;
   automated_by: { key: string; name: string; availability: Availability }[];
+  /** Guided onboarding CL-9: plain guidance for someone collecting it the first time. */
+  what?: string | null;
+  where?: string | null;
+  shows?: string | null;
+  if_none?: string | null;
 };
 
 /** One criterion a control answers, with the shipped coverage and why. */

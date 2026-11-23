@@ -1,8 +1,8 @@
 {
   "counts": {
-    "document_templates": 30,
+    "document_templates": 44,
     "openlane_policy_hub": 15,
-    "verity_authored": 15
+    "verity_authored": 29
   },
   "source": {
     "repository": "https://github.com/theopenlane/policy-hub",
@@ -14,13 +14,13 @@
   "generated": [
     {
       "path": "document_templates.json",
-      "sha256": "aeb94f203f2da2e8f2cdd3161a5100f04983a7830378ad25bdfa78357aeec7c8"
+      "sha256": "edc5253c8399a87ae846d41209df7b9a918c166adc8d940d383b9d038c259d64"
     }
   ],
   "authored": {
     "author": "Verity",
     "license": "Verity",
-    "templates": 15,
-    "note": "Written by Verity on 2026-10-16 for the ISO 27001 management system and the Phase 1 change management, acceptable use and operating procedure gaps, and reviewed by the compliance review pass (ISO 27001, PCI DSS and banking perspective) before shipping. No text of ISO/IEC 27001, 27002, PCI DSS or the AICPA criteria is reproduced: requirements are referred to by identifier only. Rows carry source 'verity' and are kept by scripts/build_policy_templates.py when the Openlane templates are rebuilt."
+    "templates": 29,
+    "note": "Written by Verity on 2026-10-16 for the ISO 27001 management system and the Phase 1 change management, acceptable use and operating procedure gaps, and reviewed by the compliance review pass (ISO 27001, PCI DSS and banking perspective) before shipping. No text of ISO/IEC 27001, 27002, PCI DSS or the AICPA criteria is reproduced: requirements are referred to by identifier only. Rows carry source 'verity' and are kept by scripts/build_policy_templates.py when the Openlane templates are rebuilt. On 2026-11-21 fourteen more were drafted for guided onboarding (rows with review_status draft_unreviewed: the policy statement, operating plan, SOC 2 system description, impact analysis, three technical standards, joiner mover leaver checklists, three privacy documents, processing integrity procedure, oversight body charter, site and equipment standard). They need the reviews named in part 5, section 10 of the plan before they are described as reviewed; the privacy ones need privacy counsel."
   }
 }

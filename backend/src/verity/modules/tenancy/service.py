@@ -74,6 +74,7 @@ from verity.modules.tenancy.models import (
     TENANT_STATUS_ACTIVE,
     TENANT_STATUS_PROVISIONING,
     CompanyProfile,
+    CompanyProfileVersion,
     PlatformAdmin,
     Tenant,
     TenantBranding,
@@ -81,8 +82,10 @@ from verity.modules.tenancy.models import (
     TenantRegistrationKey,
     TenantSmtp,
 )
+from verity.modules.tenancy.profile_questions import merge_answers, missing_core
 from verity.modules.tenancy.repository import (
     CompanyProfileRepository,
+    CompanyProfileVersionRepository,
     PlatformAdminRepository,
     TenantRepository,
     TenantSmtpRepository,
@@ -713,6 +716,7 @@ class TenancyService:
         self._gates: MembershipGates = gates or NoMembershipsYet()
         self._profiles = profiles or CompanyProfileRepository()
         self._smtp = TenantSmtpRepository()
+        self._profile_versions = CompanyProfileVersionRepository()
         self._injected_store = store
 
     @property
@@ -1238,6 +1242,11 @@ class TenancyService:
             display_name=tenant.trading_name if tenant else None,
             registration_number=tenant.registration_number if tenant else None,
             industry=tenant.industry if tenant else None,
+            # Column defaults apply on flush; a read of an unsaved profile needs them now.
+            answers={},
+            answers_schema=1,
+            status="draft",
+            version=0,
         )
 
     async def get_own_company_profile(
@@ -1263,16 +1272,27 @@ class TenancyService:
         first save seeds the rest from the registration record. Audited on the
         tenant's stream, actor = the acting membership."""
         data = changes.model_dump(exclude_unset=True)
+        answers_patch = data.pop("answers", None) or {}
         profile = await self._profiles.get(session, tenant_id)
         created = profile is None
-        if not data and profile is not None:
+        if not data and not answers_patch and profile is not None:
             return profile  # nothing sent, nothing existed to reshape
-        fields = tuple(CompanyProfileUpdate.model_fields.keys())
+        fields = (*CompanyProfileUpdate.model_fields.keys(), "status", "version")
         if profile is None:
             profile = self._seed_profile(tenant_id, await self._tenants.get(session, tenant_id))
         before = None if created else AuditService.snapshot(profile, fields=fields)
+        changed = False
         for name, value in data.items():
+            changed = changed or getattr(profile, name) != value
             setattr(profile, name, value)
+        if answers_patch:
+            merged = merge_answers(dict(profile.answers or {}), answers_patch)
+            changed = changed or merged != (profile.answers or {})
+            profile.answers = merged
+        # A confirmed profile that changes is a draft again until an admin confirms it;
+        # the confirmed version stays readable in ``company_profile_versions`` (PR-3).
+        if changed and profile.status == "confirmed":
+            profile.status = "draft"
         if created:
             await self._profiles.add(session, profile)
         else:
@@ -1289,6 +1309,83 @@ class TenancyService:
             after=AuditService.snapshot(profile, fields=fields),
         )
         return profile
+
+    async def confirm_own_company_profile(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, actor_membership_id: uuid.UUID
+    ) -> CompanyProfile:
+        """An admin confirms the profile: the next version is frozen and audited (PR-2, PR-3).
+
+        Refused while a core question these answers show is unanswered; the message names
+        them. "Not sure yet" counts as an answer.
+        """
+        profile = await self._profiles.get(session, tenant_id)
+        if profile is None:
+            profile = self._seed_profile(tenant_id, await self._tenants.get(session, tenant_id))
+            await self._profiles.add(session, profile)
+            await session.refresh(profile)
+        answers = dict(profile.answers or {})
+        missing = missing_core(answers)
+        if missing:
+            names = "; ".join(q.label for q in missing[:5])
+            more = f" and {len(missing) - 5} more" if len(missing) > 5 else ""  # noqa: PLR2004
+            raise InvalidInput(
+                f"Answer these before you confirm: {names}{more}.",
+                detail=f"{len(missing)} core profile questions unanswered",
+            )
+        if profile.status == "confirmed":
+            raise Conflict(
+                "This profile is already confirmed. Change an answer to confirm a new version.",
+                detail=f"profile version {profile.version} already confirmed",
+            )
+        fields = ("status", "version", "confirmed_by_membership_id", "confirmed_at")
+        before = AuditService.snapshot(profile, fields=fields)
+        now = datetime.now(UTC)
+        profile.version = (profile.version or 0) + 1
+        profile.status = "confirmed"
+        profile.confirmed_by_membership_id = actor_membership_id
+        profile.confirmed_at = now
+        await session.flush([profile])
+        await self._profile_versions.add(
+            session,
+            CompanyProfileVersion(
+                id=uuid7(),
+                tenant_id=tenant_id,
+                version=profile.version,
+                answers=answers,
+                details={
+                    name: getattr(profile, name)
+                    for name in (
+                        "legal_name",
+                        "display_name",
+                        "registration_number",
+                        "registered_address",
+                        "website",
+                        "domain",
+                    )
+                },
+                confirmed_by_membership_id=actor_membership_id,
+                confirmed_at=now,
+            ),
+        )
+        await session.refresh(profile)
+        await self._audit.record(
+            session,
+            action="approve",
+            object_type="company_profile",
+            object_id=tenant_id,
+            actor=MembershipActor(actor_membership_id),
+            tenant_id=tenant_id,
+            before=before,
+            after=AuditService.snapshot(profile, fields=fields),
+        )
+        return profile
+
+    async def list_company_profile_versions(
+        self, session: AsyncSession, tenant_id: uuid.UUID
+    ) -> list[CompanyProfileVersion]:
+        """Every confirmed version, newest first. RLS bounds it to the caller's tenant."""
+        _ = tenant_id  # the session is bound to it; named for the call site's clarity
+        return await self._profile_versions.list(session)
 
     # -- outbound email (tenant SMTP) ---------------------------------------
 

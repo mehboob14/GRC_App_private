@@ -11,7 +11,8 @@ export type NotificationKind =
   | "recurrence"
   | "document_review_due"
   | "document_review_overdue"
-  | "document_ack_reminder";
+  | "document_ack_reminder"
+  | "library_update";
 
 export type Notification = {
   id: string;

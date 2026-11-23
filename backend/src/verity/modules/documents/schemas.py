@@ -38,6 +38,8 @@ class DocumentOut(_Response):
     published_at: UtcDateTime | None
     archived_at: UtcDateTime | None
     updated_at: UtcDateTime
+    approved_elsewhere_on: date | None = None
+    approved_elsewhere_by_name: str | None = None
     frameworks: list[str]
     controls: list[str]
     attestation_pct: float | None
@@ -347,3 +349,16 @@ class PendingApprovalOut(_Response):
     document_code: str
     document_title: str
     tier: int
+
+
+class ApprovedElsewhereRequest(_Request):
+    """Guided onboarding RD-4, D-11: approved before Verity, confirmed here."""
+
+    approved_on: date
+    template_key: str | None = Field(default=None, max_length=120)
+
+
+class MatchTemplateRequest(_Request):
+    """Guided onboarding EX-3: this upload is the workspace's version of a template's document."""
+
+    template_key: str = Field(max_length=120)

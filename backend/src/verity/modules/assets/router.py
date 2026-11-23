@@ -91,6 +91,7 @@ async def list_assets(  # noqa: PLR0913, PLR0917 — one query parameter per fil
     exposure: str | None = None,
     owner: str | None = None,
     needs_attention: bool = False,
+    ids: Annotated[list[uuid.UUID] | None, Query(max_length=500)] = None,
     page: int = 1,
     page_size: int = 25,
 ) -> AssetPageOut:
@@ -104,6 +105,7 @@ async def list_assets(  # noqa: PLR0913, PLR0917 — one query parameter per fil
         exposure=exposure,
         owner=owner,
         needs_attention=needs_attention,
+        ids=tuple(ids) if ids is not None else None,
     )
     items, total = await asset_service.list_assets(
         session,

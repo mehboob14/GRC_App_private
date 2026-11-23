@@ -1,5 +1,8 @@
+import { apiFetch } from "@/lib/api/client";
 import { useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { DraftButton } from "@/features/onboarding/components/draft-button";
+import { ControlObjectivesTab } from "@/features/objectives/control-objectives-tab";
+import { Link, useLocation, useParams } from "react-router-dom";
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Badge,
@@ -264,18 +267,26 @@ function MappingNote({
   );
 }
 
-type TabId = "overview" | "evidence" | "tests" | "requirements" | "linked" | "history";
+type TabId = "overview" | "objectives" | "evidence" | "tests" | "requirements" | "linked" | "history";
+const TAB_IDS: readonly TabId[] = ["overview", "objectives", "evidence", "tests", "requirements", "linked", "history"];
 
 export function ControlDetailPage() {
   const { controlId = "" } = useParams();
   const { principal } = useAuth();
   const canManage = Boolean(principal?.permissions.includes("controls:manage"));
   const canReadAudit = Boolean(principal?.permissions.includes("audit:read"));
-  const [tab, setTab] = useEntryState<TabId>("detail.tab", "overview");
+  // A link may ask for a tab (the register's "+N more" opens Requirements).
+  const location = useLocation();
+  const asked =
+    (location.state as { tab?: string } | null)?.tab ?? new URLSearchParams(location.search).get("tab");
+  const [tab, setTab] = useEntryState<TabId>("detail.tab", () =>
+    TAB_IDS.includes(asked as TabId) ? (asked as TabId) : "overview",
+  );
   const linksQuery = useLinkedRecords("control", controlId);
   // Same query key as the Checks tab, so the rail and the tab share one fetch.
   const automation = useAutomation(controlId).data;
   const [editing, setEditing] = useState(false);
+  const [explained, setExplained] = useState<string | null>(null);
   const [linking, setLinking] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [judged, setJudged] = useState<Evidence | null>(null);
@@ -329,6 +340,11 @@ export function ControlDetailPage() {
   });
 
   const control = controlQuery.data;
+  const guidanceNotes = useQuery({
+    queryKey: ["guidance-notes", principal?.tenant_id, control?.code],
+    queryFn: () => apiFetch<string[]>(`/onboarding/guidance-notes/${control?.code ?? ""}`),
+    enabled: Boolean(control?.code),
+  });
   const evidence = useMemo(
     () => evidenceQuery.data ?? [],
     [evidenceQuery.data],
@@ -433,6 +449,7 @@ export function ControlDetailPage() {
   const statusFamily = STATUS_FAMILY[control.status] ?? "neutral";
   const tabs: { id: TabId; label: string; count?: number }[] = [
     { id: "overview", label: "Overview" },
+    { id: "objectives", label: "Objectives" },
     { id: "evidence", label: "Evidence", count: evidence.length },
     { id: "tests", label: "Checks" },
     { id: "requirements", label: "Requirements", count: criteria.length },
@@ -535,6 +552,24 @@ export function ControlDetailPage() {
                 <p className="text-body-md leading-relaxed text-text-secondary">
                   {control.description}
                 </p>
+                {guidanceNotes.data?.length ? (
+                  <div className="mt-3 rounded-md bg-surface-sunken px-3 py-2">
+                    <h3 className="text-caption text-text-subtle">For your company</h3>
+                    {guidanceNotes.data.map((n) => (
+                      <p key={n} className="mt-1 text-body-sm text-text-primary">
+                        {n}
+                      </p>
+                    ))}
+                  </div>
+                ) : null}
+                {canManage ? (
+                  <div className="mt-2">
+                    <DraftButton kind="control_explanation" subject={control.code} onDraft={setExplained} label="Explain for us" />
+                    {explained ? (
+                      <p className="mt-2 rounded-md bg-surface-sunken p-3 text-body-sm text-text-primary">{explained}</p>
+                    ) : null}
+                  </div>
+                ) : null}
                 {control.implementation_guidance ? (
                   <>
                     <h3 className="mb-2 mt-5 font-display text-title-sm text-text-primary">
@@ -631,6 +666,13 @@ export function ControlDetailPage() {
             />
           ) : null}
 
+          {tab === "objectives" ? (
+            <ControlObjectivesTab
+              controlId={controlId}
+              canManage={canManage}
+              evidence={evidence.map((e) => ({ id: e.id, title: e.title }))}
+            />
+          ) : null}
           {tab === "linked" ? <LinkedRecordsPanel anchorType="control" anchorId={controlId} /> : null}
 
           {tab === "history" ? (

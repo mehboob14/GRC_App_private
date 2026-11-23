@@ -20,7 +20,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from verity.seed.loader import CONTENT_ROOT, content_digest, sealed_hashes
+from verity.seed.seal import CONTENT_ROOT, content_digest, sealed_hashes
 
 FRAMEWORK_PACKS = ("soc2", "iso27001")
 

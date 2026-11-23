@@ -164,7 +164,9 @@ export function TeamPage() {
   const { principal, refreshPrincipal } = useAuth();
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const [open, setOpen] = useState(false);
+  // `?invite=1` opens the invite dialog on arrival, so a Get Started step lands on the
+  // action itself rather than on the page around it.
+  const [open, setOpen] = useState(() => new URLSearchParams(window.location.search).get("invite") === "1");
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [inviteResult, setInviteResult] = useState<InviteMemberResponse | null>(
     null,
