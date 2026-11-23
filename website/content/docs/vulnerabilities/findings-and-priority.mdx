@@ -1,0 +1,81 @@
+---
+title: Findings and priority
+description: How Verity separates a weakness from where it appears, and why a finding's priority blends CVSS, exploit data and the asset it sits on.
+status: live
+updated: 2026-10-02
+---
+
+Scanners produce thousands of findings. The vulnerabilities module turns that pile into a list somebody can work, in the order that actually reduces your risk, with a clock on each one. This page explains how findings are modelled, how Verity decides what comes first, and what the Overview tells you.
+
+## The register
+
+Open **Vulnerabilities** in the left navigation. The **Register** tab lists every finding with its CVE, severity, CVSS, EPSS, the affected asset and its contextual priority. Tiles above it count what is open, overdue, known to be exploited and accepted. Filter by severity, asset, exploit or flags such as **Known exploited (KEV)** and **Overdue**, or search by title or CVE.
+
+<Walkthrough name="vulnerabilities-register" alt="The vulnerability register with tiles for open, overdue, known exploited and accepted findings above a table of findings with CVE, severity, CVSS, EPSS, asset and contextual priority" steps={[
+  { target: "import", title: "Import", body: "Bring findings in from a scanner export." },
+  { target: "add", title: "Add finding", body: "Record a finding by hand." },
+  { target: "severity-filter", title: "Filter by severity", body: "Focus on the findings that matter most." },
+  { target: "severity-col", title: "Severity", body: "Each finding carries a severity." },
+  { target: "asset-col", title: "Asset", body: "The asset the finding was found on." },
+]} />
+
+Use **Columns** to choose what the table shows, and **Export** for a spreadsheet of the findings you are looking at.
+
+## Definitions and findings
+
+Two things share the module.
+
+- A **definition** is the weakness itself, for example CVE-2021-44228 (Log4Shell). It is the same weakness wherever it appears.
+- A **finding** is that weakness *on one of your assets*, at one location. Two servers with Log4Shell are two findings of one definition.
+
+That split is why you can fix a finding on one host without the register pretending the whole CVE has gone away.
+
+## Priority: why the order is not just CVSS
+
+A CVSS score describes the weakness in the abstract. Verity prioritises what it means *to you*, combining:
+
+- **the weakness**: its CVSS score, whether an exploit exists, the EPSS probability that it will be exploited in the next 30 days, and whether it is on the Known Exploited Vulnerabilities (KEV) catalogue,
+- **the asset**: its criticality tier (which already reflects the data it holds), whether it is internet-facing and whether it is customer-facing.
+
+Each finding gets a risk score from 0 to 100 and a priority band.
+
+| Band | Meaning |
+|---|---|
+| P1 | Act now |
+| P2 | Schedule this sprint |
+| P3 | Plan it in |
+| P4 | Track only |
+
+A medium CVSS on your payment gateway can outrank a high on a test box, which is the right answer. A finding on the KEV catalogue is floored at the top band, P1, no matter what else is true, because something is being exploited right now.
+
+<Screenshot name="vulnerability-detail" alt="A finding's Overview tab with a risk score gauge, its P1 band and a How this was calculated breakdown of CVSS, exploit probability, known exploitation and the asset weighting" caption="Every score shows its working." />
+
+### Read how a score was calculated
+
+Open a finding. The **Overview** tab shows the risk score, its band and **How this was calculated**: the points from CVSS severity, exploit probability and known exploitation, then the multiplier from the asset, then any cap or KEV floor. The asset's own confidentiality, integrity and availability ratings are shown for context; they are not a score input.
+
+The **Threat intel** tab holds the raw signals: CVSS, EPSS, whether the CVE is on the CISA KEV catalogue, public exploits, whether the vendor has a patch, the CWE and when the finding was last enriched.
+
+Verity refreshes exploit data for open findings every day and recomputes their scores, so a finding can climb the list when exploitation starts. To pull fresh data now, use **Actions > Refresh threat intel** on the finding.
+
+Asset criticality matters here, so an accurate inventory gives you a better order. See [Asset inventory](/docs/assets/inventory/).
+
+## The Overview
+
+The **Overview** tab shows open findings by severity, what is overdue, throughput over time, and where the concentration sits.
+
+<Screenshot name="vulnerabilities-overview" alt="The vulnerabilities Overview tab with tiles for open findings, P1 findings, overdue and known exploited, above charts for severity, SLA compliance, priority, SLA by severity, status and asset type" />
+
+- **Tiles**: open findings, P1 findings to act on now, overdue findings and known exploited findings.
+- **Severity distribution** and **Priority**: how the open findings split.
+- **SLA compliance** and **SLA by severity**: how many are within their remediation window and how many are overdue.
+- **Status breakdown** and **By asset type**: where the work sits.
+- **Remediation, last 30 days**: findings closed and opened, the median time to fix, and the net change.
+
+## Next steps
+
+<Cards>
+<Card title="Import findings" href="/docs/vulnerabilities/importing-findings/" icon="folder">Bring in a scanner export or add a finding by hand.</Card>
+<Card title="Remediation and exceptions" href="/docs/vulnerabilities/remediation/" icon="check">Work a finding to a verified fix, or record an exception.</Card>
+<Card title="Asset inventory" href="/docs/assets/inventory/" icon="server">Rate your assets so priority reflects what matters.</Card>
+</Cards>

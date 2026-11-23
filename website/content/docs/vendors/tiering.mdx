@@ -1,0 +1,87 @@
+---
+title: Tiering and vendor policy
+description: Answer five questions to set how much diligence an engagement earns, re-tier when things change, and set the policy that each tier drives.
+status: live
+updated: 2026-10-02
+---
+
+Tiering decides how much diligence an engagement earns. This page walks you through tiering an engagement, explains what happens when you re-tier, and covers the vendor policy that turns a tier into stages, reviewers and review dates.
+
+## How tiering works
+
+Tiering asks five questions, each scored 0 to 4:
+
+1. **Data sensitivity**: what they hold.
+2. **Business criticality**: what breaks if they stop.
+3. **System access**: how far into your estate they reach.
+4. **Regulatory scope**: whether regulators care about this relationship.
+5. **Fourth-party reliance**: who they in turn depend on.
+
+The answers are weighted and produce a band: **Low**, **Medium**, **High** or **Critical**. The tier drives the questionnaire the vendor is sent, the reassessment cadence, and how strict the approval gate is. Some answers set a minimum tier, whatever the total score.
+
+Your team answers these questions, not the vendor. They come from your workspace's default tiering questionnaire, which you can edit under [Questionnaires](/docs/vendors/questionnaires/).
+
+## Tier an engagement
+
+You need the Assess vendors permission to tier.
+
+<Steps>
+<Step title="Open the lifecycle">
+
+Open the vendor and go to **Lifecycle**. If the vendor has more than one engagement, pick the one you are tiering.
+
+</Step>
+<Step title="Start tiering">
+
+Open the **Tiering** stage and click **Start tiering**. You can also use **Tier engagement** at the top of the vendor.
+
+</Step>
+<Step title="Answer the five questions">
+
+Answer each question. The score and the tier it falls in update as you go.
+
+</Step>
+<Step title="Override only with a reason">
+
+If the computed tier is wrong for a reason the answers miss, open **Override**, choose the tier and write the reason. The reason is required.
+
+</Step>
+<Step title="Save">
+
+Click **Set tier**. The tier appears on the vendor header and on the engagement, and the twelve stages are planned, with any stages your policy skips for that tier already marked as skipped.
+
+</Step>
+</Steps>
+
+<Screenshot name="vendor-lifecycle" alt="The Lifecycle tab after tiering, with the engagement's score marked on a Low, Medium, High and Critical scale, a Re-tier button, and the twelve stages ready to work" caption="The score sits on your policy's bands, with Re-tier beside it." />
+
+## Re-tier an engagement
+
+Re-tiering later is allowed and honest about its consequences: if the new tier demands work the old one skipped, the affected stages reopen.
+
+To re-tier, click **Re-tier** next to the engagement on the vendor's Overview tab or at the top of the Lifecycle tab, or choose **Actions > Re-tier engagement**. The dialog warns you when your new answers change the tier. Click **Save tier** to apply it.
+
+## Set the vendor policy
+
+**Vendors > Policy** is where an administrator sets the rules the module runs on: the tiering bands, reassessment cadences per tier, the remediation window for each finding severity, which stages a tier may skip, and which roles must review. Changing it needs the Manage vendors permission; everyone else sees it read-only.
+
+<Screenshot name="vendors-policy" alt="The vendor Policy tab showing, for each tier, the score it starts at and how often it is reviewed, the remediation window in days for each finding severity, and the stages each tier skips" />
+
+The policy has five sections:
+
+- **Bands and cadence**: the score each tier starts from, and how often a vendor at that tier is reviewed.
+- **Remediation windows**: how many days a finding of each severity has before it is overdue.
+- **Stages each tier skips**: intake, tiering and approval run for every vendor, so they are not listed.
+- **Alert rules**: what a recorded signal sets off. See [Monitor the vendor](/docs/vendors/contracts-monitoring-offboarding/#monitor-the-vendor).
+- **Reviewers each tier needs**: roles, filled from the roster. Diligence waits until they are.
+
+Click **Save policy** when you are done. Change the policy and new work follows the new rules. Work already under way keeps the policy it started under, so a vendor assessed last quarter can still be explained: every tiering keeps a copy of the policy it was scored under.
+
+### Fill the roster
+
+**Vendors > Roster** names who plays each part in the programme: TPRM lead, analyst, security, privacy, legal, procurement, executive approver and IT. It is not a permission editor. Permissions live on roles in [Roles and groups](/docs/admin/roles-and-groups/); the roster decides who is named and notified when a stage needs a particular kind of review. If a role the policy requires has nobody on the roster, the lifecycle says so and offers **Open roster**.
+
+<Cards>
+<Card title="Questionnaires and the portal" href="/docs/vendors/questionnaires/" icon="list">Send the questionnaire the tier calls for.</Card>
+<Card title="Assessment and findings" href="/docs/vendors/assessment-and-findings/" icon="flag">How remediation windows and the gate apply.</Card>
+</Cards>

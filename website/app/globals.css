@@ -1,0 +1,112 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ------------------------------------------------------------------ tokens */
+/* Channels (r g b) so Tailwind opacity modifiers work: bg-ink/5 etc. */
+:root {
+  color-scheme: light;
+  --canvas: 255 255 255;
+  --surface: 255 255 255;
+  --subtle: 247 248 250;
+  --muted-bg: 241 243 246;
+  --ink: 11 15 23;
+  --body: 54 63 78;
+  --dim: 93 104 120;
+  --faint: 104 113 131;
+  --line: 227 231 236;
+  --line-strong: 208 213 221;
+  --accent: 10 108 203;
+  --accent-strong: 8 86 166;
+  --accent-soft: 232 242 252;
+  --header-h: 64px;
+}
+
+/* Documentation dark theme. Marketing pages stay light, as on the reference site. */
+[data-docs-theme="dark"] .docs-root {
+  color-scheme: dark;
+  --canvas: 12 15 21;
+  --surface: 19 23 31;
+  --subtle: 23 28 37;
+  --muted-bg: 31 37 48;
+  --ink: 238 241 245;
+  --body: 196 203 213;
+  --dim: 152 161 175;
+  --faint: 128 137 152;
+  --line: 40 47 59;
+  --line-strong: 58 67 82;
+  --accent: 96 170 245;
+  --accent-strong: 140 195 250;
+  --accent-soft: 22 40 62;
+}
+
+/* -------------------------------------------------------------------- base */
+@layer base {
+  html { -webkit-text-size-adjust: 100%; scroll-padding-top: calc(var(--header-h) + 24px); }
+  body { @apply bg-canvas font-sans text-body antialiased; text-rendering: optimizeLegibility; font-feature-settings: "cv11", "ss01"; }
+  h1, h2, h3, h4 { @apply text-ink; text-wrap: balance; }
+  p { text-wrap: pretty; }
+  ::selection { background: rgb(var(--accent) / 0.18); color: rgb(var(--ink)); }
+  :focus-visible { outline: 2px solid rgb(var(--accent)); outline-offset: 3px; border-radius: 6px; }
+  [hidden] { display: none !important; }
+  summary { cursor: pointer; }
+  summary::-webkit-details-marker { display: none; }
+  img, svg, video { max-width: 100%; }
+  img { height: auto; }
+}
+
+@layer components {
+  .skip-link { @apply fixed z-[100] rounded-lg bg-ink px-4 py-3 text-sm font-semibold text-white shadow-float; inset-inline-start: 16px; top: -80px; transition: top 160ms ease; }
+  .skip-link:focus { top: 12px; }
+
+  /* The framed content column with faint side rules, as on the reference site. */
+  .frame { @apply mx-auto w-full max-w-frame px-4 sm:px-6 lg:px-10; }
+  .frame-ruled { @apply relative mx-auto w-full max-w-frame; }
+  .frame-ruled::before, .frame-ruled::after { content: ""; position: absolute; top: 0; bottom: 0; width: 1px; background: rgb(var(--line)); pointer-events: none; }
+  .frame-ruled::before { inset-inline-start: 0; }
+  .frame-ruled::after { inset-inline-end: 0; }
+  @media (max-width: 1320px) { .frame-ruled::before, .frame-ruled::after { display: none; } }
+
+  .eyebrow { @apply font-mono text-eyebrow font-medium uppercase text-dim; }
+
+  /* Decorative giant wordmark at the foot of every page (generated content, so it is not read out). */
+  .footer-wordmark::before { content: "verity"; display: block; max-width: 80rem; margin: 0 auto -0.22em; padding-inline: 2.5rem; font-family: theme("fontFamily.serif"); font-size: clamp(5rem, 19vw, 17rem); line-height: 0.8; letter-spacing: -0.04em; color: rgb(var(--ink) / 0.045); }
+
+  .btn { @apply inline-flex min-h-[44px] select-none items-center justify-center gap-2 whitespace-nowrap rounded-lg px-[18px] text-[15px] font-semibold leading-none transition-[background-color,border-color,color,box-shadow,transform] duration-150 ease-out; }
+  .btn:active { transform: translateY(1px); }
+  .btn-sm { @apply min-h-[36px] px-3.5 text-sm; }
+  .btn-lg { @apply min-h-[50px] px-6 text-base; }
+  .btn-dark { @apply bg-ink text-white shadow-[0_1px_2px_rgb(16_24_40/0.12)] hover:bg-[#27303f]; }
+  .btn-outline { @apply border border-line-strong bg-surface text-ink shadow-[0_1px_2px_rgb(16_24_40/0.05)] hover:border-[#b6bdc9] hover:bg-subtle; }
+  .btn-ghost { @apply text-ink hover:bg-muted; }
+  .btn-light { @apply bg-white text-ink hover:bg-white/90; }
+  .btn .btn-arrow { transition: transform 160ms ease-out; }
+  .btn:hover .btn-arrow, .link-arrow:hover .btn-arrow { transform: translateX(3px); }
+  .link-arrow { @apply inline-flex items-center gap-1.5 font-medium text-accent hover:text-accent-strong; }
+
+  .card { @apply rounded-card border border-line bg-surface shadow-card; }
+  .chip { @apply inline-flex items-center gap-1.5 rounded-md border border-line bg-surface px-2.5 py-1.5 text-[13px] font-medium leading-none text-body; }
+  a.chip { @apply transition-colors hover:border-line-strong hover:text-ink; }
+
+  .hairline-list > * + * { border-top: 1px solid rgb(var(--line)); }
+
+  .text-balance { text-wrap: balance; }
+  .tabular { font-variant-numeric: tabular-nums; }
+  .scrollbar-none { scrollbar-width: none; }
+  .scrollbar-none::-webkit-scrollbar { display: none; }
+}
+
+/* --------------------------------------------------------- reveal on scroll */
+/* Only hidden when scripting runs and the visitor accepts motion, so no-JS and
+   reduced-motion visitors always see the content in its final state. */
+@media (prefers-reduced-motion: no-preference) {
+  .js [data-reveal] { opacity: 0; transform: translateY(14px); transition: opacity 600ms cubic-bezier(0.16, 1, 0.3, 1), transform 700ms cubic-bezier(0.16, 1, 0.3, 1); transition-delay: var(--reveal-delay, 0ms); }
+  .js [data-reveal="fade"] { transform: none; }
+  .js [data-reveal="scale"] { transform: translateY(10px) scale(0.985); }
+  .js [data-reveal].is-visible { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; animation-delay: 0ms !important; transition-duration: 0.001ms !important; transition-delay: 0ms !important; }
+}
