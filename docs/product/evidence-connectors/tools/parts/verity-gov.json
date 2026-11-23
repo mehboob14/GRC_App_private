@@ -1,0 +1,4313 @@
+{
+ "part": "verity-gov",
+ "documents_read": [
+  "coverage/gov-cs-hr.md",
+  "coverage/gov-cs-hr.json",
+  "coverage/gov-cs-hr.controls.json",
+  "AUTHORING.md sections 1 to 3 and 5 to 6",
+  "01-evidence-model.md sections 1.2 and 1.4"
+ ],
+ "checks": [
+  {
+   "key": "verity.assurance.internal_audit_held",
+   "name": "Internal audit held independently in the last 12 months",
+   "description": "An internal audit assurance record was held or closed in the last 12 months, names who performed it, and its independence was confirmed by a different member.",
+   "capabilities": [
+    "verity_controls"
+   ],
+   "implementations": [
+    "verity"
+   ],
+   "resource_type": "assurance_record",
+   "frequency": "daily",
+   "remediation": "Record the internal audit on the engagement with its performer and dates, and have a member other than the performer confirm independence. The performer should be an outside firm or a member who owns none of the controls in scope.",
+   "controls": [
+    {
+     "code": "GOV-13",
+     "coverage": "partial",
+     "rationale": "Shows an audit was held in time and by someone independent of the controls. Scope, criteria and what the report says stay with the uploaded report and the auditor's reading."
+    }
+   ],
+   "evidence_kinds": [
+    "Assurance record id and dates",
+    "Performer (member or outside firm)",
+    "Member who confirmed independence",
+    "Count of live in scope controls the performer owns"
+   ],
+   "observation_types": [
+    "verity.record (compliance: assurance records, internal audit)"
+   ],
+   "providers": {
+    "verity": "supported"
+   },
+   "artifacts": [
+    "internal-audit-or-readiness-assessment-report"
+   ],
+   "aliases": [],
+   "sources": [
+    "coverage/gov-cs-hr.md",
+    "coverage/gov-cs-hr.json"
+   ],
+   "population": "Internal audit assurance records on every current engagement.",
+   "predicate": "At least one record is held or closed with an end date in the last 12 months, names who performed it (a member or an outside firm), has its independence confirmed by a member other than the performer, and, where the performer is a member, that member owns none of the live controls in scope.",
+   "period": "Last 12 months, by the record's end date.",
+   "empty_population": "No record: workspace fail. No current engagement: insufficient information, since records hang on an engagement.",
+   "parameters": {},
+   "notes": "Overlaps existing verity.audit.internal_in_12_months (GOV-13 partial), which only looks for person filed evidence on the internal audit control dated in the last 12 months. Recommend a NEW key: the population is assurance records, not filed evidence, and it adds the independence test. Keep the old check as the fallback for a workspace that uploads a report without an assurance record (assurance records need an engagement). The JSON also lists this check on the internal audit report artifact for GOV-08 and GOV-30. Controls whose artifact rows in the JSON name this check but which are not in its control list: GOV-08, GOV-30."
+  },
+  {
+   "key": "verity.assurance.management_review_held",
+   "name": "Management review held each quarter",
+   "description": "Every calendar quarter of the audit window has a held or closed management review record with at least one attendee.",
+   "capabilities": [
+    "verity_controls"
+   ],
+   "implementations": [
+    "verity"
+   ],
+   "resource_type": "assurance_record",
+   "frequency": "daily",
+   "remediation": "Hold the quarterly management review and record it on the engagement with its date and attendees.",
+   "controls": [
+    {
+     "code": "GOV-15",
+     "coverage": "partial",
+     "rationale": "Shows the quarterly review took place. What it covered and decided stays in the minutes."
+    },
+    {
+     "code": "GOV-19",
+     "coverage": "partial",
+     "rationale": "Places a review in each quarter; that the register was on its agenda stays in the minutes."
+    }
+   ],
+   "evidence_kinds": [
+    "Quarter",
+    "Assurance record id",
+    "Review date",
+    "Attendees"
+   ],
+   "observation_types": [
+    "verity.record (compliance: assurance records, management review)"
+   ],
+   "providers": {
+    "verity": "supported"
+   },
+   "artifacts": [
+    "management-review-agenda-and-minutes",
+    "review-of-completed-improvements-and-their"
+   ],
+   "aliases": [],
+   "sources": [
+    "coverage/gov-cs-hr.md",
+    "coverage/gov-cs-hr.json"
+   ],
+   "population": "Each calendar quarter of the SOC 2 Type 2 window, or of the last 12 months when there is no window.",
+   "predicate": "Each quarter has a management review record, held or closed, dated inside the quarter, with at least one attendee or performer recorded.",
+   "period": "SOC 2 Type 2 window, otherwise the last 12 months, judged per calendar quarter. The quarter in progress is judged only after it ends.",
+   "empty_population": "No quarter covered: fail.",
+   "parameters": {},
+   "notes": "Overlaps existing verity.management_review.in_12_months (a 12 month floor on person filed evidence), which the split moves from GOV-15 to GOV-31. Recommend a NEW key: the quarterly cadence on assurance records is a different predicate and is what the quarterly GOV-15 review needs. On the artifact management-review-agenda-and-minutes the GOV-15 row lists this check instead of the old one; the JSON also lists it on that artifact for GOV-06, GOV-08, GOV-10, GOV-13, GOV-18, GOV-20, GOV-26 and GOV-30, and on review-of-completed-improvements-and-their for GOV-30. Controls whose artifact rows in the JSON name this check but which are not in its control list: GOV-06, GOV-08, GOV-10, GOV-13, GOV-18, GOV-20, GOV-26, GOV-30."
+  },
+  {
+   "key": "verity.assurance.management_review_inputs_recorded",
+   "name": "Yearly management review took every set input",
+   "description": "A management review record from the last 12 months shows each input on the shipped input list as considered or not applicable, with a note.",
+   "capabilities": [
+    "verity_controls"
+   ],
+   "implementations": [
+    "verity"
+   ],
+   "resource_type": "assurance_record",
+   "frequency": "daily",
+   "remediation": "Open the management review record and mark each listed input as considered or not applicable, with a note and the source record.",
+   "controls": [
+    {
+     "code": "GOV-31",
+     "coverage": "partial",
+     "rationale": "Shows the set inputs were taken into the yearly review. Whether top management judged the program sound is a person's conclusion."
+    },
+    {
+     "code": "GOV-15",
+     "coverage": "partial",
+     "rationale": "Until GOV-31 is adopted, the yearly review sits on GOV-15."
+    }
+   ],
+   "evidence_kinds": [
+    "Assurance record id",
+    "The input list with the state of each input"
+   ],
+   "observation_types": [
+    "verity.record (compliance: management review record inputs)"
+   ],
+   "providers": {
+    "verity": "supported"
+   },
+   "artifacts": [
+    "management-review-agenda-and-minutes"
+   ],
+   "aliases": [],
+   "sources": [
+    "coverage/gov-cs-hr.md",
+    "coverage/gov-cs-hr.json"
+   ],
+   "population": "Management review records held or closed in the last 12 months.",
+   "predicate": "At least one record covers every input on the shipped management review list, each marked considered or not applicable with a note.",
+   "period": "Last 12 months.",
+   "empty_population": "No record: fail.",
+   "parameters": {},
+   "notes": "Complements verity.management_review.in_12_months (stays on the yearly review, moved to GOV-31); NEW key. The GOV-15 mapping is transitional until the workspace adopts GOV-31. Inconsistency inside the research: the doc's table maps it to GOV-15, but the JSON row for management-review-agenda-and-minutes on GOV-15 does not list it (only GOV-31 and the other controls do). The input list is MANAGEMENT_REVIEW_INPUTS in compliance/assurance_service.py, whose labels follow the standard's list closely (see defects). Controls whose artifact rows in the JSON name this check but which are not in its control list: GOV-06, GOV-08, GOV-10, GOV-13, GOV-18, GOV-19, GOV-20, GOV-26, GOV-30."
+  },
+  {
+   "key": "verity.assurance.findings_tracked",
+   "name": "Assurance findings are owned, dated and tracked",
+   "description": "Every assurance finding open in the last 12 months has an active owner, a due date and a linked task, and none is overdue without closure evidence.",
+   "capabilities": [
+    "verity_controls"
+   ],
+   "implementations": [
+    "verity"
+   ],
+   "resource_type": "assurance_finding",
+   "frequency": "daily",
+   "remediation": "Give each listed finding an owner who is an active member, a due date and a linked task, or close it with closure evidence.",
+   "controls": [
+    {
+     "code": "GOV-13",
+     "coverage": "partial",
+     "rationale": "Shows audit findings became owned, dated actions. Reporting to managers stays in the minutes."
+    },
+    {
+     "code": "GOV-08",
+     "coverage": "partial",
+     "rationale": "Shows audit findings reached the deficiency log."
+    },
+    {
+     "code": "GOV-30",
+     "coverage": "partial",
+     "rationale": "Shows improvement items from audits reached the log."
+    }
+   ],
+   "evidence_kinds": [
+    "Finding id",
+    "Grade",
+    "Owner",
+    "Due date",
+    "Linked task id",
+    "Closure evidence id"
+   ],
+   "observation_types": [
+    "verity.record (compliance: assurance findings with linked tasks)"
+   ],
+   "providers": {
+    "verity": "supported"
+   },
+   "artifacts": [
+    "actions-raised-in-the-review-and",
+    "improvement-log-with-owners-decisions-and",
+    "log-of-control-deficiencies-with-owner",
+    "remediation-plan-for-the-gaps-found"
+   ],
+   "aliases": [],
+   "sources": [
+    "coverage/gov-cs-hr.md",
+    "coverage/gov-cs-hr.json"
+   ],
+   "population": "Assurance findings (internal audit, management review, outside audit stage) open at any time in the last 12 months.",
+   "predicate": "Every finding has an owner who is an active member, a due date and a linked task; a major or minor finding past its due date fails unless it is closed with closure evidence.",
+   "period": "Last 12 months (open at any time in the window).",
+   "empty_population": "No findings: no result (nothing to verify).",
+   "parameters": {},
+   "notes": "Different population from existing verity.tasks.remediation_in_sla (remediation tasks past SLA); NEW key. The JSON also lists it as a source on log-of-control-deficiencies-with-owner for GOV-01, GOV-06, GOV-14 and GOV-29, and on actions-raised-in-the-review-and for GOV-15 and GOV-31. Controls whose artifact rows in the JSON name this check but which are not in its control list: GOV-01, GOV-06, GOV-14, GOV-15, GOV-29, GOV-31."
+  },
+  {
+   "key": "verity.tasks.owned_and_dated",
+   "name": "Compliance tasks have an owner and a due date",
+   "description": "Every open task or issue linked to a compliance record has an owner who is an active member and a due or SLA date.",
+   "capabilities": [
+    "verity_tasks"
+   ],
+   "implementations": [
+    "verity"
+   ],
+   "resource_type": "task",
+   "frequency": "daily",
+   "remediation": "Assign an active member as owner and set a due date or SLA on each listed task.",
+   "controls": [
+    {
+     "code": "GOV-08",
+     "coverage": "partial",
+     "rationale": "Shows each logged deficiency has an owner and a due date. Root cause and containment stay in the task text."
+    },
+    {
+     "code": "GOV-15",
+     "coverage": "partial",
+     "rationale": "Shows review actions are owned and dated."
+    },
+    {
+     "code": "GOV-30",
+     "coverage": "partial",
+     "rationale": "Shows accepted improvements are owned and dated. The decision and reason stay with people."
+    },
+    {
+     "code": "GOV-14",
+     "coverage": "partial",
+     "rationale": "Shows coverage gaps raised as tasks have an owner."
+    },
+    {
+     "code": "HR-09",
+     "coverage": "partial",
+     "rationale": "Shows competence gap actions have an owner and date."
+    }
+   ],
+   "evidence_kinds": [
+    "Task code",
+    "Kind",
+    "Linked record",
+    "Owner",
+    "Due date"
+   ],
+   "observation_types": [
+    "verity.record (tasks)"
+   ],
+   "providers": {
+    "verity": "supported"
+   },
+   "artifacts": [
+    "actions-raised-in-the-review-and",
+    "communication-of-deficiencies-to-the-people",
+    "improvement-log-with-owners-decisions-and",
+    "log-of-control-deficiencies-with-owner",
+    "review-that-every-system-is-covered",
+    "security-objectives-with-owners-targets-and",
+    "training-or-other-actions-taken-to",
+    "treatment-plan-with-owners-and-due"
+   ],
+   "aliases": [],
+   "sources": [
+    "coverage/gov-cs-hr.md",
+    "coverage/gov-cs-hr.json"
+   ],
+   "population": "Open tasks and issues linked to a control, risk, assurance finding or vendor finding, or raised from a review, an improvement or a competence gap.",
+   "predicate": "Each has an owner who is an active member and a due date or SLA date.",
+   "period": "Current state (open tasks today).",
+   "empty_population": "No such task: no result.",
+   "parameters": {},
+   "notes": "Overlaps existing verity.tasks.remediation_in_sla (GOV-08), which judges lateness only, so a remediation task with no SLA and no due date passes it silently. Recommend a NEW key: wider population (review, improvement, competence and objective tasks) and a different predicate (presence of owner and date). The alternative is to add the owner and date clause to remediation_in_sla, but its population is narrower. The JSON also uses it on GOV-01, GOV-06, GOV-13, GOV-18, GOV-20, GOV-24, GOV-26, GOV-27, GOV-29 and GOV-31 artifacts. Controls whose artifact rows in the JSON name this check but which are not in its control list: GOV-01, GOV-06, GOV-13, GOV-18, GOV-20, GOV-24, GOV-26, GOV-27, GOV-29, GOV-31."
+  },
+  {
+   "key": "verity.tasks.closure_evidenced",
+   "name": "Closed compliance tasks carry proof",
+   "description": "Every task or issue linked to a control, risk or finding and closed in the last 92 days has a closure note and evidence, and critical or high issues have their corrective actions verified by someone other than the owner.",
+   "capabilities": [
+    "verity_tasks"
+   ],
+   "implementations": [
+    "verity"
+   ],
+   "resource_type": "task",
+   "frequency": "daily",
+   "remediation": "Reopen the listed tasks, attach the evidence of the fix with a closure note, and have someone other than the owner verify the corrective actions on critical and high issues.",
+   "controls": [
+    {
+     "code": "GOV-08",
+     "coverage": "partial",
+     "rationale": "Shows closure rests on proof, not the owner's word. Whether the proof is adequate stays with the reviewer."
+    },
+    {
+     "code": "GOV-20",
+     "coverage": "partial",
+     "rationale": "Shows each closed treatment action carries proof."
+    },
+    {
+     "code": "GOV-30",
+     "coverage": "partial",
+     "rationale": "Shows improvements closed with evidence."
+    },
+    {
+     "code": "GOV-12",
+     "coverage": "partial",
+     "rationale": "Shows fraud treatment actions closed with proof."
+    }
+   ],
+   "evidence_kinds": [
+    "Task code",
+    "Closed date",
+    "Closure note present",
+    "Attachment count",
+    "Corrective action verification"
+   ],
+   "observation_types": [
+    "verity.record (tasks)"
+   ],
+   "providers": {
+    "verity": "supported"
+   },
+   "artifacts": [
+    "actions-taken-on-the-fraud-risks",
+    "evidence-that-treatments-were-completed",
+    "improvement-log-with-owners-decisions-and",
+    "log-of-control-deficiencies-with-owner",
+    "training-or-other-actions-taken-to"
+   ],
+   "aliases": [],
+   "sources": [
+    "coverage/gov-cs-hr.md",
+    "coverage/gov-cs-hr.json"
+   ],
+   "population": "Tasks and issues linked to a control, risk or finding, closed in the last 92 days.",
+   "predicate": "Each closed with a closure note and at least one attachment or linked evidence item; a critical or high issue also has each corrective action completed and verified by someone other than its owner.",
+   "period": "Last 92 days (closed date).",
+   "empty_population": "Nothing closed: no result.",
+   "parameters": {},
+   "notes": "No existing check covers closure evidence; NEW key. The JSON also uses it on GOV-01, GOV-06, GOV-13, GOV-14, GOV-29 (deficiency log) and HR-09 (competence gap actions). Controls whose artifact rows in the JSON name this check but which are not in its control list: GOV-01, GOV-06, GOV-13, GOV-14, GOV-29, HR-09."
+  },
+  {
+   "key": "verity.tasks.recurring_done_on_time",
+   "name": "Recurring compliance tasks done on time",
+   "description": "Every instance of a recurring task series linked to a control and due in the last 12 months was closed within its grace with a note or attachment.",
+   "capabilities": [
+    "verity_tasks"
+   ],
+   "implementations": [
+    "verity"
+   ],
+   "resource_type": "task_series",
+   "frequency": "daily",
+   "remediation": "Close each missed instance with its note or attachment, and keep the series linked to its control.",
+   "controls": [
+    {
+     "code": "CS-07",
+     "coverage": "partial",
+     "rationale": "Shows the yearly contact check ran. Whether each channel worked is the note on the task."
+    },
+    {
+     "code": "CS-08",
+     "coverage": "partial",
+     "rationale": "Shows the threat feed review ran on its cadence."
+    },
+    {
+     "code": "GOV-02",
+     "coverage": "partial",
+     "rationale": "Shows the oversight meeting happened on cadence. Challenge and decisions stay in the minutes."
+    },
+    {
+     "code": "GOV-10",
+     "coverage": "partial",
+     "rationale": "Shows the quarterly briefing was given. Its content stays with people."
+    },
+    {
+     "code": "GOV-21",
+     "coverage": "partial",
+     "rationale": "Shows the structure review ran."
+    },
+    {
+     "code": "GOV-24",
+     "coverage": "partial",
+     "rationale": "Shows the factors review ran."
+    },
+    {
+     "code": "GOV-29",
+     "coverage": "partial",
+     "rationale": "Shows planned activities were done on time. Whether each met its standard stays with people."
+    }
+   ],
+   "evidence_kinds": [
+    "Task series",
+    "Instance due date",
+    "Instance closed date",
+    "Attachment count"
+   ],
+   "observation_types": [
+    "verity.record (tasks: recurring task series)"
+   ],
+   "providers": {
+    "verity": "supported"
+   },
+   "artifacts": [
+    "log-of-threats-reviewed-and-actions",
+    "minutes-showing-security-was-discussed-and",
+    "minutes-where-the-board-or-leadership",
+    "records-showing-planned-activities-were-completed",
+    "report-or-briefing-from-the-security",
+    "yearly-check-that-contact-details-still",
+    "yearly-review-notes-and-decisions-taken"
+   ],
+   "aliases": [],
+   "sources": [
+    "coverage/gov-cs-hr.md",
+    "coverage/gov-cs-hr.json"
+   ],
+   "population": "Recurring task series linked to a control, and their instances due in the last 12 months.",
+   "predicate": "Each instance was closed by its due date plus the series grace (default 14 days) with a note or attachment. A cancelled instance counts as missed.",
+   "period": "Last 12 months (instance due date).",
+   "empty_population": "No series linked: no result, and the control falls back to the person's record.",
+   "parameters": {
+    "series_grace_days": "14. Days after an instance's due date in which closing it still counts as on time; set per series, default 14."
+   },
+   "notes": "Related to verity.programme.periodic_on_track (which counts dated evidence per cadence) but reads task series, not evidence; keep both. The JSON also uses it on minutes-showing-security-was-discussed-and for CS-05 and GOV-15 (CS-05 and GOV-15 are not in the doc's control list for this check). Controls whose artifact rows in the JSON name this check but which are not in its control list: CS-05, GOV-15."
+  },
+  {
+   "key": "verity.tasks.checklist_steps_done",
+   "name": "Joiner, leaver and contractor checklists finished on time",
+   "description": "Every checklist task started from a joiner, leaver or contractor template in the last 92 days is closed with every sub-task closed by its own due date.",
+   "capabilities": [
+    "verity_tasks"
+   ],
+   "implementations": [
+    "verity"
+   ],
+   "resource_type": "task",
+   "frequency": "daily",
+   "remediation": "Finish the open sub-tasks of the listed checklists, or close them with a reason, and start a checklist from the template for each joiner, leaver and contractor.",
+   "controls": [
+    {
+     "code": "HR-05",
+     "coverage": "partial",
+     "rationale": "Shows each leaver checklist was finished on time. Return of devices is the sub-task's evidence."
+    },
+    {
+     "code": "HR-06",
+     "coverage": "partial",
+     "rationale": "Shows each joiner checklist was finished on time."
+    },
+    {
+     "code": "HR-03",
+     "coverage": "partial",
+     "rationale": "Shows contractor start and end checklists were finished."
+    }
+   ],
+   "evidence_kinds": [
+    "Task code",
+    "Task template",
+    "Person named",
+    "Sub-task states and dates"
+   ],
+   "observation_types": [
+    "verity.record (tasks: checklist tasks from task templates)"
+   ],
+   "providers": {
+    "verity": "supported"
+   },
+   "artifacts": [
+    "completed-checklists-for-a-sample-of",
+    "completed-offboarding-records-for-leavers-in"
+   ],
+   "aliases": [],
+   "sources": [
+    "coverage/gov-cs-hr.md",
+    "coverage/gov-cs-hr.json"
+   ],
+   "population": "Tasks started from a task template linked to HR-03, HR-05 or HR-06, created in the last 92 days.",
+   "predicate": "The task is closed, every sub-task is closed, and each sub-task closed on or before its own due date; an open checklist older than the template's time limit fails.",
+   "period": "Last 92 days (task created date).",
+   "empty_population": "No checklist task: no result. Who should have had one comes from the roster, not from this check.",
+   "parameters": {
+    "template_time_limit": "Set on each task template: how long a checklist may stay open before it fails."
+   },
+   "notes": "Complements existing people.joiners_onboarded and people.leavers_deprovisioned (hr_system plus identity_provider, account side); this one shows the steps were done. Completeness needs the roster. HR-03 is in the doc's control list but no HR-03 artifact row in the JSON names this check; the JSON uses it on GOV-09 (completed offboarding records). Controls whose artifact rows in the JSON name this check but which are not in its control list: GOV-09."
+  },
+  {
+   "key": "verity.checks.runs_continuous",
+   "name": "Automated checks ran without gaps",
+   "description": "Every automated check enabled for a live in scope control produced results across the period with no gap longer than its allowance.",
+   "capabilities": [
+    "verity_controls"
+   ],
+   "implementations": [
+    "verity"
+   ],
+   "resource_type": "check",
+   "frequency": "daily",
+   "remediation": "Fix the failing connection or check so it runs again, and note what covered each gap.",
+   "controls": [
+    {
+     "code": "GOV-06",
+     "coverage": "partial",
+     "rationale": "Shows monitoring ran across the period and lists where it did not. What covered a gap stays a person's note."
+    }
+   ],
+   "evidence_kinds": [
+    "Check",
+    "Control",
+    "Each gap with start, end and provider health"
+   ],
+   "observation_types": [
+    "verity.record (compliance: check run history per control)"
+   ],
+   "providers": {
+    "verity": "supported"
+   },
+   "artifacts": [
+    "control-test-results-across-the-observation"
+   ],
+   "aliases": [],
+   "sources": [
+    "coverage/gov-cs-hr.md",
+    "coverage/gov-cs-hr.json"
+   ],
+   "population": "Every automated check enabled for a live in scope control, over the Type 2 window or the last 92 days.",
+   "predicate": "No gap longer than two days between runs that produced a result for a daily check, or longer than one and a half times the frequency otherwise. A run that errored counts as a gap.",
+   "period": "SOC 2 Type 2 window, otherwise the last 92 days.",
+   "empty_population": "No check enabled: no result.",
+   "parameters": {},
+   "notes": "No overlap with existing verity.evidence.current (evidence freshness). NEW key. Fills control-test-results-across-the-observation, which is person only today although Verity keeps every check run (see defects)."
+  },
+  {
+   "key": "verity.controls.failed_checks_tracked",
+   "name": "Failed checks raised as owned tasks",
+   "description": "Every check result that moved from pass to fail on a live in scope control got a remediation task owned by the control owner within the allowed days, or passed again.",
+   "capabilities": [
+    "verity_controls"
+   ],
+   "implementations": [
+    "verity"
+   ],
+   "resource_type": "check_result",
+   "frequency": "daily",
+   "remediation": "Raise a remediation task for each listed failure with the control owner as its owner.",
+   "controls": [
+    {
+     "code": "GOV-06",
+     "coverage": "partial",
+     "rationale": "Shows failures reached the control owner as work. Fix time is tested by verity.tasks.remediation_in_sla."
+    }
+   ],
+   "evidence_kinds": [
+    "Check",
+    "Control",
+    "Failure time",
+    "Task code",
+    "Task owner"
+   ],
+   "observation_types": [
+    "verity.record (tasks: remediation tasks raised from failed checks)"
+   ],
+   "providers": {
+    "verity": "supported"
+   },
+   "artifacts": [
+    "exceptions-found-by-monitoring-and-how"
+   ],
+   "aliases": [],
+   "sources": [
+    "coverage/gov-cs-hr.md",
+    "coverage/gov-cs-hr.json"
+   ],
+   "population": "Check results that moved from pass to fail on a live in scope control in the last 92 days.",
+   "predicate": "Each failure has a linked remediation task created within two days (setting) with the control owner as owner, or the check passed again within that time.",
+   "period": "Last 92 days.",
+   "empty_population": "No failures: no result.",
+   "parameters": {
+    "failure_task_days": "2. Days after a pass to fail change within which a remediation task must exist, or the check must pass again."
+   },
+   "notes": "Complements existing verity.tasks.remediation_in_sla (fix time). Capability is verity_controls but the records judged are tasks. NEW key."
+  },
+  {
+   "key": "verity.members.leaver_ownership_moved",
+   "name": "Leavers' compliance records handed over",
+   "description": "Every control, risk, document, vendor and task owned by a member disabled in the last 92 days moved to an active owner within the allowed days.",
+   "capabilities": [
+    "verity_members"
+   ],
+   "implementations": [
+    "verity"
+   ],
+   "resource_type": "membership",
+   "frequency": "daily",
+   "remediation": "Assign a new owner who is an active member to each record the leaver still owns.",
+   "controls": [
+    {
+     "code": "GOV-09",
+     "coverage": "partial",
+     "rationale": "Shows ownership moved when someone left Verity. The leaving date in HR may differ, which the roster comparison covers."
+    },
+    {
+     "code": "HR-05",
+     "coverage": "partial",
+     "rationale": "Shows the handover of owned compliance records for each leaver."
+    }
+   ],
+   "evidence_kinds": [
+    "Member",
+    "Disabled date",
+    "Each owned record and the date it moved"
+   ],
+   "observation_types": [
+    "verity.record (iam: memberships and the audit trail)"
+   ],
+   "providers": {
+    "verity": "supported"
+   },
+   "artifacts": [
+    "completed-offboarding-records-for-leavers-in",
+    "updated-ownership-when-roles-change"
+   ],
+   "aliases": [],
+   "sources": [
+    "coverage/gov-cs-hr.md",
+    "coverage/gov-cs-hr.json"
+   ],
+   "population": "Memberships disabled in the last 92 days, from the audit trail.",
+   "predicate": "Every live control, open risk, published document, active vendor and open task the member owned on the day they were disabled had a new owner who is an active member within five days (setting).",
+   "period": "Last 92 days (disabled date).",
+   "empty_population": "No leavers: no result.",
+   "parameters": {
+    "ownership_handover_days": "5. Days after a membership is disabled within which each owned record must have a new active owner."
+   },
+   "notes": "Capability verity_members is proposed, not in capabilities.json. Existing owner checks (verity.controls.owned, verity.assets.owner_assigned, verity.vendors.owner_and_tier, verity.documents.controlled) catch an inactive owner today but not the delay or the leaver link; NEW key."
+  },
+  {
+   "key": "verity.members.owner_functions_held",
+   "name": "Security owner functions are held without a gap",
+   "description": "Each owner function mapped to a live control, plus the security lead and executive sponsor, is held by an active member, and the security lead role had a holder every day of the last 92 days.",
+   "capabilities": [
+    "verity_members"
+   ],
+   "implementations": [
+    "verity"
+   ],
+   "resource_type": "owner_function",
+   "frequency": "daily",
+   "remediation": "Assign an active member to each listed owner function, starting with the security lead and the executive sponsor.",
+   "controls": [
+    {
+     "code": "GOV-10",
+     "coverage": "partial",
+     "rationale": "Shows the security lead role was held without a gap. The written appointment stays an upload."
+    },
+    {
+     "code": "GOV-21",
+     "coverage": "partial",
+     "rationale": "Shows each role with security duties is held by a current member."
+    },
+    {
+     "code": "HR-09",
+     "coverage": "partial",
+     "rationale": "Gives the list of people in security roles that competence records must cover."
+    }
+   ],
+   "evidence_kinds": [
+    "Function",
+    "Holder",
+    "Holder history"
+   ],
+   "observation_types": [
+    "verity.record (onboarding: owner functions and who holds them, with change history)"
+   ],
+   "providers": {
+    "verity": "supported"
+   },
+   "artifacts": [
+    "appointment-or-role-charter-naming-the",
+    "competence-requirements-for-each-security-role",
+    "current-organization-chart-with-reporting-lines",
+    "role-descriptions-for-security-and-compliance"
+   ],
+   "aliases": [],
+   "sources": [
+    "coverage/gov-cs-hr.md",
+    "coverage/gov-cs-hr.json"
+   ],
+   "population": "Owner functions mapped to at least one live control, plus the security lead and executive sponsor functions always.",
+   "predicate": "Each is held by an active member today, and the security lead function had an active holder on every day of the last 92 days.",
+   "period": "Today for every function; the last 92 days for the security lead.",
+   "empty_population": "Functions never mapped: fail for the two required ones (security lead and executive sponsor).",
+   "parameters": {},
+   "notes": "Capability verity_members is proposed. No overlap with an existing check. The JSON also uses it on current-organization-chart-with-reporting-lines for HR-04 and HR-07; owner functions name only security roles, so reporting lines need the directory manager field (NEED identity_provider). Controls whose artifact rows in the JSON name this check but which are not in its control list: HR-04, HR-07."
+  },
+  {
+   "key": "verity.risks.reviewed_after_change",
+   "name": "Risks reviewed after changes Verity sees",
+   "description": "Every significant change Verity records (critical or high or personal data vendor approved, scope item change, high or critical asset in service) has a linked risk created, rescored or reviewed around the change date.",
+   "capabilities": [
+    "verity_risks"
+   ],
+   "implementations": [
+    "verity"
+   ],
+   "resource_type": "change_event",
+   "frequency": "daily",
+   "remediation": "Create, rescore or review a risk linked to each listed vendor, asset or scope item.",
+   "controls": [
+    {
+     "code": "GOV-03",
+     "coverage": "partial",
+     "rationale": "Sees only the changes Verity knows about. Architecture and hosting changes outside Verity stay with ticketing or people."
+    }
+   ],
+   "evidence_kinds": [
+    "Change event",
+    "Event date",
+    "Linked risk",
+    "Risk event date"
+   ],
+   "observation_types": [
+    "verity.record (risk: risk events linked to vendors, assets and scope changes)"
+   ],
+   "providers": {
+    "verity": "supported"
+   },
+   "artifacts": [
+    "risk-reviews-done-after-significant-changes"
+   ],
+   "aliases": [],
+   "sources": [
+    "coverage/gov-cs-hr.md",
+    "coverage/gov-cs-hr.json"
+   ],
+   "population": "Change events Verity records in the last 92 days: vendors approved at tier critical or high or holding personal data, scope items added or decisions changed, assets put in service at high or critical criticality.",
+   "predicate": "Each event has a risk in an active register created, rescored or reviewed and linked to that vendor, asset or scope item between 30 days before and 14 days after the event (settings).",
+   "period": "Last 92 days (event date).",
+   "empty_population": "No events: no result. The dated nil note stays a person's record.",
+   "parameters": {
+    "review_window_before_days": "30. Days before the change in which a risk event counts.",
+    "review_window_after_days": "14. Days after the change in which a risk event counts."
+   },
+   "notes": "Overlaps existing verity.risks.reviewed (next review date not passed) only in name: that one is calendar driven, this one is change driven. Recommend a NEW key. The JSON also uses it on risk-reviews-done-after-significant-changes for GOV-01 and GOV-13 (the GOV-13.E trigger). Controls whose artifact rows in the JSON name this check but which are not in its control list: GOV-01, GOV-13."
+  },
+  {
+   "key": "verity.risks.acceptance_independent",
+   "name": "Risk acceptances approved by someone else, with reason and expiry",
+   "description": "Every risk acceptance decided in the last 12 months was approved by an active member other than the requester, with a rationale and an expiry no more than 12 months away.",
+   "capabilities": [
+    "verity_risks"
+   ],
+   "implementations": [
+    "verity"
+   ],
+   "resource_type": "risk_acceptance",
+   "frequency": "daily",
+   "remediation": "Have each listed acceptance approved by an active member other than the requester, record the rationale, and set an expiry within 12 months.",
+   "controls": [
+    {
+     "code": "GOV-19",
+     "coverage": "partial",
+     "rationale": "Shows accepted risks were approved by someone else with a reason and expiry. Whether the approver holds the right authority stays with people."
+    },
+    {
+     "code": "GOV-20",
+     "coverage": "partial",
+     "rationale": "Shows remaining risk was accepted in writing by a second person."
+    },
+    {
+     "code": "GOV-07",
+     "coverage": "partial",
+     "rationale": "Shows unmitigated risks carry an accepted decision."
+    }
+   ],
+   "evidence_kinds": [
+    "Acceptance id",
+    "Risk",
+    "Requester",
+    "Approver",
+    "Decision and expiry dates"
+   ],
+   "observation_types": [
+    "verity.record (risk: risk register, acceptances)"
+   ],
+   "providers": {
+    "verity": "supported"
+   },
+   "artifacts": [
+    "approval-of-each-accepted-risk",
+    "risk-owner-acceptance-of-the-remaining"
+   ],
+   "aliases": [],
+   "sources": [
+    "coverage/gov-cs-hr.md",
+    "coverage/gov-cs-hr.json"
+   ],
+   "population": "Risk acceptances decided in the last 12 months.",
+   "predicate": "The approver is an active member other than the requester, a rationale is recorded, and the expiry is no more than 12 months (setting) after the decision.",
+   "period": "Last 12 months (decision date).",
+   "empty_population": "No acceptances: no result.",
+   "parameters": {
+    "max_acceptance_months": "12. Longest allowed time from an acceptance decision to its expiry."
+   },
+   "notes": "Overlaps existing verity.risks.acceptance_current (GOV-19: every accepted risk has an acceptance in force). A refinement is possible, but the population (decisions in the last 12 months against currently accepted risks) and the failure (who approved, reason, expiry length against expired) differ. Recommend a NEW key. The JSON also uses it on approval-of-each-accepted-risk for GOV-12. Controls whose artifact rows in the JSON name this check but which are not in its control list: GOV-12."
+  },
+  {
+   "key": "verity.risks.treatment_planned",
+   "name": "Mitigated risks have an owned, dated plan",
+   "description": "Every open risk treated by mitigation has a plan, a due date, an active owner and a target residual score, and none is past its due date while still in treatment.",
+   "capabilities": [
+    "verity_risks"
+   ],
+   "implementations": [
+    "verity"
+   ],
+   "resource_type": "risk",
+   "frequency": "daily",
+   "remediation": "Add a treatment plan, a due date, an active owner and target residual scores to each listed risk, or re plan the overdue ones.",
+   "controls": [
+    {
+     "code": "GOV-20",
+     "coverage": "partial",
+     "rationale": "Shows each mitigated risk has an owned, dated plan and flags overdue ones. Risk owner approval of the plan stays an approval on the task or an upload."
+    },
+    {
+     "code": "GOV-12",
+     "coverage": "partial",
+     "rationale": "Applies to fraud risks too."
+    }
+   ],
+   "evidence_kinds": [
+    "Risk code",
+    "Plan present",
+    "Due date",
+    "Owner",
+    "Residual target",
+    "Overdue days"
+   ],
+   "observation_types": [
+    "verity.record (risk: risk register, treatment plan and due date)"
+   ],
+   "providers": {
+    "verity": "supported"
+   },
+   "artifacts": [
+    "actions-taken-on-the-fraud-risks",
+    "risk-owner-approval-of-each-treatment-plan",
+    "treatment-plan-with-owners-and-due"
+   ],
+   "aliases": [],
+   "sources": [
+    "coverage/gov-cs-hr.md",
+    "coverage/gov-cs-hr.json"
+   ],
+   "population": "Open risks with treatment mitigate.",
+   "predicate": "Each has a treatment plan text, a treatment due date, an owner who is an active member and a target residual likelihood and impact; a due date in the past while the risk is still in treatment fails as overdue.",
+   "period": "Current state.",
+   "empty_population": "No mitigated risks: no result.",
+   "parameters": {},
+   "notes": "Overlaps existing verity.risks.treated (GOV-19, GOV-20: out of appetite risks have an owner and a treatment decision). This one tests the content of the plan for mitigated risks; a stricter refinement of treated is possible, but the populations differ. Recommend a NEW key. The JSON also uses it on treatment-plan-with-owners-and-due for GOV-18 and GOV-27. Controls whose artifact rows in the JSON name this check but which are not in its control list: GOV-18, GOV-27."
+  },
+  {
+   "key": "verity.risks.scope_covered",
+   "name": "Risk assessment reaches the declared scope",
+   "description": "Every in scope service, system or vendor scope item, high or critical asset in service and critical vendor links to a risk assessed in the last 12 months.",
+   "capabilities": [
+    "verity_risks"
+   ],
+   "implementations": [
+    "verity"
+   ],
+   "resource_type": "scope_item",
+   "frequency": "daily",
+   "remediation": "Assess a risk for each listed item and link it, or record why the item carries no significant risk.",
+   "controls": [
+    {
+     "code": "GOV-18",
+     "coverage": "partial",
+     "rationale": "Shows the assessment reached the declared scope. A conclusion that an item carries no significant risk has no field and stays a person's note."
+    }
+   ],
+   "evidence_kinds": [
+    "Item",
+    "Item kind",
+    "Linked risk codes"
+   ],
+   "observation_types": [
+    "verity.record (risk: risk register against scope items, assets and vendors)"
+   ],
+   "providers": {
+    "verity": "supported"
+   },
+   "artifacts": [
+    "risk-assessment-report-with-method-and"
+   ],
+   "aliases": [],
+   "sources": [
+    "coverage/gov-cs-hr.md",
+    "coverage/gov-cs-hr.json"
+   ],
+   "population": "Scope items in scope for a current engagement of kind service, system or vendor; assets in service of high or critical criticality; vendors of tier critical.",
+   "predicate": "Each is linked to at least one risk in an active register assessed in the last 12 months.",
+   "period": "Last 12 months (risk assessed date).",
+   "empty_population": "No scope items: insufficient information, since scope is not set.",
+   "parameters": {},
+   "notes": "Complements existing verity.risks.assessed_in_12_months (each open risk assessed in 12 months). NEW key. The JSON also uses it on risk-assessment-report-with-method-and for GOV-12 and GOV-24. Gap: no field records 'no significant risk' for an item. Controls whose artifact rows in the JSON name this check but which are not in its control list: GOV-12, GOV-24."
+  },
+  {
+   "key": "verity.risks.fraud_assessed",
+   "name": "Fraud and insider risk assessed and linked to controls",
+   "description": "At least one open fraud or insider risk is scored, assessed in the last 12 months and linked to a live control.",
+   "capabilities": [
+    "verity_risks"
+   ],
+   "implementations": [
+    "verity"
+   ],
+   "resource_type": "risk_register",
+   "frequency": "daily",
+   "remediation": "Add a fraud or insider risk from the risk library, score it, and link it to the controls that treat it.",
+   "controls": [
+    {
+     "code": "GOV-12",
+     "coverage": "partial",
+     "rationale": "Shows fraud was considered and linked to controls. Incentive, opportunity and override reasoning stays in the assessment text."
+    }
+   ],
+   "evidence_kinds": [
+    "Risk codes",
+    "Risk library template",
+    "Score",
+    "Assessed date",
+    "Linked controls"
+   ],
+   "observation_types": [
+    "verity.record (risk: risk register filtered to fraud and insider risks)"
+   ],
+   "providers": {
+    "verity": "supported"
+   },
+   "artifacts": [
+    "fraud-risk-assessment-covering-insider-misuse"
+   ],
+   "aliases": [],
+   "sources": [
+    "coverage/gov-cs-hr.md",
+    "coverage/gov-cs-hr.json"
+   ],
+   "population": "Active risk registers.",
+   "predicate": "At least one open risk from a fraud or insider template of the risk library, or in a category marked fraud, is scored, was assessed in the last 12 months and links to a live control.",
+   "period": "Last 12 months.",
+   "empty_population": "No such risk: workspace fail.",
+   "parameters": {},
+   "notes": "NEW key. Needs a fraud mark on risk categories, which does not exist (the risk library already ships insider misuse, expense fraud and payment redirection templates)."
+  },
+  {
+   "key": "verity.soa.version_approved",
+   "name": "Statement of Applicability version approved and unchanged",
+   "description": "The newest Statement of Applicability version was approved by an active member in the last 12 months and no applicability decision changed after that approval.",
+   "capabilities": [
+    "verity_frameworks"
+   ],
+   "implementations": [
+    "verity"
+   ],
+   "resource_type": "soa_version",
+   "frequency": "daily",
+   "remediation": "Approve the current Statement of Applicability version, and approve a new version after any decision changes.",
+   "controls": [
+    {
+     "code": "GOV-27",
+     "coverage": "partial",
+     "rationale": "Shows the version in use was approved and kept. One approver is recorded; sign off by each risk owner stays an upload."
+    }
+   ],
+   "evidence_kinds": [
+    "Version number",
+    "Approver",
+    "Approval date",
+    "Decisions changed since"
+   ],
+   "observation_types": [
+    "verity.record (compliance: Statement of Applicability versions)"
+   ],
+   "providers": {
+    "verity": "supported"
+   },
+   "artifacts": [
+    "approval-of-each-version-by-risk",
+    "statement-of-applicability-showing-every-decision"
+   ],
+   "aliases": [],
+   "sources": [
+    "coverage/gov-cs-hr.md",
+    "coverage/gov-cs-hr.json"
+   ],
+   "population": "ISO 27001, when added.",
+   "predicate": "The newest Statement of Applicability version was approved by an active member in the last 12 months, and no applicability decision changed after it was approved.",
+   "period": "Last 12 months.",
+   "empty_population": "No approved version: fail.",
+   "parameters": {},
+   "notes": "Overlaps existing verity.soa.complete (GOV-27: every Annex A decision reviewed in 12 months with a reason). That one judges decisions, this one judges the approved version; NEW key."
+  },
+  {
+   "key": "verity.soa.matches_risk_treatment",
+   "name": "Applicability agrees with risk treatment",
+   "description": "Every live control linked to a mitigated risk maps to an applicable Annex A requirement, and no not applicable requirement maps only to such controls.",
+   "capabilities": [
+    "verity_frameworks"
+   ],
+   "implementations": [
+    "verity"
+   ],
+   "resource_type": "control",
+   "frequency": "daily",
+   "remediation": "Mark the Annex A requirement applicable for each listed control, or change the risk treatment.",
+   "controls": [
+    {
+     "code": "GOV-27",
+     "coverage": "partial",
+     "rationale": "Shows treatment and applicability agree. Whether each reason is specific stays a person's reading."
+    }
+   ],
+   "evidence_kinds": [
+    "Control",
+    "Risk codes",
+    "Requirement keys and their decisions"
+   ],
+   "observation_types": [
+    "verity.record (compliance: Statement of Applicability)"
+   ],
+   "providers": {
+    "verity": "supported"
+   },
+   "artifacts": [
+    "statement-of-applicability-showing-every-decision"
+   ],
+   "aliases": [],
+   "sources": [
+    "coverage/gov-cs-hr.md",
+    "coverage/gov-cs-hr.json"
+   ],
+   "population": "Live controls linked to an open risk treated by mitigation, for ISO 27001.",
+   "predicate": "Each such control maps to at least one Annex A requirement marked applicable, and no Annex A requirement marked not applicable maps only to such controls.",
+   "period": "Current state.",
+   "empty_population": "No mitigated risk with controls: no result.",
+   "parameters": {},
+   "notes": "NEW key; no existing check joins risks and applicability."
+  },
+  {
+   "key": "verity.isms.scope_approved",
+   "name": "ISMS scope approved and unchanged since",
+   "description": "The current ISO 27001 scope statement was approved by a named active member in the last 12 months and has not changed since.",
+   "capabilities": [
+    "verity_frameworks"
+   ],
+   "implementations": [
+    "verity"
+   ],
+   "resource_type": "engagement",
+   "frequency": "daily",
+   "remediation": "Have a named active member approve the current scope statement, and approve it again after any change.",
+   "controls": [
+    {
+     "code": "GOV-23",
+     "coverage": "partial",
+     "rationale": "Shows the scope in use is the approved one. Approver seniority is not recorded."
+    }
+   ],
+   "evidence_kinds": [
+    "Approver",
+    "Approval date",
+    "Last change date"
+   ],
+   "observation_types": [
+    "verity.record (compliance: engagement scope statement approval)"
+   ],
+   "providers": {
+    "verity": "supported"
+   },
+   "artifacts": [
+    "scope-statement-approved-by-leadership"
+   ],
+   "aliases": [],
+   "sources": [
+    "coverage/gov-cs-hr.md",
+    "coverage/gov-cs-hr.json"
+   ],
+   "population": "The current ISO 27001 engagement.",
+   "predicate": "The scope statement was approved by a named active member in the last 12 months and has not changed since that approval.",
+   "period": "Last 12 months.",
+   "empty_population": "No engagement: fail when ISO 27001 is active.",
+   "parameters": {},
+   "notes": "Overlaps existing verity.isms.scope_recorded (scope written down when ISO 27001 is added) and verity.isms.scope_documented (the scope document is published and current). This adds approval and no change since; recommend a NEW key rather than changing what scope_recorded means. The JSON also uses it on scope-statement-approved-by-leadership for GOV-24. Controls whose artifact rows in the JSON name this check but which are not in its control list: GOV-24."
+  },
+  {
+   "key": "verity.scope.items_decided",
+   "name": "Scope suggestions and items are decided",
+   "description": "No scope suggestion is undecided after 30 days, and every live scope item has an in or out decision for each current engagement.",
+   "capabilities": [
+    "verity_frameworks"
+   ],
+   "implementations": [
+    "verity"
+   ],
+   "resource_type": "scope_item",
+   "frequency": "daily",
+   "remediation": "Decide in or out for each listed suggestion and scope item on each current engagement.",
+   "controls": [
+    {
+     "code": "GOV-14",
+     "coverage": "partial",
+     "rationale": "Shows new assets and vendors are brought into the system list. Systems unknown to Verity stay with connectors and people."
+    },
+    {
+     "code": "GOV-23",
+     "coverage": "partial",
+     "rationale": "Shows each new supplier or system got a scope decision."
+    },
+    {
+     "code": "GOV-22",
+     "coverage": "partial",
+     "rationale": "Shows the description's scope keeps up with what Verity knows."
+    }
+   ],
+   "evidence_kinds": [
+    "Item or suggestion",
+    "Age",
+    "Decision per engagement"
+   ],
+   "observation_types": [
+    "verity.record (compliance: scope items and decisions per engagement)"
+   ],
+   "providers": {
+    "verity": "supported"
+   },
+   "artifacts": [
+    "inventory-of-in-scope-systems-and",
+    "scope-review-after-changes-to-products"
+   ],
+   "aliases": [],
+   "sources": [
+    "coverage/gov-cs-hr.md",
+    "coverage/gov-cs-hr.json"
+   ],
+   "population": "Scope suggestions (assets and vendors not yet scope items) and live scope items, for each current engagement.",
+   "predicate": "No suggestion older than 30 days is undecided, and each live item has an in or out decision for each current engagement.",
+   "period": "Current state; suggestions judged on age.",
+   "empty_population": "No engagement: insufficient information.",
+   "parameters": {},
+   "notes": "NEW key. The 30 day age is fixed in the doc, not marked as a setting. The JSON lists it only on inventory-of-in-scope-systems-and (GOV-14) and scope-review-after-changes-to-products (GOV-23); no GOV-22 artifact row names it."
+  },
+  {
+   "key": "verity.engagement.subservice_listed",
+   "name": "Critical suppliers accounted for in the SOC 2 engagement",
+   "description": "Every approved, active vendor of tier critical or high is an engagement vendor (subservice organisation with its method, or supplier) or was removed from the engagement with a reason.",
+   "capabilities": [
+    "verity_frameworks"
+   ],
+   "implementations": [
+    "verity"
+   ],
+   "resource_type": "vendor",
+   "frequency": "daily",
+   "remediation": "Add each listed vendor to the engagement as a subservice organisation with its method, or as a supplier, or remove it with a reason.",
+   "controls": [
+    {
+     "code": "GOV-22",
+     "coverage": "partial",
+     "rationale": "Shows each critical supplier is accounted for in the description. Which controls each party operates stays in the description text."
+    }
+   ],
+   "evidence_kinds": [
+    "Vendor",
+    "Tier",
+    "Engagement role",
+    "Method (carve out or inclusive)"
+   ],
+   "observation_types": [
+    "verity.record (compliance: engagement vendors (subservice organisations))"
+   ],
+   "providers": {
+    "verity": "supported"
+   },
+   "artifacts": [
+    "system-description-covering-boundary-services-infrastructure"
+   ],
+   "aliases": [],
+   "sources": [
+    "coverage/gov-cs-hr.md",
+    "coverage/gov-cs-hr.json"
+   ],
+   "population": "Approved, active vendors of tier critical or high, for the current SOC 2 engagement.",
+   "predicate": "Each is an engagement vendor (a subservice organisation with its method, or a supplier), or was removed from the engagement with a reason.",
+   "period": "Current state.",
+   "empty_population": "No engagement: insufficient information.",
+   "parameters": {},
+   "notes": "NEW key; no existing check reads engagement vendors."
+  },
+  {
+   "key": "verity.commitments.owned_and_mapped",
+   "name": "Commitments registered, owned and mapped",
+   "description": "The commitments register holds contract and published commitments, each with an active owner, a source reference and the requirement or category it bears on.",
+   "capabilities": [
+    "verity_frameworks"
+   ],
+   "implementations": [
+    "verity"
+   ],
+   "resource_type": "commitment",
+   "frequency": "daily",
+   "remediation": "Register at least one contract commitment and one published commitment, and give each an owner, a source reference and the requirement it bears on.",
+   "controls": [
+    {
+     "code": "CS-02",
+     "coverage": "partial",
+     "rationale": "Shows the promises are registered and owned. That practice meets them stays the security lead's comparison."
+    },
+    {
+     "code": "GOV-22",
+     "coverage": "partial",
+     "rationale": "Shows commitments are listed for the description."
+    },
+    {
+     "code": "GOV-05",
+     "coverage": "partial",
+     "rationale": "Covers the contractual side of the obligations register."
+    },
+    {
+     "code": "CS-01",
+     "coverage": "partial",
+     "rationale": "Holds the breach notice terms of contracts."
+    }
+   ],
+   "evidence_kinds": [
+    "Commitment",
+    "Source kind",
+    "Source reference",
+    "Owner",
+    "Requirement or category it points at"
+   ],
+   "observation_types": [
+    "verity.record (compliance: commitments register)"
+   ],
+   "providers": {
+    "verity": "supported"
+   },
+   "artifacts": [
+    "check-that-the-commitments-match-actual",
+    "customer-contract-terms-on-breach-notification",
+    "published-security-availability-and-privacy-commitments",
+    "register-of-contractual-regulatory-and-certification",
+    "register-of-interested-parties-and-what",
+    "service-commitments-and-system-requirements-shared"
+   ],
+   "aliases": [],
+   "sources": [
+    "coverage/gov-cs-hr.md",
+    "coverage/gov-cs-hr.json"
+   ],
+   "population": "Active commitments in the register.",
+   "predicate": "The register holds at least one commitment from a contract and one from a published source; each has an owner who is an active member, a source reference, and points at a requirement or category.",
+   "period": "Current state.",
+   "empty_population": "No commitments: workspace fail.",
+   "parameters": {},
+   "notes": "NEW key. Capability verity_frameworks, module compliance. Commitments carry no review date, so the yearly comparison (CS-02.C) cannot be checked yet. The JSON also uses it on register-of-interested-parties-and-what for GOV-23 and GOV-25. Controls whose artifact rows in the JSON name this check but which are not in its control list: GOV-23, GOV-25."
+  },
+  {
+   "key": "verity.regulations.decided",
+   "name": "Regulations the profile points to are decided",
+   "description": "Every reviewed country pack regulation the reference panel shows as applying or likely to apply has a current workspace decision, and relevant ones are in the obligations register.",
+   "capabilities": [
+    "verity_frameworks"
+   ],
+   "implementations": [
+    "verity"
+   ],
+   "resource_type": "regulation",
+   "frequency": "daily",
+   "remediation": "Decide each listed regulation, add the relevant ones to the obligations register, and decide again after the profile changes.",
+   "controls": [
+    {
+     "code": "GOV-05",
+     "coverage": "partial",
+     "rationale": "Shows the laws the profile points to were decided. Laws outside the reviewed pack stay with legal."
+    }
+   ],
+   "evidence_kinds": [
+    "Regulation key",
+    "Decision",
+    "Register date",
+    "Profile version"
+   ],
+   "observation_types": [
+    "verity.record (regulations: country reference panel with the workspace's decisions)"
+   ],
+   "providers": {
+    "verity": "supported"
+   },
+   "artifacts": [
+    "register-of-contractual-regulatory-and-certification"
+   ],
+   "aliases": [],
+   "sources": [
+    "coverage/gov-cs-hr.md",
+    "coverage/gov-cs-hr.json"
+   ],
+   "population": "Reviewed country pack entries the reference panel shows as applying or likely to apply to the profile.",
+   "predicate": "Each has a workspace decision; each one decided relevant was added to the obligations register; a decision made on an older profile version than the current one is listed as stale and fails.",
+   "period": "Current state against the current profile version.",
+   "empty_population": "No entries shown: no result.",
+   "parameters": {},
+   "notes": "NEW key. Reads the regulations module under capability verity_frameworks."
+  },
+  {
+   "key": "verity.policies.major_change_campaigned",
+   "name": "Major policy changes re-acknowledged by staff",
+   "description": "Every major version of an all staff or required document published in the last 12 months was followed within 14 days by an acknowledgement campaign to every active member.",
+   "capabilities": [
+    "verity_policies"
+   ],
+   "implementations": [
+    "verity"
+   ],
+   "resource_type": "document_version",
+   "frequency": "daily",
+   "remediation": "Start an acknowledgement campaign on the new version for every active member.",
+   "controls": [
+    {
+     "code": "CS-04",
+     "coverage": "partial",
+     "rationale": "Shows material changes were announced to staff and re-acknowledged."
+    },
+    {
+     "code": "CS-06",
+     "coverage": "partial",
+     "rationale": "Covers the policy change topic of the plan only."
+    }
+   ],
+   "evidence_kinds": [
+    "Document",
+    "Version",
+    "Publish date",
+    "Campaign",
+    "Recipients"
+   ],
+   "observation_types": [
+    "verity.record (documents: acknowledgement campaigns after major changes)"
+   ],
+   "providers": {
+    "verity": "supported"
+   },
+   "artifacts": [
+    "sample-of-messages-sent-under-the",
+    "staff-acknowledgement-of-current-policies"
+   ],
+   "aliases": [],
+   "sources": [
+    "coverage/gov-cs-hr.md",
+    "coverage/gov-cs-hr.json"
+   ],
+   "population": "Major versions of published all staff or required documents published in the last 12 months.",
+   "predicate": "Each was followed within 14 days (setting) by an acknowledgement campaign on that version targeting every active member, directly or through a role or group.",
+   "period": "Last 12 months (publish date).",
+   "empty_population": "No major change: no result.",
+   "parameters": {
+    "campaign_after_major_days": "14. Days after a major version is published within which the campaign must start."
+   },
+   "notes": "Overlaps existing verity.policies.acknowledged (everyone asked has signed or still has time). This one tests that people were asked after a major change; NEW key. The JSON also uses it on staff-acknowledgement-of-current-policies for CS-05, GOV-21 and GOV-32. Controls whose artifact rows in the JSON name this check but which are not in its control list: CS-05, GOV-21, GOV-32."
+  },
+  {
+   "key": "verity.policies.acknowledged_at_join",
+   "name": "Joiners acknowledge all staff documents soon after joining",
+   "description": "Every member who accepted an invitation in the last 12 months, guest auditors left out, signed the current version of every all staff document within 14 days.",
+   "capabilities": [
+    "verity_policies"
+   ],
+   "implementations": [
+    "verity"
+   ],
+   "resource_type": "membership",
+   "frequency": "daily",
+   "remediation": "Ask the listed joiners to sign the current all staff documents.",
+   "controls": [
+    {
+     "code": "GOV-04",
+     "coverage": "partial",
+     "rationale": "Shows joiners acknowledged the code soon after joining Verity. The employment start date may differ."
+    },
+    {
+     "code": "HR-06",
+     "coverage": "partial",
+     "rationale": "Covers the policy step of the joiner checklist."
+    },
+    {
+     "code": "CS-04",
+     "coverage": "partial",
+     "rationale": "Covers acknowledgement at hire."
+    },
+    {
+     "code": "HR-03",
+     "coverage": "partial",
+     "rationale": "Covers contractors who are members."
+    }
+   ],
+   "evidence_kinds": [
+    "Member",
+    "Accepted date",
+    "Each document and its signed date"
+   ],
+   "observation_types": [
+    "verity.record (documents: policy acknowledgements, joiners)"
+   ],
+   "providers": {
+    "verity": "supported"
+   },
+   "artifacts": [
+    "acknowledgement-from-every-member-of-staff",
+    "staff-acknowledgement-of-current-policies"
+   ],
+   "aliases": [],
+   "sources": [
+    "coverage/gov-cs-hr.md",
+    "coverage/gov-cs-hr.json"
+   ],
+   "population": "Members who accepted their invitation in the last 12 months, guest auditors left out.",
+   "predicate": "Each signed the current version of every all staff document within 14 days (setting) of accepting.",
+   "period": "Last 12 months (invitation accepted date).",
+   "empty_population": "No joiners: no result.",
+   "parameters": {
+    "join_acknowledgement_days": "14. Days after a member accepts the invitation within which all staff documents must be signed."
+   },
+   "notes": "Overlaps existing verity.policies.acknowledged (CS-04, GOV-04). A join window could be a parameter on that check, but the population (joiners by acceptance date) and the time rule differ; recommend a NEW key. Judges members, not staff: the employment start date needs an HR source or roster import. The template code-of-conduct does not require acknowledgement at hire, which this check assumes. The JSON also uses it on CS-05, CS-06, GOV-11, GOV-21 and GOV-32 artifacts. Controls whose artifact rows in the JSON name this check but which are not in its control list: CS-05, CS-06, GOV-11, GOV-21, GOV-32."
+  },
+  {
+   "key": "verity.documents.required_present",
+   "name": "Every required document exists and is current",
+   "description": "Each row of the Required documents list for the workspace's frameworks and profile has a document that is published, approved in the last 12 months and has no placeholders left.",
+   "capabilities": [
+    "verity_policies"
+   ],
+   "implementations": [
+    "verity"
+   ],
+   "resource_type": "required_document",
+   "frequency": "daily",
+   "remediation": "Create, publish and approve each listed required document, and fill every placeholder.",
+   "controls": [
+    {
+     "code": "GOV-17",
+     "coverage": "partial",
+     "rationale": "Shows each required topic policy exists and is current."
+    },
+    {
+     "code": "GOV-28",
+     "coverage": "partial",
+     "rationale": "Is the machine form of the list of documents the program needs."
+    },
+    {
+     "code": "GOV-32",
+     "coverage": "partial",
+     "rationale": "Covers the policy statement row."
+    }
+   ],
+   "evidence_kinds": [
+    "Required documents row",
+    "Template",
+    "Document code",
+    "State",
+    "Approval date"
+   ],
+   "observation_types": [
+    "verity.record (documents: required documents list (documents/required_documents.py))"
+   ],
+   "providers": {
+    "verity": "supported"
+   },
+   "artifacts": [
+    "doc-acceptable-use-policy",
+    "doc-access-control-policy",
+    "doc-business-continuity-and-disaster-recovery-plan",
+    "doc-change-management-procedure",
+    "doc-cloud-services-security-policy",
+    "doc-code-of-conduct",
+    "doc-competence-and-awareness-procedure",
+    "doc-context-and-interested-parties",
+    "doc-corrective-action-procedure",
+    "doc-data-management-policy",
+    "doc-document-control-procedure",
+    "doc-engineering-security-standard",
+    "doc-human-resource-security-policy",
+    "doc-incident-response-plan",
+    "doc-information-security-policy",
+    "doc-information-security-policy-statement",
+    "doc-information-security-roles-and-responsibilities",
+    "doc-internal-audit-procedure",
+    "doc-isms-operating-plan",
+    "doc-isms-scope-statement",
+    "doc-joiner-mover-leaver-checklists",
+    "doc-management-review-procedure",
+    "doc-operating-procedure-template",
+    "doc-operations-security-policy",
+    "doc-oversight-body-charter",
+    "doc-processing-integrity-procedure",
+    "doc-risk-assessment-methodology",
+    "doc-risk-management-policy",
+    "doc-secure-development-policy",
+    "doc-security-communication-plan",
+    "doc-security-objectives-plan",
+    "doc-soc2-system-description",
+    "doc-third-party-management-policy",
+    "published-security-policies-covering-each-required"
+   ],
+   "aliases": [],
+   "sources": [
+    "coverage/gov-cs-hr.md",
+    "coverage/gov-cs-hr.json"
+   ],
+   "population": "Rows of the Required documents list for the frameworks the workspace runs and its profile (guided onboarding CL-5).",
+   "predicate": "Each row's document exists, is published, was approved in the last 12 months (or approved elsewhere with a date), and has no placeholders left. One result per row.",
+   "period": "Last 12 months (approval date).",
+   "empty_population": "No framework: no result.",
+   "parameters": {},
+   "notes": "Already named in the guided onboarding plan (CL-5, fixing finding LD-04) but not in checks.json. Overlaps existing verity.policies.reviewed (GOV-01, GOV-17), which judges only documents that exist and so passes on one published document. Recommend a NEW key, keeping policies.reviewed for the currency of existing documents. Used on 34 artifacts (every doc-* artifact in these families and published-security-policies-covering-each-required). Controls whose artifact rows in the JSON name this check but which are not in its control list: CS-01, CS-02, CS-03, CS-04, CS-05, CS-06, CS-07, CS-08, GOV-01, GOV-02, GOV-03, GOV-04, GOV-05, GOV-06, GOV-07, GOV-08, GOV-09, GOV-10, GOV-11, GOV-12, GOV-13, GOV-14, GOV-15, GOV-16, GOV-18, GOV-19, GOV-20, GOV-21, GOV-22, GOV-23, GOV-24, GOV-25, GOV-26, GOV-29, GOV-30, GOV-31, HR-01, HR-02, HR-03, HR-04, HR-05, HR-06, HR-08, HR-09."
+  },
+  {
+   "key": "verity.programme.periodic_on_track",
+   "name": "Periodic activities on schedule for the audit period",
+   "description": "For every live control with a monthly, quarterly or annual operating evidence item, the dated evidence found so far is at least the number of occurrences due by today.",
+   "capabilities": [
+    "verity_frameworks"
+   ],
+   "implementations": [
+    "verity"
+   ],
+   "resource_type": "control",
+   "frequency": "daily",
+   "remediation": "File the missing dated evidence for each listed control, or record why an occurrence was missed.",
+   "controls": [
+    {
+     "code": "GOV-29",
+     "coverage": "partial",
+     "rationale": "Shows recurring activities left records on schedule. Whether each met its standard stays with people."
+    }
+   ],
+   "evidence_kinds": [
+    "Control",
+    "Cadence",
+    "Occurrences needed",
+    "Occurrences found"
+   ],
+   "observation_types": [
+    "verity.record (compliance: programme periodic view)"
+   ],
+   "providers": {
+    "verity": "supported"
+   },
+   "artifacts": [
+    "operating-plan-listing-activities-owners-and",
+    "records-showing-planned-activities-were-completed"
+   ],
+   "aliases": [],
+   "sources": [
+    "coverage/gov-cs-hr.md",
+    "coverage/gov-cs-hr.json"
+   ],
+   "population": "Live controls with an operating evidence item of monthly, quarterly or annual cadence, over the audit period (the programme periodic view).",
+   "predicate": "Dated evidence found so far is at least the number of occurrences due by today.",
+   "period": "The audit period, up to today.",
+   "empty_population": "No audit dates: insufficient information.",
+   "parameters": {},
+   "notes": "NEW key, built on the existing programme periodic view (compliance/programme_service.py). Related to verity.tasks.recurring_done_on_time, which reads task series instead of evidence; keep both."
+  },
+  {
+   "key": "verity.vulns.pentest_in_12_months",
+   "name": "Penetration test in the last 12 months",
+   "description": "At least one parsed penetration test report uploaded to Vulnerabilities is dated in the last 12 months.",
+   "capabilities": [
+    "verity_vulnerabilities"
+   ],
+   "implementations": [
+    "verity"
+   ],
+   "resource_type": "vulnerability_report",
+   "frequency": "daily",
+   "remediation": "Commission a penetration test and upload its report to Vulnerabilities.",
+   "controls": [
+    {
+     "code": "GOV-16",
+     "coverage": "partial",
+     "rationale": "Shows a test was done in time. The tester's independence and the scope stay with the report."
+    }
+   ],
+   "evidence_kinds": [
+    "Report id",
+    "Report date",
+    "Finding count"
+   ],
+   "observation_types": [
+    "verity.record (vulnerabilities: uploaded penetration test reports)"
+   ],
+   "providers": {
+    "verity": "supported"
+   },
+   "artifacts": [
+    "penetration-test-report-from-an-independent"
+   ],
+   "aliases": [],
+   "sources": [
+    "coverage/gov-cs-hr.md",
+    "coverage/gov-cs-hr.json"
+   ],
+   "population": "Uploaded vulnerability reports of type penetration test.",
+   "predicate": "At least one parsed report is dated in the last 12 months (setting).",
+   "period": "Last 12 months (report date).",
+   "empty_population": "No report: fail.",
+   "parameters": {
+    "pentest_max_age_months": "12. Longest allowed age of the newest penetration test report."
+   },
+   "notes": "NEW key; no existing check reads penetration test reports."
+  },
+  {
+   "key": "verity.vulns.pentest_fixes_verified",
+   "name": "Fixed penetration test findings were retested",
+   "description": "Every critical and high penetration test finding closed as fixed in the last 12 months has its fix verified with a retest report or evidence attached.",
+   "capabilities": [
+    "verity_vulnerabilities"
+   ],
+   "implementations": [
+    "verity"
+   ],
+   "resource_type": "finding",
+   "frequency": "daily",
+   "remediation": "Verify each listed fix and attach the retest report or evidence.",
+   "controls": [
+    {
+     "code": "GOV-16",
+     "coverage": "partial",
+     "rationale": "Shows fixed findings were retested. Open ones are judged by verity.vulns.within_sla."
+    }
+   ],
+   "evidence_kinds": [
+    "Finding",
+    "Severity",
+    "Closed date",
+    "Verified flag",
+    "Attachment"
+   ],
+   "observation_types": [
+    "verity.record (vulnerabilities: penetration test findings closed as fixed)"
+   ],
+   "providers": {
+    "verity": "supported"
+   },
+   "artifacts": [
+    "remediation-of-findings-with-retest-evidence",
+    "vulnerability-register-with-remediation-and-accepted"
+   ],
+   "aliases": [],
+   "sources": [
+    "coverage/gov-cs-hr.md",
+    "coverage/gov-cs-hr.json"
+   ],
+   "population": "Critical and high findings from penetration test reports closed as fixed in the last 12 months.",
+   "predicate": "Each has its fix verified, with a retest report or evidence attached.",
+   "period": "Last 12 months (closed date).",
+   "empty_population": "No such findings: no result.",
+   "parameters": {},
+   "notes": "Complements existing verity.vulns.within_sla (open findings past SLA); NEW key. The template operations-security-policy sets no retest of fixed findings (GOV-16.E)."
+  },
+  {
+   "key": "verity.training.acknowledged",
+   "name": "In house training acknowledged by members",
+   "description": "Every active member, guest auditors left out, signed a campaign on the current training material in the last 12 months, and each joiner did so within 30 days of joining.",
+   "capabilities": [
+    "verity_policies"
+   ],
+   "implementations": [
+    "verity"
+   ],
+   "resource_type": "membership",
+   "frequency": "daily",
+   "remediation": "Send an acknowledgement campaign on the current training material to the listed members.",
+   "controls": [
+    {
+     "code": "HR-08",
+     "coverage": "partial",
+     "rationale": "Records attendance or reading for training run in house. It does not show understanding, which HR-08.E asks for."
+    }
+   ],
+   "evidence_kinds": [
+    "Member",
+    "Document",
+    "Version",
+    "Signed date"
+   ],
+   "observation_types": [
+    "verity.record (documents: training material acknowledgements (in house sessions))"
+   ],
+   "providers": {
+    "verity": "supported"
+   },
+   "artifacts": [
+    "completion-records-for-all-staff"
+   ],
+   "aliases": [],
+   "sources": [
+    "coverage/gov-cs-hr.md",
+    "coverage/gov-cs-hr.json"
+   ],
+   "population": "Active members, guest auditors left out; documents linked to HR-08 as training material.",
+   "predicate": "Each member signed a campaign on the current training material in the last 12 months, and each member who joined in the period within 30 days (setting) of joining.",
+   "period": "Last 12 months; joiners judged from their join date.",
+   "empty_population": "No training document linked: no result.",
+   "parameters": {
+    "joiner_training_days": "30. Days after joining within which a new member must sign the training campaign."
+   },
+   "notes": "Overlaps existing verity.policies.acknowledged (same acknowledgement engine). Recommend a NEW key that shares the implementation: different documents (training material linked to HR-08), a yearly recurrence and a joiner window. Judges members, not staff. The JSON uses it on completion-records-for-all-staff for HR-03, HR-06, HR-07 and HR-08, where the learning_platform NEED fills full and this check only partial. Controls whose artifact rows in the JSON name this check but which are not in its control list: HR-03, HR-06, HR-07."
+  },
+  {
+   "key": "verity.vendors.contractors_bounded",
+   "name": "Contractor engagements have sponsor, dates and systems",
+   "description": "Every live engagement of an active contractor vendor has an active sponsor, start and end dates and its systems listed, and none past its end date is still active.",
+   "capabilities": [
+    "verity_vendors"
+   ],
+   "implementations": [
+    "verity"
+   ],
+   "resource_type": "vendor_engagement",
+   "frequency": "daily",
+   "remediation": "Add a sponsor, start date, end date and systems to each listed contractor engagement, and end the engagements past their end date.",
+   "controls": [
+    {
+     "code": "HR-03",
+     "coverage": "partial",
+     "rationale": "Shows the register is complete in its fields and end dates are enforced on the record. Account removal on that date needs the identity provider."
+    }
+   ],
+   "evidence_kinds": [
+    "Vendor",
+    "Engagement",
+    "Sponsor",
+    "Start and end dates",
+    "Systems in scope"
+   ],
+   "observation_types": [
+    "verity.record (vendors: contractor engagements and vendor offboarding records)"
+   ],
+   "providers": {
+    "verity": "supported"
+   },
+   "artifacts": [
+    "contractor-register-with-start-and-end",
+    "removal-records-for-a-sample-of"
+   ],
+   "aliases": [],
+   "sources": [
+    "coverage/gov-cs-hr.md",
+    "coverage/gov-cs-hr.json"
+   ],
+   "population": "Active vendors of type contractor and their live engagements.",
+   "predicate": "Each engagement has a sponsor who is an active member, a start date, an end date and systems in scope listed; none past its end date is still active.",
+   "period": "Current state.",
+   "empty_population": "No contractors: no result.",
+   "parameters": {},
+   "notes": "NEW key. Works only when each contractor, or the firm supplying them, is a vendor of type contractor with an engagement. The JSON also uses it on contractor-register-with-start-and-end for HR-02. Controls whose artifact rows in the JSON name this check but which are not in its control list: HR-02."
+  }
+ ],
+ "existing_implementations": [],
+ "downgrades": [
+  {
+   "check": null,
+   "control": "CS-07",
+   "artifact": null,
+   "requirement": "ISO27001:A.5.6",
+   "from": "full",
+   "to": "removed",
+   "reason": "Moves to CS-08; CS-07 keeps authority contacts (A.5.5). Not a loss of coverage: the requirement maps full to the proposed successor CS-08 instead, once the owner accepts the split.",
+   "source": "coverage/gov-cs-hr.md Proposed control changes"
+  },
+  {
+   "check": null,
+   "control": "GOV-15",
+   "artifact": null,
+   "requirement": "ISO27001:9.3.1",
+   "from": "full",
+   "to": "removed",
+   "reason": "The yearly review by top management moves to GOV-31. Not a loss of coverage: the requirement maps full to the proposed successor GOV-31 instead, once the owner accepts the split.",
+   "source": "coverage/gov-cs-hr.md Proposed control changes"
+  },
+  {
+   "check": null,
+   "control": "GOV-15",
+   "artifact": null,
+   "requirement": "ISO27001:9.3.2",
+   "from": "full",
+   "to": "removed",
+   "reason": "As above. Not a loss of coverage: the requirement maps full to the proposed successor GOV-31 instead, once the owner accepts the split.",
+   "source": "coverage/gov-cs-hr.md Proposed control changes"
+  },
+  {
+   "check": null,
+   "control": "GOV-15",
+   "artifact": null,
+   "requirement": "ISO27001:9.3.3",
+   "from": "full",
+   "to": "removed",
+   "reason": "As above. Not a loss of coverage: the requirement maps full to the proposed successor GOV-31 instead, once the owner accepts the split.",
+   "source": "coverage/gov-cs-hr.md Proposed control changes"
+  }
+ ],
+ "decisions": [
+  {
+   "topic": "Split CS-07, add CS-08",
+   "question": "Accept the split of CS-07 (authority contacts, A.5.5) and the proposed successor CS-08 Security community memberships and advisories (A.5.6 full, objectives CS-08.A to C)?",
+   "options": [
+    "accept the split as proposed",
+    "keep CS-07 whole"
+   ],
+   "recommendation": "Accept, after the FW-5 second reviewer. ISO 27001 workspaces are offered CS-08; evidence tagged to memberships is listed for re-tagging, nothing copied, no green result carried over.",
+   "source": "coverage/gov-cs-hr.md Proposed control changes, Splits"
+  },
+  {
+   "topic": "Split GOV-15, add GOV-31",
+   "question": "Accept the split of GOV-15 (quarterly management review, SOC2:CC4.2, CC1.2) and the proposed successor GOV-31 Yearly management review by top management (ISO27001:9.3.1 to 9.3.3 full, 5.1 and 7.1 partial)?",
+   "options": [
+    "accept the split, with the data migration",
+    "keep GOV-15 whole"
+   ],
+   "recommendation": "Accept, after the FW-5 second reviewer. The 9.3 mappings move after the owner accepts; assurance records stay and link to both controls; verity.management_review.in_12_months moves to GOV-31 and its history stays on GOV-15.",
+   "source": "coverage/gov-cs-hr.md Proposed control changes, Splits"
+  },
+  {
+   "topic": "Split GOV-17, add GOV-32",
+   "question": "Accept the split of GOV-17 (topic policy set, SOC2:CC5.3 full) and the proposed successor GOV-32 Top management security policy statement (ISO27001:5.2 full, 5.1 and SOC2:CC5.3 partial)?",
+   "options": [
+    "accept the split as proposed",
+    "keep GOV-17 whole"
+   ],
+   "recommendation": "Accept, after the FW-5 second reviewer. The policy statement document links to GOV-32 on acceptance; 5.2 readiness is recomputed, never copied.",
+   "source": "coverage/gov-cs-hr.md Proposed control changes, Splits"
+  },
+  {
+   "topic": "Pack placement of the successors",
+   "question": "Which content pack holds the successors?",
+   "options": [
+    "CS-08 and GOV-31 in the ISO pack, GOV-32 in the shared pack",
+    "all three in the ISO pack",
+    "all in the shared pack"
+   ],
+   "recommendation": "CS-08 and GOV-31 in the ISO pack (CL-10, like CS-06, CS-07, HR-09); GOV-32 in the shared pack because it maps SOC2:CC5.3.",
+   "source": "coverage/gov-cs-hr.md Content problems and gaps found"
+  },
+  {
+   "topic": "Controls kept whole and not merged",
+   "question": "Confirm no merge of GOV-01 with GOV-28, HR-05 with IAM-12, or HR-06 with IAM-01, and no split of GOV-13 (internal audit and independent review) or GOV-22 (description and commitments)?",
+   "options": [
+    "confirm",
+    "merge or split as the second reviewer advises"
+   ],
+   "recommendation": "Confirm. The pairs test different things and share evidence instead; GOV-13 is one activity in a small company; GOV-22 is one document in practice.",
+   "source": "coverage/gov-cs-hr.md Proposed control changes; coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "topic": "Objective changes",
+   "question": "Approve the 30 objective changes (adds, rewords and moves) on CS-02, CS-03, CS-07, CS-08, GOV-05, GOV-08, GOV-13, GOV-15, GOV-17, GOV-20, GOV-21, GOV-28, GOV-29, GOV-31, GOV-32, HR-02, HR-05 and HR-08?",
+   "options": [
+    "approve all",
+    "approve per objective"
+   ],
+   "recommendation": "Approve. A reworded objective with an open not applicable decision is listed for the owner to confirm again; no data migration for rewords.",
+   "source": "coverage/gov-cs-hr.md Objective changes"
+  },
+  {
+   "topic": "Staff roster (open question 1)",
+   "question": "Verity members are not the staff list. Until an HR source exists, acknowledgement, training and joiner checks only see members. What is the staff population?",
+   "options": [
+    "offer a people roster import (CSV) as the source of joiners and leavers",
+    "wait for an HR connector",
+    "judge members only and leave the roster comparison to a person"
+   ],
+   "recommendation": "The roster import, which is the proposed reading of control-framework-requirements open question 1.",
+   "source": "coverage/gov-cs-hr.md How to read the tables; Content problems and gaps found"
+  },
+  {
+   "topic": "HR, learning, signing and screening connectors",
+   "question": "No HR, learning, e-signature or background screening connector is in the signed catalogue. Agree one as an extension, or keep HR-01, HR-02 and HR-07 operating evidence with people?",
+   "options": [
+    "agree a connector as an extension",
+    "keep manual and say so in the product"
+   ],
+   "recommendation": null,
+   "source": "coverage/gov-cs-hr.md Content problems and gaps found"
+  },
+  {
+   "topic": "verity.policies.acknowledged target",
+   "question": "Appendix C of control-framework-requirements.md says a 95 percent target; checks.json says every member. Which rule is right?",
+   "options": [
+    "all members (checks.json)",
+    "95 percent (Appendix C)"
+   ],
+   "recommendation": null,
+   "source": "coverage/gov-cs-hr.md Content problems and gaps found"
+  },
+  {
+   "topic": "Management review input labels",
+   "question": "MANAGEMENT_REVIEW_INPUTS labels follow the standard's list closely though the code says they are Verity's own words. Rewrite them before more screens show them?",
+   "options": [
+    "rewrite in Verity's words now",
+    "leave as is"
+   ],
+   "recommendation": "Give them a text policy look before more screens show them.",
+   "source": "coverage/gov-cs-hr.md Content problems and gaps found"
+  },
+  {
+   "topic": "Confidential records kept out of Verity",
+   "question": "The whistleblower log, code of conduct breach records and disciplinary cases are kept out of Verity because Tasks has no per record access limit. Keep them out?",
+   "options": [
+    "keep out, person uploads only (anonymized where needed)",
+    "build restricted records first"
+   ],
+   "recommendation": "Keep out: report content and reporter identity must not sit in a tool many staff can reach.",
+   "source": "coverage/gov-cs-hr.md CS-05, GOV-04, GOV-11"
+  },
+  {
+   "topic": "HR data minimisation",
+   "question": "How much HR data does Verity hold for background checks and performance reviews?",
+   "options": [
+    "completion date and result only, the report stays with HR",
+    "full records"
+   ],
+   "recommendation": "Completion facts only; review content is confidential HR data.",
+   "source": "coverage/gov-cs-hr.json notes, HR-01, HR-07"
+  },
+  {
+   "topic": "Acknowledgement campaigns as signed agreements",
+   "question": "May an acknowledgement campaign stand in for a signed confidentiality agreement (HR-02, HR-03)?",
+   "options": [
+    "no, agreements need a signed copy or an e-signature source",
+    "yes"
+   ],
+   "recommendation": "No; an acknowledgement is not a signed contract and is not offered as one.",
+   "source": "coverage/gov-cs-hr.json notes, HR-02"
+  },
+  {
+   "topic": "Incident register before the Incidents module",
+   "question": "Until the Incidents module (signed Phase 3.1) exists, how are security incidents recorded?",
+   "options": [
+    "add an incident kind in Tasks",
+    "a tag convention on issues",
+    "wait for the Incidents module"
+   ],
+   "recommendation": "An incident kind (or a fixed convention) on Tasks, listed as data the checks need.",
+   "source": "coverage/gov-cs-hr.md Content problems and gaps found"
+  },
+  {
+   "topic": "Risk assessment sign off",
+   "question": "GOV-18.E needs leadership sign off of the risk assessment. Add a sign off step to the Risk module, or route the exported report through a document approval?",
+   "options": [
+    "route the exported report through a document approval now",
+    "add a sign off step to the Risk module"
+   ],
+   "recommendation": "Route through a document approval now; the sign off step is listed as missing data.",
+   "source": "coverage/gov-cs-hr.json notes, GOV-18"
+  },
+  {
+   "topic": "Assurance records without an engagement",
+   "question": "Assurance records hang on an engagement, so a workspace with no engagement cannot record an internal audit or management review. Allow engagement free records?",
+   "options": [
+    "allow records without an engagement",
+    "require an engagement and say so"
+   ],
+   "recommendation": null,
+   "source": "coverage/gov-cs-hr.md Content problems and gaps found"
+  }
+ ],
+ "defects": [
+  {
+   "kind": "template",
+   "item": "code-of-conduct",
+   "finding": "The template does not require acknowledgement at hire and every year, which GOV-04.A and verity.policies.acknowledged assume.",
+   "proposal": "Add acknowledgement at hire and yearly to the template text.",
+   "source": "coverage/gov-cs-hr.md Content problems and gaps found"
+  },
+  {
+   "kind": "template",
+   "item": "human-resource-security-policy",
+   "finding": "Sets no recheck interval for sensitive roles (HR-01.A).",
+   "proposal": "Add a recheck interval for sensitive roles.",
+   "source": "coverage/gov-cs-hr.md Content problems and gaps found"
+  },
+  {
+   "kind": "template",
+   "item": "human-resource-security-policy",
+   "finding": "Covers discipline in one sentence: no range of sanctions, no right to respond and no case records (GOV-11.A). No template carries the disciplinary procedure on its own.",
+   "proposal": "Add a disciplinary procedure template (or a full section) with the range of sanctions, the right to respond and how case records are kept; source the artifact disciplinary-procedure from it.",
+   "source": "coverage/gov-cs-hr.md Content problems and gaps found"
+  },
+  {
+   "kind": "template",
+   "item": "information-security-roles-and-responsibilities",
+   "finding": "Has no appointment of the security officer, no deputy and no organization chart prompt (GOV-10.A, GOV-21.A).",
+   "proposal": "Add an appointment section with a deputy and an organization chart prompt.",
+   "source": "coverage/gov-cs-hr.md Content problems and gaps found"
+  },
+  {
+   "kind": "template",
+   "item": "operations-security-policy",
+   "finding": "Sets a yearly penetration test but no retest of fixed findings (GOV-16.E).",
+   "proposal": "Add retest of fixed findings to the template.",
+   "source": "coverage/gov-cs-hr.md Content problems and gaps found"
+  },
+  {
+   "kind": "artifact",
+   "item": "vulnerability-management-policy-with-timeframes",
+   "finding": "Points to the Documents module but has no template of its own; its source is person only (used on GOV-16 and LM-11).",
+   "proposal": "Give it a document source, template operations-security-policy as planned, or a standalone vulnerability management template.",
+   "source": "coverage/gov-cs-hr.md Content problems and gaps found"
+  },
+  {
+   "kind": "template",
+   "item": "incident-response-plan",
+   "finding": "Says customers are told per contract but states no timeframe outside the health appendix (CS-01.A).",
+   "proposal": "State a notification timeframe in the main plan, compared with the shortest contractual one.",
+   "source": "coverage/gov-cs-hr.md Content problems and gaps found"
+  },
+  {
+   "kind": "artifact",
+   "item": "roster-of-joiners-and-leavers-with",
+   "finding": "Names people.leavers_deprovisioned as its source, which covers leavers only; joiners have no source. Its category is configuration.",
+   "proposal": "Add people.joiners_onboarded as a source and the hr_system need; until an HR source exists use the roster import (open question 1) and the iam members joined and disabled report as a proxy.",
+   "source": "coverage/gov-cs-hr.md Content problems and gaps found"
+  },
+  {
+   "kind": "artifact",
+   "item": "control-test-results-across-the-observation",
+   "finding": "Person only, although Verity keeps every check run (GOV-06).",
+   "proposal": "Source it from the check run history with verity.checks.runs_continuous.",
+   "source": "coverage/gov-cs-hr.md Content problems and gaps found"
+  },
+  {
+   "kind": "artifact",
+   "item": "security-objectives-with-owners-targets-and",
+   "finding": "Its where text says the objectives are tasks (one task per objective), but its source is a document check (verity.objectives.documented) (GOV-24, GOV-26).",
+   "proposal": "Add the Tasks source with verity.tasks.owned_and_dated and the template security-objectives-plan; keep the document check.",
+   "source": "coverage/gov-cs-hr.md Content problems and gaps found"
+  },
+  {
+   "kind": "check",
+   "item": "verity.policies.reviewed",
+   "finding": "The artifact published-security-policies-covering-each-required relies on verity.policies.reviewed, which passes on one published document (guided onboarding finding LD-04). verity.documents.required_present (CL-5) is still not in checks.json.",
+   "proposal": "Add verity.documents.required_present and list it on the artifact next to policies.reviewed.",
+   "source": "coverage/gov-cs-hr.md Content problems and gaps found"
+  },
+  {
+   "kind": "artifact",
+   "item": "management-review-agenda-and-minutes",
+   "finding": "Typed configuration; it is a record.",
+   "proposal": "Change its category to record.",
+   "source": "coverage/gov-cs-hr.md Content problems and gaps found"
+  },
+  {
+   "kind": "artifact",
+   "item": "internal-audit-or-readiness-assessment-report",
+   "finding": "Typed configuration; it is a record.",
+   "proposal": "Change its category to record.",
+   "source": "coverage/gov-cs-hr.md Content problems and gaps found"
+  },
+  {
+   "kind": "artifact",
+   "item": "document-control-procedure-covering-approval-versions",
+   "finding": "Duplicates doc-document-control-procedure on the same objective (GOV-28.A); it is person only while the doc-* artifact has the template source.",
+   "proposal": "Merge into doc-document-control-procedure, or give it the document-control-procedure template source.",
+   "source": "coverage/gov-cs-hr.md Content problems and gaps found"
+  },
+  {
+   "kind": "artifact",
+   "item": "incident-procedure-showing-the-notification-timeframes",
+   "finding": "Duplicates doc-incident-response-plan on the same objective (CS-01.A); it is person only.",
+   "proposal": "Merge into doc-incident-response-plan, or give it the incident-response-plan template source.",
+   "source": "coverage/gov-cs-hr.md Content problems and gaps found"
+  },
+  {
+   "kind": "check",
+   "item": "verity.policies.acknowledged",
+   "finding": "Appendix C of control-framework-requirements.md gives it a 95 percent target; checks.json describes an all members rule. One of them is stale.",
+   "proposal": "Decide the rule and update the stale one (see decisions).",
+   "source": "coverage/gov-cs-hr.md Content problems and gaps found"
+  },
+  {
+   "kind": "other",
+   "item": "MANAGEMENT_REVIEW_INPUTS",
+   "finding": "In compliance/assurance_service.py it says it is in Verity's own words, but several labels follow the standard's list closely.",
+   "proposal": "Give the labels a text policy look before more screens show them.",
+   "source": "coverage/gov-cs-hr.md Content problems and gaps found"
+  },
+  {
+   "kind": "module",
+   "item": "tasks: incident kind",
+   "finding": "Tasks has no incident kind; until the Incidents module (Phase 3.1) exists the security incident register is a convention on issues (CS-01, CS-03, CS-06, CS-07, GOV-08).",
+   "proposal": "Add an incident kind or a fixed tag convention in Tasks until the Incidents module ships.",
+   "source": "coverage/gov-cs-hr.md Content problems and gaps found"
+  },
+  {
+   "kind": "module",
+   "item": "compliance: commitments review date",
+   "finding": "Commitments carry no review date, so the yearly comparison of promises with practice (CS-02.C) cannot be checked.",
+   "proposal": "Add a review date to commitments.",
+   "source": "coverage/gov-cs-hr.md Content problems and gaps found"
+  },
+  {
+   "kind": "module",
+   "item": "compliance: Statement of Applicability supplier rows",
+   "finding": "Supplier provided rows in the Statement of Applicability do not name the vendor, so no check can join them to supplier certificates (GOV-27.D).",
+   "proposal": "Add a vendor link on supplier provided rows.",
+   "source": "coverage/gov-cs-hr.md Content problems and gaps found"
+  },
+  {
+   "kind": "module",
+   "item": "compliance: assurance kinds",
+   "finding": "No assurance record kind exists for an oversight body meeting (GOV-02, CS-05.E, GOV-15.E).",
+   "proposal": "Add an oversight body meeting kind; until then use a recurring task with minutes attached.",
+   "source": "coverage/gov-cs-hr.md Content problems and gaps found"
+  },
+  {
+   "kind": "module",
+   "item": "objectives measures",
+   "finding": "No record type holds an objective's measure and its readings (GOV-26.C, GOV-30, Appendix A.3 clause 9.1).",
+   "proposal": "Add a measure and readings record for security objectives.",
+   "source": "coverage/gov-cs-hr.md Content problems and gaps found"
+  },
+  {
+   "kind": "module",
+   "item": "tasks: improvement decision",
+   "finding": "Tasks has no decision field for improvement items; the decision is a comment today (GOV-30.C).",
+   "proposal": "Add a decision field (accepted, rejected, with reason) on improvement items.",
+   "source": "coverage/gov-cs-hr.md Content problems and gaps found"
+  },
+  {
+   "kind": "module",
+   "item": "risk: assessment sign off",
+   "finding": "The Risk module has no sign off step on a risk assessment (GOV-18.E).",
+   "proposal": "Add a sign off step, or route the exported report through a document approval meanwhile.",
+   "source": "coverage/gov-cs-hr.md Content problems and gaps found"
+  },
+  {
+   "kind": "module",
+   "item": "risk: fraud category mark",
+   "finding": "Risk categories have no fraud mark (fraud templates exist), which verity.risks.fraud_assessed needs.",
+   "proposal": "Add a fraud mark on risk categories.",
+   "source": "coverage/gov-cs-hr.md Content problems and gaps found"
+  },
+  {
+   "kind": "capability",
+   "item": "verity_members",
+   "finding": "Checks on memberships and owner functions need a verity_members capability, which is not in capabilities.json.",
+   "proposal": "Add capability verity_members (provider verity).",
+   "source": "coverage/gov-cs-hr.md Content problems and gaps found"
+  },
+  {
+   "kind": "module",
+   "item": "compliance: assurance records need an engagement",
+   "finding": "Assurance records hang on an engagement, so a workspace with no engagement cannot record an internal audit or management review at all.",
+   "proposal": "Allow assurance records without an engagement, or make an engagement a precondition shown in the product.",
+   "source": "coverage/gov-cs-hr.md Content problems and gaps found"
+  },
+  {
+   "kind": "module",
+   "item": "iam: members are not the staff list",
+   "finding": "Acknowledgement, training and joiner checks judge Verity members, so staff never invited are invisible until an HR source or the proposed roster import exists (open question 1).",
+   "proposal": "Offer the roster import (CSV) as the staff population until an HR connector is agreed.",
+   "source": "coverage/gov-cs-hr.md Content problems and gaps found"
+  },
+  {
+   "kind": "provider",
+   "item": "hr_system, learning_platform, esignature, background_screening",
+   "finding": "No HR, learning, signing or screening connector is in the signed catalogue, so the operating evidence of HR-01, HR-02 and HR-07 stays with people until one is agreed.",
+   "proposal": "Agree a connector as an extension, or keep these manual and say so in the product.",
+   "source": "coverage/gov-cs-hr.md Content problems and gaps found"
+  },
+  {
+   "kind": "other",
+   "item": "pack placement",
+   "finding": "CS-06, CS-07 and HR-09 sit in the ISO pack (CL-10). The successors CS-08 and GOV-31 would too; GOV-32 maps SOC2:CC5.3 and needs the shared pack.",
+   "proposal": "Place CS-08 and GOV-31 in the ISO pack and GOV-32 in the shared pack.",
+   "source": "coverage/gov-cs-hr.md Content problems and gaps found"
+  },
+  {
+   "kind": "module",
+   "item": "tasks: report channel",
+   "finding": "Tasks has no field for a security report's channel (CS-03.C, CS-03.D).",
+   "proposal": "Add a tag or category convention for reports from the security address.",
+   "source": "coverage/gov-cs-hr.md CS-03"
+  },
+  {
+   "kind": "module",
+   "item": "tasks: per record access",
+   "finding": "Tasks has no per record access limit, so code of conduct breach records and disciplinary cases are kept out of Verity (GOV-04, GOV-11).",
+   "proposal": "Keep them out, or build restricted records first.",
+   "source": "coverage/gov-cs-hr.md GOV-04, GOV-11"
+  },
+  {
+   "kind": "module",
+   "item": "risk: dated assessment report export",
+   "finding": "Unverified whether the Risk module exports a dated assessment report (Appendix A.3, clause 8.2) for risk-assessment-report-with-method-and (GOV-12, GOV-18, GOV-24).",
+   "proposal": "Confirm the export exists, or build it.",
+   "source": "coverage/gov-cs-hr.json notes"
+  },
+  {
+   "kind": "template",
+   "item": "performance-review-process",
+   "finding": "No template exists for the performance review process (HR-07).",
+   "proposal": "Add a template or keep the artifact person only.",
+   "source": "coverage/gov-cs-hr.json notes, HR-07"
+  },
+  {
+   "kind": "template",
+   "item": "confidentiality-and-ip-agreement-template",
+   "finding": "Verity ships no agreement text on purpose; Appendix A row 53 asks for a clause checklist instead (HR-02). The plan points the artifact at human-resource-security-policy, which is not an agreement.",
+   "proposal": "Ship the clause checklist named in Appendix A row 53, not agreement text.",
+   "source": "coverage/gov-cs-hr.json notes, HR-02"
+  },
+  {
+   "kind": "other",
+   "item": "access-and-retention-settings-for-the",
+   "finding": "Backups and platform retention of the Documents module are Verity's own controls; the customer relies on Verity as a supplier for them (GOV-28).",
+   "proposal": "Treat Verity as a supplier in the customer's vendor list and supply its assurance, rather than asking the customer for settings.",
+   "source": "coverage/gov-cs-hr.json notes, GOV-28"
+  },
+  {
+   "kind": "other",
+   "item": "current-organization-chart-with-reporting-lines",
+   "finding": "Owner functions name only security roles; reporting lines need the directory's manager field (GOV-21, HR-04, HR-07).",
+   "proposal": "Read title, department and manager from the identity provider (NEED identity_provider, P2) or the HR system (P3).",
+   "source": "coverage/gov-cs-hr.json notes"
+  },
+  {
+   "kind": "artifact",
+   "item": "account-list-export",
+   "finding": "On HR-03 the account list must come from the customer's systems; Verity's own members list is not this population.",
+   "proposal": "Keep idp.access_list_exported as the source; do not substitute the members list.",
+   "source": "coverage/gov-cs-hr.json notes, HR-03"
+  },
+  {
+   "kind": "artifact",
+   "item": "signed-agreements-for-a-sample-of",
+   "finding": "An acknowledgement campaign is not a signed contract and must not be offered as one (HR-02, HR-03).",
+   "proposal": "Keep the source as esignature or HR system needs plus person uploads.",
+   "source": "coverage/gov-cs-hr.json notes"
+  },
+  {
+   "kind": "artifact",
+   "item": "appointment-or-role-charter-naming-the",
+   "finding": "Document artifact with no document template source today (sources: person); used on GOV-10, GOV-21.",
+   "proposal": "Add the document source: template information-security-roles-and-responsibilities, as the plan lists.",
+   "source": "coverage/gov-cs-hr.json planned sources"
+  },
+  {
+   "kind": "artifact",
+   "item": "approved-code-of-conduct",
+   "finding": "Document artifact with no document template source today (sources: person); used on GOV-04.",
+   "proposal": "Add the document source: template code-of-conduct, as the plan lists.",
+   "source": "coverage/gov-cs-hr.json planned sources"
+  },
+  {
+   "kind": "artifact",
+   "item": "background-check-policy",
+   "finding": "Document artifact with no document template source today (sources: person); used on HR-01.",
+   "proposal": "Add the document source: template human-resource-security-policy, as the plan lists.",
+   "source": "coverage/gov-cs-hr.json planned sources"
+  },
+  {
+   "kind": "artifact",
+   "item": "charter-of-the-board-or-executive",
+   "finding": "Document artifact with no document template source today (sources: person); used on GOV-02.",
+   "proposal": "Add the document source: template oversight-body-charter, as the plan lists.",
+   "source": "coverage/gov-cs-hr.json planned sources"
+  },
+  {
+   "kind": "artifact",
+   "item": "competence-requirements-for-each-security-role",
+   "finding": "Document artifact with no document template source today (sources: check verity.competence.documented, person); used on HR-09.",
+   "proposal": "Add the document source: template competence-and-awareness-procedure, as the plan lists.",
+   "source": "coverage/gov-cs-hr.json planned sources"
+  },
+  {
+   "kind": "artifact",
+   "item": "confidentiality-and-ip-agreement-template",
+   "finding": "Document artifact with no document template source today (sources: person); used on HR-02.",
+   "proposal": "Add the document source: template human-resource-security-policy, as the plan lists.",
+   "source": "coverage/gov-cs-hr.json planned sources"
+  },
+  {
+   "kind": "artifact",
+   "item": "contact-list-for-authorities-and-security",
+   "finding": "Document artifact with no document template source today (sources: person); used on CS-07.",
+   "proposal": "Add the document source: template security-communication-plan, as the plan lists.",
+   "source": "coverage/gov-cs-hr.json planned sources"
+  },
+  {
+   "kind": "artifact",
+   "item": "contractor-onboarding-and-offboarding-procedure",
+   "finding": "Document artifact with no document template source today (sources: person); used on HR-03.",
+   "proposal": "Add the document source: template joiner-mover-leaver-checklists, as the plan lists.",
+   "source": "coverage/gov-cs-hr.json planned sources"
+  },
+  {
+   "kind": "artifact",
+   "item": "description-of-the-confidential-reporting-mechanism",
+   "finding": "Document artifact with no document template source today (sources: person); used on CS-05.",
+   "proposal": "Add the document source: template information-security-policy or code-of-conduct, as the plan lists.",
+   "source": "coverage/gov-cs-hr.json planned sources"
+  },
+  {
+   "kind": "artifact",
+   "item": "disciplinary-procedure",
+   "finding": "Document artifact with no document template source today (sources: person); used on GOV-11.",
+   "proposal": "Add the document source: template human-resource-security-policy or code-of-conduct, as the plan lists.",
+   "source": "coverage/gov-cs-hr.json planned sources"
+  },
+  {
+   "kind": "artifact",
+   "item": "document-control-procedure-covering-approval-versions",
+   "finding": "Document artifact with no document template source today (sources: person); used on GOV-28.",
+   "proposal": "Add the document source: template document-control-procedure, as the plan lists.",
+   "source": "coverage/gov-cs-hr.json planned sources"
+  },
+  {
+   "kind": "artifact",
+   "item": "incident-procedure-showing-the-notification-timeframes",
+   "finding": "Document artifact with no document template source today (sources: person); used on CS-01.",
+   "proposal": "Add the document source: template incident-response-plan, as the plan lists.",
+   "source": "coverage/gov-cs-hr.json planned sources"
+  },
+  {
+   "kind": "artifact",
+   "item": "internal-audit-program-setting-frequency-methods",
+   "finding": "Document artifact with no document template source today (sources: person); used on GOV-13.",
+   "proposal": "Add the document source: template internal-audit-procedure, as the plan lists.",
+   "source": "coverage/gov-cs-hr.json planned sources"
+  },
+  {
+   "kind": "artifact",
+   "item": "job-descriptions-that-state-security-responsibilities",
+   "finding": "Document artifact with no document template source today (sources: person); used on HR-04, HR-07, HR-09.",
+   "proposal": "Add the document source: template competence-and-awareness-procedure, as the plan lists.",
+   "source": "coverage/gov-cs-hr.json planned sources"
+  },
+  {
+   "kind": "artifact",
+   "item": "map-of-the-management-processes-and",
+   "finding": "Document artifact with no document template source today (sources: person); used on GOV-23.",
+   "proposal": "Add the document source: template isms-operating-plan, as the plan lists.",
+   "source": "coverage/gov-cs-hr.json planned sources"
+  },
+  {
+   "kind": "artifact",
+   "item": "offboarding-checklist",
+   "finding": "Document artifact with no document template source today (sources: person); used on HR-05.",
+   "proposal": "Add the document source: template joiner-mover-leaver-checklists, as the plan lists.",
+   "source": "coverage/gov-cs-hr.json planned sources"
+  },
+  {
+   "kind": "artifact",
+   "item": "onboarding-checklist",
+   "finding": "Document artifact with no document template source today (sources: person); used on CS-03, HR-06.",
+   "proposal": "Add the document source: template joiner-mover-leaver-checklists, as the plan lists.",
+   "source": "coverage/gov-cs-hr.json planned sources"
+  },
+  {
+   "kind": "artifact",
+   "item": "operating-plan-listing-activities-owners-and",
+   "finding": "Document artifact with no document template source today (sources: person); used on GOV-29.",
+   "proposal": "Add the document source: template isms-operating-plan, as the plan lists.",
+   "source": "coverage/gov-cs-hr.json planned sources"
+  },
+  {
+   "kind": "artifact",
+   "item": "procedure-for-raising-and-deciding-improvements",
+   "finding": "Document artifact with no document template source today (sources: person); used on GOV-30.",
+   "proposal": "Add the document source: template corrective-action-procedure, as the plan lists.",
+   "source": "coverage/gov-cs-hr.json planned sources"
+  },
+  {
+   "kind": "artifact",
+   "item": "procedure-listing-what-triggers-a-risk",
+   "finding": "Document artifact with no document template source today (sources: person); used on GOV-03.",
+   "proposal": "Add the document source: template risk-assessment-methodology, as the plan lists.",
+   "source": "coverage/gov-cs-hr.json planned sources"
+  },
+  {
+   "kind": "artifact",
+   "item": "published-reporting-channel-for-staff-and",
+   "finding": "Document artifact with no document template source today (sources: person); used on CS-03.",
+   "proposal": "Add the document source: template security-communication-plan or incident-response-plan, as the plan lists.",
+   "source": "coverage/gov-cs-hr.json planned sources"
+  },
+  {
+   "kind": "artifact",
+   "item": "published-security-availability-and-privacy-commitments",
+   "finding": "Document artifact with no document template source today (sources: person); used on CS-02, GOV-22.",
+   "proposal": "Add the document source: template privacy-notice-outline, as the plan lists.",
+   "source": "coverage/gov-cs-hr.json planned sources"
+  },
+  {
+   "kind": "artifact",
+   "item": "record-of-who-sits-on-the",
+   "finding": "Document artifact with no document template source today (sources: person); used on GOV-02.",
+   "proposal": "Add the document source: template oversight-body-charter, as the plan lists.",
+   "source": "coverage/gov-cs-hr.json planned sources"
+  },
+  {
+   "kind": "artifact",
+   "item": "register-of-contractual-regulatory-and-certification",
+   "finding": "Document artifact with no document template source today (sources: person); used on GOV-05.",
+   "proposal": "Add the document source: template context-and-interested-parties, as the plan lists.",
+   "source": "coverage/gov-cs-hr.json planned sources"
+  },
+  {
+   "kind": "artifact",
+   "item": "register-of-external-and-internal-factors",
+   "finding": "Document artifact with no document template source today (sources: check verity.context.documented); used on GOV-23, GOV-24.",
+   "proposal": "Add the document source: template context-and-interested-parties, as the plan lists.",
+   "source": "coverage/gov-cs-hr.json planned sources"
+  },
+  {
+   "kind": "artifact",
+   "item": "register-of-interested-parties-and-what",
+   "finding": "Document artifact with no document template source today (sources: check verity.interested_parties.documented); used on GOV-05, GOV-23, GOV-25.",
+   "proposal": "Add the document source: template context-and-interested-parties, as the plan lists.",
+   "source": "coverage/gov-cs-hr.json planned sources"
+  },
+  {
+   "kind": "artifact",
+   "item": "role-and-access-matrix",
+   "finding": "Document artifact with no document template source today (sources: person); used on HR-04.",
+   "proposal": "Add the document source: template access-control-policy, as the plan lists.",
+   "source": "coverage/gov-cs-hr.json planned sources"
+  },
+  {
+   "kind": "artifact",
+   "item": "role-descriptions-for-security-and-compliance",
+   "finding": "Document artifact with no document template source today (sources: person); used on GOV-21, HR-09.",
+   "proposal": "Add the document source: template information-security-roles-and-responsibilities, as the plan lists.",
+   "source": "coverage/gov-cs-hr.json planned sources"
+  },
+  {
+   "kind": "artifact",
+   "item": "scope-statement-approved-by-leadership",
+   "finding": "Document artifact with no document template source today (sources: check verity.isms.scope_documented+verity.isms.scope_recorded); used on GOV-23, GOV-24.",
+   "proposal": "Add the document source: template isms-scope-statement, as the plan lists.",
+   "source": "coverage/gov-cs-hr.json planned sources"
+  },
+  {
+   "kind": "artifact",
+   "item": "security-communication-plan",
+   "finding": "Document artifact with no document template source today (sources: check verity.communication.plan_documented); used on CS-06.",
+   "proposal": "Add the document source: template security-communication-plan, as the plan lists.",
+   "source": "coverage/gov-cs-hr.json planned sources"
+  },
+  {
+   "kind": "artifact",
+   "item": "security-objectives-with-owners-targets-and",
+   "finding": "Document artifact with no document template source today (sources: check verity.objectives.documented); used on GOV-24, GOV-26.",
+   "proposal": "Add the document source: template security-objectives-plan, as the plan lists.",
+   "source": "coverage/gov-cs-hr.json planned sources"
+  },
+  {
+   "kind": "artifact",
+   "item": "service-commitments-and-system-requirements-shared",
+   "finding": "Document artifact with no document template source today (sources: person); used on CS-02, GOV-05, GOV-22.",
+   "proposal": "Add the document source: template soc2-system-description, as the plan lists.",
+   "source": "coverage/gov-cs-hr.json planned sources"
+  },
+  {
+   "kind": "artifact",
+   "item": "system-description-covering-boundary-services-infrastructure",
+   "finding": "Document artifact with no document template source today (sources: person); used on GOV-22.",
+   "proposal": "Add the document source: template soc2-system-description, as the plan lists.",
+   "source": "coverage/gov-cs-hr.json planned sources"
+  },
+  {
+   "kind": "artifact",
+   "item": "training-content-and-schedule",
+   "finding": "Document artifact with no document template source today (sources: person); used on CS-03, HR-08.",
+   "proposal": "Add the document source: template competence-and-awareness-procedure, as the plan lists.",
+   "source": "coverage/gov-cs-hr.json planned sources"
+  },
+  {
+   "kind": "artifact",
+   "item": "vulnerability-management-policy-with-timeframes",
+   "finding": "Document artifact with no document template source today (sources: person); used on GOV-16.",
+   "proposal": "Add the document source: template operations-security-policy, as the plan lists.",
+   "source": "coverage/gov-cs-hr.json planned sources"
+  },
+  {
+   "kind": "mapping",
+   "item": "artifacts with only partial sources",
+   "finding": "Found during extraction, not stated in the document: these artifacts have no person, document or full source in the plan, only module reports and checks that fill partial: approval-of-each-accepted-risk (GOV-07, GOV-12, GOV-19); asset-inventory (GOV-14, GOV-18, GOV-22); contractor-register-with-start-and-end (HR-02, HR-03); fraud-risk-assessment-covering-insider-misuse (GOV-12); log-of-control-deficiencies-with-owner (GOV-01, GOV-06, GOV-08, GOV-13, GOV-14, GOV-29); published-security-policies-covering-each-required (CS-04, GOV-01, GOV-17); remediation-plan-for-the-gaps-found (GOV-13); risk-assessment-report-with-method-and (GOV-12, GOV-18, GOV-24); risk-register-with-owners-ratings-and (GOV-03, GOV-07, GOV-18, GOV-19, GOV-20, GOV-27); risks-linked-to-the-controls-that (GOV-07, GOV-12); security-assessment-for-each-critical-vendor (GOV-29); staff-acknowledgement-of-current-policies (CS-04, CS-05, CS-06, GOV-21, GOV-32); treatment-plan-with-owners-and-due (GOV-18, GOV-20, GOV-27); updated-ownership-when-roles-change (GOV-09); vendor-assurance-reports-that-were-reviewed (GOV-28); vendor-inventory-with-owner-data-and (GOV-03, GOV-05, GOV-14, GOV-18, GOV-22, GOV-23, HR-02); vulnerability-register-with-remediation-and-accepted (GOV-16). Under rule A (a partial check can only take satisfaction away) nothing can satisfy them. Several of them are check only today, where a passing check satisfies the artifact alone.",
+   "proposal": "Decide whether a Verity module report counts as the satisfying source, add a person source, or mark the check fill full for these Verity held records.",
+   "source": "coverage/gov-cs-hr.json"
+  },
+  {
+   "kind": "artifact",
+   "item": "management-review-agenda-and-minutes",
+   "finding": "Found during extraction: the plan gives this one artifact different sources per control (GOV-15 row: verity.assurance.management_review_held, without verity.management_review.in_12_months; GOV-31 row: in_12_months and management_review_inputs_recorded, without management_review_held). artifacts.json sources are per artifact, not per control, so this cannot be represented as is. The shipped where text says quarterly meeting notes.",
+   "proposal": "Split into a quarterly management review minutes artifact (GOV-15) and a yearly management review record artifact (GOV-31), or union the sources.",
+   "source": "coverage/gov-cs-hr.json"
+  }
+ ],
+ "capabilities_proposed": [
+  {
+   "key": "verity_members",
+   "name": "Verity members",
+   "purpose": "Members, groups and owner functions kept in Verity (iam and onboarding modules). Needed by verity.members.leaver_ownership_moved and verity.members.owner_functions_held. Built in, P1.",
+   "providers": [
+    "verity"
+   ],
+   "source": "coverage/gov-cs-hr.md Counts"
+  },
+  {
+   "key": "learning_platform",
+   "name": "Learning platform",
+   "purpose": "The training platform that assigns courses and records completion: yearly course completion and joiner deadlines, overdue assignments with reminders and escalation, courses assigned with topics and audience, role module completions (CS-03, HR-03, HR-06, HR-07, HR-08, HR-09). Outside the signed catalogue, P3.",
+   "providers": [],
+   "source": "coverage/gov-cs-hr.md Counts"
+  },
+  {
+   "key": "esignature",
+   "name": "E-signature",
+   "purpose": "The signing tool that holds signed agreements: every starter has a completed confidentiality agreement signed on or before first access (HR-02, HR-03). Outside the signed catalogue, P3.",
+   "providers": [
+    "docusign"
+   ],
+   "source": "coverage/gov-cs-hr.md Counts"
+  },
+  {
+   "key": "background_screening",
+   "name": "Background screening",
+   "purpose": "The screening provider that runs pre-hire checks: every hire, move into a sensitive role and recheck has a completed check with a clear result dated before first access, without the check details (HR-01). Outside the signed catalogue, P3.",
+   "providers": [
+    "checkr",
+    "certn"
+   ],
+   "source": "coverage/gov-cs-hr.md Counts"
+  },
+  {
+   "key": "public_web",
+   "name": "Public web",
+   "purpose": "Unauthenticated reads of the company's own public web pages: security.txt published, not expired and naming a monitored contact (CS-03); security page, terms, service levels and privacy notice reachable and dated, with text changes recorded (CS-02, GOV-22). No vendor; Verity reads the pages. P3 in the doc.",
+   "providers": [],
+   "source": "coverage/gov-cs-hr.md Counts"
+  }
+ ],
+ "providers_proposed": [
+  {
+   "key": "docusign",
+   "name": "DocuSign",
+   "capability": "esignature",
+   "phase": "not in plan",
+   "source": "coverage/gov-cs-hr.md Counts"
+  },
+  {
+   "key": "checkr",
+   "name": "Checkr",
+   "capability": "background_screening",
+   "phase": "not in plan",
+   "source": "coverage/gov-cs-hr.md Counts"
+  },
+  {
+   "key": "certn",
+   "name": "Certn",
+   "capability": "background_screening",
+   "phase": "not in plan",
+   "source": "coverage/gov-cs-hr.md Counts"
+  }
+ ],
+ "artifacts_proposed": [],
+ "existing_check_changes": [
+  {
+   "check": "verity.management_review.in_12_months",
+   "change": "move_to_successor",
+   "control": "GOV-15",
+   "to_control": "GOV-31",
+   "coverage": "partial",
+   "rationale": "It is a 12 month floor, which fits the yearly review by top management. The quarterly GOV-15 review gets verity.assurance.management_review_held. Data migration: its history stays on GOV-15. Its GOV-15 rationale and its description and remediation, which say 'the management review control', need rewording for GOV-31.",
+   "source": "coverage/gov-cs-hr.controls.json check_mapping_changes"
+  },
+  {
+   "check": "verity.policies.reviewed",
+   "change": "other",
+   "control": "GOV-17",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Passes on one published document (LD-04), so it does not show the library holds every required policy. No mapping change: pair it with the new verity.documents.required_present on the policy artifacts. It stays on GOV-17 after the split; the policy statement row is covered for GOV-32 by required_present.",
+   "source": "coverage/gov-cs-hr.md Content problems and gaps found"
+  },
+  {
+   "check": "verity.policies.acknowledged",
+   "change": "reword",
+   "control": null,
+   "to_control": null,
+   "coverage": null,
+   "rationale": "Appendix C target (95 percent) and the checks.json rule (every member) disagree; one is stale. It also judges members, not staff, and assumes the code of conduct requires acknowledgement at hire and yearly, which the template does not.",
+   "source": "coverage/gov-cs-hr.md Content problems and gaps found"
+  },
+  {
+   "check": "verity.audit.internal_in_12_months",
+   "change": "other",
+   "control": "GOV-13",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Stays as a source on the internal audit report artifact next to the new verity.assurance.internal_audit_held, which reads assurance records and tests independence. Consider retiring it once assurance records no longer need an engagement (extractor's note, not the document's).",
+   "source": "coverage/gov-cs-hr.json"
+  },
+  {
+   "check": "people.leavers_deprovisioned",
+   "change": "other",
+   "control": "HR-05",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "It is today's only check source on roster-of-joiners-and-leavers-with, which also needs joiners; add people.joiners_onboarded to that artifact. No mapping change to the check.",
+   "source": "coverage/gov-cs-hr.md Content problems and gaps found"
+  }
+ ],
+ "needs": [
+  {
+   "capability": "alerting",
+   "capability_is_new": false,
+   "phase": "P2",
+   "predicate": "messages posted in the named security announcement channel in the period, with date, author and channel (Slack)",
+   "fills": [
+    "partial"
+   ],
+   "controls": [
+    "CS-04",
+    "CS-06"
+   ],
+   "artifacts": [
+    "sample-of-messages-sent-under-the"
+   ],
+   "source": "coverage/gov-cs-hr.md Needs for connector research"
+  },
+  {
+   "capability": "background_screening",
+   "capability_is_new": true,
+   "phase": "P3",
+   "predicate": "every hire, move into a sensitive role and recheck in the period has a completed check with a clear result dated before the first access date, without the check details",
+   "fills": [
+    "partial"
+   ],
+   "controls": [
+    "HR-01"
+   ],
+   "artifacts": [
+    "completed-background-checks-for-a-sample"
+   ],
+   "source": "coverage/gov-cs-hr.md Needs for connector research"
+  },
+  {
+   "capability": "esignature",
+   "capability_is_new": true,
+   "phase": "P3",
+   "predicate": "every person who started in the period has a completed confidentiality agreement signed on or before the first access date",
+   "fills": [
+    "partial"
+   ],
+   "controls": [
+    "HR-02",
+    "HR-03"
+   ],
+   "artifacts": [
+    "signed-agreements-for-a-sample-of"
+   ],
+   "source": "coverage/gov-cs-hr.md Needs for connector research"
+  },
+  {
+   "capability": "hr_system",
+   "capability_is_new": false,
+   "phase": "P3",
+   "predicate": "agreements signed in the HR system for each person, with agreement type and date signed",
+   "fills": [
+    "partial"
+   ],
+   "controls": [
+    "HR-02",
+    "HR-03"
+   ],
+   "artifacts": [
+    "signed-agreements-for-a-sample-of"
+   ],
+   "source": "coverage/gov-cs-hr.md Needs for connector research"
+  },
+  {
+   "capability": "hr_system",
+   "capability_is_new": false,
+   "phase": "P3",
+   "predicate": "an annual review cycle is configured for every employee group",
+   "fills": [
+    "partial"
+   ],
+   "controls": [
+    "HR-07"
+   ],
+   "artifacts": [
+    "performance-review-process"
+   ],
+   "source": "coverage/gov-cs-hr.md Needs for connector research"
+  },
+  {
+   "capability": "hr_system",
+   "capability_is_new": false,
+   "phase": "P3",
+   "predicate": "certifications and training records for each person in a listed security role, dated",
+   "fills": [
+    "partial"
+   ],
+   "controls": [
+    "HR-09"
+   ],
+   "artifacts": [
+    "competence-record-for-each-person-in"
+   ],
+   "source": "coverage/gov-cs-hr.md Needs for connector research"
+  },
+  {
+   "capability": "hr_system",
+   "capability_is_new": false,
+   "phase": "P3",
+   "predicate": "contractors with company, sponsor, start date and end date",
+   "fills": [
+    "partial"
+   ],
+   "controls": [
+    "HR-02",
+    "HR-03"
+   ],
+   "artifacts": [
+    "contractor-register-with-start-and-end"
+   ],
+   "source": "coverage/gov-cs-hr.md Needs for connector research"
+  },
+  {
+   "capability": "hr_system",
+   "capability_is_new": false,
+   "phase": "P3",
+   "predicate": "each person's title, department and manager, for the organization chart",
+   "fills": [
+    "full"
+   ],
+   "controls": [
+    "GOV-21",
+    "HR-04",
+    "HR-07"
+   ],
+   "artifacts": [
+    "current-organization-chart-with-reporting-lines"
+   ],
+   "source": "coverage/gov-cs-hr.md Needs for connector research"
+  },
+  {
+   "capability": "hr_system",
+   "capability_is_new": false,
+   "phase": "P3",
+   "predicate": "every active person on the HR roster has a Verity membership, so acknowledgement and training cover the whole staff",
+   "fills": [
+    "partial"
+   ],
+   "controls": [
+    "CS-04",
+    "CS-05",
+    "CS-06",
+    "GOV-04",
+    "GOV-11",
+    "GOV-21",
+    "GOV-32",
+    "HR-03",
+    "HR-06",
+    "HR-07",
+    "HR-08"
+   ],
+   "artifacts": [
+    "acknowledgement-from-every-member-of-staff",
+    "completion-records-for-all-staff",
+    "staff-acknowledgement-of-current-policies"
+   ],
+   "source": "coverage/gov-cs-hr.md Needs for connector research"
+  },
+  {
+   "capability": "hr_system",
+   "capability_is_new": false,
+   "phase": "P3",
+   "predicate": "every active position has a job description, and the description has a security duties section",
+   "fills": [
+    "partial"
+   ],
+   "controls": [
+    "HR-04",
+    "HR-07",
+    "HR-09"
+   ],
+   "artifacts": [
+    "job-descriptions-that-state-security-responsibilities"
+   ],
+   "source": "coverage/gov-cs-hr.md Needs for connector research"
+  },
+  {
+   "capability": "hr_system",
+   "capability_is_new": false,
+   "phase": "P3",
+   "predicate": "every employee in post for the cycle has a completed performance review with reviewer and date",
+   "fills": [
+    "full"
+   ],
+   "controls": [
+    "HR-07"
+   ],
+   "artifacts": [
+    "completed-reviews-showing-control-responsibilities-were"
+   ],
+   "source": "coverage/gov-cs-hr.md Needs for connector research"
+  },
+  {
+   "capability": "hr_system",
+   "capability_is_new": false,
+   "phase": "P3",
+   "predicate": "every person who started, changed role or left in the period, with employment type, start date and end date",
+   "fills": [
+    "full"
+   ],
+   "controls": [
+    "CS-04",
+    "GOV-04",
+    "GOV-09",
+    "GOV-21",
+    "HR-01",
+    "HR-02",
+    "HR-05",
+    "HR-06",
+    "HR-08"
+   ],
+   "artifacts": [
+    "roster-of-joiners-and-leavers-with"
+   ],
+   "source": "coverage/gov-cs-hr.md Needs for connector research"
+  },
+  {
+   "capability": "hr_system",
+   "capability_is_new": false,
+   "phase": "P3",
+   "predicate": "hires and moves into roles marked sensitive, with start dates, to compare with completed checks",
+   "fills": [
+    "partial"
+   ],
+   "controls": [
+    "HR-01"
+   ],
+   "artifacts": [
+    "completed-background-checks-for-a-sample"
+   ],
+   "source": "coverage/gov-cs-hr.md Needs for connector research"
+  },
+  {
+   "capability": "identity_provider",
+   "capability_is_new": false,
+   "phase": "P2",
+   "predicate": "accounts created and disabled in the period with their dates, to test the roster against",
+   "fills": [
+    "partial"
+   ],
+   "controls": [
+    "CS-04",
+    "GOV-04",
+    "GOV-09",
+    "GOV-21",
+    "HR-01",
+    "HR-02",
+    "HR-05",
+    "HR-06",
+    "HR-08"
+   ],
+   "artifacts": [
+    "roster-of-joiners-and-leavers-with"
+   ],
+   "source": "coverage/gov-cs-hr.md Needs for connector research"
+  },
+  {
+   "capability": "identity_provider",
+   "capability_is_new": false,
+   "phase": "P2",
+   "predicate": "each account is labelled employee, contractor or service, and each contractor account has an end date",
+   "fills": [
+    "partial"
+   ],
+   "controls": [
+    "HR-03"
+   ],
+   "artifacts": [
+    "account-list-export"
+   ],
+   "source": "coverage/gov-cs-hr.md Needs for connector research"
+  },
+  {
+   "capability": "identity_provider",
+   "capability_is_new": false,
+   "phase": "P2",
+   "predicate": "each active user carries a title, department and manager, so the organization chart can be rebuilt from the directory",
+   "fills": [
+    "partial"
+   ],
+   "controls": [
+    "GOV-21",
+    "HR-04",
+    "HR-07"
+   ],
+   "artifacts": [
+    "current-organization-chart-with-reporting-lines"
+   ],
+   "source": "coverage/gov-cs-hr.md Needs for connector research"
+  },
+  {
+   "capability": "identity_provider",
+   "capability_is_new": false,
+   "phase": "P2",
+   "predicate": "each contractor account was disabled on or before the end date in the contractor register",
+   "fills": [
+    "partial"
+   ],
+   "controls": [
+    "HR-02",
+    "HR-03"
+   ],
+   "artifacts": [
+    "contractor-register-with-start-and-end",
+    "removal-records-for-a-sample-of"
+   ],
+   "source": "coverage/gov-cs-hr.md Needs for connector research"
+  },
+  {
+   "capability": "identity_provider",
+   "capability_is_new": false,
+   "phase": "P2",
+   "predicate": "the published security reporting address is a group or shared mailbox with at least one active member",
+   "fills": [
+    "partial"
+   ],
+   "controls": [
+    "CS-03"
+   ],
+   "artifacts": [
+    "published-reporting-channel-for-staff-and"
+   ],
+   "source": "coverage/gov-cs-hr.md Needs for connector research"
+  },
+  {
+   "capability": "learning_platform",
+   "capability_is_new": true,
+   "phase": "P3",
+   "predicate": "completions of the role modules by the people in each listed security role",
+   "fills": [
+    "partial"
+   ],
+   "controls": [
+    "HR-09"
+   ],
+   "artifacts": [
+    "competence-record-for-each-person-in",
+    "training-or-other-actions-taken-to"
+   ],
+   "source": "coverage/gov-cs-hr.md Needs for connector research"
+  },
+  {
+   "capability": "learning_platform",
+   "capability_is_new": true,
+   "phase": "P3",
+   "predicate": "every assigned person completed the yearly security course in the last 12 months, and each joiner within the set days of the start date",
+   "fills": [
+    "full"
+   ],
+   "controls": [
+    "HR-03",
+    "HR-06",
+    "HR-07",
+    "HR-08"
+   ],
+   "artifacts": [
+    "completion-records-for-all-staff"
+   ],
+   "source": "coverage/gov-cs-hr.md Needs for connector research"
+  },
+  {
+   "capability": "learning_platform",
+   "capability_is_new": true,
+   "phase": "P3",
+   "predicate": "overdue assignments with each reminder sent and the date of escalation",
+   "fills": [
+    "partial"
+   ],
+   "controls": [
+    "HR-03",
+    "HR-06",
+    "HR-07",
+    "HR-08"
+   ],
+   "artifacts": [
+    "completion-records-for-all-staff"
+   ],
+   "source": "coverage/gov-cs-hr.md Needs for connector research"
+  },
+  {
+   "capability": "learning_platform",
+   "capability_is_new": true,
+   "phase": "P3",
+   "predicate": "the courses assigned in the period, with topics, audience and due rule",
+   "fills": [
+    "partial"
+   ],
+   "controls": [
+    "CS-03",
+    "HR-08"
+   ],
+   "artifacts": [
+    "training-content-and-schedule"
+   ],
+   "source": "coverage/gov-cs-hr.md Needs for connector research"
+  },
+  {
+   "capability": "public_web",
+   "capability_is_new": true,
+   "phase": "P3",
+   "predicate": "security.txt is published at the company domain, has not expired and names a monitored contact",
+   "fills": [
+    "partial"
+   ],
+   "controls": [
+    "CS-03"
+   ],
+   "artifacts": [
+    "published-reporting-channel-for-staff-and"
+   ],
+   "source": "coverage/gov-cs-hr.md Needs for connector research"
+  },
+  {
+   "capability": "public_web",
+   "capability_is_new": true,
+   "phase": "P3",
+   "predicate": "the security page, terms, service levels and privacy notice are reachable and dated, and each change in their text is recorded with the date seen",
+   "fills": [
+    "partial"
+   ],
+   "controls": [
+    "CS-02",
+    "GOV-22"
+   ],
+   "artifacts": [
+    "published-security-availability-and-privacy-commitments"
+   ],
+   "source": "coverage/gov-cs-hr.md Needs for connector research"
+  },
+  {
+   "capability": "ticketing",
+   "capability_is_new": false,
+   "phase": "P2",
+   "predicate": "changes marked significant (architecture, hosting, new data type, new supplier) link to a risk review dated before release",
+   "fills": [
+    "partial"
+   ],
+   "controls": [
+    "GOV-01",
+    "GOV-03",
+    "GOV-13"
+   ],
+   "artifacts": [
+    "change-requests-with-approval-for-a",
+    "risk-reviews-done-after-significant-changes"
+   ],
+   "source": "coverage/gov-cs-hr.md Needs for connector research"
+  },
+  {
+   "capability": "ticketing",
+   "capability_is_new": false,
+   "phase": "P2",
+   "predicate": "every joiner and leaver has an onboarding or offboarding ticket from the checklist template, closed with each step done and dated",
+   "fills": [
+    "partial"
+   ],
+   "controls": [
+    "GOV-09",
+    "HR-05",
+    "HR-06"
+   ],
+   "artifacts": [
+    "completed-checklists-for-a-sample-of",
+    "completed-offboarding-records-for-leavers-in"
+   ],
+   "source": "coverage/gov-cs-hr.md Needs for connector research"
+  },
+  {
+   "capability": "ticketing",
+   "capability_is_new": false,
+   "phase": "P2",
+   "predicate": "every report to the security address opened a ticket with date, source, triage decision and closure date",
+   "fills": [
+    "partial"
+   ],
+   "controls": [
+    "CS-03"
+   ],
+   "artifacts": [
+    "sample-of-reports-received-and-how"
+   ],
+   "source": "coverage/gov-cs-hr.md Needs for connector research"
+  },
+  {
+   "capability": "ticketing",
+   "capability_is_new": false,
+   "phase": "P2",
+   "predicate": "incident tickets in the period, with severity, detection date, closure date and the customer notice decision",
+   "fills": [
+    "partial"
+   ],
+   "controls": [
+    "CS-01",
+    "CS-03",
+    "CS-06",
+    "CS-07",
+    "GOV-08"
+   ],
+   "artifacts": [
+    "notification-decisions-for-each-incident-including",
+    "security-incident-register"
+   ],
+   "source": "coverage/gov-cs-hr.md Needs for connector research"
+  }
+ ],
+ "requirement_mapping_changes": [
+  {
+   "requirement": "ISO27001:A.5.6",
+   "control": "CS-07",
+   "from_coverage": "full",
+   "to_coverage": "removed",
+   "rationale": "Moves to CS-08; CS-07 keeps authority contacts (A.5.5).",
+   "source": "coverage/gov-cs-hr.md Proposed control changes"
+  },
+  {
+   "requirement": "ISO27001:A.5.6",
+   "control": "CS-08",
+   "from_coverage": null,
+   "to_coverage": "full",
+   "rationale": "The list of groups and feeds followed, each with an owner, kept current and producing items for the threat review, is the contact this requirement asks for.",
+   "source": "coverage/gov-cs-hr.md Proposed control changes"
+  },
+  {
+   "requirement": "ISO27001:9.3.1",
+   "control": "GOV-15",
+   "from_coverage": "full",
+   "to_coverage": "removed",
+   "rationale": "The yearly review by top management moves to GOV-31.",
+   "source": "coverage/gov-cs-hr.md Proposed control changes"
+  },
+  {
+   "requirement": "ISO27001:9.3.2",
+   "control": "GOV-15",
+   "from_coverage": "full",
+   "to_coverage": "removed",
+   "rationale": "As above.",
+   "source": "coverage/gov-cs-hr.md Proposed control changes"
+  },
+  {
+   "requirement": "ISO27001:9.3.3",
+   "control": "GOV-15",
+   "from_coverage": "full",
+   "to_coverage": "removed",
+   "rationale": "As above.",
+   "source": "coverage/gov-cs-hr.md Proposed control changes"
+  },
+  {
+   "requirement": "ISO27001:7.1",
+   "control": "GOV-15",
+   "from_coverage": "partial",
+   "to_coverage": "removed",
+   "rationale": "Resource commitments for the program are decided at the yearly review.",
+   "source": "coverage/gov-cs-hr.md Proposed control changes"
+  },
+  {
+   "requirement": "ISO27001:9.3.1",
+   "control": "GOV-31",
+   "from_coverage": null,
+   "to_coverage": "full",
+   "rationale": "A yearly review by top management of whether the program fits, covers what it should and works, with attendees and decisions recorded.",
+   "source": "coverage/gov-cs-hr.md Proposed control changes"
+  },
+  {
+   "requirement": "ISO27001:9.3.2",
+   "control": "GOV-31",
+   "from_coverage": null,
+   "to_coverage": "full",
+   "rationale": "The review takes each set input and the record shows it, input by input.",
+   "source": "coverage/gov-cs-hr.md Proposed control changes"
+  },
+  {
+   "requirement": "ISO27001:9.3.3",
+   "control": "GOV-31",
+   "from_coverage": null,
+   "to_coverage": "full",
+   "rationale": "Decisions on improvements, changes and resources are recorded and tracked.",
+   "source": "coverage/gov-cs-hr.md Proposed control changes"
+  },
+  {
+   "requirement": "ISO27001:5.1",
+   "control": "GOV-31",
+   "from_coverage": null,
+   "to_coverage": "partial",
+   "rationale": "Top management reviewing the program once a year is part of leadership. Policy and objectives are shown by GOV-32 and GOV-26.",
+   "source": "coverage/gov-cs-hr.md Proposed control changes"
+  },
+  {
+   "requirement": "ISO27001:7.1",
+   "control": "GOV-31",
+   "from_coverage": null,
+   "to_coverage": "partial",
+   "rationale": "The yearly review records the resource commitments for the program as a whole. Needs per objective are in GOV-26.",
+   "source": "coverage/gov-cs-hr.md Proposed control changes"
+  },
+  {
+   "requirement": "ISO27001:5.2",
+   "control": "GOV-17",
+   "from_coverage": "partial",
+   "to_coverage": "removed",
+   "rationale": "The statement moves to GOV-32. CS-04 keeps its partial link for communication to staff.",
+   "source": "coverage/gov-cs-hr.md Proposed control changes"
+  },
+  {
+   "requirement": "ISO27001:5.1",
+   "control": "GOV-17",
+   "from_coverage": "partial",
+   "to_coverage": "removed",
+   "rationale": "Top management setting the policy moves with the statement.",
+   "source": "coverage/gov-cs-hr.md Proposed control changes"
+  },
+  {
+   "requirement": "ISO27001:5.2",
+   "control": "GOV-32",
+   "from_coverage": null,
+   "to_coverage": "full",
+   "rationale": "A statement approved by top management that fits the company, frames the objectives, commits to the requirements and to improving, is communicated to staff and is available to interested parties.",
+   "source": "coverage/gov-cs-hr.md Proposed control changes"
+  },
+  {
+   "requirement": "ISO27001:5.1",
+   "control": "GOV-32",
+   "from_coverage": null,
+   "to_coverage": "partial",
+   "rationale": "Top management setting the policy is part of leadership. Review and resourcing are shown by GOV-02, GOV-15 and GOV-31.",
+   "source": "coverage/gov-cs-hr.md Proposed control changes"
+  },
+  {
+   "requirement": "SOC2:CC5.3",
+   "control": "GOV-32",
+   "from_coverage": null,
+   "to_coverage": "partial",
+   "rationale": "The statement is the top of the policy set that deploys control activities; the topic policies are GOV-17. GOV-17 keeps CC5.3 full.",
+   "source": "coverage/gov-cs-hr.md Proposed control changes"
+  }
+ ],
+ "objective_changes": [
+  {
+   "code": "CS-02.F",
+   "change": "add",
+   "statement": "Where Processing Integrity is in scope, the published terms or service description say what the service processes, which inputs it accepts and what customers can expect about the completeness, accuracy and timing of its outputs.",
+   "assurance": "design",
+   "methods": [
+    {
+     "method": "examine",
+     "artifacts": [
+      "published-security-availability-and-privacy-commitments",
+      "doc-processing-integrity-procedure"
+     ]
+    }
+   ],
+   "why": "SOC2:PI1.1 is mapped partial to CS-02 on the published terms, and no objective tested what those terms say about processing.",
+   "control": "CS-02",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "code": "CS-03.A",
+   "change": "reword",
+   "statement": "A security reporting channel, such as a security address or form, is published for staff and customers. It names who reads it and the expected response time, says that reports made in good faith carry no blame, and the incident plan points to it.",
+   "assurance": "design",
+   "methods": [
+    {
+     "method": "examine",
+     "artifacts": [
+      "published-reporting-channel-for-staff-and",
+      "doc-incident-response-plan",
+      "doc-security-communication-plan"
+     ]
+    }
+   ],
+   "why": "The ISO27001:A.6.8 mapping is full and its rationale relies on no blame for good faith reports, which no objective tested.",
+   "control": "CS-03",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "code": "CS-07.B",
+   "change": "move",
+   "to": "CS-08.B",
+   "statement": "The company belonged to or subscribed to security groups and advisory feeds that fit its technology and sector, and a named person followed each one and passed on what mattered.",
+   "assurance": "operating",
+   "methods": [
+    {
+     "method": "examine",
+     "artifacts": [
+      "memberships-or-subscriptions-to-security-communities"
+     ]
+    },
+    {
+     "method": "interview",
+     "artifacts": [],
+     "who": "security_lead"
+    }
+   ],
+   "why": "Moves with ISO27001:A.5.6 to the successor control.",
+   "control": "CS-07",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "code": "CS-08.A",
+   "change": "add",
+   "statement": "The security groups, advisory feeds and professional bodies the company follows are listed, each chosen for its technology or sector, with a named owner and a rule for what is passed on and to whom.",
+   "assurance": "design",
+   "methods": [
+    {
+     "method": "examine",
+     "artifacts": [
+      "memberships-or-subscriptions-to-security-communities",
+      "doc-security-communication-plan"
+     ]
+    }
+   ],
+   "why": "The successor needs a design objective of its own.",
+   "control": "CS-07",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "code": "CS-08.C",
+   "change": "add",
+   "statement": "Items passed on from these sources in the period reached the threat review or the people named, and the list of sources was checked in the last 12 months.",
+   "assurance": "operating",
+   "methods": [
+    {
+     "method": "examine",
+     "artifacts": [
+      "memberships-or-subscriptions-to-security-communities",
+      "log-of-threats-reviewed-and-actions"
+     ]
+    }
+   ],
+   "why": "ISO27001:A.5.6 is about keeping the contact useful, so what came of it is tested, not membership alone.",
+   "control": "CS-07",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "code": "GOV-05.E",
+   "change": "add",
+   "statement": "Software licences and other intellectual property terms the company relies on are in the register with their limits and an owner, and use was compared with those limits in the last 12 months.",
+   "assurance": "operating",
+   "methods": [
+    {
+     "method": "examine",
+     "artifacts": [
+      "register-of-contractual-regulatory-and-certification",
+      "vendor-inventory-with-owner-data-and"
+     ]
+    }
+   ],
+   "why": "ISO27001:A.5.32 is mapped partial on licence and IP terms in the register, and no objective tested them.",
+   "control": "GOV-05",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "code": "GOV-08.B",
+   "change": "reword",
+   "statement": "Every deficiency found in the period was logged with its source, date found, owner, severity, root cause, due date and the step taken at once to contain it and deal with its effects, including those raised by internal audit and by incidents.",
+   "assurance": "operating",
+   "methods": [
+    {
+     "method": "test",
+     "artifacts": [
+      "log-of-control-deficiencies-with-owner",
+      "internal-audit-or-readiness-assessment-report",
+      "security-incident-register"
+     ]
+    }
+   ],
+   "why": "ISO27001:10.2 is mapped full and its rationale names containment and consequences, which the objective left out.",
+   "control": "GOV-08",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "code": "GOV-08.E",
+   "change": "reword",
+   "statement": "Deficiencies past their due date were reported at management review with a new date or a decision.",
+   "assurance": "operating",
+   "methods": [
+    {
+     "method": "examine",
+     "artifacts": [
+      "log-of-control-deficiencies-with-owner",
+      "management-review-agenda-and-minutes"
+     ]
+    }
+   ],
+   "why": "The old objective bundled overdue reporting with the search for the same cause elsewhere; the second part moves to GOV-08.F.",
+   "control": "GOV-08",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "code": "GOV-08.F",
+   "change": "add",
+   "statement": "Where a root cause could apply elsewhere, other systems and teams were checked for the same problem, and the policy, procedure or control was changed where the cause showed a wider gap.",
+   "assurance": "operating",
+   "methods": [
+    {
+     "method": "examine",
+     "artifacts": [
+      "log-of-control-deficiencies-with-owner",
+      "management-review-agenda-and-minutes"
+     ]
+    },
+    {
+     "method": "interview",
+     "artifacts": [],
+     "who": "security_lead"
+    }
+   ],
+   "why": "Tests the part of ISO27001:10.2 on similar problems elsewhere and changes to the program on its own.",
+   "control": "GOV-08",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "code": "GOV-13.E",
+   "change": "add",
+   "statement": "After each significant change to the organization, its services or the way security is run, a targeted independent review was held, or the change was recorded as covered by the next planned audit with a reason.",
+   "assurance": "operating",
+   "methods": [
+    {
+     "method": "examine",
+     "artifacts": [
+      "internal-audit-or-readiness-assessment-report",
+      "risk-reviews-done-after-significant-changes"
+     ]
+    }
+   ],
+   "why": "ISO27001:A.5.35 is mapped full and expects review on significant change as well as at planned intervals.",
+   "control": "GOV-13",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "code": "GOV-13.F",
+   "change": "add",
+   "statement": "Where the Privacy category is in scope, the audit program covers the privacy commitments, including how privacy requests and complaints are handled.",
+   "assurance": "design",
+   "methods": [
+    {
+     "method": "examine",
+     "artifacts": [
+      "internal-audit-program-setting-frequency-methods",
+      "doc-internal-audit-procedure"
+     ]
+    }
+   ],
+   "why": "SOC2:P8.1 is mapped partial to GOV-13 (guided onboarding part 5, section 7) with no objective behind it.",
+   "control": "GOV-13",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "code": "GOV-15.A",
+   "change": "reword",
+   "statement": "An approved procedure sets a management review at least each quarter with the security lead and managers who can commit resources, and states how actions are recorded and escalated.",
+   "assurance": "design",
+   "methods": [
+    {
+     "method": "examine",
+     "artifacts": [
+      "doc-management-review-procedure"
+     ]
+    }
+   ],
+   "why": "The input list of the yearly review moves to GOV-31.A.",
+   "control": "GOV-15",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "code": "GOV-15.C",
+   "change": "move",
+   "to": "GOV-31.C",
+   "statement": "In the last 12 months top management judged whether the program still fits the business, covers what it should and works, using the set inputs, and recorded its decisions on improvements, changes and resources.",
+   "assurance": "operating",
+   "methods": [
+    {
+     "method": "examine",
+     "artifacts": [
+      "management-review-agenda-and-minutes",
+      "doc-management-review-procedure"
+     ]
+    },
+    {
+     "method": "interview",
+     "artifacts": [],
+     "who": "executive_sponsor"
+    }
+   ],
+   "why": "Moves with ISO27001:9.3.1 to 9.3.3 to the successor control.",
+   "control": "GOV-15",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "code": "GOV-31.A",
+   "change": "add",
+   "statement": "An approved procedure sets a review by top management at least once a year and lists what it must take in: actions from earlier reviews, changes in outside and inside factors and in what interested parties need, their feedback, nonconformities and corrective actions, measurement and audit results, how far objectives were met, risk results and treatment status, and improvement ideas.",
+   "assurance": "design",
+   "methods": [
+    {
+     "method": "examine",
+     "artifacts": [
+      "doc-management-review-procedure"
+     ]
+    }
+   ],
+   "why": "ISO27001:9.3.2 needs the inputs set in advance.",
+   "control": "GOV-15",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "code": "GOV-31.B",
+   "change": "add",
+   "statement": "The record of the yearly review shows each listed input was considered, with the source record for each, or says why one did not apply.",
+   "assurance": "operating",
+   "methods": [
+    {
+     "method": "test",
+     "artifacts": [
+      "management-review-agenda-and-minutes"
+     ]
+    }
+   ],
+   "why": "ISO27001:9.3.2 is tested input by input, which the old GOV-15.C did in one line.",
+   "control": "GOV-15",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "code": "GOV-31.D",
+   "change": "add",
+   "statement": "Each decision from the yearly review on improvements, changes to the program or resources has an owner and a date and was tracked to closure or carried to the next review.",
+   "assurance": "operating",
+   "methods": [
+    {
+     "method": "test",
+     "artifacts": [
+      "actions-raised-in-the-review-and",
+      "management-review-agenda-and-minutes"
+     ]
+    }
+   ],
+   "why": "ISO27001:9.3.3 outputs are tested on their own.",
+   "control": "GOV-15",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "code": "GOV-17.A",
+   "change": "move",
+   "to": "GOV-32.A",
+   "statement": "The top level security policy is approved by top management, or by the board where a regulator requires it. It fits the purpose of the company, states the security objectives or how they are set, and commits to meeting the requirements that apply and to improving the program.",
+   "assurance": "design",
+   "methods": [
+    {
+     "method": "examine",
+     "artifacts": [
+      "doc-information-security-policy-statement",
+      "approval-record-for-each-policy"
+     ]
+    }
+   ],
+   "why": "Moves with ISO27001:5.2 to the successor control.",
+   "control": "GOV-17",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "code": "GOV-17.D",
+   "change": "reword",
+   "statement": "The current version of each policy was available to all staff at a known location during the period.",
+   "assurance": "operating",
+   "methods": [
+    {
+     "method": "examine",
+     "artifacts": [
+      "published-security-policies-covering-each-required"
+     ]
+    },
+    {
+     "method": "observe",
+     "artifacts": [
+      "published-security-policies-covering-each-required"
+     ]
+    }
+   ],
+   "why": "The part on sharing the top level policy outside the company moves to GOV-32.D.",
+   "control": "GOV-17",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "code": "GOV-32.D",
+   "change": "add",
+   "statement": "The current policy statement was communicated to staff and made available to customers and other interested parties who need it, and the version they could reach was the approved one.",
+   "assurance": "operating",
+   "methods": [
+    {
+     "method": "examine",
+     "artifacts": [
+      "doc-information-security-policy-statement",
+      "staff-acknowledgement-of-current-policies"
+     ]
+    }
+   ],
+   "why": "ISO27001:5.2 expects the statement communicated inside and available outside; this was half of the old GOV-17.D.",
+   "control": "GOV-17",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "code": "GOV-20.F",
+   "change": "add",
+   "statement": "Each risk treated by transfer names the contract or insurance policy that carries it, with its cover and expiry, and a recorded decision says whether insurance is needed against business disruption.",
+   "assurance": "operating",
+   "methods": [
+    {
+     "method": "examine",
+     "artifacts": [
+      "risk-register-with-owners-ratings-and",
+      "treatment-plan-with-owners-and-due"
+     ]
+    }
+   ],
+   "why": "SOC2:CC9.1 is mapped partial to GOV-20 and the guided onboarding plan adds the insurance decision; no objective tested transfer.",
+   "control": "GOV-20",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "code": "GOV-21.E",
+   "change": "add",
+   "statement": "Each person holding a role with security duties was told of the role and its duties in writing, such as through a role description they acknowledged, and could describe it when asked.",
+   "assurance": "operating",
+   "methods": [
+    {
+     "method": "examine",
+     "artifacts": [
+      "role-descriptions-for-security-and-compliance",
+      "staff-acknowledgement-of-current-policies"
+     ]
+    },
+    {
+     "method": "interview",
+     "artifacts": [],
+     "who": "security_lead"
+    }
+   ],
+   "why": "ISO27001:5.3 expects roles to be communicated, and the mapping rationale says this control does not show it; no other control did.",
+   "control": "GOV-21",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "code": "GOV-28.B",
+   "change": "reword",
+   "statement": "A list names every document and record the program needs, including those the standards, laws and contracts followed call for, each with an owner.",
+   "assurance": "design",
+   "methods": [
+    {
+     "method": "examine",
+     "artifacts": [
+      "doc-document-control-procedure"
+     ]
+    }
+   ],
+   "why": "The operating procedures part moves to GOV-28.F, so ISO27001:7.5.1 and A.5.37 are tested apart.",
+   "control": "GOV-28",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "code": "GOV-28.F",
+   "change": "add",
+   "statement": "An operating procedure exists for each routine task on the systems in scope, with an owner, version and review date, and the people who run those systems can reach the current version.",
+   "assurance": "operating",
+   "methods": [
+    {
+     "method": "examine",
+     "artifacts": [
+      "doc-operating-procedure-template",
+      "version-history-and-approval-record-for"
+     ]
+    }
+   ],
+   "why": "ISO27001:A.5.37 is owned by engineering and was folded into the documents list objective.",
+   "control": "GOV-28",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "code": "GOV-29.D",
+   "change": "reword",
+   "statement": "Before each planned change to the management system or the services in scope, the reason, expected effect, owner, timing and resources were recorded and approved.",
+   "assurance": "operating",
+   "methods": [
+    {
+     "method": "examine",
+     "artifacts": [
+      "review-of-planned-changes-and-outsourced"
+     ]
+    },
+    {
+     "method": "interview",
+     "artifacts": [],
+     "who": "security_lead"
+    }
+   ],
+   "why": "Planned and unplanned changes are two populations; unplanned ones move to GOV-29.F.",
+   "control": "GOV-29",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "code": "GOV-29.F",
+   "change": "add",
+   "statement": "Each unplanned change to the management system or the services in scope in the period was reviewed afterwards for harm, and any action needed was raised.",
+   "assurance": "operating",
+   "methods": [
+    {
+     "method": "examine",
+     "artifacts": [
+      "review-of-planned-changes-and-outsourced",
+      "log-of-control-deficiencies-with-owner"
+     ]
+    }
+   ],
+   "why": "ISO27001:8.1 asks for unintended changes to be reviewed, tested on its own.",
+   "control": "GOV-29",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "code": "HR-02.B",
+   "change": "reword",
+   "statement": "The list of staff and contractors who started in the period was complete when compared with the joiner roster and the contractor register.",
+   "assurance": "operating",
+   "methods": [
+    {
+     "method": "test",
+     "artifacts": [
+      "signed-agreements-for-a-sample-of",
+      "roster-of-joiners-and-leavers-with",
+      "contractor-register-with-start-and-end"
+     ]
+    }
+   ],
+   "why": "Outside parties are a different population with a different source; they move to HR-02.F.",
+   "control": "HR-02",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "code": "HR-02.F",
+   "change": "add",
+   "statement": "Each outside party given confidential information in the period, such as a supplier, partner or prospective customer, had a non-disclosure agreement or contract confidentiality terms in force first.",
+   "assurance": "operating",
+   "methods": [
+    {
+     "method": "test",
+     "artifacts": [
+      "signed-agreements-for-a-sample-of",
+      "vendor-inventory-with-owner-data-and",
+      "security-terms-agreed-in-each-vendor"
+     ]
+    }
+   ],
+   "why": "ISO27001:A.6.6 is mapped full and covers outside parties, whose population is the vendor and partner list, not the joiner roster.",
+   "control": "HR-02",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "code": "HR-05.C",
+   "change": "reword",
+   "statement": "Every leaver on the roster for the period had a closed offboarding record.",
+   "assurance": "operating",
+   "methods": [
+    {
+     "method": "test",
+     "artifacts": [
+      "roster-of-joiners-and-leavers-with",
+      "completed-offboarding-records-for-leavers-in"
+     ]
+    }
+   ],
+   "why": "Role changes move to HR-05.F.",
+   "control": "HR-05",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "code": "HR-05.F",
+   "change": "add",
+   "statement": "Each role change in the period had the access, asset and duty items of the checklist run by the date of the change, and access the new role does not need was removed.",
+   "assurance": "operating",
+   "methods": [
+    {
+     "method": "test",
+     "artifacts": [
+      "roster-of-joiners-and-leavers-with",
+      "completed-offboarding-records-for-leavers-in"
+     ]
+    }
+   ],
+   "why": "ISO27001:A.6.5 covers change of role; movers and leavers are separate populations with separate failures.",
+   "control": "HR-05",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "code": "HR-08.E",
+   "change": "add",
+   "statement": "The training checked that people understood it, such as through a quiz or a phishing exercise, and each person below the pass mark was trained again.",
+   "assurance": "operating",
+   "methods": [
+    {
+     "method": "examine",
+     "artifacts": [
+      "completion-records-for-all-staff",
+      "training-content-and-schedule"
+     ]
+    }
+   ],
+   "why": "The SOC2:CC1.4 rationale says attendance alone does not show competence, and ISO27001:A.6.3 and 7.2 expect training to work.",
+   "control": "HR-08",
+   "source": "coverage/gov-cs-hr.controls.json"
+  }
+ ],
+ "control_decisions": [
+  {
+   "control": "CS-01",
+   "decision": "keep",
+   "reason": "One activity, the breach notice promise and its use. SOC2:CC2.3 partial is tested by A to D.",
+   "successors": [],
+   "tenant_impact": "none",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "control": "CS-02",
+   "decision": "revise_objectives",
+   "reason": "Right control, but SOC2:PI1.1 is mapped on the published terms and nothing tested their processing promises. SOC2:CC2.3 full is tested by A to E.",
+   "successors": [],
+   "tenant_impact": "none for data: objectives are content read at request time; a reworded objective with an open not applicable decision is listed for the owner to confirm again",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "control": "CS-03",
+   "decision": "revise_objectives",
+   "reason": "Right control. ISO27001:A.6.8 full relies on no blame for good faith reports, which A now states. A.5.24, CC2.2 and CC2.3 are tested by A to D.",
+   "successors": [],
+   "tenant_impact": "none for data: objectives are content read at request time; a reworded objective with an open not applicable decision is listed for the owner to confirm again",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "control": "CS-04",
+   "decision": "keep",
+   "reason": "One activity, publishing policies and tracking acknowledgement. ISO27001:5.2, 7.3, A.5.1, A.6.3 and SOC2:CC2.2 are all partial and A to E test their communication part.",
+   "successors": [],
+   "tenant_impact": "none",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "control": "CS-05",
+   "decision": "keep",
+   "reason": "One activity, the confidential reporting channel. SOC2:CC1.1 and CC2.2 partial are tested by A to E.",
+   "successors": [],
+   "tenant_impact": "none",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "control": "CS-06",
+   "decision": "keep",
+   "reason": "One plan, ISO27001:7.4 full and A.5.1 partial (outside parties hear of policy changes through the plan's topics).",
+   "successors": [],
+   "tenant_impact": "none",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "control": "CS-07",
+   "decision": "split",
+   "reason": "ISO27001:A.5.5 (authorities) and A.5.6 (security groups) are both mapped full but are different activities: the first is an incident and legal duty owned with legal, the second is a threat input owned by security, with its own evidence and its own SoA row.",
+   "successors": [
+    {
+     "code": "CS-08",
+     "status": "proposed",
+     "name": "Security community memberships and advisories",
+     "takes_objectives": [
+      "CS-07.B"
+     ],
+     "requirements": [
+      {
+       "key": "ISO27001:A.5.6",
+       "coverage": "full",
+       "rationale": "The list of groups and feeds followed, each with an owner, kept current and producing items for the threat review, is the contact this requirement asks for."
+      }
+     ]
+    }
+   ],
+   "tenant_impact": "adoption proposal: ISO 27001 workspaces are offered CS-08; CS-07 evidence tagged to memberships is listed for the owner to re-tag, nothing is copied and no green result carries over.",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "control": "GOV-01",
+   "decision": "keep",
+   "reason": "Policy content review for SOC2:CC5.3 and ISO27001:A.5.1. It overlaps GOV-28 on mechanics (7.5.2, 7.5.3 partial) but tests whether each policy still fits practice, which GOV-28 does not. Not merged.",
+   "successors": [],
+   "tenant_impact": "none",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "control": "GOV-02",
+   "decision": "keep",
+   "reason": "One body and its meetings. SOC2:CC1.2 full, ISO27001:5.1 and 7.1 partial are tested by A to E.",
+   "successors": [],
+   "tenant_impact": "none",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "control": "GOV-03",
+   "decision": "keep",
+   "reason": "One trigger driven review. SOC2:CC3.4 full; ISO27001:6.3, 8.2 and A.5.8 partial are tested by A to E.",
+   "successors": [],
+   "tenant_impact": "none",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "control": "GOV-04",
+   "decision": "keep",
+   "reason": "One code and its acknowledgement. SOC2:CC1.1 and ISO27001:A.5.4, A.5.10, A.6.2, A.6.4 partial are tested by A to D.",
+   "successors": [],
+   "tenant_impact": "none",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "control": "GOV-05",
+   "decision": "revise_objectives",
+   "reason": "Right control, but ISO27001:A.5.32 is mapped on licence and IP terms in the register and no objective tested them.",
+   "successors": [],
+   "tenant_impact": "none for data: objectives are content read at request time; a reworded objective with an open not applicable decision is listed for the owner to confirm again",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "control": "GOV-06",
+   "decision": "keep",
+   "reason": "One monitoring activity. SOC2:CC4.1 full, ISO27001:9.1 and A.5.36 partial are tested by A to E.",
+   "successors": [],
+   "tenant_impact": "none",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "control": "GOV-07",
+   "decision": "keep",
+   "reason": "One mapping activity. SOC2:CC5.1 and ISO27001:6.1.3 partial are tested by A to E.",
+   "successors": [],
+   "tenant_impact": "none",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "control": "GOV-08",
+   "decision": "revise_objectives",
+   "reason": "Right control. ISO27001:10.2 is full and its rationale names containment and consequences, which B left out, and E bundled overdue reporting with the search for the same cause elsewhere.",
+   "successors": [],
+   "tenant_impact": "none for data: objectives are content read at request time; a reworded objective with an open not applicable decision is listed for the owner to confirm again",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "control": "GOV-09",
+   "decision": "keep",
+   "reason": "One ownership register. SOC2:CC1.3, CC1.5 and ISO27001:5.3, A.5.2 partial are tested by A to D.",
+   "successors": [],
+   "tenant_impact": "none",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "control": "GOV-10",
+   "decision": "keep",
+   "reason": "One appointment and its reporting. SOC2:CC1.3, CC1.5 and ISO27001:5.1, 5.3, A.5.2 partial are tested by A to D.",
+   "successors": [],
+   "tenant_impact": "none",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "control": "GOV-11",
+   "decision": "keep",
+   "reason": "One disciplinary process. ISO27001:A.6.4 full and the partial links are tested by A to E.",
+   "successors": [],
+   "tenant_impact": "none",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "control": "GOV-12",
+   "decision": "keep",
+   "reason": "One assessment theme. SOC2:CC3.3 full is tested by A to D.",
+   "successors": [],
+   "tenant_impact": "none",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "control": "GOV-13",
+   "decision": "revise_objectives",
+   "reason": "Internal audit (ISO27001:9.2.1, 9.2.2) and the independent review (A.5.35) are one activity in a small company, so not split. But A.5.35 expects review on significant change, and SOC2:P8.1 is mapped with no objective.",
+   "successors": [],
+   "tenant_impact": "none for data: objectives are content read at request time; a reworded objective with an open not applicable decision is listed for the owner to confirm again",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "control": "GOV-14",
+   "decision": "keep",
+   "reason": "One coverage review. SOC2:CC5.2 and ISO27001:8.1 partial are tested by A to D. CC5.2 resting on this control alone is the LD-14 finding, handled by the guided onboarding mapping changes.",
+   "successors": [],
+   "tenant_impact": "none",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "control": "GOV-15",
+   "decision": "split",
+   "reason": "Bundles a quarterly management review (SOC2:CC4.2, CC1.2, the forum for control health) with the yearly review by top management that ISO27001:9.3.1 to 9.3.3 require, with its own input list, attendees and outputs. Different cadence, different body, and the ISO part does not apply to a SOC 2 only workspace.",
+   "successors": [
+    {
+     "code": "GOV-31",
+     "status": "proposed",
+     "name": "Yearly management review by top management",
+     "takes_objectives": [
+      "GOV-15.C"
+     ],
+     "requirements": [
+      {
+       "key": "ISO27001:9.3.1",
+       "coverage": "full",
+       "rationale": "A yearly review by top management of whether the program fits, covers what it should and works, with attendees and decisions recorded."
+      },
+      {
+       "key": "ISO27001:9.3.2",
+       "coverage": "full",
+       "rationale": "The review takes each set input and the record shows it, input by input."
+      },
+      {
+       "key": "ISO27001:9.3.3",
+       "coverage": "full",
+       "rationale": "Decisions on improvements, changes and resources are recorded and tracked."
+      },
+      {
+       "key": "ISO27001:5.1",
+       "coverage": "partial",
+       "rationale": "Top management reviewing the program once a year is part of leadership. Policy and objectives are shown by GOV-32 and GOV-26."
+      },
+      {
+       "key": "ISO27001:7.1",
+       "coverage": "partial",
+       "rationale": "The yearly review records the resource commitments for the program as a whole. Needs per objective are in GOV-26."
+      }
+     ]
+    }
+   ],
+   "tenant_impact": "adoption proposal and data migration: ISO 27001 workspaces are offered GOV-31; the 9.3 mappings move after the owner accepts; management review assurance records stay where they are and are linked to both controls; verity.management_review.in_12_months moves to GOV-31 and its history stays on GOV-15.",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "control": "GOV-16",
+   "decision": "keep",
+   "reason": "One test and its follow up. SOC2:CC4.1, CC7.1 and ISO27001:A.5.35, A.8.29, A.8.34 partial are tested by A to E.",
+   "successors": [],
+   "tenant_impact": "none",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "control": "GOV-17",
+   "decision": "split",
+   "reason": "Bundles the top management policy statement (ISO27001:5.2, a clause duty with its own approver and content) with the topic policy set (SOC2:CC5.3 full, ISO27001:A.5.1 and topic Annex A links). Different approver, different evidence, and SOC 2 does not ask for the statement.",
+   "successors": [
+    {
+     "code": "GOV-32",
+     "status": "proposed",
+     "name": "Top management security policy statement",
+     "takes_objectives": [
+      "GOV-17.A"
+     ],
+     "requirements": [
+      {
+       "key": "ISO27001:5.2",
+       "coverage": "full",
+       "rationale": "A statement approved by top management that fits the company, frames the objectives, commits to the requirements and to improving, is communicated to staff and is available to interested parties."
+      },
+      {
+       "key": "ISO27001:5.1",
+       "coverage": "partial",
+       "rationale": "Top management setting the policy is part of leadership. Review and resourcing are shown by GOV-02, GOV-15 and GOV-31."
+      },
+      {
+       "key": "SOC2:CC5.3",
+       "coverage": "partial",
+       "rationale": "The statement is the top of the policy set that deploys control activities; the topic policies are GOV-17."
+      }
+     ]
+    }
+   ],
+   "tenant_impact": "adoption proposal: ISO 27001 workspaces are offered GOV-32; the policy statement document is linked to GOV-32 on acceptance; 5.2 readiness is recomputed, never copied.",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "control": "GOV-18",
+   "decision": "keep",
+   "reason": "One yearly assessment. SOC2:CC3.2 full and ISO27001:6.1.1, 6.1.2, 8.2 partial are tested by A to E.",
+   "successors": [],
+   "tenant_impact": "none",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "control": "GOV-19",
+   "decision": "keep",
+   "reason": "One register. All links partial and tested by A to D.",
+   "successors": [],
+   "tenant_impact": "none",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "control": "GOV-20",
+   "decision": "revise_objectives",
+   "reason": "Right control, but SOC2:CC9.1 is mapped partial and treatment by transfer or insurance was never tested.",
+   "successors": [],
+   "tenant_impact": "none for data: objectives are content read at request time; a reworded objective with an open not applicable decision is listed for the owner to confirm again",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "control": "GOV-21",
+   "decision": "revise_objectives",
+   "reason": "Right control, but ISO27001:5.3 expects roles to be communicated and nothing tested it.",
+   "successors": [],
+   "tenant_impact": "none for data: objectives are content read at request time; a reworded objective with an open not applicable decision is listed for the owner to confirm again",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "control": "GOV-22",
+   "decision": "keep",
+   "reason": "The description and its commitments section are one document in practice. SOC2:CC3.1 full is tested by B; A, C and D test the description. Not split.",
+   "successors": [],
+   "tenant_impact": "none",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "control": "GOV-23",
+   "decision": "keep",
+   "reason": "Scope and the design of the management system as connected processes (ISO27001:4.3 full, 4.4 partial) share owner and cadence.",
+   "successors": [],
+   "tenant_impact": "none",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "control": "GOV-24",
+   "decision": "keep",
+   "reason": "ISO27001:4.1 full, tested by A to D.",
+   "successors": [],
+   "tenant_impact": "none",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "control": "GOV-25",
+   "decision": "keep",
+   "reason": "ISO27001:4.2 full, tested by A to D.",
+   "successors": [],
+   "tenant_impact": "none",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "control": "GOV-26",
+   "decision": "keep",
+   "reason": "Objectives and their measures are one activity. ISO27001:6.2 full and 5.1, 7.1, 9.1 partial are tested by A to E. The missing record type for measures is a product gap, not a control gap.",
+   "successors": [],
+   "tenant_impact": "none",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "control": "GOV-27",
+   "decision": "keep",
+   "reason": "ISO27001:6.1.3 partial (the SoA part), tested by A to E.",
+   "successors": [],
+   "tenant_impact": "none",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "control": "GOV-28",
+   "decision": "revise_objectives",
+   "reason": "Right control, but B bundled the list of required documents (ISO27001:7.5.1) with operating procedures for systems (A.5.37), which engineering owns.",
+   "successors": [],
+   "tenant_impact": "none for data: objectives are content read at request time; a reworded objective with an open not applicable decision is listed for the owner to confirm again",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "control": "GOV-29",
+   "decision": "revise_objectives",
+   "reason": "Right control for ISO27001:8.1 full, but D bundled planned changes (6.3) with the review of unplanned ones.",
+   "successors": [],
+   "tenant_impact": "none for data: objectives are content read at request time; a reworded objective with an open not applicable decision is listed for the owner to confirm again",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "control": "GOV-30",
+   "decision": "keep",
+   "reason": "ISO27001:10.1 full and 4.4, 6.1.1 partial, tested by A to E.",
+   "successors": [],
+   "tenant_impact": "none",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "control": "HR-01",
+   "decision": "keep",
+   "reason": "One screening activity. ISO27001:A.6.1 full is tested by A to E.",
+   "successors": [],
+   "tenant_impact": "none",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "control": "HR-02",
+   "decision": "revise_objectives",
+   "reason": "Right control, but B mixed staff and contractors (joiner roster) with outside parties (vendor and partner list) under ISO27001:A.6.6 full.",
+   "successors": [],
+   "tenant_impact": "none for data: objectives are content read at request time; a reworded objective with an open not applicable decision is listed for the owner to confirm again",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "control": "HR-03",
+   "decision": "keep",
+   "reason": "One contractor lifecycle, a distinct population from employees.",
+   "successors": [],
+   "tenant_impact": "none",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "control": "HR-04",
+   "decision": "keep",
+   "reason": "One set of job descriptions. ISO27001:7.2, A.6.2 and SOC2:CC1.4 partial are tested by A to D.",
+   "successors": [],
+   "tenant_impact": "none",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "control": "HR-05",
+   "decision": "revise_objectives",
+   "reason": "Right control, but C mixed leavers with role changes, two populations ISO27001:A.6.5 treats separately. HR-05 overlaps IAM-12 on access removal; not merged, HR-05 is wider.",
+   "successors": [],
+   "tenant_impact": "none for data: objectives are content read at request time; a reworded objective with an open not applicable decision is listed for the owner to confirm again",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "control": "HR-06",
+   "decision": "keep",
+   "reason": "One joiner checklist. Overlaps IAM-01 on access approval; not merged, HR-06 is wider.",
+   "successors": [],
+   "tenant_impact": "none",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "control": "HR-07",
+   "decision": "keep",
+   "reason": "One review cycle. SOC2:CC1.4 and CC1.5 partial are tested by A to D.",
+   "successors": [],
+   "tenant_impact": "none",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "control": "HR-08",
+   "decision": "revise_objectives",
+   "reason": "Right control, but SOC2:CC1.4 says attendance alone does not show competence and ISO27001:A.6.3 and 7.2 expect training to work; no objective tested understanding.",
+   "successors": [],
+   "tenant_impact": "none for data: objectives are content read at request time; a reworded objective with an open not applicable decision is listed for the owner to confirm again",
+   "source": "coverage/gov-cs-hr.controls.json"
+  },
+  {
+   "control": "HR-09",
+   "decision": "keep",
+   "reason": "ISO27001:7.2 full, tested by A to D.",
+   "successors": [],
+   "tenant_impact": "none",
+   "source": "coverage/gov-cs-hr.controls.json"
+  }
+ ],
+ "extra_keys_note": "needs, requirement_mapping_changes, objective_changes and control_decisions are extra lists beyond the brief's shape, copied from gov-cs-hr.md/.json/.controls.json so the merger need not read them. existing_implementations is empty: the document has no provider feasibility tables; it reuses 38 existing checks as artifact sources without new provider support levels. artifacts_proposed is empty: every artifact the document names exists in artifacts.json."
+}

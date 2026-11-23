@@ -1,0 +1,1611 @@
+[
+  {
+    "control": "IAM-01",
+    "decision": "revise_objectives",
+    "reason": "SOC2:CC6.3 is mapped partial on the strength of approving changes to access, but B only tests joiners. ISO27001:A.8.34 is mapped partial for approving auditor and tester access to live systems, and no objective tests it.",
+    "successors": [],
+    "objective_changes": [
+      {
+        "code": "IAM-01.B",
+        "change": "reword",
+        "statement": "The list of access granted or changed in the period was complete for every in scope system: every joiner appeared on it, and so did every mover whose access changed.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "test",
+            "artifacts": [
+              "approved-requests-for-a-sample-of",
+              "completed-checklists-for-a-sample-of",
+              "roster-of-joiners-and-leavers-with"
+            ]
+          }
+        ],
+        "why": "Adds movers, which the SOC2:CC6.3 rationale relies on."
+      },
+      {
+        "code": "IAM-01.F",
+        "change": "add",
+        "statement": "Access to live systems for auditors, testers and outside support staff was requested, approved by the system owner before it was created, limited to the agreed level and time, and removed when the work ended.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "approved-requests-for-a-sample-of",
+              "removal-records-for-a-sample-of"
+            ]
+          }
+        ],
+        "why": "ISO27001:A.8.34 is mapped and was not tested."
+      }
+    ],
+    "tenant_impact": "none: objectives are content; the comparison report of AO-3 shows any control whose readiness would change."
+  },
+  {
+    "control": "IAM-02",
+    "decision": "revise_objectives",
+    "reason": "The ISO27001:A.8.4 rationale relies on the code host, build pipelines and package registries being in review scope, which C did not say. SOC2:CC6.3 is mapped full from both IAM-02 and IAM-08; neither alone authorizes, changes and removes access, so both become partial (continuous-compliance-plan section 6 D asks for this review).",
+    "successors": [],
+    "objective_changes": [
+      {
+        "code": "IAM-02.C",
+        "change": "reword",
+        "statement": "Reviews took place at the set frequency for every in scope system in the period, including the code host, build pipelines and package registries.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "completed-access-reviews-with-reviewer-sign"
+            ]
+          },
+          {
+            "method": "test",
+            "artifacts": [
+              "completed-access-reviews-with-reviewer-sign",
+              "asset-inventory"
+            ]
+          }
+        ],
+        "why": "Makes the ISO27001:A.8.4 claim testable."
+      }
+    ],
+    "mapping_changes": [
+      {
+        "key": "SOC2:CC6.3",
+        "coverage": "partial",
+        "rationale": "Reviews confirm that access still matches each person's role. Granting by role (IAM-08), removal (IAM-12) and separating duties (IAM-09) are the other parts.",
+        "control": "IAM-02",
+        "was": "full"
+      }
+    ],
+    "tenant_impact": "none for objectives; the CC6.3 coverage change alters what CC6.3 status means and needs the reviewer sign off of FW-5."
+  },
+  {
+    "control": "IAM-03",
+    "decision": "revise_objectives",
+    "reason": "ISO27001:A.8.5 and the policy objective (A) require a second factor on every system that supports one, but B tests only the identity provider. Systems people sign in to directly (cloud console users, code host, password manager, applications outside single sign on) had no operating objective, so running checks such as vcs.org_two_factor_required had nothing to land on.",
+    "successors": [],
+    "objective_changes": [
+      {
+        "code": "IAM-03.F",
+        "change": "add",
+        "statement": "Each in scope system that people sign in to directly rather than through the identity provider, such as the cloud console, the code host, the password manager and applications outside single sign on, required a second factor for its own accounts.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "test",
+            "artifacts": [
+              "second-factor-enforcement-and-enrolled-users",
+              "applications-inside-and-outside-single-sign-on"
+            ]
+          }
+        ],
+        "why": "Covers the population outside the identity provider that ISO27001:A.8.5 and IAM-03.A name."
+      }
+    ],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "IAM-04",
+    "decision": "revise_objectives",
+    "reason": "D tested leaver removal, which IAM-12 owns (IAM-12.C, IAM-12.D) and which an identity check maps to there. What single sign on itself must make true is that apps behind it cannot be entered with a local password. SOC2:CC6.1 and ISO27001:A.8.5 are partial and unchanged.",
+    "successors": [],
+    "objective_changes": [
+      {
+        "code": "IAM-04.D",
+        "change": "reword",
+        "statement": "Each application behind single sign on refused sign in with a local password, or kept local accounts only as recorded break glass accounts, so disabling the identity provider account blocked access to it.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "test",
+            "artifacts": [
+              "applications-inside-and-outside-single-sign-on"
+            ]
+          },
+          {
+            "method": "interview",
+            "artifacts": [],
+            "who": "it_lead"
+          }
+        ],
+        "why": "Removes the duplicate leaver test; the leaver side moves to IAM-12.D, which gains the application list."
+      }
+    ],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "IAM-05",
+    "decision": "keep",
+    "reason": "One activity with one owner (IT lead): the vault holds shared and non SSO credentials. SOC2:CC6.1 and ISO27001:A.5.17 are both partial and objectives A to D test what the rationales claim.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "IAM-06",
+    "decision": "revise_objectives",
+    "reason": "The ISO27001:A.5.17 rationale claims single use initial and reset passwords and an identity check before any reset. A sets that rule, but no operating objective tested it.",
+    "successors": [],
+    "objective_changes": [
+      {
+        "code": "IAM-06.E",
+        "change": "add",
+        "statement": "Initial and reset passwords were single use and had to be changed at first sign in, and each reset done by an administrator or the help desk followed a recorded identity check.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "test",
+            "artifacts": [
+              "identity-provider-password-settings"
+            ]
+          },
+          {
+            "method": "interview",
+            "artifacts": [],
+            "who": "it_lead"
+          }
+        ],
+        "why": "Tests the ISO27001:A.5.17 claim."
+      }
+    ],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "IAM-07",
+    "decision": "revise_objectives",
+    "reason": "ISO27001:A.8.2 is mapped full, but A only approves the review procedure, not the rules for granting privileged access separately, break glass handling and logging of use. The A.8.2 and A.8.18 rationales rely on logged use, which B used only to find unlisted accounts. Considered a split of granting from review: kept as one because the owner (engineering lead) and the population are the same.",
+    "successors": [],
+    "objective_changes": [
+      {
+        "code": "IAM-07.A",
+        "change": "reword",
+        "statement": "The privileged access rules are written and approved. They say how privileged access and powerful tools are requested and approved separately from normal access, when access is time limited, how break glass accounts are held and checked out, that each use is logged, and how often privileged access is reviewed and by whom.",
+        "assurance": "design",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "access-review-procedure",
+              "doc-access-control-policy"
+            ]
+          },
+          {
+            "method": "interview",
+            "artifacts": [],
+            "who": "engineering_lead"
+          }
+        ],
+        "why": "A.8.2 full needs the granting rules, not only the review procedure."
+      },
+      {
+        "code": "IAM-07.F",
+        "change": "add",
+        "statement": "Each privileged elevation and break glass use in the period was logged, raised an alert, and was reviewed afterwards by someone other than the person who used it.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "test",
+            "artifacts": [
+              "privileged-elevation-and-break-glass-log"
+            ]
+          },
+          {
+            "method": "examine",
+            "artifacts": [
+              "review-of-privileged-access"
+            ]
+          }
+        ],
+        "why": "Tests logged use, which the A.8.2 and A.8.18 rationales rely on."
+      }
+    ],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "IAM-08",
+    "decision": "keep",
+    "reason": "Role based access is one coherent activity and A to D test it. Only the SOC2:CC6.3 coverage changes: full from two controls (IAM-02 and IAM-08) cannot both be true.",
+    "successors": [],
+    "objective_changes": [],
+    "mapping_changes": [
+      {
+        "key": "SOC2:CC6.3",
+        "coverage": "partial",
+        "rationale": "Granting access through roles at least privilege is the core of authorizing access by role. Changes, removal and periodic review sit in IAM-01, IAM-12 and IAM-02.",
+        "control": "IAM-08",
+        "was": "full"
+      }
+    ],
+    "tenant_impact": "none for objectives; the CC6.3 coverage change needs FW-5 sign off."
+  },
+  {
+    "control": "IAM-09",
+    "decision": "split",
+    "reason": "IAM-09 bundles duty separation in technology work (change author and approver, deployer and approver, administrator and log reviewer) with duty separation in finance and payment processes (create a vendor and pay it). The owner functions already give them different owners (IT lead, finance lead), the objectives give them different cadences (yearly, quarterly), and the finance part can be not applicable for a company with no in scope finance process while the technology part always applies. SOC2:CC5.1 and ISO27001:A.5.3 (full today) are reached by both parts. Identity and code host checks map to the technology part only.",
+    "successors": [
+      {
+        "code": "IAM-13",
+        "status": "proposed",
+        "name": "Segregation of duties in finance and payment processes",
+        "owner_function": "finance_lead",
+        "applies_when": "The company runs billing, payment, refund or finance processes inside the scope, or its services affect customers' financial reporting (profile fact affects_customer_financial_reporting).",
+        "takes_objectives": [],
+        "requirements": [
+          {
+            "key": "SOC2:CC5.1",
+            "coverage": "partial",
+            "rationale": "Separating finance and payment duties is one of the control activities that keep fraud and error risk down."
+          },
+          {
+            "key": "ISO27001:A.5.3",
+            "coverage": "partial",
+            "rationale": "Keeps conflicting finance and payment duties apart, with a recorded safeguard where the team is too small. Technology duties are in IAM-09."
+          }
+        ]
+      }
+    ],
+    "objective_changes": [
+      {
+        "code": "IAM-09.A",
+        "change": "reword",
+        "statement": "The conflicting duties matrix for technology work is approved. It lists the duties one person must not hold together, such as writing and approving the same change, deploying and approving it, administering a system and reviewing its logs, or granting access and reviewing it, and the rule or safeguard for each.",
+        "assurance": "design",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "matrix-of-conflicting-duties",
+              "doc-access-control-policy"
+            ]
+          },
+          {
+            "method": "interview",
+            "artifacts": [],
+            "who": "security_lead"
+          }
+        ],
+        "why": "Finance pairs move to IAM-13.A."
+      },
+      {
+        "code": "IAM-09.C",
+        "change": "reword",
+        "statement": "Where team size made separation impractical, an approved safeguard such as an independent review of the logged action was in place and was carried out.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "review-of-people-who-hold-conflicting"
+            ]
+          },
+          {
+            "method": "interview",
+            "artifacts": [],
+            "who": "security_lead"
+          }
+        ],
+        "why": "Interviewee changes from finance lead to security lead; the finance case moves to IAM-13.C."
+      },
+      {
+        "code": "IAM-09.D",
+        "change": "reword",
+        "statement": "Access was checked against the matrix at least once a year and again when the team grew or was restructured. Each conflict found was fixed or covered by an approved safeguard.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "review-of-people-who-hold-conflicting",
+              "matrix-of-conflicting-duties"
+            ]
+          }
+        ],
+        "why": "The quarterly cadence for payment systems moves to IAM-13.D."
+      },
+      {
+        "code": "IAM-13.A",
+        "change": "add",
+        "statement": "The conflicting duties matrix for finance and payment processes is approved. It lists the duties one person must not hold together, such as creating a vendor and approving its payment, or raising and approving a refund or credit, and the safeguard for each.",
+        "assurance": "design",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "matrix-of-conflicting-duties"
+            ]
+          },
+          {
+            "method": "interview",
+            "artifacts": [],
+            "who": "finance_lead"
+          }
+        ]
+      },
+      {
+        "code": "IAM-13.B",
+        "change": "add",
+        "statement": "Each finance conflict was separated in the finance and payment systems, with maker checker approval where the system supports it.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "test",
+            "artifacts": [
+              "review-of-people-who-hold-conflicting",
+              "group-and-role-membership-export"
+            ]
+          }
+        ]
+      },
+      {
+        "code": "IAM-13.C",
+        "change": "add",
+        "statement": "Where separation was impractical, the approved safeguard, such as an independent review of logged payments, was carried out each time it was due.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "review-of-people-who-hold-conflicting"
+            ]
+          },
+          {
+            "method": "interview",
+            "artifacts": [],
+            "who": "finance_lead"
+          }
+        ]
+      },
+      {
+        "code": "IAM-13.D",
+        "change": "add",
+        "statement": "Access to finance and payment systems was checked against the matrix every quarter and after each restructure, and each conflict was fixed or covered by an approved safeguard.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "review-of-people-who-hold-conflicting",
+              "matrix-of-conflicting-duties"
+            ]
+          }
+        ]
+      }
+    ],
+    "mapping_changes": [
+      {
+        "key": "ISO27001:A.5.3",
+        "coverage": "partial",
+        "rationale": "Keeps conflicting duties in technology work apart. Finance and payment duties are in IAM-13.",
+        "control": "IAM-09",
+        "was": "full"
+      }
+    ],
+    "tenant_impact": "adoption proposal: IAM-13 is proposed to workspaces whose profile says they run in scope finance processes; a person confirms. IAM-09 keeps its evidence, history and owner. No result or risk acceptance is copied to IAM-13."
+  },
+  {
+    "control": "IAM-10",
+    "decision": "keep",
+    "reason": "Machine identities are one population with one owner (engineering lead). Objectives B to E test inventory, least privilege, rotation and inactivity, which is what SOC2:CC6.1, CC6.3 and ISO27001:A.5.16, A.8.3 rely on.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "IAM-11",
+    "decision": "keep",
+    "reason": "Session limits are one configuration duty. SOC2:CC6.1 and ISO27001:A.8.5 are partial; B to D test the settings, step up and logout. No requirement claims more.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "IAM-12",
+    "decision": "revise_objectives",
+    "reason": "SOC2:CC6.3 and ISO27001:A.5.18 rationales claim modification on role change, but B only lists leavers. D now also carries the leaver test removed from IAM-04.D, so it needs the list of applications outside single sign on.",
+    "successors": [],
+    "objective_changes": [
+      {
+        "code": "IAM-12.B",
+        "change": "reword",
+        "statement": "The list of leavers and role changes for the period matched the HR record and showed each system each person held.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "test",
+            "artifacts": [
+              "removal-records-for-a-sample-of",
+              "roster-of-joiners-and-leavers-with"
+            ]
+          }
+        ],
+        "why": "Adds movers."
+      },
+      {
+        "code": "IAM-12.D",
+        "change": "reword",
+        "statement": "For each leaver and role change, access to systems outside single sign on, shared credentials, remote access and code repositories was removed as well as the identity provider account.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "removal-records-for-a-sample-of",
+              "completed-offboarding-records-for-leavers-in",
+              "applications-inside-and-outside-single-sign-on"
+            ]
+          },
+          {
+            "method": "interview",
+            "artifacts": [],
+            "who": "it_lead"
+          }
+        ],
+        "why": "Takes the leaver side of the old IAM-04.D."
+      }
+    ],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "IAM-14",
+    "decision": "add",
+    "reason": "No control tests how customer users sign in to the product itself. The product is inside the SOC 2 system (SOC2:CC6.1) and is an information system for ISO27001:A.8.5 and A.5.17. IAM-03, IAM-04 and IAM-06 cover staff sign in only; IAM-11 covers product sessions but not passwords, lockout, reset or second factor options.",
+    "successors": [
+      {
+        "code": "IAM-14",
+        "status": "proposed",
+        "name": "Product sign in protections for customer users",
+        "owner_function": "engineering_lead",
+        "applies_when": "The company runs an application its customers' users sign in to (profile fact: public internet facing application).",
+        "takes_objectives": [],
+        "requirements": [
+          {
+            "key": "SOC2:CC6.1",
+            "coverage": "partial",
+            "rationale": "How users of the product authenticate is one of the logical access protections over the system."
+          },
+          {
+            "key": "ISO27001:A.8.5",
+            "coverage": "partial",
+            "rationale": "Secure sign in for the product's own users. Staff sign in is IAM-03, IAM-04, IAM-06 and IAM-11."
+          },
+          {
+            "key": "ISO27001:A.5.17",
+            "coverage": "partial",
+            "rationale": "How the product stores, issues and resets its users' passwords."
+          }
+        ]
+      }
+    ],
+    "objective_changes": [
+      {
+        "code": "IAM-14.A",
+        "change": "add",
+        "statement": "The engineering security standard sets how customer users sign in to the product: password length and breached password screening, storage as a slow salted hash, lockout or rate limits, reset links that expire and work once, and the second factor and single sign on options offered.",
+        "assurance": "design",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "doc-engineering-security-standard"
+            ]
+          },
+          {
+            "method": "interview",
+            "artifacts": [],
+            "who": "engineering_lead"
+          }
+        ]
+      },
+      {
+        "code": "IAM-14.B",
+        "change": "add",
+        "statement": "The product's sign in settings in the period matched the standard for password rules, rate limiting or lockout, reset link expiry and second factor options.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "test",
+            "artifacts": [
+              "product-sign-in-settings"
+            ]
+          }
+        ]
+      },
+      {
+        "code": "IAM-14.C",
+        "change": "add",
+        "statement": "Customer user passwords were stored only as slow salted hashes, and no password or reset token was written to logs.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "product-sign-in-settings"
+            ]
+          },
+          {
+            "method": "interview",
+            "artifacts": [],
+            "who": "engineering_lead"
+          }
+        ]
+      },
+      {
+        "code": "IAM-14.D",
+        "change": "add",
+        "statement": "The latest independent test of the product covered sign in, reset and session handling, and each finding was fixed or accepted.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "penetration-test-report-from-an-independent",
+              "log-of-control-deficiencies-with-owner"
+            ]
+          }
+        ]
+      }
+    ],
+    "new_artifacts": [
+      {
+        "key": "product-sign-in-settings",
+        "name": "Product sign in settings and password storage method",
+        "category": "configuration",
+        "what": "Product sign in settings",
+        "where": "The product's authentication configuration or admin screen, with the hashing setting from the code, exported by engineering."
+      }
+    ],
+    "tenant_impact": "adoption proposal for workspaces whose profile says they run a customer facing application; the engineering-security-standard template needs a product sign in section first."
+  },
+  {
+    "control": "EP-01",
+    "decision": "keep",
+    "reason": "Agent coverage and alert handling were considered for a split (configuration versus monitoring). Kept: same owner (IT lead), same applicability, and SOC2:CC6.8 full needs prevention and detection together. ISO27001:A.8.7 and A.8.16 are both partial. Revisit if customers outsource alert handling to a managed detection provider.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "EP-02",
+    "decision": "keep",
+    "reason": "One configuration duty with one owner and one device population. SOC2:CC6.1, CC6.5, CC6.7 and ISO27001:A.7.9, A.7.10, A.8.1, A.8.24 are all partial and the objectives test encryption, checks and exceptions.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "EP-03",
+    "decision": "revise_objectives",
+    "reason": "The ISO27001:A.8.19 rationale claims device management enforces the permitted software list so staff cannot install outside it. A sets the rule; no operating objective tested it.",
+    "successors": [],
+    "objective_changes": [
+      {
+        "code": "EP-03.E",
+        "change": "add",
+        "statement": "Staff could install software on company devices only from the permitted list or a managed catalogue, and installs outside it were blocked, or reported and removed.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "test",
+            "artifacts": [
+              "inventory-of-company-devices"
+            ]
+          },
+          {
+            "method": "examine",
+            "artifacts": [
+              "device-management-policy"
+            ]
+          }
+        ],
+        "why": "Tests the ISO27001:A.8.19 claim."
+      }
+    ],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "EP-04",
+    "decision": "split",
+    "reason": "EP-04 bundles patching of staff devices (IT lead, device management, monthly device reports) with patching of servers and container images (engineering lead, cloud patching or image rebuilds, scanner results). The server part is not applicable to a company that runs only fully managed services, while devices always apply. SOC2:CC6.8, CC7.1 and ISO27001:A.8.8 are partial and reached by both. The split decides that devices.os_current maps to EP-04 and scanner and cloud patch checks map to NS-13.",
+    "successors": [
+      {
+        "code": "NS-13",
+        "status": "proposed",
+        "name": "Server and container image patching",
+        "owner_function": "engineering_lead",
+        "applies_when": "The company runs servers, virtual machines or container images it maintains itself (not only fully managed services).",
+        "takes_objectives": [
+          "EP-04.E"
+        ],
+        "requirements": [
+          {
+            "key": "ISO27001:A.8.8",
+            "coverage": "partial",
+            "rationale": "Patching servers and rebuilding images within set times is how known weaknesses in production software are fixed. Finding them is LM-11 and SD-03."
+          },
+          {
+            "key": "SOC2:CC7.1",
+            "coverage": "partial",
+            "rationale": "Patching is how vulnerabilities found in production systems are treated. Finding them is covered by scanning."
+          },
+          {
+            "key": "SOC2:CC6.8",
+            "coverage": "partial",
+            "rationale": "Patching removes the weaknesses malicious software uses on servers."
+          }
+        ]
+      }
+    ],
+    "objective_changes": [
+      {
+        "code": "EP-04.A",
+        "change": "reword",
+        "statement": "The patch policy for company devices is approved. It sets timeframes by severity for operating systems, browsers and installed software on laptops, desktops and mobile devices, requires deployment through device management or a patch tool, and says how exceptions are approved.",
+        "assurance": "design",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "patch-management-policy-with-timeframes",
+              "doc-endpoint-security-standard",
+              "doc-operations-security-policy"
+            ]
+          }
+        ],
+        "why": "Servers move to NS-13.A."
+      },
+      {
+        "code": "EP-04.C",
+        "change": "reword",
+        "statement": "Each company device was patched within the timeframe for the severity, as shown by the monthly reports across the period.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "test",
+            "artifacts": [
+              "patch-compliance-report"
+            ]
+          }
+        ],
+        "why": "Servers move to NS-13.C."
+      },
+      {
+        "code": "EP-04.D",
+        "change": "reword",
+        "statement": "Company devices that fell behind were followed up and patched, or given an approved exception.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "patch-compliance-report",
+              "log-of-control-deficiencies-with-owner"
+            ]
+          }
+        ],
+        "why": "Servers move to NS-13.D."
+      },
+      {
+        "code": "EP-04.E",
+        "change": "move",
+        "to": "NS-13.E",
+        "why": "Out of cycle critical patches through the emergency change path are a production change; they follow the server part."
+      },
+      {
+        "code": "NS-13.A",
+        "change": "add",
+        "statement": "The patch rules for servers, virtual machines and container base images are approved. They set timeframes by severity, how images are rebuilt and redeployed, and how exceptions are approved.",
+        "assurance": "design",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "patch-management-policy-with-timeframes",
+              "doc-operations-security-policy",
+              "doc-infrastructure-security-standard"
+            ]
+          }
+        ]
+      },
+      {
+        "code": "NS-13.B",
+        "change": "add",
+        "statement": "Server and image updates were applied by automation, such as managed patching or scheduled image rebuilds, not by hand.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "patch-compliance-report"
+            ]
+          },
+          {
+            "method": "interview",
+            "artifacts": [],
+            "who": "engineering_lead"
+          }
+        ]
+      },
+      {
+        "code": "NS-13.C",
+        "change": "add",
+        "statement": "Each server and running image was patched or rebuilt within the timeframe for its severity across the period.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "test",
+            "artifacts": [
+              "patch-compliance-report"
+            ]
+          }
+        ]
+      },
+      {
+        "code": "NS-13.D",
+        "change": "add",
+        "statement": "Servers and images that fell behind were patched or given an approved exception.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "patch-compliance-report",
+              "log-of-control-deficiencies-with-owner"
+            ]
+          }
+        ]
+      },
+      {
+        "code": "NS-13.E",
+        "change": "add",
+        "statement": "Critical patches released out of cycle were applied through the emergency change path and reviewed afterwards.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "emergency-changes-with-their-after-the"
+            ]
+          }
+        ],
+        "why": "Moved from EP-04.E with its letter."
+      }
+    ],
+    "tenant_impact": "adoption proposal: NS-13 proposed to workspaces that run their own servers or images; EP-04 keeps its history, including any server patch evidence filed so far. Overlap with LM-11 remediation is for the LM reviewer to settle. No result or acceptance is copied."
+  },
+  {
+    "control": "EP-05",
+    "decision": "keep",
+    "reason": "Lost devices and unreturned leaver devices share the owner, the tool and the record. SOC2:CC6.5 and ISO27001:A.5.11, A.7.9, A.7.14, A.8.1 are partial and B to E test them.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "EP-06",
+    "decision": "keep",
+    "reason": "One setting, one owner. SOC2:CC6.1 and ISO27001:A.7.7 (clear screen half), A.8.1 are partial and covered by B to D.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "EP-07",
+    "decision": "revise_objectives",
+    "reason": "C (no general web access from servers and admin workstations for high value systems) is outbound network filtering owned by engineering and evidenced by firewall rules, not by the web filter on staff devices. It moves to NS-03 as NS-03.E. ISO27001:A.8.23 then rests on both controls.",
+    "successors": [],
+    "objective_changes": [
+      {
+        "code": "EP-07.C",
+        "change": "move",
+        "to": "NS-03.E",
+        "why": "Server outbound limits are network rules with an engineering owner."
+      }
+    ],
+    "mapping_changes": [
+      {
+        "key": "ISO27001:A.8.23",
+        "coverage": "partial",
+        "rationale": "Web filtering on staff devices in the office and remote. Outbound limits for servers that hold card data or other high value systems are in NS-03.",
+        "control": "EP-07",
+        "was": "full"
+      },
+      {
+        "key": "ISO27001:A.8.23",
+        "coverage": "partial",
+        "rationale": "Limits outbound web access from servers that hold card data or other high value systems to named destinations.",
+        "control": "NS-03"
+      }
+    ],
+    "tenant_impact": "none for objectives; the A.8.23 mapping change needs FW-5 sign off. The EP-07.C letter is retired, never reused."
+  },
+  {
+    "control": "PE-01",
+    "decision": "keep",
+    "reason": "One review of each hosting provider's assurance with one owner (vendor lead). The fourteen ISO A.7 partials and SOC2:CC6.4, CC9.2, A1.2 all rest on that review; E covers the ISO Statement of Applicability side.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "PE-02",
+    "decision": "keep",
+    "reason": "All parts apply together when the company has its own office and share one owner. SOC2:CC6.4 and the ISO A.5.15, A.7.1 to A.7.4, A.7.6, A.7.7 partials are tested by B to E.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "PE-03",
+    "decision": "keep",
+    "reason": "All parts apply together when the company runs its own site. E (payment devices) is conditional guidance switched by the card data profile fact, not a separate activity worth a code.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "NS-01",
+    "decision": "keep",
+    "reason": "One configuration duty. SOC2:CC6.1 and ISO27001:A.8.24 are partial; B to D test coverage, key type and new stores.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "NS-02",
+    "decision": "revise_objectives",
+    "reason": "D (internal and database traffic encrypted) is an operating objective tested only by examining the standard and an interview, so it cannot show operation. ISO27001:A.8.21 and A.8.24 rationales rely on it.",
+    "successors": [],
+    "objective_changes": [
+      {
+        "code": "NS-02.D",
+        "change": "reword",
+        "statement": "Traffic between internal services and every database connection required TLS, shown by the database and service settings that refuse unencrypted connections.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "test",
+            "artifacts": [
+              "internal-tls-enforcement-settings"
+            ]
+          },
+          {
+            "method": "examine",
+            "artifacts": [
+              "encryption-in-transit-standard"
+            ]
+          },
+          {
+            "method": "interview",
+            "artifacts": [],
+            "who": "engineering_lead"
+          }
+        ],
+        "why": "Adds a settings artifact a test can read."
+      }
+    ],
+    "new_artifacts": [
+      {
+        "key": "internal-tls-enforcement-settings",
+        "name": "Settings that make internal services and databases refuse unencrypted connections",
+        "category": "configuration",
+        "what": "Database and internal service TLS settings",
+        "where": "Database parameter settings, load balancer to service protocol and any service mesh setting, exported from the cloud console."
+      }
+    ],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "NS-03",
+    "decision": "revise_objectives",
+    "reason": "Receives EP-07.C as NS-03.E (outbound limits for high value systems) and gains a partial ISO27001:A.8.23 link. SOC2:CC6.6 full stays: inbound and outbound filtering are both boundary protection.",
+    "successors": [],
+    "objective_changes": [
+      {
+        "code": "NS-03.E",
+        "change": "add",
+        "statement": "Servers and administrative workstations for card data or other high value systems had no general web access and reached only named update and service destinations.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "firewall-rule-register-with-owner-and",
+              "asset-inventory"
+            ]
+          },
+          {
+            "method": "interview",
+            "artifacts": [],
+            "who": "engineering_lead"
+          }
+        ],
+        "why": "Moved from EP-07.C; interviewee changes from IT lead to engineering lead."
+      }
+    ],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "NS-04",
+    "decision": "split",
+    "reason": "NS-04 bundles hardening of cloud services, servers, containers and databases (engineering lead, cloud configuration checks) with hardening and firmware of network equipment such as office firewalls, routers, switches and wireless controllers (IT lead, device configuration backups). The network equipment part is not applicable to a cloud only company with no own network equipment. The ISO27001:A.8.20 rationale on NS-04 is entirely about network devices, and A.8.9 is mapped full across both.",
+    "successors": [
+      {
+        "code": "NS-14",
+        "status": "proposed",
+        "name": "Network equipment hardening and firmware",
+        "owner_function": "it_lead",
+        "applies_when": "The company runs its own network equipment, such as office or site firewalls, routers, switches or wireless controllers (profile facts: own premises or server sites).",
+        "takes_objectives": [],
+        "requirements": [
+          {
+            "key": "ISO27001:A.8.20",
+            "coverage": "partial",
+            "rationale": "Firewalls, routers, switches and wireless controllers are hardened to an approved baseline, their configurations are backed up on change, and drift and unsupported firmware are checked at least quarterly. Moved from NS-04 with its rationale."
+          },
+          {
+            "key": "ISO27001:A.8.9",
+            "coverage": "partial",
+            "rationale": "Secure configuration of network equipment. Servers, containers, databases and cloud services are NS-04."
+          }
+        ]
+      }
+    ],
+    "objective_changes": [
+      {
+        "code": "NS-04.A",
+        "change": "reword",
+        "statement": "The hardening standard is approved. It names the baseline, such as a CIS benchmark, for each kind of system, including servers, containers, databases and cloud services, how drift is checked and when baselines are reviewed.",
+        "assurance": "design",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "hardening-standard-such-as-cis-or",
+              "doc-infrastructure-security-standard",
+              "doc-operations-security-policy"
+            ]
+          }
+        ],
+        "why": "Network equipment moves to NS-14.A."
+      },
+      {
+        "code": "NS-04.D",
+        "change": "reword",
+        "statement": "Drift from the baselines was checked at least quarterly, and each regression found was fixed or covered by an approved exception.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "test",
+            "artifacts": [
+              "alerts-on-drift-that-were-investigated",
+              "approved-exceptions-to-the-standard",
+              "asset-inventory"
+            ]
+          }
+        ],
+        "why": "Firmware moves to NS-14.C."
+      },
+      {
+        "code": "NS-14.A",
+        "change": "add",
+        "statement": "The hardening baseline for network equipment is approved. It requires default credentials changed, management interfaces reachable only from an admin network, unused services off, configuration backed up after each change, and firmware kept within vendor support.",
+        "assurance": "design",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "hardening-standard-such-as-cis-or",
+              "doc-infrastructure-security-standard"
+            ]
+          }
+        ]
+      },
+      {
+        "code": "NS-14.B",
+        "change": "add",
+        "statement": "Each network device in the asset inventory matched the baseline, and its configuration was backed up after each change.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "test",
+            "artifacts": [
+              "asset-inventory",
+              "approved-configuration-baseline"
+            ]
+          }
+        ]
+      },
+      {
+        "code": "NS-14.C",
+        "change": "add",
+        "statement": "Network device firmware stayed within vendor support and was updated within the patch timeframes, or had an approved exception.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "test",
+            "artifacts": [
+              "asset-inventory",
+              "approved-exceptions-to-the-standard"
+            ]
+          }
+        ]
+      },
+      {
+        "code": "NS-14.D",
+        "change": "add",
+        "statement": "Network device drift was checked at least quarterly, and each finding was fixed or covered by an approved exception.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "alerts-on-drift-that-were-investigated"
+            ]
+          }
+        ]
+      }
+    ],
+    "mapping_changes": [
+      {
+        "key": "ISO27001:A.8.20",
+        "coverage": "removed",
+        "rationale": "The NS-04 rationale for A.8.20 described network equipment only; the link moves to NS-14.",
+        "control": "NS-04",
+        "was": "partial"
+      },
+      {
+        "key": "ISO27001:A.8.9",
+        "coverage": "partial",
+        "rationale": "Secure configuration of servers, containers, databases and cloud services. Network equipment is NS-14.",
+        "control": "NS-04",
+        "was": "full"
+      }
+    ],
+    "tenant_impact": "adoption proposal: NS-14 proposed to workspaces with own premises or server sites. Engine gap: if NS-14 is not applicable, A.8.9 rests on one partial link and CL-3 reads it as partly covered; see Gaps. No result or acceptance is copied."
+  },
+  {
+    "control": "NS-05",
+    "decision": "keep",
+    "reason": "Detection coverage and triage are both monitoring, with one owner (engineering lead). SOC2:CC6.8, CC7.2 and ISO27001:A.8.16 are partial and of the same nature.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "NS-06",
+    "decision": "keep",
+    "reason": "Key management is one duty (engineering operates, security approves key access, already written into the owner functions). SOC2:CC6.1 and ISO27001:A.8.24 are partial.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "NS-07",
+    "decision": "keep",
+    "reason": "Design, rules review and testing of segmentation share one owner and one population. SOC2:CC6.1, CC6.6 and ISO27001:A.8.20, A.8.22 (full) are tested by A to D.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "NS-08",
+    "decision": "keep",
+    "reason": "One exposure class with one owner. SOC2:CC6.6 and ISO27001:A.8.20 are partial.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "NS-09",
+    "decision": "keep",
+    "reason": "One store and one owner. SOC2:CC6.1 and ISO27001:A.5.17 are partial; B to D test store use, rotation and exposure.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "NS-10",
+    "decision": "keep",
+    "reason": "Coverage, origin lock and rule review share one owner and apply together when a public application exists. SOC2:CC6.6 and ISO27001:A.8.21 are partial.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "NS-11",
+    "decision": "revise_objectives",
+    "reason": "D bundled a configuration fact (access granted per application) with a monitoring duty (sessions logged and reviewed with privileged access). They are evidenced differently and fail independently. SOC2:CC6.6 and ISO27001:A.6.7, A.8.21 are unchanged.",
+    "successors": [],
+    "objective_changes": [
+      {
+        "code": "NS-11.D",
+        "change": "reword",
+        "statement": "Access through the remote access tool was granted per application or per system, not to the whole network.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "test",
+            "artifacts": [
+              "remote-access-settings-and-members"
+            ]
+          }
+        ],
+        "why": "Monitoring half moves to E."
+      },
+      {
+        "code": "NS-11.E",
+        "change": "add",
+        "statement": "Remote sessions were logged, and the log was reviewed together with privileged access at the privileged review frequency.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "remote-access-settings-and-members",
+              "review-of-privileged-access"
+            ]
+          },
+          {
+            "method": "interview",
+            "artifacts": [],
+            "who": "it_lead"
+          }
+        ]
+      }
+    ],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "NS-12",
+    "decision": "keep",
+    "reason": "One configuration duty. ISO27001:A.8.17 is full and A to D test it.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "DM-01",
+    "decision": "revise_objectives",
+    "reason": "C bundled notices owed to customers under contract (the processor duty) with notices owed to regulators and affected people (the controller duty). Which applies depends on the personal data role fact, and onboarding (part 5 section 4) treats the role as switching DM objectives. SOC2:P6.6 full and ISO27001:A.5.5 partial are unchanged.",
+    "successors": [],
+    "objective_changes": [
+      {
+        "code": "DM-01.C",
+        "change": "reword",
+        "statement": "Each notice owed to customers under their contracts was sent within the contract deadline using the approved template, and a copy of each notice was kept.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "test",
+            "artifacts": [
+              "notification-decisions-for-each-incident-including",
+              "customer-contract-terms-on-breach-notification"
+            ]
+          },
+          {
+            "method": "examine",
+            "artifacts": [
+              "breach-notification-procedure-and-templates"
+            ]
+          }
+        ],
+        "why": "Customer side only; applies to processor and both roles."
+      },
+      {
+        "code": "DM-01.E",
+        "change": "add",
+        "statement": "Where the company decided the purposes of the data, each notice owed to a regulator or to affected people went within the legal deadline using the approved template, and a copy was kept, or a dated nil return was kept.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "test",
+            "artifacts": [
+              "notification-decisions-for-each-incident-including"
+            ]
+          },
+          {
+            "method": "examine",
+            "artifacts": [
+              "breach-notification-procedure-and-templates",
+              "doc-security-communication-plan"
+            ]
+          }
+        ],
+        "why": "Controller side; applies to controller and both roles."
+      }
+    ],
+    "tenant_impact": "none; the role fact proposes which of C and E apply, a person confirms."
+  },
+  {
+    "control": "DM-02",
+    "decision": "keep",
+    "reason": "One register with one owner. SOC2:P6.3 is full and B to D test completeness, content and pattern review.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "DM-03",
+    "decision": "revise_objectives",
+    "reason": "SOC2:P3.2 is partial because the consequences of declining consent are not communicated; onboarding part 5 section 7 proposes extending DM-03 and then marking it full. For a processor, consent is the customer's duty; the role fact rewords guidance to supporting the customer.",
+    "successors": [],
+    "objective_changes": [
+      {
+        "code": "DM-03.E",
+        "change": "add",
+        "statement": "Where consent was asked, the person was told at that point what happens if they refuse or later withdraw.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "consent-records-showing-when-what-and",
+              "current-privacy-notice"
+            ]
+          }
+        ],
+        "why": "Closes the SOC2:P3.2 gap."
+      }
+    ],
+    "mapping_changes": [
+      {
+        "key": "SOC2:P3.2",
+        "coverage": "full",
+        "rationale": "Consent is captured before collection, and people are told what follows if they refuse or withdraw (DM-03.E).",
+        "control": "DM-03",
+        "was": "partial"
+      }
+    ],
+    "tenant_impact": "none for objectives; the P3.2 change needs FW-5 sign off and only after E ships."
+  },
+  {
+    "control": "DM-04",
+    "decision": "keep",
+    "reason": "Scheme and marking share one owner (security lead) and one document. ISO27001:A.5.13 full is tested by C and D. Note: B overlaps DM-06.B (classification per store); kept because DM-04.B is the owner's assignment and DM-06.B the map's content.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "DM-05",
+    "decision": "keep",
+    "reason": "One request type with one owner. SOC2:P5.2 full and P7.1 partial (proactive quality is the proposed DM-20 in the onboarding plan). Processor wording is a guidance switch by the personal data role fact.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "DM-06",
+    "decision": "keep",
+    "reason": "One record with one owner (engineering lead). SOC2:C1.1 full and ISO27001:A.5.9, A.5.12 partial are tested by B to D.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "DM-07",
+    "decision": "keep",
+    "reason": "One duty. SOC2:P3.1 full is tested by B and C. Processor wording is a guidance switch by the personal data role fact.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "DM-08",
+    "decision": "revise_objectives",
+    "reason": "C tested that backups, archives and analytics copies were deleted on schedule, which DM-16.D also tests. DM-08 owns when data goes (ISO27001:A.5.33, A.8.10 timing), DM-16 owns that it really went. C now checks that the schedule covers every copy.",
+    "successors": [],
+    "objective_changes": [
+      {
+        "code": "DM-08.C",
+        "change": "reword",
+        "statement": "The retention schedule names the period for each copy of the data, including backups, archives and analytics stores, and matches the backup retention in the backup policy.",
+        "assurance": "design",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "data-retention-schedule",
+              "backup-policy-covering-scope-frequency-and"
+            ]
+          }
+        ],
+        "why": "Removes the duplicate deletion test; DM-16.D tests that deletion reached copies."
+      }
+    ],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "DM-09",
+    "decision": "keep",
+    "reason": "One register with one owner. SOC2:P6.2 full and P6.1, P6.7, ISO27001:A.5.14 partial are tested by B to D.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "DM-10",
+    "decision": "keep",
+    "reason": "One agreement type with one owner. SOC2:P6.4, CC9.2 and ISO27001:A.5.20, A.5.34 are partial and B to D test coverage, terms and repapering.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "DM-11",
+    "decision": "revise_objectives",
+    "reason": "Objectives assume the company is the controller. Where it acts for customers (processor or both), requests about customer data must go to the customer and the company helps within the contract time; the privacy requests template has a section for this, and no objective tested it. SOC2:P5.1 full and ISO27001:A.5.34 partial are unchanged.",
+    "successors": [],
+    "objective_changes": [
+      {
+        "code": "DM-11.E",
+        "change": "add",
+        "statement": "Requests about customer data, where the company acts for the customer, were passed to that customer within the contract time, and the company gave the help the contract requires.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "test",
+            "artifacts": [
+              "log-of-requests-with-dates-and"
+            ]
+          },
+          {
+            "method": "examine",
+            "artifacts": [
+              "doc-privacy-requests-and-complaints-procedure"
+            ]
+          }
+        ],
+        "why": "Processor path; the role fact proposes it, a person confirms."
+      }
+    ],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "DM-12",
+    "decision": "keep",
+    "reason": "Purpose limitation, including the AI training position, is one duty. SOC2:P4.1 full is tested by B to E.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "DM-13",
+    "decision": "keep",
+    "reason": "One duty with one owner. ISO27001:A.8.33 full and SOC2:C1.1 partial are tested by B and C.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "DM-14",
+    "decision": "keep",
+    "reason": "One channel with one owner. SOC2:P8.1 is already partial.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "DM-15",
+    "decision": "keep",
+    "reason": "One document with one owner. SOC2:P1.1 full and ISO27001:A.5.34 partial are tested by B to D.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "DM-16",
+    "decision": "split",
+    "reason": "DM-16 bundles wiping and disposing of devices and media (IT lead, asset disposal records, contractor certificates, per item) with deleting data from every store and copy (engineering lead, lifecycle rules and purge jobs, per deletion run). Owners, evidence and connector checks differ: verity.assets.disposal_recorded and device management belong to the first, cloud.storage_lifecycle to the second. ISO27001:A.7.14 and A.7.10 rationales are about equipment and media; A.8.10 is about data. No objective tested deletion on request or when a customer leaves, which SOC2:C1.2 and P4.3 rely on.",
+    "successors": [
+      {
+        "code": "EP-08",
+        "status": "proposed",
+        "name": "Equipment and media wiping and disposal",
+        "owner_function": "it_lead",
+        "applies_when": "Always (every company retires laptops or media).",
+        "takes_objectives": [
+          "DM-16.B",
+          "DM-16.C"
+        ],
+        "requirements": [
+          {
+            "key": "ISO27001:A.7.14",
+            "coverage": "partial",
+            "rationale": "Moved from DM-16 with its rationale: laptops, servers, drives and removable media are wiped or destroyed by a fitting method before reuse, sale or scrap, the result is confirmed, and a record or certificate is kept."
+          },
+          {
+            "key": "ISO27001:A.7.10",
+            "coverage": "partial",
+            "rationale": "Moved from DM-16: drives and removable media at the end of their life are wiped or destroyed and recorded."
+          },
+          {
+            "key": "SOC2:CC6.5",
+            "coverage": "partial",
+            "rationale": "Moved from DM-16: data on retired equipment is made unrecoverable before its protections end."
+          },
+          {
+            "key": "SOC2:C1.2",
+            "coverage": "partial",
+            "rationale": "Confidential data on retired equipment is destroyed. Data in stores and copies is DM-16."
+          }
+        ]
+      }
+    ],
+    "objective_changes": [
+      {
+        "code": "DM-16.A",
+        "change": "reword",
+        "statement": "The data deletion procedure is approved. It covers every copy of data, including replicas, indexes, caches, analytics, vendor systems and backups, with approved methods, sign off and records kept.",
+        "assurance": "design",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "secure-disposal-procedure",
+              "doc-data-management-policy"
+            ]
+          }
+        ],
+        "why": "Devices and media move to EP-08.A."
+      },
+      {
+        "code": "DM-16.B",
+        "change": "move",
+        "to": "EP-08.B",
+        "why": "Device and media disposal records."
+      },
+      {
+        "code": "DM-16.C",
+        "change": "move",
+        "to": "EP-08.C",
+        "why": "Disposal method and certificates."
+      },
+      {
+        "code": "DM-16.E",
+        "change": "add",
+        "statement": "Customer data for customers who left, and personal data under an accepted erasure request, was deleted from every store within the committed time, with a record for each case, or a dated nil return was kept.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "test",
+            "artifacts": [
+              "evidence-data-was-deleted-when-retention",
+              "log-of-requests-with-dates-and"
+            ]
+          }
+        ],
+        "why": "SOC2:C1.2 and P4.3 rely on disposal when data is no longer needed, including on request and at customer exit; no objective tested it."
+      },
+      {
+        "code": "EP-08.A",
+        "change": "add",
+        "statement": "The procedure for wiping, reusing and disposing of laptops, servers, drives and removable media is approved. It sets the method for each data level, confirmation before reuse, certificates from disposal contractors and the record kept.",
+        "assurance": "design",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "secure-disposal-procedure",
+              "doc-asset-management-policy"
+            ]
+          }
+        ]
+      },
+      {
+        "code": "EP-08.B",
+        "change": "add",
+        "statement": "Every device and medium retired, sold, returned or reissued in the period had a disposal record with item, serial number, method, date and who did it, or a dated nil return was kept.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "test",
+            "artifacts": [
+              "disposal-records-or-certificates",
+              "asset-inventory"
+            ]
+          }
+        ],
+        "why": "Moved from DM-16.B with its letter."
+      },
+      {
+        "code": "EP-08.C",
+        "change": "add",
+        "statement": "Each method fitted the data the item held, the result was confirmed before reuse or disposal, and a certificate was kept for each item a disposal contractor handled.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "disposal-records-or-certificates",
+              "secure-disposal-procedure"
+            ]
+          },
+          {
+            "method": "interview",
+            "artifacts": [],
+            "who": "it_lead"
+          }
+        ],
+        "why": "Moved from DM-16.C with its letter."
+      }
+    ],
+    "mapping_changes": [
+      {
+        "key": "ISO27001:A.7.14",
+        "coverage": "removed",
+        "rationale": "Moves to EP-08.",
+        "control": "DM-16",
+        "was": "partial"
+      },
+      {
+        "key": "ISO27001:A.7.10",
+        "coverage": "removed",
+        "rationale": "Moves to EP-08.",
+        "control": "DM-16",
+        "was": "partial"
+      },
+      {
+        "key": "SOC2:CC6.5",
+        "coverage": "removed",
+        "rationale": "Moves to EP-08.",
+        "control": "DM-16",
+        "was": "partial"
+      },
+      {
+        "key": "SOC2:C1.2",
+        "coverage": "partial",
+        "rationale": "Deleting confidential data from every store and copy, including at customer exit. Wiping devices and media is EP-08.",
+        "control": "DM-16",
+        "was": "full"
+      }
+    ],
+    "tenant_impact": "adoption proposal: EP-08 proposed to every workspace that has DM-16; DM-16 keeps its history, including device disposal evidence filed so far. checks.json mapping of verity.assets.disposal_recorded moves from DM-16 to EP-08 (owner decision). No result or acceptance is copied."
+  },
+  {
+    "control": "DM-17",
+    "decision": "keep",
+    "reason": "Terms and the handling of received notices share one owner (vendor lead). SOC2:P6.5 and ISO27001:A.5.20 are partial.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "DM-18",
+    "decision": "keep",
+    "reason": "One standard with one owner (engineering lead). ISO27001:A.8.11 full is tested by B to E.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "DM-19",
+    "decision": "keep",
+    "reason": "All leak routes share one owner (IT lead) and one rule set. ISO27001:A.8.12 full and A.5.14, A.7.10 partial are tested by B to E.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  }
+]

@@ -1,0 +1,3012 @@
+{
+  "part": "ops-identity",
+  "documents_read": [
+    "connectors/identity-checks.md",
+    "connectors/operations-checks.md",
+    "connectors/entra-id.md",
+    "connectors/okta.md",
+    "connectors/google-workspace.md",
+    "connectors/1password.md",
+    "connectors/identity-providers-unified-setup.md",
+    "connectors/jira.md",
+    "connectors/slack.md",
+    "connectors/pagerduty.md",
+    "connectors/datadog.md",
+    "connectors/sentry.md",
+    "connectors/cloudflare.md",
+    "connectors/tailscale.md",
+    "02-integration-model.md",
+    "03-market-research.md",
+    "AUTHORING.md",
+    "01-evidence-model.md"
+  ],
+  "checks": [
+    {
+      "key": "idp.admin_mfa_phishing_resistant",
+      "name": "Administrators use phishing resistant sign in",
+      "description": "Every account that holds an administrator role must sign in with a phishing resistant factor, such as a security key or a passkey.",
+      "capabilities": [
+        "identity_provider"
+      ],
+      "implementations": [
+        "entra",
+        "okta",
+        "gws"
+      ],
+      "resource_type": "user",
+      "frequency": "daily",
+      "remediation": "Require a phishing resistant factor for administrator roles, and enrol a security key or passkey for each listed administrator.",
+      "controls": [
+        {
+          "code": "IAM-03",
+          "coverage": "partial",
+          "rationale": "Shows identity provider administrators must use a phishing resistant factor. Cloud root accounts and other systems are checked separately."
+        },
+        {
+          "code": "IAM-07",
+          "coverage": "partial",
+          "rationale": "Shows privileged identity provider accounts carry stronger sign in protection. Approval and review of those accounts stay with people."
+        }
+      ],
+      "evidence_kinds": [
+        "Administrator sign in requirement",
+        "Administrator factor enrolment"
+      ],
+      "observation_types": [
+        "identity.user",
+        "identity.policy"
+      ],
+      "providers": {
+        "entra": "supported",
+        "okta": "partial",
+        "gws": "partial"
+      },
+      "provider_notes": {
+        "entra": "Needs P1: an enabled Conditional Access policy targeting the admin roles with an authentication strength of phishing resistant methods only (FIDO2, Windows Hello for Business, certificate based multifactor). Security defaults alone fail; no P1 fails with reason plan. Method value names to confirm.",
+        "okta": "Whether Okta Verify counts as phishing resistant depends on its configuration (unverified), so those admins read insufficient. The Admin Console policy constraint field name is unverified. Role read may need more than Read-only Administrator.",
+        "gws": "Uses security key and passkey counts from usage reports, which are 1 to 5 days late, and the 2SV factor policy (PASSKEY_ONLY or a passkey combination). How a policy targets a group is unverified. The policy part errors without a super admin subject."
+      },
+      "artifacts": [
+        "second-factor-enforcement-and-enrolled-users"
+      ],
+      "aliases": [],
+      "sources": [
+        "connectors/identity-checks.md",
+        "connectors/entra-id.md",
+        "connectors/okta.md",
+        "connectors/google-workspace.md"
+      ],
+      "population": "Enabled accounts holding any administrator role (active or eligible) at collection time",
+      "predicate": "A policy that applies to the account requires a phishing resistant factor, and the account has one enrolled",
+      "period": "Point in time, daily",
+      "empty_population": "`error`: an identity provider always has at least one administrator, so an empty list means the role read failed",
+      "parameters": {},
+      "notes": "Fills second-factor-enforcement-and-enrolled-users for IAM-03.C (idp.mfa_enforced fills B, D, E). 1Password is n/a in the matrix. implementations in identity-checks.md say empty until a collector ships; here they follow the brief (supported or partial providers)."
+    },
+    {
+      "key": "idp.no_inactive_accounts",
+      "name": "No unused account stays active",
+      "description": "No enabled account, member or guest, has gone longer than the allowed period without a successful sign in.",
+      "capabilities": [
+        "identity_provider"
+      ],
+      "implementations": [
+        "entra",
+        "okta",
+        "gws"
+      ],
+      "resource_type": "user",
+      "frequency": "daily",
+      "remediation": "Disable the listed accounts, or record why each one must stay active.",
+      "controls": [
+        {
+          "code": "IAM-12",
+          "coverage": "partial",
+          "rationale": "Finds accounts nobody uses, which is how missed removals surface. Matching accounts to leavers needs the staff list."
+        },
+        {
+          "code": "IAM-02",
+          "coverage": "partial",
+          "rationale": "Points reviewers at unused access between reviews. The review and its sign off stay with people."
+        },
+        {
+          "code": "HR-03",
+          "coverage": "partial",
+          "rationale": "Finds guest and contractor accounts that outlived their use. The contractor register and end dates stay with people."
+        }
+      ],
+      "evidence_kinds": [
+        "Account list with last successful sign in"
+      ],
+      "observation_types": [
+        "identity.user"
+      ],
+      "providers": {
+        "entra": "supported",
+        "okta": "supported",
+        "gws": "supported",
+        "onepassword": "not_possible"
+      },
+      "provider_notes": {
+        "entra": "Supported with P1 only: signInActivity needs P1 or P2, so a Free tenant reads error with reason licence. lastSuccessfulSignInDateTime exists only from December 2023; before that use the later of the interactive and non interactive times. A guest still PendingAcceptance counts as inactive. signInActivity reads are limited to 10 a minute.",
+        "okta": "lastLogin; null means never signed in. Deprovisioned users must be queried explicitly.",
+        "gws": "The later of lastLoginTime and accounts:timestamp_last_sso.",
+        "onepassword": "The Users API has no last sign in field."
+      },
+      "artifacts": [
+        "account-list-export"
+      ],
+      "aliases": [],
+      "sources": [
+        "connectors/identity-checks.md",
+        "connectors/entra-id.md",
+        "connectors/okta.md",
+        "connectors/google-workspace.md",
+        "connectors/1password.md"
+      ],
+      "population": "Enabled accounts older than `inactive_days`, members and guests, excluding accounts recorded as exceptions in Verity",
+      "predicate": "Last successful sign in is within `inactive_days`. An account that never signed in counts as inactive",
+      "period": "Rolling window of `inactive_days` ending at collection",
+      "empty_population": "`pass` only when the provider returned a complete user list; otherwise `insufficient information`",
+      "parameters": {
+        "inactive_days": "default 90, set from the customer's access policy; accounts created less recently than this are left out"
+      },
+      "notes": "Fills account-list-export for IAM-12.E. Related, not an alias: people.accounts_match_roster (members against the roster; guests are covered here)."
+    },
+    {
+      "key": "idp.machine_identities_owned",
+      "name": "App credentials have owners and expire",
+      "description": "Every application or service app that holds a credential in the identity provider has a named owner, and no credential lives longer than the rotation limit.",
+      "capabilities": [
+        "identity_provider"
+      ],
+      "implementations": [
+        "entra",
+        "okta"
+      ],
+      "resource_type": "application",
+      "frequency": "daily",
+      "remediation": "Add an owner to the listed applications, and replace credentials that outlive the rotation limit.",
+      "controls": [
+        {
+          "code": "IAM-10",
+          "coverage": "partial",
+          "rationale": "Covers machine identities held in the identity provider. Cloud and build system credentials are checked by `cloud.machine_credentials_rotated`."
+        }
+      ],
+      "evidence_kinds": [
+        "Application credential inventory",
+        "Application owners"
+      ],
+      "observation_types": [
+        "identity.app"
+      ],
+      "providers": {
+        "entra": "supported",
+        "okta": "partial",
+        "gws": "not_possible"
+      },
+      "provider_notes": {
+        "entra": "App registrations with a secret or certificate: owners and credential start and end dates (never secret values).",
+        "okta": "Okta apps have no owner field (unverified), so only credential age is judged; API tokens are judged as tied to an active admin. The token listing endpoint and scope are unverified.",
+        "gws": "Service accounts and delegation clients live in Google Cloud, not the Workspace directory (no Admin SDK listing found, unverified). Covered by cloud.machine_credentials_rotated."
+      },
+      "artifacts": [
+        "inventory-of-service-accounts-and-keys",
+        "records-of-rotation-or-review"
+      ],
+      "aliases": [],
+      "sources": [
+        "connectors/identity-checks.md",
+        "connectors/entra-id.md",
+        "connectors/okta.md",
+        "connectors/google-workspace.md"
+      ],
+      "population": "Applications registered in the customer's own directory that hold at least one secret or certificate",
+      "predicate": "At least one owner, and every credential's lifetime (end minus start, or age where no end exists) is at most `max_credential_days`",
+      "period": "Point in time, daily",
+      "empty_population": "`pass` with a note when the list was complete (many small tenants have none)",
+      "parameters": {
+        "max_credential_days": "default 365, from the customer's access policy"
+      },
+      "notes": "identity.app in 01-evidence-model 1.4 has no owner or credential date fields; extend it with owners and credential dates, or add a new observation type identity.app_credential. records-of-rotation-or-review is filled for IAM-10.D."
+    },
+    {
+      "key": "idp.access_reviews_completed",
+      "name": "Identity provider access reviews are finished",
+      "description": "Every access review that closed in the period has a decision on every item by someone other than the person reviewed, and every removal decided was applied.",
+      "capabilities": [
+        "identity_provider"
+      ],
+      "implementations": [
+        "entra",
+        "okta"
+      ],
+      "resource_type": "access_review",
+      "frequency": "daily",
+      "remediation": "Finish open reviews, reassign self reviews, and apply the removals that were decided.",
+      "controls": [
+        {
+          "code": "IAM-02",
+          "coverage": "partial",
+          "rationale": "Shows reviews run inside the identity provider were completed and acted on. Systems outside it and the review procedure stay with people."
+        },
+        {
+          "code": "IAM-07",
+          "coverage": "partial",
+          "rationale": "Where privileged roles are reviewed in the identity provider, shows those reviews were completed."
+        }
+      ],
+      "evidence_kinds": [
+        "Access review instances and decisions"
+      ],
+      "observation_types": [],
+      "providers": {
+        "entra": "supported",
+        "okta": "supported",
+        "gws": "not_possible"
+      },
+      "provider_notes": {
+        "entra": "Needs Entra ID Governance, or P2 for features GA in P2, and the optional AccessReview.Read.All permission; without them error with reason licence. Decision field names unverified.",
+        "okta": "Needs Okta Identity Governance and the optional okta.governance.accessCertifications.read scope; not applicable without it.",
+        "gws": "Workspace has no access review feature."
+      },
+      "artifacts": [
+        "completed-access-reviews-with-reviewer-sign",
+        "access-changes-made-as-a-result"
+      ],
+      "aliases": [],
+      "sources": [
+        "connectors/identity-checks.md",
+        "connectors/entra-id.md",
+        "connectors/okta.md",
+        "connectors/google-workspace.md"
+      ],
+      "population": "Review instances that ended in the last 90 days",
+      "predicate": "No item without a decision; no item decided by the person it is about; every deny decision applied",
+      "period": "90 days ending at collection",
+      "empty_population": "`not_applicable` when the customer runs reviews outside the identity provider (the manual review pack stays the evidence), never `pass`",
+      "parameters": {},
+      "notes": "New observation type proposed: identity.access_review (review instance, decisions, reviewer, principal, apply result); none of the 1.4 types fits. Fills completed-access-reviews-with-reviewer-sign only where the customer reviews inside Entra or Okta."
+    },
+    {
+      "key": "people.accounts_match_roster",
+      "name": "Every account belongs to a current person",
+      "description": "Every enabled member account in the identity provider matches a person on the current staff and contractor roster, or is a recorded shared or service account with an owner.",
+      "capabilities": [
+        "hr_system",
+        "identity_provider"
+      ],
+      "implementations": [
+        "entra",
+        "okta",
+        "gws"
+      ],
+      "resource_type": "user",
+      "frequency": "daily",
+      "remediation": "Disable the listed accounts, link each to a person, or record it as a service account with an owner.",
+      "controls": [
+        {
+          "code": "IAM-12",
+          "coverage": "partial",
+          "rationale": "Reconciles accounts with the people who should have them. Systems outside the identity provider need their own reconciliation."
+        },
+        {
+          "code": "IAM-01",
+          "coverage": "partial",
+          "rationale": "Shows each account maps to one named person. Approval of the access is checked separately."
+        },
+        {
+          "code": "HR-03",
+          "coverage": "partial",
+          "rationale": "Shows contractor accounts match the contractor roster. Agreements and training stay with people."
+        }
+      ],
+      "evidence_kinds": [
+        "Account list",
+        "Staff and contractor roster",
+        "Match results"
+      ],
+      "observation_types": [
+        "identity.user",
+        "person.record"
+      ],
+      "providers": {
+        "entra": "supported",
+        "okta": "supported",
+        "gws": "supported"
+      },
+      "provider_notes": {
+        "entra": "Needs a roster. Match by employee id or UPN.",
+        "okta": "Needs a roster. Population is users that can sign in.",
+        "gws": "Needs a roster. Shared or service mailboxes can be recorded as such."
+      },
+      "artifacts": [
+        "account-list-export"
+      ],
+      "aliases": [],
+      "sources": [
+        "connectors/identity-checks.md",
+        "connectors/entra-id.md",
+        "connectors/okta.md",
+        "connectors/google-workspace.md"
+      ],
+      "population": "Enabled member accounts (guests are covered by `idp.no_inactive_accounts`)",
+      "predicate": "Matched to an active roster person by immutable id, or by email when the roster has no id, or recorded in Verity as a shared or service account with an owner",
+      "period": "Point in time, daily",
+      "empty_population": "`insufficient information` when no roster exists or it is older than its own review period",
+      "parameters": {},
+      "notes": "Fills account-list-export for IAM-12.E and HR-03.B. contractor-register-with-start-and-end is an input, unchanged. hr_system providers are not_planned in capabilities.json; until a roster exists in Verity (continuous compliance plan 6 C proposes a controlled workforce import) it reads insufficient information. Related: idp.no_inactive_accounts, edge.members_current."
+    },
+    {
+      "key": "vault.leavers_removed",
+      "name": "Leavers lose password manager access",
+      "description": "No one who left still has an active company password manager account after the allowed time.",
+      "capabilities": [
+        "hr_system",
+        "password_manager"
+      ],
+      "implementations": [
+        "onepassword"
+      ],
+      "resource_type": "person",
+      "frequency": "daily",
+      "remediation": "Suspend the listed password manager accounts, and rotate the shared credentials they could read.",
+      "controls": [
+        {
+          "code": "IAM-05",
+          "coverage": "partial",
+          "rationale": "Shows leavers lost vault access. Rotating the shared credentials they could read is recorded by people."
+        },
+        {
+          "code": "IAM-12",
+          "coverage": "partial",
+          "rationale": "Covers the password manager, one of the systems outside single sign on that removal must reach."
+        }
+      ],
+      "evidence_kinds": [
+        "Password manager member status",
+        "Leavers from the HR source"
+      ],
+      "observation_types": [
+        "vault.member",
+        "person.record"
+      ],
+      "providers": {
+        "onepassword": "supported"
+      },
+      "provider_notes": {
+        "onepassword": "Needs a leaver roster. Removal time from the suspend or delete audit event (Events Reporting token, auditevents only), else the first daily snapshot showing the member gone or suspended. The Users API is not available on Teams or when the account uses 1Password automated provisioning; then membership comes from the identity provider's assignment of the 1Password app and the evidence says so."
+      },
+      "artifacts": [
+        "removal-records-for-a-sample-of",
+        "password-manager-members-against-staff-list"
+      ],
+      "aliases": [],
+      "sources": [
+        "connectors/identity-checks.md",
+        "connectors/1password.md"
+      ],
+      "population": "Leavers on the roster whose end date is in the last 90 days",
+      "predicate": "No active vault account for the leaver later than `removal_hours` after the end date",
+      "period": "90 days ending at collection",
+      "empty_population": "`pass` only when the roster is current and shows no leavers; otherwise `insufficient information`",
+      "parameters": {
+        "removal_hours": "default 24, the same value `people.leavers_deprovisioned` uses"
+      },
+      "notes": "New observation type proposed: vault.event (password manager audit events: suspend, delete, vault access grant and revoke). Fills removal-records-for-a-sample-of for IAM-12.D and password-manager-members-against-staff-list for IAM-05.B and D (IAM-05.C stays a person). Same predicate shape as people.leavers_deprovisioned on a different system and shares removal_hours; kept separate because multiple capabilities on a check mean all are needed. 1Password marks people.leavers_deprovisioned n/a and points here. Related NEED password_manager: every shared vault has a named owner and members that match its team (IAM-05.C); no read only, complete API lists vault access, so no check is proposed."
+    },
+    {
+      "key": "tickets.changes_approved_before_release",
+      "name": "Changes are approved before release",
+      "description": "Every change ticket that reached its released status was approved first, by someone other than its requester and its implementer.",
+      "capabilities": [
+        "ticketing"
+      ],
+      "implementations": [
+        "jira"
+      ],
+      "resource_type": "ticket",
+      "frequency": "daily",
+      "remediation": "Record the approval on the listed tickets, or raise each one released without approval as a finding.",
+      "controls": [
+        {
+          "code": "SD-01",
+          "coverage": "partial",
+          "rationale": "Shows each ticketed change was approved before release by someone independent of it. It does not show that every production change had a ticket, which tickets.changes_linked checks against the merged code."
+        },
+        {
+          "code": "IAM-09",
+          "coverage": "partial",
+          "rationale": "Shows nobody approved a change they requested or carried out, for changes tracked in tickets. Other conflicting duties need their own review."
+        }
+      ],
+      "evidence_kinds": [
+        "Change tickets with approval and release times",
+        "Approval decisions and approvers"
+      ],
+      "observation_types": [
+        "ticket"
+      ],
+      "providers": {
+        "jira": "supported"
+      },
+      "provider_notes": {
+        "jira": "Needs a status mapping (approved and released statuses, required impact, testing and rollback fields). Approval is a JSM approval, a transition into a mapped approved status, or a mapped approver field. JSM change management needs Premium or Enterprise; on lower plans approval is modelled with statuses or fields, which is weaker. Automation or app actors do not count as approvers (actor type field unverified)."
+      },
+      "artifacts": [
+        "change-requests-with-approval-for-a"
+      ],
+      "aliases": [],
+      "sources": [
+        "connectors/operations-checks.md",
+        "connectors/jira.md"
+      ],
+      "population": "Change tickets in mapped projects that reached a released status in the last 30 days",
+      "predicate": "Approval before release, approver independent (account id differs from the reporter, the assignee at release and any mapped implementer), mapped required fields (impact, testing, rollback) not empty. The last approval before release counts; release is the first transition into a mapped released status",
+      "period": "Rolling 30 day window of tickets that changed state, checked daily; daily results are the Type 2 history",
+      "empty_population": "insufficient information: no released change tickets does not show no changes happened. Mapping not set or history truncated is insufficient",
+      "parameters": {
+        "status_mapping": "per project, which statuses mean approved and released, and which fields are required; set on the connection, audited, printed on every result"
+      },
+      "notes": "ticket in 1.4 needs approvals and status history (changelog author and time) added, or new types ticket.approval and ticket.change. Related, not an alias: tickets.changes_linked starts from merged code and looks for the ticket; this one starts from released change tickets. Fills change-requests-with-approval-for-a partially."
+    },
+    {
+      "key": "tickets.emergency_changes_reviewed",
+      "name": "Emergency changes are reviewed afterwards",
+      "description": "Every change released through the emergency route was reviewed and approved by someone else within the set window after release.",
+      "capabilities": [
+        "ticketing"
+      ],
+      "implementations": [
+        "jira"
+      ],
+      "resource_type": "ticket",
+      "frequency": "daily",
+      "remediation": "Hold the missing reviews now and record them on the listed tickets.",
+      "controls": [
+        {
+          "code": "SD-04",
+          "coverage": "partial",
+          "rationale": "Shows each emergency change recorded in tickets had a review by another person within the window. Emergency changes made without a ticket are found by vcs.unreviewed_merges_recorded, and the authorization at the time stays with people."
+        }
+      ],
+      "evidence_kinds": [
+        "Emergency change tickets",
+        "Retrospective approvals with their times"
+      ],
+      "observation_types": [
+        "ticket"
+      ],
+      "providers": {
+        "jira": "supported"
+      },
+      "provider_notes": {
+        "jira": "Needs an emergency marker mapped on the connection."
+      },
+      "artifacts": [
+        "emergency-changes-with-their-after-the"
+      ],
+      "aliases": [],
+      "sources": [
+        "connectors/operations-checks.md",
+        "connectors/jira.md"
+      ],
+      "population": "Change tickets carrying the mapped emergency marker, released in the last 30 days, whose review window has closed",
+      "predicate": "A review approval by someone other than the implementer and requester, dated by the end of the next business day after release in the workspace time zone",
+      "period": "Rolling 30 day window of tickets that changed state, checked daily; daily results are the Type 2 history",
+      "empty_population": "pass only with an emergency marker mapped, and the result says emergency changes without tickets are vcs.unreviewed_merges_recorded; no marker mapped is insufficient",
+      "parameters": {
+        "retrospective_review_window": "SD-04 parameter; default the end of the next business day after release, in the workspace time zone",
+        "emergency_marker": "mapping of the work type, field or label that marks an emergency change"
+      },
+      "notes": "Tickets still inside their window are listed as pending, not judged. Emergency changes made without a ticket are vcs.unreviewed_merges_recorded. SD-04.C (authorised at the time) stays with people."
+    },
+    {
+      "key": "tickets.access_approver_independent",
+      "name": "Access approvals are independent",
+      "description": "Every access request was approved by someone other than the requester and the person receiving the access, and each privileged request by an owner of the system.",
+      "capabilities": [
+        "ticketing"
+      ],
+      "implementations": [
+        "jira"
+      ],
+      "resource_type": "ticket",
+      "frequency": "daily",
+      "remediation": "Have the system owner approve the listed requests, or remove the access granted on them.",
+      "controls": [
+        {
+          "code": "IAM-01",
+          "coverage": "partial",
+          "rationale": "Shows no one approved their own access and that privileged requests were approved by a listed owner. That the grant matched the approved request is tickets.access_requests_approved."
+        },
+        {
+          "code": "IAM-09",
+          "coverage": "partial",
+          "rationale": "Shows requesting and approving access sat with different people for tracked requests. Other conflicting duties need their own review."
+        }
+      ],
+      "evidence_kinds": [
+        "Access requests with requester, beneficiary and approvers",
+        "System owner list used for privileged requests"
+      ],
+      "observation_types": [
+        "ticket"
+      ],
+      "providers": {
+        "jira": "supported"
+      },
+      "provider_notes": {
+        "jira": "Needs JSM approvals or a mapped approver field, and a beneficiary field where requests are raised on someone's behalf. Independence uses account ids; emails may be hidden by profile setting (unverified)."
+      },
+      "artifacts": [
+        "approved-requests-for-a-sample-of"
+      ],
+      "aliases": [],
+      "sources": [
+        "connectors/operations-checks.md",
+        "connectors/jira.md"
+      ],
+      "population": "Access request tickets (mapped JSM request types or work types) approved or resolved in the last 30 days",
+      "predicate": "At least one approving decision from someone who is neither the requester nor the beneficiary; for request types marked privileged, an approver in the mapped system owner group",
+      "period": "Rolling 30 day window of tickets that changed state, checked daily; daily results are the Type 2 history",
+      "empty_population": "not stated in the connector document; the shared rule applies: insufficient information unless the provider shows the population really was empty",
+      "parameters": {
+        "privileged_request_types": "request types marked privileged",
+        "system_owner_group": "group whose members may approve privileged requests",
+        "beneficiary_field": "field naming the person who receives the access"
+      },
+      "notes": "Related, not an alias: tickets.access_requests_approved checks the grant matched an approved request; this one checks who approved."
+    },
+    {
+      "key": "tickets.security_reports_answered",
+      "name": "Security reports are answered in time",
+      "description": "Every report received through the tracked security channel had a first response within the stated time and a recorded decision when it closed.",
+      "capabilities": [
+        "ticketing"
+      ],
+      "implementations": [
+        "jira"
+      ],
+      "resource_type": "ticket",
+      "frequency": "daily",
+      "remediation": "Answer the listed reports and record the triage decision on each.",
+      "controls": [
+        {
+          "code": "CS-03",
+          "coverage": "partial",
+          "rationale": "Shows reports that reached the tracker were answered within the stated time and closed with a decision. Reports sent anywhere else, and whether each incident reached the register, need other evidence."
+        }
+      ],
+      "evidence_kinds": [
+        "Security report tickets with first response times",
+        "Resolution of each report"
+      ],
+      "observation_types": [
+        "ticket"
+      ],
+      "providers": {
+        "jira": "supported"
+      },
+      "provider_notes": {
+        "jira": "Supported with a JSM first response SLA (needs an agent seat on the service desk). Partial on Jira without SLAs: the first public comment or transition by someone other than the reporter within the set time (read:comment:jira)."
+      },
+      "artifacts": [
+        "sample-of-reports-received-and-how"
+      ],
+      "aliases": [],
+      "sources": [
+        "connectors/operations-checks.md",
+        "connectors/jira.md"
+      ],
+      "population": "Requests of the mapped security report types created in the last 30 days, plus any still open",
+      "predicate": "The mapped first response SLA has no breached cycle; without JSM, the first public comment or transition by someone other than the reporter came within the set time. Closed ones have a resolution",
+      "period": "Rolling 30 day window of tickets that changed state, checked daily; daily results are the Type 2 history",
+      "empty_population": "insufficient information; the dated nil return stays with people. No SLA or response rule mapped is insufficient",
+      "parameters": {
+        "first_response_time": "default 2 business days (operations owner decision 6)",
+        "sla_names": "JSM SLA names for first response and resolution"
+      },
+      "notes": "Feasibility matrix: S (JSM SLA), P (Jira without SLAs). ticket in 1.4 needs SLA cycles and first response fields."
+    },
+    {
+      "key": "tickets.incidents_registered",
+      "name": "Ticketed incidents are in the register",
+      "description": "Every security incident raised in the ticketing system appears in Verity's incident register, or has a recorded decision there that it was not an incident.",
+      "capabilities": [
+        "ticketing",
+        "verity_tasks"
+      ],
+      "implementations": [
+        "jira"
+      ],
+      "resource_type": "ticket",
+      "frequency": "daily",
+      "remediation": "Add the listed incidents to the register, or record why each is not a security incident.",
+      "controls": [
+        {
+          "code": "LM-07",
+          "coverage": "partial",
+          "rationale": "Shows the incident register is complete against incidents raised in tickets. Severity, the notice decision and handling under the plan stay with people."
+        },
+        {
+          "code": "LM-04",
+          "coverage": "partial",
+          "rationale": "Shows each possible incident raised in tickets got a recorded decision. Whether the decision was right is reviewed by people."
+        }
+      ],
+      "evidence_kinds": [
+        "Incident tickets in the period",
+        "Matching register entries and triage decisions"
+      ],
+      "observation_types": [
+        "ticket"
+      ],
+      "providers": {
+        "jira": "supported"
+      },
+      "provider_notes": {
+        "jira": "Supported with the Verity register: an entry synced with source jira and the issue id, or linked by a person."
+      },
+      "artifacts": [
+        "security-incident-register"
+      ],
+      "aliases": [
+        "alerts.incidents_registered"
+      ],
+      "sources": [
+        "connectors/operations-checks.md",
+        "connectors/jira.md"
+      ],
+      "population": "Incident tickets (mapped JSM incident work type, or work types and labels) created in the period, filtered to security incidents by the mapped category",
+      "predicate": "Each has a Verity register entry (synced with source jira and the issue id, or linked by a person) or a recorded not an incident decision",
+      "period": "Rolling 30 day window of tickets that changed state, checked daily; daily results are the Type 2 history",
+      "empty_population": "insufficient information. Mapping not set is insufficient",
+      "parameters": {
+        "incident_mapping": "incident work types or labels and the security category"
+      },
+      "notes": "ALIAS: tests the same reconciliation as alerts.incidents_registered from a different source capability. Keep both keys while a check's capabilities all have to be connected (as checks.json treats them today): one merged key with ticketing and alerting would demand both Jira and PagerDuty. If the engine gains either of these capabilities, keep alerts.incidents_registered (incidents are its native object, machine recorded, and its empty rule is the sharper one) and add jira as an implementation. Conflict: this key's empty population is insufficient, the PagerDuty one passes when the list was read in full. Needs the verity_tasks register to hold a triage decision and expose completeness by source and external_id (operations owner decision 3, incident sync). Fills security-incident-register for completeness only."
+    },
+    {
+      "key": "alerts.on_call_covered",
+      "name": "Someone is on call at all times",
+      "description": "For every in scope service, the first escalation level had someone on call for the whole period, with a second level behind it.",
+      "capabilities": [
+        "alerting"
+      ],
+      "implementations": [
+        "pagerduty"
+      ],
+      "resource_type": "escalation_policy",
+      "frequency": "daily",
+      "remediation": "Fill the listed gaps in the schedule and add a backup level to the policy.",
+      "controls": [
+        {
+          "code": "LM-08",
+          "coverage": "partial",
+          "rationale": "Shows someone, with a backup, was on call for every minute of the period on the in scope services. Contact details and whether cover meets customer commitments are reviewed by people."
+        }
+      ],
+      "evidence_kinds": [
+        "On call entries per escalation level",
+        "Schedules and their coverage"
+      ],
+      "observation_types": [],
+      "providers": {
+        "pagerduty": "supported",
+        "slack": "not_possible"
+      },
+      "provider_notes": {
+        "pagerduty": "On call entries from GET /oncalls per escalation level. A schedule type whose entries cannot be computed (v3 schedules, unverified) reads insufficient. Past rendering may change after edits (unverified); Verity's daily result is the record.",
+        "slack": "Slack has no on call schedule."
+      },
+      "artifacts": [
+        "on-call-schedule"
+      ],
+      "aliases": [],
+      "sources": [
+        "connectors/operations-checks.md",
+        "connectors/pagerduty.md",
+        "connectors/slack.md"
+      ],
+      "population": "Escalation policies of in scope services (customer selected, all active services by default)",
+      "predicate": "For the last full day (UTC), the on call entries at level 1 cover every minute, and a level 2 with a different target also covers every minute",
+      "period": "Last full day (UTC), checked daily; the next 7 days are shown as a warning, not judged",
+      "empty_population": "not stated in the connector document; the shared rule applies",
+      "parameters": {},
+      "notes": "New observation types proposed: escalation_policy and on_call_entry (schedules and their coverage); none of the 1.4 types fits. Fills on-call-schedule FULL for LM-08.B over the period it ran (it is the schedule for the whole period); contact details stay with people."
+    },
+    {
+      "key": "alerts.escalation_policies_escalate",
+      "name": "Unanswered pages escalate",
+      "description": "Every in scope service routes to an escalation policy that passes an unanswered page to another target within the set time.",
+      "capabilities": [
+        "alerting"
+      ],
+      "implementations": [
+        "pagerduty"
+      ],
+      "resource_type": "escalation_policy",
+      "frequency": "daily",
+      "remediation": "Add a second level, or shorten the escalation delay, on the listed policies.",
+      "controls": [
+        {
+          "code": "LM-08",
+          "coverage": "partial",
+          "rationale": "Shows the tool escalates an unanswered page to another person within the set time. Whether the settings match the approved escalation policy is a person's review."
+        }
+      ],
+      "evidence_kinds": [
+        "Escalation policies with levels, targets and delays",
+        "Service to policy routing"
+      ],
+      "observation_types": [],
+      "providers": {
+        "pagerduty": "supported",
+        "slack": "not_possible"
+      },
+      "provider_notes": {
+        "pagerduty": "Escalation policies with rules (delay, targets), loops and services. Audit Trail does not record escalation level changes, so Verity's daily snapshots are the change history.",
+        "slack": "Slack has no escalation."
+      },
+      "artifacts": [
+        "escalation-policy"
+      ],
+      "aliases": [],
+      "sources": [
+        "connectors/operations-checks.md",
+        "connectors/pagerduty.md",
+        "connectors/slack.md"
+      ],
+      "population": "Escalation policies of in scope services",
+      "predicate": "At least two levels, each with a target; level 1 escalates within the set delay; level 2 targets someone other than level 1",
+      "period": "Point in time, checked daily",
+      "empty_population": "not stated in the connector document; the shared rule applies",
+      "parameters": {
+        "escalation_delay_minutes": "default 30 (operations owner decision 6)"
+      },
+      "notes": "New observation types proposed: escalation_policy and service (service to policy routing). escalation-policy is a document artifact (LM-08.A, C); the check fills only the configuration, approval of the policy stays with people."
+    },
+    {
+      "key": "alerts.incidents_registered",
+      "name": "Paged incidents are in the register",
+      "description": "Every security or major incident in the on call tool appears in Verity's incident register, or has a recorded decision there that it was not a security incident.",
+      "capabilities": [
+        "alerting",
+        "verity_tasks"
+      ],
+      "implementations": [
+        "pagerduty"
+      ],
+      "resource_type": "incident",
+      "frequency": "daily",
+      "remediation": "Add the listed incidents to the register, or record why each is not a security incident.",
+      "controls": [
+        {
+          "code": "LM-04",
+          "coverage": "partial",
+          "rationale": "Shows each paged security event got a recorded decision on whether it is an incident. Whether the decision was right is reviewed by people."
+        },
+        {
+          "code": "LM-07",
+          "coverage": "partial",
+          "rationale": "Shows the incident register is complete against security incidents paged in the period. Severity, the notice decision and handling under the plan stay with people."
+        }
+      ],
+      "evidence_kinds": [
+        "Security and major incidents in the period",
+        "Matching register entries and triage decisions"
+      ],
+      "observation_types": [
+        "incident"
+      ],
+      "providers": {
+        "pagerduty": "supported",
+        "slack": "not_possible"
+      },
+      "provider_notes": {
+        "pagerduty": "Supported with the Verity register: an entry synced with source pagerduty and the incident id, or linked by a person. Historic data: Free 3 months, Professional 1 year.",
+        "slack": "Slack has no incident record; incident channels hold conversation Verity does not read."
+      },
+      "artifacts": [
+        "security-incident-register",
+        "sample-of-evaluated-events-with-the"
+      ],
+      "aliases": [
+        "tickets.incidents_registered"
+      ],
+      "sources": [
+        "connectors/operations-checks.md",
+        "connectors/pagerduty.md",
+        "connectors/slack.md"
+      ],
+      "population": "Incidents in the last 30 days on services marked as security, plus any at or above the mapped major priority",
+      "predicate": "Each has a Verity register entry (synced with source pagerduty and the incident id, or linked by a person), or a recorded decision that it was not a security incident",
+      "period": "Last 30 days, checked daily",
+      "empty_population": "pass only when the incident list was read in full. Register sync off and nothing linked is insufficient",
+      "parameters": {
+        "major_priority": "the priority at or above which an incident counts as major",
+        "security_services": "services the customer marks as carrying security alerts"
+      },
+      "notes": "ALIAS of tickets.incidents_registered (same reconciliation, alerting source). See that entry: keep both while capabilities are all required; if the engine allows either capability, keep this key and add jira as an implementation. Conflict: this key passes on an empty list read in full, the Jira key reads insufficient. Fills security-incident-register for completeness only, and sample-of-evaluated-events-with-the partially."
+    },
+    {
+      "key": "alerts.postmortems_completed",
+      "name": "Major incidents have a completed review",
+      "description": "Every major or high priority incident resolved in the period has a completed post incident review within the set number of days.",
+      "capabilities": [
+        "alerting"
+      ],
+      "implementations": [
+        "pagerduty"
+      ],
+      "resource_type": "incident",
+      "frequency": "daily",
+      "remediation": "Complete the review for the listed incidents.",
+      "controls": [
+        {
+          "code": "LM-05",
+          "coverage": "partial",
+          "rationale": "Shows each major incident got a completed review in time. The content of the review, and its actions tracked to closure, are checked by people and the Tasks module."
+        }
+      ],
+      "evidence_kinds": [
+        "Major incidents",
+        "Post incident reviews with status and completion time"
+      ],
+      "observation_types": [
+        "incident"
+      ],
+      "providers": {
+        "pagerduty": "partial",
+        "slack": "not_possible"
+      },
+      "provider_notes": {
+        "pagerduty": "Post incident reviews need the Professional plan and above, and only count when the customer says reviews live in PagerDuty; a 402 reads not on plan and the artifact stays with people.",
+        "slack": "No incident or review record."
+      },
+      "artifacts": [
+        "postmortem-for-each-significant-incident"
+      ],
+      "aliases": [],
+      "sources": [
+        "connectors/operations-checks.md",
+        "connectors/pagerduty.md",
+        "connectors/slack.md"
+      ],
+      "population": "Only when the customer says reviews live in PagerDuty: incidents at or above the major priority resolved between 14 and 44 days ago",
+      "predicate": "A review with status completed, completed within the set days of resolution",
+      "period": "Incidents resolved between 14 and 44 days ago, checked daily",
+      "empty_population": "not stated in the connector document; the shared rule applies",
+      "parameters": {
+        "review_days": "default 14 (operations owner decision 6)",
+        "major_priority": "mapped major priority"
+      },
+      "notes": "New observation type proposed: incident_review (status started, in review, completed; created; completed). Review content and its actions stay with people and the Tasks module (tickets.remediation_tracked with LM-05)."
+    },
+    {
+      "key": "observability.monitors_notify_on_call",
+      "name": "High priority alerts page someone",
+      "description": "Every enabled high priority monitor or alert rule notifies an on call destination, not only email or chat.",
+      "capabilities": [
+        "observability"
+      ],
+      "implementations": [
+        "datadog",
+        "sentry"
+      ],
+      "resource_type": "monitor",
+      "frequency": "daily",
+      "remediation": "Add the paging tool as a destination on the listed monitors.",
+      "controls": [
+        {
+          "code": "LM-08",
+          "coverage": "partial",
+          "rationale": "Shows high priority alerts are sent to the paging tool. Whether someone is on call there is alerts.on_call_covered."
+        },
+        {
+          "code": "LM-09",
+          "coverage": "partial",
+          "rationale": "Shows each high priority alert has a destination that leads to a response. Tuning and removing unused alerts stay with people."
+        }
+      ],
+      "evidence_kinds": [
+        "Monitors and alert rules with their notification targets"
+      ],
+      "observation_types": [
+        "monitor"
+      ],
+      "providers": {
+        "datadog": "supported",
+        "sentry": "supported"
+      },
+      "provider_notes": {
+        "datadog": "Monitors at or above the mapped priority (default 1 and 2) and Cloud SIEM rules with high or critical cases; on call handles @pagerduty-, @oncall- or a webhook the customer marks as paging. Draft monitors excluded. Opsgenie handle format unverified.",
+        "sentry": "Enabled alerts on production projects marked high priority (default all with a production environment); an action targeting PagerDuty or Opsgenie (exact type values unverified) or a webhook marked as paging. Build only on the new workflows and detectors endpoints."
+      },
+      "artifacts": [
+        "review-of-alert-tuning",
+        "on-call-schedule"
+      ],
+      "aliases": [],
+      "sources": [
+        "connectors/operations-checks.md",
+        "connectors/datadog.md",
+        "connectors/sentry.md"
+      ],
+      "population": "Enabled high priority monitors and alert rules (Datadog: priority at or above the mapping and Cloud SIEM rules with high or critical cases; Sentry: alerts on production projects marked high priority)",
+      "predicate": "Each notification includes an on call destination (a paging tool handle or a webhook marked as paging); email or chat alone fails",
+      "period": "Point in time, checked daily",
+      "empty_population": "insufficient information: Datadog when no monitor has a priority and no tag mapping is set; Sentry when no alert is in the population",
+      "parameters": {
+        "priority_threshold": "default priorities 1 and 2",
+        "paging_handles": "default @pagerduty- and @oncall-; webhooks the customer marks as paging"
+      },
+      "notes": "Also reads detection rules on Datadog (new observation type detection_rule). Fills on-call-schedule for LM-08.C (alerts reach the rotation) per datadog.md and sentry.md, and review-of-alert-tuning partially. Related: alerts.security_routed (routing on the paging side)."
+    },
+    {
+      "key": "observability.production_services_monitored",
+      "name": "Production services are monitored",
+      "description": "Every production service known to the monitoring tool has at least one enabled alert that notifies someone.",
+      "capabilities": [
+        "observability"
+      ],
+      "implementations": [
+        "datadog",
+        "sentry"
+      ],
+      "resource_type": "service",
+      "frequency": "daily",
+      "remediation": "Add an alert for each listed service.",
+      "controls": [
+        {
+          "code": "LM-09",
+          "coverage": "partial",
+          "rationale": "Shows no production service is left without an alert. Whether the alerts cover the priority conditions is reviewed by people."
+        }
+      ],
+      "evidence_kinds": [
+        "Production services",
+        "Monitors matched to each service"
+      ],
+      "observation_types": [
+        "monitor"
+      ],
+      "providers": {
+        "datadog": "supported",
+        "sentry": "supported"
+      },
+      "provider_notes": {
+        "datadog": "Needs APM services in the mapped production environments, catalog entities with a production lifecycle, or production tagged hosts when APM is not used. Matching is a reading of queries and tags, shown per service.",
+        "sentry": "Projects with a production environment; each needs an enabled monitor with at least one enabled alert that has an action."
+      },
+      "artifacts": [
+        "review-of-alert-tuning"
+      ],
+      "aliases": [],
+      "sources": [
+        "connectors/operations-checks.md",
+        "connectors/datadog.md",
+        "connectors/sentry.md"
+      ],
+      "population": "Production services known to the monitoring tool (Datadog APM services, production catalog entities and production tagged hosts; Sentry projects with a production environment)",
+      "predicate": "Each is matched by at least one enabled monitor or alert, referencing it by service or host scope, that notifies someone",
+      "period": "Point in time, checked daily",
+      "empty_population": "insufficient information when no production services are found (APM off and no tags, or no project with a production environment)",
+      "parameters": {
+        "production_environments": "default prod and production"
+      },
+      "notes": "New observation type proposed: service (APM services, catalog entities, Sentry projects). Hosts disappear from Datadog after 7 days."
+    },
+    {
+      "key": "observability.silent_sources_alert",
+      "name": "A silent log source raises an alert",
+      "description": "Every in scope log source has an enabled alert that fires when the source stops sending.",
+      "capabilities": [
+        "observability"
+      ],
+      "implementations": [
+        "datadog"
+      ],
+      "resource_type": "log_source",
+      "frequency": "daily",
+      "remediation": "Add a missing data alert for each listed source.",
+      "controls": [
+        {
+          "code": "LM-02",
+          "coverage": "partial",
+          "rationale": "Shows a source that stops sending raises an alert. Whether every in scope system sends its logs is compared with the asset inventory by people."
+        }
+      ],
+      "evidence_kinds": [
+        "In scope log sources",
+        "Missing data monitors per source"
+      ],
+      "observation_types": [
+        "monitor"
+      ],
+      "providers": {
+        "datadog": "supported"
+      },
+      "provider_notes": {
+        "datadog": "Needs the list of in scope log sources (or an import from the asset inventory)."
+      },
+      "artifacts": [
+        "evidence-logs-are-reviewed"
+      ],
+      "aliases": [],
+      "sources": [
+        "connectors/operations-checks.md",
+        "connectors/datadog.md"
+      ],
+      "population": "In scope log sources the customer lists",
+      "predicate": "Each has an enabled log monitor on that source that alerts on missing data or a count below a threshold, notifying someone",
+      "period": "Point in time, checked daily",
+      "empty_population": "insufficient information when no sources are listed",
+      "parameters": {
+        "log_sources": "the in scope log sources, listed by the customer or taken from the asset inventory"
+      },
+      "notes": "New observation type proposed: log_source (customer listed sources). Sentry is n/a. Fills evidence-logs-are-reviewed for LM-02.B."
+    },
+    {
+      "key": "observability.siem_rules_enabled",
+      "name": "Detection rules are on and notify",
+      "description": "Enabled detection rules cover each condition the alerting standard names, and every high or critical case notifies someone.",
+      "capabilities": [
+        "observability"
+      ],
+      "implementations": [
+        "datadog"
+      ],
+      "resource_type": "detection_rule",
+      "frequency": "daily",
+      "remediation": "Turn on a rule for each listed condition and add a notification to its high and critical cases.",
+      "controls": [
+        {
+          "code": "LM-09",
+          "coverage": "partial",
+          "rationale": "Shows enabled detection rules exist for each condition the alerting standard names and that serious cases notify someone. Tuning stays with people."
+        },
+        {
+          "code": "LM-02",
+          "coverage": "partial",
+          "rationale": "Shows security events are reviewed continuously by rules, which LM-02.D accepts in place of a daily human review. The monthly review record stays with people."
+        },
+        {
+          "code": "NS-05",
+          "coverage": "partial",
+          "rationale": "Where the cloud audit trail feeds the rules, shows control plane misuse is detected. Turning on the provider's own detection service is cloud.threat_detection."
+        }
+      ],
+      "evidence_kinds": [
+        "Detection rules with state, cases and notifications",
+        "Mapping of rules to the conditions in the alerting standard"
+      ],
+      "observation_types": [],
+      "providers": {
+        "datadog": "supported"
+      },
+      "provider_notes": {
+        "datadog": "Cloud SIEM product only; without it the check reads not on plan once per connection. Rule to condition mapping proposed by Verity from rule names and tags, confirmed by the customer."
+      },
+      "artifacts": [
+        "review-of-alert-tuning",
+        "evidence-logs-are-reviewed"
+      ],
+      "aliases": [],
+      "sources": [
+        "connectors/operations-checks.md",
+        "connectors/datadog.md"
+      ],
+      "population": "Cloud SIEM rules not deleted, against the conditions the workspace's alerting standard names (LM-09.B list by default)",
+      "predicate": "Each condition has at least one enabled rule mapped to it; every enabled rule's high and critical cases notify someone",
+      "period": "Point in time, checked daily",
+      "empty_population": "not stated beyond not on plan without Cloud SIEM; the shared rule applies",
+      "parameters": {
+        "conditions": "the condition list in the alerting standard (LM-09.B by default)",
+        "rule_mapping": "rules mapped to conditions, customer confirmed"
+      },
+      "notes": "New observation type proposed: detection_rule; none of the 1.4 types fits. Reads its condition list from the alerting standard (alerting-standard, a document; LM-09.B list by default), so that list must be machine readable. Fills evidence-logs-are-reviewed for LM-02.D. Related: cloud.threat_detection (NS-05)."
+    },
+    {
+      "key": "observability.security_signals_triaged",
+      "name": "Security signals are triaged in time",
+      "description": "Every high or critical security signal was taken up by a named person within the response time, and every closed signal carries a reason.",
+      "capabilities": [
+        "observability"
+      ],
+      "implementations": [
+        "datadog"
+      ],
+      "resource_type": "signal",
+      "frequency": "daily",
+      "remediation": "Triage the listed signals and record a reason on each one closed.",
+      "controls": [
+        {
+          "code": "LM-04",
+          "coverage": "partial",
+          "rationale": "Shows each serious security signal was looked at by a named person in time and closed with a reason. Whether it was an incident, and is in the register, stays with people."
+        },
+        {
+          "code": "NS-05",
+          "coverage": "partial",
+          "rationale": "For threat detection findings that reach the SIEM, shows each was triaged within the response time. Findings that never reach the SIEM need their own evidence."
+        }
+      ],
+      "evidence_kinds": [
+        "Security signals with triage state, assignee and times"
+      ],
+      "observation_types": [],
+      "providers": {
+        "datadog": "supported"
+      },
+      "provider_notes": {
+        "datadog": "Cloud SIEM product only. First triage time comes from the audit trail (audit_logs_read needs a custom role); without it a last state change inside the window proves the first one was too. Signals lock 30 days after creation. Presence of triage fields in list results unverified."
+      },
+      "artifacts": [
+        "sample-of-evaluated-events-with-the",
+        "sample-of-alerts-that-were-investigated"
+      ],
+      "aliases": [],
+      "sources": [
+        "connectors/operations-checks.md",
+        "connectors/datadog.md"
+      ],
+      "population": "High and critical signals created in the last 30 days, past their response time",
+      "predicate": "Each left the open state within the response time, with an assignee or a named user on the state change; every archived one has a reason other than none",
+      "period": "Last 30 days, checked daily",
+      "empty_population": "not stated; the shared rule applies. Insufficient when the last change is after the window and the audit trail cannot show the first",
+      "parameters": {
+        "response_time_hours": "default 24 (operations owner decision 6)"
+      },
+      "notes": "New observation type proposed: security_signal (triage state, assignee, archive reason, times); the 1.4 alert type lacks triage fields. NS-05.E tuning decisions stay with people."
+    },
+    {
+      "key": "observability.audit_trail_enabled",
+      "name": "The monitoring tool records its own changes",
+      "description": "The monitoring tool's audit trail is on, so changes to monitors, log retention and keys are recorded with who made them.",
+      "capabilities": [
+        "observability"
+      ],
+      "implementations": [
+        "datadog"
+      ],
+      "resource_type": "organization",
+      "frequency": "daily",
+      "remediation": "Turn on the audit trail and keep its events for at least 90 days.",
+      "controls": [
+        {
+          "code": "LM-02",
+          "coverage": "partial",
+          "rationale": "Shows changes to log retention, indexes and monitors are recorded with the person who made them. Who may delete logs is reviewed by people."
+        }
+      ],
+      "evidence_kinds": [
+        "Audit trail events by type and age"
+      ],
+      "observation_types": [],
+      "providers": {
+        "datadog": "partial",
+        "sentry": "not_possible"
+      },
+      "provider_notes": {
+        "datadog": "Inferred from event age: no endpoint reports whether Audit Trail is on (unverified). Audit Trail is a paid add on; off keeps 7 days, so no event older than 8 days fails with reason plan or setting.",
+        "sentry": "The organisation audit log endpoint is undocumented, experimental and needs org:write even to read (operations owner decision 8)."
+      },
+      "artifacts": [],
+      "aliases": [],
+      "sources": [
+        "connectors/operations-checks.md",
+        "connectors/datadog.md",
+        "connectors/sentry.md"
+      ],
+      "population": "The organisation",
+      "predicate": "Audit Trail events older than 8 days exist",
+      "period": "Point in time, checked daily",
+      "empty_population": "insufficient information while the connection is younger than 8 days",
+      "parameters": {
+        "min_event_age_days": "8, since with Audit Trail off Datadog keeps 7 days"
+      },
+      "notes": "New observation type proposed: audit_event (counts by type and age only). No artifact is named for this check in operations-checks.md section 4 or datadog.md section 6, so as written it fills nothing and cannot move an objective (the same problem section 2 raises for observability.logs_retained). Suggestion from extraction, not the research: add it to the proposed log-retention-settings artifact (LM-02.C)."
+    },
+    {
+      "key": "observability.errors_triaged_in_time",
+      "name": "Production errors are triaged in time",
+      "description": "Every high priority error in production was assigned, resolved or archived within the triage time, and none stays unresolved past the fix time without an owner.",
+      "capabilities": [
+        "observability"
+      ],
+      "implementations": [
+        "sentry"
+      ],
+      "resource_type": "issue",
+      "frequency": "daily",
+      "remediation": "Assign or resolve the listed errors.",
+      "controls": [
+        {
+          "code": "SD-08",
+          "coverage": "partial",
+          "rationale": "Shows failures reported as production errors were picked up and handled within the target. Reconciling outputs with inputs is separate."
+        }
+      ],
+      "evidence_kinds": [
+        "Production issues with first seen, assignment and resolution times"
+      ],
+      "observation_types": [],
+      "providers": {
+        "sentry": "supported"
+      },
+      "provider_notes": {
+        "sentry": "Resolve, assign and archive times come from each issue's activity (activity type names unverified); the issue list has no resolved at field. The Developer plan has no API access (error with reason plan). Always pass an explicit query, the default hides resolved issues."
+      },
+      "artifacts": [
+        "reconciliation-results-and-how-exceptions-were"
+      ],
+      "aliases": [],
+      "sources": [
+        "connectors/operations-checks.md",
+        "connectors/sentry.md"
+      ],
+      "population": "Issues in production with priority high (or level fatal), first seen in the last 30 days, older than the triage time",
+      "predicate": "Within the triage time the issue was assigned, resolved or archived; any still unresolved after the fix time has an assignee",
+      "period": "Last 30 days, checked daily",
+      "empty_population": "not stated; the shared rule applies. Insufficient when activity is unreadable for an issue or the issue list is cut short",
+      "parameters": {
+        "triage_hours": "default 72 (operations owner decision 6)",
+        "fix_days": "default 30"
+      },
+      "notes": "New observation type proposed: error_issue (Sentry issue with first seen, assignment, resolution, priority, level). Datadog n/a. Fills reconciliation-results-and-how-exceptions-were for SD-08.B only. Regressions count again from their regression time."
+    },
+    {
+      "key": "edge.hsts_enabled",
+      "name": "Browsers must use HTTPS",
+      "description": "Every public zone sends a strict transport security header with a long enough lifetime.",
+      "capabilities": [
+        "network_edge"
+      ],
+      "implementations": [
+        "cloudflare"
+      ],
+      "resource_type": "zone",
+      "frequency": "daily",
+      "remediation": "Turn on HSTS for the zone with a lifetime of at least 180 days.",
+      "controls": [
+        {
+          "code": "NS-02",
+          "coverage": "partial",
+          "rationale": "Shows browsers are told to refuse plain HTTP to the zone, which NS-02.C asks. Internal traffic is separate."
+        }
+      ],
+      "evidence_kinds": [
+        "HSTS settings per zone"
+      ],
+      "observation_types": [
+        "edge.zone"
+      ],
+      "providers": {
+        "cloudflare": "supported"
+      },
+      "provider_notes": {
+        "cloudflare": "Zone setting security_header. A zone whose origin sends the header can be left out with that reason."
+      },
+      "artifacts": [
+        "public-endpoint-tls-scan"
+      ],
+      "aliases": [],
+      "sources": [
+        "connectors/operations-checks.md",
+        "connectors/cloudflare.md"
+      ],
+      "population": "In scope zones serving web traffic",
+      "predicate": "HSTS enabled with max age at least the set lifetime, and include subdomains where the workspace standard asks",
+      "period": "Point in time, checked daily; each daily result is the record for that day",
+      "empty_population": "not stated; the shared rule applies",
+      "parameters": {
+        "hsts_max_age_days": "default 180 (operations owner decision 6)"
+      },
+      "notes": "Tailscale n/a. Fills public-endpoint-tls-scan partially (settings, not a scan)."
+    },
+    {
+      "key": "edge.origin_tls_verified",
+      "name": "Traffic to the origin is verified",
+      "description": "The edge connects to each origin over TLS and checks the origin's certificate.",
+      "capabilities": [
+        "network_edge"
+      ],
+      "implementations": [
+        "cloudflare"
+      ],
+      "resource_type": "zone",
+      "frequency": "daily",
+      "remediation": "Install a trusted or origin certificate and set the zone's encryption mode to Full (strict).",
+      "controls": [
+        {
+          "code": "NS-02",
+          "coverage": "partial",
+          "rationale": "Shows the hop from the edge to the origin is encrypted and the origin certificate is validated. Traffic between internal services and to databases needs its own evidence."
+        }
+      ],
+      "evidence_kinds": [
+        "Encryption mode per zone"
+      ],
+      "observation_types": [
+        "edge.zone"
+      ],
+      "providers": {
+        "cloudflare": "supported"
+      },
+      "provider_notes": {
+        "cloudflare": "Zone settings ssl and ssl_automatic_mode. Automatic mode may report a value that is not the effective mode (unverified), and the origin_pull value's meaning is unverified; both read insufficient."
+      },
+      "artifacts": [
+        "public-endpoint-tls-scan"
+      ],
+      "aliases": [],
+      "sources": [
+        "connectors/operations-checks.md",
+        "connectors/cloudflare.md"
+      ],
+      "population": "In scope zones",
+      "predicate": "Encryption mode is Full (strict); off, Flexible or Full fail",
+      "period": "Point in time, checked daily; each daily result is the record for that day",
+      "empty_population": "not stated; the shared rule applies",
+      "parameters": {},
+      "notes": "Fills public-endpoint-tls-scan partially."
+    },
+    {
+      "key": "edge.dnssec_enabled",
+      "name": "DNS answers are signed",
+      "description": "Every zone whose DNS the edge serves has DNSSEC active.",
+      "capabilities": [
+        "network_edge"
+      ],
+      "implementations": [
+        "cloudflare"
+      ],
+      "resource_type": "zone",
+      "frequency": "daily",
+      "remediation": "Turn on DNSSEC and add the DS record at the registrar.",
+      "controls": [
+        {
+          "code": "NS-02",
+          "coverage": "partial",
+          "rationale": "Shows answers for the company's domains are signed, so a client is not sent to a forged endpoint. It supports the endpoint authentication NS-02 relies on; no objective asks for it by name."
+        }
+      ],
+      "evidence_kinds": [
+        "DNSSEC status per zone"
+      ],
+      "observation_types": [
+        "edge.zone"
+      ],
+      "providers": {
+        "cloudflare": "supported"
+      },
+      "provider_notes": {
+        "cloudflare": "Zones using Cloudflare as their DNS. Pending (DS record not at the registrar) fails."
+      },
+      "artifacts": [],
+      "aliases": [],
+      "sources": [
+        "connectors/operations-checks.md",
+        "connectors/cloudflare.md"
+      ],
+      "population": "In scope zones using Cloudflare as their DNS",
+      "predicate": "DNSSEC status is active",
+      "period": "Point in time, checked daily; each daily result is the record for that day",
+      "empty_population": "not stated; the shared rule applies",
+      "parameters": {},
+      "notes": "No artifact names this check (operations-checks.md section 4, cloudflare.md section 6), and its NS-02 rationale says no objective asks for it by name. Operations owner decision 7: keep it mapped to NS-02 partial or drop it until an objective asks."
+    },
+    {
+      "key": "edge.origin_locked",
+      "name": "Origins accept only edge traffic",
+      "description": "Each proxied hostname reaches its origin through a tunnel, or the edge presents a client certificate that the origin can require.",
+      "capabilities": [
+        "network_edge"
+      ],
+      "implementations": [
+        "cloudflare"
+      ],
+      "resource_type": "hostname",
+      "frequency": "daily",
+      "remediation": "Serve the listed hostnames through a tunnel, or turn on authenticated origin pulls and require the certificate at the origin.",
+      "controls": [
+        {
+          "code": "NS-10",
+          "coverage": "partial",
+          "rationale": "Shows the edge is set up so the origin can refuse traffic that bypasses the firewall. That the origin does refuse it needs a cloud network check or a test."
+        }
+      ],
+      "evidence_kinds": [
+        "Tunnels and their hostnames",
+        "Authenticated origin pull settings"
+      ],
+      "observation_types": [
+        "edge.zone"
+      ],
+      "providers": {
+        "cloudflare": "partial"
+      },
+      "provider_notes": {
+        "cloudflare": "Edge side only: the origin side is not visible. Hostname to tunnel mapping through the DNS record target is unverified; a tunnel's health unreadable reads insufficient."
+      },
+      "artifacts": [
+        "review-of-web-application-firewall-rules"
+      ],
+      "aliases": [],
+      "sources": [
+        "connectors/operations-checks.md",
+        "connectors/cloudflare.md"
+      ],
+      "population": "Proxied hostnames in scope",
+      "predicate": "Served through a healthy tunnel, or authenticated origin pulls on at zone or hostname level",
+      "period": "Point in time, checked daily; each daily result is the record for that day",
+      "empty_population": "not stated; the shared rule applies",
+      "parameters": {},
+      "notes": "New observation types proposed: edge.tunnel and edge.hostname (proxied records). NEED cloud_infrastructure: security groups or firewalls in front of each origin allow inbound web traffic only from the edge's published ranges, or no public port where a tunnel is used (NS-10.C)."
+    },
+    {
+      "key": "edge.access_policies_least_privilege",
+      "name": "Access rules name groups, not everyone",
+      "description": "No access rule lets everyone reach everything, and every rule that reaches production names a group, a tag or the company identity provider.",
+      "capabilities": [
+        "network_edge"
+      ],
+      "implementations": [
+        "cloudflare",
+        "tailscale"
+      ],
+      "resource_type": "policy",
+      "frequency": "daily",
+      "remediation": "Replace the listed rules with rules for named groups.",
+      "controls": [
+        {
+          "code": "NS-11",
+          "coverage": "partial",
+          "rationale": "Shows access is granted per application or tag to named groups, which NS-11.D asks. Logging and review of sessions stay with people."
+        },
+        {
+          "code": "IAM-08",
+          "coverage": "partial",
+          "rationale": "Shows network access to production is granted through groups. Whether group membership matches roles is idp.groups_drive_access and a person's review."
+        }
+      ],
+      "evidence_kinds": [
+        "Access policy or application policies",
+        "Rules flagged as open to everyone"
+      ],
+      "observation_types": [
+        "edge.policy"
+      ],
+      "providers": {
+        "cloudflare": "supported",
+        "tailscale": "supported"
+      },
+      "provider_notes": {
+        "cloudflare": "Access applications of type self hosted, SSH, RDP and VNC: no allow policy includes everyone without a require rule naming a group, the company email domain or an identity provider group; no bypass on a whole application unless marked public with a reason; one time PIN excluded unless a reason is recorded.",
+        "tailscale": "Policy file: no ACL from * to *:* and no grant from * to * on all ports; rules into production tags name groups, tags or users. Both acls and grants are evaluated. New tailnets start with an allow all policy."
+      },
+      "artifacts": [
+        "remote-access-settings-and-members",
+        "group-and-role-membership-export"
+      ],
+      "aliases": [],
+      "sources": [
+        "connectors/operations-checks.md",
+        "connectors/cloudflare.md",
+        "connectors/tailscale.md"
+      ],
+      "population": "Cloudflare: Access applications of type self hosted, SSH, RDP and VNC. Tailscale: the policy file",
+      "predicate": "No access rule lets everyone reach everything, and every rule that reaches production names a group, a tag or the company identity provider",
+      "period": "Point in time, checked daily; each daily result is the record for that day",
+      "empty_population": "not stated; Tailscale reads insufficient when the policy is unparsable",
+      "parameters": {
+        "production_tags": "tags the customer marks as production (Tailscale)",
+        "all_members_counts_as_open": "configurable on Tailscale"
+      },
+      "notes": "group-and-role-membership-export (IAM-08.B) comes from tailscale.md section 6 only, partial: shows grants go to groups; the membership export itself is the identity provider's. Related: idp.groups_drive_access."
+    },
+    {
+      "key": "edge.devices_verified",
+      "name": "Only approved devices connect",
+      "description": "New devices need approval before they can connect, and administrative applications require a device check.",
+      "capabilities": [
+        "network_edge"
+      ],
+      "implementations": [
+        "cloudflare",
+        "tailscale"
+      ],
+      "resource_type": "policy",
+      "frequency": "daily",
+      "remediation": "Turn on device approval, and add a device posture requirement to the listed applications.",
+      "controls": [
+        {
+          "code": "NS-11",
+          "coverage": "partial",
+          "rationale": "Shows the remote access tool enforces the device rules the standard sets, which NS-11.B asks. The second factor at sign in is enforced in the identity provider (idp.mfa_enforced)."
+        }
+      ],
+      "evidence_kinds": [
+        "Device approval settings",
+        "Device posture requirements per application"
+      ],
+      "observation_types": [
+        "edge.policy"
+      ],
+      "providers": {
+        "cloudflare": "partial",
+        "tailscale": "supported"
+      },
+      "provider_notes": {
+        "cloudflare": "Device posture permission unverified (the posture endpoint lists no accepted permission), and account owned tokens are not supported for the Zero Trust client platform (whether posture falls under it is unverified). Applies to Access applications the customer marks administrative.",
+        "tailscale": "Device approval setting on; where the workspace standard requires a device check, rules into production carry a posture condition."
+      },
+      "artifacts": [
+        "remote-access-settings-and-members"
+      ],
+      "aliases": [],
+      "sources": [
+        "connectors/operations-checks.md",
+        "connectors/cloudflare.md",
+        "connectors/tailscale.md"
+      ],
+      "population": "Cloudflare: Access applications the customer marks administrative. Tailscale: tailnet settings, and rules into production when the standard asks for posture",
+      "predicate": "New devices need approval before they can connect, and administrative applications require a device check",
+      "period": "Point in time, checked daily; each daily result is the record for that day",
+      "empty_population": "insufficient information on Cloudflare when no application is marked administrative",
+      "parameters": {},
+      "notes": "Reads settings and posture rules; settings could be carried on edge.policy. Second factor is idp.mfa_enforced (NEED identity_provider for remote access members). Reusable preauthorized auth keys on Tailscale are listed with the result."
+    },
+    {
+      "key": "edge.device_keys_expire",
+      "name": "Device access expires",
+      "description": "Device keys expire within the set number of days, and no person's device has expiry turned off.",
+      "capabilities": [
+        "network_edge"
+      ],
+      "implementations": [
+        "tailscale"
+      ],
+      "resource_type": "device",
+      "frequency": "daily",
+      "remediation": "Shorten the key expiry, and turn expiry back on for the listed devices.",
+      "controls": [
+        {
+          "code": "NS-11",
+          "coverage": "partial",
+          "rationale": "Shows each device must sign in again through the identity provider within the set time, so a lost device or a leaver loses access when the key expires."
+        },
+        {
+          "code": "IAM-11",
+          "coverage": "partial",
+          "rationale": "Shows remote access sessions have a maximum length. Idle timeouts, and sessions in other systems, are separate."
+        }
+      ],
+      "evidence_kinds": [
+        "Key expiry setting",
+        "Devices with expiry turned off"
+      ],
+      "observation_types": [
+        "edge.policy"
+      ],
+      "providers": {
+        "tailscale": "supported"
+      },
+      "provider_notes": {
+        "tailscale": "Key duration setting and devices with expiry turned off. Tagged server devices are listed, not judged; tagged devices that look like personal machines (by OS) are listed for review."
+      },
+      "artifacts": [
+        "remote-access-settings-and-members",
+        "session-limit-settings-export"
+      ],
+      "aliases": [],
+      "sources": [
+        "connectors/operations-checks.md",
+        "connectors/tailscale.md"
+      ],
+      "population": "Devices of people (untagged) and the tailnet key duration",
+      "predicate": "Key duration at most the workspace standard; no person's device has expiry turned off unless left out with a reason",
+      "period": "Point in time, checked daily; each daily result is the record for that day",
+      "empty_population": "not stated; the shared rule applies",
+      "parameters": {
+        "key_expiry_days": "default 180, the Tailscale maximum (operations owner decision 6)"
+      },
+      "notes": "New observation type proposed: edge.device (tailnet devices); the 1.4 device type belongs to device_management and endpoint_protection. Fills session-limit-settings-export for IAM-11.B (remote access only). Cloudflare n/a."
+    },
+    {
+      "key": "edge.members_current",
+      "name": "Remote access members are current staff",
+      "description": "Every active member of the remote access tool is an active user in the identity provider.",
+      "capabilities": [
+        "network_edge",
+        "identity_provider"
+      ],
+      "implementations": [
+        "tailscale"
+      ],
+      "resource_type": "user",
+      "frequency": "daily",
+      "remediation": "Suspend or remove the listed members.",
+      "controls": [
+        {
+          "code": "NS-11",
+          "coverage": "partial",
+          "rationale": "Shows only current staff hold remote access, which NS-11.C asks."
+        },
+        {
+          "code": "IAM-12",
+          "coverage": "partial",
+          "rationale": "Shows leavers do not keep remote access. How fast it was removed is people.leavers_deprovisioned."
+        }
+      ],
+      "evidence_kinds": [
+        "Remote access members",
+        "Identity provider status of each member"
+      ],
+      "observation_types": [
+        "identity.user"
+      ],
+      "providers": {
+        "tailscale": "supported"
+      },
+      "provider_notes": {
+        "tailscale": "Needs a connected identity provider; without one insufficient. A user suspended in the identity provider can stay connected until device keys expire."
+      },
+      "artifacts": [
+        "remote-access-settings-and-members"
+      ],
+      "aliases": [],
+      "sources": [
+        "connectors/operations-checks.md",
+        "connectors/tailscale.md"
+      ],
+      "population": "Users of type member with status active or idle",
+      "predicate": "Each login name is an active user in the connected identity provider",
+      "period": "Point in time, checked daily; each daily result is the record for that day",
+      "empty_population": "insufficient information when no identity provider is connected",
+      "parameters": {},
+      "notes": "New observation type proposed: edge.member (tailnet users with role and status). Related: people.accounts_match_roster, people.leavers_deprovisioned."
+    },
+    {
+      "key": "edge.policy_tests_defined",
+      "name": "The access policy tests its boundaries",
+      "description": "The access policy holds tests that expect paths into production to be denied from sources that should not reach it, so a change that opens such a path is refused.",
+      "capabilities": [
+        "network_edge"
+      ],
+      "implementations": [
+        "tailscale"
+      ],
+      "resource_type": "policy",
+      "frequency": "daily",
+      "remediation": "Add deny tests for each production tag to the policy.",
+      "controls": [
+        {
+          "code": "NS-07",
+          "coverage": "partial",
+          "rationale": "Shows the network policy asserts blocked paths into production and every policy change is tested against them before it applies. Paths outside the tailnet need a cloud check or a penetration test."
+        }
+      ],
+      "evidence_kinds": [
+        "Policy tests and the production tags they protect"
+      ],
+      "observation_types": [
+        "edge.policy"
+      ],
+      "providers": {
+        "tailscale": "supported"
+      },
+      "provider_notes": {
+        "tailscale": "Policy file tests; Tailscale rejects a policy change that makes a test fail."
+      },
+      "artifacts": [
+        "segmentation-test-results"
+      ],
+      "aliases": [],
+      "sources": [
+        "connectors/operations-checks.md",
+        "connectors/tailscale.md"
+      ],
+      "population": "The policy file and the production tags",
+      "predicate": "For each production tag, at least one test expects traffic to it to be denied from a source that should not reach it",
+      "period": "Point in time, checked daily; each daily result is the record for that day",
+      "empty_population": "insufficient information when no production tag is marked",
+      "parameters": {
+        "production_tags": "tags the customer marks as production"
+      },
+      "notes": "Fills segmentation-test-results partially (tests inside the tailnet only). Where the policy file is managed in git, its changes are reviewed through the version control checks."
+    }
+  ],
+  "existing_implementations": [
+    {
+      "check": "idp.mfa_enforced",
+      "provider": "entra",
+      "support": "supported",
+      "note": "Security defaults on, or an enabled (not report only) Conditional Access policy for all users and apps requiring MFA or an authentication strength; exclusions are recorded exceptions; every enabled member isMfaCapable. P1 for Conditional Access, Free through security defaults. Federated domain users read insufficient. Per user (legacy) MFA not read.",
+      "source": "connectors/entra-id.md"
+    },
+    {
+      "check": "idp.sso_enforced",
+      "provider": "entra",
+      "support": "partial",
+      "note": "Vendor register apps matched to service principals with preferredSingleSignOnMode saml or oidc (null for multi tenant apps). password mode is vaulted passwords. Apps not in Entra listed as outside it; cannot see whether the app still allows local passwords.",
+      "source": "connectors/entra-id.md"
+    },
+    {
+      "check": "idp.password_policy",
+      "provider": "entra",
+      "support": "partial",
+      "note": "Only configurable items judged: expiry, banned passwords, lockout. Length (8 to 256) and complexity are fixed by Microsoft; a 12 character rule cannot be met. On premises synced users read insufficient. Custom lockout and banned lists need P1.",
+      "source": "connectors/entra-id.md"
+    },
+    {
+      "check": "idp.session_timeout",
+      "provider": "entra",
+      "support": "partial",
+      "note": "No tenant wide idle timeout; the Microsoft 365 idle policy covers web apps only. Sign in frequency needs P1. persistentBrowser never required.",
+      "source": "connectors/entra-id.md"
+    },
+    {
+      "check": "idp.admins_limited",
+      "provider": "entra",
+      "support": "supported",
+      "note": "Active and eligible holders of every directory role, groups expanded; Global Administrator count within limit; service principals holding roles listed. PIM needs P2 or Governance.",
+      "source": "connectors/entra-id.md"
+    },
+    {
+      "check": "idp.access_list_exported",
+      "provider": "entra",
+      "support": "supported",
+      "note": "All users with groups and roles; insufficient when truncated. Weekly.",
+      "source": "connectors/entra-id.md"
+    },
+    {
+      "check": "idp.groups_drive_access",
+      "provider": "entra",
+      "support": "supported",
+      "note": "Supported with P1: Free tenants cannot assign groups, so they fail with reason plan. Nested groups do not cascade. Weekly.",
+      "source": "connectors/entra-id.md"
+    },
+    {
+      "check": "idp.connected_apps_known",
+      "provider": "entra",
+      "support": "supported",
+      "note": "Service principals owned by another organisation holding delegated grants or application permissions; Microsoft first party apps left out by owner tenant (tenant id list unverified). DelegatedPermissionGrant.Read.All first, Directory.Read.All only as fallback.",
+      "source": "connectors/entra-id.md"
+    },
+    {
+      "check": "people.leavers_deprovisioned",
+      "provider": "entra",
+      "support": "partial",
+      "note": "Needs a leaver roster (or employeeLeaveDateTime when HR writes it, licence unverified). Directory audits kept 30 days (7 on Free), so Verity's daily snapshots keep the trail. Disabling Entra does not prove other systems were removed.",
+      "source": "connectors/entra-id.md"
+    },
+    {
+      "check": "people.joiners_onboarded",
+      "provider": "entra",
+      "support": "partial",
+      "note": "Needs onboarding records; createdDateTime is null for some accounts made before June 2018.",
+      "source": "connectors/entra-id.md"
+    },
+    {
+      "check": "tickets.access_requests_approved",
+      "provider": "entra",
+      "support": "partial",
+      "note": "Identity side only: group, role and app assignment events from directory audits (30 days, 7 Free); approvals come from ticketing.",
+      "source": "connectors/entra-id.md"
+    },
+    {
+      "check": "idp.mfa_enforced",
+      "provider": "okta",
+      "support": "supported",
+      "note": "Identity Engine: every authentication policy rule that allows access requires two factors, read in priority order; global session policy does not let a password alone open a session. Classic: sign on policy rules. Each user has an active factor other than password or email. Upstream identity provider users read insufficient.",
+      "source": "connectors/okta.md"
+    },
+    {
+      "check": "idp.sso_enforced",
+      "provider": "okta",
+      "support": "partial",
+      "note": "signOnMode SAML_2_0, SAML_1_1, OPENID_CONNECT or WS_FEDERATION; AUTO_LOGIN, BROWSER_PLUGIN, BASIC_AUTH, SECURE_PASSWORD_STORE store passwords; BOOKMARK is a link. Apps missing from Okta listed as outside; local passwords not visible.",
+      "source": "connectors/okta.md"
+    },
+    {
+      "check": "idp.password_policy",
+      "provider": "okta",
+      "support": "supported",
+      "note": "minLength, complexity, historyCount, maxAgeDays, lockout maxAttempts and autoUnlockMinutes, common password check (JSON paths unverified). Users signing in through an upstream provider do not use the Okta password. Strongest of the three identity providers.",
+      "source": "connectors/okta.md"
+    },
+    {
+      "check": "idp.session_timeout",
+      "provider": "okta",
+      "support": "supported",
+      "note": "maxSessionIdleMinutes, maxSessionLifetimeMinutes, usePersistentCookie false, app re-authentication interval. The weakest rule decides; default idle 120 minutes. Admin Console re-authentication interval partly covers IAM-11.C.",
+      "source": "connectors/okta.md"
+    },
+    {
+      "check": "idp.admins_limited",
+      "provider": "okta",
+      "support": "supported",
+      "note": "Users, groups and clients holding any admin role; apps holding SUPER_ADMIN listed. Reading roles may need more than Read-only Administrator (test on a developer org); a refused read is error, never pass.",
+      "source": "connectors/okta.md"
+    },
+    {
+      "check": "idp.access_list_exported",
+      "provider": "okta",
+      "support": "supported",
+      "note": "All users with groups, apps and roles; insufficient when truncated.",
+      "source": "connectors/okta.md"
+    },
+    {
+      "check": "idp.groups_drive_access",
+      "provider": "okta",
+      "support": "supported",
+      "note": "Every assignment comes through a group (app user scope field unverified; else compare app users with app groups).",
+      "source": "connectors/okta.md"
+    },
+    {
+      "check": "idp.connected_apps_known",
+      "provider": "okta",
+      "support": "partial",
+      "note": "Apps in Okta only; Okta does not see OAuth consents staff give inside other platforms.",
+      "source": "connectors/okta.md"
+    },
+    {
+      "check": "people.leavers_deprovisioned",
+      "provider": "okta",
+      "support": "partial",
+      "note": "Needs a leaver roster. Time from statusChanged and user.lifecycle.deactivate or suspend; deprovisioned users must be queried explicitly; 90 day System Log.",
+      "source": "connectors/okta.md"
+    },
+    {
+      "check": "people.joiners_onboarded",
+      "provider": "okta",
+      "support": "partial",
+      "note": "Needs onboarding records.",
+      "source": "connectors/okta.md"
+    },
+    {
+      "check": "tickets.access_requests_approved",
+      "provider": "okta",
+      "support": "partial",
+      "note": "Identity side only: membership, app assignment and privilege grant events, 90 days of System Log.",
+      "source": "connectors/okta.md"
+    },
+    {
+      "check": "idp.mfa_enforced",
+      "provider": "gws",
+      "support": "supported",
+      "note": "Every user isEnforcedIn2Sv and isEnrolledIn2Sv; less secure apps off. Users signing in through a third party SAML provider read insufficient. A unit with a long grace period shows enrolled users not yet forced.",
+      "source": "connectors/google-workspace.md"
+    },
+    {
+      "check": "idp.sso_enforced",
+      "provider": "gws",
+      "support": "partial",
+      "note": "Vendor register apps signed into through Google in 180 days (saml or token authorise events). No documented API lists custom SAML apps or assignments (unverified), so an app unused for 180 days is invisible.",
+      "source": "connectors/google-workspace.md"
+    },
+    {
+      "check": "idp.password_policy",
+      "provider": "gws",
+      "support": "partial",
+      "note": "security.password per unit plus password_length_compliance per user. Lockout is not a Google setting (not applicable). Needs a super admin subject for the Policy API, else error.",
+      "source": "connectors/google-workspace.md"
+    },
+    {
+      "check": "idp.session_timeout",
+      "provider": "gws",
+      "support": "partial",
+      "note": "webSessionDuration only (maximum); no idle timeout exists (not applicable). Needs a super admin subject.",
+      "source": "connectors/google-workspace.md"
+    },
+    {
+      "check": "idp.admins_limited",
+      "provider": "gws",
+      "support": "supported",
+      "note": "isAdmin, isDelegatedAdmin and every role assignment (groups expanded, service accounts listed); super admin count within limit. Usage report admin fields ended 15 Nov 2024; use role assignments.",
+      "source": "connectors/google-workspace.md"
+    },
+    {
+      "check": "idp.access_list_exported",
+      "provider": "gws",
+      "support": "supported",
+      "note": "All users with groups and roles; insufficient when truncated.",
+      "source": "connectors/google-workspace.md"
+    },
+    {
+      "check": "idp.groups_drive_access",
+      "provider": "gws",
+      "support": "not_possible",
+      "note": "App access for Google's SAML apps is set per unit or group in the console with no read API found (unverified); shown as not applicable with that reason.",
+      "source": "connectors/google-workspace.md"
+    },
+    {
+      "check": "idp.connected_apps_known",
+      "provider": "gws",
+      "support": "partial",
+      "note": "OAuth clients authorised in 180 days from token events; older unused grants invisible; num_authorized_apps flags users with more clients than seen. Avoids the write capable admin.directory.user.security scope.",
+      "source": "connectors/google-workspace.md"
+    },
+    {
+      "check": "people.leavers_deprovisioned",
+      "provider": "gws",
+      "support": "partial",
+      "note": "Needs a leaver roster; time from admin audit events (event names to confirm) or snapshots; suspension is enough.",
+      "source": "connectors/google-workspace.md"
+    },
+    {
+      "check": "people.joiners_onboarded",
+      "provider": "gws",
+      "support": "partial",
+      "note": "Needs onboarding records; creationTime.",
+      "source": "connectors/google-workspace.md"
+    },
+    {
+      "check": "tickets.access_requests_approved",
+      "provider": "gws",
+      "support": "partial",
+      "note": "Identity side only: role and group change events, 180 days.",
+      "source": "connectors/google-workspace.md"
+    },
+    {
+      "check": "vault.everyone_enrolled",
+      "provider": "onepassword",
+      "support": "supported",
+      "note": "Needs a staff roster. Each active roster person has an ACTIVE member matched by email; invited but not joined counts as not enrolled. With automated provisioning the identity provider's assignment is read instead. Users API: Business or Enterprise, not Teams.",
+      "source": "connectors/1password.md"
+    },
+    {
+      "check": "idp.mfa_enforced",
+      "provider": "onepassword",
+      "support": "not_possible",
+      "note": "Feasibility matrix marks n/a. Member two factor is not exposed by any API (only the console team report); audit events show only changes. Owners' and admins' two factor (IAM-03.C) stays a person's upload. Recorded so the gap is not lost.",
+      "source": "connectors/1password.md"
+    },
+    {
+      "check": "idp.sso_enforced",
+      "provider": "onepassword",
+      "support": "partial",
+      "note": "Only unlock with SSO set up per user (sdvcsso) and account SSO change events; owners cannot unlock with SSO and always keep a password. 1Password is the application here; the identity provider's connector shows it signs in through it.",
+      "source": "connectors/1password.md"
+    },
+    {
+      "check": "idp.password_policy",
+      "provider": "onepassword",
+      "support": "not_possible",
+      "note": "Account policies are not exposed by any documented API.",
+      "source": "connectors/identity-checks.md"
+    },
+    {
+      "check": "idp.access_list_exported",
+      "provider": "onepassword",
+      "support": "partial",
+      "note": "Member list only, complete and dated; no vault or group access in the Users API, so a review covers accounts, not entitlements.",
+      "source": "connectors/1password.md"
+    },
+    {
+      "check": "tickets.changes_linked",
+      "provider": "jira",
+      "support": "partial",
+      "note": "Ticket side only; production changes come from version control (merged to the default branch, 30 days). Each references a change ticket in a mapped project with an approval dated before the merge. Jira's development information has no public read API, so links come from version control and remote links.",
+      "source": "connectors/jira.md"
+    },
+    {
+      "check": "tickets.access_requests_approved",
+      "provider": "jira",
+      "support": "partial",
+      "note": "Approval side only; Jira alone reads insufficient, the grant side comes from the identity provider. Only requests found by JQL, never the servicedeskapi request list.",
+      "source": "connectors/jira.md"
+    },
+    {
+      "check": "tickets.remediation_tracked",
+      "provider": "jira",
+      "support": "supported",
+      "note": "Needs a mapping of finding tickets (and postmortem actions). Closed by due time (JSM SLA not breached, or resolution date on or before due date); open ones not past due. No mapping, or a ticket with no due date or SLA, is insufficient. Empty population is insufficient.",
+      "source": "connectors/jira.md"
+    },
+    {
+      "check": "alerts.security_routed",
+      "provider": "slack",
+      "support": "not_possible",
+      "note": "Slack has no schedules, escalation, acknowledgement or incident record; a message in a channel is not a page.",
+      "source": "connectors/slack.md"
+    },
+    {
+      "check": "alerts.acknowledged_in_time",
+      "provider": "slack",
+      "support": "not_possible",
+      "note": "Slack has no schedules, escalation, acknowledgement or incident record; a message in a channel is not a page.",
+      "source": "connectors/slack.md"
+    },
+    {
+      "check": "alerts.incidents_resolved",
+      "provider": "slack",
+      "support": "not_possible",
+      "note": "Slack has no schedules, escalation, acknowledgement or incident record; a message in a channel is not a page.",
+      "source": "connectors/slack.md"
+    },
+    {
+      "check": "alerts.security_routed",
+      "provider": "pagerduty",
+      "support": "supported",
+      "note": "Services marked as carrying security alerts: not disabled, high urgency (severity based passes with a note), escalation policy targets a schedule or user, at least one integration. No service marked is insufficient.",
+      "source": "connectors/pagerduty.md"
+    },
+    {
+      "check": "alerts.acknowledged_in_time",
+      "provider": "pagerduty",
+      "support": "supported",
+      "note": "High urgency incidents in 30 days: first acknowledgement, or a resolve by a person, within the target (default 30 minutes). Source auto resolved before the target is left out with that reason. Computed from incidents and log entries, not analytics. Empty passes only when the list was read in full.",
+      "source": "connectors/pagerduty.md"
+    },
+    {
+      "check": "alerts.incidents_resolved",
+      "provider": "pagerduty",
+      "support": "partial",
+      "note": "Owner (assignment or acknowledgement by a user) and a readable timeline only; not the recovery steps (LM-06.C, D stay with people).",
+      "source": "connectors/pagerduty.md"
+    },
+    {
+      "check": "observability.logs_retained",
+      "provider": "datadog",
+      "support": "partial",
+      "note": "Searchable days at least 90 and total retention 12 months through Flex or a WORKING archive; archive bucket retention is not visible in Datadog, so relying on an archive reads insufficient without the cloud connector. Exclusion filters listed.",
+      "source": "connectors/datadog.md"
+    },
+    {
+      "check": "observability.anomaly_monitors",
+      "provider": "datadog",
+      "support": "supported",
+      "note": "Needs a category mapping: error spikes, unusual traffic, failed sign ins, each with a mapped or query matched monitor that notifies someone.",
+      "source": "connectors/datadog.md"
+    },
+    {
+      "check": "observability.processing_monitored",
+      "provider": "datadog",
+      "support": "partial",
+      "note": "Needs the list of jobs; each needs a failure monitor and a missing data monitor, both notifying someone. No jobs listed is insufficient.",
+      "source": "connectors/datadog.md"
+    },
+    {
+      "check": "observability.capacity_trends",
+      "provider": "datadog",
+      "support": "supported",
+      "note": "Production hosts and services covered by CPU, memory and disk monitors below the limit (databases add connections); metric names from a reviewed list. Weekly.",
+      "source": "connectors/datadog.md"
+    },
+    {
+      "check": "observability.anomaly_monitors",
+      "provider": "sentry",
+      "support": "partial",
+      "note": "Error spikes only (metric monitor on error count, or new and regressed issue alert per production project). With Sentry as the only observability connection the check reads insufficient.",
+      "source": "connectors/sentry.md"
+    },
+    {
+      "check": "observability.processing_monitored",
+      "provider": "sentry",
+      "support": "partial",
+      "note": "Error alerts on job failure only; cron missed run monitoring API not researched (unverified), so a missed run cannot be shown.",
+      "source": "connectors/sentry.md"
+    },
+    {
+      "check": "edge.waf_enabled",
+      "provider": "cloudflare",
+      "support": "supported",
+      "note": "Zone active, hostnames proxied, managed WAF phase executes the Cloudflare Managed Ruleset, not log only; no DDoS override sets every rule to log only. Free zones running only the Free Managed Ruleset fail with reason plan (operations owner decision 9). Rulesets API only.",
+      "source": "connectors/cloudflare.md"
+    },
+    {
+      "check": "edge.zero_trust_access",
+      "provider": "cloudflare",
+      "support": "partial",
+      "note": "Internal applications listed by the customer must be destinations of an Access application with an allow policy requiring an identity. Cannot see other paths in.",
+      "source": "connectors/cloudflare.md"
+    },
+    {
+      "check": "edge.minimum_tls",
+      "provider": "cloudflare",
+      "support": "supported",
+      "note": "Minimum TLS 1.2 or higher on the zone and every per hostname override; Always Use HTTPS on.",
+      "source": "connectors/cloudflare.md"
+    },
+    {
+      "check": "edge.zero_trust_access",
+      "provider": "tailscale",
+      "support": "partial",
+      "note": "Internal systems listed (or from the asset inventory) are tailnet devices or inside an enabled subnet route. Tailnet side only; the result names the cloud checks for other routes.",
+      "source": "connectors/tailscale.md"
+    },
+    {
+      "check": "edge.minimum_tls",
+      "provider": "tailscale",
+      "support": "not_possible",
+      "note": "Matrix marks n/a: Tailscale traffic is WireGuard, no TLS version setting exists. Recorded because capabilities.json lists Tailscale under network_edge (operations-checks section 2 proposes Cloudflare only).",
+      "source": "connectors/operations-checks.md"
+    }
+  ],
+  "downgrades": [
+    {
+      "check": "idp.sso_enforced",
+      "control": "IAM-04",
+      "artifact": null,
+      "requirement": null,
+      "from": "full",
+      "to": "partial",
+      "reason": "An identity provider sees only apps connected to it. IAM-04.B needs the vendor register compared, and IAM-04.C needs approved exceptions.",
+      "source": "connectors/identity-checks.md section 5"
+    },
+    {
+      "check": "idp.password_policy",
+      "control": "IAM-06",
+      "artifact": null,
+      "requirement": null,
+      "from": "full",
+      "to": "partial",
+      "reason": "Settings cannot show passwords were changed after an exposure (IAM-06.D). On Entra the length rule is fixed by Microsoft; Google has no lockout setting.",
+      "source": "connectors/identity-checks.md section 5"
+    },
+    {
+      "check": "idp.session_timeout",
+      "control": "IAM-11",
+      "artifact": null,
+      "requirement": null,
+      "from": "full",
+      "to": "partial",
+      "reason": "Settings do not show re-authentication for high risk actions (IAM-11.C) or that sign out ends refresh tokens (IAM-11.D). Entra and Google have no idle timeout.",
+      "source": "connectors/identity-checks.md section 5"
+    },
+    {
+      "check": "people.leavers_deprovisioned",
+      "control": "IAM-12",
+      "artifact": null,
+      "requirement": null,
+      "from": "full",
+      "to": "partial",
+      "reason": "Disabling the identity provider account does not prove access to systems outside single sign on was removed (IAM-12.D).",
+      "source": "connectors/identity-checks.md section 5"
+    },
+    {
+      "check": "vault.everyone_enrolled",
+      "control": "IAM-05",
+      "artifact": null,
+      "requirement": null,
+      "from": "full",
+      "to": "partial",
+      "reason": "Membership does not show shared credentials are kept in team vaults (IAM-05.C).",
+      "source": "connectors/identity-checks.md section 5"
+    },
+    {
+      "check": "tickets.access_requests_approved",
+      "control": "IAM-01",
+      "artifact": null,
+      "requirement": null,
+      "from": "full",
+      "to": "partial",
+      "reason": "It does not show that privileged grants were approved by the system owner (IAM-01.D), that each person has their own account (IAM-01.E), or that every system's grants were seen (IAM-01.B needs every in scope system connected).",
+      "source": "connectors/operations-checks.md section 2; operations owner decision 4"
+    },
+    {
+      "check": "edge.zero_trust_access",
+      "control": "NS-11",
+      "artifact": null,
+      "requirement": null,
+      "from": "full",
+      "to": "partial",
+      "reason": "An edge or tailnet can show a system sits behind it, not that there is no other route in (cloud ingress, a public IP). NS-11.C (members match staff) and NS-11.D (sessions logged and reviewed) also remain.",
+      "source": "connectors/operations-checks.md section 2; operations owner decision 4"
+    },
+    {
+      "check": "edge.waf_enabled",
+      "control": "NS-10",
+      "artifact": null,
+      "requirement": null,
+      "from": "full",
+      "to": "partial",
+      "reason": "NS-10.C (origin refuses traffic that bypasses the firewall) and NS-10.D (quarterly rule review) are not shown by the firewall settings.",
+      "source": "connectors/operations-checks.md section 2; operations owner decision 4"
+    }
+  ],
+  "decisions": [
+    {
+      "topic": "Entra evidence app ownership",
+      "question": "Launch Entra evidence with customer owned app registrations (option B, unified option b) or Verity's publisher verified multi tenant app (option A, unified option c), and when to join the Microsoft AI Cloud Partner Program for publisher verification.",
+      "options": [
+        "Customer app first, Verity multi tenant app after the first Entra pilot",
+        "Verity multi tenant app now"
+      ],
+      "recommendation": "Launch with customer owned evidence apps in one guided flow (Verity generates the certificate); add Verity's multi tenant app after the first Entra pilot, only with a non exportable signing key; join the partner program either way.",
+      "source": "connectors/entra-id.md decisions 1; connectors/identity-providers-unified-setup.md section 6 and decision 2"
+    },
+    {
+      "topic": "Entra password length",
+      "question": "Entra fixes the minimum password length at 8, while IAM-06.A asks for 12. Judge only the configurable items, or accept a compensating rule (MFA or passwordless). A compliance meaning: the owner and an auditor decide.",
+      "options": [
+        "Judge configurable items only",
+        "Accept a compensating rule (MFA or passwordless)"
+      ],
+      "recommendation": null,
+      "source": "connectors/entra-id.md decision 2"
+    },
+    {
+      "topic": "Entra Free tenants",
+      "question": "For Entra Free tenants, show the checks that need P1 as could not check with reason licence, or hide them.",
+      "options": [
+        "Show as could not check, licence",
+        "Hide them"
+      ],
+      "recommendation": "Show them as could not check, licence (proposed); never a pass.",
+      "source": "connectors/entra-id.md decision 3"
+    },
+    {
+      "topic": "Entra multi tenant certificate risk",
+      "question": "Accept the concentration risk of one Verity certificate that can read every consenting Entra customer's directory, conditional on a non exportable signing key. Needs an ADR and updates to AUTHORING and integrations.md non negotiables.",
+      "options": [
+        "Accept with a non exportable key and an ADR",
+        "Do not build the multi tenant app"
+      ],
+      "recommendation": "Accept only with a key that signs through a key service that never exports it (whether azidentity can sign through such a callback is unverified).",
+      "source": "connectors/identity-providers-unified-setup.md decision 3"
+    },
+    {
+      "topic": "Okta admin role for the service app",
+      "question": "Assign the evidence service app Read-only Administrator plus whatever a developer org test shows is needed to read admin roles (for example a custom role with okta.iam.read), or Super Administrator as Vanta does.",
+      "options": [
+        "Read-only Administrator plus tested additions",
+        "Custom role adding okta.iam.read",
+        "Super Administrator"
+      ],
+      "recommendation": "Test on a developer org first; never ask for Super Administrator by default.",
+      "source": "connectors/okta.md decision 1; connectors/identity-providers-unified-setup.md decision 6"
+    },
+    {
+      "topic": "Okta SSWS token fallback",
+      "question": "Allow an SSWS API token as a fallback for orgs that cannot create a service app.",
+      "options": [
+        "Allow, marked weaker on the connection",
+        "Do not allow"
+      ],
+      "recommendation": "Allow, marked weaker on the connection.",
+      "source": "connectors/okta.md decision 2"
+    },
+    {
+      "topic": "Okta app type",
+      "question": "Customer created API Services app (private key JWT, key never leaves Verity) or an Okta Integration Network API service integration (client secret only).",
+      "options": [
+        "Customer created service app",
+        "OIN API service integration"
+      ],
+      "recommendation": "Customer created service app; skip the OIN API listing until a sales need appears (it costs a review cycle and downgrades the credential to a client secret).",
+      "source": "connectors/okta.md decision 3; connectors/identity-providers-unified-setup.md section 6.4"
+    },
+    {
+      "topic": "Google connection option",
+      "question": "Connect Google Workspace evidence through a Verity owned service account with domain wide delegation (option A) or a verified OAuth app (option D).",
+      "options": [
+        "A: Verity service account, domain wide delegation",
+        "D: verified three legged OAuth app",
+        "B, C or E (see google-workspace.md 2.1)"
+      ],
+      "recommendation": "A: no Google verification, no 100 user cap, all scopes read only.",
+      "source": "connectors/google-workspace.md decision 1"
+    },
+    {
+      "topic": "Google keyless signing",
+      "question": "How Verity's Google service account signs without a stored key.",
+      "options": [
+        "Federate from Verity's AWS identity (workload identity federation)",
+        "Host an OIDC issuer Verity runs",
+        "Keep a key, overriding iam.managed.disableServiceAccountKeyCreation for one project"
+      ],
+      "recommendation": null,
+      "source": "connectors/google-workspace.md decision 2; connectors/identity-providers-unified-setup.md decision 4"
+    },
+    {
+      "topic": "Google delegated subject",
+      "question": "Ask customers for a super admin as the delegated subject (every check runs), or accept a dedicated read only admin and three policy checks (password, 2 step verification, session) that say needs a super admin.",
+      "options": [
+        "Super admin subject",
+        "Read only admin, three checks read needs a super admin"
+      ],
+      "recommendation": null,
+      "source": "connectors/google-workspace.md decision 3; connectors/identity-providers-unified-setup.md decision 5"
+    },
+    {
+      "topic": "1Password SCIM bridge token",
+      "question": "Accept a SCIM bridge bearer token (as Vanta and Drata do; it can provision, read only is vendor discipline) for customers who want it, or keep the read only credential rule.",
+      "options": [
+        "Keep the read only rule, offer the identity provider route",
+        "Accept the SCIM bridge token"
+      ],
+      "recommendation": "Keep the read only rule and offer the identity provider route instead.",
+      "source": "connectors/1password.md decision 1"
+    },
+    {
+      "topic": "1Password Teams plan",
+      "question": "Teams plan customers have no Users API. Support them through the identity provider route only, or not at all.",
+      "options": [
+        "Identity provider route only",
+        "Not supported"
+      ],
+      "recommendation": null,
+      "source": "connectors/1password.md decision 2"
+    },
+    {
+      "topic": "Two credential rule",
+      "question": "Approve the rule that every identity provider uses two credentials (sign in app held by Keycloak, evidence credential held by Verity), one guided setup and one card, including Entra.",
+      "options": [
+        "Approve",
+        "Allow one shared app"
+      ],
+      "recommendation": "Approve: reject a shared app for all three providers.",
+      "source": "connectors/identity-providers-unified-setup.md decision 1; 02-integration-model.md section 2.1"
+    },
+    {
+      "topic": "First identity provider",
+      "question": "Which identity provider goes first.",
+      "options": [
+        "Entra ID",
+        "Okta",
+        "Google Workspace"
+      ],
+      "recommendation": "The pilot customer's provider (continuous-compliance-plan.md section 7).",
+      "source": "connectors/identity-providers-unified-setup.md decision 7"
+    },
+    {
+      "topic": "Keycloak to Entra signed JWT",
+      "question": "Who confirms with Infowise whether their Keycloak build can authenticate to Entra with a signed JWT instead of a client secret, which would remove the 24 month secret expiry from sign in.",
+      "options": [],
+      "recommendation": null,
+      "source": "connectors/identity-providers-unified-setup.md decision 8"
+    },
+    {
+      "topic": "Roster source for people and vault checks",
+      "question": "Every check that needs a staff, leaver or contractor roster reads insufficient information until a roster exists in Verity; hr_system providers are not_planned. Choose the roster source.",
+      "options": [
+        "Controlled workforce import (continuous compliance plan 6 C)",
+        "Plan hr_system connectors",
+        "Both"
+      ],
+      "recommendation": null,
+      "source": "connectors/identity-checks.md section 1 (implied, not a numbered decision)"
+    },
+    {
+      "topic": "Identity coverage downgrades",
+      "question": "Approve the identity content corrections: idp.sso_enforced, idp.password_policy, idp.session_timeout, people.leavers_deprovisioned and vault.everyone_enrolled from full to partial, vault.everyone_enrolled gaining hr_system, idp.mfa_enforced naming its exclusions, and artifacts listing the existing checks.",
+      "options": [
+        "Approve",
+        "Reject"
+      ],
+      "recommendation": "Approve (proposed for the reconciliation step).",
+      "source": "connectors/identity-checks.md section 5 (implied, not a numbered decision)"
+    },
+    {
+      "topic": "Jira auth for the first release",
+      "question": "Service account with a scoped API token (customer pasted, up to 365 days, outside the points quota) or Verity's OAuth 2.0 (3LO) app (one 65,000 point hourly quota shared by all customers from 2 March 2026, plus a personal data reporting duty).",
+      "options": [
+        "Scoped API token first",
+        "OAuth 3LO app"
+      ],
+      "recommendation": "Scoped API token first; the OAuth app once Atlassian grants a per tenant quota tier.",
+      "source": "connectors/operations-checks.md section 8 decision 1; connectors/jira.md section 2.1"
+    },
+    {
+      "topic": "Slack's role",
+      "question": "Keep Slack as an alerting provider, or make it Verity's notification channel only and remove it from alerting; optionally later a business application check of member two factor (needs an admin's user token).",
+      "options": [
+        "Notification channel only, removed from alerting",
+        "Keep under alerting",
+        "Also add a business application member check later"
+      ],
+      "recommendation": "Notification channel only, removed from alerting.",
+      "source": "connectors/operations-checks.md section 8 decision 2; connectors/slack.md"
+    },
+    {
+      "topic": "Slack posting exception",
+      "question": "Slack notifications post Verity's own messages into customer channels, the only integration that writes to a customer system, as a deliberate exception to Verity never writes. Approve the exception.",
+      "options": [
+        "Approve: customer picks channels, nothing is read",
+        "Do not post"
+      ],
+      "recommendation": "Approve (the document calls it deliberate: the customer chooses channels and nothing is read from conversations).",
+      "source": "connectors/slack.md section 2.1 (implied)"
+    },
+    {
+      "topic": "Incident sync",
+      "question": "Import Jira and PagerDuty incidents into the Verity register as synced Integratable issues awaiting a triage decision (source, external_id, synced_at), or keep the register manual and only reconcile.",
+      "options": [
+        "Sync into the register as issues awaiting triage",
+        "Keep the register manual, reconcile only"
+      ],
+      "recommendation": "Sync (proposed in operations-checks section 5); the person's incident or not an incident decision is the LM-04.B record.",
+      "source": "connectors/operations-checks.md section 8 decision 3 and section 5"
+    },
+    {
+      "topic": "Operations coverage downgrades",
+      "question": "Approve the downgrades of tickets.access_requests_approved (IAM-01), edge.waf_enabled (NS-10) and edge.zero_trust_access (NS-11) from full to partial.",
+      "options": [
+        "Approve",
+        "Reject"
+      ],
+      "recommendation": "Approve (proposed).",
+      "source": "connectors/operations-checks.md section 8 decision 4"
+    },
+    {
+      "topic": "Log retention settings artifact",
+      "question": "Add a new configuration artifact log-retention-settings for LM-02.C with sources observability.logs_retained, cloud.audit_logging and person.",
+      "options": [
+        "Add it",
+        "Do not add"
+      ],
+      "recommendation": "Add it; without it observability.logs_retained fills no artifact.",
+      "source": "connectors/operations-checks.md section 8 decision 5"
+    },
+    {
+      "topic": "Default thresholds",
+      "question": "Default thresholds the new checks use until the workspace's procedures set them: first response to a security report 2 business days, acknowledgement of a high urgency page 30 minutes, escalation delay 30 minutes, signal triage 24 hours, error triage 72 hours, post incident review within 14 days, HSTS lifetime 180 days, device key expiry 180 days. Each is a proposal, not a rule from a standard.",
+      "options": [
+        "Accept the proposed defaults",
+        "Set other defaults"
+      ],
+      "recommendation": "Accept as proposals, overridden by the workspace procedure.",
+      "source": "connectors/operations-checks.md section 8 decision 6"
+    },
+    {
+      "topic": "DNSSEC check",
+      "question": "Keep edge.dnssec_enabled mapped to NS-02 partial, or drop it until an objective asks for it.",
+      "options": [
+        "Keep mapped to NS-02 partial",
+        "Drop until an objective asks"
+      ],
+      "recommendation": null,
+      "source": "connectors/operations-checks.md section 8 decision 7"
+    },
+    {
+      "topic": "Sentry audit log",
+      "question": "Leave the Sentry organisation audit log out (reading it needs the org:write scope), or accept a write scope for one read.",
+      "options": [
+        "Leave it out",
+        "Accept org:write"
+      ],
+      "recommendation": "Leave it out.",
+      "source": "connectors/operations-checks.md section 8 decision 8; connectors/sentry.md section 2"
+    },
+    {
+      "topic": "Cloudflare Free plan WAF",
+      "question": "Does the Free Managed Ruleset satisfy edge.waf_enabled?",
+      "options": [
+        "No: fail with reason plan",
+        "Yes: pass on the Free Managed Ruleset"
+      ],
+      "recommendation": "No: fail with reason plan (the full managed ruleset needs Pro), so a customer upgrades or records the gap.",
+      "source": "connectors/operations-checks.md section 8 decision 9; connectors/cloudflare.md section 5"
+    },
+    {
+      "topic": "Provider content and guides as content",
+      "question": "Adopt the proposed provider content file (catalogue, permissions, form fields, requirements, guide, collector observation types) and setup guides as reviewed content (seed/content/integrations/guides/<provider>.md), generating the connect dialog and catalogue from it.",
+      "options": [
+        "Adopt",
+        "Keep the hard coded catalogue"
+      ],
+      "recommendation": "Adopt (proposed in 02 sections 2.4 and 2.5).",
+      "source": "02-integration-model.md sections 2.3 to 2.5 (proposal)"
+    },
+    {
+      "topic": "Names the owner gave for competitors",
+      "question": "The market research read Intrata as Drata and Like dot as Laika (Thoropass). Did the owner mean another product, for example Scytale or Delve?",
+      "options": [
+        "Drata and Thoropass are right",
+        "Another product (name it)"
+      ],
+      "recommendation": null,
+      "source": "03-market-research.md introduction"
+    },
+    {
+      "topic": "HRIS breadth through a unified API",
+      "question": "Buy HRIS breadth through a unified API vendor (Merge, Finch) as Drata and Secureframe do, or build each HR connector. A new dependency, needs an ADR.",
+      "options": [
+        "Unified API vendor",
+        "Build each connector"
+      ],
+      "recommendation": null,
+      "source": "03-market-research.md section 3.10 item 8"
+    },
+    {
+      "topic": "Endpoint agent",
+      "question": "Build an osquery based agent for teams with no MDM, or adopt Fleet (Go, MIT) as a base, with its code or query list public. An ADR decides build or adopt.",
+      "options": [
+        "Build on osquery",
+        "Adopt Fleet"
+      ],
+      "recommendation": null,
+      "source": "03-market-research.md section 3.10 item 9"
+    },
+    {
+      "topic": "Identity provider connection model conflict",
+      "question": "03-market-research 3.10 item 1 recommends vendor apps with admin consent for Entra and Google and an Okta catalogue API Service Integration; identity-providers-unified-setup recommends customer owned apps first (Entra), domain wide delegation (Google) and skipping the Okta OIN listing. Which recommendation stands?",
+      "options": [
+        "Unified setup recommendation",
+        "Market research recommendation"
+      ],
+      "recommendation": "The unified setup recommendation is the later, provider specific analysis (it explains why the OIN listing downgrades the credential).",
+      "source": "03-market-research.md section 3.10; connectors/identity-providers-unified-setup.md section 6"
+    }
+  ],
+  "defects": [
+    {
+      "kind": "check",
+      "item": "idp.mfa_enforced",
+      "finding": "No artifact in artifacts.json lists this existing check as a source (verified during extraction), so the engine never counts it and it moves no objective.",
+      "proposal": "Add it as a check source of second-factor-enforcement-and-enrolled-users (IAM-03.B, D, E), keeping the person source.",
+      "source": "connectors/identity-checks.md section 3/4; connectors/identity-checks.md section 5 last row"
+    },
+    {
+      "kind": "check",
+      "item": "idp.sso_enforced",
+      "finding": "No artifact in artifacts.json lists this existing check as a source (verified during extraction), so the engine never counts it and it moves no objective.",
+      "proposal": "Add it as a check source of applications-inside-and-outside-single-sign-on (IAM-04.B), keeping the person source.",
+      "source": "connectors/identity-checks.md section 3/4; connectors/identity-checks.md section 5 last row"
+    },
+    {
+      "kind": "check",
+      "item": "idp.password_policy",
+      "finding": "No artifact in artifacts.json lists this existing check as a source (verified during extraction), so the engine never counts it and it moves no objective.",
+      "proposal": "Add it as a check source of identity-provider-password-settings (IAM-06.B, C), keeping the person source.",
+      "source": "connectors/identity-checks.md section 3/4; connectors/identity-checks.md section 5 last row"
+    },
+    {
+      "kind": "check",
+      "item": "idp.session_timeout",
+      "finding": "No artifact in artifacts.json lists this existing check as a source (verified during extraction), so the engine never counts it and it moves no objective.",
+      "proposal": "Add it as a check source of session-limit-settings-export (IAM-11.B; Okta partly C), keeping the person source.",
+      "source": "connectors/identity-checks.md section 3/4; connectors/identity-checks.md section 5 last row"
+    },
+    {
+      "kind": "check",
+      "item": "idp.groups_drive_access",
+      "finding": "No artifact in artifacts.json lists this existing check as a source (verified during extraction), so the engine never counts it and it moves no objective.",
+      "proposal": "Add it as a check source of group-and-role-membership-export (IAM-08.B, C, IAM-09.B), not on Google, keeping the person source.",
+      "source": "connectors/identity-checks.md section 3/4; connectors/identity-checks.md section 5 last row"
+    },
+    {
+      "kind": "check",
+      "item": "idp.connected_apps_known",
+      "finding": "No artifact in artifacts.json lists this existing check as a source (verified during extraction), so the engine never counts it and it moves no objective.",
+      "proposal": "Add it as a check source of review-of-newly-discovered-applications (BC-05.B), keeping the person source.",
+      "source": "connectors/identity-checks.md section 3/4; connectors/identity-checks.md section 5 last row"
+    },
+    {
+      "kind": "check",
+      "item": "people.joiners_onboarded",
+      "finding": "No artifact in artifacts.json lists this existing check as a source (verified during extraction), so the engine never counts it and it moves no objective.",
+      "proposal": "Add it as a check source of completed-checklists-for-a-sample-of (HR-06.B), keeping the person source.",
+      "source": "connectors/identity-checks.md section 3/4; connectors/identity-checks.md section 5 last row"
+    },
+    {
+      "kind": "check",
+      "item": "vault.everyone_enrolled",
+      "finding": "No artifact in artifacts.json lists this existing check as a source (verified during extraction), so the engine never counts it and it moves no objective.",
+      "proposal": "Add it as a check source of password-manager-members-against-staff-list (IAM-05.B), keeping the person source.",
+      "source": "connectors/identity-checks.md section 3/4; connectors/identity-checks.md section 5 last row"
+    },
+    {
+      "kind": "check",
+      "item": "alerts.security_routed",
+      "finding": "No artifact in artifacts.json lists this existing check as a source (verified during extraction), so the engine never counts it and it moves no objective.",
+      "proposal": "Add it as a check source of review-of-alert-tuning (LM-09.B, C), keeping the person source.",
+      "source": "connectors/operations-checks.md section 3/4; connectors/identity-checks.md section 5 last row"
+    },
+    {
+      "kind": "check",
+      "item": "alerts.acknowledged_in_time",
+      "finding": "No artifact in artifacts.json lists this existing check as a source (verified during extraction), so the engine never counts it and it moves no objective.",
+      "proposal": "Add it as a check source of sample-of-evaluated-events-with-the (LM-04) and on-call-schedule (LM-08.D), keeping the person source.",
+      "source": "connectors/operations-checks.md section 3/4; connectors/identity-checks.md section 5 last row"
+    },
+    {
+      "kind": "check",
+      "item": "edge.waf_enabled",
+      "finding": "No artifact in artifacts.json lists this existing check as a source (verified during extraction), so the engine never counts it and it moves no objective.",
+      "proposal": "Add it as a check source of review-of-web-application-firewall-rules (NS-10.B, C), keeping the person source.",
+      "source": "connectors/operations-checks.md section 3/4; connectors/identity-checks.md section 5 last row"
+    },
+    {
+      "kind": "check",
+      "item": "edge.zero_trust_access",
+      "finding": "No artifact in artifacts.json lists this existing check as a source (verified during extraction), so the engine never counts it and it moves no objective.",
+      "proposal": "Add it as a check source of remote-access-settings-and-members (NS-11.B, C, D), keeping the person source.",
+      "source": "connectors/operations-checks.md section 3/4; connectors/identity-checks.md section 5 last row"
+    },
+    {
+      "kind": "check",
+      "item": "edge.minimum_tls",
+      "finding": "No artifact in artifacts.json lists this existing check as a source (verified during extraction), so the engine never counts it and it moves no objective.",
+      "proposal": "Add it as a check source of public-endpoint-tls-scan (NS-02.B, C), keeping the person source.",
+      "source": "connectors/operations-checks.md section 3/4; connectors/identity-checks.md section 5 last row"
+    },
+    {
+      "kind": "check",
+      "item": "observability.logs_retained",
+      "finding": "No artifact in artifacts.json lists this existing check as a source (verified during extraction), so the engine never counts it and it moves no objective.",
+      "proposal": "Add it as a check source of the proposed log-retention-settings (LM-02.C), keeping the person source.",
+      "source": "connectors/operations-checks.md section 3/4; connectors/identity-checks.md section 5 last row"
+    },
+    {
+      "kind": "check",
+      "item": "observability.anomaly_monitors",
+      "finding": "No artifact in artifacts.json lists this existing check as a source (verified during extraction), so the engine never counts it and it moves no objective.",
+      "proposal": "Add it as a check source of review-of-alert-tuning (LM-09.B, C), keeping the person source.",
+      "source": "connectors/operations-checks.md section 3/4; connectors/identity-checks.md section 5 last row"
+    },
+    {
+      "kind": "check",
+      "item": "observability.processing_monitored",
+      "finding": "No artifact in artifacts.json lists this existing check as a source (verified during extraction), so the engine never counts it and it moves no objective.",
+      "proposal": "Add it as a check source of reconciliation-results-and-how-exceptions-were (SD-08.B), keeping the person source.",
+      "source": "connectors/operations-checks.md section 3/4; connectors/identity-checks.md section 5 last row"
+    },
+    {
+      "kind": "check",
+      "item": "observability.capacity_trends",
+      "finding": "No artifact in artifacts.json lists this existing check as a source (verified during extraction), so the engine never counts it and it moves no objective.",
+      "proposal": "Add it as a check source of capacity-review (BC-04.B, C), keeping the person source.",
+      "source": "connectors/operations-checks.md section 3/4; connectors/identity-checks.md section 5 last row"
+    },
+    {
+      "kind": "check",
+      "item": "cloud.audit_logging",
+      "finding": "No artifact in artifacts.json lists this existing check as a source (verified during extraction), so the engine never counts it and it moves no objective.",
+      "proposal": "Add it as a check source of the proposed log-retention-settings (LM-02.C), keeping the person source.",
+      "source": "connectors/operations-checks.md section 3/4; connectors/identity-checks.md section 5 last row"
+    },
+    {
+      "kind": "artifact",
+      "item": "privileged-elevation-and-break-glass-log",
+      "finding": "Person only, although idp.admins_limited can show PIM eligible versus active roles and activation events on Entra with P2.",
+      "proposal": "Add check idp.admins_limited as a source (Entra with PIM only), keep person.",
+      "source": "connectors/identity-checks.md section 3; connectors/entra-id.md section 6"
+    },
+    {
+      "kind": "artifact",
+      "item": "log-of-control-deficiencies-with-owner",
+      "finding": "Its only sources are checks (tickets.remediation_tracked, verity.tasks.remediation_in_sla); it has no person source, against evidence model rule 1 that every artifact keeps one. Seen in operations-checks section 4 (Today column) and artifacts.json.",
+      "proposal": "Add a person source.",
+      "source": "connectors/operations-checks.md section 4"
+    },
+    {
+      "kind": "artifact",
+      "item": "LM-02.C",
+      "finding": "LM-02.C has only logging-and-retention-standard (a document) and an interview; no settings artifact exists, so observability.logs_retained cannot move any objective.",
+      "proposal": "Add artifact log-retention-settings (configuration; sources check observability.logs_retained, cloud.audit_logging; person) to LM-02.C.",
+      "source": "connectors/operations-checks.md section 2; connectors/datadog.md section 6"
+    },
+    {
+      "kind": "provider",
+      "item": "slack (alerting)",
+      "finding": "Slack is listed as an alerting provider in capabilities.json, but it has no on call schedule, escalation, acknowledgement or incident record; a channel message is not a page. It implements none of the alerts checks.",
+      "proposal": "Remove Slack from alerting. Keep it as Verity's notification channel (not a capability), optionally under business applications for its own member list. Catalogue card: notifications only.",
+      "source": "connectors/operations-checks.md section 2; connectors/slack.md sections 1, 9"
+    },
+    {
+      "kind": "provider",
+      "item": "tailscale (edge.minimum_tls)",
+      "finding": "The network_edge capability lists Tailscale, which would make it an implementation candidate for edge.minimum_tls, but Tailscale traffic is WireGuard and has no TLS version setting.",
+      "proposal": "Implement edge.minimum_tls on Cloudflare only.",
+      "source": "connectors/operations-checks.md section 2"
+    },
+    {
+      "kind": "capability",
+      "item": "vault.everyone_enrolled",
+      "finding": "Capabilities are password_manager only, but every active employee needs a staff list; the vault alone cannot say who is missing.",
+      "proposal": "Capabilities password_manager and hr_system.",
+      "source": "connectors/identity-checks.md section 5"
+    },
+    {
+      "kind": "capability",
+      "item": "idp.sso_enforced, idp.access_list_exported (1Password)",
+      "finding": "Inferred during extraction, not raised by the research: identity-checks.md marks 1Password partial for these identity_provider checks, but 1Password is a password_manager provider, so it cannot be an implementation unless the checks gain that capability or 1Password is treated as a business application in scope.",
+      "proposal": "Decide whether these rows become password_manager implementations, business application evidence, or notes only.",
+      "source": "connectors/identity-checks.md section 1; connectors/1password.md section 5.1"
+    },
+    {
+      "kind": "mapping",
+      "item": "LM-08",
+      "finding": "LM-08 (on call) has no ISO 27001 mapping, so PagerDuty's strongest evidence reaches ISO only through LM-04, LM-07 and LM-09.",
+      "proposal": "A mapping question for the ISO pack (not a connector gap).",
+      "source": "connectors/operations-checks.md section 7; connectors/pagerduty.md section 7; connectors/sentry.md section 7"
+    },
+    {
+      "kind": "mapping",
+      "item": "SD-08",
+      "finding": "SD-08 has no ISO 27001 mapping in the current pack.",
+      "proposal": "Review in the ISO pack.",
+      "source": "connectors/operations-checks.md section 7; connectors/sentry.md section 7"
+    },
+    {
+      "kind": "mapping",
+      "item": "CS-06",
+      "finding": "CS-06 has no SOC 2 mapping (noted while tracing the Slack needs).",
+      "proposal": "Review the SOC 2 mapping for CS-06.",
+      "source": "connectors/slack.md section 7"
+    },
+    {
+      "kind": "module",
+      "item": "verity_tasks (incident register)",
+      "finding": "The register is a filtered view of Tasks. Imported incidents need to land with a triage decision field, and the register must expose completeness against source and external_id, or the *.incidents_registered checks cannot be evaluated.",
+      "proposal": "Add the triage decision field and source based completeness (NEED verity_tasks).",
+      "source": "connectors/operations-checks.md sections 5, 6"
+    },
+    {
+      "kind": "module",
+      "item": "verity notifications",
+      "finding": "No delivery log of security messages Verity sent (channel, time, provider message id), so sample-of-messages-sent-under-the (CS-04.D, CS-06.B, C) cannot gain a module source.",
+      "proposal": "Record every send attempt and the provider's answer in the notifications module, complete with failures, and list it as a source of that artifact (partial: sent, not read).",
+      "source": "connectors/slack.md sections 4, 6, 10; connectors/operations-checks.md section 6"
+    },
+    {
+      "kind": "template",
+      "item": "escalation-policy, alerting-standard, logging-and-retention-standard",
+      "finding": "Observed during extraction, not raised by the research: these document category artifacts have only a person source, and no matching template exists in document_templates.json.",
+      "proposal": "Add document templates (or map to an existing one such as incident-response-plan or operations-security-policy) and list them as document sources.",
+      "source": "artifacts.json, document_templates.json (extraction check)"
+    },
+    {
+      "kind": "other",
+      "item": "approved-requests-for-a-sample-of objectives",
+      "finding": "identity-checks.md section 3 lists IAM-01.B to E, HR-06.B, D, IAM-08.C, HR-03.C and omits HR-01.B, HR-01.C and HR-02.C, which objectives.json and operations-checks.md section 4 include.",
+      "proposal": "Use the objectives.json list.",
+      "source": "connectors/identity-checks.md section 3; connectors/operations-checks.md section 4"
+    },
+    {
+      "kind": "check",
+      "item": "idp.stale_accounts",
+      "finding": "The proposed provider content example names requirement check idp.stale_accounts, which does not exist.",
+      "proposal": "Use idp.no_inactive_accounts.",
+      "source": "02-integration-model.md section 2.5"
+    },
+    {
+      "kind": "capability",
+      "item": "single_sign_on",
+      "finding": "The provider content example lists capability single_sign_on, which capabilities.json does not have.",
+      "proposal": "Add single_sign_on as a capability or drop it from the example.",
+      "source": "02-integration-model.md section 2.5"
+    },
+    {
+      "kind": "other",
+      "item": "entra provider content example",
+      "finding": "The example's auth fields ask for a client_secret, while entra-id.md uses a certificate credential with a Verity generated key pair and no secret.",
+      "proposal": "Replace the secret field with the certificate download and tenant and client ids.",
+      "source": "02-integration-model.md section 2.5; connectors/entra-id.md section 2"
+    },
+    {
+      "kind": "other",
+      "item": "credential pattern table",
+      "finding": "02 section 2.2 lists Google Workspace and Jira under vendor app consent and Datadog as API key plus application key, while the connector documents recommend Verity's service account with domain wide delegation for Google, a scoped API token on a service account first for Jira, and a Service Access Token for Datadog.",
+      "proposal": "Align the table with the connector documents.",
+      "source": "02-integration-model.md section 2.2; connectors/google-workspace.md; connectors/jira.md; connectors/datadog.md"
+    },
+    {
+      "kind": "module",
+      "item": "frontend/src/features/connectors/connector-catalogue.ts",
+      "finding": "The integration catalogue is hard coded in the frontend and can drift from what the backend supports.",
+      "proposal": "Move it to provider content (02 section 2.5).",
+      "source": "02-integration-model.md section 2.3"
+    },
+    {
+      "kind": "provider",
+      "item": "entra versus intune",
+      "finding": "02 section 2.1 and entra-id.md treat Intune device evidence as a capability of the Microsoft connection, while capabilities.json lists intune as a separate device_management provider.",
+      "proposal": "Decide whether Intune is a capability of the entra provider or its own provider key (devices research).",
+      "source": "02-integration-model.md section 2.1; connectors/entra-id.md"
+    },
+    {
+      "kind": "other",
+      "item": "03-market-research 3.10 item 1",
+      "finding": "Recommends vendor apps for Entra and Google and an Okta catalogue API Service Integration, which conflicts with the unified setup recommendation.",
+      "proposal": "Reconcile (see the decision Identity provider connection model conflict).",
+      "source": "03-market-research.md section 3.10; connectors/identity-providers-unified-setup.md section 6"
+    }
+  ],
+  "capabilities_proposed": [
+    {
+      "key": "business_application",
+      "name": "Business applications",
+      "purpose": "The tool's own member list, the accounts holding admin roles (for the privileged access list, IAM-07.B, IAM-02.B) and, where the tool is outside single sign on, member second factor or SSO (IAM-03.B, IAM-04.B, C). Slack after leaving alerting.",
+      "providers": [
+        "slack",
+        "sentry",
+        "datadog",
+        "pagerduty",
+        "jira",
+        "cloudflare",
+        "tailscale"
+      ],
+      "source": "connectors/operations-checks.md sections 2, 6 and decision 2; connectors/slack.md sections 2.2, 5. AUTHORING section 3 gives the apps. prefix to phase 3 research"
+    },
+    {
+      "key": "verity_notifications",
+      "name": "Verity notifications",
+      "purpose": "Inferred from NEED verity (notifications): Verity's delivery log of security messages it sent (channel, time, provider message id), as a module source for sample-of-messages-sent-under-the (CS-04.D, CS-06.B).",
+      "providers": [
+        "verity"
+      ],
+      "source": "connectors/operations-checks.md section 6; connectors/slack.md section 5"
+    }
+  ],
+  "providers_proposed": [
+    {
+      "key": "verity",
+      "name": "Verity controlled workforce import",
+      "capability": "hr_system",
+      "phase": "not in plan",
+      "source": "connectors/identity-checks.md section 1 (refers to continuous compliance plan section 6 C); existing key verity, new capability placement"
+    }
+  ],
+  "artifacts_proposed": [
+    {
+      "key": "log-retention-settings",
+      "control": "LM-02",
+      "objectives": [
+        "LM-02.C"
+      ],
+      "sources": [
+        "check observability.logs_retained",
+        "check cloud.audit_logging",
+        "person"
+      ],
+      "why": "LM-02.C has no settings artifact (only the logging-and-retention-standard document and an interview), so observability.logs_retained fills nothing. Category configuration. Fill partial for both checks.",
+      "source": "connectors/operations-checks.md section 2, 4 and decision 5; connectors/datadog.md section 6"
+    }
+  ],
+  "existing_check_changes": [
+    {
+      "check": "alerts.acknowledged_in_time",
+      "change": "add_control",
+      "control": "LM-08",
+      "to_control": null,
+      "coverage": "partial",
+      "rationale": "Lists high urgency pages that were not acknowledged in time. Reviewing them and fixing cover stay with people.",
+      "source": "connectors/operations-checks.md section 2; connectors/pagerduty.md"
+    },
+    {
+      "check": "tickets.remediation_tracked",
+      "change": "add_control",
+      "control": "LM-05",
+      "to_control": null,
+      "coverage": "partial",
+      "rationale": "Shows postmortem actions tracked in tickets closed by their due date. Whether the actions fix the cause is reviewed by people.",
+      "source": "connectors/operations-checks.md section 2; connectors/jira.md"
+    },
+    {
+      "check": "tickets.remediation_tracked",
+      "change": "other",
+      "control": "LM-05",
+      "to_control": null,
+      "coverage": null,
+      "rationale": "Population gains postmortem actions (tickets the customer marks as findings or postmortem actions, open or closed in the period); the predicate also judges tickets closed late, since verity.tasks.remediation_in_sla judges open tasks only.",
+      "source": "connectors/operations-checks.md sections 2, 5; connectors/jira.md section 5"
+    },
+    {
+      "check": "vault.everyone_enrolled",
+      "change": "add_capability",
+      "control": null,
+      "to_control": null,
+      "coverage": null,
+      "rationale": "Add hr_system: every active employee needs a staff list; the vault alone cannot say who is missing.",
+      "source": "connectors/identity-checks.md section 5"
+    },
+    {
+      "check": "edge.waf_enabled",
+      "change": "reword",
+      "control": "SD-05",
+      "to_control": null,
+      "coverage": "partial",
+      "rationale": "Blocks some malformed requests at the edge. Validation inside the application is tested separately.",
+      "source": "connectors/operations-checks.md section 2"
+    },
+    {
+      "check": "idp.mfa_enforced",
+      "change": "reword",
+      "control": "IAM-03",
+      "to_control": null,
+      "coverage": "partial",
+      "rationale": "Predicate: name the exclusions. Every real tenant excludes break glass accounts; the check lists each exclusion and passes only when each has an approved exception (IAM-03.D).",
+      "source": "connectors/identity-checks.md section 5; connectors/entra-id.md section 8"
+    },
+    {
+      "check": "edge.minimum_tls",
+      "change": "other",
+      "control": "NS-02",
+      "to_control": null,
+      "coverage": null,
+      "rationale": "Implement on Cloudflare only; Tailscale is WireGuard and has no TLS version setting.",
+      "source": "connectors/operations-checks.md section 2"
+    },
+    {
+      "check": "idp.mfa_enforced",
+      "change": "other",
+      "control": "NS-11",
+      "to_control": null,
+      "coverage": "partial",
+      "rationale": "NEED identity_provider: the identity provider behind the remote access tool requires a second factor for every member. Reuse idp.mfa_enforced joined on the members of the tailnet or Cloudflare Access, for NS-11.B and IAM-03.B (a mapping to NS-11 or a source on remote-access-settings-and-members; the document does not say which).",
+      "source": "connectors/operations-checks.md section 6; connectors/tailscale.md section 8"
+    },
+    {
+      "check": "cloud.storage_lifecycle",
+      "change": "other",
+      "control": "LM-02",
+      "to_control": null,
+      "coverage": "partial",
+      "rationale": "NEED cloud_infrastructure: each archive bucket that holds logs keeps them for the policy period (cloud.storage_lifecycle with a log bucket population), so observability.logs_retained can pass when retention relies on an archive (LM-02.C).",
+      "source": "connectors/operations-checks.md section 6; connectors/datadog.md section 8"
+    },
+    {
+      "check": "people.leavers_deprovisioned",
+      "change": "other",
+      "control": "IAM-11",
+      "to_control": null,
+      "coverage": "partial",
+      "rationale": "On Entra, a user's signInSessionsValidFromDateTime after the end date would show sessions were revoked, for IAM-11.D on removal-records-for-a-sample-of (readable with User.Read.All is unverified).",
+      "source": "connectors/entra-id.md section 6"
+    }
+  ],
+  "needs": [
+    {
+      "need": "identity_provider: the identity provider behind the remote access tool requires a second factor for every member (reuse idp.mfa_enforced joined on tailnet or Access members)",
+      "raised_by": "tailscale, cloudflare",
+      "for": "NS-11.B, IAM-03.B",
+      "source": "connectors/operations-checks.md section 6"
+    },
+    {
+      "need": "cloud_infrastructure: security groups or firewalls in front of each origin allow inbound web traffic only from the edge's published ranges, or no public port where a tunnel is used",
+      "raised_by": "edge.origin_locked",
+      "for": "NS-10.C",
+      "source": "connectors/operations-checks.md section 6"
+    },
+    {
+      "need": "cloud_infrastructure: each archive bucket that holds logs keeps them for the policy period (cloud.storage_lifecycle with a log bucket population)",
+      "raised_by": "observability.logs_retained",
+      "for": "LM-02.C",
+      "source": "connectors/operations-checks.md section 6"
+    },
+    {
+      "need": "verity_tasks: incidents imported from a connector land in the register with a triage decision field; the register exposes completeness against source and external_id",
+      "raised_by": "tickets.incidents_registered, alerts.incidents_registered",
+      "for": "LM-04.B, LM-07.D",
+      "source": "connectors/operations-checks.md section 6"
+    },
+    {
+      "need": "verity (notifications): a delivery log of security messages Verity sent (channel, time, provider message id)",
+      "raised_by": "slack",
+      "for": "CS-04.D, CS-06.B (sample-of-messages-sent-under-the)",
+      "source": "connectors/operations-checks.md section 6; connectors/slack.md"
+    },
+    {
+      "need": "business application: an export of the accounts holding admin roles in each tool, for the privileged access list",
+      "raised_by": "slack, sentry, datadog, pagerduty, jira, cloudflare, tailscale",
+      "for": "IAM-07.B, IAM-02.B (list-of-privileged-accounts-with-approval, account-list-export)",
+      "source": "connectors/operations-checks.md section 6"
+    },
+    {
+      "need": "business application (Slack, Sentry): every active member has a second factor or signs in through SSO (Slack has_2fa with an admin user token, has_sso on Enterprise; Sentry member has2fa and SSO flags)",
+      "raised_by": "slack, sentry",
+      "for": "IAM-03.B, IAM-04.B, IAM-04.C (approved-exceptions-for-applications-outside-single)",
+      "source": "connectors/operations-checks.md section 6; connectors/slack.md section 5; connectors/sentry.md"
+    },
+    {
+      "need": "password_manager: every shared vault has a named owner and members that match its team (no read only, complete API exists today)",
+      "raised_by": "onepassword",
+      "for": "IAM-05.C",
+      "source": "connectors/1password.md section 5.2"
+    },
+    {
+      "need": "observability: identity provider sign in and admin events reach the central log store",
+      "raised_by": "identity providers",
+      "for": "LM-02.B, D (evidence-logs-are-reviewed)",
+      "source": "connectors/identity-checks.md section 3"
+    }
+  ]
+}

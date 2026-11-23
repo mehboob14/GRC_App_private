@@ -1,0 +1,1100 @@
+[
+  {
+    "control": "CS-01",
+    "decision": "keep",
+    "reason": "One activity, the breach notice promise and its use. SOC2:CC2.3 partial is tested by A to D.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "CS-02",
+    "decision": "revise_objectives",
+    "reason": "Right control, but SOC2:PI1.1 is mapped on the published terms and nothing tested their processing promises. SOC2:CC2.3 full is tested by A to E.",
+    "successors": [],
+    "objective_changes": [
+      {
+        "code": "CS-02.F",
+        "change": "add",
+        "statement": "Where Processing Integrity is in scope, the published terms or service description say what the service processes, which inputs it accepts and what customers can expect about the completeness, accuracy and timing of its outputs.",
+        "assurance": "design",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "published-security-availability-and-privacy-commitments",
+              "doc-processing-integrity-procedure"
+            ]
+          }
+        ],
+        "why": "SOC2:PI1.1 is mapped partial to CS-02 on the published terms, and no objective tested what those terms say about processing."
+      }
+    ],
+    "tenant_impact": "none for data: objectives are content read at request time; a reworded objective with an open not applicable decision is listed for the owner to confirm again"
+  },
+  {
+    "control": "CS-03",
+    "decision": "revise_objectives",
+    "reason": "Right control. ISO27001:A.6.8 full relies on no blame for good faith reports, which A now states. A.5.24, CC2.2 and CC2.3 are tested by A to D.",
+    "successors": [],
+    "objective_changes": [
+      {
+        "code": "CS-03.A",
+        "change": "reword",
+        "statement": "A security reporting channel, such as a security address or form, is published for staff and customers. It names who reads it and the expected response time, says that reports made in good faith carry no blame, and the incident plan points to it.",
+        "assurance": "design",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "published-reporting-channel-for-staff-and",
+              "doc-incident-response-plan",
+              "doc-security-communication-plan"
+            ]
+          }
+        ],
+        "why": "The ISO27001:A.6.8 mapping is full and its rationale relies on no blame for good faith reports, which no objective tested."
+      }
+    ],
+    "tenant_impact": "none for data: objectives are content read at request time; a reworded objective with an open not applicable decision is listed for the owner to confirm again"
+  },
+  {
+    "control": "CS-04",
+    "decision": "keep",
+    "reason": "One activity, publishing policies and tracking acknowledgement. ISO27001:5.2, 7.3, A.5.1, A.6.3 and SOC2:CC2.2 are all partial and A to E test their communication part.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "CS-05",
+    "decision": "keep",
+    "reason": "One activity, the confidential reporting channel. SOC2:CC1.1 and CC2.2 partial are tested by A to E.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "CS-06",
+    "decision": "keep",
+    "reason": "One plan, ISO27001:7.4 full and A.5.1 partial (outside parties hear of policy changes through the plan's topics).",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "CS-07",
+    "decision": "split",
+    "reason": "ISO27001:A.5.5 (authorities) and A.5.6 (security groups) are both mapped full but are different activities: the first is an incident and legal duty owned with legal, the second is a threat input owned by security, with its own evidence and its own SoA row.",
+    "successors": [
+      {
+        "code": "CS-08",
+        "status": "proposed",
+        "name": "Security community memberships and advisories",
+        "takes_objectives": [
+          "CS-07.B"
+        ],
+        "requirements": [
+          {
+            "key": "ISO27001:A.5.6",
+            "coverage": "full",
+            "rationale": "The list of groups and feeds followed, each with an owner, kept current and producing items for the threat review, is the contact this requirement asks for."
+          }
+        ]
+      }
+    ],
+    "objective_changes": [
+      {
+        "code": "CS-07.B",
+        "change": "move",
+        "to": "CS-08.B",
+        "statement": "The company belonged to or subscribed to security groups and advisory feeds that fit its technology and sector, and a named person followed each one and passed on what mattered.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "memberships-or-subscriptions-to-security-communities"
+            ]
+          },
+          {
+            "method": "interview",
+            "artifacts": [],
+            "who": "security_lead"
+          }
+        ],
+        "why": "Moves with ISO27001:A.5.6 to the successor control."
+      },
+      {
+        "code": "CS-08.A",
+        "change": "add",
+        "statement": "The security groups, advisory feeds and professional bodies the company follows are listed, each chosen for its technology or sector, with a named owner and a rule for what is passed on and to whom.",
+        "assurance": "design",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "memberships-or-subscriptions-to-security-communities",
+              "doc-security-communication-plan"
+            ]
+          }
+        ],
+        "why": "The successor needs a design objective of its own."
+      },
+      {
+        "code": "CS-08.C",
+        "change": "add",
+        "statement": "Items passed on from these sources in the period reached the threat review or the people named, and the list of sources was checked in the last 12 months.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "memberships-or-subscriptions-to-security-communities",
+              "log-of-threats-reviewed-and-actions"
+            ]
+          }
+        ],
+        "why": "ISO27001:A.5.6 is about keeping the contact useful, so what came of it is tested, not membership alone."
+      }
+    ],
+    "mapping_changes": [
+      {
+        "requirement": "ISO27001:A.5.6",
+        "control": "CS-07",
+        "from_coverage": "full",
+        "to_coverage": "removed",
+        "rationale": "Moves to CS-08; CS-07 keeps authority contacts (A.5.5)."
+      },
+      {
+        "requirement": "ISO27001:A.5.6",
+        "control": "CS-08",
+        "from_coverage": null,
+        "to_coverage": "full",
+        "rationale": "See successor."
+      }
+    ],
+    "tenant_impact": "adoption proposal: ISO 27001 workspaces are offered CS-08; CS-07 evidence tagged to memberships is listed for the owner to re-tag, nothing is copied and no green result carries over."
+  },
+  {
+    "control": "GOV-01",
+    "decision": "keep",
+    "reason": "Policy content review for SOC2:CC5.3 and ISO27001:A.5.1. It overlaps GOV-28 on mechanics (7.5.2, 7.5.3 partial) but tests whether each policy still fits practice, which GOV-28 does not. Not merged.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "GOV-02",
+    "decision": "keep",
+    "reason": "One body and its meetings. SOC2:CC1.2 full, ISO27001:5.1 and 7.1 partial are tested by A to E.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "GOV-03",
+    "decision": "keep",
+    "reason": "One trigger driven review. SOC2:CC3.4 full; ISO27001:6.3, 8.2 and A.5.8 partial are tested by A to E.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "GOV-04",
+    "decision": "keep",
+    "reason": "One code and its acknowledgement. SOC2:CC1.1 and ISO27001:A.5.4, A.5.10, A.6.2, A.6.4 partial are tested by A to D.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "GOV-05",
+    "decision": "revise_objectives",
+    "reason": "Right control, but ISO27001:A.5.32 is mapped on licence and IP terms in the register and no objective tested them.",
+    "successors": [],
+    "objective_changes": [
+      {
+        "code": "GOV-05.E",
+        "change": "add",
+        "statement": "Software licences and other intellectual property terms the company relies on are in the register with their limits and an owner, and use was compared with those limits in the last 12 months.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "register-of-contractual-regulatory-and-certification",
+              "vendor-inventory-with-owner-data-and"
+            ]
+          }
+        ],
+        "why": "ISO27001:A.5.32 is mapped partial on licence and IP terms in the register, and no objective tested them."
+      }
+    ],
+    "tenant_impact": "none for data: objectives are content read at request time; a reworded objective with an open not applicable decision is listed for the owner to confirm again"
+  },
+  {
+    "control": "GOV-06",
+    "decision": "keep",
+    "reason": "One monitoring activity. SOC2:CC4.1 full, ISO27001:9.1 and A.5.36 partial are tested by A to E.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "GOV-07",
+    "decision": "keep",
+    "reason": "One mapping activity. SOC2:CC5.1 and ISO27001:6.1.3 partial are tested by A to E.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "GOV-08",
+    "decision": "revise_objectives",
+    "reason": "Right control. ISO27001:10.2 is full and its rationale names containment and consequences, which B left out, and E bundled overdue reporting with the search for the same cause elsewhere.",
+    "successors": [],
+    "objective_changes": [
+      {
+        "code": "GOV-08.B",
+        "change": "reword",
+        "statement": "Every deficiency found in the period was logged with its source, date found, owner, severity, root cause, due date and the step taken at once to contain it and deal with its effects, including those raised by internal audit and by incidents.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "test",
+            "artifacts": [
+              "log-of-control-deficiencies-with-owner",
+              "internal-audit-or-readiness-assessment-report",
+              "security-incident-register"
+            ]
+          }
+        ],
+        "why": "ISO27001:10.2 is mapped full and its rationale names containment and consequences, which the objective left out."
+      },
+      {
+        "code": "GOV-08.E",
+        "change": "reword",
+        "statement": "Deficiencies past their due date were reported at management review with a new date or a decision.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "log-of-control-deficiencies-with-owner",
+              "management-review-agenda-and-minutes"
+            ]
+          }
+        ],
+        "why": "The old objective bundled overdue reporting with the search for the same cause elsewhere; the second part moves to GOV-08.F."
+      },
+      {
+        "code": "GOV-08.F",
+        "change": "add",
+        "statement": "Where a root cause could apply elsewhere, other systems and teams were checked for the same problem, and the policy, procedure or control was changed where the cause showed a wider gap.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "log-of-control-deficiencies-with-owner",
+              "management-review-agenda-and-minutes"
+            ]
+          },
+          {
+            "method": "interview",
+            "artifacts": [],
+            "who": "security_lead"
+          }
+        ],
+        "why": "Tests the part of ISO27001:10.2 on similar problems elsewhere and changes to the program on its own."
+      }
+    ],
+    "tenant_impact": "none for data: objectives are content read at request time; a reworded objective with an open not applicable decision is listed for the owner to confirm again"
+  },
+  {
+    "control": "GOV-09",
+    "decision": "keep",
+    "reason": "One ownership register. SOC2:CC1.3, CC1.5 and ISO27001:5.3, A.5.2 partial are tested by A to D.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "GOV-10",
+    "decision": "keep",
+    "reason": "One appointment and its reporting. SOC2:CC1.3, CC1.5 and ISO27001:5.1, 5.3, A.5.2 partial are tested by A to D.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "GOV-11",
+    "decision": "keep",
+    "reason": "One disciplinary process. ISO27001:A.6.4 full and the partial links are tested by A to E.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "GOV-12",
+    "decision": "keep",
+    "reason": "One assessment theme. SOC2:CC3.3 full is tested by A to D.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "GOV-13",
+    "decision": "revise_objectives",
+    "reason": "Internal audit (ISO27001:9.2.1, 9.2.2) and the independent review (A.5.35) are one activity in a small company, so not split. But A.5.35 expects review on significant change, and SOC2:P8.1 is mapped with no objective.",
+    "successors": [],
+    "objective_changes": [
+      {
+        "code": "GOV-13.E",
+        "change": "add",
+        "statement": "After each significant change to the organization, its services or the way security is run, a targeted independent review was held, or the change was recorded as covered by the next planned audit with a reason.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "internal-audit-or-readiness-assessment-report",
+              "risk-reviews-done-after-significant-changes"
+            ]
+          }
+        ],
+        "why": "ISO27001:A.5.35 is mapped full and expects review on significant change as well as at planned intervals."
+      },
+      {
+        "code": "GOV-13.F",
+        "change": "add",
+        "statement": "Where the Privacy category is in scope, the audit program covers the privacy commitments, including how privacy requests and complaints are handled.",
+        "assurance": "design",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "internal-audit-program-setting-frequency-methods",
+              "doc-internal-audit-procedure"
+            ]
+          }
+        ],
+        "why": "SOC2:P8.1 is mapped partial to GOV-13 (guided onboarding part 5, section 7) with no objective behind it."
+      }
+    ],
+    "tenant_impact": "none for data: objectives are content read at request time; a reworded objective with an open not applicable decision is listed for the owner to confirm again"
+  },
+  {
+    "control": "GOV-14",
+    "decision": "keep",
+    "reason": "One coverage review. SOC2:CC5.2 and ISO27001:8.1 partial are tested by A to D. CC5.2 resting on this control alone is the LD-14 finding, handled by the guided onboarding mapping changes.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "GOV-15",
+    "decision": "split",
+    "reason": "Bundles a quarterly management review (SOC2:CC4.2, CC1.2, the forum for control health) with the yearly review by top management that ISO27001:9.3.1 to 9.3.3 require, with its own input list, attendees and outputs. Different cadence, different body, and the ISO part does not apply to a SOC 2 only workspace.",
+    "successors": [
+      {
+        "code": "GOV-31",
+        "status": "proposed",
+        "name": "Yearly management review by top management",
+        "takes_objectives": [
+          "GOV-15.C"
+        ],
+        "requirements": [
+          {
+            "key": "ISO27001:9.3.1",
+            "coverage": "full",
+            "rationale": "A yearly review by top management of whether the program fits, covers what it should and works, with attendees and decisions recorded."
+          },
+          {
+            "key": "ISO27001:9.3.2",
+            "coverage": "full",
+            "rationale": "The review takes each set input and the record shows it, input by input."
+          },
+          {
+            "key": "ISO27001:9.3.3",
+            "coverage": "full",
+            "rationale": "Decisions on improvements, changes and resources are recorded and tracked."
+          },
+          {
+            "key": "ISO27001:5.1",
+            "coverage": "partial",
+            "rationale": "Top management reviewing the program once a year is part of leadership. Policy and objectives are shown by GOV-32 and GOV-26."
+          },
+          {
+            "key": "ISO27001:7.1",
+            "coverage": "partial",
+            "rationale": "The yearly review records the resource commitments for the program as a whole. Needs per objective are in GOV-26."
+          }
+        ]
+      }
+    ],
+    "objective_changes": [
+      {
+        "code": "GOV-15.A",
+        "change": "reword",
+        "statement": "An approved procedure sets a management review at least each quarter with the security lead and managers who can commit resources, and states how actions are recorded and escalated.",
+        "assurance": "design",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "doc-management-review-procedure"
+            ]
+          }
+        ],
+        "why": "The input list of the yearly review moves to GOV-31.A."
+      },
+      {
+        "code": "GOV-15.C",
+        "change": "move",
+        "to": "GOV-31.C",
+        "statement": "In the last 12 months top management judged whether the program still fits the business, covers what it should and works, using the set inputs, and recorded its decisions on improvements, changes and resources.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "management-review-agenda-and-minutes",
+              "doc-management-review-procedure"
+            ]
+          },
+          {
+            "method": "interview",
+            "artifacts": [],
+            "who": "executive_sponsor"
+          }
+        ],
+        "why": "Moves with ISO27001:9.3.1 to 9.3.3 to the successor control."
+      },
+      {
+        "code": "GOV-31.A",
+        "change": "add",
+        "statement": "An approved procedure sets a review by top management at least once a year and lists what it must take in: actions from earlier reviews, changes in outside and inside factors and in what interested parties need, their feedback, nonconformities and corrective actions, measurement and audit results, how far objectives were met, risk results and treatment status, and improvement ideas.",
+        "assurance": "design",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "doc-management-review-procedure"
+            ]
+          }
+        ],
+        "why": "ISO27001:9.3.2 needs the inputs set in advance."
+      },
+      {
+        "code": "GOV-31.B",
+        "change": "add",
+        "statement": "The record of the yearly review shows each listed input was considered, with the source record for each, or says why one did not apply.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "test",
+            "artifacts": [
+              "management-review-agenda-and-minutes"
+            ]
+          }
+        ],
+        "why": "ISO27001:9.3.2 is tested input by input, which the old GOV-15.C did in one line."
+      },
+      {
+        "code": "GOV-31.D",
+        "change": "add",
+        "statement": "Each decision from the yearly review on improvements, changes to the program or resources has an owner and a date and was tracked to closure or carried to the next review.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "test",
+            "artifacts": [
+              "actions-raised-in-the-review-and",
+              "management-review-agenda-and-minutes"
+            ]
+          }
+        ],
+        "why": "ISO27001:9.3.3 outputs are tested on their own."
+      }
+    ],
+    "mapping_changes": [
+      {
+        "requirement": "ISO27001:9.3.1",
+        "control": "GOV-15",
+        "from_coverage": "full",
+        "to_coverage": "removed",
+        "rationale": "The yearly review by top management moves to GOV-31."
+      },
+      {
+        "requirement": "ISO27001:9.3.2",
+        "control": "GOV-15",
+        "from_coverage": "full",
+        "to_coverage": "removed",
+        "rationale": "As above."
+      },
+      {
+        "requirement": "ISO27001:9.3.3",
+        "control": "GOV-15",
+        "from_coverage": "full",
+        "to_coverage": "removed",
+        "rationale": "As above."
+      },
+      {
+        "requirement": "ISO27001:7.1",
+        "control": "GOV-15",
+        "from_coverage": "partial",
+        "to_coverage": "removed",
+        "rationale": "Resource commitments for the program are decided at the yearly review."
+      },
+      {
+        "requirement": "ISO27001:9.3.1",
+        "control": "GOV-31",
+        "from_coverage": null,
+        "to_coverage": "full",
+        "rationale": "See successor."
+      },
+      {
+        "requirement": "ISO27001:9.3.2",
+        "control": "GOV-31",
+        "from_coverage": null,
+        "to_coverage": "full",
+        "rationale": "See successor."
+      },
+      {
+        "requirement": "ISO27001:9.3.3",
+        "control": "GOV-31",
+        "from_coverage": null,
+        "to_coverage": "full",
+        "rationale": "See successor."
+      },
+      {
+        "requirement": "ISO27001:5.1",
+        "control": "GOV-31",
+        "from_coverage": null,
+        "to_coverage": "partial",
+        "rationale": "See successor."
+      },
+      {
+        "requirement": "ISO27001:7.1",
+        "control": "GOV-31",
+        "from_coverage": null,
+        "to_coverage": "partial",
+        "rationale": "See successor."
+      }
+    ],
+    "check_mapping_changes": [
+      {
+        "check": "verity.management_review.in_12_months",
+        "from_control": "GOV-15",
+        "to_control": "GOV-31",
+        "why": "It is a 12 month floor, which fits the yearly review. The quarterly review gets verity.assurance.management_review_held."
+      }
+    ],
+    "tenant_impact": "adoption proposal and data migration: ISO 27001 workspaces are offered GOV-31; the 9.3 mappings move after the owner accepts; management review assurance records stay where they are and are linked to both controls; verity.management_review.in_12_months moves to GOV-31 and its history stays on GOV-15."
+  },
+  {
+    "control": "GOV-16",
+    "decision": "keep",
+    "reason": "One test and its follow up. SOC2:CC4.1, CC7.1 and ISO27001:A.5.35, A.8.29, A.8.34 partial are tested by A to E.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "GOV-17",
+    "decision": "split",
+    "reason": "Bundles the top management policy statement (ISO27001:5.2, a clause duty with its own approver and content) with the topic policy set (SOC2:CC5.3 full, ISO27001:A.5.1 and topic Annex A links). Different approver, different evidence, and SOC 2 does not ask for the statement.",
+    "successors": [
+      {
+        "code": "GOV-32",
+        "status": "proposed",
+        "name": "Top management security policy statement",
+        "takes_objectives": [
+          "GOV-17.A"
+        ],
+        "requirements": [
+          {
+            "key": "ISO27001:5.2",
+            "coverage": "full",
+            "rationale": "A statement approved by top management that fits the company, frames the objectives, commits to the requirements and to improving, is communicated to staff and is available to interested parties."
+          },
+          {
+            "key": "ISO27001:5.1",
+            "coverage": "partial",
+            "rationale": "Top management setting the policy is part of leadership. Review and resourcing are shown by GOV-02, GOV-15 and GOV-31."
+          },
+          {
+            "key": "SOC2:CC5.3",
+            "coverage": "partial",
+            "rationale": "The statement is the top of the policy set that deploys control activities; the topic policies are GOV-17."
+          }
+        ]
+      }
+    ],
+    "objective_changes": [
+      {
+        "code": "GOV-17.A",
+        "change": "move",
+        "to": "GOV-32.A",
+        "statement": "The top level security policy is approved by top management, or by the board where a regulator requires it. It fits the purpose of the company, states the security objectives or how they are set, and commits to meeting the requirements that apply and to improving the program.",
+        "assurance": "design",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "doc-information-security-policy-statement",
+              "approval-record-for-each-policy"
+            ]
+          }
+        ],
+        "why": "Moves with ISO27001:5.2 to the successor control."
+      },
+      {
+        "code": "GOV-17.D",
+        "change": "reword",
+        "statement": "The current version of each policy was available to all staff at a known location during the period.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "published-security-policies-covering-each-required"
+            ]
+          },
+          {
+            "method": "observe",
+            "artifacts": [
+              "published-security-policies-covering-each-required"
+            ]
+          }
+        ],
+        "why": "The part on sharing the top level policy outside the company moves to GOV-32.D."
+      },
+      {
+        "code": "GOV-32.D",
+        "change": "add",
+        "statement": "The current policy statement was communicated to staff and made available to customers and other interested parties who need it, and the version they could reach was the approved one.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "doc-information-security-policy-statement",
+              "staff-acknowledgement-of-current-policies"
+            ]
+          }
+        ],
+        "why": "ISO27001:5.2 expects the statement communicated inside and available outside; this was half of the old GOV-17.D."
+      }
+    ],
+    "mapping_changes": [
+      {
+        "requirement": "ISO27001:5.2",
+        "control": "GOV-17",
+        "from_coverage": "partial",
+        "to_coverage": "removed",
+        "rationale": "The statement moves to GOV-32. CS-04 keeps its partial link for communication to staff."
+      },
+      {
+        "requirement": "ISO27001:5.1",
+        "control": "GOV-17",
+        "from_coverage": "partial",
+        "to_coverage": "removed",
+        "rationale": "Top management setting the policy moves with the statement."
+      },
+      {
+        "requirement": "ISO27001:5.2",
+        "control": "GOV-32",
+        "from_coverage": null,
+        "to_coverage": "full",
+        "rationale": "See successor."
+      },
+      {
+        "requirement": "ISO27001:5.1",
+        "control": "GOV-32",
+        "from_coverage": null,
+        "to_coverage": "partial",
+        "rationale": "See successor."
+      },
+      {
+        "requirement": "SOC2:CC5.3",
+        "control": "GOV-32",
+        "from_coverage": null,
+        "to_coverage": "partial",
+        "rationale": "See successor. GOV-17 keeps CC5.3 full."
+      }
+    ],
+    "tenant_impact": "adoption proposal: ISO 27001 workspaces are offered GOV-32; the policy statement document is linked to GOV-32 on acceptance; 5.2 readiness is recomputed, never copied."
+  },
+  {
+    "control": "GOV-18",
+    "decision": "keep",
+    "reason": "One yearly assessment. SOC2:CC3.2 full and ISO27001:6.1.1, 6.1.2, 8.2 partial are tested by A to E.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "GOV-19",
+    "decision": "keep",
+    "reason": "One register. All links partial and tested by A to D.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "GOV-20",
+    "decision": "revise_objectives",
+    "reason": "Right control, but SOC2:CC9.1 is mapped partial and treatment by transfer or insurance was never tested.",
+    "successors": [],
+    "objective_changes": [
+      {
+        "code": "GOV-20.F",
+        "change": "add",
+        "statement": "Each risk treated by transfer names the contract or insurance policy that carries it, with its cover and expiry, and a recorded decision says whether insurance is needed against business disruption.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "risk-register-with-owners-ratings-and",
+              "treatment-plan-with-owners-and-due"
+            ]
+          }
+        ],
+        "why": "SOC2:CC9.1 is mapped partial to GOV-20 and the guided onboarding plan adds the insurance decision; no objective tested transfer."
+      }
+    ],
+    "tenant_impact": "none for data: objectives are content read at request time; a reworded objective with an open not applicable decision is listed for the owner to confirm again"
+  },
+  {
+    "control": "GOV-21",
+    "decision": "revise_objectives",
+    "reason": "Right control, but ISO27001:5.3 expects roles to be communicated and nothing tested it.",
+    "successors": [],
+    "objective_changes": [
+      {
+        "code": "GOV-21.E",
+        "change": "add",
+        "statement": "Each person holding a role with security duties was told of the role and its duties in writing, such as through a role description they acknowledged, and could describe it when asked.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "role-descriptions-for-security-and-compliance",
+              "staff-acknowledgement-of-current-policies"
+            ]
+          },
+          {
+            "method": "interview",
+            "artifacts": [],
+            "who": "security_lead"
+          }
+        ],
+        "why": "ISO27001:5.3 expects roles to be communicated, and the mapping rationale says this control does not show it; no other control did."
+      }
+    ],
+    "tenant_impact": "none for data: objectives are content read at request time; a reworded objective with an open not applicable decision is listed for the owner to confirm again"
+  },
+  {
+    "control": "GOV-22",
+    "decision": "keep",
+    "reason": "The description and its commitments section are one document in practice. SOC2:CC3.1 full is tested by B; A, C and D test the description. Not split.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "GOV-23",
+    "decision": "keep",
+    "reason": "Scope and the design of the management system as connected processes (ISO27001:4.3 full, 4.4 partial) share owner and cadence.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "GOV-24",
+    "decision": "keep",
+    "reason": "ISO27001:4.1 full, tested by A to D.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "GOV-25",
+    "decision": "keep",
+    "reason": "ISO27001:4.2 full, tested by A to D.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "GOV-26",
+    "decision": "keep",
+    "reason": "Objectives and their measures are one activity. ISO27001:6.2 full and 5.1, 7.1, 9.1 partial are tested by A to E. The missing record type for measures is a product gap, not a control gap.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "GOV-27",
+    "decision": "keep",
+    "reason": "ISO27001:6.1.3 partial (the SoA part), tested by A to E.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "GOV-28",
+    "decision": "revise_objectives",
+    "reason": "Right control, but B bundled the list of required documents (ISO27001:7.5.1) with operating procedures for systems (A.5.37), which engineering owns.",
+    "successors": [],
+    "objective_changes": [
+      {
+        "code": "GOV-28.B",
+        "change": "reword",
+        "statement": "A list names every document and record the program needs, including those the standards, laws and contracts followed call for, each with an owner.",
+        "assurance": "design",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "doc-document-control-procedure"
+            ]
+          }
+        ],
+        "why": "The operating procedures part moves to GOV-28.F, so ISO27001:7.5.1 and A.5.37 are tested apart."
+      },
+      {
+        "code": "GOV-28.F",
+        "change": "add",
+        "statement": "An operating procedure exists for each routine task on the systems in scope, with an owner, version and review date, and the people who run those systems can reach the current version.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "doc-operating-procedure-template",
+              "version-history-and-approval-record-for"
+            ]
+          }
+        ],
+        "why": "ISO27001:A.5.37 is owned by engineering and was folded into the documents list objective."
+      }
+    ],
+    "tenant_impact": "none for data: objectives are content read at request time; a reworded objective with an open not applicable decision is listed for the owner to confirm again"
+  },
+  {
+    "control": "GOV-29",
+    "decision": "revise_objectives",
+    "reason": "Right control for ISO27001:8.1 full, but D bundled planned changes (6.3) with the review of unplanned ones.",
+    "successors": [],
+    "objective_changes": [
+      {
+        "code": "GOV-29.D",
+        "change": "reword",
+        "statement": "Before each planned change to the management system or the services in scope, the reason, expected effect, owner, timing and resources were recorded and approved.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "review-of-planned-changes-and-outsourced"
+            ]
+          },
+          {
+            "method": "interview",
+            "artifacts": [],
+            "who": "security_lead"
+          }
+        ],
+        "why": "Planned and unplanned changes are two populations; unplanned ones move to GOV-29.F."
+      },
+      {
+        "code": "GOV-29.F",
+        "change": "add",
+        "statement": "Each unplanned change to the management system or the services in scope in the period was reviewed afterwards for harm, and any action needed was raised.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "review-of-planned-changes-and-outsourced",
+              "log-of-control-deficiencies-with-owner"
+            ]
+          }
+        ],
+        "why": "ISO27001:8.1 asks for unintended changes to be reviewed, tested on its own."
+      }
+    ],
+    "tenant_impact": "none for data: objectives are content read at request time; a reworded objective with an open not applicable decision is listed for the owner to confirm again"
+  },
+  {
+    "control": "GOV-30",
+    "decision": "keep",
+    "reason": "ISO27001:10.1 full and 4.4, 6.1.1 partial, tested by A to E.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "HR-01",
+    "decision": "keep",
+    "reason": "One screening activity. ISO27001:A.6.1 full is tested by A to E.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "HR-02",
+    "decision": "revise_objectives",
+    "reason": "Right control, but B mixed staff and contractors (joiner roster) with outside parties (vendor and partner list) under ISO27001:A.6.6 full.",
+    "successors": [],
+    "objective_changes": [
+      {
+        "code": "HR-02.B",
+        "change": "reword",
+        "statement": "The list of staff and contractors who started in the period was complete when compared with the joiner roster and the contractor register.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "test",
+            "artifacts": [
+              "signed-agreements-for-a-sample-of",
+              "roster-of-joiners-and-leavers-with",
+              "contractor-register-with-start-and-end"
+            ]
+          }
+        ],
+        "why": "Outside parties are a different population with a different source; they move to HR-02.F."
+      },
+      {
+        "code": "HR-02.F",
+        "change": "add",
+        "statement": "Each outside party given confidential information in the period, such as a supplier, partner or prospective customer, had a non-disclosure agreement or contract confidentiality terms in force first.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "test",
+            "artifacts": [
+              "signed-agreements-for-a-sample-of",
+              "vendor-inventory-with-owner-data-and",
+              "security-terms-agreed-in-each-vendor"
+            ]
+          }
+        ],
+        "why": "ISO27001:A.6.6 is mapped full and covers outside parties, whose population is the vendor and partner list, not the joiner roster."
+      }
+    ],
+    "tenant_impact": "none for data: objectives are content read at request time; a reworded objective with an open not applicable decision is listed for the owner to confirm again"
+  },
+  {
+    "control": "HR-03",
+    "decision": "keep",
+    "reason": "One contractor lifecycle, a distinct population from employees.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "HR-04",
+    "decision": "keep",
+    "reason": "One set of job descriptions. ISO27001:7.2, A.6.2 and SOC2:CC1.4 partial are tested by A to D.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "HR-05",
+    "decision": "revise_objectives",
+    "reason": "Right control, but C mixed leavers with role changes, two populations ISO27001:A.6.5 treats separately. HR-05 overlaps IAM-12 on access removal; not merged, HR-05 is wider.",
+    "successors": [],
+    "objective_changes": [
+      {
+        "code": "HR-05.C",
+        "change": "reword",
+        "statement": "Every leaver on the roster for the period had a closed offboarding record.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "test",
+            "artifacts": [
+              "roster-of-joiners-and-leavers-with",
+              "completed-offboarding-records-for-leavers-in"
+            ]
+          }
+        ],
+        "why": "Role changes move to HR-05.F."
+      },
+      {
+        "code": "HR-05.F",
+        "change": "add",
+        "statement": "Each role change in the period had the access, asset and duty items of the checklist run by the date of the change, and access the new role does not need was removed.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "test",
+            "artifacts": [
+              "roster-of-joiners-and-leavers-with",
+              "completed-offboarding-records-for-leavers-in"
+            ]
+          }
+        ],
+        "why": "ISO27001:A.6.5 covers change of role; movers and leavers are separate populations with separate failures."
+      }
+    ],
+    "tenant_impact": "none for data: objectives are content read at request time; a reworded objective with an open not applicable decision is listed for the owner to confirm again"
+  },
+  {
+    "control": "HR-06",
+    "decision": "keep",
+    "reason": "One joiner checklist. Overlaps IAM-01 on access approval; not merged, HR-06 is wider.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "HR-07",
+    "decision": "keep",
+    "reason": "One review cycle. SOC2:CC1.4 and CC1.5 partial are tested by A to D.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "HR-08",
+    "decision": "revise_objectives",
+    "reason": "Right control, but SOC2:CC1.4 says attendance alone does not show competence and ISO27001:A.6.3 and 7.2 expect training to work; no objective tested understanding.",
+    "successors": [],
+    "objective_changes": [
+      {
+        "code": "HR-08.E",
+        "change": "add",
+        "statement": "The training checked that people understood it, such as through a quiz or a phishing exercise, and each person below the pass mark was trained again.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "completion-records-for-all-staff",
+              "training-content-and-schedule"
+            ]
+          }
+        ],
+        "why": "The SOC2:CC1.4 rationale says attendance alone does not show competence, and ISO27001:A.6.3 and 7.2 expect training to work."
+      }
+    ],
+    "tenant_impact": "none for data: objectives are content read at request time; a reworded objective with an open not applicable decision is listed for the owner to confirm again"
+  },
+  {
+    "control": "HR-09",
+    "decision": "keep",
+    "reason": "ISO27001:7.2 full, tested by A to D.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  }
+]

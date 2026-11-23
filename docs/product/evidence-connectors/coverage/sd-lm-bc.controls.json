@@ -1,0 +1,1679 @@
+[
+  {
+    "control": "SD-01",
+    "decision": "revise_objectives",
+    "reason": "SOC2:CC8.1 (full) and ISO27001:A.8.19, A.8.32 rely on SD-01 for every kind of production change, including server software, infrastructure, configuration and database changes. SD-01.B tested a population of merges only, so it is reworded to cover the whole change population.",
+    "successors": [],
+    "objective_changes": [
+      {
+        "code": "SD-01.B",
+        "change": "reword",
+        "statement": "Every production change released in the period appeared on the change list: application releases checked against the deployments, and infrastructure, configuration, database and server software changes checked against the cloud change history and administrator activity.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "test",
+            "artifacts": [
+              "change-requests-with-approval-for-a",
+              "sample-of-reviewed-changes",
+              "deployment-history-for-a-sample-of",
+              "infrastructure-and-configuration-change-history"
+            ]
+          }
+        ],
+        "why": "ISO27001:A.8.19 and A.8.32 rely on SD-01 for software installed on servers and for infrastructure, configuration and database changes, but the population was merges only."
+      }
+    ],
+    "tenant_impact": "none",
+    "check_mapping_changes": [
+      {
+        "check": "ci.deployment_history_recorded",
+        "control": "SD-01",
+        "change": "add",
+        "coverage": "partial",
+        "rationale": "Named as a source of deployment-history-for-a-sample-of on this control; without the mapping its evidence does not attach here (AU-11)."
+      },
+      {
+        "check": "ci.production_deploys_controlled",
+        "control": "SD-01",
+        "change": "add",
+        "coverage": "partial",
+        "rationale": "Named as a source of deployment-history-for-a-sample-of on this control; without the mapping its evidence does not attach here (AU-11)."
+      },
+      {
+        "check": "cloud.config_changes_recorded",
+        "control": "SD-01",
+        "change": "add",
+        "coverage": "partial",
+        "rationale": "Named as a source of infrastructure-and-configuration-change-history on this control; without the mapping its evidence does not attach here (AU-11)."
+      }
+    ]
+  },
+  {
+    "control": "SD-02",
+    "decision": "revise_objectives",
+    "reason": "ISO27001:A.8.28 and A.8.29 rely on static analysis in the pipeline, which no objective tested. SD-02.F is added. SD-02.E applies only when Processing Integrity (SOC2:PI1.3) is in scope and reads not applicable otherwise.",
+    "successors": [],
+    "objective_changes": [
+      {
+        "code": "SD-02.F",
+        "change": "add",
+        "statement": "The security tests the engineering standard names, such as static analysis, ran on every change merged in the period, and each finding they raised was fixed, dismissed with a reason or carried as an approved exception before release.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "test",
+            "artifacts": [
+              "static-analysis-results-for-merged-changes"
+            ]
+          },
+          {
+            "method": "examine",
+            "artifacts": [
+              "testing-standard-stating-what-must-pass"
+            ]
+          }
+        ],
+        "why": "ISO27001:A.8.28 and A.8.29 rely on static analysis in the pipeline (rationales on SD-02 and SD-10). No objective tested that it ran."
+      }
+    ],
+    "tenant_impact": "none",
+    "check_mapping_changes": [
+      {
+        "check": "vcs.code_scanning_enabled",
+        "control": "SD-02",
+        "change": "add",
+        "coverage": "partial",
+        "rationale": "Named as a source of static-analysis-results-for-merged-changes on this control; without the mapping its evidence does not attach here (AU-11)."
+      },
+      {
+        "check": "vcs.default_branch_protected",
+        "control": "SD-02",
+        "change": "add",
+        "coverage": "partial",
+        "rationale": "Named as a source of branch-protection-settings on this control; without the mapping its evidence does not attach here (AU-11)."
+      }
+    ]
+  },
+  {
+    "control": "SD-03",
+    "decision": "split",
+    "reason": "SD-03 bundles vulnerability scanning (SOC2:CC6.8, CC7.1, ISO27001:A.8.8, A.8.28, A.8.29) with a component list and licence review (ISO27001:A.5.32). The licence review has a different owner (legal with engineering), a different remediation (replace the component or approve the licence) and different applicability (a SOC 2 only workspace can leave it out), and no operating objective tested it.",
+    "successors": [
+      {
+        "code": "SD-18",
+        "status": "proposed",
+        "name": "Software component list and licence review",
+        "takes_objectives": [],
+        "new_objectives": [
+          "SD-18.A",
+          "SD-18.B",
+          "SD-18.C"
+        ],
+        "requirements": [
+          {
+            "key": "ISO27001:A.5.32",
+            "coverage": "partial",
+            "rationale": "Moved from SD-03. The component list records each open source component's licence, and licences that conflict with how the product is used or sold are reviewed before release. Commercial licences sit with GOV-05 and rights in staff work with HR-02."
+          },
+          {
+            "key": "ISO27001:A.5.21",
+            "coverage": "partial",
+            "rationale": "A component list per release shows which third party software each release contains, which is the software part of supply chain visibility. Vulnerability scanning of those components stays with SD-03."
+          }
+        ]
+      }
+    ],
+    "objective_changes": [
+      {
+        "code": "SD-03.A",
+        "change": "reword",
+        "statement": "The dependency triage standard is approved. It names the scanner for code dependencies and container images, sets triage and fix timeframes by severity, says which new critical findings fail a build and how exceptions are approved.",
+        "assurance": "design",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "dependency-vulnerability-triage-standard-with-timeframes",
+              "doc-engineering-security-standard"
+            ]
+          }
+        ],
+        "why": "The component list with licences moves to the proposed SD-18.A."
+      },
+      {
+        "code": "SD-18.A",
+        "change": "add",
+        "statement": "The component and licence standard is approved. It says which builds produce a component list, which licences are allowed, restricted or not allowed for how the product is used or sold, and who may approve an exception.",
+        "assurance": "design",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "doc-engineering-security-standard"
+            ]
+          }
+        ],
+        "why": "New objective on successor SD-18."
+      },
+      {
+        "code": "SD-18.B",
+        "change": "add",
+        "statement": "Each release in the period had a component list, produced by the build, naming each component, its version and its licence.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "test",
+            "artifacts": [
+              "software-component-list-with-licences"
+            ]
+          }
+        ],
+        "why": "New objective on successor SD-18."
+      },
+      {
+        "code": "SD-18.C",
+        "change": "add",
+        "statement": "Components with a restricted or not allowed licence were found before release and removed, replaced or approved as an exception with a reason.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "test",
+            "artifacts": [
+              "licence-exceptions-record",
+              "software-component-list-with-licences"
+            ]
+          }
+        ],
+        "why": "New objective on successor SD-18."
+      }
+    ],
+    "mapping_changes": [
+      {
+        "requirement": "ISO27001:A.5.32",
+        "control": "SD-03",
+        "change": "remove",
+        "coverage": null,
+        "rationale": "Moves to SD-18 with the component list and licence review."
+      }
+    ],
+    "tenant_impact": "adoption proposal: offer SD-18 to ISO workspaces; SD-03 wording change offered, not applied (CF-6)",
+    "check_mapping_changes": [
+      {
+        "check": "verity.vulns.within_sla",
+        "control": "SD-03",
+        "change": "add",
+        "coverage": "partial",
+        "rationale": "Named as a source of open-alerts-triaged-within-the-timeframe, vulnerability-register-with-remediation-and-accepted on this control; without the mapping its evidence does not attach here (AU-11)."
+      }
+    ]
+  },
+  {
+    "control": "SD-04",
+    "decision": "keep",
+    "reason": "One activity, the emergency path, with its own procedure, records and retrospective review. Objectives cover SOC2:CC8.1 and ISO27001:A.8.32 as mapped.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none",
+    "check_mapping_changes": [
+      {
+        "check": "verity.management_review.in_12_months",
+        "control": "SD-04",
+        "change": "add",
+        "coverage": "partial",
+        "rationale": "Named as a source of management-review-agenda-and-minutes on this control; without the mapping its evidence does not attach here (AU-11)."
+      }
+    ]
+  },
+  {
+    "control": "SD-05",
+    "decision": "revise_objectives",
+    "reason": "SD-05.D (rejects and duplicates held in a monitored queue, rejection rate alerts) is processing integrity error handling under SOC2:PI1.2, not secure input validation. It moves to the proposed SD-15. What stays answers SOC2:PI1.2 and ISO27001:A.8.26, A.8.28, so SD-05 must be adoptable without Processing Integrity (onboarding lists it as on demand for PI only).",
+    "successors": [],
+    "objective_changes": [
+      {
+        "code": "SD-05.D",
+        "change": "move",
+        "to": "SD-15.D",
+        "why": "Moves to SD-15 with the activity it tests."
+      }
+    ],
+    "tenant_impact": "data migration: objective SD-05.D results and evidence stay on SD-05 history; SD-15 starts empty",
+    "check_mapping_changes": [
+      {
+        "check": "verity.vulns.within_sla",
+        "control": "SD-05",
+        "change": "add",
+        "coverage": "partial",
+        "rationale": "Named as a source of vulnerability-register-with-remediation-and-accepted on this control; without the mapping its evidence does not attach here (AU-11)."
+      }
+    ]
+  },
+  {
+    "control": "SD-06",
+    "decision": "keep",
+    "reason": "One coherent activity, independent review before merge, with configuration and operating objectives. ISO27001:A.8.4 is partial by its own rationale (it does not show who can read code).",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "SD-07",
+    "decision": "keep",
+    "reason": "One activity (integrity of intermediate stores) for one criterion, SOC2:PI1.5. SD-07.E overlaps DM-08 retention but tests the pipeline's own stores.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none",
+    "check_mapping_changes": [
+      {
+        "check": "cloud.storage_lifecycle",
+        "control": "SD-07",
+        "change": "add",
+        "coverage": "partial",
+        "rationale": "Named as a source of evidence-data-was-deleted-when-retention on this control; without the mapping its evidence does not attach here (AU-11)."
+      },
+      {
+        "check": "observability.processing_monitored",
+        "control": "SD-07",
+        "change": "add",
+        "coverage": "partial",
+        "rationale": "Named as a source of integrity-check-results on this control; without the mapping its evidence does not attach here (AU-11)."
+      }
+    ]
+  },
+  {
+    "control": "SD-08",
+    "decision": "keep",
+    "reason": "Job monitoring and reconciliation serve SOC2:PI1.3 and PI1.4 together. Delivery of outputs to the right recipient, which the PI1.4 rationale leaves open, goes to the proposed SD-16. The SOC 1 gap on general job scheduling (onboarding section 9) is not added, since SOC 1 is guidance only.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "SD-09",
+    "decision": "keep",
+    "reason": "Specifications for SOC2:PI1.1; objectives cover definition, currency, test tracing and review after change. Communicating specifications to users is left to CS-02 (onboarding section 7).",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none",
+    "check_mapping_changes": [
+      {
+        "check": "ci.required_checks_passed",
+        "control": "SD-09",
+        "change": "add",
+        "coverage": "partial",
+        "rationale": "Named as a source of test-run-results-for-a-sample on this control; without the mapping its evidence does not attach here (AU-11)."
+      },
+      {
+        "check": "tickets.changes_linked",
+        "control": "SD-09",
+        "change": "add",
+        "coverage": "partial",
+        "rationale": "Named as a source of change-requests-with-approval-for-a on this control; without the mapping its evidence does not attach here (AU-11)."
+      },
+      {
+        "check": "vcs.merged_changes_reviewed",
+        "control": "SD-09",
+        "change": "add",
+        "coverage": "partial",
+        "rationale": "Named as a source of change-requests-with-approval-for-a on this control; without the mapping its evidence does not attach here (AU-11)."
+      }
+    ]
+  },
+  {
+    "control": "SD-10",
+    "decision": "revise_objectives",
+    "reason": "ISO27001:A.8.25 and A.8.27 (both full) and A.8.26, A.8.29 rest on SD-10. Objective B bundled approval of security requirements before build and the check before release that A.8.29 relies on. B is reworded and F added. A split into a separate design review control was weighed and not proposed: one owner, one population, and the objectives already separate the evidence.",
+    "successors": [],
+    "objective_changes": [
+      {
+        "code": "SD-10.B",
+        "change": "reword",
+        "statement": "Each new application, major feature and acquired system in the period had its security requirements recorded and approved at design review before it was built or bought.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "test",
+            "artifacts": [
+              "approved-security-requirements-for-a-sample"
+            ]
+          },
+          {
+            "method": "examine",
+            "artifacts": [
+              "security-assessment-for-each-critical-vendor"
+            ]
+          }
+        ],
+        "why": "The original bundled approval before build and verification before release, two moments with different evidence. Verification moves to SD-10.F."
+      },
+      {
+        "code": "SD-10.F",
+        "change": "add",
+        "statement": "Before release, each of those systems was checked against its approved security requirements, and any requirement not met was fixed or accepted by the approver.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "test",
+            "artifacts": [
+              "approved-security-requirements-for-a-sample"
+            ]
+          }
+        ],
+        "why": "ISO27001:A.8.29 relies on SD-10 for acceptance against security requirements before release."
+      }
+    ],
+    "tenant_impact": "none",
+    "check_mapping_changes": [
+      {
+        "check": "idp.access_list_exported",
+        "control": "SD-10",
+        "change": "add",
+        "coverage": "partial",
+        "rationale": "Named as a source of group-and-role-membership-export on this control; without the mapping its evidence does not attach here (AU-11)."
+      },
+      {
+        "check": "verity.vendors.assessed_in_cadence",
+        "control": "SD-10",
+        "change": "add",
+        "coverage": "partial",
+        "rationale": "Named as a source of security-assessment-for-each-critical-vendor on this control; without the mapping its evidence does not attach here (AU-11)."
+      }
+    ]
+  },
+  {
+    "control": "SD-11",
+    "decision": "keep",
+    "reason": "One activity, detecting and handling leaked secrets, for SOC2:CC6.1, CC7.1 and ISO27001:A.5.17, A.8.28. Pre commit hooks remain guidance.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none",
+    "check_mapping_changes": [
+      {
+        "check": "alerts.incidents_resolved",
+        "control": "SD-11",
+        "change": "add",
+        "coverage": "partial",
+        "rationale": "Named as a source of security-incident-register on this control; without the mapping its evidence does not attach here (AU-11)."
+      },
+      {
+        "check": "cloud.secrets_managed",
+        "control": "SD-11",
+        "change": "add",
+        "coverage": "partial",
+        "rationale": "Named as a source of secret-store-rotation-list on this control; without the mapping its evidence does not attach here (AU-11)."
+      }
+    ]
+  },
+  {
+    "control": "SD-12",
+    "decision": "keep",
+    "reason": "Environment separation, ISO27001:A.8.31 (full) and SOC2:CC8.1. SD-12.E overlaps DM-13 (masked test data); keep both, they test different populations (environments versus data sets).",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none",
+    "check_mapping_changes": [
+      {
+        "check": "ci.deployment_history_recorded",
+        "control": "SD-12",
+        "change": "add",
+        "coverage": "partial",
+        "rationale": "Named as a source of deployment-history-for-a-sample-of on this control; without the mapping its evidence does not attach here (AU-11)."
+      },
+      {
+        "check": "cloud.least_privilege",
+        "control": "SD-12",
+        "change": "add",
+        "coverage": "partial",
+        "rationale": "Named as a source of cloud-accounts-and-production-access, list-of-privileged-accounts-with-approval on this control; without the mapping its evidence does not attach here (AU-11)."
+      },
+      {
+        "check": "idp.admins_limited",
+        "control": "SD-12",
+        "change": "add",
+        "coverage": "partial",
+        "rationale": "Named as a source of list-of-privileged-accounts-with-approval on this control; without the mapping its evidence does not attach here (AU-11)."
+      }
+    ]
+  },
+  {
+    "control": "SD-13",
+    "decision": "keep",
+    "reason": "Release step of change, SOC2:CC8.1 and ISO27001:A.8.19, A.8.32. Objectives cover source, approval, deployers and history.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none",
+    "check_mapping_changes": [
+      {
+        "check": "cloud.least_privilege",
+        "control": "SD-13",
+        "change": "add",
+        "coverage": "partial",
+        "rationale": "Named as a source of list-of-privileged-accounts-with-approval on this control; without the mapping its evidence does not attach here (AU-11)."
+      },
+      {
+        "check": "cloud.machine_credentials_rotated",
+        "control": "SD-13",
+        "change": "add",
+        "coverage": "partial",
+        "rationale": "Named as a source of inventory-of-service-accounts-and-keys on this control; without the mapping its evidence does not attach here (AU-11)."
+      },
+      {
+        "check": "vcs.default_branch_protected",
+        "control": "SD-13",
+        "change": "add",
+        "coverage": "partial",
+        "rationale": "Named as a source of branch-protection-settings on this control; without the mapping its evidence does not attach here (AU-11)."
+      }
+    ]
+  },
+  {
+    "control": "SD-14",
+    "decision": "keep",
+    "reason": "Traceability across the change records, SOC2:CC8.1 and ISO27001:A.8.32.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none",
+    "check_mapping_changes": [
+      {
+        "check": "vcs.merged_changes_reviewed",
+        "control": "SD-14",
+        "change": "add",
+        "coverage": "partial",
+        "rationale": "Named as a source of change-records-linking-request-review-and, sample-of-reviewed-changes on this control; without the mapping its evidence does not attach here (AU-11)."
+      }
+    ]
+  },
+  {
+    "control": "SD-15",
+    "decision": "add",
+    "reason": "SOC2:PI1.2 and PI1.3 rest on SD-05 and SD-08 alone, each partial (LD-14). Error handling and correction is the missing activity (onboarding section 7). Receives SD-05.D.",
+    "name": "Processing error handling and correction",
+    "status": "proposed",
+    "requirements": [
+      {
+        "key": "SOC2:PI1.2",
+        "coverage": "partial",
+        "rationale": "Rejected and duplicate inputs are held in a monitored queue and corrected, so input errors are not lost. Validation at the boundary comes from SD-05."
+      },
+      {
+        "key": "SOC2:PI1.3",
+        "coverage": "partial",
+        "rationale": "Processing errors are logged, corrected with approval and reprocessed against the reconciliation. Detecting the error comes from SD-08."
+      }
+    ],
+    "successors": [],
+    "objective_changes": [
+      {
+        "code": "SD-15.A",
+        "change": "add",
+        "statement": "The error handling procedure is approved. It says where rejected inputs and processing errors are held, who reviews them, how a correction is approved and reprocessed, and the time allowed for each.",
+        "assurance": "design",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "doc-processing-integrity-procedure"
+            ]
+          }
+        ],
+        "why": "New control."
+      },
+      {
+        "code": "SD-15.B",
+        "change": "add",
+        "statement": "Each processing error in the period was logged with the date, the records affected, the cause and the correction, and was closed within the time the procedure allows.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "test",
+            "artifacts": [
+              "processing-error-log"
+            ]
+          }
+        ],
+        "why": "New control."
+      },
+      {
+        "code": "SD-15.C",
+        "change": "add",
+        "statement": "Corrections and reprocessing were approved by someone other than the person who made them, and the reprocessed run reconciled before its output was released.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "test",
+            "artifacts": [
+              "processing-error-log",
+              "reconciliation-results-and-how-exceptions-were"
+            ]
+          }
+        ],
+        "why": "New control."
+      },
+      {
+        "code": "SD-15.D",
+        "change": "move",
+        "moved_from": "SD-05.D",
+        "why": "Moved from SD-05.D with the activity it tests."
+      }
+    ],
+    "tenant_impact": "adoption proposal: offer when Processing Integrity is elected",
+    "check_mapping_changes": [
+      {
+        "check": "observability.processing_monitored",
+        "control": "SD-15",
+        "change": "add",
+        "coverage": "partial",
+        "rationale": "Named as a source of evidence-validation-was-tested, reconciliation-results-and-how-exceptions-were on this control; without the mapping its evidence does not attach here (AU-11)."
+      }
+    ]
+  },
+  {
+    "control": "SD-16",
+    "decision": "add",
+    "reason": "SOC2:PI1.4 rests on SD-08 alone, and the SD-08 rationale says delivery to the right recipient needs its own check (onboarding section 7).",
+    "name": "Output delivery and review",
+    "status": "proposed",
+    "requirements": [
+      {
+        "key": "SOC2:PI1.4",
+        "coverage": "partial",
+        "rationale": "Outputs are checked before release and reach only their intended recipients on time, with wrong or late outputs corrected. SD-08 shows the outputs were produced."
+      }
+    ],
+    "successors": [],
+    "objective_changes": [
+      {
+        "code": "SD-16.A",
+        "change": "add",
+        "statement": "Each key output has an approved specification of its recipients, format and timing, the checks made before release, and how a wrong or late output is withdrawn and corrected.",
+        "assurance": "design",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "processing-specifications-covering-inputs-outputs-and",
+              "doc-processing-integrity-procedure"
+            ]
+          }
+        ],
+        "why": "New control."
+      },
+      {
+        "code": "SD-16.B",
+        "change": "add",
+        "statement": "Each scheduled output in the period was produced on time and passed its completeness and accuracy checks before release.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "test",
+            "artifacts": [
+              "output-delivery-log"
+            ]
+          }
+        ],
+        "why": "New control."
+      },
+      {
+        "code": "SD-16.C",
+        "change": "add",
+        "statement": "Outputs reached only their intended recipients, and each misdirected, late or wrong output was recorded, corrected and, where a customer was affected, reported to them.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "output-delivery-log",
+              "security-incident-register"
+            ]
+          }
+        ],
+        "why": "New control."
+      }
+    ],
+    "tenant_impact": "adoption proposal: offer when Processing Integrity is elected",
+    "check_mapping_changes": [
+      {
+        "check": "alerts.incidents_resolved",
+        "control": "SD-16",
+        "change": "add",
+        "coverage": "partial",
+        "rationale": "Named as a source of security-incident-register on this control; without the mapping its evidence does not attach here (AU-11)."
+      }
+    ]
+  },
+  {
+    "control": "SD-17",
+    "decision": "add",
+    "reason": "SOC2:CC8.1 names changes to data. Direct changes to production data outside the application are tested by every SOC 1 and SOC 2 auditor and no SD control covers them (onboarding section 9).",
+    "name": "Direct changes to production data",
+    "status": "proposed",
+    "requirements": [
+      {
+        "key": "SOC2:CC8.1",
+        "coverage": "partial",
+        "rationale": "Changes made straight to production data, outside the application and its release path, are requested, approved by someone other than the person who runs them, logged and reconciled with the database activity. The other change controls cover code and infrastructure."
+      },
+      {
+        "key": "ISO27001:A.8.32",
+        "coverage": "partial",
+        "rationale": "Brings data fixes run by hand inside change control: approval before the change, a limited group who may run it, and a check of the database activity against approved changes."
+      }
+    ],
+    "successors": [],
+    "objective_changes": [
+      {
+        "code": "SD-17.A",
+        "change": "add",
+        "statement": "The procedure for changing production data outside the application is approved. It says when a direct change is allowed, who may request, approve and run one, that it runs as a reviewed script where possible, and what is logged.",
+        "assurance": "design",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "doc-change-management-procedure"
+            ]
+          }
+        ],
+        "why": "New control."
+      },
+      {
+        "code": "SD-17.B",
+        "change": "add",
+        "statement": "Every direct change to production data in the period was requested and approved before it ran, by someone other than the person who ran it.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "test",
+            "artifacts": [
+              "production-data-change-log"
+            ]
+          }
+        ],
+        "why": "New control."
+      },
+      {
+        "code": "SD-17.C",
+        "change": "add",
+        "statement": "Only the listed people could change production data directly, and the database activity for the period matched the approved changes.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "test",
+            "artifacts": [
+              "list-of-privileged-accounts-with-approval",
+              "database-activity-log-review"
+            ]
+          }
+        ],
+        "why": "New control."
+      }
+    ],
+    "tenant_impact": "adoption proposal: offer to every workspace with production data",
+    "check_mapping_changes": [
+      {
+        "check": "cloud.least_privilege",
+        "control": "SD-17",
+        "change": "add",
+        "coverage": "partial",
+        "rationale": "Named as a source of list-of-privileged-accounts-with-approval on this control; without the mapping its evidence does not attach here (AU-11)."
+      }
+    ]
+  },
+  {
+    "control": "LM-01",
+    "decision": "keep",
+    "reason": "Asset inventory for SOC2:CC2.1, CC6.1 and ISO27001:A.5.9. Licence and end of support details in the guidance stay advisory.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "LM-02",
+    "decision": "revise_objectives",
+    "reason": "ISO27001:A.8.15 (full) needs collection, retention, protection, gap detection and review. LM-02.B and LM-02.C each bundled two of these with different evidence. Reworded B and C, added F (gap alerts) and G (protection from administrators).",
+    "successors": [],
+    "objective_changes": [
+      {
+        "code": "LM-02.B",
+        "change": "reword",
+        "statement": "Sign in, access change, administrator and application audit events from every in scope system reached the central log store.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "test",
+            "artifacts": [
+              "evidence-logs-are-reviewed",
+              "asset-inventory"
+            ]
+          }
+        ],
+        "why": "Gap alerting moves to its own objective, LM-02.F, because it is shown by different evidence (monitor and alert history, not source coverage)."
+      },
+      {
+        "code": "LM-02.C",
+        "change": "reword",
+        "statement": "Logs were kept for at least 12 months with the latest 3 months searchable at once.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "logging-and-retention-standard"
+            ]
+          },
+          {
+            "method": "test",
+            "artifacts": [
+              "log-store-retention-and-access-settings"
+            ]
+          },
+          {
+            "method": "interview",
+            "artifacts": [],
+            "who": "engineering_lead"
+          }
+        ],
+        "why": "Retention and protection against administrators were one objective. ISO27001:A.8.15 claims both; protection moves to LM-02.G, and retention gains a settings test instead of an interview alone."
+      },
+      {
+        "code": "LM-02.F",
+        "change": "add",
+        "statement": "A source that stopped sending logs raised an alert, and each such alert was followed up until the source was sending again.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "test",
+            "artifacts": [
+              "log-source-gap-alerts"
+            ]
+          }
+        ],
+        "why": "Split out of LM-02.B; ISO27001:A.8.15 and SOC2:CC2.1 rely on complete logs."
+      },
+      {
+        "code": "LM-02.G",
+        "change": "add",
+        "statement": "The administrators of a system could not change or delete its logs, and the few people who can change retention or delete logs in the central store were named and approved.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "test",
+            "artifacts": [
+              "log-store-retention-and-access-settings"
+            ]
+          }
+        ],
+        "why": "Split out of LM-02.C; ISO27001:A.8.15 (full) and A.5.28 rely on protected logs."
+      }
+    ],
+    "tenant_impact": "none",
+    "check_mapping_changes": [
+      {
+        "check": "observability.anomaly_monitors",
+        "control": "LM-02",
+        "change": "add",
+        "coverage": "partial",
+        "rationale": "Named as a source of evidence-logs-are-reviewed on this control; without the mapping its evidence does not attach here (AU-11)."
+      }
+    ]
+  },
+  {
+    "control": "LM-03",
+    "decision": "keep",
+    "reason": "Drift detection against a baseline, SOC2:CC7.1 and ISO27001:A.8.9, A.8.20.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none",
+    "check_mapping_changes": [
+      {
+        "check": "cloud.hardening_baseline",
+        "control": "LM-03",
+        "change": "add",
+        "coverage": "partial",
+        "rationale": "Named as a source of approved-configuration-baseline on this control; without the mapping its evidence does not attach here (AU-11)."
+      },
+      {
+        "check": "vcs.merged_changes_reviewed",
+        "control": "LM-03",
+        "change": "add",
+        "coverage": "partial",
+        "rationale": "Named as a source of approved-configuration-baseline on this control; without the mapping its evidence does not attach here (AU-11)."
+      }
+    ]
+  },
+  {
+    "control": "LM-04",
+    "decision": "keep",
+    "reason": "Event triage is the whole of SOC2:CC7.3 and ISO27001:A.5.25; objectives cover procedure, evaluation, escalation and consistency.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none",
+    "check_mapping_changes": [
+      {
+        "check": "alerts.incidents_resolved",
+        "control": "LM-04",
+        "change": "add",
+        "coverage": "partial",
+        "rationale": "Named as a source of security-incident-register on this control; without the mapping its evidence does not attach here (AU-11)."
+      }
+    ]
+  },
+  {
+    "control": "LM-05",
+    "decision": "revise_objectives",
+    "reason": "ISO27001:10.2 asks that corrective action is checked for effect. LM-05.E added. A.5.27 (full) is otherwise covered.",
+    "successors": [],
+    "objective_changes": [
+      {
+        "code": "LM-05.E",
+        "change": "add",
+        "statement": "Each closed corrective action was checked for effect, by confirming the cause did not recur or by a verification recorded by someone other than its owner.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "corrective-actions-tracked-to-closure",
+              "postmortem-for-each-significant-incident"
+            ]
+          }
+        ],
+        "why": "ISO27001:10.2 asks that the effect of corrective action is reviewed; LM-05 maps to it and no objective tested it."
+      }
+    ],
+    "tenant_impact": "none",
+    "check_mapping_changes": [
+      {
+        "check": "alerts.incidents_resolved",
+        "control": "LM-05",
+        "change": "add",
+        "coverage": "partial",
+        "rationale": "Named as a source of security-incident-register on this control; without the mapping its evidence does not attach here (AU-11)."
+      }
+    ]
+  },
+  {
+    "control": "LM-06",
+    "decision": "keep",
+    "reason": "Recovery from incidents, SOC2:CC7.5 (full) and ISO27001:A.5.26.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "LM-07",
+    "decision": "revise_objectives",
+    "reason": "ISO27001:A.5.28 is mapped on the evidence procedure, but only the written plan was examined; LM-07.F tests that evidence was handled as the plan sets. LM-07.C bundled sharing the plan and reviewing it; C is reworded and G added.",
+    "successors": [],
+    "objective_changes": [
+      {
+        "code": "LM-07.C",
+        "change": "reword",
+        "statement": "The current plan was given to everyone who holds a role in it, and each of them acknowledged the current version.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "incident-plan-acknowledgement-by-role-holders",
+              "doc-incident-response-plan"
+            ]
+          },
+          {
+            "method": "interview",
+            "artifacts": [],
+            "who": "security_lead"
+          }
+        ],
+        "why": "Sharing the plan and reviewing it were one objective with different evidence and cadence. Review moves to LM-07.G."
+      },
+      {
+        "code": "LM-07.F",
+        "change": "add",
+        "statement": "Where an incident needed evidence, it was collected and kept as the plan sets, with a record of who collected and handled each item and when.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "evidence-handling-record-for-incidents",
+              "incident-response-plan"
+            ]
+          }
+        ],
+        "why": "ISO27001:A.5.28 is mapped to LM-07 on the evidence procedure, but only the written procedure was examined."
+      },
+      {
+        "code": "LM-07.G",
+        "change": "add",
+        "statement": "The plan was reviewed in the last 12 months and after each significant incident, and each review was recorded.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "review-and-re-approval-record-for",
+              "security-incident-register"
+            ]
+          }
+        ],
+        "why": "Split out of LM-07.C (shared and reviewed)."
+      }
+    ],
+    "tenant_impact": "none",
+    "check_mapping_changes": [
+      {
+        "check": "alerts.incidents_resolved",
+        "control": "LM-07",
+        "change": "add",
+        "coverage": "partial",
+        "rationale": "Named as a source of security-incident-register on this control; without the mapping its evidence does not attach here (AU-11)."
+      }
+    ]
+  },
+  {
+    "control": "LM-08",
+    "decision": "keep",
+    "reason": "One activity, on call cover with escalation, for SOC2:CC7.2 and CC7.4. It has no ISO mapping, so an ISO only workspace would not see it; ISO27001:A.5.24 partial is proposed.",
+    "successors": [],
+    "objective_changes": [],
+    "mapping_changes": [
+      {
+        "requirement": "ISO27001:A.5.24",
+        "control": "LM-08",
+        "change": "add",
+        "coverage": "partial",
+        "rationale": "An on call rotation with escalation makes the response roles the plan names reachable at any hour. The plan itself comes from LM-07 and the exercise from LM-10."
+      }
+    ],
+    "tenant_impact": "none",
+    "check_mapping_changes": [
+      {
+        "check": "alerts.acknowledged_in_time",
+        "control": "LM-08",
+        "change": "add",
+        "coverage": "partial",
+        "rationale": "Named as a source of on-call-schedule on this control; without the mapping its evidence does not attach here (AU-11)."
+      },
+      {
+        "check": "alerts.security_routed",
+        "control": "LM-08",
+        "change": "add",
+        "coverage": "partial",
+        "rationale": "Named as a source of on-call-schedule on this control; without the mapping its evidence does not attach here (AU-11)."
+      }
+    ]
+  },
+  {
+    "control": "LM-09",
+    "decision": "keep",
+    "reason": "Alerting on a limited set of conditions, SOC2:CC7.2 (full) and ISO27001:A.8.16.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "LM-10",
+    "decision": "keep",
+    "reason": "Yearly exercise for SOC2:CC7.4 and ISO27001:A.5.24.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "LM-11",
+    "decision": "split",
+    "reason": "SOC2:CC7.1 and ISO27001:A.8.8 are both full on LM-11, which bundles discovery coverage (scanners, targets reconciled with the asset inventory, authenticated scans) with triage, remediation and risk acceptance. They have different owners (whoever runs the scanners versus each asset owner), cadences (scan interval versus per finding SLA) and failure conclusions (a coverage gap is not a late fix). Continuous compliance plan section 4 names this split. Scanner checks then map to LM-13, register checks to LM-11.",
+    "successors": [
+      {
+        "code": "LM-13",
+        "status": "proposed",
+        "name": "Vulnerability scanning coverage",
+        "takes_objectives": [
+          "LM-11.B"
+        ],
+        "new_objectives": [
+          "LM-13.A",
+          "LM-13.C"
+        ],
+        "requirements": [
+          {
+            "key": "SOC2:CC7.1",
+            "coverage": "partial",
+            "rationale": "Scans of infrastructure, containers, dependencies and the external surface at the set frequency, with targets reconciled to the asset inventory, are the discovery half of vulnerability detection. Handling what is found stays with LM-11."
+          },
+          {
+            "key": "ISO27001:A.8.8",
+            "coverage": "partial",
+            "rationale": "Finding technical weaknesses across the whole estate, with authenticated scans and coverage gaps followed up. Evaluating and fixing them stays with LM-11."
+          }
+        ]
+      }
+    ],
+    "objective_changes": [
+      {
+        "code": "LM-11.B",
+        "change": "move",
+        "to": "LM-13.B",
+        "why": "Moves to LM-13 with the activity it tests."
+      },
+      {
+        "code": "LM-13.A",
+        "change": "add",
+        "statement": "The vulnerability management policy sets the scan scope for infrastructure, containers, dependencies and the external surface, the minimum scan frequency, when authenticated scans are required and what counts as a significant change that triggers an extra scan.",
+        "assurance": "design",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "vulnerability-management-policy-with-timeframes",
+              "doc-operations-security-policy"
+            ]
+          }
+        ],
+        "why": "New objective on successor LM-13."
+      },
+      {
+        "code": "LM-13.C",
+        "change": "add",
+        "statement": "Failed, partial and unauthenticated scans, and targets the scanner could not reach, were found and followed up, so a gap in coverage was not read as a clean result.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "test",
+            "artifacts": [
+              "scan-reports"
+            ]
+          },
+          {
+            "method": "examine",
+            "artifacts": [
+              "log-of-control-deficiencies-with-owner"
+            ]
+          }
+        ],
+        "why": "New objective on successor LM-13."
+      }
+    ],
+    "mapping_changes": [
+      {
+        "requirement": "SOC2:CC7.1",
+        "control": "LM-11",
+        "change": "coverage",
+        "coverage": "partial",
+        "rationale": "LM-11 keeps the register, triage, remediation times and risk acceptance. Discovery coverage moves to LM-13, so LM-11 alone no longer covers the whole criterion."
+      },
+      {
+        "requirement": "ISO27001:A.8.8",
+        "control": "LM-11",
+        "change": "coverage",
+        "coverage": "partial",
+        "rationale": "Same split: evaluating and treating weaknesses stays, finding them across the estate moves to LM-13."
+      }
+    ],
+    "tenant_impact": "adoption proposal: LM-13 offered to every workspace running LM-11; LM-11 mapping coverage changes from full to partial with an audit row; no LM-11 result or acceptance is copied to LM-13",
+    "check_mapping_changes": [
+      {
+        "check": "scanner.scans_current",
+        "control": "LM-13",
+        "change": "add",
+        "coverage": "partial",
+        "rationale": "Named as a source of asset-inventory, scan-reports on this control; without the mapping its evidence does not attach here (AU-11)."
+      }
+    ]
+  },
+  {
+    "control": "LM-12",
+    "decision": "keep",
+    "reason": "Threat source monitoring, ISO27001:A.5.7 (full). SOC2:CC7.1 partial is proposed so SOC 2 workspaces use it once it moves out of the ISO pack (CL-10).",
+    "successors": [],
+    "objective_changes": [],
+    "mapping_changes": [
+      {
+        "requirement": "SOC2:CC7.1",
+        "control": "LM-12",
+        "change": "add",
+        "coverage": "partial",
+        "rationale": "Following advisories and the known exploited list surfaces newly disclosed weaknesses in software in use, which feeds detection. Scanning and remediation come from LM-11 and LM-13. Needs LM-12 adoptable by SOC 2 workspaces (CL-10)."
+      }
+    ],
+    "tenant_impact": "adoption proposal: offer to SOC 2 workspaces after the CL-10 move",
+    "check_mapping_changes": [
+      {
+        "check": "verity.management_review.in_12_months",
+        "control": "LM-12",
+        "change": "add",
+        "coverage": "partial",
+        "rationale": "Named as a source of management-review-agenda-and-minutes on this control; without the mapping its evidence does not attach here (AU-11)."
+      },
+      {
+        "check": "verity.risks.treated",
+        "control": "LM-12",
+        "change": "add",
+        "coverage": "partial",
+        "rationale": "Named as a source of risk-register-with-owners-ratings-and on this control; without the mapping its evidence does not attach here (AU-11)."
+      },
+      {
+        "check": "verity.vulns.kev_owned",
+        "control": "LM-12",
+        "change": "add",
+        "coverage": "partial",
+        "rationale": "Named as a source of actively-exploited-vulnerabilities-and-time-taken on this control; without the mapping its evidence does not attach here (AU-11)."
+      },
+      {
+        "check": "verity.vulns.within_sla",
+        "control": "LM-12",
+        "change": "add",
+        "coverage": "partial",
+        "rationale": "Named as a source of vulnerability-register-with-remediation-and-accepted on this control; without the mapping its evidence does not attach here (AU-11)."
+      }
+    ]
+  },
+  {
+    "control": "BC-01",
+    "decision": "revise_objectives",
+    "reason": "ISO27001:A.8.13 covers copies of software and systems, not only data stores; BC-01.F added. BC-01.D bundled storage protection with restore rights; D reworded and E added. BC-01 and BC-02 stay separate (continuous compliance plan section 4).",
+    "successors": [],
+    "objective_changes": [
+      {
+        "code": "BC-01.D",
+        "change": "reword",
+        "statement": "Backups were encrypted at rest, and at least one copy sat in a separate region, account or site on immutable or offline storage.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "backup-policy-covering-scope-frequency-and"
+            ]
+          },
+          {
+            "method": "test",
+            "artifacts": [
+              "backup-storage-settings-export"
+            ]
+          },
+          {
+            "method": "interview",
+            "artifacts": [],
+            "who": "engineering_lead"
+          }
+        ],
+        "why": "Storage protection and restore rights were one objective. Restore rights move to BC-01.E, and storage protection gains a settings test."
+      },
+      {
+        "code": "BC-01.E",
+        "change": "add",
+        "statement": "Rights to restore or delete backups were held by a small group that was reviewed in the period.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "test",
+            "artifacts": [
+              "list-of-privileged-accounts-with-approval"
+            ]
+          }
+        ],
+        "why": "Split out of BC-01.D."
+      },
+      {
+        "code": "BC-01.F",
+        "change": "add",
+        "statement": "The configuration, infrastructure code and images needed to rebuild each service were kept in versioned storage covered by the backup policy.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "test",
+            "artifacts": [
+              "rebuild-materials-inventory"
+            ]
+          }
+        ],
+        "why": "ISO27001:A.8.13 covers copies of software and systems as well as data. BC-01.A names them; nothing tested them."
+      }
+    ],
+    "tenant_impact": "none",
+    "check_mapping_changes": [
+      {
+        "check": "cloud.encryption_at_rest",
+        "control": "BC-01",
+        "change": "add",
+        "coverage": "partial",
+        "rationale": "Named as a source of backup-storage-settings-export on this control; without the mapping its evidence does not attach here (AU-11)."
+      },
+      {
+        "check": "cloud.least_privilege",
+        "control": "BC-01",
+        "change": "add",
+        "coverage": "partial",
+        "rationale": "Named as a source of list-of-privileged-accounts-with-approval on this control; without the mapping its evidence does not attach here (AU-11)."
+      },
+      {
+        "check": "cloud.storage_versioned",
+        "control": "BC-01",
+        "change": "add",
+        "coverage": "partial",
+        "rationale": "Named as a source of rebuild-materials-inventory on this control; without the mapping its evidence does not attach here (AU-11)."
+      },
+      {
+        "check": "vcs.default_branch_protected",
+        "control": "BC-01",
+        "change": "add",
+        "coverage": "partial",
+        "rationale": "Named as a source of rebuild-materials-inventory on this control; without the mapping its evidence does not attach here (AU-11)."
+      }
+    ]
+  },
+  {
+    "control": "BC-02",
+    "decision": "keep",
+    "reason": "Restore testing, SOC2:A1.3 (full) and ISO27001:A.5.30, A.8.13.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "BC-03",
+    "decision": "split",
+    "reason": "ISO27001:A.8.14 (full) is a separate Annex A control, chosen on its own in the Statement of Applicability, about technical redundancy. BC-03 bundled it with continuity planning (SOC2:CC9.1, ISO27001:A.5.29, A.5.30). The two have different owners (the business continuity owner versus engineering), different evidence (a plan and an exercise versus cloud configuration and a failover test) and different remediation (rewrite and exercise the plan versus change the architecture). A cloud check on zones and standbys needs a control to map to that is not the plan.",
+    "successors": [
+      {
+        "code": "BC-09",
+        "status": "proposed",
+        "name": "Redundancy and failover of critical services",
+        "takes_objectives": [
+          "BC-03.D"
+        ],
+        "new_objectives": [
+          "BC-09.A",
+          "BC-09.B",
+          "BC-09.C"
+        ],
+        "requirements": [
+          {
+            "key": "ISO27001:A.8.14",
+            "coverage": "full",
+            "rationale": "Moved from BC-03. The redundancy each critical service relies on is recorded against its recovery targets, kept in place and failed over in a yearly test, which shows it is enough for the availability promised."
+          },
+          {
+            "key": "SOC2:A1.2",
+            "coverage": "partial",
+            "rationale": "Redundant components and a tested failover are part of the recovery infrastructure. Backups come from BC-01 and environmental protection from PE-01 and PE-03."
+          },
+          {
+            "key": "ISO27001:A.5.30",
+            "coverage": "partial",
+            "rationale": "A tested failover shows technology can meet the recovery targets the continuity plan sets. Data restores come from BC-02."
+          }
+        ]
+      }
+    ],
+    "objective_changes": [
+      {
+        "code": "BC-03.A",
+        "change": "reword",
+        "statement": "The continuity and recovery plan is approved. It sets recovery time and data loss targets for each critical service, activation criteria, roles, and how customers and staff are told.",
+        "assurance": "design",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "business-continuity-and-disaster-recovery-plan",
+              "doc-business-continuity-and-disaster-recovery-plan",
+              "doc-business-impact-analysis"
+            ]
+          }
+        ],
+        "why": "The redundancy each service relies on moves to the proposed BC-09.A."
+      },
+      {
+        "code": "BC-03.C",
+        "change": "reword",
+        "statement": "The plan was exercised in the last 12 months against a realistic scenario, recording who took part and the results compared with each recovery target.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "exercise-or-test-report"
+            ]
+          }
+        ],
+        "why": "Failover of the redundant parts moves to the proposed BC-09.C."
+      },
+      {
+        "code": "BC-03.D",
+        "change": "move",
+        "to": "BC-09.D",
+        "why": "Moves to BC-09 with the activity it tests."
+      },
+      {
+        "code": "BC-09.A",
+        "change": "add",
+        "statement": "For each critical service the redundancy it relies on to meet its recovery targets is recorded, such as several availability zones, a standby database or a secondary region, and approved by the engineering lead.",
+        "assurance": "design",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "business-continuity-and-disaster-recovery-plan",
+              "doc-business-continuity-and-disaster-recovery-plan"
+            ]
+          }
+        ],
+        "why": "New objective on successor BC-09."
+      },
+      {
+        "code": "BC-09.B",
+        "change": "add",
+        "statement": "The recorded redundancy was in place throughout the period for each critical service.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "test",
+            "artifacts": [
+              "redundancy-configuration-export"
+            ]
+          }
+        ],
+        "why": "New objective on successor BC-09."
+      },
+      {
+        "code": "BC-09.C",
+        "change": "add",
+        "statement": "Failover of the redundant parts was tested in the last 12 months, and the time to fail over was compared with the recovery targets.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "exercise-or-test-report"
+            ]
+          },
+          {
+            "method": "test",
+            "artifacts": [
+              "measured-recovery-time-against-the-target"
+            ]
+          }
+        ],
+        "why": "New objective on successor BC-09."
+      }
+    ],
+    "mapping_changes": [
+      {
+        "requirement": "ISO27001:A.8.14",
+        "control": "BC-03",
+        "change": "remove",
+        "coverage": null,
+        "rationale": "Moves to BC-09 with the redundancy record and the failover test."
+      }
+    ],
+    "tenant_impact": "adoption proposal: offer BC-09 to workspaces running BC-03; A.8.14 moves with an audit row; BC-03.D history stays on BC-03"
+  },
+  {
+    "control": "BC-04",
+    "decision": "keep",
+    "reason": "Capacity management, SOC2:A1.1 and ISO27001:A.8.6 (both full).",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none"
+  },
+  {
+    "control": "BC-05",
+    "decision": "keep",
+    "reason": "Detecting applications adopted outside procurement, SOC2:CC9.2 and ISO27001:A.5.23.",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none",
+    "check_mapping_changes": [
+      {
+        "check": "verity.vendors.owner_and_tier",
+        "control": "BC-05",
+        "change": "add",
+        "coverage": "partial",
+        "rationale": "Named as a source of vendor-inventory-with-owner-data-and on this control; without the mapping its evidence does not attach here (AU-11)."
+      }
+    ]
+  },
+  {
+    "control": "BC-06",
+    "decision": "keep",
+    "reason": "Subprocessor list and notice, SOC2:CC9.2, P6.1, P6.4 and ISO27001:A.5.21, A.5.22. Applies only when customer data is shared with subprocessors (profile fact).",
+    "successors": [],
+    "objective_changes": [],
+    "tenant_impact": "none",
+    "check_mapping_changes": [
+      {
+        "check": "verity.assets.classified",
+        "control": "BC-06",
+        "change": "add",
+        "coverage": "partial",
+        "rationale": "Named as a source of data-inventory-and-data-map on this control; without the mapping its evidence does not attach here (AU-11)."
+      }
+    ]
+  },
+  {
+    "control": "BC-07",
+    "decision": "revise_objectives",
+    "reason": "ISO27001:A.5.22 relies on suppliers no longer used being removed with access revoked. BC-07.D bundled the yearly review with offboarding, an event per vendor with its own record; D reworded and E added.",
+    "successors": [],
+    "objective_changes": [
+      {
+        "code": "BC-07.D",
+        "change": "reword",
+        "statement": "The register was reviewed in the last 12 months, with contract dates and renewal points checked for each vendor.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "vendor-inventory-with-owner-data-and"
+            ]
+          }
+        ],
+        "why": "Offboarding with access revoked moves to BC-07.E: it is an event per vendor, not part of the yearly review."
+      },
+      {
+        "code": "BC-07.E",
+        "change": "add",
+        "statement": "Vendors no longer used were offboarded: their access was revoked, their copy of company data returned or deleted, and the offboarding recorded.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "test",
+            "artifacts": [
+              "vendor-offboarding-records"
+            ]
+          }
+        ],
+        "why": "Split out of BC-07.D; ISO27001:A.5.22 rationale relies on removal with access revoked."
+      }
+    ],
+    "tenant_impact": "none",
+    "check_mapping_changes": [
+      {
+        "check": "idp.connected_apps_known",
+        "control": "BC-07",
+        "change": "add",
+        "coverage": "partial",
+        "rationale": "Named as a source of vendor-inventory-with-owner-data-and, vendor-offboarding-records on this control; without the mapping its evidence does not attach here (AU-11)."
+      }
+    ]
+  },
+  {
+    "control": "BC-08",
+    "decision": "split",
+    "reason": "BC-08 maps to ten requirements. ISO27001:A.8.30 (outsourced development) applies only where a supplier builds software for the company and needs its own evidence (code ownership, acceptance testing of deliveries, escrow); bundled in BC-08 it cannot be marked not applicable on its own in the Statement of Applicability. It moves to BC-10. BC-08 objectives are also revised: B repeated BC-07.C and becomes tiering, E bundled contract terms (A.5.20) with findings (now F), and G is added for ongoing delivery review (A.5.22, A.8.21).",
+    "successors": [
+      {
+        "code": "BC-10",
+        "status": "proposed",
+        "name": "Oversight of outsourced development",
+        "takes_objectives": [],
+        "new_objectives": [
+          "BC-10.A",
+          "BC-10.B",
+          "BC-10.C"
+        ],
+        "requirements": [
+          {
+            "key": "ISO27001:A.8.30",
+            "coverage": "partial",
+            "rationale": "Contracts with suppliers that build software set security requirements, code ownership, audit rights and escrow where needed, and each delivery is reviewed and tested before it goes live. Choosing the supplier stays with BC-08 and code review with SD-06."
+          },
+          {
+            "key": "SOC2:CC9.2",
+            "coverage": "partial",
+            "rationale": "Manages the risk of a business partner that writes software the company runs. General vendor due diligence comes from BC-08."
+          }
+        ]
+      }
+    ],
+    "objective_changes": [
+      {
+        "code": "BC-08.B",
+        "change": "reword",
+        "statement": "Each supplier with access to systems or data had a current tier from a tiering assessment, and that tier set the depth of its assessment.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "test",
+            "artifacts": [
+              "vendor-inventory-with-owner-data-and",
+              "asset-inventory"
+            ]
+          }
+        ],
+        "why": "As written it repeated BC-07.C (register complete). BC-08 relies on BC-07 for the population and tests its own step, tiering."
+      },
+      {
+        "code": "BC-08.E",
+        "change": "reword",
+        "statement": "Contracts carried the security terms the procedure sets for the vendor's tier, such as incident notice, audit rights, limits on subcontracting and data return at exit.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "security-terms-agreed-in-each-vendor"
+            ]
+          }
+        ],
+        "why": "Contract terms (ISO27001:A.5.20) and tracking of findings were one objective. Findings move to BC-08.F."
+      },
+      {
+        "code": "BC-08.F",
+        "change": "add",
+        "statement": "Findings and accepted risks from assessments were tracked to closure, or to an acceptance with an owner and an expiry.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "security-assessment-for-each-critical-vendor",
+              "risk-register-with-owners-ratings-and"
+            ]
+          }
+        ],
+        "why": "Split out of BC-08.E."
+      },
+      {
+        "code": "BC-08.G",
+        "change": "add",
+        "statement": "At each reassessment of a critical vendor, its delivery against the agreed security and service levels was reviewed, and a material change, such as a breach, new ownership or a new subservice provider, led to an early review.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "vendor-service-level-review"
+            ]
+          }
+        ],
+        "why": "ISO27001:A.5.22 and A.8.21 rationales rely on checking delivered service levels; no objective tested it."
+      },
+      {
+        "code": "BC-10.A",
+        "change": "add",
+        "statement": "Contracts with suppliers that build software for the company set the security requirements, who owns the code, audit rights and, where a critical system depends on the supplier's code, an escrow arrangement.",
+        "assurance": "design",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "doc-third-party-management-policy",
+              "security-terms-agreed-in-each-vendor"
+            ]
+          }
+        ],
+        "why": "New objective on successor BC-10."
+      },
+      {
+        "code": "BC-10.B",
+        "change": "add",
+        "statement": "Each delivery from a development supplier was reviewed by a member of staff and tested against its security requirements before it went live.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "test",
+            "artifacts": [
+              "acceptance-test-of-supplier-deliveries",
+              "sample-of-reviewed-changes"
+            ]
+          }
+        ],
+        "why": "New objective on successor BC-10."
+      },
+      {
+        "code": "BC-10.C",
+        "change": "add",
+        "statement": "Where escrow is required, the deposit was checked as complete and current at each review.",
+        "assurance": "operating",
+        "methods": [
+          {
+            "method": "examine",
+            "artifacts": [
+              "escrow-verification-record"
+            ]
+          }
+        ],
+        "why": "New objective on successor BC-10."
+      }
+    ],
+    "mapping_changes": [
+      {
+        "requirement": "ISO27001:A.8.30",
+        "control": "BC-08",
+        "change": "rationale",
+        "coverage": "partial",
+        "rationale": "Narrowed: BC-08 chooses and reassesses the development supplier. Contract terms for code, testing of deliveries and escrow move to BC-10."
+      }
+    ],
+    "tenant_impact": "adoption proposal: offer BC-10 when the profile says development is outsourced; A.8.30 rationale on BC-08 narrowed with an audit row",
+    "check_mapping_changes": [
+      {
+        "check": "verity.risks.treated",
+        "control": "BC-08",
+        "change": "add",
+        "coverage": "partial",
+        "rationale": "Named as a source of risk-register-with-owners-ratings-and on this control; without the mapping its evidence does not attach here (AU-11)."
+      },
+      {
+        "check": "verity.vendors.owner_and_tier",
+        "control": "BC-08",
+        "change": "add",
+        "coverage": "partial",
+        "rationale": "Named as a source of vendor-inventory-with-owner-data-and on this control; without the mapping its evidence does not attach here (AU-11)."
+      },
+      {
+        "check": "vcs.merged_changes_reviewed",
+        "control": "BC-10",
+        "change": "add",
+        "coverage": "partial",
+        "rationale": "Named as a source of sample-of-reviewed-changes on this control; without the mapping its evidence does not attach here (AU-11)."
+      }
+    ]
+  }
+]

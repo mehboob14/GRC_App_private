@@ -1,0 +1,3318 @@
+{
+ "part": "verity-iam",
+ "documents_read": [
+  "AUTHORING.md (sections 1 to 3)",
+  "01-evidence-model.md (section 1.4)",
+  "coverage/iam-ep-pe-ns-dm.md",
+  "coverage/iam-ep-pe-ns-dm.json",
+  "coverage/iam-ep-pe-ns-dm.controls.json"
+ ],
+ "checks": [
+  {
+   "key": "verity.tasks.reviews_on_cadence",
+   "name": "Periodic reviews happen on time and are signed off",
+   "description": "Every occurrence of a recurring review task linked to the control was closed on time with its record attached and, where required, approved by someone other than its owner or assignee.",
+   "capabilities": [
+    "verity_tasks"
+   ],
+   "implementations": [
+    "verity"
+   ],
+   "resource_type": "task",
+   "frequency": "daily",
+   "remediation": "Set up a recurring review task linked to the control, close each occurrence by its due date with the signed record attached, and have an active member who is not the owner or assignee approve it where the template asks.",
+   "controls": [
+    {
+     "code": "IAM-02",
+     "coverage": "partial",
+     "rationale": "Proves each access review happened on its cadence and was signed off by someone other than the doer, not what the reviewer concluded. Objectives: IAM-02.C, IAM-02.D."
+    },
+    {
+     "code": "IAM-07",
+     "coverage": "partial",
+     "rationale": "Proves the privileged access review happened on its cadence and was signed off by someone other than the doer, not what the reviewer concluded. Objectives: IAM-07.C, IAM-07.D, IAM-07.E, IAM-07.F."
+    },
+    {
+     "code": "IAM-09",
+     "coverage": "partial",
+     "rationale": "Proves the conflicts review happened on its cadence and was signed off by someone other than the doer, not what the reviewer concluded. Objectives: IAM-09.B, IAM-09.C, IAM-09.D."
+    },
+    {
+     "code": "IAM-10",
+     "coverage": "partial",
+     "rationale": "Proves the yearly service account review happened on its cadence and was signed off by someone other than the doer, not what the reviewer concluded. Objectives: IAM-10.D, IAM-10.E."
+    },
+    {
+     "code": "IAM-13",
+     "coverage": "partial",
+     "rationale": "Proves the quarterly finance conflicts review happened on its cadence and was signed off by someone other than the doer, not what the reviewer concluded. Objectives: IAM-13.B, IAM-13.C, IAM-13.D."
+    },
+    {
+     "code": "NS-03",
+     "coverage": "partial",
+     "rationale": "Proves the quarterly rule review happened on its cadence and was signed off by someone other than the doer, not what the reviewer concluded. Objectives: NS-03.C, NS-03.D."
+    },
+    {
+     "code": "NS-04",
+     "coverage": "partial",
+     "rationale": "Proves the review happened on its cadence and who signed it, never what it concluded. Listed in the check's Controls row, but no artifact in the JSON uses the check for this control."
+    },
+    {
+     "code": "NS-05",
+     "coverage": "partial",
+     "rationale": "Proves the quarterly tuning review happened on its cadence and was signed off by someone other than the doer, not what the reviewer concluded. Objectives: NS-05.E."
+    },
+    {
+     "code": "NS-06",
+     "coverage": "partial",
+     "rationale": "Proves the yearly key access review happened on its cadence and was signed off by someone other than the doer, not what the reviewer concluded. Objectives: NS-06.B, NS-06.C."
+    },
+    {
+     "code": "NS-07",
+     "coverage": "partial",
+     "rationale": "Proves the quarterly segment rule review happened on its cadence and was signed off by someone other than the doer, not what the reviewer concluded. Objectives: NS-07.C."
+    },
+    {
+     "code": "NS-10",
+     "coverage": "partial",
+     "rationale": "Proves the quarterly WAF review happened on its cadence and was signed off by someone other than the doer, not what the reviewer concluded. Objectives: NS-10.B, NS-10.C, NS-10.D."
+    },
+    {
+     "code": "NS-12",
+     "coverage": "partial",
+     "rationale": "Proves the quarterly clock check happened on its cadence and was signed off by someone other than the doer, not what the reviewer concluded. Objectives: NS-12.B, NS-12.C, NS-12.D."
+    },
+    {
+     "code": "NS-14",
+     "coverage": "partial",
+     "rationale": "Proves the quarterly network equipment drift check happened on its cadence and was signed off by someone other than the doer, not what the reviewer concluded. Objectives: NS-14.D."
+    },
+    {
+     "code": "EP-07",
+     "coverage": "partial",
+     "rationale": "Proves the quarterly filter review happened on its cadence and was signed off by someone other than the doer, not what the reviewer concluded. Objectives: EP-07.B, EP-07.D, EP-07.E."
+    },
+    {
+     "code": "DM-02",
+     "coverage": "partial",
+     "rationale": "Proves the review happened on its cadence and who signed it, never what it concluded. Listed in the check's Controls row, but no artifact in the JSON uses the check for this control."
+    },
+    {
+     "code": "DM-06",
+     "coverage": "partial",
+     "rationale": "Proves the yearly data map completeness review happened on its cadence and was signed off by someone other than the doer, not what the reviewer concluded. Objectives: DM-06.D."
+    },
+    {
+     "code": "DM-07",
+     "coverage": "partial",
+     "rationale": "Proves the yearly collection point review happened on its cadence and was signed off by someone other than the doer, not what the reviewer concluded. Objectives: DM-07.B, DM-07.C."
+    },
+    {
+     "code": "DM-19",
+     "coverage": "partial",
+     "rationale": "Proves the quarterly exceptions and tuning review happened on its cadence and was signed off by someone other than the doer, not what the reviewer concluded. Objectives: DM-19.D, DM-19.E."
+    },
+    {
+     "code": "PE-02",
+     "coverage": "partial",
+     "rationale": "Proves the quarterly badge reconciliation happened on its cadence and was signed off by someone other than the doer, not what the reviewer concluded. Objectives: PE-02.B, PE-02.D, PE-02.E."
+    },
+    {
+     "code": "PE-03",
+     "coverage": "partial",
+     "rationale": "Proves the yearly hazard assessment happened on its cadence and was signed off by someone other than the doer, not what the reviewer concluded. Objectives: PE-03.A, PE-03.B, PE-03.D, PE-03.E."
+    },
+    {
+     "code": "IAM-01",
+     "coverage": "partial",
+     "rationale": "Proves each access review happened on its cadence and was signed off by someone other than the doer, not what the reviewer concluded. Used in the artifact plan, not in the check's Controls row. Objectives: IAM-01.E."
+    },
+    {
+     "code": "NS-11",
+     "coverage": "partial",
+     "rationale": "Proves the privileged access review happened on its cadence and was signed off by someone other than the doer, not what the reviewer concluded. Used in the artifact plan, not in the check's Controls row. Objectives: NS-11.E."
+    }
+   ],
+   "evidence_kinds": [
+    "Occurrence list with due date, closed at, closer and approver",
+    "Attachment names and hashes"
+   ],
+   "observation_types": [
+    "verity.record"
+   ],
+   "providers": {
+    "verity": "supported"
+   },
+   "artifacts": [
+    "access-list-and-badge-records",
+    "alarm-or-camera-review-or-the",
+    "alerts-and-exceptions-that-were-reviewed",
+    "alerts-on-drift-that-were-investigated",
+    "clock-check-across-a-sample-of",
+    "completed-access-reviews-with-reviewer-sign",
+    "desk-and-secure-area-walk-through",
+    "dm-06-review-that-the-inventory-is-complete",
+    "evidence-logs-are-reviewed",
+    "hazard-assessment-and-protections-for-each",
+    "payment-device-list-and-tamper-inspections",
+    "periodic-review-of-firewall-rules",
+    "power-alarm-and-suppression-test-results",
+    "records-of-rotation-or-review",
+    "report-of-filter-coverage-and-blocked",
+    "review-of-alert-tuning",
+    "review-of-each-collection-point-against",
+    "review-of-people-who-hold-conflicting",
+    "review-of-privileged-access",
+    "review-of-the-rules-between-segments",
+    "review-of-web-application-firewall-rules",
+    "review-of-who-can-use-and"
+   ],
+   "aliases": [],
+   "sources": [
+    "coverage/iam-ep-pe-ns-dm.md",
+    "coverage/iam-ep-pe-ns-dm.json"
+   ],
+   "population": "Every occurrence, due in the last 12 months, of a recurring task linked to the control (tasks with a recurrence rule and a link to the control).",
+   "predicate": "Each occurrence was closed, not cancelled, by its due date or within its SLA; has at least one attachment; and, where the template requires approval, was approved by an active member who is not its owner or assignee.",
+   "period": "Occurrences due in the last 12 months.",
+   "empty_population": "Fail: no recurring review is set up for a control in scope. Verity owns this population, so an empty list is a real gap.",
+   "parameters": {
+    "window_months": "12: occurrences due in this window are judged"
+   },
+   "notes": "Observation type verity.record from the tasks module. Results: pass when all occurrences meet the predicate; fail when one is late, cancelled, missing its record or self approved; insufficient information when an occurrence is still open inside its window (shown as pending). The doc's Controls row and the JSON disagree: the JSON also uses it for IAM-01 (IAM-01.E) and NS-11 (NS-11.E), and never uses it for NS-04 or DM-02 although the row lists them. 19 P1 artifact entries rest on this check (Counts table). Overlap: verity.tasks.remediation_in_sla and tickets.remediation_tracked test remediation SLA, not recurrence; verity.assets.reviewed and verity.risks.reviewed are cadence checks for their own registers. Keep all; this key is the generic cadence check for controls whose review is a task."
+  },
+  {
+   "key": "verity.tasks.approved_before_done",
+   "name": "Requests are approved before they are done",
+   "description": "Every task from a template that requires approval was approved before it was resolved, by an active member who is neither its reporter nor its owner.",
+   "capabilities": [
+    "verity_tasks"
+   ],
+   "implementations": [
+    "verity"
+   ],
+   "resource_type": "task",
+   "frequency": "daily",
+   "remediation": "Approve each access, privileged access or new use of personal data request before it is resolved, by a member who did not raise it and does not own it; link privileged requests to the asset so its owner can approve.",
+   "controls": [
+    {
+     "code": "IAM-01",
+     "coverage": "partial",
+     "rationale": "Approval before closure by someone other than the reporter or owner. The grant time in the target system comes from the identity provider or ticketing. Objectives: IAM-01.B, IAM-01.C, IAM-01.D, IAM-01.E, IAM-01.F."
+    },
+    {
+     "code": "DM-12",
+     "coverage": "partial",
+     "rationale": "New uses of personal data were approved before they started. Objectives: DM-12.C, DM-12.D, DM-12.E."
+    },
+    {
+     "code": "IAM-08",
+     "coverage": "partial",
+     "rationale": "Used in the artifact plan for IAM-08.C (approved requests): access granted by role was requested and approved. Not in the check's Controls row. Objectives: IAM-08.C."
+    }
+   ],
+   "evidence_kinds": [
+    "Task list with reporter, approver, approved at and closed at",
+    "Linked asset and its primary owner"
+   ],
+   "observation_types": [
+    "verity.record"
+   ],
+   "providers": {
+    "verity": "supported"
+   },
+   "artifacts": [
+    "approved-requests-for-a-sample-of",
+    "review-of-new-uses-against-the"
+   ],
+   "aliases": [],
+   "sources": [
+    "coverage/iam-ep-pe-ns-dm.md",
+    "coverage/iam-ep-pe-ns-dm.json"
+   ],
+   "population": "Tasks created in the period from a template marked as requiring approval (access request, privileged access request, new use of personal data).",
+   "predicate": "Each was approved before it was resolved or closed, by an active member who is neither its reporter nor its owner; a privileged access request was approved by the primary owner of the linked asset.",
+   "period": "Tasks created in the evaluation period (the doc does not fix its length).",
+   "empty_population": "Not applicable when no such template is in use (the company uses another request tool). Otherwise an empty period passes and is listed as none raised.",
+   "parameters": {
+    "approval_templates": "task templates marked as requiring approval: access request, privileged access request, new use of personal data"
+   },
+   "notes": "Observation type verity.record from the tasks module. Results: pass or fail per task; insufficient information for a privileged request with no linked asset, so the system owner is unknown. The JSON also uses it for IAM-08.C, which the Controls row does not list. Overlap: tickets.access_requests_approved (ticketing plus identity provider) tests the same approval predicate in an outside ticketing tool and adds the grant time. Recommendation: keep both; this key is the Verity tasks implementation for companies that use Verity as the request tool, and the grant time still comes from the source."
+  },
+  {
+   "key": "verity.tasks.privacy_requests_on_time",
+   "name": "Privacy requests are answered on time",
+   "description": "Every privacy request task (access, correction, erasure, consent withdrawal, inquiry or complaint) was closed by its legal or contract deadline, with the identity check before the response and a closure note.",
+   "capabilities": [
+    "verity_tasks"
+   ],
+   "implementations": [
+    "verity"
+   ],
+   "resource_type": "task",
+   "frequency": "daily",
+   "remediation": "Log every privacy request from the privacy request templates, set the SLA from the legal or contract deadline, close the identity check subtask before the response, add a closure note, and pass customer data requests to the customer within the contract time.",
+   "controls": [
+    {
+     "code": "DM-03",
+     "coverage": "partial",
+     "rationale": "Timeliness and order of steps (identity check before response), not the completeness of an answer. Objectives: DM-03.A, DM-03.D."
+    },
+    {
+     "code": "DM-05",
+     "coverage": "partial",
+     "rationale": "Timeliness and order of steps (identity check before response), not the completeness of an answer. Objectives: DM-05.B, DM-05.C, DM-05.D."
+    },
+    {
+     "code": "DM-11",
+     "coverage": "partial",
+     "rationale": "Timeliness and order of steps (identity check before response), not the completeness of an answer. Objectives: DM-11.B, DM-11.C, DM-11.D, DM-11.E."
+    },
+    {
+     "code": "DM-14",
+     "coverage": "partial",
+     "rationale": "Timeliness and order of steps (identity check before response), not the completeness of an answer. Objectives: DM-14.B, DM-14.C, DM-14.D."
+    },
+    {
+     "code": "DM-16",
+     "coverage": "partial",
+     "rationale": "Timeliness and order of steps (identity check before response), not the completeness of an answer. Objectives: DM-16.D, DM-16.E."
+    }
+   ],
+   "evidence_kinds": [
+    "Request list with type, received, due, identity check time, answered and outcome"
+   ],
+   "observation_types": [
+    "verity.record"
+   ],
+   "providers": {
+    "verity": "supported"
+   },
+   "artifacts": [
+    "consent-withdrawal-process-and-records",
+    "evidence-data-was-deleted-when-retention",
+    "log-of-corrections-and-how-third",
+    "log-of-inquiries-with-resolution-times",
+    "log-of-requests-with-dates-and",
+    "sample-responses-that-include-disclosure-accounting"
+   ],
+   "aliases": [],
+   "sources": [
+    "coverage/iam-ep-pe-ns-dm.md",
+    "coverage/iam-ep-pe-ns-dm.json"
+   ],
+   "population": "Tasks created from the privacy request templates (access, correction, erasure, consent withdrawal, inquiry or complaint) received (detected at) in the period.",
+   "predicate": "Each was closed by its SLA due date, set from the legal or contract deadline; its identity check subtask closed before its response subtask; it has a closure note; a request about customer data has its passed to the customer subtask closed within the contract time.",
+   "period": "Requests received in the evaluation period (the doc does not fix its length).",
+   "empty_population": "Insufficient information: Verity cannot see the privacy mailbox or support tool, so an empty log needs a dated nil return filed by a person.",
+   "parameters": {
+    "sla_due": "per task, set from the legal or contract deadline (no fixed default)"
+   },
+   "notes": "Observation type verity.record from the tasks module. Results: pass or fail as above; no error state (internal data). Doc Controls row and JSON agree."
+  },
+  {
+   "key": "verity.tasks.incident_notice_decided",
+   "name": "Every incident has a recorded notice decision",
+   "description": "Every incident and vendor breach notice task has a closed notice decision subtask naming the decision and who decided, and any notice given was sent before its deadline.",
+   "capabilities": [
+    "verity_tasks"
+   ],
+   "implementations": [
+    "verity"
+   ],
+   "resource_type": "task",
+   "frequency": "daily",
+   "remediation": "Raise incidents from the incident template, close the notice decision subtask with the decision and the decider (including decisions not to notify), and close the notice subtask before the recorded deadline.",
+   "controls": [
+    {
+     "code": "DM-01",
+     "coverage": "partial",
+     "rationale": "The notice decision is recorded and timely; whether it was right is legal judgement. Objectives: DM-01.B, DM-01.C, DM-01.E."
+    },
+    {
+     "code": "DM-02",
+     "coverage": "partial",
+     "rationale": "The notice decision is recorded and timely; whether it was right is legal judgement. Objectives: DM-02.B, DM-02.C, DM-02.D."
+    },
+    {
+     "code": "DM-17",
+     "coverage": "partial",
+     "rationale": "The notice decision is recorded and timely; whether it was right is legal judgement. Objectives: DM-17.D."
+    }
+   ],
+   "evidence_kinds": [
+    "Incident list with notice decision, decider, deadline and notice sent at"
+   ],
+   "observation_types": [
+    "verity.record"
+   ],
+   "providers": {
+    "verity": "supported"
+   },
+   "artifacts": [
+    "notification-decisions-for-each-incident-including",
+    "record-of-vendor-notifications-received-and",
+    "register-of-unauthorized-disclosures-including-near",
+    "security-incident-register"
+   ],
+   "aliases": [],
+   "sources": [
+    "coverage/iam-ep-pe-ns-dm.md",
+    "coverage/iam-ep-pe-ns-dm.json"
+   ],
+   "population": "Issues created in the period from the incident template, and vendor breach notice tasks.",
+   "predicate": "Each has its notice decision subtask closed with a note naming the decision and who decided, including decisions not to notify; where notice was given, the notice subtask closed before the deadline recorded on it.",
+   "period": "Issues created in the evaluation period (the doc does not fix its length).",
+   "empty_population": "Insufficient information: needs a dated nil return, because incidents may never have been raised in Verity.",
+   "parameters": {},
+   "notes": "Observation type verity.record from the tasks module. Depends on an incident template convention: Tasks has no incident kind and no custom fields, so the notice decision can only be a subtask (gap 10); the Incidents module is Phase 3.1. Doc Controls row and JSON agree. No overlapping existing check."
+  },
+  {
+   "key": "verity.exceptions.in_force",
+   "name": "Control exceptions are approved and in force",
+   "description": "Every accepted risk recorded as an exception to the control has an approval by someone other than the requester, a reason and safeguard, and an expiry that has not passed and is no more than 12 months after the decision.",
+   "capabilities": [
+    "verity_risks"
+   ],
+   "implementations": [
+    "verity"
+   ],
+   "resource_type": "risk",
+   "frequency": "daily",
+   "remediation": "Record each exception as a risk linked to the control with treatment accept, fill the reason and the safeguard, have someone other than the requester approve it, and set an expiry no more than 12 months out; renew or close it before it expires.",
+   "controls": [
+    {
+     "code": "IAM-01",
+     "coverage": "partial",
+     "rationale": "Each recorded exception has an approver other than the requester, a reason and safeguard, and an expiry in force. A connector list of failing items is what shows every gap has one. Listed in the check's Controls row, but no artifact in the JSON uses the check for this control."
+    },
+    {
+     "code": "IAM-03",
+     "coverage": "partial",
+     "rationale": "Each recorded exception has an approver other than the requester, a reason and safeguard, and an expiry in force. A connector list of failing items is what shows every gap has one. Objectives: IAM-03.D."
+    },
+    {
+     "code": "IAM-04",
+     "coverage": "partial",
+     "rationale": "Each recorded exception has an approver other than the requester, a reason and safeguard, and an expiry in force. A connector list of failing items is what shows every gap has one. Objectives: IAM-04.C."
+    },
+    {
+     "code": "EP-02",
+     "coverage": "partial",
+     "rationale": "Each recorded exception has an approver other than the requester, a reason and safeguard, and an expiry in force. A connector list of failing items is what shows every gap has one. Objectives: EP-02.D."
+    },
+    {
+     "code": "EP-07",
+     "coverage": "partial",
+     "rationale": "Each recorded exception has an approver other than the requester, a reason and safeguard, and an expiry in force. A connector list of failing items is what shows every gap has one. Objectives: EP-07.B, EP-07.D, EP-07.E."
+    },
+    {
+     "code": "NS-04",
+     "coverage": "partial",
+     "rationale": "Each recorded exception has an approver other than the requester, a reason and safeguard, and an expiry in force. A connector list of failing items is what shows every gap has one. Objectives: NS-04.C, NS-04.D."
+    },
+    {
+     "code": "NS-08",
+     "coverage": "partial",
+     "rationale": "Each recorded exception has an approver other than the requester, a reason and safeguard, and an expiry in force. A connector list of failing items is what shows every gap has one. Objectives: NS-08.C."
+    },
+    {
+     "code": "NS-13",
+     "coverage": "partial",
+     "rationale": "Each recorded exception has an approver other than the requester, a reason and safeguard, and an expiry in force. A connector list of failing items is what shows every gap has one. Objectives: NS-13.D."
+    },
+    {
+     "code": "NS-14",
+     "coverage": "partial",
+     "rationale": "Each recorded exception has an approver other than the requester, a reason and safeguard, and an expiry in force. A connector list of failing items is what shows every gap has one. Objectives: NS-14.C."
+    }
+   ],
+   "evidence_kinds": [
+    "Exception list with requester, approver, decided at, expiry and rationale"
+   ],
+   "observation_types": [
+    "verity.record"
+   ],
+   "providers": {
+    "verity": "supported"
+   },
+   "artifacts": [
+    "approved-exceptions",
+    "approved-exceptions-for-applications-outside-single",
+    "approved-exceptions-for-exposed-management-access",
+    "approved-exceptions-to-multi-factor-authentication",
+    "approved-exceptions-to-the-standard",
+    "log-of-control-deficiencies-with-owner",
+    "report-of-filter-coverage-and-blocked"
+   ],
+   "aliases": [],
+   "sources": [
+    "coverage/iam-ep-pe-ns-dm.md",
+    "coverage/iam-ep-pe-ns-dm.json"
+   ],
+   "population": "Open risks linked to the control whose treatment is accept (the control's recorded exceptions).",
+   "predicate": "Each has an approved acceptance in force: approver is not the requester (already a database rule), rationale filled with the reason and the safeguard, expiry not passed and no more than 12 months after the decision. An expired acceptance is listed with the date the gap reopened.",
+   "period": "Acceptances in force on the evaluation date.",
+   "empty_population": "Not applicable: no exceptions recorded. This is never reported as proof that no gap exists; the connector check for the control shows that.",
+   "parameters": {
+    "max_acceptance_months": "12"
+   },
+   "notes": "Observation type verity.record from the risks module. Connector checks for the same control should treat an item named in an exception in force as excepted and list it, not fail it (recorded under existing_check_changes). The Controls row lists IAM-01, but no IAM-01 artifact in the JSON uses the check. Overlap: verity.risks.acceptance_current (GOV-19) already tests that every accepted risk has an acceptance in force that has not expired. This key is narrower (risks linked to the control) and stricter (approver not requester, reason and safeguard, 12 month maximum). Recommendation: implement it on the acceptance_current evaluation with a control filter and the extra rules, and consider the key verity.risks.exceptions_in_force so the prefix names the module like every other verity.* key."
+  },
+  {
+   "key": "verity.identity.sso_required",
+   "name": "Verity sign in goes through the identity provider",
+   "description": "Workspace SSO is on and required with at least one proven domain, and every sign in to Verity by a member in a proven domain in the last 90 days came through the identity provider.",
+   "capabilities": [
+    "verity_identity"
+   ],
+   "implementations": [
+    "verity"
+   ],
+   "resource_type": "workspace",
+   "frequency": "daily",
+   "remediation": "Turn on and require SSO for the workspace, prove the company domains, and keep password sign in only for break glass Admins with TOTP.",
+   "controls": [
+    {
+     "code": "IAM-04",
+     "coverage": "partial",
+     "rationale": "Verity is one application behind single sign on; the others need idp.sso_enforced. Objectives: IAM-04.B, IAM-04.C, IAM-04.D."
+    },
+    {
+     "code": "IAM-12",
+     "coverage": "partial",
+     "rationale": "Used in the artifact plan for IAM-12.D (applications inside and outside single sign on): Verity is one app inside SSO. Not in the check's Controls row. Objectives: IAM-12.D."
+    }
+   ],
+   "evidence_kinds": [
+    "SSO settings and proven domains",
+    "Sign in counts by method",
+    "List of password sign ins"
+   ],
+   "observation_types": [
+    "verity.record"
+   ],
+   "providers": {
+    "verity": "supported"
+   },
+   "artifacts": [
+    "applications-inside-and-outside-single-sign-on"
+   ],
+   "aliases": [],
+   "sources": [
+    "coverage/iam-ep-pe-ns-dm.md",
+    "coverage/iam-ep-pe-ns-dm.json"
+   ],
+   "population": "The workspace's SSO configuration and every sign in to Verity by an active member in the last 90 days (session audit rows).",
+   "predicate": "SSO is on and required, at least one domain is proven, and every sign in by a member in a proven domain came through the identity provider. Password sign ins are only by break glass Admins with TOTP, each listed.",
+   "period": "Sign ins in the last 90 days.",
+   "empty_population": "Insufficient information when nobody signed in during the window.",
+   "parameters": {
+    "window_days": "90"
+   },
+   "notes": "Observation type verity.record from the iam (Keycloak sign in and session audit rows) module. Results: pass or fail as above; error when SSO status cannot be read from Keycloak. Needs the proposed capability verity_identity. Evidence for one application, Verity itself; it must never be read as a staff roster. The JSON also uses it for IAM-12.D. Overlap: idp.sso_enforced (identity_provider) proves SSO for every app behind the provider; this key is complementary and covers Verity only. Keep both."
+  },
+  {
+   "key": "verity.identity.second_factor_on_sign_in",
+   "name": "Sign ins to Verity used a second factor",
+   "description": "Every sign in to Verity by an active member in the last 90 days carried proof of a second factor, at the identity provider or by TOTP.",
+   "capabilities": [
+    "verity_identity"
+   ],
+   "implementations": [
+    "verity"
+   ],
+   "resource_type": "session",
+   "frequency": "daily",
+   "remediation": "Require a second factor at the identity provider for Verity sign ins, require TOTP for password sign ins, and turn on Admin MFA in workspace settings.",
+   "controls": [
+    {
+     "code": "IAM-03",
+     "coverage": "partial",
+     "rationale": "An independent sample of the provider's MFA on real sign ins, for one application. Objectives: IAM-03.B, IAM-03.C, IAM-03.D, IAM-03.E, IAM-03.F."
+    }
+   ],
+   "evidence_kinds": [
+    "Sign in list with method, amr and acr values"
+   ],
+   "observation_types": [
+    "verity.record"
+   ],
+   "providers": {
+    "verity": "supported"
+   },
+   "artifacts": [
+    "second-factor-enforcement-and-enrolled-users"
+   ],
+   "aliases": [],
+   "sources": [
+    "coverage/iam-ep-pe-ns-dm.md",
+    "coverage/iam-ep-pe-ns-dm.json"
+   ],
+   "population": "Sign ins to Verity by active members in the last 90 days.",
+   "predicate": "Each SSO sign in carries an authentication method or level claim that shows a second factor at the provider, and each password sign in used TOTP; Admin MFA is required in workspace settings.",
+   "period": "Sign ins in the last 90 days.",
+   "empty_population": "Insufficient information when nobody signed in.",
+   "parameters": {
+    "window_days": "90"
+   },
+   "notes": "Observation type verity.record from the iam (session audit rows) module. Unverified whether Keycloak passes the upstream provider's method claims (amr, acr) through brokering; if the claim is absent the result is insufficient information, never pass. Overlap: idp.mfa_enforced (identity_provider) proves the policy and enrolment; this key is an independent sample on real sign ins to one application. Keep both."
+  },
+  {
+   "key": "verity.identity.leavers_removed_by_sync",
+   "name": "Leavers at the identity provider lose Verity access",
+   "description": "Directory sync ran at least every two hours and every member removed or disabled at the identity provider was disabled in Verity at the next run, with sessions revoked.",
+   "capabilities": [
+    "verity_identity"
+   ],
+   "implementations": [
+    "verity"
+   ],
+   "resource_type": "member",
+   "frequency": "hourly",
+   "remediation": "Turn on directory sync with a lifecycle feed (SCIM or LDAP) into Keycloak, and resolve any failed sync run within 24 hours.",
+   "controls": [
+    {
+     "code": "IAM-12",
+     "coverage": "partial",
+     "rationale": "Removal reached one application a leaver held. Objectives: IAM-12.B, IAM-12.C, IAM-12.D."
+    },
+    {
+     "code": "IAM-11",
+     "coverage": "partial",
+     "rationale": "Disabling ends sessions in Verity through back-channel logout. Objectives: IAM-11.D."
+    }
+   ],
+   "evidence_kinds": [
+    "Sync runs with time and outcome",
+    "Members disabled with source time and Verity time",
+    "Sessions revoked"
+   ],
+   "observation_types": [
+    "verity.record"
+   ],
+   "providers": {
+    "verity": "supported"
+   },
+   "artifacts": [
+    "removal-records-for-a-sample-of"
+   ],
+   "aliases": [],
+   "sources": [
+    "coverage/iam-ep-pe-ns-dm.md",
+    "coverage/iam-ep-pe-ns-dm.json"
+   ],
+   "population": "Members linked to a Keycloak user, in a workspace with directory sync on, and the sync runs in the period.",
+   "predicate": "The sync ran at least every two hours, with no failed run left unresolved for more than 24 hours; every member removed or disabled in the organization was disabled in Verity at the next run and their sessions were revoked.",
+   "period": "Sync runs and disablements in the evaluation period (hourly with the sync).",
+   "empty_population": "Not applicable when sync is off; manual disablements are listed from the audit log instead.",
+   "parameters": {
+    "max_sync_interval_hours": "2",
+    "max_unresolved_failure_hours": "24"
+   },
+   "notes": "Observation type verity.record from the iam (directory sync runs, back-channel logout) module. Results: pass or fail as above; error when Keycloak is unreachable for a run. Needs a lifecycle feed (SCIM or LDAP) into Keycloak; the runbook records that this Keycloak build's SCIM server does not place users in organizations. Overlap: people.leavers_deprovisioned (hr_system plus identity_provider) proves leavers lose accounts against an HR source; this key covers one application and never fills the joiner and leaver roster. Keep both."
+  },
+  {
+   "key": "verity.identity.roles_from_groups",
+   "name": "Verity roles come from identity provider groups",
+   "description": "Where group mapping is on, every role of an SSO member comes from a mapped identity provider group, direct assignments are listed, and every Admin is named, active and signs in with a second factor.",
+   "capabilities": [
+    "verity_identity"
+   ],
+   "implementations": [
+    "verity"
+   ],
+   "resource_type": "role_assignment",
+   "frequency": "daily",
+   "remediation": "Turn on group to role mapping, remove direct role assignments that are not needed, and keep Admins few, named and on a second factor.",
+   "controls": [
+    {
+     "code": "IAM-08",
+     "coverage": "partial",
+     "rationale": "Verity as one system: its roles come from identity provider groups. Objectives: IAM-08.B, IAM-08.C."
+    },
+    {
+     "code": "IAM-07",
+     "coverage": "partial",
+     "rationale": "Verity admins are privileged accounts of one system. Objectives: IAM-07.B."
+    },
+    {
+     "code": "IAM-01",
+     "coverage": "partial",
+     "rationale": "Used in the artifact plan for IAM-01.D (list of privileged accounts): Verity Admin holders. Not in the check's Controls row. Objectives: IAM-01.D."
+    },
+    {
+     "code": "IAM-03",
+     "coverage": "partial",
+     "rationale": "Used in the artifact plan for IAM-03.C (privileged accounts with a second factor): every Verity Admin signs in with a second factor. Not in the check's Controls row. Objectives: IAM-03.C."
+    },
+    {
+     "code": "IAM-09",
+     "coverage": "partial",
+     "rationale": "Used in the artifact plan for IAM-09.B (group and role membership export): Verity roles and their source. Not in the check's Controls row. Objectives: IAM-09.B."
+    },
+    {
+     "code": "IAM-10",
+     "coverage": "partial",
+     "rationale": "Used in the artifact plan for IAM-10.C (list of privileged accounts): Verity Admin holders. Not in the check's Controls row. Objectives: IAM-10.C."
+    }
+   ],
+   "evidence_kinds": [
+    "Role assignments with role, source (group or direct) and assigned by",
+    "Admin list"
+   ],
+   "observation_types": [
+    "verity.record"
+   ],
+   "providers": {
+    "verity": "supported"
+   },
+   "artifacts": [
+    "group-and-role-membership-export",
+    "list-of-privileged-accounts-with-approval"
+   ],
+   "aliases": [],
+   "sources": [
+    "coverage/iam-ep-pe-ns-dm.md",
+    "coverage/iam-ep-pe-ns-dm.json"
+   ],
+   "population": "Role assignments of active members.",
+   "predicate": "Where group mapping is on, every role of an SSO member comes from a mapped group; direct assignments are listed with who made them; every Admin is named, active and signs in with a second factor.",
+   "period": "Assignments as of the evaluation date.",
+   "empty_population": "Fail: a workspace always has at least one Admin, so an empty list is an error in collection.",
+   "parameters": {},
+   "notes": "Observation type verity.record from the iam (roles, group mappings) module. Inconsistency in the doc: it calls an empty list an error in collection but sets the result to fail; AUTHORING rule 3 says a collection problem is error, never fail. Recommendation: report error. The JSON also uses it for IAM-01.D, IAM-03.C, IAM-09.B and IAM-10.C. Overlap: idp.groups_drive_access and idp.admins_limited (identity_provider) test the same ideas across the company; this key covers Verity only. Keep both."
+  },
+  {
+   "key": "verity.identity.sign_in_settings",
+   "name": "Verity's own sign in settings meet the standard",
+   "description": "Where password sign in to Verity is allowed, minimum length, lockout and idle timeout meet the standard.",
+   "capabilities": [
+    "verity_identity"
+   ],
+   "implementations": [
+    "verity"
+   ],
+   "resource_type": "workspace",
+   "frequency": "daily",
+   "remediation": "Set Verity's password minimum to at least 12, lockout after no more than 10 failures for at least 30 minutes, and an idle timeout within the session standard.",
+   "controls": [
+    {
+     "code": "IAM-06",
+     "coverage": "partial",
+     "rationale": "Verity only, and only where password sign in is still allowed. Objectives: IAM-06.B, IAM-06.C, IAM-06.D, IAM-06.E."
+    },
+    {
+     "code": "IAM-11",
+     "coverage": "partial",
+     "rationale": "Verity only: idle timeout within the session standard. Objectives: IAM-11.B, IAM-11.C, IAM-11.D."
+    }
+   ],
+   "evidence_kinds": [
+    "Settings snapshot"
+   ],
+   "observation_types": [
+    "verity.record"
+   ],
+   "providers": {
+    "verity": "supported"
+   },
+   "artifacts": [
+    "identity-provider-password-settings",
+    "session-limit-settings-export"
+   ],
+   "aliases": [],
+   "sources": [
+    "coverage/iam-ep-pe-ns-dm.md",
+    "coverage/iam-ep-pe-ns-dm.json"
+   ],
+   "population": "The workspace's password, lockout and session settings.",
+   "predicate": "Where password sign in is allowed: minimum length at least 12, lockout after 1 to 10 failures for at least 30 minutes; idle timeout set and no longer than the session standard's limit (a parameter).",
+   "period": "Settings on the evaluation date.",
+   "empty_population": "Not applicable.",
+   "parameters": {
+    "min_password_length": "12",
+    "lockout_failures": "1 to 10",
+    "lockout_minutes": "at least 30",
+    "max_idle_timeout": "the session standard's limit, set per workspace"
+   },
+   "notes": "Observation type verity.record from the iam (Keycloak realm or organization settings) module. Overlap: idp.password_policy and idp.session_timeout (identity_provider) test the provider's settings; this key covers Verity only. Keep both. Note the access-control-policy template's example password minimum is eight, against the 12 here and in IAM-06.A."
+  },
+  {
+   "key": "verity.vendors.assurance_reviewed",
+   "name": "Hosting providers' assurance reports were reviewed",
+   "description": "Every active hosting provider linked to PE-01 has a current SOC report or certificate, reviewed by a named person in the last 12 months, with complementary user entity controls marked reviewed and material findings followed up.",
+   "capabilities": [
+    "verity_vendors"
+   ],
+   "implementations": [
+    "verity"
+   ],
+   "resource_type": "vendor",
+   "frequency": "daily",
+   "remediation": "Link each hosting provider to PE-01, record a review of its latest SOC report or certificate (or a bridge letter) within 12 months, mark the complementary user entity controls reviewed, and link material findings to a risk or task.",
+   "controls": [
+    {
+     "code": "PE-01",
+     "coverage": "partial",
+     "rationale": "The review is recorded and current; mapping each complementary customer control to a company control is a person's work. Objectives: PE-01.B, PE-01.C, PE-01.D."
+    }
+   ],
+   "evidence_kinds": [
+    "Report kind, type, period and opinion",
+    "Reviewer and reviewed at",
+    "Complementary user entity control notes"
+   ],
+   "observation_types": [
+    "verity.record"
+   ],
+   "providers": {
+    "verity": "supported"
+   },
+   "artifacts": [
+    "cloud-provider-assurance-report-that-was",
+    "review-of-the-carve-out-and"
+   ],
+   "aliases": [],
+   "sources": [
+    "coverage/iam-ep-pe-ns-dm.md",
+    "coverage/iam-ep-pe-ns-dm.json"
+   ],
+   "population": "Active vendors linked to PE-01 (the hosting providers relied on for physical security).",
+   "predicate": "Each has a SOC report review or certificate whose period ended within the last 12 months, or a bridge letter covering the gap; a named reviewer and review date within 12 months; complementary user entity controls marked reviewed; and material findings linked to a risk or task.",
+   "period": "Reports and reviews in the last 12 months.",
+   "empty_population": "Fail when PE-01 is in scope: a hosting provider must be linked.",
+   "parameters": {
+    "report_period_max_age_months": "12",
+    "review_max_age_months": "12"
+   },
+   "notes": "Observation type verity.record from the vendors (SOC report reviews) module. Overlap: verity.vendors.assessed_in_cadence (BC-08) tests tier cadence of vendor assessments, not the SOC report review. Keep both."
+  },
+  {
+   "key": "verity.vendors.breach_terms_recorded",
+   "name": "Vendor contracts state breach notice hours",
+   "description": "Every active data processing or master contract with a vendor that holds personal data records breach notice hours within the policy maximum and has the contract file attached.",
+   "capabilities": [
+    "verity_vendors"
+   ],
+   "implementations": [
+    "verity"
+   ],
+   "resource_type": "vendor",
+   "frequency": "daily",
+   "remediation": "Record the breach notification hours on each active dpa or master contract with vendors that hold personal data, attach the signed file, and renegotiate any term longer than the policy allows.",
+   "controls": [
+    {
+     "code": "DM-17",
+     "coverage": "partial",
+     "rationale": "Contracts record breach notice hours within the policy maximum, with the file attached. Objectives: DM-17.A, DM-17.B, DM-17.C."
+    },
+    {
+     "code": "DM-10",
+     "coverage": "partial",
+     "rationale": "The breach term of DM-10.C only; the other terms are fields a person sets. Objectives: DM-10.C."
+    }
+   ],
+   "evidence_kinds": [
+    "Vendor, contract, breach hours and file reference"
+   ],
+   "observation_types": [
+    "verity.record"
+   ],
+   "providers": {
+    "verity": "supported"
+   },
+   "artifacts": [
+    "security-terms-agreed-in-each-vendor",
+    "vendor-contract-terms-with-the-breach"
+   ],
+   "aliases": [],
+   "sources": [
+    "coverage/iam-ep-pe-ns-dm.md",
+    "coverage/iam-ep-pe-ns-dm.json"
+   ],
+   "population": "Active vendors marked as holding personal data, with an active contract of type dpa or master.",
+   "predicate": "Each active such contract records breach notification hours no greater than the policy's maximum (a parameter) and has the contract file attached.",
+   "period": "Contracts active on the evaluation date.",
+   "empty_population": "Not applicable when no vendor holds personal data; listed as such.",
+   "parameters": {
+    "max_breach_notice_hours": "the policy's maximum (no default given; the third-party-management-policy template has no breach hours yet)"
+   },
+   "notes": "Observation type verity.record from the vendors (contracts) module. Overlap: verity.vendors.dpa_on_file (DM-10) shares the population (vendors holding personal data) and the contract record. Recommendation: build it beside dpa_on_file on the same population query; keep a separate key because the predicate and controls differ."
+  },
+  {
+   "key": "verity.vendors.personal_data_recorded",
+   "name": "Vendors that receive personal data are fully recorded",
+   "description": "Every active vendor marked as holding personal data has its data types, location, systems and services recorded and an approval dated before its first engagement started.",
+   "capabilities": [
+    "verity_vendors"
+   ],
+   "implementations": [
+    "verity"
+   ],
+   "resource_type": "vendor",
+   "frequency": "daily",
+   "remediation": "For each vendor that holds personal data, fill the data types in scope, data location, systems in scope and services provided, and record its approval before the engagement starts.",
+   "controls": [
+    {
+     "code": "DM-09",
+     "coverage": "partial",
+     "rationale": "Disclosure recipients are recorded with data types, location, systems and approval date. Lawful basis is not a field, so the check never claims it. Objectives: DM-09.B, DM-09.C, DM-09.D."
+    },
+    {
+     "code": "DM-06",
+     "coverage": "partial",
+     "rationale": "Vendor flows of the data map. Objectives: DM-06.C, DM-06.D."
+    },
+    {
+     "code": "DM-11",
+     "coverage": "partial",
+     "rationale": "Used in the artifact plan for DM-11.C and D: the recipients each access request answer should list. Not in the check's Controls row. Objectives: DM-11.C, DM-11.D."
+    },
+    {
+     "code": "DM-15",
+     "coverage": "partial",
+     "rationale": "Used in the artifact plan for DM-15.B: the register of disclosures the privacy notice must match. Not in the check's Controls row. Objectives: DM-15.B."
+    }
+   ],
+   "evidence_kinds": [
+    "Vendor register rows with data types, location, systems, services and approval date"
+   ],
+   "observation_types": [
+    "verity.record"
+   ],
+   "providers": {
+    "verity": "supported"
+   },
+   "artifacts": [
+    "consent-or-lawful-basis-for-each",
+    "register-of-authorized-disclosures-to-third",
+    "sample-responses-that-include-disclosure-accounting",
+    "vendor-inventory-with-owner-data-and"
+   ],
+   "aliases": [],
+   "sources": [
+    "coverage/iam-ep-pe-ns-dm.md",
+    "coverage/iam-ep-pe-ns-dm.json"
+   ],
+   "population": "Active vendors marked as holding personal data.",
+   "predicate": "Each has the data types in scope, the data location, the systems in scope and the services provided filled, and an approval recorded before its first engagement started.",
+   "period": "Vendors active on the evaluation date.",
+   "empty_population": "Not applicable when none is marked; a person confirms against the data map.",
+   "parameters": {},
+   "notes": "Observation type verity.record from the vendors (register, approvals) module. Lawful basis is not a vendor field, so the check never claims it (gap 11). The JSON also uses it for DM-11 and DM-15. Overlap: verity.vendors.owner_and_tier (BC-07) and verity.vendors.dpa_on_file test other fields of the same register. Keep all."
+  },
+  {
+   "key": "verity.assets.data_stores_mapped",
+   "name": "Data stores carry what the data map needs",
+   "description": "Every data asset in service has a classification, an active owner, a location, an environment, a regulated data type where it holds personal data, at least one data flow relationship, and the retention and encryption fields filled.",
+   "capabilities": [
+    "verity_assets"
+   ],
+   "implementations": [
+    "verity"
+   ],
+   "resource_type": "asset",
+   "frequency": "daily",
+   "remediation": "For each data store, fill classification, primary owner, location, environment, regulated data type, the retention and encryption fields, and add a relationship showing where its data comes from or goes.",
+   "controls": [
+    {
+     "code": "DM-06",
+     "coverage": "partial",
+     "rationale": "The map is complete in its own terms; completeness against reality needs assets.resources_registered. Objectives: DM-06.B, DM-06.C, DM-06.D."
+    },
+    {
+     "code": "DM-05",
+     "coverage": "partial",
+     "rationale": "Used in the artifact plan for the data inventory and data map artifact on DM-05. Not in the check's Controls row; the map is complete in its own terms only. Objectives: DM-05.D."
+    },
+    {
+     "code": "DM-09",
+     "coverage": "partial",
+     "rationale": "Used in the artifact plan for the data inventory and data map artifact on DM-09. Not in the check's Controls row; the map is complete in its own terms only. Objectives: DM-09.D."
+    },
+    {
+     "code": "DM-11",
+     "coverage": "partial",
+     "rationale": "Used in the artifact plan for the data inventory and data map artifact on DM-11. Not in the check's Controls row; the map is complete in its own terms only. Objectives: DM-11.D."
+    },
+    {
+     "code": "DM-12",
+     "coverage": "partial",
+     "rationale": "Used in the artifact plan for the data inventory and data map artifact on DM-12. Not in the check's Controls row; the map is complete in its own terms only. Objectives: DM-12.E."
+    },
+    {
+     "code": "DM-15",
+     "coverage": "partial",
+     "rationale": "Used in the artifact plan for the data inventory and data map artifact on DM-15. Not in the check's Controls row; the map is complete in its own terms only. Objectives: DM-15.B."
+    },
+    {
+     "code": "DM-16",
+     "coverage": "partial",
+     "rationale": "Used in the artifact plan for the data inventory and data map artifact on DM-16. Not in the check's Controls row; the map is complete in its own terms only. Objectives: DM-16.D."
+    }
+   ],
+   "evidence_kinds": [
+    "Data asset rows with the required fields",
+    "Their relationships"
+   ],
+   "observation_types": [
+    "verity.record"
+   ],
+   "providers": {
+    "verity": "supported"
+   },
+   "artifacts": [
+    "data-inventory-and-data-map"
+   ],
+   "aliases": [],
+   "sources": [
+    "coverage/iam-ep-pe-ns-dm.md",
+    "coverage/iam-ep-pe-ns-dm.json"
+   ],
+   "population": "Assets in service of type data, and cloud assets marked as holding data.",
+   "predicate": "Each has a classification, a primary owner who is an active member, a location, an environment, a regulated data type where it holds personal data, at least one relationship showing where its data comes from or goes, and the retention and encryption custom fields filled.",
+   "period": "Assets in service on the evaluation date.",
+   "empty_population": "Fail: a company in scope always has at least one data store.",
+   "parameters": {
+    "retention_field": "custom field key (fixed key to be decided)",
+    "encryption_field": "custom field key (fixed key to be decided)"
+   },
+   "notes": "Observation type verity.record from the assets (data stores and relationships) module. Retention and encryption are not native asset fields; custom fields hold them today (gap 12, owner decision). The population needs cloud assets marked as holding data, but the shipped verity.assets.classified says Verity does not record which assets hold data; the marker must be defined. The JSON also uses it on DM-05, DM-09, DM-11, DM-12, DM-15 and DM-16 (all through data-inventory-and-data-map). Overlap: verity.assets.classified and verity.assets.owner_assigned test parts of this predicate on every asset. Keep; this one is scoped to data stores and adds the map fields."
+  }
+ ],
+ "existing_implementations": [
+  {
+   "check": "vcs.org_two_factor_required",
+   "provider": "github",
+   "support": "supported",
+   "note": "Already runs; used here for IAM-03 (lands on the new IAM-03.F).",
+   "source": "coverage/iam-ep-pe-ns-dm.md (How to read this file)"
+  },
+  {
+   "check": "vcs.merged_changes_reviewed",
+   "provider": "github",
+   "support": "supported",
+   "note": "Already runs; used here for IAM-09 and DM-18.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (How to read this file)"
+  },
+  {
+   "check": "vcs.secret_scanning_enabled",
+   "provider": "github",
+   "support": "supported",
+   "note": "Already runs; used here for NS-09.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (How to read this file)"
+  }
+ ],
+ "downgrades": [
+  {
+   "check": "cloud.encryption_at_rest",
+   "control": "NS-01",
+   "artifact": null,
+   "requirement": null,
+   "from": "full",
+   "to": "partial",
+   "reason": "The control has design and other operating objectives the check does not test (the rationale 'which is what the control states' breaks EC-3). Policy (A), key type per contract (C) and stores outside connected accounts remain.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found, rows 1 and 2)"
+  },
+  {
+   "check": "cloud.admin_ports_closed",
+   "control": "NS-08",
+   "artifact": null,
+   "requirement": null,
+   "from": "full",
+   "to": "partial",
+   "reason": "The control has design and other operating objectives the check does not test (the rationale 'which is what the control states' breaks EC-3). Policy (A), approved exceptions (C) and drift alerts and the remote access route (D) remain.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found, rows 1 and 2)"
+  },
+  {
+   "check": "idp.sso_enforced",
+   "control": "IAM-04",
+   "artifact": null,
+   "requirement": null,
+   "from": "full",
+   "to": "partial",
+   "reason": "The control has design and other operating objectives the check does not test (the rationale 'which is what the control states' breaks EC-3). Policy, the list of apps outside SSO (a person's list and the vendor register) and approved exceptions remain.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found, rows 1 and 2)"
+  },
+  {
+   "check": "idp.password_policy",
+   "control": "IAM-06",
+   "artifact": null,
+   "requirement": null,
+   "from": "full",
+   "to": "partial",
+   "reason": "The control has design and other operating objectives the check does not test (the rationale 'which is what the control states' breaks EC-3). Policy (A), rotation only when justified (D, interview) and single use reset passwords (new E) remain.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found, rows 1 and 2)"
+  },
+  {
+   "check": "idp.session_timeout",
+   "control": "IAM-11",
+   "artifact": null,
+   "requirement": null,
+   "from": "full",
+   "to": "partial",
+   "reason": "The control has design and other operating objectives the check does not test (the rationale 'which is what the control states' breaks EC-3). Policy, step up for sensitive actions, console and product sessions and logout on disable remain.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found, rows 1 and 2)"
+  },
+  {
+   "check": "people.leavers_deprovisioned",
+   "control": "IAM-12",
+   "artifact": null,
+   "requirement": null,
+   "from": "full",
+   "to": "partial",
+   "reason": "The control has design and other operating objectives the check does not test (the rationale 'which is what the control states' breaks EC-3). Needs an HR source in no signed phase and cannot see systems outside single sign on (IAM-12.D), so a full link can never be met (gap 2).",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found, rows 1 and 2)"
+  },
+  {
+   "check": "vault.everyone_enrolled",
+   "control": "IAM-05",
+   "artifact": null,
+   "requirement": null,
+   "from": "full",
+   "to": "partial",
+   "reason": "The control has design and other operating objectives the check does not test (the rationale 'which is what the control states' breaks EC-3). Policy, leaver suspension against an HR list and vault scoping (C, interview) remain.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found, rows 1 and 2)"
+  },
+  {
+   "check": "tickets.access_requests_approved",
+   "control": "IAM-01",
+   "artifact": null,
+   "requirement": null,
+   "from": "full",
+   "to": "partial",
+   "reason": "The control has design and other operating objectives the check does not test (the rationale 'which is what the control states' breaks EC-3). Policy, joiner completeness against the roster, privileged approvals, reviews and auditor access (new F) remain.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found, rows 1 and 2)"
+  },
+  {
+   "check": "edge.waf_enabled",
+   "control": "NS-10",
+   "artifact": null,
+   "requirement": null,
+   "from": "full",
+   "to": "partial",
+   "reason": "The control has design and other operating objectives the check does not test (the rationale 'which is what the control states' breaks EC-3). Policy, origin lockdown on the cloud side and rule reviews remain.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found, rows 1 and 2)"
+  },
+  {
+   "check": "edge.zero_trust_access",
+   "control": "NS-11",
+   "artifact": null,
+   "requirement": null,
+   "from": "full",
+   "to": "partial",
+   "reason": "The control has design and other operating objectives the check does not test (the rationale 'which is what the control states' breaks EC-3). Policy, leaver removal against a leaver source and session log review (new E) remain.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found, rows 1 and 2)"
+  },
+  {
+   "check": "devices.enrolled",
+   "control": "EP-03",
+   "artifact": null,
+   "requirement": null,
+   "from": "full",
+   "to": "partial",
+   "reason": "The control has design and other operating objectives the check does not test (the rationale 'which is what the control states' breaks EC-3). Policy, enrolment before assignment, roster comparison, baseline and permitted software (new E) remain.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found, rows 1 and 2)"
+  },
+  {
+   "check": "devices.disk_encrypted",
+   "control": "EP-02",
+   "artifact": null,
+   "requirement": null,
+   "from": "full",
+   "to": "partial",
+   "reason": "The control has design and other operating objectives the check does not test (the rationale 'which is what the control states' breaks EC-3). Policy, recovery key escrow, encryption before assignment and exceptions remain.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found, rows 1 and 2)"
+  },
+  {
+   "check": "devices.screen_lock",
+   "control": "EP-06",
+   "artifact": null,
+   "requirement": null,
+   "from": "full",
+   "to": "partial",
+   "reason": "The control has design and other operating objectives the check does not test (the rationale 'which is what the control states' breaks EC-3). Policy (A) and remediation of devices out of setting (D) remain.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found, rows 1 and 2)"
+  },
+  {
+   "check": "endpoint.protection_active",
+   "control": "EP-01",
+   "artifact": null,
+   "requirement": null,
+   "from": "full",
+   "to": "partial",
+   "reason": "The control has design and other operating objectives the check does not test (the rationale 'which is what the control states' breaks EC-3). Policy, server agents, alert review and incident linkage remain.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found, rows 1 and 2)"
+  },
+  {
+   "check": null,
+   "control": "IAM-02",
+   "artifact": null,
+   "requirement": "SOC2:CC6.3",
+   "from": "full",
+   "to": "partial",
+   "reason": "Two full links (IAM-02, IAM-08) cannot both be true; neither alone authorizes, changes and removes access. Needs FW-5 reviewer sign off.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Proposed control changes, Mapping changes); coverage/iam-ep-pe-ns-dm.controls.json"
+  },
+  {
+   "check": null,
+   "control": "IAM-08",
+   "artifact": null,
+   "requirement": "SOC2:CC6.3",
+   "from": "full",
+   "to": "partial",
+   "reason": "Two full links (IAM-02, IAM-08) cannot both be true; neither alone authorizes, changes and removes access. Needs FW-5 reviewer sign off.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Proposed control changes, Mapping changes); coverage/iam-ep-pe-ns-dm.controls.json"
+  },
+  {
+   "check": null,
+   "control": "IAM-09",
+   "artifact": null,
+   "requirement": "ISO27001:A.5.3",
+   "from": "full",
+   "to": "partial",
+   "reason": "Finance and payment duties move to the proposed IAM-13 (partial there). Needs FW-5 reviewer sign off.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Proposed control changes, Mapping changes); coverage/iam-ep-pe-ns-dm.controls.json"
+  },
+  {
+   "check": null,
+   "control": "EP-07",
+   "artifact": null,
+   "requirement": "ISO27001:A.8.23",
+   "from": "full",
+   "to": "partial",
+   "reason": "Server outbound limits (EP-07.C) move to NS-03 as NS-03.E; NS-03 gains a partial A.8.23 link. Needs FW-5 reviewer sign off.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Proposed control changes, Mapping changes); coverage/iam-ep-pe-ns-dm.controls.json"
+  },
+  {
+   "check": null,
+   "control": "NS-04",
+   "artifact": null,
+   "requirement": "ISO27001:A.8.9",
+   "from": "full",
+   "to": "partial",
+   "reason": "Network equipment moves to the proposed NS-14 (partial there). Needs FW-5 reviewer sign off.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Proposed control changes, Mapping changes); coverage/iam-ep-pe-ns-dm.controls.json"
+  },
+  {
+   "check": null,
+   "control": "DM-16",
+   "artifact": null,
+   "requirement": "SOC2:C1.2",
+   "from": "full",
+   "to": "partial",
+   "reason": "Equipment wiping moves to the proposed EP-08 (partial there). Needs FW-5 reviewer sign off.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Proposed control changes, Mapping changes); coverage/iam-ep-pe-ns-dm.controls.json"
+  }
+ ],
+ "decisions": [
+  {
+   "topic": "Split IAM-09 into IAM-09 and IAM-13",
+   "question": "Approve splitting segregation of duties into technology duties (IAM-09, IT lead) and finance and payment duties (proposed IAM-13, finance lead, applies when in scope finance or payment processes exist)?",
+   "options": [
+    "approve the split",
+    "keep IAM-09 as one control"
+   ],
+   "recommendation": "Approve. A.5.3 becomes partial on both; CC5.1 partial added to IAM-13; idp.access_list_exported and vcs.merged_changes_reviewed stay on IAM-09.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Proposed control changes) Splits"
+  },
+  {
+   "topic": "Split EP-04 into EP-04 and NS-13",
+   "question": "Approve splitting patch management into company devices (EP-04, IT lead) and server and container image patching (proposed NS-13, engineering lead, applies when the company runs servers, VMs or images it maintains)?",
+   "options": [
+    "approve the split",
+    "keep EP-04 as one control"
+   ],
+   "recommendation": "Approve. EP-04.E moves to NS-13.E; A.8.8, CC7.1, CC6.8 partial on both.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Proposed control changes) Splits"
+  },
+  {
+   "topic": "Split NS-04 into NS-04 and NS-14",
+   "question": "Approve splitting hardening baselines into cloud services, servers, containers and databases (NS-04) and network equipment hardening and firmware (proposed NS-14, IT lead, applies when own network equipment exists)?",
+   "options": [
+    "approve the split",
+    "keep NS-04 as one control"
+   ],
+   "recommendation": "Approve. A.8.20 moves from NS-04 to NS-14; A.8.9 full becomes partial on both; NS-14 has no connector.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Proposed control changes) Splits"
+  },
+  {
+   "topic": "Split DM-16 into DM-16 and EP-08",
+   "question": "Approve splitting secure data disposal into deleting data from every store and copy (DM-16) and equipment and media wiping and disposal (proposed EP-08, IT lead, always applies)?",
+   "options": [
+    "approve the split",
+    "keep DM-16 as one control"
+   ],
+   "recommendation": "Approve. DM-16.B and C move to EP-08.B and C; new DM-16.E (deletion at customer exit and on erasure request) and EP-08.A; A.7.14, A.7.10, CC6.5 move to EP-08; C1.2 partial on both; A.8.10 and P4.3 stay full on DM-16.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Proposed control changes) Splits"
+  },
+  {
+   "topic": "Add IAM-14 product sign in protections",
+   "question": "Add a control for how the product authenticates its customers' users (password rules, slow salted hash, lockout, reset links, second factor options), owner engineering lead, applies when customers' users sign in to the product?",
+   "options": [
+    "add IAM-14",
+    "do not add"
+   ],
+   "recommendation": "Add, mapped CC6.1, A.8.5 and A.5.17 partial, with the proposed artifact product-sign-in-settings; the engineering-security-standard template needs a product sign in section first.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Proposed control changes) Addition"
+  },
+  {
+   "topic": "Requirement mapping changes",
+   "question": "Approve the Mapping changes table (CC6.3 on IAM-02 and IAM-08 full to partial; A.5.3 IAM-09 full to partial; A.8.23 EP-07 full to partial and new partial on NS-03; A.8.20 removed from NS-04; A.8.9 NS-04 full to partial; A.7.14, A.7.10, CC6.5 moved from DM-16 to EP-08; C1.2 DM-16 full to partial; new partials on IAM-13, NS-13, NS-14, EP-08, IAM-14)?",
+   "options": [
+    "approve all",
+    "approve per row",
+    "reject"
+   ],
+   "recommendation": "Approve; all are proposals for the qualified FW-5 review. The CC6.3 and A.8.23 changes alter what framework status means and need reviewer sign off.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Proposed control changes) Mapping changes"
+  },
+  {
+   "topic": "DM-03 P3.2 to full",
+   "question": "Raise SOC2:P3.2 on DM-03 from partial to full once DM-03.E (people told what follows if they refuse or withdraw consent) ships?",
+   "options": [
+    "raise to full after DM-03.E ships",
+    "keep partial"
+   ],
+   "recommendation": "Raise to full only once DM-03.E ships, with FW-5 sign off.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Proposed control changes) Mapping changes; coverage/iam-ep-pe-ns-dm.controls.json"
+  },
+  {
+   "topic": "Applicability-aware coverage in the readiness engine",
+   "question": "Coverage is static but applicability is not: when NS-14 or IAM-13 is not applicable, A.8.9 or A.5.3 rests on one partial link and CL-3 reads it as partly covered. Model 'full when the sibling is not applicable' before the splits ship?",
+   "options": [
+    "model sibling-aware coverage before the splits ship",
+    "ship the splits and accept lower ISO status",
+    "hold the splits"
+   ],
+   "recommendation": "Model 'full when the sibling is not applicable' before the splits ship, or the splits wrongly lower ISO status.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Proposed control changes) What existing workspaces need; coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 14"
+  },
+  {
+   "topic": "Move verity.assets.disposal_recorded to EP-08",
+   "question": "Move the checks.json mapping of verity.assets.disposal_recorded from DM-16 to the proposed EP-08?",
+   "options": [
+    "move to EP-08",
+    "keep on DM-16",
+    "map to both"
+   ],
+   "recommendation": "Move to EP-08 (the controls.json file calls this an owner decision).",
+   "source": "coverage/iam-ep-pe-ns-dm.controls.json DM-16 tenant_impact"
+  },
+  {
+   "topic": "Scanner and vulnerability SLA checks after the EP-04 split",
+   "question": "Do scanner.scans_current and verity.vulns.within_sla move off EP-04 onto NS-13, or keep EP-04 and gain NS-13? The doc says both: the Splits table and controls.json say they go to NS-13, 'What existing workspaces need' says they gain NS-13.",
+   "options": [
+    "move from EP-04 to NS-13",
+    "keep EP-04 and add NS-13"
+   ],
+   "recommendation": "Move to NS-13: after the split EP-04 is company devices only, its artifact plan no longer lists either check, and controls.json says the split decides devices.os_current maps to EP-04 and scanner and cloud patch checks map to NS-13.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Proposed control changes) Splits; What existing workspaces need; coverage/iam-ep-pe-ns-dm.controls.json EP-04"
+  },
+  {
+   "topic": "Connector check to control coverage",
+   "question": "Make all 14 full links from a connector check to a control in these families partial, with a rationale naming what remains (policy, exceptions, review, population outside the source)?",
+   "options": [
+    "make all 14 partial",
+    "keep full"
+   ],
+   "recommendation": "Make all 14 partial; the current rationale 'which is what the control states' breaks EC-3.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 1"
+  },
+  {
+   "topic": "Device management and endpoint protection in the catalogue",
+   "question": "Device management and endpoint protection are not in the signed catalogue, so EP-01 to EP-06 and DM-19.C stay on people. Add them to a phase?",
+   "options": [
+    "add to a signed phase",
+    "leave EP-01 to EP-06 and DM-19.C on people"
+   ],
+   "recommendation": null,
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 7 (question 1 of control-framework-requirements)"
+  },
+  {
+   "topic": "Staff roster source",
+   "question": "There is no staff roster in Verity and no HR connector in any signed phase, yet IAM-01, IAM-05, IAM-12, EP-03, EP-05, NS-11 and PE-02 compare against a roster. Build the proposed CSV roster import?",
+   "options": [
+    "build the CSV roster import",
+    "wait for an HR connector",
+    "leave the roster to people"
+   ],
+   "recommendation": "Build the CSV roster import (control-framework-requirements question 1). Verity members are not a roster.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) rows 2 and 6"
+  },
+  {
+   "topic": "New capabilities",
+   "question": "Add verity_identity and business_applications to capabilities.json, and decide whether productivity suite sharing and leak prevention settings (Google Workspace, Microsoft 365) get their own capability instead of identity_provider?",
+   "options": [
+    "add both; give the suite its own capability",
+    "add both; keep the suite under identity_provider"
+   ],
+   "recommendation": "Add both capabilities; the suite question is open (this doc files suite settings under identity_provider).",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 8"
+  },
+  {
+   "topic": "Person-only document artifacts",
+   "question": "45 document artifacts list only a person as source although a shipped template holds the text. Give each a document source with its template and section, or fold it into the doc-* artifact?",
+   "options": [
+    "add a document source with template and section",
+    "fold into the doc-* artifact"
+   ],
+   "recommendation": null,
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 3"
+  },
+  {
+   "topic": "Template gaps",
+   "question": "Add the missing sections to access-control-policy, third-party-management-policy, cryptography-policy, endpoint-security-standard and engineering-security-standard (CL-6 work), or point the objectives at infrastructure-security-standard and operations-security-policy, which hold several of them?",
+   "options": [
+    "add the sections (CL-6)",
+    "repoint the objectives"
+   ],
+   "recommendation": null,
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 4"
+  },
+  {
+   "topic": "Data map fields in Assets",
+   "question": "The data map needs retention and encryption per store, which Assets holds only as custom fields. Accept custom fields with fixed keys, or add columns?",
+   "options": [
+    "custom fields with fixed keys",
+    "add columns"
+   ],
+   "recommendation": null,
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 12"
+  },
+  {
+   "topic": "Vendor fields for lawful basis and sign in method",
+   "question": "Add a lawful basis field (DM-09) and a sign in method per application (IAM-04.B) to Vendors?",
+   "options": [
+    "add when DM-09 and IAM-04 automation is built",
+    "add now",
+    "do not add"
+   ],
+   "recommendation": "Add when DM-09 and IAM-04 automation is built.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 11"
+  },
+  {
+   "topic": "Endpoint asset type",
+   "question": "Add an endpoint or device asset type to Assets (migration) so the device inventory and EP-08 records have a home?",
+   "options": [
+    "add before device management connectors land",
+    "keep recording laptops as infrastructure"
+   ],
+   "recommendation": "Add it before device management connectors land.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 5"
+  },
+  {
+   "topic": "Rename access-request-procedure",
+   "question": "Rename the DM-11 artifact access-request-procedure (a data subject access request procedure, beside access-request-and-approval-procedure for IAM) to data-subject-access-request-procedure?",
+   "options": [
+    "rename with an evidence migration",
+    "keep the key"
+   ],
+   "recommendation": "Rename, with a migration of any evidence that references it.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 9"
+  },
+  {
+   "topic": "Incident record in Tasks",
+   "question": "Tasks has no incident kind and no custom fields. Use an incident template with notice decision and notice sent subtasks now?",
+   "options": [
+    "incident template now, Incidents module later",
+    "wait for the Incidents module (Phase 3.1)"
+   ],
+   "recommendation": "Incident template with notice decision and notice sent subtasks now; Incidents module later.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 10"
+  },
+  {
+   "topic": "Overlap HR-05 and IAM-12",
+   "question": "HR-05 and IAM-12 both test leaver removal. Which owns what?",
+   "options": [
+    "HR family reviewer settles"
+   ],
+   "recommendation": "Kept on purpose; the HR family settles it.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 15"
+  },
+  {
+   "topic": "Overlap LM-11 and NS-13",
+   "question": "LM-11 (remediation) and the proposed NS-13 (server patching) overlap on server remediation. Which owns what?",
+   "options": [
+    "LM family reviewer settles"
+   ],
+   "recommendation": "Kept on purpose; the LM family settles it.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 15; coverage/iam-ep-pe-ns-dm.controls.json EP-04"
+  },
+  {
+   "topic": "Overlap DM-04.B and DM-06.B",
+   "question": "DM-04.B and DM-06.B both look at classification per store. Keep both?",
+   "options": [
+    "keep both",
+    "merge"
+   ],
+   "recommendation": "Keep: DM-04.B is the owner's assignment, DM-06.B the map's content.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 15; coverage/iam-ep-pe-ns-dm.controls.json DM-04"
+  },
+  {
+   "topic": "Successor adoption in existing workspaces",
+   "question": "Confirm the rule for existing workspaces: each successor is an adoption proposal a person confirms with an audit row; the original keeps evidence, history, owner and exceptions; no green result or risk acceptance is copied; retired objective letters (EP-04.E, EP-07.C, DM-16.B, DM-16.C) are never reused.",
+   "options": [
+    "confirm",
+    "change"
+   ],
+   "recommendation": "Confirm.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Proposed control changes) What existing workspaces need"
+  },
+  {
+   "topic": "EP-01 split if alert handling is outsourced",
+   "question": "EP-01 was kept as one control (agent coverage and alert handling). Revisit the split if customers outsource alert handling to a managed detection provider?",
+   "options": [
+    "keep as one",
+    "split configuration from monitoring"
+   ],
+   "recommendation": "Keep as one; revisit if customers outsource alert handling.",
+   "source": "coverage/iam-ep-pe-ns-dm.controls.json EP-01"
+  }
+ ],
+ "defects": [
+  {
+   "kind": "check",
+   "item": "14 connector checks in IAM, EP, NS",
+   "finding": "All 14 checks.json links from a connector check to a control in these families are full with the rationale 'which is what the control states' (cloud.encryption_at_rest NS-01, cloud.admin_ports_closed NS-08, idp.sso_enforced IAM-04, idp.password_policy IAM-06, idp.session_timeout IAM-11, people.leavers_deprovisioned IAM-12, vault.everyone_enrolled IAM-05, tickets.access_requests_approved IAM-01, edge.waf_enabled NS-10, edge.zero_trust_access NS-11, devices.enrolled EP-03, devices.disk_encrypted EP-02, devices.screen_lock EP-06, endpoint.protection_active EP-01). EC-3 is broken.",
+   "proposal": "Make all 14 partial with a rationale naming what remains (see downgrades).",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 1"
+  },
+  {
+   "kind": "check",
+   "item": "people.leavers_deprovisioned",
+   "finding": "Needs an HR source, which is in no signed phase, and cannot see systems outside single sign on (IAM-12.D). Its full link to IAM-12 can never be met.",
+   "proposal": "Partial, plus the CSV roster import of control-framework-requirements question 1.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 2"
+  },
+  {
+   "kind": "check",
+   "item": "verity.assets.disposal_recorded",
+   "finding": "Mapped to DM-16 (data deletion) although it proves equipment disposal, which the split moves to EP-08.",
+   "proposal": "Move the mapping to EP-08 (owner decision).",
+   "source": "coverage/iam-ep-pe-ns-dm.controls.json DM-16"
+  },
+  {
+   "kind": "check",
+   "item": "scanner.scans_current",
+   "finding": "Mapped to EP-04, which after the split is company devices only; it proves server and application scanning.",
+   "proposal": "Move the mapping to NS-13.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Proposed control changes) Splits"
+  },
+  {
+   "kind": "check",
+   "item": "verity.vulns.within_sla",
+   "finding": "Mapped to EP-04, which after the split is company devices only; vulnerability SLA belongs to server and image patching.",
+   "proposal": "Move the mapping to NS-13 (LM-11 mapping stays).",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Proposed control changes) Splits"
+  },
+  {
+   "kind": "mapping",
+   "item": "vcs.merged_changes_reviewed",
+   "finding": "The doc says this running GitHub check is used for IAM-09 and DM-18 and 'stays on IAM-09' after the split, but checks.json maps it only to SD-01 and SD-06.",
+   "proposal": "Add partial mappings to IAM-09 (author and approver are different people) and DM-18 (masking changes approved), or stop describing it as on IAM-09.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Proposed control changes) Splits; How to read this file"
+  },
+  {
+   "kind": "mapping",
+   "item": "vcs.secret_scanning_enabled",
+   "finding": "The doc says this running GitHub check is used for NS-09, but checks.json maps it only to SD-11.",
+   "proposal": "Add a partial mapping to NS-09.",
+   "source": "coverage/iam-ep-pe-ns-dm.md How to read this file; NS-09"
+  },
+  {
+   "kind": "mapping",
+   "item": "ISO27001:A.8.20 on NS-04",
+   "finding": "The NS-04 rationale for A.8.20 describes network equipment only.",
+   "proposal": "Remove A.8.20 from NS-04 and map it partial to the proposed NS-14.",
+   "source": "coverage/iam-ep-pe-ns-dm.controls.json NS-04"
+  },
+  {
+   "kind": "mapping",
+   "item": "SOC2:CC6.3 on IAM-02 and IAM-08",
+   "finding": "Mapped full from both controls; two full links cannot both be true and neither alone authorizes, changes and removes access.",
+   "proposal": "Partial on both.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Proposed control changes) Mapping changes"
+  },
+  {
+   "kind": "artifact",
+   "item": "person-only document artifacts (summary)",
+   "finding": "The doc counts 45 document artifacts in these families whose only source is a person although a shipped template holds the text; a script over the JSON and artifacts.json finds 43 (listed one by one below). Many objectives name both the person artifact and the doc-* artifact for the same document.",
+   "proposal": "Give each a document source with its template and section, or fold it into the doc-* artifact (owner decision).",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 3"
+  },
+  {
+   "kind": "artifact",
+   "item": "access-policy-requiring-multi-factor-authentication",
+   "finding": "access-policy-requiring-multi-factor-authentication (AR-IAM-06) lists only a person as source, although template(s) access-control-policy hold the text (used by IAM-03). Duplicate: doc-access-control-policy also named on IAM-03.A.",
+   "proposal": "Add a document source for access-control-policy with its section, or fold it into the doc-* artifact.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 3; coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "kind": "artifact",
+   "item": "access-removal-procedure-with-the-timeframe",
+   "finding": "access-removal-procedure-with-the-timeframe (AR-IAM-27) lists only a person as source, although template(s) joiner-mover-leaver-checklists hold the text (used by IAM-12). Duplicate: doc-joiner-mover-leaver-checklists also named on IAM-12.A.",
+   "proposal": "Add a document source for joiner-mover-leaver-checklists with its section, or fold it into the doc-* artifact.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 3; coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "kind": "artifact",
+   "item": "access-request-and-approval-procedure",
+   "finding": "access-request-and-approval-procedure (AR-IAM-01) lists only a person as source, although template(s) access-control-policy hold the text (used by IAM-01). Duplicate: doc-access-control-policy also named on IAM-01.A.",
+   "proposal": "Add a document source for access-control-policy with its section, or fold it into the doc-* artifact.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 3; coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "kind": "artifact",
+   "item": "access-request-procedure",
+   "finding": "access-request-procedure (AR-DM-18) lists only a person as source, although template(s) privacy-requests-and-complaints-procedure hold the text (used by DM-11). Duplicate: doc-privacy-requests-and-complaints-procedure also named on DM-11.A.",
+   "proposal": "Add a document source for privacy-requests-and-complaints-procedure with its section, or fold it into the doc-* artifact.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 3; coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "kind": "artifact",
+   "item": "access-review-procedure",
+   "finding": "access-review-procedure (AR-IAM-03) lists only a person as source, although template(s) access-control-policy hold the text (used by IAM-02, IAM-07). Duplicate: doc-access-control-policy also named on IAM-02.A, IAM-07.A.",
+   "proposal": "Add a document source for access-control-policy with its section, or fold it into the doc-* artifact.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 3; coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "kind": "artifact",
+   "item": "approved-configuration-baseline",
+   "finding": "approved-configuration-baseline (AR-LM-08) lists only a person as source, although template(s) infrastructure-security-standard hold the text (used by NS-04, NS-14).",
+   "proposal": "Add a document source for infrastructure-security-standard with its section, or fold it into the doc-* artifact.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 3; coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "kind": "artifact",
+   "item": "backup-policy-covering-scope-frequency-and",
+   "finding": "backup-policy-covering-scope-frequency-and (AR-BC-07) lists only a person as source, although template(s) business-continuity-and-disaster-recovery-plan, operations-security-policy hold the text (used by DM-08, DM-16).",
+   "proposal": "Add a document source for business-continuity-and-disaster-recovery-plan, operations-security-policy with its section, or fold it into the doc-* artifact.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 3; coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "kind": "artifact",
+   "item": "breach-notification-procedure-and-templates",
+   "finding": "breach-notification-procedure-and-templates (AR-DM-01) lists only a person as source, although template(s) incident-response-plan, security-communication-plan hold the text (used by DM-01). Duplicate: doc-incident-response-plan also named on DM-01.A; doc-security-communication-plan also named on DM-01.A, DM-01.E.",
+   "proposal": "Add a document source for incident-response-plan, security-communication-plan with its section, or fold it into the doc-* artifact.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 3; coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "kind": "artifact",
+   "item": "consent-withdrawal-process-and-records",
+   "finding": "consent-withdrawal-process-and-records (AR-DM-05) lists only a person as source, although template(s) personal-data-handling-procedure hold the text (used by DM-03). Duplicate: doc-personal-data-handling-procedure also named on DM-03.A.",
+   "proposal": "Add a document source for personal-data-handling-procedure with its section, or fold it into the doc-* artifact.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 3; coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "kind": "artifact",
+   "item": "correction-procedure",
+   "finding": "correction-procedure (AR-DM-08) lists only a person as source, although template(s) privacy-requests-and-complaints-procedure hold the text (used by DM-05). Duplicate: doc-privacy-requests-and-complaints-procedure also named on DM-05.A.",
+   "proposal": "Add a document source for privacy-requests-and-complaints-procedure with its section, or fold it into the doc-* artifact.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 3; coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "kind": "artifact",
+   "item": "current-privacy-notice",
+   "finding": "current-privacy-notice (AR-DM-27) lists only a person as source, although template(s) privacy-notice-outline hold the text (used by DM-03, DM-09, DM-12, DM-14, DM-15). Duplicate: doc-privacy-notice-outline also named on DM-15.A.",
+   "proposal": "Add a document source for privacy-notice-outline with its section, or fold it into the doc-* artifact.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 3; coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "kind": "artifact",
+   "item": "data-classification-policy",
+   "finding": "data-classification-policy (AR-DM-06) lists only a person as source, although template(s) data-management-policy hold the text (used by DM-04, DM-18). Duplicate: doc-data-management-policy also named on DM-04.A.",
+   "proposal": "Add a document source for data-management-policy with its section, or fold it into the doc-* artifact.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 3; coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "kind": "artifact",
+   "item": "data-retention-schedule",
+   "finding": "data-retention-schedule (AR-DM-13) lists only a person as source, although template(s) data-management-policy hold the text (used by DM-08, DM-15). Duplicate: doc-data-management-policy also named on DM-08.A.",
+   "proposal": "Add a document source for data-management-policy with its section, or fold it into the doc-* artifact.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 3; coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "kind": "artifact",
+   "item": "device-management-policy",
+   "finding": "device-management-policy (AR-EP-05) lists only a person as source, although template(s) endpoint-security-standard hold the text (used by EP-03). Duplicate: doc-endpoint-security-standard also named on EP-03.A.",
+   "proposal": "Add a document source for endpoint-security-standard with its section, or fold it into the doc-* artifact.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 3; coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "kind": "artifact",
+   "item": "encryption-in-transit-standard",
+   "finding": "encryption-in-transit-standard (AR-NS-03) lists only a person as source, although template(s) cryptography-policy, infrastructure-security-standard hold the text (used by NS-02). Duplicate: doc-cryptography-policy also named on NS-02.A; doc-infrastructure-security-standard also named on NS-02.A.",
+   "proposal": "Add a document source for cryptography-policy, infrastructure-security-standard with its section, or fold it into the doc-* artifact.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 3; coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "kind": "artifact",
+   "item": "encryption-standard-stating-what-is-encrypted",
+   "finding": "encryption-standard-stating-what-is-encrypted (AR-NS-01) lists only a person as source, although template(s) cryptography-policy, infrastructure-security-standard hold the text (used by NS-01). Duplicate: doc-cryptography-policy also named on NS-01.A; doc-infrastructure-security-standard also named on NS-01.A.",
+   "proposal": "Add a document source for cryptography-policy, infrastructure-security-standard with its section, or fold it into the doc-* artifact.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 3; coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "kind": "artifact",
+   "item": "endpoint-encryption-policy",
+   "finding": "endpoint-encryption-policy (AR-EP-03) lists only a person as source, although template(s) endpoint-security-standard hold the text (used by EP-02). Duplicate: doc-endpoint-security-standard also named on EP-02.A.",
+   "proposal": "Add a document source for endpoint-security-standard with its section, or fold it into the doc-* artifact.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 3; coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "kind": "artifact",
+   "item": "endpoint-protection-standard",
+   "finding": "endpoint-protection-standard (AR-EP-01) lists only a person as source, although template(s) endpoint-security-standard hold the text (used by EP-01). Duplicate: doc-endpoint-security-standard also named on EP-01.A.",
+   "proposal": "Add a document source for endpoint-security-standard with its section, or fold it into the doc-* artifact.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 3; coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "kind": "artifact",
+   "item": "hardening-standard-such-as-cis-or",
+   "finding": "hardening-standard-such-as-cis-or (AR-NS-07) lists only a person as source, although template(s) infrastructure-security-standard, operations-security-policy hold the text (used by NS-04, NS-14). Duplicate: doc-infrastructure-security-standard also named on NS-04.A, NS-14.A; doc-operations-security-policy also named on NS-04.A.",
+   "proposal": "Add a document source for infrastructure-security-standard, operations-security-policy with its section, or fold it into the doc-* artifact.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 3; coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "kind": "artifact",
+   "item": "hazard-assessment-and-protections-for-each",
+   "finding": "hazard-assessment-and-protections-for-each (AR-PE-08) lists only a person as source, although template(s) site-and-equipment-protection-standard hold the text (used by PE-03). Duplicate: doc-site-and-equipment-protection-standard also named on PE-03.A.",
+   "proposal": "Add a document source for site-and-equipment-protection-standard with its section, or fold it into the doc-* artifact.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 3; coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "kind": "artifact",
+   "item": "key-management-policy",
+   "finding": "key-management-policy (AR-NS-11) lists only a person as source, although template(s) cryptography-policy, infrastructure-security-standard hold the text (used by NS-06). Duplicate: doc-cryptography-policy also named on NS-06.A; doc-infrastructure-security-standard also named on NS-06.A.",
+   "proposal": "Add a document source for cryptography-policy, infrastructure-security-standard with its section, or fold it into the doc-* artifact.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 3; coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "kind": "artifact",
+   "item": "leakage-prevention-and-sharing-settings-in",
+   "finding": "leakage-prevention-and-sharing-settings-in (AR-DM-35) lists only a person as source, although template(s) operations-security-policy hold the text (used by DM-19). Duplicate: doc-operations-security-policy also named on DM-19.A.",
+   "proposal": "Add a document source for operations-security-policy with its section, or fold it into the doc-* artifact.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 3; coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "kind": "artifact",
+   "item": "masking-standard-listing-fields-methods-and",
+   "finding": "masking-standard-listing-fields-methods-and (AR-DM-33) lists only a person as source, although template(s) operations-security-policy hold the text (used by DM-18). Duplicate: doc-operations-security-policy also named on DM-18.A.",
+   "proposal": "Add a document source for operations-security-policy with its section, or fold it into the doc-* artifact.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 3; coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "kind": "artifact",
+   "item": "matrix-of-conflicting-duties",
+   "finding": "matrix-of-conflicting-duties (AR-IAM-21) lists only a person as source, although template(s) access-control-policy hold the text (used by IAM-09, IAM-13). Duplicate: doc-access-control-policy also named on IAM-09.A.",
+   "proposal": "Add a document source for access-control-policy with its section, or fold it into the doc-* artifact.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 3; coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "kind": "artifact",
+   "item": "password-policy",
+   "finding": "password-policy (AR-IAM-16) lists only a person as source, although template(s) access-control-policy hold the text (used by IAM-06). Duplicate: doc-access-control-policy also named on IAM-06.A.",
+   "proposal": "Add a document source for access-control-policy with its section, or fold it into the doc-* artifact.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 3; coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "kind": "artifact",
+   "item": "patch-management-policy-with-timeframes",
+   "finding": "patch-management-policy-with-timeframes (AR-EP-07) lists only a person as source, although template(s) endpoint-security-standard, operations-security-policy hold the text (used by EP-04, NS-13). Duplicate: doc-endpoint-security-standard also named on EP-04.A; doc-operations-security-policy also named on EP-04.A, NS-13.A.",
+   "proposal": "Add a document source for endpoint-security-standard, operations-security-policy with its section, or fold it into the doc-* artifact.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 3; coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "kind": "artifact",
+   "item": "physical-access-policy-for-offices",
+   "finding": "physical-access-policy-for-offices (AR-PE-03) lists only a person as source, although template(s) physical-security-policy hold the text (used by PE-02). Duplicate: doc-physical-security-policy also named on PE-02.A.",
+   "proposal": "Add a document source for physical-security-policy with its section, or fold it into the doc-* artifact.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 3; coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "kind": "artifact",
+   "item": "policy-against-production-data-in-lower",
+   "finding": "policy-against-production-data-in-lower (AR-DM-23) lists only a person as source, although template(s) operations-security-policy, secure-development-policy hold the text (used by DM-13). Duplicate: doc-secure-development-policy also named on DM-13.A.",
+   "proposal": "Add a document source for operations-security-policy, secure-development-policy with its section, or fold it into the doc-* artifact.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 3; coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "kind": "artifact",
+   "item": "policy-requiring-a-password-manager-for",
+   "finding": "policy-requiring-a-password-manager-for (AR-IAM-14) lists only a person as source, although template(s) acceptable-use-policy, access-control-policy hold the text (used by IAM-05). Duplicate: doc-acceptable-use-policy also named on IAM-05.A; doc-access-control-policy also named on IAM-05.A.",
+   "proposal": "Add a document source for acceptable-use-policy, access-control-policy with its section, or fold it into the doc-* artifact.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 3; coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "kind": "artifact",
+   "item": "privacy-inquiry-and-complaint-procedure",
+   "finding": "privacy-inquiry-and-complaint-procedure (AR-DM-25) lists only a person as source, although template(s) privacy-requests-and-complaints-procedure hold the text (used by DM-14). Duplicate: doc-privacy-requests-and-complaints-procedure also named on DM-14.A.",
+   "proposal": "Add a document source for privacy-requests-and-complaints-procedure with its section, or fold it into the doc-* artifact.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 3; coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "kind": "artifact",
+   "item": "procedure-for-lost-devices-and-offboarding",
+   "finding": "procedure-for-lost-devices-and-offboarding (AR-EP-09) lists only a person as source, although template(s) endpoint-security-standard, joiner-mover-leaver-checklists hold the text (used by EP-05). Duplicate: doc-endpoint-security-standard also named on EP-05.A.",
+   "proposal": "Add a document source for endpoint-security-standard, joiner-mover-leaver-checklists with its section, or fold it into the doc-* artifact.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 3; coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "kind": "artifact",
+   "item": "procedure-for-responding-to-threat-detection",
+   "finding": "procedure-for-responding-to-threat-detection (AR-NS-09) lists only a person as source, although template(s) incident-response-plan, infrastructure-security-standard hold the text (used by NS-05). Duplicate: doc-infrastructure-security-standard also named on NS-05.A.",
+   "proposal": "Add a document source for incident-response-plan, infrastructure-security-standard with its section, or fold it into the doc-* artifact.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 3; coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "kind": "artifact",
+   "item": "register-of-the-purposes-personal-information",
+   "finding": "register-of-the-purposes-personal-information (AR-DM-21) lists only a person as source, although template(s) personal-data-handling-procedure hold the text (used by DM-07, DM-12, DM-15). Duplicate: doc-personal-data-handling-procedure also named on DM-12.A.",
+   "proposal": "Add a document source for personal-data-handling-procedure with its section, or fold it into the doc-* artifact.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 3; coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "kind": "artifact",
+   "item": "remote-access-standard",
+   "finding": "remote-access-standard (AR-NS-22) lists only a person as source, although template(s) infrastructure-security-standard, remote-working-policy hold the text (used by NS-11). Duplicate: doc-infrastructure-security-standard also named on NS-11.A; doc-remote-working-policy also named on NS-11.A.",
+   "proposal": "Add a document source for infrastructure-security-standard, remote-working-policy with its section, or fold it into the doc-* artifact.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 3; coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "kind": "artifact",
+   "item": "role-and-access-matrix",
+   "finding": "role-and-access-matrix (AR-IAM-18) lists only a person as source, although template(s) access-control-policy hold the text (used by DM-12, DM-18, IAM-08). Duplicate: doc-access-control-policy also named on IAM-08.A.",
+   "proposal": "Add a document source for access-control-policy with its section, or fold it into the doc-* artifact.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 3; coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "kind": "artifact",
+   "item": "role-definitions-approved-by-their-owners",
+   "finding": "role-definitions-approved-by-their-owners (AR-IAM-19) lists only a person as source, although template(s) access-control-policy hold the text (used by IAM-08). Duplicate: doc-access-control-policy also named on IAM-08.A.",
+   "proposal": "Add a document source for access-control-policy with its section, or fold it into the doc-* artifact.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 3; coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "kind": "artifact",
+   "item": "screen-lock-standard",
+   "finding": "screen-lock-standard (AR-EP-11) lists only a person as source, although template(s) endpoint-security-standard hold the text (used by EP-06). Duplicate: doc-endpoint-security-standard also named on EP-06.A.",
+   "proposal": "Add a document source for endpoint-security-standard with its section, or fold it into the doc-* artifact.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 3; coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "kind": "artifact",
+   "item": "secrets-management-standard",
+   "finding": "secrets-management-standard (AR-NS-19) lists only a person as source, although template(s) engineering-security-standard, infrastructure-security-standard hold the text (used by NS-09). Duplicate: doc-infrastructure-security-standard also named on NS-09.A.",
+   "proposal": "Add a document source for engineering-security-standard, infrastructure-security-standard with its section, or fold it into the doc-* artifact.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 3; coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "kind": "artifact",
+   "item": "secure-disposal-procedure",
+   "finding": "secure-disposal-procedure (AR-DM-29) lists only a person as source, although template(s) asset-management-policy, data-management-policy hold the text (used by DM-16, EP-08). Duplicate: doc-asset-management-policy also named on EP-08.A; doc-data-management-policy also named on DM-16.A.",
+   "proposal": "Add a document source for asset-management-policy, data-management-policy with its section, or fold it into the doc-* artifact.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 3; coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "kind": "artifact",
+   "item": "session-timeout-standard",
+   "finding": "session-timeout-standard (AR-IAM-25) lists only a person as source, although template(s) infrastructure-security-standard hold the text (used by IAM-11). Duplicate: doc-infrastructure-security-standard also named on IAM-11.A.",
+   "proposal": "Add a document source for infrastructure-security-standard with its section, or fold it into the doc-* artifact.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 3; coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "kind": "artifact",
+   "item": "training-content-and-schedule",
+   "finding": "training-content-and-schedule (AR-HR-08) lists only a person as source, although template(s) competence-and-awareness-procedure hold the text (used by EP-07).",
+   "proposal": "Add a document source for competence-and-awareness-procedure with its section, or fold it into the doc-* artifact.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 3; coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "kind": "artifact",
+   "item": "trusted-time-sources-and-how-systems",
+   "finding": "trusted-time-sources-and-how-systems (AR-NS-24) lists only a person as source, although template(s) infrastructure-security-standard, operations-security-policy hold the text (used by NS-12). Duplicate: doc-infrastructure-security-standard also named on NS-12.A; doc-operations-security-policy also named on NS-12.A.",
+   "proposal": "Add a document source for infrastructure-security-standard, operations-security-policy with its section, or fold it into the doc-* artifact.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 3; coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "kind": "artifact",
+   "item": "web-filtering-standard-covering-blocked-categories",
+   "finding": "web-filtering-standard-covering-blocked-categories (AR-EP-13) lists only a person as source, although template(s) operations-security-policy hold the text (used by EP-07). Duplicate: doc-operations-security-policy also named on EP-07.A.",
+   "proposal": "Add a document source for operations-security-policy with its section, or fold it into the doc-* artifact.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 3; coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "kind": "artifact",
+   "item": "inventory-of-company-devices",
+   "finding": "Sources list only the check devices.enrolled and its 'where' says it lives in the Assets module, but Assets has no endpoint or device type. It is used by EP-01, EP-02, EP-03, EP-05, EP-06, EP-07 and DM-19, where the planned sources are endpoint.protection_active, devices.disk_encrypted and devices.remote_wipe (none listed as sources), and EP-07 and DM-19 plan a person source (device management export or a sheet) that the artifact lacks. Device management is not in the signed catalogue, so today nothing can fill it.",
+   "proposal": "Add the device checks and a person source to its sources, and add an endpoint asset type before device management connectors land.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 5; coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "kind": "artifact",
+   "item": "access-request-procedure",
+   "finding": "The key names the data subject access request procedure (DM-11), beside access-request-and-approval-procedure for IAM; easy to confuse.",
+   "proposal": "Rename to data-subject-access-request-procedure, with a migration of any evidence that references it.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 9"
+  },
+  {
+   "kind": "artifact",
+   "item": "backup-policy-covering-scope-frequency-and",
+   "finding": "No dedicated backup policy template exists; the plan points at the Backups and restore tests section of operations-security-policy and business-continuity-and-disaster-recovery-plan.",
+   "proposal": "Add a backup policy template, or name the section as the document source.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 4; coverage/iam-ep-pe-ns-dm.json DM-08"
+  },
+  {
+   "kind": "artifact",
+   "item": "masking-standard-listing-fields-methods-and",
+   "finding": "No masking standard template lists fields and methods; only the section 'Hiding sensitive values in data' of operations-security-policy.",
+   "proposal": "Add a masking standard template or a field and method list section.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 4; coverage/iam-ep-pe-ns-dm.json DM-18"
+  },
+  {
+   "kind": "template",
+   "item": "access-control-policy",
+   "finding": "Asks for a second factor only on privileged production access, has no single sign on rule and no session limits, and its example password minimum is eight characters against IAM-06.A's 12.",
+   "proposal": "Add the sections (CL-6 work), or point the objectives at infrastructure-security-standard and operations-security-policy.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 4"
+  },
+  {
+   "kind": "template",
+   "item": "third-party-management-policy",
+   "finding": "No data processing agreement requirement and no breach notice timeframe in hours (DM-10.A, DM-17.A); verity.vendors.breach_terms_recorded has no policy maximum to read.",
+   "proposal": "Add both sections.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 4"
+  },
+  {
+   "kind": "template",
+   "item": "cryptography-policy",
+   "finding": "No rotation interval and no key service or HSM rule; infrastructure-security-standard section 3 holds those.",
+   "proposal": "Add the rule, or point NS-06, NS-01, NS-02 and EP-02 objectives at infrastructure-security-standard section 3.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 4"
+  },
+  {
+   "kind": "template",
+   "item": "endpoint-security-standard",
+   "finding": "No web filtering section (EP-07 relies on operations-security-policy instead).",
+   "proposal": "Add a web filtering section or keep EP-07 on operations-security-policy.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 4"
+  },
+  {
+   "kind": "template",
+   "item": "engineering-security-standard",
+   "finding": "Nothing on how customer users sign in to the product; the proposed IAM-14 needs a product sign in section.",
+   "proposal": "Add a product sign in section before IAM-14 ships.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 4; coverage/iam-ep-pe-ns-dm.md (Proposed control changes) Addition"
+  },
+  {
+   "kind": "module",
+   "item": "assets: ASSET_TYPES",
+   "finding": "Assets has no endpoint or device type (application, infrastructure, data, cloud, third party, business service), so laptops are recorded as infrastructure and the device inventory has no home.",
+   "proposal": "Add an endpoint type (migration) before device management connectors land.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 5 (backend/src/verity/modules/assets/models.py)"
+  },
+  {
+   "kind": "module",
+   "item": "assets: data map fields",
+   "finding": "Retention and encryption per data store exist only as custom fields.",
+   "proposal": "Accept custom fields with fixed keys, or add columns (owner decision).",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 12"
+  },
+  {
+   "kind": "module",
+   "item": "hr_system / staff roster",
+   "finding": "No staff roster in Verity and no HR connector in any signed phase; seven controls compare against a roster (IAM-01, IAM-05, IAM-12, EP-03, EP-05, NS-11, PE-02). Verity members are not a roster and must never fill roster-of-joiners-and-leavers-with.",
+   "proposal": "Build the proposed CSV roster import.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 6"
+  },
+  {
+   "kind": "module",
+   "item": "tasks",
+   "finding": "No incident kind (security-incident-register relies on an incident template convention until the Incidents module, Phase 3.1) and no custom fields, so a notice decision can only be a subtask.",
+   "proposal": "Incident template with notice decision and notice sent subtasks now; Incidents module later.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 10"
+  },
+  {
+   "kind": "module",
+   "item": "vendors",
+   "finding": "No lawful basis field (DM-09) and no sign in method per application (IAM-04.B); discovered apps wait for the identity connectors.",
+   "proposal": "Add lawful basis and sign in method fields when DM-09 and IAM-04 automation is built.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 11"
+  },
+  {
+   "kind": "capability",
+   "item": "capabilities.json",
+   "finding": "No business_applications capability (Appendix A lists it for Phase 3) and no verity_identity. Productivity suite sharing and leak prevention settings (Google Workspace, Microsoft 365) have no capability; this doc files them under identity_provider.",
+   "proposal": "Add both capabilities; decide whether the suite settings deserve their own.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 8"
+  },
+  {
+   "kind": "other",
+   "item": "readiness engine CL-3",
+   "finding": "Coverage cannot depend on applicability: a split with a conditional successor lowers ISO status when the successor is not applicable (A.5.3 with IAM-13, A.8.9 with NS-14).",
+   "proposal": "Model 'full when the sibling is not applicable' before the splits ship.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 14"
+  },
+  {
+   "kind": "other",
+   "item": "Verity check runner (ME-2)",
+   "finding": "The runner for Verity checks is not built, so every P1 check here, existing or new, is planned only.",
+   "proposal": "Build ME-2.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 16"
+  },
+  {
+   "kind": "other",
+   "item": "Keycloak brokering claims",
+   "finding": "Unverified whether Keycloak passes the upstream provider's authentication method claims (amr, acr) through brokering; verity.identity.second_factor_on_sign_in depends on it.",
+   "proposal": "Verify; until then the check reports insufficient information when the claim is absent.",
+   "source": "coverage/iam-ep-pe-ns-dm.md Verity's own sign in and directory sync as evidence"
+  },
+  {
+   "kind": "other",
+   "item": "Keycloak SCIM and organizations",
+   "finding": "verity.identity.leavers_removed_by_sync needs a lifecycle feed (SCIM or LDAP) into Keycloak; the runbook records that this Keycloak build's SCIM server does not place users in organizations.",
+   "proposal": "Resolve the lifecycle feed before building the check.",
+   "source": "coverage/iam-ep-pe-ns-dm.md Verity's own sign in and directory sync as evidence"
+  },
+  {
+   "kind": "objective",
+   "item": "IAM-01",
+   "finding": "SOC2:CC6.3 is mapped on approving changes to access, but B only tests joiners; ISO27001:A.8.34 (auditor and tester access to live systems) is mapped and no objective tests it.",
+   "proposal": "Reword B to add movers; add F for auditor, tester and outside support access approved by the system owner, time limited and removed.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Proposed control changes) Objective revisions; coverage/iam-ep-pe-ns-dm.controls.json"
+  },
+  {
+   "kind": "objective",
+   "item": "IAM-02",
+   "finding": "The A.8.4 rationale relies on the code host, build pipelines and package registries being in review scope, which C did not say.",
+   "proposal": "Reword C to name them.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Proposed control changes) Objective revisions; coverage/iam-ep-pe-ns-dm.controls.json"
+  },
+  {
+   "kind": "objective",
+   "item": "IAM-03",
+   "finding": "A.8.5 and IAM-03.A require a second factor on every system, but B tests only the identity provider; vcs.org_two_factor_required and cloud.root_account_mfa had no objective to land on.",
+   "proposal": "Add F: second factor on systems people sign in to directly (cloud console, code host, password manager, apps outside SSO).",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Proposed control changes) Objective revisions; coverage/iam-ep-pe-ns-dm.controls.json"
+  },
+  {
+   "kind": "objective",
+   "item": "IAM-04",
+   "finding": "D tested leaver removal, which duplicates IAM-12.C and D.",
+   "proposal": "Reword D to 'apps behind SSO refuse local passwords'; move the leaver side to IAM-12.D.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Proposed control changes) Objective revisions; coverage/iam-ep-pe-ns-dm.controls.json"
+  },
+  {
+   "kind": "objective",
+   "item": "IAM-06",
+   "finding": "The A.5.17 rationale claims single use initial and reset passwords and an identity check before a reset; no operating objective tested it.",
+   "proposal": "Add E.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Proposed control changes) Objective revisions; coverage/iam-ep-pe-ns-dm.controls.json"
+  },
+  {
+   "kind": "objective",
+   "item": "IAM-07",
+   "finding": "A.8.2 is mapped full but A only approves the review procedure; the A.8.2 and A.8.18 rationales rely on logged use, which no objective tested.",
+   "proposal": "Reword A to cover granting rules, break glass and logging; add F: each elevation and break glass use logged, alerted and reviewed.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Proposed control changes) Objective revisions; coverage/iam-ep-pe-ns-dm.controls.json"
+  },
+  {
+   "kind": "objective",
+   "item": "IAM-12",
+   "finding": "CC6.3 and A.5.18 rationales claim modification on role change, but B only lists leavers; D now needs the list of apps outside SSO.",
+   "proposal": "Reword B to add role changes; D gains the list of apps outside SSO.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Proposed control changes) Objective revisions; coverage/iam-ep-pe-ns-dm.controls.json"
+  },
+  {
+   "kind": "objective",
+   "item": "IAM-14",
+   "finding": "No control tested how the product authenticates its customers' users (IAM-03, IAM-04, IAM-06 cover staff; IAM-11 only product sessions).",
+   "proposal": "Add IAM-14 with objectives A to D.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Proposed control changes) Objective revisions; coverage/iam-ep-pe-ns-dm.controls.json"
+  },
+  {
+   "kind": "objective",
+   "item": "EP-03",
+   "finding": "The A.8.19 rationale claims device management enforces the permitted software list; no operating objective tested it.",
+   "proposal": "Add E: software installs limited to the permitted list.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Proposed control changes) Objective revisions; coverage/iam-ep-pe-ns-dm.controls.json"
+  },
+  {
+   "kind": "objective",
+   "item": "EP-07.C",
+   "finding": "Server outbound web limits are network rules owned by engineering, not the staff web filter.",
+   "proposal": "Move to NS-03 as NS-03.E; retire the letter EP-07.C.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Proposed control changes) Objective revisions; coverage/iam-ep-pe-ns-dm.controls.json"
+  },
+  {
+   "kind": "objective",
+   "item": "NS-02.D",
+   "finding": "An operating objective (internal and database traffic encrypted) tested only by reading the standard and an interview, so it cannot show operation.",
+   "proposal": "Give it the proposed settings artifact internal-tls-enforcement-settings.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Proposed control changes) Objective revisions; coverage/iam-ep-pe-ns-dm.controls.json"
+  },
+  {
+   "kind": "objective",
+   "item": "NS-11.D",
+   "finding": "Bundled a configuration fact (access per application) with a monitoring duty (sessions logged and reviewed); they fail independently.",
+   "proposal": "Split into D (per application access) and E (sessions logged and reviewed).",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Proposed control changes) Objective revisions; coverage/iam-ep-pe-ns-dm.controls.json"
+  },
+  {
+   "kind": "objective",
+   "item": "DM-01.C",
+   "finding": "Bundled customer notices under contract (processor) with regulator and individual notices (controller).",
+   "proposal": "Limit C to customer notices; add E for regulator and individual notices where the company is controller.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Proposed control changes) Objective revisions; coverage/iam-ep-pe-ns-dm.controls.json"
+  },
+  {
+   "kind": "objective",
+   "item": "DM-03",
+   "finding": "SOC2:P3.2 is partial because the consequences of declining consent are not communicated; no objective tested it.",
+   "proposal": "Add E; then P3.2 becomes full.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Proposed control changes) Objective revisions; coverage/iam-ep-pe-ns-dm.controls.json"
+  },
+  {
+   "kind": "objective",
+   "item": "DM-08.C",
+   "finding": "Tested deletion of backups, archives and analytics copies, which duplicates DM-16.D.",
+   "proposal": "Reword C to 'the schedule covers every copy'; the deletion test stays in DM-16.D.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Proposed control changes) Objective revisions; coverage/iam-ep-pe-ns-dm.controls.json"
+  },
+  {
+   "kind": "objective",
+   "item": "DM-11",
+   "finding": "Objectives assume the company is the controller; the processor path (requests about customer data passed to the customer within the contract time) was untested.",
+   "proposal": "Add E.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Proposed control changes) Objective revisions; coverage/iam-ep-pe-ns-dm.controls.json"
+  },
+  {
+   "kind": "objective",
+   "item": "DM-16",
+   "finding": "No objective tested deletion when a customer leaves or on an erasure request, which SOC2:C1.2 and P4.3 rely on.",
+   "proposal": "Add DM-16.E.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Proposed control changes) Objective revisions; coverage/iam-ep-pe-ns-dm.controls.json"
+  }
+ ],
+ "capabilities_proposed": [
+  {
+   "key": "verity_identity",
+   "name": "Verity identity",
+   "purpose": "Verity members, roles and sign in: Verity's own Keycloak sign in, session audit rows and directory sync as evidence for one application, Verity itself. Separate from the read only identity provider evidence connectors; the sign in app must not gain directory read rights.",
+   "providers": [
+    "verity"
+   ],
+   "source": "coverage/iam-ep-pe-ns-dm.md Verity's own sign in and directory sync as evidence; Gaps row 8"
+  },
+  {
+   "key": "business_applications",
+   "name": "Business applications",
+   "purpose": "Applications outside the other capabilities that hold personal data or run business processes: consent tools, support desks, finance and payment systems, chat and file sharing. Needed by NEED entries for DM-03, DM-05, DM-06, DM-09, DM-11, DM-12, DM-14 to DM-16, DM-19 and IAM-13.",
+   "providers": [],
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 8 (Appendix A, Phase 3); NEED entries"
+  },
+  {
+   "key": "productivity_suite",
+   "name": "Productivity suite (open question)",
+   "purpose": "Mail and file suite settings: external sharing, public links, leak prevention rules and alerts, sensitivity labels (DM-04, DM-19). Filed under identity_provider in this doc; the owner decides whether it deserves its own capability.",
+   "providers": [
+    "gws",
+    "entra"
+   ],
+   "source": "coverage/iam-ep-pe-ns-dm.md (Gaps and content problems found) row 8"
+  }
+ ],
+ "providers_proposed": [],
+ "artifacts_proposed": [
+  {
+   "key": "product-sign-in-settings",
+   "control": "IAM-14",
+   "objectives": [
+    "IAM-14.B",
+    "IAM-14.C"
+   ],
+   "sources": [
+    "person"
+   ],
+   "why": "Product sign in settings and password storage method, exported by engineering from the product's authentication configuration and the hashing setting in code. Verity cannot read the product's code or configuration; a code scanning connector could check parts later. Category configuration.",
+   "source": "coverage/iam-ep-pe-ns-dm.controls.json IAM-14 new_artifacts; coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "key": "internal-tls-enforcement-settings",
+   "control": "NS-02",
+   "objectives": [
+    "NS-02.D"
+   ],
+   "sources": [
+    "NEED cloud_infrastructure: Database parameters refuse unencrypted connections, and load balancers reach targets over TLS"
+   ],
+   "why": "Settings that make internal services and databases refuse unencrypted connections (database parameters, load balancer to service protocol, service mesh), exported from the cloud console, so NS-02.D can be tested by more than reading the standard. Category configuration.",
+   "source": "coverage/iam-ep-pe-ns-dm.controls.json NS-02 new_artifacts; coverage/iam-ep-pe-ns-dm.json"
+  }
+ ],
+ "existing_check_changes": [
+  {
+   "check": "verity.assets.disposal_recorded",
+   "change": "move_to_successor",
+   "control": "DM-16",
+   "to_control": "EP-08",
+   "coverage": "partial",
+   "rationale": "Equipment disposal moves to EP-08 with the DM-16 split (owner decision).",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Proposed control changes) Splits; coverage/iam-ep-pe-ns-dm.controls.json"
+  },
+  {
+   "check": "scanner.scans_current",
+   "change": "move_to_successor",
+   "control": "EP-04",
+   "to_control": "NS-13",
+   "coverage": "partial",
+   "rationale": "Server and image scanning goes to NS-13 with the EP-04 split. Conflict: 'What existing workspaces need' says it gains NS-13 rather than moves; see decisions.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Proposed control changes) Splits; coverage/iam-ep-pe-ns-dm.controls.json"
+  },
+  {
+   "check": "verity.vulns.within_sla",
+   "change": "move_to_successor",
+   "control": "EP-04",
+   "to_control": "NS-13",
+   "coverage": "partial",
+   "rationale": "Vulnerability SLA goes to NS-13 with the EP-04 split; the LM-11 mapping stays. Same move or gain conflict as scanner.scans_current.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Proposed control changes) Splits; coverage/iam-ep-pe-ns-dm.controls.json"
+  },
+  {
+   "check": "devices.os_current",
+   "change": "other",
+   "control": "EP-04",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Stays on EP-04 after the split (company devices).",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Proposed control changes) Splits"
+  },
+  {
+   "check": "idp.access_list_exported",
+   "change": "other",
+   "control": "IAM-09",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Stays on IAM-09 after the split; nothing moves to IAM-13.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Proposed control changes) Splits"
+  },
+  {
+   "check": "cloud.hardening_baseline",
+   "change": "other",
+   "control": "NS-04",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Stays on NS-04 after the split; NS-14 has no connector.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Proposed control changes) Splits"
+  },
+  {
+   "check": "cloud.storage_lifecycle",
+   "change": "other",
+   "control": "DM-16",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Stays on DM-16 after the split (data deletion).",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Proposed control changes) Splits"
+  },
+  {
+   "check": "vcs.merged_changes_reviewed",
+   "change": "add_control",
+   "control": "IAM-09",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Doc says it stays on IAM-09 after the split, but checks.json does not map it there today. Proves change author and approver are different people.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Proposed control changes) Splits"
+  },
+  {
+   "check": "vcs.org_two_factor_required",
+   "change": "other",
+   "control": "IAM-03",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Gains an objective to land on: the new IAM-03.F (second factor on systems signed in to directly).",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Proposed control changes) Objective revisions"
+  },
+  {
+   "check": "cloud.root_account_mfa",
+   "change": "other",
+   "control": "IAM-03",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Gains an objective to land on: the new IAM-03.F.",
+   "source": "coverage/iam-ep-pe-ns-dm.md (Proposed control changes) Objective revisions"
+  },
+  {
+   "check": "tickets.access_requests_approved",
+   "change": "other",
+   "control": "IAM-01",
+   "to_control": null,
+   "coverage": null,
+   "rationale": "Treat an item named in an exception in force (verity.exceptions.in_force) as excepted and list it, not fail it.",
+   "source": "coverage/iam-ep-pe-ns-dm.md verity.exceptions.in_force"
+  },
+  {
+   "check": "idp.mfa_enforced",
+   "change": "other",
+   "control": "IAM-03",
+   "to_control": null,
+   "coverage": null,
+   "rationale": "Treat an item named in an exception in force (verity.exceptions.in_force) as excepted and list it, not fail it.",
+   "source": "coverage/iam-ep-pe-ns-dm.md verity.exceptions.in_force"
+  },
+  {
+   "check": "cloud.root_account_mfa",
+   "change": "other",
+   "control": "IAM-03",
+   "to_control": null,
+   "coverage": null,
+   "rationale": "Treat an item named in an exception in force (verity.exceptions.in_force) as excepted and list it, not fail it.",
+   "source": "coverage/iam-ep-pe-ns-dm.md verity.exceptions.in_force"
+  },
+  {
+   "check": "vcs.org_two_factor_required",
+   "change": "other",
+   "control": "IAM-03",
+   "to_control": null,
+   "coverage": null,
+   "rationale": "Treat an item named in an exception in force (verity.exceptions.in_force) as excepted and list it, not fail it.",
+   "source": "coverage/iam-ep-pe-ns-dm.md verity.exceptions.in_force"
+  },
+  {
+   "check": "idp.sso_enforced",
+   "change": "other",
+   "control": "IAM-04",
+   "to_control": null,
+   "coverage": null,
+   "rationale": "Treat an item named in an exception in force (verity.exceptions.in_force) as excepted and list it, not fail it.",
+   "source": "coverage/iam-ep-pe-ns-dm.md verity.exceptions.in_force"
+  },
+  {
+   "check": "devices.disk_encrypted",
+   "change": "other",
+   "control": "EP-02",
+   "to_control": null,
+   "coverage": null,
+   "rationale": "Treat an item named in an exception in force (verity.exceptions.in_force) as excepted and list it, not fail it.",
+   "source": "coverage/iam-ep-pe-ns-dm.md verity.exceptions.in_force"
+  },
+  {
+   "check": "cloud.hardening_baseline",
+   "change": "other",
+   "control": "NS-04",
+   "to_control": null,
+   "coverage": null,
+   "rationale": "Treat an item named in an exception in force (verity.exceptions.in_force) as excepted and list it, not fail it.",
+   "source": "coverage/iam-ep-pe-ns-dm.md verity.exceptions.in_force"
+  },
+  {
+   "check": "cloud.admin_ports_closed",
+   "change": "other",
+   "control": "NS-08",
+   "to_control": null,
+   "coverage": null,
+   "rationale": "Treat an item named in an exception in force (verity.exceptions.in_force) as excepted and list it, not fail it.",
+   "source": "coverage/iam-ep-pe-ns-dm.md verity.exceptions.in_force"
+  },
+  {
+   "check": "scanner.scans_current",
+   "change": "other",
+   "control": "NS-13",
+   "to_control": null,
+   "coverage": null,
+   "rationale": "Treat an item named in an exception in force (verity.exceptions.in_force) as excepted and list it, not fail it.",
+   "source": "coverage/iam-ep-pe-ns-dm.md verity.exceptions.in_force"
+  },
+  {
+   "check": "verity.policies.reviewed",
+   "change": "other",
+   "control": null,
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan: every document artifact in these families uses this check, on 58 controls not mapped in checks.json (DM-01, DM-02, DM-03, DM-04, DM-05, DM-06, DM-07, DM-08, DM-09, DM-10, DM-11, DM-12, DM-13, DM-14, DM-15, DM-16, DM-17, DM-18, DM-19, EP-01, EP-02, EP-03, EP-04, EP-05, EP-06, EP-07, EP-08, IAM-01, IAM-02, IAM-03, IAM-04, IAM-05, IAM-06, IAM-07, IAM-08, IAM-09, IAM-10, IAM-11, IAM-12, IAM-13, IAM-14, NS-01, NS-02, NS-03, NS-04, NS-05, NS-06, NS-07, NS-08, NS-09, NS-10, NS-11, NS-12, NS-13, NS-14, PE-01, PE-02, PE-03). Decide whether document currency checks map to each control or only to GOV-01 and GOV-17.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "alerts.acknowledged_in_time",
+   "change": "add_control",
+   "control": "NS-05",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for sample-of-alerts-that-were-investigated (NS-05.C, NS-05.D, NS-05.E), and checks.json has no mapping to NS-05.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "assets.resources_registered",
+   "change": "add_control",
+   "control": "DM-04",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for asset-inventory (DM-04.B), and checks.json has no mapping to DM-04.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "assets.resources_registered",
+   "change": "add_control",
+   "control": "DM-05",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for data-inventory-and-data-map (DM-05.D), and checks.json has no mapping to DM-05.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "assets.resources_registered",
+   "change": "add_control",
+   "control": "DM-06",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for asset-inventory (DM-06.D); data-inventory-and-data-map (DM-06.B, DM-06.C, DM-06.D); dm-06-review-that-the-inventory-is-complete (DM-06.D), and checks.json has no mapping to DM-06.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "assets.resources_registered",
+   "change": "add_control",
+   "control": "DM-09",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for data-inventory-and-data-map (DM-09.D), and checks.json has no mapping to DM-09.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "assets.resources_registered",
+   "change": "add_control",
+   "control": "DM-11",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for data-inventory-and-data-map (DM-11.D), and checks.json has no mapping to DM-11.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "assets.resources_registered",
+   "change": "add_control",
+   "control": "DM-12",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for data-inventory-and-data-map (DM-12.E), and checks.json has no mapping to DM-12.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "assets.resources_registered",
+   "change": "add_control",
+   "control": "DM-15",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for data-inventory-and-data-map (DM-15.B), and checks.json has no mapping to DM-15.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "assets.resources_registered",
+   "change": "add_control",
+   "control": "DM-16",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for data-inventory-and-data-map (DM-16.D), and checks.json has no mapping to DM-16.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "assets.resources_registered",
+   "change": "add_control",
+   "control": "EP-01",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for asset-inventory (EP-01.B), and checks.json has no mapping to EP-01.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "assets.resources_registered",
+   "change": "add_control",
+   "control": "IAM-02",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for asset-inventory (IAM-02.C), and checks.json has no mapping to IAM-02.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "assets.resources_registered",
+   "change": "add_control",
+   "control": "IAM-07",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for asset-inventory (IAM-07.D), and checks.json has no mapping to IAM-07.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "assets.resources_registered",
+   "change": "add_control",
+   "control": "NS-01",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for asset-inventory (NS-01.B), and checks.json has no mapping to NS-01.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "assets.resources_registered",
+   "change": "add_control",
+   "control": "NS-02",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for asset-inventory (NS-02.B), and checks.json has no mapping to NS-02.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "assets.resources_registered",
+   "change": "add_control",
+   "control": "NS-03",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for asset-inventory (NS-03.D, NS-03.E), and checks.json has no mapping to NS-03.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "assets.resources_registered",
+   "change": "add_control",
+   "control": "NS-04",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for asset-inventory (NS-04.D), and checks.json has no mapping to NS-04.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "assets.resources_registered",
+   "change": "add_control",
+   "control": "NS-05",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for asset-inventory (NS-05.B), and checks.json has no mapping to NS-05.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "assets.resources_registered",
+   "change": "add_control",
+   "control": "NS-10",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for asset-inventory (NS-10.B), and checks.json has no mapping to NS-10.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "assets.resources_registered",
+   "change": "add_control",
+   "control": "NS-12",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for asset-inventory (NS-12.B), and checks.json has no mapping to NS-12.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "assets.resources_registered",
+   "change": "add_control",
+   "control": "PE-01",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for asset-inventory (PE-01.B), and checks.json has no mapping to PE-01.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "cloud.backups_enabled",
+   "change": "add_control",
+   "control": "DM-08",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for backup-policy-covering-scope-frequency-and (DM-08.C), and checks.json has no mapping to DM-08.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "cloud.backups_enabled",
+   "change": "add_control",
+   "control": "DM-16",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for backup-policy-covering-scope-frequency-and (DM-16.D), and checks.json has no mapping to DM-16.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "cloud.config_changes_recorded",
+   "change": "add_control",
+   "control": "NS-04",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for alerts-on-drift-that-were-investigated (NS-04.C, NS-04.D), and checks.json has no mapping to NS-04.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "cloud.config_changes_recorded",
+   "change": "add_control",
+   "control": "NS-05",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for alerts-on-drift-that-were-investigated (NS-05.B), and checks.json has no mapping to NS-05.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "cloud.config_changes_recorded",
+   "change": "add_control",
+   "control": "NS-08",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for alerts-on-drift-that-were-investigated (NS-08.D), and checks.json has no mapping to NS-08.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "cloud.least_privilege",
+   "change": "add_control",
+   "control": "IAM-01",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for list-of-privileged-accounts-with-approval (IAM-01.D), and checks.json has no mapping to IAM-01.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "cloud.least_privilege",
+   "change": "add_control",
+   "control": "IAM-03",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for list-of-privileged-accounts-with-approval (IAM-03.C), and checks.json has no mapping to IAM-03.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "cloud.least_privilege",
+   "change": "add_control",
+   "control": "IAM-09",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for group-and-role-membership-export (IAM-09.B), and checks.json has no mapping to IAM-09.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "cloud.least_privilege",
+   "change": "add_control",
+   "control": "IAM-10",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for inventory-of-service-accounts-and-keys (IAM-10.B, IAM-10.C, IAM-10.D); list-of-privileged-accounts-with-approval (IAM-10.C), and checks.json has no mapping to IAM-10.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "cloud.storage_lifecycle",
+   "change": "add_control",
+   "control": "DM-08",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for evidence-data-was-deleted-when-retention (DM-08.B, DM-08.D), and checks.json has no mapping to DM-08.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "devices.enrolled",
+   "change": "add_control",
+   "control": "DM-19",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for inventory-of-company-devices (DM-19.C), and checks.json has no mapping to DM-19.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "devices.enrolled",
+   "change": "add_control",
+   "control": "EP-01",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for inventory-of-company-devices (EP-01.B), and checks.json has no mapping to EP-01.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "devices.enrolled",
+   "change": "add_control",
+   "control": "EP-06",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for inventory-of-company-devices (EP-06.B), and checks.json has no mapping to EP-06.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "devices.enrolled",
+   "change": "add_control",
+   "control": "EP-07",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for inventory-of-company-devices (EP-07.B), and checks.json has no mapping to EP-07.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "devices.os_current",
+   "change": "add_control",
+   "control": "EP-03",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for patch-compliance-report (EP-03.D), and checks.json has no mapping to EP-03.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "devices.screen_lock",
+   "change": "add_control",
+   "control": "EP-03",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for screen-lock-setting-report (EP-03.D), and checks.json has no mapping to EP-03.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "edge.zero_trust_access",
+   "change": "add_control",
+   "control": "NS-08",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for remote-access-settings-and-members (NS-08.D), and checks.json has no mapping to NS-08.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "idp.access_list_exported",
+   "change": "add_control",
+   "control": "IAM-01",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for completed-access-reviews-with-reviewer-sign (IAM-01.E), and checks.json has no mapping to IAM-01.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "idp.access_list_exported",
+   "change": "add_control",
+   "control": "IAM-07",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for completed-access-reviews-with-reviewer-sign (IAM-07.C, IAM-07.D), and checks.json has no mapping to IAM-07.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "idp.access_list_exported",
+   "change": "add_control",
+   "control": "IAM-08",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for group-and-role-membership-export (IAM-08.B, IAM-08.C), and checks.json has no mapping to IAM-08.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "idp.access_list_exported",
+   "change": "add_control",
+   "control": "IAM-10",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for account-list-export (IAM-10.B), and checks.json has no mapping to IAM-10.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "idp.access_list_exported",
+   "change": "add_control",
+   "control": "IAM-12",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for account-list-export (IAM-12.E), and checks.json has no mapping to IAM-12.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "idp.admins_limited",
+   "change": "add_control",
+   "control": "IAM-01",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for list-of-privileged-accounts-with-approval (IAM-01.D), and checks.json has no mapping to IAM-01.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "idp.admins_limited",
+   "change": "add_control",
+   "control": "IAM-03",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for list-of-privileged-accounts-with-approval (IAM-03.C), and checks.json has no mapping to IAM-03.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "idp.admins_limited",
+   "change": "add_control",
+   "control": "IAM-10",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for list-of-privileged-accounts-with-approval (IAM-10.C), and checks.json has no mapping to IAM-10.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "idp.admins_limited",
+   "change": "add_control",
+   "control": "NS-11",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for review-of-privileged-access (NS-11.E), and checks.json has no mapping to NS-11.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "idp.connected_apps_known",
+   "change": "add_control",
+   "control": "IAM-04",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for applications-inside-and-outside-single-sign-on (IAM-04.B, IAM-04.C, IAM-04.D); vendor-inventory-with-owner-data-and (IAM-04.B), and checks.json has no mapping to IAM-04.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "idp.connected_apps_known",
+   "change": "add_control",
+   "control": "IAM-12",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for applications-inside-and-outside-single-sign-on (IAM-12.D), and checks.json has no mapping to IAM-12.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "idp.groups_drive_access",
+   "change": "add_control",
+   "control": "DM-12",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for role-and-access-matrix (DM-12.B), and checks.json has no mapping to DM-12.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "idp.groups_drive_access",
+   "change": "add_control",
+   "control": "DM-18",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for role-and-access-matrix (DM-18.D), and checks.json has no mapping to DM-18.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "idp.groups_drive_access",
+   "change": "add_control",
+   "control": "IAM-09",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for group-and-role-membership-export (IAM-09.B), and checks.json has no mapping to IAM-09.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "idp.sso_enforced",
+   "change": "add_control",
+   "control": "IAM-12",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for applications-inside-and-outside-single-sign-on (IAM-12.D), and checks.json has no mapping to IAM-12.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "observability.processing_monitored",
+   "change": "add_control",
+   "control": "DM-08",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for evidence-data-was-deleted-when-retention (DM-08.B, DM-08.D), and checks.json has no mapping to DM-08.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "observability.processing_monitored",
+   "change": "add_control",
+   "control": "DM-16",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for evidence-data-was-deleted-when-retention (DM-16.D, DM-16.E), and checks.json has no mapping to DM-16.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "people.joiners_onboarded",
+   "change": "add_control",
+   "control": "EP-03",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for completed-checklists-for-a-sample-of (EP-03.B), and checks.json has no mapping to EP-03.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "people.joiners_onboarded",
+   "change": "add_control",
+   "control": "IAM-01",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for completed-checklists-for-a-sample-of (IAM-01.B), and checks.json has no mapping to IAM-01.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "people.leavers_deprovisioned",
+   "change": "add_control",
+   "control": "EP-03",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for roster-of-joiners-and-leavers-with (EP-03.C), and checks.json has no mapping to EP-03.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "people.leavers_deprovisioned",
+   "change": "add_control",
+   "control": "EP-05",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for completed-offboarding-records-for-leavers-in (EP-05.C, EP-05.E); roster-of-joiners-and-leavers-with (EP-05.C), and checks.json has no mapping to EP-05.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "people.leavers_deprovisioned",
+   "change": "add_control",
+   "control": "IAM-01",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for roster-of-joiners-and-leavers-with (IAM-01.B), and checks.json has no mapping to IAM-01.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "people.leavers_deprovisioned",
+   "change": "add_control",
+   "control": "IAM-05",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for completed-offboarding-records-for-leavers-in (IAM-05.D); roster-of-joiners-and-leavers-with (IAM-05.B), and checks.json has no mapping to IAM-05.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "people.leavers_deprovisioned",
+   "change": "add_control",
+   "control": "NS-11",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for roster-of-joiners-and-leavers-with (NS-11.C), and checks.json has no mapping to NS-11.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "people.leavers_deprovisioned",
+   "change": "add_control",
+   "control": "PE-02",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for roster-of-joiners-and-leavers-with (PE-02.B), and checks.json has no mapping to PE-02.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "tickets.access_requests_approved",
+   "change": "add_control",
+   "control": "IAM-08",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for approved-requests-for-a-sample-of (IAM-08.C), and checks.json has no mapping to IAM-08.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "tickets.changes_linked",
+   "change": "add_control",
+   "control": "DM-18",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for change-requests-with-approval-for-a (DM-18.B), and checks.json has no mapping to DM-18.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "tickets.remediation_tracked",
+   "change": "add_control",
+   "control": "EP-04",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for log-of-control-deficiencies-with-owner (EP-04.D), and checks.json has no mapping to EP-04.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "tickets.remediation_tracked",
+   "change": "add_control",
+   "control": "EP-06",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for log-of-control-deficiencies-with-owner (EP-06.D), and checks.json has no mapping to EP-06.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "tickets.remediation_tracked",
+   "change": "add_control",
+   "control": "IAM-02",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for access-changes-made-as-a-result (IAM-02.E); log-of-control-deficiencies-with-owner (IAM-02.E), and checks.json has no mapping to IAM-02.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "tickets.remediation_tracked",
+   "change": "add_control",
+   "control": "IAM-03",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for log-of-control-deficiencies-with-owner (IAM-03.E), and checks.json has no mapping to IAM-03.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "tickets.remediation_tracked",
+   "change": "add_control",
+   "control": "IAM-07",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for access-changes-made-as-a-result (IAM-07.E); log-of-control-deficiencies-with-owner (IAM-07.E), and checks.json has no mapping to IAM-07.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "tickets.remediation_tracked",
+   "change": "add_control",
+   "control": "IAM-14",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for log-of-control-deficiencies-with-owner (IAM-14.D), and checks.json has no mapping to IAM-14.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "tickets.remediation_tracked",
+   "change": "add_control",
+   "control": "NS-13",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for log-of-control-deficiencies-with-owner (NS-13.D), and checks.json has no mapping to NS-13.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "vcs.merged_changes_reviewed",
+   "change": "add_control",
+   "control": "DM-18",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for change-requests-with-approval-for-a (DM-18.B), and checks.json has no mapping to DM-18.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "vcs.secret_scanning_enabled",
+   "change": "add_control",
+   "control": "NS-09",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for records-of-exposed-secrets-that-were (NS-09.D), and checks.json has no mapping to NS-09.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "vcs.unreviewed_merges_recorded",
+   "change": "add_control",
+   "control": "NS-13",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for emergency-changes-with-their-after-the (NS-13.E), and checks.json has no mapping to NS-13.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "verity.assets.owner_assigned",
+   "change": "add_control",
+   "control": "DM-04",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for asset-inventory (DM-04.B), and checks.json has no mapping to DM-04.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "verity.assets.owner_assigned",
+   "change": "add_control",
+   "control": "DM-06",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for asset-inventory (DM-06.D), and checks.json has no mapping to DM-06.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "verity.assets.owner_assigned",
+   "change": "add_control",
+   "control": "EP-01",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for asset-inventory (EP-01.B), and checks.json has no mapping to EP-01.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "verity.assets.owner_assigned",
+   "change": "add_control",
+   "control": "IAM-02",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for asset-inventory (IAM-02.C), and checks.json has no mapping to IAM-02.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "verity.assets.owner_assigned",
+   "change": "add_control",
+   "control": "IAM-07",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for asset-inventory (IAM-07.D), and checks.json has no mapping to IAM-07.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "verity.assets.owner_assigned",
+   "change": "add_control",
+   "control": "NS-01",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for asset-inventory (NS-01.B), and checks.json has no mapping to NS-01.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "verity.assets.owner_assigned",
+   "change": "add_control",
+   "control": "NS-02",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for asset-inventory (NS-02.B), and checks.json has no mapping to NS-02.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "verity.assets.owner_assigned",
+   "change": "add_control",
+   "control": "NS-03",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for asset-inventory (NS-03.D, NS-03.E), and checks.json has no mapping to NS-03.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "verity.assets.owner_assigned",
+   "change": "add_control",
+   "control": "NS-04",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for asset-inventory (NS-04.D), and checks.json has no mapping to NS-04.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "verity.assets.owner_assigned",
+   "change": "add_control",
+   "control": "NS-05",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for asset-inventory (NS-05.B), and checks.json has no mapping to NS-05.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "verity.assets.owner_assigned",
+   "change": "add_control",
+   "control": "NS-10",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for asset-inventory (NS-10.B), and checks.json has no mapping to NS-10.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "verity.assets.owner_assigned",
+   "change": "add_control",
+   "control": "NS-12",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for asset-inventory (NS-12.B), and checks.json has no mapping to NS-12.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "verity.assets.owner_assigned",
+   "change": "add_control",
+   "control": "PE-01",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for asset-inventory (PE-01.B), and checks.json has no mapping to PE-01.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "verity.assets.reviewed",
+   "change": "add_control",
+   "control": "NS-14",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for asset-inventory (NS-14.B, NS-14.C), and checks.json has no mapping to NS-14.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "verity.documents.controlled",
+   "change": "add_control",
+   "control": "IAM-08",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for role-definitions-approved-by-their-owners (IAM-08.A, IAM-08.D), and checks.json has no mapping to IAM-08.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "verity.policies.acknowledged",
+   "change": "add_control",
+   "control": "DM-04",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for completion-records-for-all-staff (DM-04.D), and checks.json has no mapping to DM-04.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "verity.soa.complete",
+   "change": "add_control",
+   "control": "PE-01",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for statement-of-applicability-showing-every-decision (PE-01.E), and checks.json has no mapping to PE-01.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "verity.tasks.remediation_in_sla",
+   "change": "add_control",
+   "control": "EP-04",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for log-of-control-deficiencies-with-owner (EP-04.D), and checks.json has no mapping to EP-04.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "verity.tasks.remediation_in_sla",
+   "change": "add_control",
+   "control": "EP-06",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for log-of-control-deficiencies-with-owner (EP-06.D), and checks.json has no mapping to EP-06.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "verity.tasks.remediation_in_sla",
+   "change": "add_control",
+   "control": "IAM-02",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for access-changes-made-as-a-result (IAM-02.E); log-of-control-deficiencies-with-owner (IAM-02.E), and checks.json has no mapping to IAM-02.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "verity.tasks.remediation_in_sla",
+   "change": "add_control",
+   "control": "IAM-03",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for log-of-control-deficiencies-with-owner (IAM-03.E), and checks.json has no mapping to IAM-03.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "verity.tasks.remediation_in_sla",
+   "change": "add_control",
+   "control": "IAM-07",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for access-changes-made-as-a-result (IAM-07.E); log-of-control-deficiencies-with-owner (IAM-07.E), and checks.json has no mapping to IAM-07.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "verity.tasks.remediation_in_sla",
+   "change": "add_control",
+   "control": "IAM-14",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for log-of-control-deficiencies-with-owner (IAM-14.D), and checks.json has no mapping to IAM-14.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "verity.tasks.remediation_in_sla",
+   "change": "add_control",
+   "control": "NS-04",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for alerts-on-drift-that-were-investigated (NS-04.C, NS-04.D), and checks.json has no mapping to NS-04.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "verity.tasks.remediation_in_sla",
+   "change": "add_control",
+   "control": "NS-05",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for alerts-on-drift-that-were-investigated (NS-05.B), and checks.json has no mapping to NS-05.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "verity.tasks.remediation_in_sla",
+   "change": "add_control",
+   "control": "NS-08",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for alerts-on-drift-that-were-investigated (NS-08.D), and checks.json has no mapping to NS-08.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "verity.tasks.remediation_in_sla",
+   "change": "add_control",
+   "control": "NS-13",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for log-of-control-deficiencies-with-owner (NS-13.D), and checks.json has no mapping to NS-13.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "verity.vendors.assessed_in_cadence",
+   "change": "add_control",
+   "control": "DM-17",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for security-assessment-for-each-critical-vendor (DM-17.C), and checks.json has no mapping to DM-17.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "verity.vendors.dpa_on_file",
+   "change": "add_control",
+   "control": "DM-17",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for executed-data-processing-agreements-for-vendors (DM-17.B), and checks.json has no mapping to DM-17.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "verity.vendors.owner_and_tier",
+   "change": "add_control",
+   "control": "DM-06",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for vendor-inventory-with-owner-data-and (DM-06.C, DM-06.D), and checks.json has no mapping to DM-06.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "verity.vendors.owner_and_tier",
+   "change": "add_control",
+   "control": "DM-09",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for vendor-inventory-with-owner-data-and (DM-09.B), and checks.json has no mapping to DM-09.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "verity.vendors.owner_and_tier",
+   "change": "add_control",
+   "control": "DM-10",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for vendor-inventory-with-owner-data-and (DM-10.B), and checks.json has no mapping to DM-10.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "verity.vendors.owner_and_tier",
+   "change": "add_control",
+   "control": "IAM-04",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for vendor-inventory-with-owner-data-and (IAM-04.B), and checks.json has no mapping to IAM-04.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "verity.vulns.within_sla",
+   "change": "add_control",
+   "control": "IAM-14",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for penetration-test-report-from-an-independent (IAM-14.D), and checks.json has no mapping to IAM-14.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  },
+  {
+   "check": "verity.vulns.within_sla",
+   "change": "add_control",
+   "control": "NS-07",
+   "to_control": null,
+   "coverage": "partial",
+   "rationale": "Implied by the artifact plan, not stated as a mapping proposal: the plan uses this check for penetration-test-report-from-an-independent (NS-07.D), and checks.json has no mapping to NS-07.",
+   "source": "coverage/iam-ep-pe-ns-dm.json"
+  }
+ ]
+}

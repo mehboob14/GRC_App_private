@@ -1,0 +1,5169 @@
+{
+  "about": "Every NEED entry in coverage/*.json matched to a check key (existing in checks.json or proposed in checks-proposed.json), or marked unresolved with the reason. Generated 2026-11-23 by the reconciliation step.",
+  "match_values": {
+    "exact": "the key tests this predicate",
+    "partial": "the key tests part of it; note says what is left",
+    "unresolved": "no key; reason not_defined (no researcher defined a check) or no_provider (no researched provider can collect it)"
+  },
+  "counts": {
+    "entries": 317,
+    "unique_predicates": 202,
+    "by_match": {
+      "partial": 141,
+      "unresolved": 93,
+      "exact": 83
+    },
+    "unique_by_match": {
+      "partial": 90,
+      "unresolved": 59,
+      "exact": 53
+    },
+    "unresolved_by_reason": {
+      "not_defined": 90,
+      "no_provider": 3
+    },
+    "by_capability": {
+      "alerting": {
+        "unresolved": 4,
+        "partial": 2,
+        "exact": 3
+      },
+      "background_screening": {
+        "partial": 1
+      },
+      "business_applications": {
+        "partial": 12,
+        "unresolved": 3
+      },
+      "ci_cd": {
+        "partial": 5,
+        "unresolved": 4,
+        "exact": 3
+      },
+      "cloud_infrastructure": {
+        "unresolved": 12,
+        "exact": 14,
+        "partial": 30
+      },
+      "device_management": {
+        "exact": 5,
+        "partial": 9,
+        "unresolved": 2
+      },
+      "endpoint_protection": {
+        "exact": 2,
+        "partial": 2
+      },
+      "esignature": {
+        "unresolved": 2
+      },
+      "hr_system": {
+        "unresolved": 20,
+        "exact": 18,
+        "partial": 5
+      },
+      "identity_provider": {
+        "unresolved": 10,
+        "partial": 22,
+        "exact": 7
+      },
+      "learning_platform": {
+        "unresolved": 6,
+        "exact": 4,
+        "partial": 2
+      },
+      "network_edge": {
+        "unresolved": 4,
+        "partial": 2,
+        "exact": 5
+      },
+      "observability": {
+        "unresolved": 3,
+        "partial": 12,
+        "exact": 1
+      },
+      "password_manager": {
+        "unresolved": 8,
+        "exact": 1
+      },
+      "public_web": {
+        "unresolved": 3
+      },
+      "ticketing": {
+        "partial": 28,
+        "exact": 2,
+        "unresolved": 3
+      },
+      "version_control": {
+        "exact": 18,
+        "unresolved": 9,
+        "partial": 7
+      },
+      "vulnerability_scanner": {
+        "partial": 2
+      }
+    },
+    "resolved_to_existing": 100,
+    "resolved_to_proposed": 124
+  },
+  "needs": [
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "security-incident-register",
+      "control": "CS-01",
+      "objectives": [
+        "CS-01.C"
+      ],
+      "capability": "ticketing",
+      "predicate": "incident tickets in the period, with severity, detection date, closure date and the customer notice decision",
+      "fills": "partial",
+      "match": "partial",
+      "check": "alerts.incidents_registered",
+      "check_status": "proposed",
+      "also": [
+        "verity.incidents.registered",
+        "verity.tasks.incident_notice_decided"
+      ]
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "notification-decisions-for-each-incident-including",
+      "control": "CS-01",
+      "objectives": [
+        "CS-01.C",
+        "CS-01.D"
+      ],
+      "capability": "ticketing",
+      "predicate": "incident tickets in the period, with severity, detection date, closure date and the customer notice decision",
+      "fills": "partial",
+      "match": "partial",
+      "check": "alerts.incidents_registered",
+      "check_status": "proposed",
+      "also": [
+        "verity.incidents.registered",
+        "verity.tasks.incident_notice_decided"
+      ]
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "published-security-availability-and-privacy-commitments",
+      "control": "CS-02",
+      "objectives": [
+        "CS-02.A",
+        "CS-02.B",
+        "CS-02.D",
+        "CS-02.E",
+        "CS-02.F"
+      ],
+      "capability": "public_web",
+      "predicate": "the security page, terms, service levels and privacy notice are reachable and dated, and each change in their text is recorded with the date seen",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "public_web is a proposed capability with no check."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "published-reporting-channel-for-staff-and",
+      "control": "CS-03",
+      "objectives": [
+        "CS-03.A",
+        "CS-03.B"
+      ],
+      "capability": "public_web",
+      "predicate": "security.txt is published at the company domain, has not expired and names a monitored contact",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "public_web is a proposed capability with no check."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "published-reporting-channel-for-staff-and",
+      "control": "CS-03",
+      "objectives": [
+        "CS-03.A",
+        "CS-03.B"
+      ],
+      "capability": "identity_provider",
+      "predicate": "the published security reporting address is a group or shared mailbox with at least one active member",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no mailbox membership check was defined."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "training-content-and-schedule",
+      "control": "CS-03",
+      "objectives": [
+        "CS-03.B"
+      ],
+      "capability": "learning_platform",
+      "predicate": "the courses assigned in the period, with topics, audience and due rule",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no course assignment export check was defined."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "sample-of-reports-received-and-how",
+      "control": "CS-03",
+      "objectives": [
+        "CS-03.C",
+        "CS-03.D"
+      ],
+      "capability": "ticketing",
+      "predicate": "every report to the security address opened a ticket with date, source, triage decision and closure date",
+      "fills": "partial",
+      "match": "exact",
+      "check": "tickets.security_reports_answered",
+      "check_status": "proposed"
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "security-incident-register",
+      "control": "CS-03",
+      "objectives": [
+        "CS-03.D"
+      ],
+      "capability": "ticketing",
+      "predicate": "incident tickets in the period, with severity, detection date, closure date and the customer notice decision",
+      "fills": "partial",
+      "match": "partial",
+      "check": "alerts.incidents_registered",
+      "check_status": "proposed",
+      "also": [
+        "verity.incidents.registered",
+        "verity.tasks.incident_notice_decided"
+      ]
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "staff-acknowledgement-of-current-policies",
+      "control": "CS-04",
+      "objectives": [
+        "CS-04.C",
+        "CS-04.E"
+      ],
+      "capability": "hr_system",
+      "predicate": "every active person on the HR roster has a Verity membership, so acknowledgement and training cover the whole staff",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no check compares the HR roster with Verity members (13 entries rest on it). Needs a verity_members check on top of hr.roster_exported."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "roster-of-joiners-and-leavers-with",
+      "control": "CS-04",
+      "objectives": [
+        "CS-04.C"
+      ],
+      "capability": "hr_system",
+      "predicate": "every person who started, changed role or left in the period, with employment type, start date and end date",
+      "fills": "full",
+      "match": "exact",
+      "check": "hr.roster_exported",
+      "check_status": "proposed"
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "roster-of-joiners-and-leavers-with",
+      "control": "CS-04",
+      "objectives": [
+        "CS-04.C"
+      ],
+      "capability": "identity_provider",
+      "predicate": "accounts created and disabled in the period with their dates, to test the roster against",
+      "fills": "partial",
+      "match": "partial",
+      "check": "people.leavers_deprovisioned",
+      "check_status": "existing",
+      "also": [
+        "people.joiners_onboarded",
+        "people.accounts_match_roster"
+      ],
+      "note": "The joiner and leaver checks read these dates; a plain dated export is part of their evidence."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "sample-of-messages-sent-under-the",
+      "control": "CS-04",
+      "objectives": [
+        "CS-04.D"
+      ],
+      "capability": "alerting",
+      "predicate": "messages posted in the named security announcement channel in the period, with date, author and channel (Slack)",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "the Slack research keeps Slack to notifications and Verity never reads message content; operations-checks.md section 6 proposes a Verity notification delivery log instead."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "staff-acknowledgement-of-current-policies",
+      "control": "CS-05",
+      "objectives": [
+        "CS-05.B"
+      ],
+      "capability": "hr_system",
+      "predicate": "every active person on the HR roster has a Verity membership, so acknowledgement and training cover the whole staff",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no check compares the HR roster with Verity members (13 entries rest on it). Needs a verity_members check on top of hr.roster_exported."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "sample-of-messages-sent-under-the",
+      "control": "CS-06",
+      "objectives": [
+        "CS-06.B",
+        "CS-06.C"
+      ],
+      "capability": "alerting",
+      "predicate": "messages posted in the named security announcement channel in the period, with date, author and channel (Slack)",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "the Slack research keeps Slack to notifications and Verity never reads message content; operations-checks.md section 6 proposes a Verity notification delivery log instead."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "security-incident-register",
+      "control": "CS-06",
+      "objectives": [
+        "CS-06.C"
+      ],
+      "capability": "ticketing",
+      "predicate": "incident tickets in the period, with severity, detection date, closure date and the customer notice decision",
+      "fills": "partial",
+      "match": "partial",
+      "check": "alerts.incidents_registered",
+      "check_status": "proposed",
+      "also": [
+        "verity.incidents.registered",
+        "verity.tasks.incident_notice_decided"
+      ]
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "staff-acknowledgement-of-current-policies",
+      "control": "CS-06",
+      "objectives": [
+        "CS-06.D"
+      ],
+      "capability": "hr_system",
+      "predicate": "every active person on the HR roster has a Verity membership, so acknowledgement and training cover the whole staff",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no check compares the HR roster with Verity members (13 entries rest on it). Needs a verity_members check on top of hr.roster_exported."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "notification-decisions-for-each-incident-including",
+      "control": "CS-07",
+      "objectives": [
+        "CS-07.D"
+      ],
+      "capability": "ticketing",
+      "predicate": "incident tickets in the period, with severity, detection date, closure date and the customer notice decision",
+      "fills": "partial",
+      "match": "partial",
+      "check": "alerts.incidents_registered",
+      "check_status": "proposed",
+      "also": [
+        "verity.incidents.registered",
+        "verity.tasks.incident_notice_decided"
+      ]
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "security-incident-register",
+      "control": "CS-07",
+      "objectives": [
+        "CS-07.D"
+      ],
+      "capability": "ticketing",
+      "predicate": "incident tickets in the period, with severity, detection date, closure date and the customer notice decision",
+      "fills": "partial",
+      "match": "partial",
+      "check": "alerts.incidents_registered",
+      "check_status": "proposed",
+      "also": [
+        "verity.incidents.registered",
+        "verity.tasks.incident_notice_decided"
+      ]
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "risk-reviews-done-after-significant-changes",
+      "control": "GOV-01",
+      "objectives": [
+        "GOV-01.E"
+      ],
+      "capability": "ticketing",
+      "predicate": "changes marked significant (architecture, hosting, new data type, new supplier) link to a risk review dated before release",
+      "fills": "partial",
+      "match": "partial",
+      "check": "verity.risks.reviewed_after_change",
+      "check_status": "proposed",
+      "note": "Verity side only; a ticketing implementation is not defined."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "risk-reviews-done-after-significant-changes",
+      "control": "GOV-03",
+      "objectives": [
+        "GOV-03.B",
+        "GOV-03.C",
+        "GOV-03.D"
+      ],
+      "capability": "ticketing",
+      "predicate": "changes marked significant (architecture, hosting, new data type, new supplier) link to a risk review dated before release",
+      "fills": "partial",
+      "match": "partial",
+      "check": "verity.risks.reviewed_after_change",
+      "check_status": "proposed",
+      "note": "Verity side only; a ticketing implementation is not defined."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "change-requests-with-approval-for-a",
+      "control": "GOV-03",
+      "objectives": [
+        "GOV-03.B",
+        "GOV-03.C"
+      ],
+      "capability": "ticketing",
+      "predicate": "changes marked significant (architecture, hosting, new data type, new supplier) link to a risk review dated before release",
+      "fills": "partial",
+      "match": "partial",
+      "check": "verity.risks.reviewed_after_change",
+      "check_status": "proposed",
+      "note": "Verity side only; a ticketing implementation is not defined."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "acknowledgement-from-every-member-of-staff",
+      "control": "GOV-04",
+      "objectives": [
+        "GOV-04.B",
+        "GOV-04.C"
+      ],
+      "capability": "hr_system",
+      "predicate": "every active person on the HR roster has a Verity membership, so acknowledgement and training cover the whole staff",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no check compares the HR roster with Verity members (13 entries rest on it). Needs a verity_members check on top of hr.roster_exported."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "roster-of-joiners-and-leavers-with",
+      "control": "GOV-04",
+      "objectives": [
+        "GOV-04.B"
+      ],
+      "capability": "hr_system",
+      "predicate": "every person who started, changed role or left in the period, with employment type, start date and end date",
+      "fills": "full",
+      "match": "exact",
+      "check": "hr.roster_exported",
+      "check_status": "proposed"
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "roster-of-joiners-and-leavers-with",
+      "control": "GOV-04",
+      "objectives": [
+        "GOV-04.B"
+      ],
+      "capability": "identity_provider",
+      "predicate": "accounts created and disabled in the period with their dates, to test the roster against",
+      "fills": "partial",
+      "match": "partial",
+      "check": "people.leavers_deprovisioned",
+      "check_status": "existing",
+      "also": [
+        "people.joiners_onboarded",
+        "people.accounts_match_roster"
+      ],
+      "note": "The joiner and leaver checks read these dates; a plain dated export is part of their evidence."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "security-incident-register",
+      "control": "GOV-08",
+      "objectives": [
+        "GOV-08.B"
+      ],
+      "capability": "ticketing",
+      "predicate": "incident tickets in the period, with severity, detection date, closure date and the customer notice decision",
+      "fills": "partial",
+      "match": "partial",
+      "check": "alerts.incidents_registered",
+      "check_status": "proposed",
+      "also": [
+        "verity.incidents.registered",
+        "verity.tasks.incident_notice_decided"
+      ]
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "roster-of-joiners-and-leavers-with",
+      "control": "GOV-09",
+      "objectives": [
+        "GOV-09.C"
+      ],
+      "capability": "hr_system",
+      "predicate": "every person who started, changed role or left in the period, with employment type, start date and end date",
+      "fills": "full",
+      "match": "exact",
+      "check": "hr.roster_exported",
+      "check_status": "proposed"
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "roster-of-joiners-and-leavers-with",
+      "control": "GOV-09",
+      "objectives": [
+        "GOV-09.C"
+      ],
+      "capability": "identity_provider",
+      "predicate": "accounts created and disabled in the period with their dates, to test the roster against",
+      "fills": "partial",
+      "match": "partial",
+      "check": "people.leavers_deprovisioned",
+      "check_status": "existing",
+      "also": [
+        "people.joiners_onboarded",
+        "people.accounts_match_roster"
+      ],
+      "note": "The joiner and leaver checks read these dates; a plain dated export is part of their evidence."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "completed-offboarding-records-for-leavers-in",
+      "control": "GOV-09",
+      "objectives": [
+        "GOV-09.C"
+      ],
+      "capability": "ticketing",
+      "predicate": "every joiner and leaver has an onboarding or offboarding ticket from the checklist template, closed with each step done and dated",
+      "fills": "partial",
+      "match": "partial",
+      "check": "verity.tasks.checklist_steps_done",
+      "check_status": "proposed",
+      "also": [
+        "people.joiners_onboarded"
+      ],
+      "note": "Holds when checklists run in Verity Tasks."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "acknowledgement-from-every-member-of-staff",
+      "control": "GOV-11",
+      "objectives": [
+        "GOV-11.B"
+      ],
+      "capability": "hr_system",
+      "predicate": "every active person on the HR roster has a Verity membership, so acknowledgement and training cover the whole staff",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no check compares the HR roster with Verity members (13 entries rest on it). Needs a verity_members check on top of hr.roster_exported."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "risk-reviews-done-after-significant-changes",
+      "control": "GOV-13",
+      "objectives": [
+        "GOV-13.E"
+      ],
+      "capability": "ticketing",
+      "predicate": "changes marked significant (architecture, hosting, new data type, new supplier) link to a risk review dated before release",
+      "fills": "partial",
+      "match": "partial",
+      "check": "verity.risks.reviewed_after_change",
+      "check_status": "proposed",
+      "note": "Verity side only; a ticketing implementation is not defined."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "current-organization-chart-with-reporting-lines",
+      "control": "GOV-21",
+      "objectives": [
+        "GOV-21.A",
+        "GOV-21.B",
+        "GOV-21.D"
+      ],
+      "capability": "identity_provider",
+      "predicate": "each active user carries a title, department and manager, so the organization chart can be rebuilt from the directory",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no directory attribute completeness check was defined."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "current-organization-chart-with-reporting-lines",
+      "control": "GOV-21",
+      "objectives": [
+        "GOV-21.A",
+        "GOV-21.B",
+        "GOV-21.D"
+      ],
+      "capability": "hr_system",
+      "predicate": "each person's title, department and manager, for the organization chart",
+      "fills": "full",
+      "match": "partial",
+      "check": "hr.roster_exported",
+      "check_status": "proposed",
+      "note": "The roster export keeps the manager; title and department are not required fields of the check."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "roster-of-joiners-and-leavers-with",
+      "control": "GOV-21",
+      "objectives": [
+        "GOV-21.D"
+      ],
+      "capability": "hr_system",
+      "predicate": "every person who started, changed role or left in the period, with employment type, start date and end date",
+      "fills": "full",
+      "match": "exact",
+      "check": "hr.roster_exported",
+      "check_status": "proposed"
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "roster-of-joiners-and-leavers-with",
+      "control": "GOV-21",
+      "objectives": [
+        "GOV-21.D"
+      ],
+      "capability": "identity_provider",
+      "predicate": "accounts created and disabled in the period with their dates, to test the roster against",
+      "fills": "partial",
+      "match": "partial",
+      "check": "people.leavers_deprovisioned",
+      "check_status": "existing",
+      "also": [
+        "people.joiners_onboarded",
+        "people.accounts_match_roster"
+      ],
+      "note": "The joiner and leaver checks read these dates; a plain dated export is part of their evidence."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "staff-acknowledgement-of-current-policies",
+      "control": "GOV-21",
+      "objectives": [
+        "GOV-21.E"
+      ],
+      "capability": "hr_system",
+      "predicate": "every active person on the HR roster has a Verity membership, so acknowledgement and training cover the whole staff",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no check compares the HR roster with Verity members (13 entries rest on it). Needs a verity_members check on top of hr.roster_exported."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "published-security-availability-and-privacy-commitments",
+      "control": "GOV-22",
+      "objectives": [
+        "GOV-22.B"
+      ],
+      "capability": "public_web",
+      "predicate": "the security page, terms, service levels and privacy notice are reachable and dated, and each change in their text is recorded with the date seen",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "public_web is a proposed capability with no check."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "staff-acknowledgement-of-current-policies",
+      "control": "GOV-32",
+      "objectives": [
+        "GOV-32.D"
+      ],
+      "capability": "hr_system",
+      "predicate": "every active person on the HR roster has a Verity membership, so acknowledgement and training cover the whole staff",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no check compares the HR roster with Verity members (13 entries rest on it). Needs a verity_members check on top of hr.roster_exported."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "completed-background-checks-for-a-sample",
+      "control": "HR-01",
+      "objectives": [
+        "HR-01.B",
+        "HR-01.C",
+        "HR-01.D",
+        "HR-01.E"
+      ],
+      "capability": "background_screening",
+      "predicate": "every hire, move into a sensitive role and recheck in the period has a completed check with a clear result dated before the first access date, without the check details",
+      "fills": "partial",
+      "match": "partial",
+      "check": "hr.background_checks_before_start",
+      "check_status": "proposed",
+      "note": "Reads screening dates from the HR system for hires only; moves into sensitive roles and rechecks, and a screening provider source, are not defined."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "completed-background-checks-for-a-sample",
+      "control": "HR-01",
+      "objectives": [
+        "HR-01.B",
+        "HR-01.C",
+        "HR-01.D",
+        "HR-01.E"
+      ],
+      "capability": "hr_system",
+      "predicate": "hires and moves into roles marked sensitive, with start dates, to compare with completed checks",
+      "fills": "partial",
+      "match": "partial",
+      "check": "hr.background_checks_before_start",
+      "check_status": "proposed",
+      "note": "Hires only; moves into sensitive roles are not read."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "roster-of-joiners-and-leavers-with",
+      "control": "HR-01",
+      "objectives": [
+        "HR-01.B"
+      ],
+      "capability": "hr_system",
+      "predicate": "every person who started, changed role or left in the period, with employment type, start date and end date",
+      "fills": "full",
+      "match": "exact",
+      "check": "hr.roster_exported",
+      "check_status": "proposed"
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "roster-of-joiners-and-leavers-with",
+      "control": "HR-01",
+      "objectives": [
+        "HR-01.B"
+      ],
+      "capability": "identity_provider",
+      "predicate": "accounts created and disabled in the period with their dates, to test the roster against",
+      "fills": "partial",
+      "match": "partial",
+      "check": "people.leavers_deprovisioned",
+      "check_status": "existing",
+      "also": [
+        "people.joiners_onboarded",
+        "people.accounts_match_roster"
+      ],
+      "note": "The joiner and leaver checks read these dates; a plain dated export is part of their evidence."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "signed-agreements-for-a-sample-of",
+      "control": "HR-02",
+      "objectives": [
+        "HR-02.B",
+        "HR-02.C",
+        "HR-02.D",
+        "HR-02.E",
+        "HR-02.F"
+      ],
+      "capability": "esignature",
+      "predicate": "every person who started in the period has a completed confidentiality agreement signed on or before the first access date",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no e-signature or agreement check was defined; esignature is a proposed capability with no check."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "signed-agreements-for-a-sample-of",
+      "control": "HR-02",
+      "objectives": [
+        "HR-02.B",
+        "HR-02.C",
+        "HR-02.D",
+        "HR-02.E",
+        "HR-02.F"
+      ],
+      "capability": "hr_system",
+      "predicate": "agreements signed in the HR system for each person, with agreement type and date signed",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "hr-systems.md defines no agreement check."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "roster-of-joiners-and-leavers-with",
+      "control": "HR-02",
+      "objectives": [
+        "HR-02.B"
+      ],
+      "capability": "hr_system",
+      "predicate": "every person who started, changed role or left in the period, with employment type, start date and end date",
+      "fills": "full",
+      "match": "exact",
+      "check": "hr.roster_exported",
+      "check_status": "proposed"
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "roster-of-joiners-and-leavers-with",
+      "control": "HR-02",
+      "objectives": [
+        "HR-02.B"
+      ],
+      "capability": "identity_provider",
+      "predicate": "accounts created and disabled in the period with their dates, to test the roster against",
+      "fills": "partial",
+      "match": "partial",
+      "check": "people.leavers_deprovisioned",
+      "check_status": "existing",
+      "also": [
+        "people.joiners_onboarded",
+        "people.accounts_match_roster"
+      ],
+      "note": "The joiner and leaver checks read these dates; a plain dated export is part of their evidence."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "contractor-register-with-start-and-end",
+      "control": "HR-02",
+      "objectives": [
+        "HR-02.B"
+      ],
+      "capability": "hr_system",
+      "predicate": "contractors with company, sponsor, start date and end date",
+      "fills": "partial",
+      "match": "exact",
+      "check": "hr.contractors_have_end_dates",
+      "check_status": "proposed",
+      "note": "Sponsor and company fields depend on the HR system."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "contractor-register-with-start-and-end",
+      "control": "HR-02",
+      "objectives": [
+        "HR-02.B"
+      ],
+      "capability": "identity_provider",
+      "predicate": "each contractor account was disabled on or before the end date in the contractor register",
+      "fills": "partial",
+      "match": "partial",
+      "check": "people.leavers_deprovisioned",
+      "check_status": "existing",
+      "also": [
+        "hr.contractors_have_end_dates"
+      ],
+      "note": "Needs contractor end dates in the roster."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "contractor-register-with-start-and-end",
+      "control": "HR-03",
+      "objectives": [
+        "HR-03.B",
+        "HR-03.C",
+        "HR-03.D",
+        "HR-03.E"
+      ],
+      "capability": "hr_system",
+      "predicate": "contractors with company, sponsor, start date and end date",
+      "fills": "partial",
+      "match": "exact",
+      "check": "hr.contractors_have_end_dates",
+      "check_status": "proposed",
+      "note": "Sponsor and company fields depend on the HR system."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "contractor-register-with-start-and-end",
+      "control": "HR-03",
+      "objectives": [
+        "HR-03.B",
+        "HR-03.C",
+        "HR-03.D",
+        "HR-03.E"
+      ],
+      "capability": "identity_provider",
+      "predicate": "each contractor account was disabled on or before the end date in the contractor register",
+      "fills": "partial",
+      "match": "partial",
+      "check": "people.leavers_deprovisioned",
+      "check_status": "existing",
+      "also": [
+        "hr.contractors_have_end_dates"
+      ],
+      "note": "Needs contractor end dates in the roster."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "account-list-export",
+      "control": "HR-03",
+      "objectives": [
+        "HR-03.B"
+      ],
+      "capability": "identity_provider",
+      "predicate": "each account is labelled employee, contractor or service, and each contractor account has an end date",
+      "fills": "partial",
+      "match": "partial",
+      "check": "people.accounts_match_roster",
+      "check_status": "proposed",
+      "also": [
+        "hr.contractors_have_end_dates"
+      ]
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "signed-agreements-for-a-sample-of",
+      "control": "HR-03",
+      "objectives": [
+        "HR-03.C"
+      ],
+      "capability": "esignature",
+      "predicate": "every person who started in the period has a completed confidentiality agreement signed on or before the first access date",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no e-signature or agreement check was defined; esignature is a proposed capability with no check."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "signed-agreements-for-a-sample-of",
+      "control": "HR-03",
+      "objectives": [
+        "HR-03.C"
+      ],
+      "capability": "hr_system",
+      "predicate": "agreements signed in the HR system for each person, with agreement type and date signed",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "hr-systems.md defines no agreement check."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "acknowledgement-from-every-member-of-staff",
+      "control": "HR-03",
+      "objectives": [
+        "HR-03.C"
+      ],
+      "capability": "hr_system",
+      "predicate": "every active person on the HR roster has a Verity membership, so acknowledgement and training cover the whole staff",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no check compares the HR roster with Verity members (13 entries rest on it). Needs a verity_members check on top of hr.roster_exported."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "completion-records-for-all-staff",
+      "control": "HR-03",
+      "objectives": [
+        "HR-03.C"
+      ],
+      "capability": "learning_platform",
+      "predicate": "every assigned person completed the yearly security course in the last 12 months, and each joiner within the set days of the start date",
+      "fills": "full",
+      "match": "exact",
+      "check": "hr.training_current",
+      "check_status": "proposed",
+      "note": "Same predicate; learning_platform must be added as a capability that can implement it (capability_match any)."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "completion-records-for-all-staff",
+      "control": "HR-03",
+      "objectives": [
+        "HR-03.C"
+      ],
+      "capability": "learning_platform",
+      "predicate": "overdue assignments with each reminder sent and the date of escalation",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no reminder and escalation check was defined."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "completion-records-for-all-staff",
+      "control": "HR-03",
+      "objectives": [
+        "HR-03.C"
+      ],
+      "capability": "hr_system",
+      "predicate": "every active person on the HR roster has a Verity membership, so acknowledgement and training cover the whole staff",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no check compares the HR roster with Verity members (13 entries rest on it). Needs a verity_members check on top of hr.roster_exported."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "removal-records-for-a-sample-of",
+      "control": "HR-03",
+      "objectives": [
+        "HR-03.D"
+      ],
+      "capability": "identity_provider",
+      "predicate": "each contractor account was disabled on or before the end date in the contractor register",
+      "fills": "partial",
+      "match": "partial",
+      "check": "people.leavers_deprovisioned",
+      "check_status": "existing",
+      "also": [
+        "hr.contractors_have_end_dates"
+      ],
+      "note": "Needs contractor end dates in the roster."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "job-descriptions-that-state-security-responsibilities",
+      "control": "HR-04",
+      "objectives": [
+        "HR-04.A",
+        "HR-04.B",
+        "HR-04.C",
+        "HR-04.D"
+      ],
+      "capability": "hr_system",
+      "predicate": "every active position has a job description, and the description has a security duties section",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no job description check was defined."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "current-organization-chart-with-reporting-lines",
+      "control": "HR-04",
+      "objectives": [
+        "HR-04.B"
+      ],
+      "capability": "identity_provider",
+      "predicate": "each active user carries a title, department and manager, so the organization chart can be rebuilt from the directory",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no directory attribute completeness check was defined."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "current-organization-chart-with-reporting-lines",
+      "control": "HR-04",
+      "objectives": [
+        "HR-04.B"
+      ],
+      "capability": "hr_system",
+      "predicate": "each person's title, department and manager, for the organization chart",
+      "fills": "full",
+      "match": "partial",
+      "check": "hr.roster_exported",
+      "check_status": "proposed",
+      "note": "The roster export keeps the manager; title and department are not required fields of the check."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "roster-of-joiners-and-leavers-with",
+      "control": "HR-05",
+      "objectives": [
+        "HR-05.C",
+        "HR-05.D",
+        "HR-05.F"
+      ],
+      "capability": "hr_system",
+      "predicate": "every person who started, changed role or left in the period, with employment type, start date and end date",
+      "fills": "full",
+      "match": "exact",
+      "check": "hr.roster_exported",
+      "check_status": "proposed"
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "roster-of-joiners-and-leavers-with",
+      "control": "HR-05",
+      "objectives": [
+        "HR-05.C",
+        "HR-05.D",
+        "HR-05.F"
+      ],
+      "capability": "identity_provider",
+      "predicate": "accounts created and disabled in the period with their dates, to test the roster against",
+      "fills": "partial",
+      "match": "partial",
+      "check": "people.leavers_deprovisioned",
+      "check_status": "existing",
+      "also": [
+        "people.joiners_onboarded",
+        "people.accounts_match_roster"
+      ],
+      "note": "The joiner and leaver checks read these dates; a plain dated export is part of their evidence."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "completed-offboarding-records-for-leavers-in",
+      "control": "HR-05",
+      "objectives": [
+        "HR-05.C",
+        "HR-05.D",
+        "HR-05.E",
+        "HR-05.F"
+      ],
+      "capability": "ticketing",
+      "predicate": "every joiner and leaver has an onboarding or offboarding ticket from the checklist template, closed with each step done and dated",
+      "fills": "partial",
+      "match": "partial",
+      "check": "verity.tasks.checklist_steps_done",
+      "check_status": "proposed",
+      "also": [
+        "people.joiners_onboarded"
+      ],
+      "note": "Holds when checklists run in Verity Tasks."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "completed-checklists-for-a-sample-of",
+      "control": "HR-06",
+      "objectives": [
+        "HR-06.B",
+        "HR-06.C",
+        "HR-06.D",
+        "HR-06.E"
+      ],
+      "capability": "ticketing",
+      "predicate": "every joiner and leaver has an onboarding or offboarding ticket from the checklist template, closed with each step done and dated",
+      "fills": "partial",
+      "match": "partial",
+      "check": "verity.tasks.checklist_steps_done",
+      "check_status": "proposed",
+      "also": [
+        "people.joiners_onboarded"
+      ],
+      "note": "Holds when checklists run in Verity Tasks."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "roster-of-joiners-and-leavers-with",
+      "control": "HR-06",
+      "objectives": [
+        "HR-06.B"
+      ],
+      "capability": "hr_system",
+      "predicate": "every person who started, changed role or left in the period, with employment type, start date and end date",
+      "fills": "full",
+      "match": "exact",
+      "check": "hr.roster_exported",
+      "check_status": "proposed"
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "roster-of-joiners-and-leavers-with",
+      "control": "HR-06",
+      "objectives": [
+        "HR-06.B"
+      ],
+      "capability": "identity_provider",
+      "predicate": "accounts created and disabled in the period with their dates, to test the roster against",
+      "fills": "partial",
+      "match": "partial",
+      "check": "people.leavers_deprovisioned",
+      "check_status": "existing",
+      "also": [
+        "people.joiners_onboarded",
+        "people.accounts_match_roster"
+      ],
+      "note": "The joiner and leaver checks read these dates; a plain dated export is part of their evidence."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "acknowledgement-from-every-member-of-staff",
+      "control": "HR-06",
+      "objectives": [
+        "HR-06.C"
+      ],
+      "capability": "hr_system",
+      "predicate": "every active person on the HR roster has a Verity membership, so acknowledgement and training cover the whole staff",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no check compares the HR roster with Verity members (13 entries rest on it). Needs a verity_members check on top of hr.roster_exported."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "completion-records-for-all-staff",
+      "control": "HR-06",
+      "objectives": [
+        "HR-06.E"
+      ],
+      "capability": "learning_platform",
+      "predicate": "every assigned person completed the yearly security course in the last 12 months, and each joiner within the set days of the start date",
+      "fills": "full",
+      "match": "exact",
+      "check": "hr.training_current",
+      "check_status": "proposed",
+      "note": "Same predicate; learning_platform must be added as a capability that can implement it (capability_match any)."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "completion-records-for-all-staff",
+      "control": "HR-06",
+      "objectives": [
+        "HR-06.E"
+      ],
+      "capability": "learning_platform",
+      "predicate": "overdue assignments with each reminder sent and the date of escalation",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no reminder and escalation check was defined."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "completion-records-for-all-staff",
+      "control": "HR-06",
+      "objectives": [
+        "HR-06.E"
+      ],
+      "capability": "hr_system",
+      "predicate": "every active person on the HR roster has a Verity membership, so acknowledgement and training cover the whole staff",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no check compares the HR roster with Verity members (13 entries rest on it). Needs a verity_members check on top of hr.roster_exported."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "performance-review-process",
+      "control": "HR-07",
+      "objectives": [
+        "HR-07.A"
+      ],
+      "capability": "hr_system",
+      "predicate": "an annual review cycle is configured for every employee group",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no performance cycle check was defined."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "completed-reviews-showing-control-responsibilities-were",
+      "control": "HR-07",
+      "objectives": [
+        "HR-07.B",
+        "HR-07.C",
+        "HR-07.D"
+      ],
+      "capability": "hr_system",
+      "predicate": "every employee in post for the cycle has a completed performance review with reviewer and date",
+      "fills": "full",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no performance review check was defined; the owner decided to keep review content out of Verity."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "current-organization-chart-with-reporting-lines",
+      "control": "HR-07",
+      "objectives": [
+        "HR-07.B"
+      ],
+      "capability": "identity_provider",
+      "predicate": "each active user carries a title, department and manager, so the organization chart can be rebuilt from the directory",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no directory attribute completeness check was defined."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "current-organization-chart-with-reporting-lines",
+      "control": "HR-07",
+      "objectives": [
+        "HR-07.B"
+      ],
+      "capability": "hr_system",
+      "predicate": "each person's title, department and manager, for the organization chart",
+      "fills": "full",
+      "match": "partial",
+      "check": "hr.roster_exported",
+      "check_status": "proposed",
+      "note": "The roster export keeps the manager; title and department are not required fields of the check."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "job-descriptions-that-state-security-responsibilities",
+      "control": "HR-07",
+      "objectives": [
+        "HR-07.C"
+      ],
+      "capability": "hr_system",
+      "predicate": "every active position has a job description, and the description has a security duties section",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no job description check was defined."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "completion-records-for-all-staff",
+      "control": "HR-07",
+      "objectives": [
+        "HR-07.D"
+      ],
+      "capability": "learning_platform",
+      "predicate": "every assigned person completed the yearly security course in the last 12 months, and each joiner within the set days of the start date",
+      "fills": "full",
+      "match": "exact",
+      "check": "hr.training_current",
+      "check_status": "proposed",
+      "note": "Same predicate; learning_platform must be added as a capability that can implement it (capability_match any)."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "completion-records-for-all-staff",
+      "control": "HR-07",
+      "objectives": [
+        "HR-07.D"
+      ],
+      "capability": "learning_platform",
+      "predicate": "overdue assignments with each reminder sent and the date of escalation",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no reminder and escalation check was defined."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "completion-records-for-all-staff",
+      "control": "HR-07",
+      "objectives": [
+        "HR-07.D"
+      ],
+      "capability": "hr_system",
+      "predicate": "every active person on the HR roster has a Verity membership, so acknowledgement and training cover the whole staff",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no check compares the HR roster with Verity members (13 entries rest on it). Needs a verity_members check on top of hr.roster_exported."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "training-content-and-schedule",
+      "control": "HR-08",
+      "objectives": [
+        "HR-08.A",
+        "HR-08.B",
+        "HR-08.E"
+      ],
+      "capability": "learning_platform",
+      "predicate": "the courses assigned in the period, with topics, audience and due rule",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no course assignment export check was defined."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "completion-records-for-all-staff",
+      "control": "HR-08",
+      "objectives": [
+        "HR-08.B",
+        "HR-08.C",
+        "HR-08.D",
+        "HR-08.E"
+      ],
+      "capability": "learning_platform",
+      "predicate": "every assigned person completed the yearly security course in the last 12 months, and each joiner within the set days of the start date",
+      "fills": "full",
+      "match": "exact",
+      "check": "hr.training_current",
+      "check_status": "proposed",
+      "note": "Same predicate; learning_platform must be added as a capability that can implement it (capability_match any)."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "completion-records-for-all-staff",
+      "control": "HR-08",
+      "objectives": [
+        "HR-08.B",
+        "HR-08.C",
+        "HR-08.D",
+        "HR-08.E"
+      ],
+      "capability": "learning_platform",
+      "predicate": "overdue assignments with each reminder sent and the date of escalation",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no reminder and escalation check was defined."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "completion-records-for-all-staff",
+      "control": "HR-08",
+      "objectives": [
+        "HR-08.B",
+        "HR-08.C",
+        "HR-08.D",
+        "HR-08.E"
+      ],
+      "capability": "hr_system",
+      "predicate": "every active person on the HR roster has a Verity membership, so acknowledgement and training cover the whole staff",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no check compares the HR roster with Verity members (13 entries rest on it). Needs a verity_members check on top of hr.roster_exported."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "roster-of-joiners-and-leavers-with",
+      "control": "HR-08",
+      "objectives": [
+        "HR-08.C"
+      ],
+      "capability": "hr_system",
+      "predicate": "every person who started, changed role or left in the period, with employment type, start date and end date",
+      "fills": "full",
+      "match": "exact",
+      "check": "hr.roster_exported",
+      "check_status": "proposed"
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "roster-of-joiners-and-leavers-with",
+      "control": "HR-08",
+      "objectives": [
+        "HR-08.C"
+      ],
+      "capability": "identity_provider",
+      "predicate": "accounts created and disabled in the period with their dates, to test the roster against",
+      "fills": "partial",
+      "match": "partial",
+      "check": "people.leavers_deprovisioned",
+      "check_status": "existing",
+      "also": [
+        "people.joiners_onboarded",
+        "people.accounts_match_roster"
+      ],
+      "note": "The joiner and leaver checks read these dates; a plain dated export is part of their evidence."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "job-descriptions-that-state-security-responsibilities",
+      "control": "HR-09",
+      "objectives": [
+        "HR-09.A"
+      ],
+      "capability": "hr_system",
+      "predicate": "every active position has a job description, and the description has a security duties section",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no job description check was defined."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "competence-record-for-each-person-in",
+      "control": "HR-09",
+      "objectives": [
+        "HR-09.C",
+        "HR-09.D"
+      ],
+      "capability": "hr_system",
+      "predicate": "certifications and training records for each person in a listed security role, dated",
+      "fills": "partial",
+      "match": "partial",
+      "check": "hr.training_current",
+      "check_status": "proposed",
+      "note": "Awareness training for everyone; role certifications are not read."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "competence-record-for-each-person-in",
+      "control": "HR-09",
+      "objectives": [
+        "HR-09.C",
+        "HR-09.D"
+      ],
+      "capability": "learning_platform",
+      "predicate": "completions of the role modules by the people in each listed security role",
+      "fills": "partial",
+      "match": "partial",
+      "check": "hr.training_current",
+      "check_status": "proposed",
+      "note": "Capability mismatch: hr.training_current reads the HR system; a learning platform implementation is not defined."
+    },
+    {
+      "file": "coverage/gov-cs-hr.json",
+      "artifact": "training-or-other-actions-taken-to",
+      "control": "HR-09",
+      "objectives": [
+        "HR-09.D"
+      ],
+      "capability": "learning_platform",
+      "predicate": "completions of the role modules by the people in each listed security role",
+      "fills": "partial",
+      "match": "partial",
+      "check": "hr.training_current",
+      "check_status": "proposed",
+      "note": "Capability mismatch: hr.training_current reads the HR system; a learning platform implementation is not defined."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "approved-requests-for-a-sample-of",
+      "control": "IAM-01",
+      "objectives": [
+        "IAM-01.B",
+        "IAM-01.C",
+        "IAM-01.D",
+        "IAM-01.E",
+        "IAM-01.F"
+      ],
+      "capability": "identity_provider",
+      "predicate": "Every group or application assignment in the period has an assignment time and actor from the audit log, so it can be matched to its request.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "tickets.access_requests_approved",
+      "check_status": "existing",
+      "note": "The identity side of the check reads grant events within the provider's log window."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "roster-of-joiners-and-leavers-with",
+      "control": "IAM-01",
+      "objectives": [
+        "IAM-01.B"
+      ],
+      "capability": "hr_system",
+      "predicate": "Joiners, movers and leavers are listed with effective dates.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "hr.roster_exported",
+      "check_status": "proposed"
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "list-of-privileged-accounts-with-approval",
+      "control": "IAM-01",
+      "objectives": [
+        "IAM-01.D"
+      ],
+      "capability": "version_control",
+      "predicate": "Code host owners and repository administrators are listed.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "idp.access_list_exported",
+      "check_status": "existing",
+      "note": "Through the alias vcs.access_list_exported."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "list-of-privileged-accounts-with-approval",
+      "control": "IAM-01",
+      "objectives": [
+        "IAM-01.D"
+      ],
+      "capability": "password_manager",
+      "predicate": "Password manager administrators are listed.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no password manager admin check was defined (idp.admins_limited is n/a for 1Password in the feasibility matrix)."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "completed-access-reviews-with-reviewer-sign",
+      "control": "IAM-01",
+      "objectives": [
+        "IAM-01.E"
+      ],
+      "capability": "identity_provider",
+      "predicate": "Accounts not linked to one named person (shared or generic) are listed.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "people.accounts_match_roster",
+      "check_status": "proposed"
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "removal-records-for-a-sample-of",
+      "control": "IAM-01",
+      "objectives": [
+        "IAM-01.F"
+      ],
+      "capability": "identity_provider",
+      "predicate": "Accounts and groups created for auditors and testers carry an end date and were disabled by it.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no temporary account expiry check was defined."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "removal-records-for-a-sample-of",
+      "control": "IAM-01",
+      "objectives": [
+        "IAM-01.F"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "Temporary roles for auditors and testers expired at the agreed time.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no temporary access expiry check was defined."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "account-list-export",
+      "control": "IAM-02",
+      "objectives": [
+        "IAM-02.B"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "Cloud users, roles and access keys are listed with the extraction time, including those of outside parties.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "idp.access_list_exported",
+      "check_status": "existing",
+      "note": "Through the alias cloud.access_list_exported."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "account-list-export",
+      "control": "IAM-02",
+      "objectives": [
+        "IAM-02.B"
+      ],
+      "capability": "version_control",
+      "predicate": "Code host members, outside collaborators and team permissions are listed with the extraction time.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "idp.access_list_exported",
+      "check_status": "existing",
+      "note": "Through the alias vcs.access_list_exported."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "access-changes-made-as-a-result",
+      "control": "IAM-02",
+      "objectives": [
+        "IAM-02.E"
+      ],
+      "capability": "identity_provider",
+      "predicate": "Every account or group membership marked for removal in a review is absent from the next account export, with the date it went.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "idp.access_reviews_completed",
+      "check_status": "proposed",
+      "also": [
+        "idp.access_list_exported"
+      ],
+      "note": "Only for reviews run inside the identity provider."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "access-changes-made-as-a-result",
+      "control": "IAM-02",
+      "objectives": [
+        "IAM-02.E"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "Every cloud permission marked for removal in a review is gone at the next listing.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "idp.access_list_exported",
+      "check_status": "existing",
+      "note": "The next listing exists; comparing it with the review's removal decisions is not defined."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "second-factor-enforcement-and-enrolled-users",
+      "control": "IAM-03",
+      "objectives": [
+        "IAM-03.B",
+        "IAM-03.C",
+        "IAM-03.D",
+        "IAM-03.E",
+        "IAM-03.F"
+      ],
+      "capability": "identity_provider",
+      "predicate": "Every administrator has a phishing resistant factor enrolled and required.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "idp.admin_mfa_phishing_resistant",
+      "check_status": "proposed"
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "second-factor-enforcement-and-enrolled-users",
+      "control": "IAM-03",
+      "objectives": [
+        "IAM-03.B",
+        "IAM-03.C",
+        "IAM-03.D",
+        "IAM-03.E",
+        "IAM-03.F"
+      ],
+      "capability": "password_manager",
+      "predicate": "The password manager requires a second factor for every member.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "no_provider",
+      "why": "1Password does not expose member two factor status (identity-checks.md section 1)."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "list-of-privileged-accounts-with-approval",
+      "control": "IAM-03",
+      "objectives": [
+        "IAM-03.C"
+      ],
+      "capability": "version_control",
+      "predicate": "Code host owners and repository administrators are listed.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "idp.access_list_exported",
+      "check_status": "existing",
+      "note": "Through the alias vcs.access_list_exported."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "list-of-privileged-accounts-with-approval",
+      "control": "IAM-03",
+      "objectives": [
+        "IAM-03.C"
+      ],
+      "capability": "password_manager",
+      "predicate": "Password manager administrators are listed.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no password manager admin check was defined (idp.admins_limited is n/a for 1Password in the feasibility matrix)."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "applications-inside-and-outside-single-sign-on",
+      "control": "IAM-03",
+      "objectives": [
+        "IAM-03.F"
+      ],
+      "capability": "password_manager",
+      "predicate": "The password manager requires a second factor for every member.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "no_provider",
+      "why": "1Password does not expose member two factor status (identity-checks.md section 1)."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "password-manager-members-against-staff-list",
+      "control": "IAM-05",
+      "objectives": [
+        "IAM-05.B",
+        "IAM-05.C",
+        "IAM-05.D"
+      ],
+      "capability": "password_manager",
+      "predicate": "No member who left still has an active account, and leavers were suspended within the removal time.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "vault.leavers_removed",
+      "check_status": "proposed"
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "password-manager-members-against-staff-list",
+      "control": "IAM-05",
+      "objectives": [
+        "IAM-05.B",
+        "IAM-05.C",
+        "IAM-05.D"
+      ],
+      "capability": "password_manager",
+      "predicate": "Shared vaults are listed with an owner and member groups, and none is shared with everyone.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "no_provider",
+      "why": "the identity feasibility matrix says the 1Password list has members only, no vault access."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "roster-of-joiners-and-leavers-with",
+      "control": "IAM-05",
+      "objectives": [
+        "IAM-05.B"
+      ],
+      "capability": "hr_system",
+      "predicate": "Joiners, movers and leavers are listed with effective dates.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "hr.roster_exported",
+      "check_status": "proposed"
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "completed-offboarding-records-for-leavers-in",
+      "control": "IAM-05",
+      "objectives": [
+        "IAM-05.D"
+      ],
+      "capability": "ticketing",
+      "predicate": "Every leaver has an offboarding ticket closed with each system checked.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "verity.tasks.checklist_steps_done",
+      "check_status": "proposed",
+      "also": [
+        "people.leavers_deprovisioned"
+      ],
+      "note": "Holds when checklists run in Verity Tasks; a ticketing implementation is not defined."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "list-of-privileged-accounts-with-approval",
+      "control": "IAM-07",
+      "objectives": [
+        "IAM-07.B"
+      ],
+      "capability": "version_control",
+      "predicate": "Code host owners and repository administrators are listed.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "idp.access_list_exported",
+      "check_status": "existing",
+      "note": "Through the alias vcs.access_list_exported."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "list-of-privileged-accounts-with-approval",
+      "control": "IAM-07",
+      "objectives": [
+        "IAM-07.B"
+      ],
+      "capability": "password_manager",
+      "predicate": "Password manager administrators are listed.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no password manager admin check was defined (idp.admins_limited is n/a for 1Password in the feasibility matrix)."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "privileged-elevation-and-break-glass-log",
+      "control": "IAM-07",
+      "objectives": [
+        "IAM-07.B",
+        "IAM-07.F"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "Root and break glass sign ins and privileged role assumptions are listed from the audit log, each with the alert it raised.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no audit event listing check was defined; cloud.audit_logging only shows the trail is on."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "privileged-elevation-and-break-glass-log",
+      "control": "IAM-07",
+      "objectives": [
+        "IAM-07.B",
+        "IAM-07.F"
+      ],
+      "capability": "identity_provider",
+      "predicate": "Privileged role activations and administrator role grants are listed from the audit log with actor and time.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "idp.admins_limited",
+      "check_status": "existing",
+      "note": "Entra with PIM only (identity-checks.md section 3)."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "privileged-elevation-and-break-glass-log",
+      "control": "IAM-07",
+      "objectives": [
+        "IAM-07.B",
+        "IAM-07.F"
+      ],
+      "capability": "password_manager",
+      "predicate": "Access to break glass vault items is listed with who and when.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no vault item access event check was defined."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "access-changes-made-as-a-result",
+      "control": "IAM-07",
+      "objectives": [
+        "IAM-07.E"
+      ],
+      "capability": "identity_provider",
+      "predicate": "Every account or group membership marked for removal in a review is absent from the next account export, with the date it went.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "idp.access_reviews_completed",
+      "check_status": "proposed",
+      "also": [
+        "idp.access_list_exported"
+      ],
+      "note": "Only for reviews run inside the identity provider."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "access-changes-made-as-a-result",
+      "control": "IAM-07",
+      "objectives": [
+        "IAM-07.E"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "Every cloud permission marked for removal in a review is gone at the next listing.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "idp.access_list_exported",
+      "check_status": "existing",
+      "note": "The next listing exists; comparing it with the review's removal decisions is not defined."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "group-and-role-membership-export",
+      "control": "IAM-08",
+      "objectives": [
+        "IAM-08.B",
+        "IAM-08.C"
+      ],
+      "capability": "version_control",
+      "predicate": "Code host teams, members and repository roles are listed with the extraction time.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "idp.access_list_exported",
+      "check_status": "existing",
+      "note": "Through the alias vcs.access_list_exported."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "approved-requests-for-a-sample-of",
+      "control": "IAM-08",
+      "objectives": [
+        "IAM-08.C"
+      ],
+      "capability": "identity_provider",
+      "predicate": "Every group or application assignment in the period has an assignment time and actor from the audit log, so it can be matched to its request.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "tickets.access_requests_approved",
+      "check_status": "existing",
+      "note": "The identity side of the check reads grant events within the provider's log window."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "approved-requests-for-a-sample-of",
+      "control": "IAM-08",
+      "objectives": [
+        "IAM-08.C"
+      ],
+      "capability": "identity_provider",
+      "predicate": "A new or moved user's groups equal the groups their role defines.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "idp.groups_drive_access",
+      "check_status": "existing"
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "group-and-role-membership-export",
+      "control": "IAM-09",
+      "objectives": [
+        "IAM-09.B"
+      ],
+      "capability": "version_control",
+      "predicate": "Code host teams, members and repository roles are listed with the extraction time.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "idp.access_list_exported",
+      "check_status": "existing",
+      "note": "Through the alias vcs.access_list_exported."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "inventory-of-service-accounts-and-keys",
+      "control": "IAM-10",
+      "objectives": [
+        "IAM-10.B",
+        "IAM-10.C",
+        "IAM-10.D"
+      ],
+      "capability": "identity_provider",
+      "predicate": "Service principals, API tokens and service accounts are listed with owner, created date, last use and credential expiry.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "idp.machine_identities_owned",
+      "check_status": "proposed"
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "inventory-of-service-accounts-and-keys",
+      "control": "IAM-10",
+      "objectives": [
+        "IAM-10.B",
+        "IAM-10.C",
+        "IAM-10.D"
+      ],
+      "capability": "ci_cd",
+      "predicate": "Pipeline secrets, deploy keys and tokens are listed with created date and last rotation.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "cloud.machine_credentials_rotated",
+      "check_status": "existing",
+      "note": "Cloud and build credentials; a pipeline secret inventory per CI provider was not defined."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "inventory-of-service-accounts-and-keys",
+      "control": "IAM-10",
+      "objectives": [
+        "IAM-10.B",
+        "IAM-10.C",
+        "IAM-10.D"
+      ],
+      "capability": "version_control",
+      "predicate": "Deploy keys and installed apps with their permissions are listed.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no code host machine credential check was defined."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "account-list-export",
+      "control": "IAM-10",
+      "objectives": [
+        "IAM-10.B"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "Cloud users, roles and access keys are listed with the extraction time, including those of outside parties.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "idp.access_list_exported",
+      "check_status": "existing",
+      "note": "Through the alias cloud.access_list_exported."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "account-list-export",
+      "control": "IAM-10",
+      "objectives": [
+        "IAM-10.B"
+      ],
+      "capability": "version_control",
+      "predicate": "Code host members, outside collaborators and team permissions are listed with the extraction time.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "idp.access_list_exported",
+      "check_status": "existing",
+      "note": "Through the alias vcs.access_list_exported."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "list-of-privileged-accounts-with-approval",
+      "control": "IAM-10",
+      "objectives": [
+        "IAM-10.C"
+      ],
+      "capability": "version_control",
+      "predicate": "Code host owners and repository administrators are listed.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "idp.access_list_exported",
+      "check_status": "existing",
+      "note": "Through the alias vcs.access_list_exported."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "list-of-privileged-accounts-with-approval",
+      "control": "IAM-10",
+      "objectives": [
+        "IAM-10.C"
+      ],
+      "capability": "password_manager",
+      "predicate": "Password manager administrators are listed.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no password manager admin check was defined (idp.admins_limited is n/a for 1Password in the feasibility matrix)."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "records-of-rotation-or-review",
+      "control": "IAM-10",
+      "objectives": [
+        "IAM-10.D",
+        "IAM-10.E"
+      ],
+      "capability": "identity_provider",
+      "predicate": "Service principals and tokens with no use in 90 days are disabled.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "idp.machine_identities_owned",
+      "check_status": "proposed",
+      "note": "Owner and lifetime are tested; last use is not."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "session-limit-settings-export",
+      "control": "IAM-11",
+      "objectives": [
+        "IAM-11.B",
+        "IAM-11.C",
+        "IAM-11.D"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "Console role maximum session lengths are within the standard.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no cloud session length check was defined (idp.session_timeout covers the identity provider only)."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "session-limit-settings-export",
+      "control": "IAM-11",
+      "objectives": [
+        "IAM-11.B",
+        "IAM-11.C",
+        "IAM-11.D"
+      ],
+      "capability": "identity_provider",
+      "predicate": "Sensitive admin actions require a fresh sign in.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "identity-checks.md says settings do not show re-authentication for high risk actions (IAM-11.C)."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "session-limit-settings-export",
+      "control": "IAM-11",
+      "objectives": [
+        "IAM-11.B",
+        "IAM-11.C",
+        "IAM-11.D"
+      ],
+      "capability": "identity_provider",
+      "predicate": "Disabling a user revokes their sessions and refresh tokens.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "identity-checks.md says settings cannot show sign out ends refresh tokens (IAM-11.D); no check was defined."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "removal-records-for-a-sample-of",
+      "control": "IAM-11",
+      "objectives": [
+        "IAM-11.D"
+      ],
+      "capability": "identity_provider",
+      "predicate": "After an account is disabled, its sign in log shows no session or token use.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "people.leavers_deprovisioned",
+      "check_status": "existing",
+      "note": "Disable time is read; token use after disable is not."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "removal-records-for-a-sample-of",
+      "control": "IAM-12",
+      "objectives": [
+        "IAM-12.B",
+        "IAM-12.C",
+        "IAM-12.D"
+      ],
+      "capability": "identity_provider",
+      "predicate": "Each disabled account has a disable time from the audit log.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "people.leavers_deprovisioned",
+      "check_status": "existing"
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "removal-records-for-a-sample-of",
+      "control": "IAM-12",
+      "objectives": [
+        "IAM-12.B",
+        "IAM-12.C",
+        "IAM-12.D"
+      ],
+      "capability": "version_control",
+      "predicate": "Each leaver was removed from the code host organisation.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "people.leavers_deprovisioned",
+      "check_status": "existing",
+      "also": [
+        "idp.access_list_exported"
+      ],
+      "note": "Only where the code host signs in through the identity provider."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "roster-of-joiners-and-leavers-with",
+      "control": "IAM-12",
+      "objectives": [
+        "IAM-12.B",
+        "IAM-12.E"
+      ],
+      "capability": "hr_system",
+      "predicate": "Joiners, movers and leavers are listed with effective dates.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "hr.roster_exported",
+      "check_status": "proposed"
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "completed-offboarding-records-for-leavers-in",
+      "control": "IAM-12",
+      "objectives": [
+        "IAM-12.D"
+      ],
+      "capability": "ticketing",
+      "predicate": "Every leaver has an offboarding ticket closed with each system checked.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "verity.tasks.checklist_steps_done",
+      "check_status": "proposed",
+      "also": [
+        "people.leavers_deprovisioned"
+      ],
+      "note": "Holds when checklists run in Verity Tasks; a ticketing implementation is not defined."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "account-list-export",
+      "control": "IAM-12",
+      "objectives": [
+        "IAM-12.E"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "Cloud users, roles and access keys are listed with the extraction time, including those of outside parties.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "idp.access_list_exported",
+      "check_status": "existing",
+      "note": "Through the alias cloud.access_list_exported."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "account-list-export",
+      "control": "IAM-12",
+      "objectives": [
+        "IAM-12.E"
+      ],
+      "capability": "version_control",
+      "predicate": "Code host members, outside collaborators and team permissions are listed with the extraction time.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "idp.access_list_exported",
+      "check_status": "existing",
+      "note": "Through the alias vcs.access_list_exported."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "account-list-export",
+      "control": "IAM-12",
+      "objectives": [
+        "IAM-12.E"
+      ],
+      "capability": "identity_provider",
+      "predicate": "Accounts with no sign in for the set number of days are listed.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "idp.no_inactive_accounts",
+      "check_status": "proposed"
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "group-and-role-membership-export",
+      "control": "IAM-13",
+      "objectives": [
+        "IAM-13.B"
+      ],
+      "capability": "business_applications",
+      "predicate": "Finance and payment system roles are listed per user.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "idp.access_list_exported",
+      "check_status": "existing",
+      "note": "Through the alias apps.access_list_exported; no finance or payment provider is in any catalogue yet."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "asset-inventory",
+      "control": "EP-01",
+      "objectives": [
+        "EP-01.B"
+      ],
+      "capability": "endpoint_protection",
+      "predicate": "Every server asset in the inventory runs a healthy agent.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "endpoint.servers_covered",
+      "check_status": "proposed"
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "alerts-that-were-reviewed-and-acted",
+      "control": "EP-01",
+      "objectives": [
+        "EP-01.C",
+        "EP-01.D"
+      ],
+      "capability": "endpoint_protection",
+      "predicate": "Detections are listed with device, severity, assignee, status and closed time, and none of high severity stays open past the response time.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "endpoint.detections_triaged",
+      "check_status": "proposed"
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "security-incident-register",
+      "control": "EP-01",
+      "objectives": [
+        "EP-01.D"
+      ],
+      "capability": "endpoint_protection",
+      "predicate": "Each high severity detection is linked to an incident record.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "endpoint.detections_triaged",
+      "check_status": "proposed",
+      "note": "The link to an incident record is not tested."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "inventory-of-company-devices",
+      "control": "EP-02",
+      "objectives": [
+        "EP-02.B",
+        "EP-02.C",
+        "EP-02.D"
+      ],
+      "capability": "device_management",
+      "predicate": "Every encrypted device has its recovery key held in device management.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "devices.recovery_key_escrowed",
+      "check_status": "proposed"
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "inventory-of-company-devices",
+      "control": "EP-02",
+      "objectives": [
+        "EP-02.B",
+        "EP-02.C",
+        "EP-02.D"
+      ],
+      "capability": "device_management",
+      "predicate": "Encryption was on before a device's first assignment, and the compliance history shows unencrypted devices were fixed.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "devices.disk_encrypted",
+      "check_status": "existing",
+      "note": "Point in time; the state before first assignment is not read."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "approved-exceptions",
+      "control": "EP-02",
+      "objectives": [
+        "EP-02.D"
+      ],
+      "capability": "device_management",
+      "predicate": "Every company device without full disk encryption is named in an exception in force.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "devices.disk_encrypted",
+      "check_status": "existing",
+      "also": [
+        "verity.risks.acceptance_independent"
+      ]
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "inventory-of-company-devices",
+      "control": "EP-03",
+      "objectives": [
+        "EP-03.B",
+        "EP-03.C",
+        "EP-03.D",
+        "EP-03.E"
+      ],
+      "capability": "device_management",
+      "predicate": "Each device was enrolled before its first assignment to a person.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "devices.staff_have_managed_device",
+      "check_status": "proposed",
+      "note": "Enrolment before assignment is not tested."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "inventory-of-company-devices",
+      "control": "EP-03",
+      "objectives": [
+        "EP-03.B",
+        "EP-03.C",
+        "EP-03.D",
+        "EP-03.E"
+      ],
+      "capability": "device_management",
+      "predicate": "Each device is assigned to a person, for comparison with the staff roster.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "devices.assigned_to_active_staff",
+      "check_status": "proposed"
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "inventory-of-company-devices",
+      "control": "EP-03",
+      "objectives": [
+        "EP-03.B",
+        "EP-03.C",
+        "EP-03.D",
+        "EP-03.E"
+      ],
+      "capability": "device_management",
+      "predicate": "Installed software outside the permitted list is reported per device.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no software allow list check was defined."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "inventory-of-company-devices",
+      "control": "EP-03",
+      "objectives": [
+        "EP-03.B",
+        "EP-03.C",
+        "EP-03.D",
+        "EP-03.E"
+      ],
+      "capability": "device_management",
+      "predicate": "Devices out of the baseline are listed with the date found and fixed.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "the device checks are point in time; a compliance history with fix dates is not defined."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "completed-checklists-for-a-sample-of",
+      "control": "EP-03",
+      "objectives": [
+        "EP-03.B"
+      ],
+      "capability": "device_management",
+      "predicate": "Enrolment date precedes the joiner's start date.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "devices.staff_have_managed_device",
+      "check_status": "proposed",
+      "note": "Enrolment timing against the start date is not tested."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "roster-of-joiners-and-leavers-with",
+      "control": "EP-03",
+      "objectives": [
+        "EP-03.C"
+      ],
+      "capability": "hr_system",
+      "predicate": "Joiners, movers and leavers are listed with effective dates.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "hr.roster_exported",
+      "check_status": "proposed"
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "patch-compliance-report",
+      "control": "EP-03",
+      "objectives": [
+        "EP-03.D"
+      ],
+      "capability": "device_management",
+      "predicate": "Browser and installed application versions are within the patch timeframe.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "devices.os_current",
+      "check_status": "existing",
+      "note": "Operating system only; application versions are not defined."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "patch-compliance-report",
+      "control": "EP-04",
+      "objectives": [
+        "EP-04.B",
+        "EP-04.C",
+        "EP-04.D"
+      ],
+      "capability": "device_management",
+      "predicate": "Browser and installed application versions are within the patch timeframe.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "devices.os_current",
+      "check_status": "existing",
+      "note": "Operating system only; application versions are not defined."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "wipe-confirmations-for-recovered-or-lost",
+      "control": "EP-05",
+      "objectives": [
+        "EP-05.C",
+        "EP-05.D",
+        "EP-05.E"
+      ],
+      "capability": "device_management",
+      "predicate": "Each wipe command shows a confirmed completion time per device.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "devices.wipes_confirmed",
+      "check_status": "proposed"
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "roster-of-joiners-and-leavers-with",
+      "control": "EP-05",
+      "objectives": [
+        "EP-05.C"
+      ],
+      "capability": "hr_system",
+      "predicate": "Joiners, movers and leavers are listed with effective dates.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "hr.roster_exported",
+      "check_status": "proposed"
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "completed-offboarding-records-for-leavers-in",
+      "control": "EP-05",
+      "objectives": [
+        "EP-05.C",
+        "EP-05.E"
+      ],
+      "capability": "ticketing",
+      "predicate": "Every leaver has an offboarding ticket closed with each system checked.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "verity.tasks.checklist_steps_done",
+      "check_status": "proposed",
+      "also": [
+        "people.leavers_deprovisioned"
+      ],
+      "note": "Holds when checklists run in Verity Tasks; a ticketing implementation is not defined."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "log-of-control-deficiencies-with-owner",
+      "control": "EP-06",
+      "objectives": [
+        "EP-06.D"
+      ],
+      "capability": "device_management",
+      "predicate": "Devices out of the screen lock setting are listed with the date found and fixed.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "devices.screen_lock",
+      "check_status": "existing",
+      "note": "Point in time; fix dates are not kept."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "report-of-filter-coverage-and-blocked",
+      "control": "EP-07",
+      "objectives": [
+        "EP-07.B",
+        "EP-07.D",
+        "EP-07.E"
+      ],
+      "capability": "network_edge",
+      "predicate": "Secure web gateway policies block the named categories, and every enrolled device runs the gateway client.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no secure web gateway check was defined."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "report-of-filter-coverage-and-blocked",
+      "control": "EP-07",
+      "objectives": [
+        "EP-07.B",
+        "EP-07.D",
+        "EP-07.E"
+      ],
+      "capability": "endpoint_protection",
+      "predicate": "Web protection is on in the endpoint agent.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "endpoint.prevention_enabled",
+      "check_status": "proposed",
+      "note": "Malware prevention mode only; web filtering is not a named predicate (EP-07)."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "inventory-of-company-devices",
+      "control": "EP-07",
+      "objectives": [
+        "EP-07.B"
+      ],
+      "capability": "network_edge",
+      "predicate": "Every managed device runs the secure web gateway client, including newly enrolled ones.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no secure web gateway check was defined."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "disposal-records-or-certificates",
+      "control": "EP-08",
+      "objectives": [
+        "EP-08.B",
+        "EP-08.C"
+      ],
+      "capability": "device_management",
+      "predicate": "Every device removed from device management in the period has a disposal or reissue record.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "verity.assets.disposal_recorded",
+      "check_status": "existing",
+      "also": [
+        "devices.enrolled"
+      ]
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "asset-inventory",
+      "control": "EP-08",
+      "objectives": [
+        "EP-08.B"
+      ],
+      "capability": "device_management",
+      "predicate": "Devices removed from device management in the period are listed.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "devices.enrolled",
+      "check_status": "existing"
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "roster-of-joiners-and-leavers-with",
+      "control": "PE-02",
+      "objectives": [
+        "PE-02.B"
+      ],
+      "capability": "hr_system",
+      "predicate": "Joiners, movers and leavers are listed with effective dates.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "hr.roster_exported",
+      "check_status": "proposed"
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "data-store-encryption-settings",
+      "control": "NS-01",
+      "objectives": [
+        "NS-01.B",
+        "NS-01.C",
+        "NS-01.D"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "Each data store records the key type used, customer managed or provider managed.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "cloud.encryption_at_rest",
+      "check_status": "existing",
+      "note": "Encryption is read; key type per data class needs the key field kept."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "public-endpoint-tls-scan",
+      "control": "NS-02",
+      "objectives": [
+        "NS-02.B",
+        "NS-02.C",
+        "NS-02.E"
+      ],
+      "capability": "network_edge",
+      "predicate": "Each public hostname sends HSTS, and its certificate renews automatically and has more than 14 days left.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "edge.hsts_enabled",
+      "check_status": "proposed",
+      "also": [
+        "cloud.tls_certificates_current"
+      ],
+      "note": "Certificate renewal at the edge is not part of either check."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "internal-tls-enforcement-settings",
+      "control": "NS-02",
+      "objectives": [
+        "NS-02.D"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "Database parameters refuse unencrypted connections, and load balancers reach targets over TLS.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "cloud.tls_in_transit",
+      "check_status": "existing"
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "firewall-rule-register-with-owner-and",
+      "control": "NS-03",
+      "objectives": [
+        "NS-03.B",
+        "NS-03.C",
+        "NS-03.E"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "Every allow rule carries an owner and purpose in a tag or description.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no rule ownership tag check was defined."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "firewall-rule-register-with-owner-and",
+      "control": "NS-03",
+      "objectives": [
+        "NS-03.B",
+        "NS-03.C",
+        "NS-03.E"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "Outbound rules for workloads tagged high value allow only named destinations.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no egress restriction check was defined (cloud.default_deny_ingress is inbound only)."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "asset-inventory",
+      "control": "NS-03",
+      "objectives": [
+        "NS-03.D",
+        "NS-03.E"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "Outbound rules for workloads tagged high value allow only named destinations.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no egress restriction check was defined (cloud.default_deny_ingress is inbound only)."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "asset-inventory",
+      "control": "NS-03",
+      "objectives": [
+        "NS-03.D",
+        "NS-03.E"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "No allow rule points at a retired service.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no stale rule check was defined."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "approved-configuration-baseline",
+      "control": "NS-04",
+      "objectives": [
+        "NS-04.B"
+      ],
+      "capability": "version_control",
+      "predicate": "The repositories holding infrastructure code are identified, and every change to them merged in the period was reviewed by someone other than its author.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "vcs.merged_changes_reviewed",
+      "check_status": "existing",
+      "note": "Needs the infrastructure repositories marked in scope."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "alerts-on-drift-that-were-investigated",
+      "control": "NS-04",
+      "objectives": [
+        "NS-04.C",
+        "NS-04.D"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "Configuration rule findings are listed with first seen and resolved times, and each open past the response time is flagged.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "cloud.hardening_baseline",
+      "check_status": "existing",
+      "also": [
+        "cloud.threat_findings_triaged"
+      ],
+      "note": "Posture findings with times; cloud-code decision 24 asks whether to widen cloud.threat_findings_triaged to posture findings."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "alerts-on-drift-that-were-investigated",
+      "control": "NS-05",
+      "objectives": [
+        "NS-05.B"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "Configuration rule findings are listed with first seen and resolved times, and each open past the response time is flagged.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "cloud.hardening_baseline",
+      "check_status": "existing",
+      "also": [
+        "cloud.threat_findings_triaged"
+      ],
+      "note": "Posture findings with times; cloud-code decision 24 asks whether to widen cloud.threat_findings_triaged to posture findings."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "alerts-on-drift-that-were-investigated",
+      "control": "NS-05",
+      "objectives": [
+        "NS-05.B"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "Disabling the detection service, or an account without it, raises an alert.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "cloud.threat_detection",
+      "check_status": "existing",
+      "note": "Reads that detection is on, not the alert when it is turned off."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "sample-of-alerts-that-were-investigated",
+      "control": "NS-05",
+      "objectives": [
+        "NS-05.C",
+        "NS-05.D",
+        "NS-05.E"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "Threat detection findings are listed with severity, status, first seen and closed time, and who closed them.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "cloud.threat_findings_triaged",
+      "check_status": "proposed"
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "security-incident-register",
+      "control": "NS-05",
+      "objectives": [
+        "NS-05.D"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "Each finding of the severity the procedure names is linked to an incident record.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "cloud.threat_findings_triaged",
+      "check_status": "proposed",
+      "note": "Triage time is tested; the link to an incident record is not."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "review-of-alert-tuning",
+      "control": "NS-05",
+      "objectives": [
+        "NS-05.E"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "Suppression rules in the threat detection service are listed with a reason and author.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no suppression rule check was defined."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "review-of-who-can-use-and",
+      "control": "NS-06",
+      "objectives": [
+        "NS-06.B",
+        "NS-06.C"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "Key policies give administration and use to different roles, and no principal holds both.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "cloud.least_privilege",
+      "check_status": "existing",
+      "note": "Separation of key administration and key use is not a named predicate."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "key-rotation-records",
+      "control": "NS-06",
+      "objectives": [
+        "NS-06.D",
+        "NS-06.E"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "Disabled keys and keys pending deletion are listed with the stores and backups still using them.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "cloud.key_rotation",
+      "check_status": "existing",
+      "note": "Key state is read; the stores and backups still using a disabled key are not."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "segmentation-test-results",
+      "control": "NS-07",
+      "objectives": [
+        "NS-07.B",
+        "NS-07.D"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "A reachability analysis between zones finds no path that the diagram forbids.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "cloud.network_segmented",
+      "check_status": "existing",
+      "note": "Reads segmentation settings, not a reachability analysis."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "inbound-rules-export-admin-ports",
+      "control": "NS-08",
+      "objectives": [
+        "NS-08.B",
+        "NS-08.C"
+      ],
+      "capability": "vulnerability_scanner",
+      "predicate": "An external scan of the public address ranges finds no management port open.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "scanner.scans_current",
+      "check_status": "existing",
+      "also": [
+        "cloud.admin_ports_closed"
+      ]
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "alerts-on-drift-that-were-investigated",
+      "control": "NS-08",
+      "objectives": [
+        "NS-08.D"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "Configuration rule findings are listed with first seen and resolved times, and each open past the response time is flagged.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "cloud.hardening_baseline",
+      "check_status": "existing",
+      "also": [
+        "cloud.threat_findings_triaged"
+      ],
+      "note": "Posture findings with times; cloud-code decision 24 asks whether to widen cloud.threat_findings_triaged to posture findings."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "alerts-on-drift-that-were-investigated",
+      "control": "NS-08",
+      "objectives": [
+        "NS-08.D"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "A change that opens a management port to a public range raises an alert.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "cloud.admin_ports_closed",
+      "check_status": "existing",
+      "note": "Reads the state, not the alert on change."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "remote-access-settings-and-members",
+      "control": "NS-08",
+      "objectives": [
+        "NS-08.D"
+      ],
+      "capability": "network_edge",
+      "predicate": "Remote access members match current staff and approved contractors, and leavers were removed.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "apps.members_active_in_directory",
+      "check_status": "proposed",
+      "note": "Through the alias edge.members_current."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "remote-access-settings-and-members",
+      "control": "NS-08",
+      "objectives": [
+        "NS-08.D"
+      ],
+      "capability": "network_edge",
+      "predicate": "Access policies grant per application or per system, not to whole networks.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "edge.access_policies_least_privilege",
+      "check_status": "proposed"
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "remote-access-settings-and-members",
+      "control": "NS-08",
+      "objectives": [
+        "NS-08.D"
+      ],
+      "capability": "network_edge",
+      "predicate": "Remote session logs are retained and exported.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no remote session log retention check was defined."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "remote-access-settings-and-members",
+      "control": "NS-08",
+      "objectives": [
+        "NS-08.D"
+      ],
+      "capability": "network_edge",
+      "predicate": "Administrative SSH and RDP are reachable only through the zero trust or VPN tool.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "edge.zero_trust_access",
+      "check_status": "existing",
+      "also": [
+        "cloud.admin_ports_closed"
+      ]
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "secret-store-rotation-list",
+      "control": "NS-09",
+      "objectives": [
+        "NS-09.B",
+        "NS-09.C",
+        "NS-09.D"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "Each secret in the store has a last rotated date within the interval and an owner tag; values are never read.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "cloud.secrets_rotated",
+      "check_status": "proposed",
+      "note": "The owner tag is not part of the predicate yet."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "records-of-exposed-secrets-that-were",
+      "control": "NS-09",
+      "objectives": [
+        "NS-09.D"
+      ],
+      "capability": "version_control",
+      "predicate": "Secret scanning alerts are listed with created and resolved times and the resolution, and none stays open past the response time.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "vcs.secret_alerts_closed_in_time",
+      "check_status": "proposed"
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "review-of-web-application-firewall-rules",
+      "control": "NS-10",
+      "objectives": [
+        "NS-10.B",
+        "NS-10.C",
+        "NS-10.D"
+      ],
+      "capability": "network_edge",
+      "predicate": "Managed rule sets are in block mode, not log only, for each public hostname.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "edge.waf_enabled",
+      "check_status": "existing"
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "review-of-web-application-firewall-rules",
+      "control": "NS-10",
+      "objectives": [
+        "NS-10.B",
+        "NS-10.C",
+        "NS-10.D"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "Each public origin accepts traffic only from the edge provider's ranges.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "edge.origin_locked",
+      "check_status": "proposed",
+      "note": "The edge side is read; the cloud firewall side (operations-checks.md section 6) is not defined."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "remote-access-settings-and-members",
+      "control": "NS-11",
+      "objectives": [
+        "NS-11.B",
+        "NS-11.C",
+        "NS-11.D",
+        "NS-11.E"
+      ],
+      "capability": "network_edge",
+      "predicate": "Remote access members match current staff and approved contractors, and leavers were removed.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "apps.members_active_in_directory",
+      "check_status": "proposed",
+      "note": "Through the alias edge.members_current."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "remote-access-settings-and-members",
+      "control": "NS-11",
+      "objectives": [
+        "NS-11.B",
+        "NS-11.C",
+        "NS-11.D",
+        "NS-11.E"
+      ],
+      "capability": "network_edge",
+      "predicate": "Access policies grant per application or per system, not to whole networks.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "edge.access_policies_least_privilege",
+      "check_status": "proposed"
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "remote-access-settings-and-members",
+      "control": "NS-11",
+      "objectives": [
+        "NS-11.B",
+        "NS-11.C",
+        "NS-11.D",
+        "NS-11.E"
+      ],
+      "capability": "network_edge",
+      "predicate": "Remote session logs are retained and exported.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no remote session log retention check was defined."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "roster-of-joiners-and-leavers-with",
+      "control": "NS-11",
+      "objectives": [
+        "NS-11.C"
+      ],
+      "capability": "hr_system",
+      "predicate": "Joiners, movers and leavers are listed with effective dates.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "hr.roster_exported",
+      "check_status": "proposed"
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "clock-check-across-a-sample-of",
+      "control": "NS-12",
+      "objectives": [
+        "NS-12.B",
+        "NS-12.C"
+      ],
+      "capability": "observability",
+      "predicate": "Each monitored host reports a clock offset within the allowed limit, and offsets beyond it raised an alert.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no clock offset check was defined."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "clock-check-across-a-sample-of",
+      "control": "NS-12",
+      "objectives": [
+        "NS-12.B",
+        "NS-12.C"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "Each instance and managed service uses the provider's or a named time source.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no time source check was defined."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "evidence-logs-are-reviewed",
+      "control": "NS-12",
+      "objectives": [
+        "NS-12.D"
+      ],
+      "capability": "observability",
+      "predicate": "Log timestamps from every source are stored in UTC or carry an offset.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no timestamp format check was defined."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "patch-compliance-report",
+      "control": "NS-13",
+      "objectives": [
+        "NS-13.B",
+        "NS-13.C",
+        "NS-13.D"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "Each managed instance reports patch compliance from the cloud's patch manager, within the timeframe for its severity.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no cloud patch manager check was defined (proposed NS-13 has no connector check)."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "patch-compliance-report",
+      "control": "NS-13",
+      "objectives": [
+        "NS-13.B",
+        "NS-13.C",
+        "NS-13.D"
+      ],
+      "capability": "ci_cd",
+      "predicate": "Running container images were rebuilt from a current base image within the set interval.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no base image age check was defined."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "consent-withdrawal-process-and-records",
+      "control": "DM-03",
+      "objectives": [
+        "DM-03.A",
+        "DM-03.D"
+      ],
+      "capability": "business_applications",
+      "predicate": "Withdrawals in the consent tool are listed with the time processing stopped.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no consent management tool was researched."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "consent-records-showing-when-what-and",
+      "control": "DM-03",
+      "objectives": [
+        "DM-03.B",
+        "DM-03.C",
+        "DM-03.E"
+      ],
+      "capability": "business_applications",
+      "predicate": "Consent records from the consent tool carry person or ID, time, purpose, notice version and capture method.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no consent management tool was researched."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "classification-applied-to-systems-and-data",
+      "control": "DM-04",
+      "objectives": [
+        "DM-04.B",
+        "DM-04.C"
+      ],
+      "capability": "identity_provider",
+      "predicate": "Files and mail in the productivity suite carry a sensitivity label where the policy requires marking.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no labelling check was defined."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "log-of-corrections-and-how-third",
+      "control": "DM-05",
+      "objectives": [
+        "DM-05.B",
+        "DM-05.C",
+        "DM-05.D"
+      ],
+      "capability": "business_applications",
+      "predicate": "Support tickets tagged as privacy requests carry received and answered times.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "verity.tasks.privacy_requests_on_time",
+      "check_status": "proposed",
+      "note": "Holds when privacy requests are tracked in Verity Tasks; a support desk connector check was not defined."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "data-inventory-and-data-map",
+      "control": "DM-05",
+      "objectives": [
+        "DM-05.D"
+      ],
+      "capability": "business_applications",
+      "predicate": "Business applications that hold personal data are listed.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "verity.vendors.personal_data_recorded",
+      "check_status": "proposed",
+      "also": [
+        "idp.connected_apps_known"
+      ],
+      "note": "No connector can say which application holds personal data; the vendor record does, and discovery comes from the identity provider."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "data-inventory-and-data-map",
+      "control": "DM-06",
+      "objectives": [
+        "DM-06.B",
+        "DM-06.C",
+        "DM-06.D"
+      ],
+      "capability": "business_applications",
+      "predicate": "Business applications that hold personal data are listed.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "verity.vendors.personal_data_recorded",
+      "check_status": "proposed",
+      "also": [
+        "idp.connected_apps_known"
+      ],
+      "note": "No connector can say which application holds personal data; the vendor record does, and discovery comes from the identity provider."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "evidence-security-was-considered-in-the",
+      "control": "DM-07",
+      "objectives": [
+        "DM-07.C"
+      ],
+      "capability": "version_control",
+      "predicate": "Pull requests that add personal data fields carry a privacy review label or link.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no privacy review label check was defined."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "evidence-data-was-deleted-when-retention",
+      "control": "DM-08",
+      "objectives": [
+        "DM-08.B",
+        "DM-08.D"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "Lifecycle and expiry rules ran in the period, with deletion counts per store.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "cloud.storage_lifecycle",
+      "check_status": "existing",
+      "note": "Rules are read; deletion counts per run are not."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "data-inventory-and-data-map",
+      "control": "DM-09",
+      "objectives": [
+        "DM-09.D"
+      ],
+      "capability": "business_applications",
+      "predicate": "Business applications that hold personal data are listed.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "verity.vendors.personal_data_recorded",
+      "check_status": "proposed",
+      "also": [
+        "idp.connected_apps_known"
+      ],
+      "note": "No connector can say which application holds personal data; the vendor record does, and discovery comes from the identity provider."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "log-of-requests-with-dates-and",
+      "control": "DM-11",
+      "objectives": [
+        "DM-11.B",
+        "DM-11.C",
+        "DM-11.E"
+      ],
+      "capability": "business_applications",
+      "predicate": "Support tickets tagged as privacy requests carry received and answered times.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "verity.tasks.privacy_requests_on_time",
+      "check_status": "proposed",
+      "note": "Holds when privacy requests are tracked in Verity Tasks; a support desk connector check was not defined."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "data-inventory-and-data-map",
+      "control": "DM-11",
+      "objectives": [
+        "DM-11.D"
+      ],
+      "capability": "business_applications",
+      "predicate": "Business applications that hold personal data are listed.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "verity.vendors.personal_data_recorded",
+      "check_status": "proposed",
+      "also": [
+        "idp.connected_apps_known"
+      ],
+      "note": "No connector can say which application holds personal data; the vendor record does, and discovery comes from the identity provider."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "role-and-access-matrix",
+      "control": "DM-12",
+      "objectives": [
+        "DM-12.B"
+      ],
+      "capability": "identity_provider",
+      "predicate": "Groups that grant access to systems holding personal data contain only the roles the purpose register allows.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "idp.groups_drive_access",
+      "check_status": "existing",
+      "note": "Comparison with the purpose register is not defined."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "data-inventory-and-data-map",
+      "control": "DM-12",
+      "objectives": [
+        "DM-12.E"
+      ],
+      "capability": "business_applications",
+      "predicate": "Business applications that hold personal data are listed.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "verity.vendors.personal_data_recorded",
+      "check_status": "proposed",
+      "also": [
+        "idp.connected_apps_known"
+      ],
+      "note": "No connector can say which application holds personal data; the vendor record does, and discovery comes from the identity provider."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "evidence-test-data-is-masked-or",
+      "control": "DM-13",
+      "objectives": [
+        "DM-13.B",
+        "DM-13.C"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "No production snapshot or database copy was restored into, or shared with, a non production account in the period.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "cloud.environments_separated",
+      "check_status": "existing",
+      "also": [
+        "cloud.storage_public_access_blocked"
+      ],
+      "note": "Public sharing is tested; restores into non production accounts are not."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "sample-of-masked-data-in-test",
+      "control": "DM-13",
+      "objectives": [
+        "DM-13.C"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "Data stores in non production accounts carry a masking or synthetic tag.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no masking tag check was defined."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "log-of-inquiries-with-resolution-times",
+      "control": "DM-14",
+      "objectives": [
+        "DM-14.B",
+        "DM-14.C",
+        "DM-14.D"
+      ],
+      "capability": "business_applications",
+      "predicate": "Support tickets tagged as privacy inquiries carry received and resolved times.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "verity.tasks.privacy_requests_on_time",
+      "check_status": "proposed",
+      "note": "Holds when privacy requests are tracked in Verity Tasks; a support desk connector check was not defined."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "data-inventory-and-data-map",
+      "control": "DM-15",
+      "objectives": [
+        "DM-15.B"
+      ],
+      "capability": "business_applications",
+      "predicate": "Business applications that hold personal data are listed.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "verity.vendors.personal_data_recorded",
+      "check_status": "proposed",
+      "also": [
+        "idp.connected_apps_known"
+      ],
+      "note": "No connector can say which application holds personal data; the vendor record does, and discovery comes from the identity provider."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "evidence-data-was-deleted-when-retention",
+      "control": "DM-16",
+      "objectives": [
+        "DM-16.D",
+        "DM-16.E"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "Lifecycle and expiry rules ran in the period, with deletion counts per store.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "cloud.storage_lifecycle",
+      "check_status": "existing",
+      "note": "Rules are read; deletion counts per run are not."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "evidence-data-was-deleted-when-retention",
+      "control": "DM-16",
+      "objectives": [
+        "DM-16.D",
+        "DM-16.E"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "Backups age out within the backup retention window, and no backup older than it exists.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "cloud.storage_lifecycle",
+      "check_status": "existing",
+      "also": [
+        "cloud.backups_enabled"
+      ],
+      "note": "Retention rules are read; the absence of older backups is not tested."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "data-inventory-and-data-map",
+      "control": "DM-16",
+      "objectives": [
+        "DM-16.D"
+      ],
+      "capability": "business_applications",
+      "predicate": "Business applications that hold personal data are listed.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "verity.vendors.personal_data_recorded",
+      "check_status": "proposed",
+      "also": [
+        "idp.connected_apps_known"
+      ],
+      "note": "No connector can say which application holds personal data; the vendor record does, and discovery comes from the identity provider."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "log-of-requests-with-dates-and",
+      "control": "DM-16",
+      "objectives": [
+        "DM-16.E"
+      ],
+      "capability": "business_applications",
+      "predicate": "Support tickets tagged as privacy requests carry received and answered times.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "verity.tasks.privacy_requests_on_time",
+      "check_status": "proposed",
+      "note": "Holds when privacy requests are tracked in Verity Tasks; a support desk connector check was not defined."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "leakage-prevention-and-sharing-settings-in",
+      "control": "DM-19",
+      "objectives": [
+        "DM-19.A",
+        "DM-19.B",
+        "DM-19.C"
+      ],
+      "capability": "identity_provider",
+      "predicate": "External sharing in the mail and file suite is limited as the rules set, public links are off or expire, and leak prevention rules are on.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no productivity suite sharing check was defined (verity-iam decision on a suite capability is open)."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "leakage-prevention-and-sharing-settings-in",
+      "control": "DM-19",
+      "objectives": [
+        "DM-19.A",
+        "DM-19.B",
+        "DM-19.C"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "Storage buckets block public access at account level.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "cloud.storage_public_access_blocked",
+      "check_status": "proposed"
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "leakage-prevention-and-sharing-settings-in",
+      "control": "DM-19",
+      "objectives": [
+        "DM-19.A",
+        "DM-19.B",
+        "DM-19.C"
+      ],
+      "capability": "device_management",
+      "predicate": "Removable storage is blocked or limited to encrypted media by a device profile.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "devices.removable_storage_restricted",
+      "check_status": "proposed"
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "leakage-prevention-and-sharing-settings-in",
+      "control": "DM-19",
+      "objectives": [
+        "DM-19.A",
+        "DM-19.B",
+        "DM-19.C"
+      ],
+      "capability": "business_applications",
+      "predicate": "Chat and file sharing tools restrict external sharing as the rules set.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no sharing settings check was defined for chat or file tools."
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "inventory-of-company-devices",
+      "control": "DM-19",
+      "objectives": [
+        "DM-19.C"
+      ],
+      "capability": "device_management",
+      "predicate": "Removable storage is blocked or limited to encrypted media by a device profile.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "devices.removable_storage_restricted",
+      "check_status": "proposed"
+    },
+    {
+      "file": "coverage/iam-ep-pe-ns-dm.json",
+      "artifact": "alerts-and-exceptions-that-were-reviewed",
+      "control": "DM-19",
+      "objectives": [
+        "DM-19.D",
+        "DM-19.E"
+      ],
+      "capability": "identity_provider",
+      "predicate": "Leak prevention and sharing alerts in the mail and file suite are listed with severity, status and triage time.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no leak prevention alert check was defined."
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "change-requests-with-approval-for-a",
+      "control": "SD-01",
+      "objectives": [
+        "SD-01.B",
+        "SD-01.C",
+        "SD-01.D",
+        "SD-01.E"
+      ],
+      "capability": "ci_cd",
+      "predicate": "Each production deployment is linked to a change approved before the deployment started; deployments without one are listed.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "ci.production_deploys_approved",
+      "check_status": "proposed",
+      "also": [
+        "tickets.changes_approved_before_release"
+      ]
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "infrastructure-and-configuration-change-history",
+      "control": "SD-01",
+      "objectives": [
+        "SD-01.B"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "Configuration changes in production accounts in the period are listed with actor and time, and each is matched to an approved change or flagged.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "cloud.config_changes_recorded",
+      "check_status": "existing",
+      "note": "Records the changes; matching each to an approved change is not defined."
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "infrastructure-and-configuration-change-history",
+      "control": "SD-01",
+      "objectives": [
+        "SD-01.B"
+      ],
+      "capability": "version_control",
+      "predicate": "Merges to the infrastructure code repository in the period are listed with their reviews.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "vcs.merged_changes_reviewed",
+      "check_status": "existing",
+      "note": "Needs the infrastructure repositories marked in scope."
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "branch-protection-settings",
+      "control": "SD-02",
+      "objectives": [
+        "SD-02.B"
+      ],
+      "capability": "version_control",
+      "predicate": "The required checks configured on each default branch include every check the testing standard names.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "vcs.status_checks_required",
+      "check_status": "existing",
+      "note": "Comparison with the testing standard's list is not defined."
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "test-run-results-for-a-sample",
+      "control": "SD-02",
+      "objectives": [
+        "SD-02.C",
+        "SD-02.D",
+        "SD-02.E"
+      ],
+      "capability": "ci_cd",
+      "predicate": "Merges where a required check failed, was skipped or was bypassed by an administrator are listed.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "ci.required_checks_passed",
+      "check_status": "existing",
+      "also": [
+        "vcs.protection_bypass_limited"
+      ]
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "static-analysis-results-for-merged-changes",
+      "control": "SD-02",
+      "objectives": [
+        "SD-02.F"
+      ],
+      "capability": "ci_cd",
+      "predicate": "Static analysis ran on every merged change and the merge waited for its result.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "vcs.code_scanning_enabled",
+      "check_status": "existing",
+      "also": [
+        "vcs.status_checks_required"
+      ],
+      "note": "Shows scanning is on and checks are required; that each merge waited for it is not tested."
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "static-analysis-results-for-merged-changes",
+      "control": "SD-02",
+      "objectives": [
+        "SD-02.F"
+      ],
+      "capability": "version_control",
+      "predicate": "Code scanning alerts in the period were fixed, dismissed with a reason, or carried as an exception within the timeframe.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no code scanning alert timeliness check was defined (vcs.dependency_alerts_within_sla covers dependency alerts)."
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "open-alerts-triaged-within-the-timeframe",
+      "control": "SD-03",
+      "objectives": [
+        "SD-03.B",
+        "SD-03.D",
+        "SD-03.E"
+      ],
+      "capability": "version_control",
+      "predicate": "Every dependency alert in the period has a triage decision (dismissed with a reason, or linked to a fix) within the timeframe for its severity, read with created, dismissed and fixed times.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "vcs.dependency_alerts_within_sla",
+      "check_status": "proposed"
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "open-alerts-triaged-within-the-timeframe",
+      "control": "SD-03",
+      "objectives": [
+        "SD-03.B",
+        "SD-03.D",
+        "SD-03.E"
+      ],
+      "capability": "ci_cd",
+      "predicate": "Container image scan results exist for every image pushed to the production registries in the period.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no registry image scanning check was defined."
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "asset-inventory",
+      "control": "SD-03",
+      "objectives": [
+        "SD-03.B"
+      ],
+      "capability": "version_control",
+      "predicate": "Every repository with a commit in the period is in scope of the connection or excluded with a recorded reason, and each in scope repository is linked to an application asset.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no repository scope completeness check was defined (cloud-code decision on repositories as assets is open)."
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "asset-inventory",
+      "control": "SD-03",
+      "objectives": [
+        "SD-03.B"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "Every container registry in production accounts is listed so its scanning can be checked.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "assets.resources_registered",
+      "check_status": "existing"
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "test-run-results-for-a-sample",
+      "control": "SD-03",
+      "objectives": [
+        "SD-03.C"
+      ],
+      "capability": "ci_cd",
+      "predicate": "Builds that introduced a new critical dependency or image finding failed, and any release made despite one has a linked approved exception.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "ci.required_checks_passed",
+      "check_status": "existing",
+      "note": "Shows required checks passed; a build gate on new critical findings and linked exceptions is not defined."
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "emergency-changes-with-their-after-the",
+      "control": "SD-04",
+      "objectives": [
+        "SD-04.B",
+        "SD-04.C",
+        "SD-04.D"
+      ],
+      "capability": "version_control",
+      "predicate": "Each merge without a qualifying approval has an after the fact approving review, or a linked ticket, from someone other than the author within the window.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "vcs.unreviewed_merges_recorded",
+      "check_status": "existing"
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "emergency-changes-with-their-after-the",
+      "control": "SD-04",
+      "objectives": [
+        "SD-04.B",
+        "SD-04.C",
+        "SD-04.D"
+      ],
+      "capability": "ticketing",
+      "predicate": "Emergency change tickets record who authorised, the reason and a retrospective approval within the window.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "tickets.emergency_changes_reviewed",
+      "check_status": "proposed"
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "unreviewed-merge-log",
+      "control": "SD-04",
+      "objectives": [
+        "SD-04.B"
+      ],
+      "capability": "version_control",
+      "predicate": "Pushes that bypassed branch protection on in scope repositories are listed from the provider's audit records.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "vcs.protection_bypass_limited",
+      "check_status": "proposed",
+      "also": [
+        "vcs.unreviewed_merges_recorded"
+      ],
+      "note": "The settings are read; the audit record of each bypassed push is not."
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "evidence-validation-was-tested",
+      "control": "SD-05",
+      "objectives": [
+        "SD-05.B",
+        "SD-05.C"
+      ],
+      "capability": "ci_cd",
+      "predicate": "Static or dynamic application tests with input validation rules ran on merged changes, with results kept.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "vcs.code_scanning_enabled",
+      "check_status": "existing",
+      "note": "Static scanning only; dynamic tests are not read."
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "sample-of-reviewed-changes",
+      "control": "SD-06",
+      "objectives": [
+        "SD-06.B",
+        "SD-06.D"
+      ],
+      "capability": "version_control",
+      "predicate": "Every repository with a commit in the period is in scope of the connection or excluded with a recorded reason, and each in scope repository is linked to an application asset.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no repository scope completeness check was defined (cloud-code decision on repositories as assets is open)."
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "asset-inventory",
+      "control": "SD-06",
+      "objectives": [
+        "SD-06.B"
+      ],
+      "capability": "version_control",
+      "predicate": "Every repository with a commit in the period is in scope of the connection or excluded with a recorded reason, and each in scope repository is linked to an application asset.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no repository scope completeness check was defined (cloud-code decision on repositories as assets is open)."
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "branch-protection-settings",
+      "control": "SD-06",
+      "objectives": [
+        "SD-06.C"
+      ],
+      "capability": "version_control",
+      "predicate": "Repository administrators and everyone allowed to bypass branch protection or rulesets on in scope repositories are listed, and bypass is limited to named roles.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "vcs.protection_bypass_limited",
+      "check_status": "proposed"
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "unreviewed-merge-log",
+      "control": "SD-06",
+      "objectives": [
+        "SD-06.E"
+      ],
+      "capability": "version_control",
+      "predicate": "Pushes that bypassed branch protection on in scope repositories are listed from the provider's audit records.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "vcs.protection_bypass_limited",
+      "check_status": "proposed",
+      "also": [
+        "vcs.unreviewed_merges_recorded"
+      ],
+      "note": "The settings are read; the audit record of each bypassed push is not."
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "integrity-check-results",
+      "control": "SD-07",
+      "objectives": [
+        "SD-07.B",
+        "SD-07.C",
+        "SD-07.D"
+      ],
+      "capability": "observability",
+      "predicate": "Each integrity check between stages reports a pass or fail per run, and runs are present for every scheduled time.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "observability.processing_monitored",
+      "check_status": "existing"
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "evidence-data-was-deleted-when-retention",
+      "control": "SD-07",
+      "objectives": [
+        "SD-07.E"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "Lifecycle rules on pipeline intermediate stores expire objects at or before the retention the schedule sets.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "cloud.storage_lifecycle",
+      "check_status": "existing"
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "reconciliation-results-and-how-exceptions-were",
+      "control": "SD-08",
+      "objectives": [
+        "SD-08.B",
+        "SD-08.C",
+        "SD-08.D"
+      ],
+      "capability": "observability",
+      "predicate": "Each reconciliation job run records counts, control totals and a pass or break result, and a break raises an alert.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "observability.processing_monitored",
+      "check_status": "existing"
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "approved-security-requirements-for-a-sample",
+      "control": "SD-10",
+      "objectives": [
+        "SD-10.B",
+        "SD-10.F"
+      ],
+      "capability": "ticketing",
+      "predicate": "Each project or epic for a new system has a linked security requirements item, approved before work started and checked before release.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no security requirements link check was defined."
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "evidence-security-was-considered-in-the",
+      "control": "SD-10",
+      "objectives": [
+        "SD-10.C"
+      ],
+      "capability": "ticketing",
+      "predicate": "Each new system epic links a design review or threat model item.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no design review link check was defined."
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "group-and-role-membership-export",
+      "control": "SD-10",
+      "objectives": [
+        "SD-10.D"
+      ],
+      "capability": "version_control",
+      "predicate": "Organisation members and outside collaborators with write access to in scope repositories are listed.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "idp.access_list_exported",
+      "check_status": "existing",
+      "note": "Through the alias vcs.access_list_exported."
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "records-of-exposed-secrets-that-were",
+      "control": "SD-11",
+      "objectives": [
+        "SD-11.B",
+        "SD-11.C",
+        "SD-11.D",
+        "SD-11.E"
+      ],
+      "capability": "version_control",
+      "predicate": "Every secret scanning alert in the period was resolved as revoked within the time the procedure sets, read with created and resolved times.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "vcs.secret_alerts_closed_in_time",
+      "check_status": "proposed"
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "records-of-exposed-secrets-that-were",
+      "control": "SD-11",
+      "objectives": [
+        "SD-11.B",
+        "SD-11.C",
+        "SD-11.D",
+        "SD-11.E"
+      ],
+      "capability": "version_control",
+      "predicate": "Push protection blocks new secrets on in scope repositories.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "vcs.push_protection_enabled",
+      "check_status": "proposed"
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "asset-inventory",
+      "control": "SD-11",
+      "objectives": [
+        "SD-11.B"
+      ],
+      "capability": "version_control",
+      "predicate": "Every repository with a commit in the period is in scope of the connection or excluded with a recorded reason, and each in scope repository is linked to an application asset.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no repository scope completeness check was defined (cloud-code decision on repositories as assets is open)."
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "secret-store-rotation-list",
+      "control": "SD-11",
+      "objectives": [
+        "SD-11.C"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "Each secret in the secrets manager has a last rotated date; values are never read.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "cloud.secrets_rotated",
+      "check_status": "proposed"
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "security-incident-register",
+      "control": "SD-11",
+      "objectives": [
+        "SD-11.E"
+      ],
+      "capability": "ticketing",
+      "predicate": "Incident tickets record severity, owner, date found and date closed.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "alerts.incidents_registered",
+      "check_status": "proposed",
+      "also": [
+        "verity.incidents.registered"
+      ],
+      "note": "Completeness through the alias tickets.incidents_registered; the facts per entry are verity.incidents.registered once incidents sync into the register."
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "cloud-accounts-and-production-access",
+      "control": "SD-12",
+      "objectives": [
+        "SD-12.B",
+        "SD-12.C",
+        "SD-12.E"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "Principals with access to production accounts or projects are listed with their roles and how they were granted.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "idp.access_list_exported",
+      "check_status": "existing",
+      "note": "Through the alias cloud.access_list_exported."
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "cloud-accounts-and-production-access",
+      "control": "SD-12",
+      "objectives": [
+        "SD-12.B",
+        "SD-12.C",
+        "SD-12.E"
+      ],
+      "capability": "identity_provider",
+      "predicate": "Members of the groups that grant production access are listed.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "idp.access_list_exported",
+      "check_status": "existing"
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "deployment-history-for-a-sample-of",
+      "control": "SD-12",
+      "objectives": [
+        "SD-12.D"
+      ],
+      "capability": "ci_cd",
+      "predicate": "Each production deployment was preceded by a successful deployment of the same commit to staging.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no promotion order check was defined."
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "evidence-test-data-is-masked-or",
+      "control": "SD-12",
+      "objectives": [
+        "SD-12.E"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "No production snapshot or backup was shared with, or restored into, a non production account in the period.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "cloud.environments_separated",
+      "check_status": "existing",
+      "also": [
+        "cloud.storage_public_access_blocked"
+      ],
+      "note": "Public sharing is tested; restores into non production accounts are not."
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "list-of-privileged-accounts-with-approval",
+      "control": "SD-13",
+      "objectives": [
+        "SD-13.D"
+      ],
+      "capability": "ci_cd",
+      "predicate": "People and pipeline identities allowed to run or approve production deployments (environment reviewers, deployment branch rules) are listed.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "ci.production_deploys_controlled",
+      "check_status": "existing"
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "list-of-privileged-accounts-with-approval",
+      "control": "SD-13",
+      "objectives": [
+        "SD-13.D"
+      ],
+      "capability": "version_control",
+      "predicate": "Repository administrators and everyone allowed to bypass branch protection or rulesets on in scope repositories are listed, and bypass is limited to named roles.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "vcs.protection_bypass_limited",
+      "check_status": "proposed"
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "inventory-of-service-accounts-and-keys",
+      "control": "SD-13",
+      "objectives": [
+        "SD-13.D"
+      ],
+      "capability": "ci_cd",
+      "predicate": "Production deployment credentials are stored as pipeline or environment secrets scoped to production, and no long lived key is held by a person.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "cloud.secrets_managed",
+      "check_status": "existing",
+      "note": "Shows secrets live in a managed store; that no person holds a long lived production key is not defined."
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "change-records-linking-request-review-and",
+      "control": "SD-14",
+      "objectives": [
+        "SD-14.B",
+        "SD-14.C",
+        "SD-14.D",
+        "SD-14.E"
+      ],
+      "capability": "version_control",
+      "predicate": "Every pull request merged to the default branch references a ticket key in its title, branch or description.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "tickets.changes_linked",
+      "check_status": "existing"
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "change-records-linking-request-review-and",
+      "control": "SD-14",
+      "objectives": [
+        "SD-14.B",
+        "SD-14.C",
+        "SD-14.D",
+        "SD-14.E"
+      ],
+      "capability": "ticketing",
+      "predicate": "Tickets of released changes are kept, not deleted, for at least 12 months.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no ticket retention check was defined."
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "processing-error-log",
+      "control": "SD-15",
+      "objectives": [
+        "SD-15.B",
+        "SD-15.C"
+      ],
+      "capability": "observability",
+      "predicate": "Processing errors are counted per job and run, with records affected.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "observability.errors_triaged_in_time",
+      "check_status": "proposed",
+      "also": [
+        "observability.processing_monitored"
+      ]
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "reconciliation-results-and-how-exceptions-were",
+      "control": "SD-15",
+      "objectives": [
+        "SD-15.C"
+      ],
+      "capability": "observability",
+      "predicate": "Each reconciliation job run records counts, control totals and a pass or break result, and a break raises an alert.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "observability.processing_monitored",
+      "check_status": "existing"
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "evidence-validation-was-tested",
+      "control": "SD-15",
+      "objectives": [
+        "SD-15.D"
+      ],
+      "capability": "observability",
+      "predicate": "A monitor on the rejected records queue alerts when depth or rejection rate passes the expected level, and each alert was acknowledged.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "observability.processing_monitored",
+      "check_status": "existing"
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "output-delivery-log",
+      "control": "SD-16",
+      "objectives": [
+        "SD-16.B",
+        "SD-16.C"
+      ],
+      "capability": "observability",
+      "predicate": "Each scheduled output job ran on time and passed its pre release checks.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "observability.processing_monitored",
+      "check_status": "existing"
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "security-incident-register",
+      "control": "SD-16",
+      "objectives": [
+        "SD-16.C"
+      ],
+      "capability": "ticketing",
+      "predicate": "Incident tickets record severity, owner, date found and date closed.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "alerts.incidents_registered",
+      "check_status": "proposed",
+      "also": [
+        "verity.incidents.registered"
+      ],
+      "note": "Completeness through the alias tickets.incidents_registered; the facts per entry are verity.incidents.registered once incidents sync into the register."
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "production-data-change-log",
+      "control": "SD-17",
+      "objectives": [
+        "SD-17.B"
+      ],
+      "capability": "ticketing",
+      "predicate": "Each direct data change has a ticket approved, before it ran, by someone other than the person who ran it.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "tickets.changes_approved_before_release",
+      "check_status": "proposed",
+      "also": [
+        "verity.tasks.approved_before_done"
+      ],
+      "note": "Data changes need their own ticket type mapping."
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "list-of-privileged-accounts-with-approval",
+      "control": "SD-17",
+      "objectives": [
+        "SD-17.C"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "Principals with write access to production databases are listed with their roles.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "idp.access_list_exported",
+      "check_status": "existing",
+      "also": [
+        "cloud.least_privilege"
+      ],
+      "note": "The list holds every principal; filtering to database write rights is not defined."
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "database-activity-log-review",
+      "control": "SD-17",
+      "objectives": [
+        "SD-17.C"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "Database audit logging is on for every production database.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "cloud.audit_logging",
+      "check_status": "existing",
+      "note": "Control plane audit logging; database level logging per engine is not defined."
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "database-activity-log-review",
+      "control": "SD-17",
+      "objectives": [
+        "SD-17.C"
+      ],
+      "capability": "observability",
+      "predicate": "Production database activity events are retained and searchable for the review period.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "observability.logs_retained",
+      "check_status": "existing"
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "software-component-list-with-licences",
+      "control": "SD-18",
+      "objectives": [
+        "SD-18.B",
+        "SD-18.C"
+      ],
+      "capability": "version_control",
+      "predicate": "A component list with licences can be exported for each in scope repository from the provider's dependency graph.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no dependency graph export check was defined for SD-18."
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "software-component-list-with-licences",
+      "control": "SD-18",
+      "objectives": [
+        "SD-18.B",
+        "SD-18.C"
+      ],
+      "capability": "ci_cd",
+      "predicate": "Each release build produced a component list stored with the release.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no component list (SBOM) check was defined for SD-18."
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "licence-exceptions-record",
+      "control": "SD-18",
+      "objectives": [
+        "SD-18.C"
+      ],
+      "capability": "version_control",
+      "predicate": "Dependency changes that add a component with a restricted licence are flagged at review.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no licence review check was defined."
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "asset-inventory",
+      "control": "LM-01",
+      "objectives": [
+        "LM-01.B",
+        "LM-01.C"
+      ],
+      "capability": "identity_provider",
+      "predicate": "Applications connected to the identity provider each match an application asset or a vendor.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "idp.connected_apps_known",
+      "check_status": "existing"
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "evidence-logs-are-reviewed",
+      "control": "LM-02",
+      "objectives": [
+        "LM-02.B",
+        "LM-02.D"
+      ],
+      "capability": "observability",
+      "predicate": "Every in scope system in the asset register has a matching log source that sent events in the last 24 hours.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "observability.silent_sources_alert",
+      "check_status": "proposed",
+      "note": "Comparison with the asset register is not defined."
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "asset-inventory",
+      "control": "LM-02",
+      "objectives": [
+        "LM-02.B"
+      ],
+      "capability": "observability",
+      "predicate": "Every in scope system in the asset register has a matching log source that sent events in the last 24 hours.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "observability.silent_sources_alert",
+      "check_status": "proposed",
+      "note": "Comparison with the asset register is not defined."
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "log-store-retention-and-access-settings",
+      "control": "LM-02",
+      "objectives": [
+        "LM-02.C",
+        "LM-02.G"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "The central log store has a retention lock or object lock, and system administrators cannot delete it.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "cloud.audit_logging",
+      "check_status": "existing",
+      "also": [
+        "cloud.storage_versioned"
+      ],
+      "note": "Lock and deletion rights on the log store are not a named predicate."
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "log-store-retention-and-access-settings",
+      "control": "LM-02",
+      "objectives": [
+        "LM-02.C",
+        "LM-02.G"
+      ],
+      "capability": "observability",
+      "predicate": "Roles that can delete logs or change retention in the observability tool are listed.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "observability.audit_trail_enabled",
+      "check_status": "proposed",
+      "note": "Changes are recorded; the list of roles that can make them is not."
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "log-source-gap-alerts",
+      "control": "LM-02",
+      "objectives": [
+        "LM-02.F"
+      ],
+      "capability": "observability",
+      "predicate": "A monitor alerts when any listed log source sends nothing for longer than the set gap, and each alert was followed up.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "observability.silent_sources_alert",
+      "check_status": "proposed",
+      "note": "Follow up of each alert stays with people."
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "alerts-on-drift-that-were-investigated",
+      "control": "LM-03",
+      "objectives": [
+        "LM-03.B",
+        "LM-03.C",
+        "LM-03.D"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "Each high risk configuration finding in the period has a recorded disposition (fixed, accepted, false alarm) within the time its type allows.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "cloud.hardening_baseline",
+      "check_status": "existing",
+      "also": [
+        "cloud.threat_findings_triaged"
+      ],
+      "note": "Disposition times for posture findings are not yet part of either check."
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "alerts-on-drift-that-were-investigated",
+      "control": "LM-03",
+      "objectives": [
+        "LM-03.B",
+        "LM-03.C",
+        "LM-03.D"
+      ],
+      "capability": "ticketing",
+      "predicate": "Each drift alert opened a ticket that closed with a cause and an action.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "tickets.remediation_tracked",
+      "check_status": "existing"
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "sample-of-evaluated-events-with-the",
+      "control": "LM-04",
+      "objectives": [
+        "LM-04.B",
+        "LM-04.C",
+        "LM-04.D"
+      ],
+      "capability": "alerting",
+      "predicate": "Every security alert in the period has a recorded resolution, or a note marking it benign, with time and responder.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "alerts.incidents_registered",
+      "check_status": "proposed",
+      "also": [
+        "alerts.incidents_resolved"
+      ],
+      "note": "The register decision covers security incidents; benign alerts below incident level are not read."
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "sample-of-evaluated-events-with-the",
+      "control": "LM-04",
+      "objectives": [
+        "LM-04.B",
+        "LM-04.C",
+        "LM-04.D"
+      ],
+      "capability": "ticketing",
+      "predicate": "Security event tickets record the triage decision, date and evaluator.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "alerts.incidents_registered",
+      "check_status": "proposed"
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "security-incident-register",
+      "control": "LM-04",
+      "objectives": [
+        "LM-04.C"
+      ],
+      "capability": "ticketing",
+      "predicate": "Incident tickets record severity, owner, date found and date closed.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "alerts.incidents_registered",
+      "check_status": "proposed",
+      "also": [
+        "verity.incidents.registered"
+      ],
+      "note": "Completeness through the alias tickets.incidents_registered; the facts per entry are verity.incidents.registered once incidents sync into the register."
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "postmortem-for-each-significant-incident",
+      "control": "LM-05",
+      "objectives": [
+        "LM-05.B",
+        "LM-05.C",
+        "LM-05.D",
+        "LM-05.E"
+      ],
+      "capability": "alerting",
+      "predicate": "Each high severity incident in the on call tool links a postmortem.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "alerts.postmortems_completed",
+      "check_status": "proposed"
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "security-incident-register",
+      "control": "LM-05",
+      "objectives": [
+        "LM-05.B"
+      ],
+      "capability": "ticketing",
+      "predicate": "Incident tickets record severity, owner, date found and date closed.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "alerts.incidents_registered",
+      "check_status": "proposed",
+      "also": [
+        "verity.incidents.registered"
+      ],
+      "note": "Completeness through the alias tickets.incidents_registered; the facts per entry are verity.incidents.registered once incidents sync into the register."
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "security-incident-register",
+      "control": "LM-06",
+      "objectives": [
+        "LM-06.B"
+      ],
+      "capability": "ticketing",
+      "predicate": "Incident tickets record severity, owner, date found and date closed.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "alerts.incidents_registered",
+      "check_status": "proposed",
+      "also": [
+        "verity.incidents.registered"
+      ],
+      "note": "Completeness through the alias tickets.incidents_registered; the facts per entry are verity.incidents.registered once incidents sync into the register."
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "roles-and-contact-list",
+      "control": "LM-07",
+      "objectives": [
+        "LM-07.B"
+      ],
+      "capability": "alerting",
+      "predicate": "Responders in each in scope on call schedule have at least one working contact method recorded.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no researcher defined a contact method check; alerts.on_call_covered leaves contact details to people."
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "security-incident-register",
+      "control": "LM-07",
+      "objectives": [
+        "LM-07.D",
+        "LM-07.E",
+        "LM-07.G"
+      ],
+      "capability": "ticketing",
+      "predicate": "Incident tickets record severity, owner, date found and date closed.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "alerts.incidents_registered",
+      "check_status": "proposed",
+      "also": [
+        "verity.incidents.registered"
+      ],
+      "note": "Completeness through the alias tickets.incidents_registered; the facts per entry are verity.incidents.registered once incidents sync into the register."
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "escalation-policy",
+      "control": "LM-08",
+      "objectives": [
+        "LM-08.A",
+        "LM-08.C"
+      ],
+      "capability": "alerting",
+      "predicate": "Each in scope service has an escalation policy naming the first responder, the escalation timeout and the next level, exported with the period it was in force.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "alerts.escalation_policies_escalate",
+      "check_status": "proposed"
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "on-call-schedule",
+      "control": "LM-08",
+      "objectives": [
+        "LM-08.B",
+        "LM-08.C",
+        "LM-08.D"
+      ],
+      "capability": "alerting",
+      "predicate": "Every day of the period is covered by a primary and a backup in each in scope schedule, with no gaps.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "alerts.on_call_covered",
+      "check_status": "proposed"
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "review-of-alert-tuning",
+      "control": "LM-09",
+      "objectives": [
+        "LM-09.B",
+        "LM-09.C",
+        "LM-09.D"
+      ],
+      "capability": "observability",
+      "predicate": "Alert volume and alerts closed without action are counted per monitor for the quarter.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no alert volume check was defined."
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "review-of-alert-tuning",
+      "control": "LM-09",
+      "objectives": [
+        "LM-09.B",
+        "LM-09.C",
+        "LM-09.D"
+      ],
+      "capability": "alerting",
+      "predicate": "Alerts per service with acknowledgement and resolution are listed, so alerts nobody acted on show up.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "alerts.acknowledged_in_time",
+      "check_status": "existing",
+      "note": "Covers high urgency pages only, not every alert per service."
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "roles-and-contact-list",
+      "control": "LM-10",
+      "objectives": [
+        "LM-10.C"
+      ],
+      "capability": "alerting",
+      "predicate": "Responders in each in scope on call schedule have at least one working contact method recorded.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no researcher defined a contact method check; alerts.on_call_covered leaves contact details to people."
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "actively-exploited-vulnerabilities-and-time-taken",
+      "control": "LM-12",
+      "objectives": [
+        "LM-12.C"
+      ],
+      "capability": "vulnerability_scanner",
+      "predicate": "Findings on known exploited vulnerabilities are reported with first seen time for every scanned asset.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "verity.vulns.kev_triaged_same_day",
+      "check_status": "proposed",
+      "also": [
+        "scanner.scans_current"
+      ],
+      "note": "Once scanner findings feed the register (phase3-catalogue.md section 5)."
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "scan-reports",
+      "control": "LM-13",
+      "objectives": [
+        "LM-13.B",
+        "LM-13.C"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "The cloud provider's own vulnerability scanning covers every running instance and image in production accounts.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "scanner.scans_current",
+      "check_status": "existing",
+      "note": "Cloud native scanners (for example Amazon Inspector) are not an implementation of scanner.scans_current yet."
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "asset-inventory",
+      "control": "BC-01",
+      "objectives": [
+        "BC-01.B"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "Every production data store found in connected accounts matches a data asset in the register.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "assets.resources_registered",
+      "check_status": "existing"
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "backup-failure-alerts-and-follow-up",
+      "control": "BC-01",
+      "objectives": [
+        "BC-01.B",
+        "BC-01.C"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "Backup jobs for every production data store succeeded within the expected window across the period; failed or missed jobs are listed with times.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "cloud.backup_jobs_succeeding",
+      "check_status": "proposed"
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "backup-failure-alerts-and-follow-up",
+      "control": "BC-01",
+      "objectives": [
+        "BC-01.B",
+        "BC-01.C"
+      ],
+      "capability": "observability",
+      "predicate": "A monitor alerts on a failed or late backup job.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "observability.processing_monitored",
+      "check_status": "existing",
+      "also": [
+        "cloud.backup_jobs_succeeding"
+      ]
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "backup-failure-alerts-and-follow-up",
+      "control": "BC-01",
+      "objectives": [
+        "BC-01.B",
+        "BC-01.C"
+      ],
+      "capability": "ticketing",
+      "predicate": "Each failed backup has a ticket with cause, fix and the date of the next good backup.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "tickets.remediation_tracked",
+      "check_status": "existing"
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "backup-storage-settings-export",
+      "control": "BC-01",
+      "objectives": [
+        "BC-01.D"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "Each backup store has a copy in another region or account and an immutability or lock setting.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "cloud.backups_protected",
+      "check_status": "proposed"
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "list-of-privileged-accounts-with-approval",
+      "control": "BC-01",
+      "objectives": [
+        "BC-01.E"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "Principals with restore or delete rights on backup vaults and snapshots are listed with their roles.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "idp.access_list_exported",
+      "check_status": "existing",
+      "also": [
+        "cloud.least_privilege"
+      ],
+      "note": "The list holds every principal; filtering to backup rights is not defined."
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "restore-test-plan-and-results",
+      "control": "BC-02",
+      "objectives": [
+        "BC-02.B",
+        "BC-02.C",
+        "BC-02.E"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "A restore from backup into a non production account or isolated network ran in the last 12 months.",
+      "fills": "partial",
+      "match": "exact",
+      "check": "cloud.restore_tested",
+      "check_status": "proposed"
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "measured-recovery-time-against-the-target",
+      "control": "BC-02",
+      "objectives": [
+        "BC-02.D"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "Restore and failover events during a test window are recorded with start and end times.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "cloud.restore_tested",
+      "check_status": "proposed",
+      "note": "Restores are read; failover events are not."
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "capacity-review",
+      "control": "BC-04",
+      "objectives": [
+        "BC-04.B",
+        "BC-04.C",
+        "BC-04.D"
+      ],
+      "capability": "observability",
+      "predicate": "No monitored resource reached its limit in the period without a threshold alert firing first.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "observability.capacity_trends",
+      "check_status": "existing"
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "capacity-actions-that-were-taken",
+      "control": "BC-04",
+      "objectives": [
+        "BC-04.D"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "Scaling, instance size and quota changes in the period are listed with time and actor from the cloud change history.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "cloud.config_changes_recorded",
+      "check_status": "existing"
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "capacity-actions-that-were-taken",
+      "control": "BC-04",
+      "objectives": [
+        "BC-04.D"
+      ],
+      "capability": "ticketing",
+      "predicate": "Capacity actions are tickets linked to the review that raised them.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "tickets.remediation_tracked",
+      "check_status": "existing"
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "redundancy-configuration-export",
+      "control": "BC-09",
+      "objectives": [
+        "BC-09.B"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "Each database, load balancer and compute group tagged as critical runs across more than one zone or has a standby.",
+      "fills": "partial",
+      "match": "unresolved",
+      "reason": "not_defined",
+      "why": "no zone redundancy or standby check was defined (BC-09)."
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "exercise-or-test-report",
+      "control": "BC-09",
+      "objectives": [
+        "BC-09.C",
+        "BC-09.D"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "Restore and failover events during a test window are recorded with start and end times.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "cloud.restore_tested",
+      "check_status": "proposed",
+      "note": "Restores are read; failover events are not."
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "measured-recovery-time-against-the-target",
+      "control": "BC-09",
+      "objectives": [
+        "BC-09.C"
+      ],
+      "capability": "cloud_infrastructure",
+      "predicate": "Restore and failover events during a test window are recorded with start and end times.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "cloud.restore_tested",
+      "check_status": "proposed",
+      "note": "Restores are read; failover events are not."
+    },
+    {
+      "file": "coverage/sd-lm-bc.json",
+      "artifact": "acceptance-test-of-supplier-deliveries",
+      "control": "BC-10",
+      "objectives": [
+        "BC-10.B"
+      ],
+      "capability": "version_control",
+      "predicate": "Changes authored by outside collaborators or supplier accounts were approved by an organisation member before merge.",
+      "fills": "partial",
+      "match": "partial",
+      "check": "vcs.merged_changes_reviewed",
+      "check_status": "existing",
+      "note": "Author type is not filtered."
+    }
+  ]
+}
