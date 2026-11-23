@@ -37,6 +37,7 @@ Full walkthrough, including what each database role is for and how to verify the
 ```
 backend/    FastAPI modular monolith, one folder per bounded context
 frontend/   React app, features mirror backend modules
+website/    Separate public marketing site and user guide (static React/Tailwind)
 docs/       architecture, ADRs, conventions, runbooks
 infra/      docker compose, deploy scripts
 openspec/   specs and change proposals
