@@ -11,13 +11,25 @@ On 2026-10-19 the GitHub account pushed obfuscated malware into `postcss.config`
 that existed then (`main`, `feat/phase1-completion`, `feat/website-deploy`, `codex/public-website`). A
 frontend build or dev server runs that file. This branch was made from the clean local history. So:
 
+Clone into a short local folder outside OneDrive or Dropbox (for example `C:\dev`), from an ordinary
+terminal where Git can ask you to sign in to GitHub, not through a tool that times out:
+
 ```bash
-git clone --branch handoff/verity-dev --single-branch https://github.com/mehboob14/GRC_App_private.git Verity_GRC_Platform
-cd Verity_GRC_Platform
+git clone --branch handoff/verity-dev --single-branch https://github.com/mehboob14/GRC_App_private.git C:/dev/Verity_GRC_Platform
+cd C:/dev/Verity_GRC_Platform
 git rev-parse HEAD                                    # must equal the hash the last session reported
-wc -c frontend/postcss.config.js website/postcss.config.mjs    # 81 and 105 bytes; thousands means infected
-grep -rl "global.o=" --include=*.js --include=*.mjs --include=*.cjs . | grep -v node_modules   # must print nothing
+git cat-file -s HEAD:frontend/postcss.config.js       # 81 (the stored size; thousands means infected)
+git cat-file -s HEAD:website/postcss.config.mjs       # 105
+git grep -l "global.o=" -- "*.js" "*.mjs" "*.cjs"     # must print nothing
 ```
+
+Read the sizes with `git cat-file -s`, not from the files on disk: on Windows Git turns line endings into
+CRLF on checkout, so the same clean files show 87 and 113 bytes there.
+
+If a clone stops part way (no `HEAD`, no files, a locked `tmp_pack` file): close the terminal, end any
+`git.exe` still running in Task Manager, delete the folder, and clone again. A shallow clone is smaller:
+`git clone --depth 1 --branch handoff/verity-dev --single-branch <url> C:/dev/Verity_GRC_Platform`, and
+`git fetch --unshallow` later brings the history.
 
 Only then run `npm install`. Never check out, pull or build the other GitHub branches until the account is
 secured (password and every token rotated, 2FA on, sessions signed out) and those branches are restored.
