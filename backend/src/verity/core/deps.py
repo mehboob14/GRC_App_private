@@ -276,7 +276,8 @@ _bearer = HTTPBearer(auto_error=False)
 _MEMBERSHIP_FOR_SESSION = text(
     "SELECT m.id AS membership_id, m.tenant_id, m.user_id, "
     "m.status AS membership_status, u.status AS user_status, t.status AS tenant_status, "
-    "c.credentials_changed_at AS credentials_changed_at "
+    "c.credentials_changed_at AS credentials_changed_at, "
+    "u.sessions_revoked_at AS sessions_revoked_at "
     "FROM tenant_memberships m "
     "JOIN users u ON u.id = m.user_id "
     "JOIN tenants t ON t.id = m.tenant_id "
@@ -320,6 +321,9 @@ async def get_current_principal(
             raise AuthenticationRequired(
                 detail="session predates a credential change; sign in again"
             )
+        # Keycloak's back-channel logout moves the person's epoch forward (ADR-0015).
+        if row.sessions_revoked_at is not None and claims.issued_at < row.sessions_revoked_at:
+            raise AuthenticationRequired(detail="session ended by single sign on; sign in again")
         permissions = await resolve_effective_permissions(
             session, tenant_id=row.tenant_id, membership_id=row.membership_id
         )

@@ -20,7 +20,7 @@ import uuid
 from datetime import date, datetime
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 
 from verity.modules.tenancy.schemas import UtcDateTime
 
@@ -391,3 +391,103 @@ class SecuritySettingsPatch(_Request):
     lockout_threshold: int | None = Field(default=None, ge=0, le=100)
     lockout_duration_minutes: int | None = Field(default=None, ge=0, le=10080)
     idle_timeout_minutes: int | None = Field(default=None, ge=0, le=10080)
+
+
+# -- sign in through Keycloak (openspec/changes/add-keycloak-sso) ---------------------------
+
+
+class SsoStatusOut(_Response):
+    enabled: bool
+
+
+class SsoStartOut(_Response):
+    authorize_url: str
+
+
+class SsoCompleteRequest(_Request):
+    handoff: str = Field(min_length=10, max_length=200)
+
+
+class SsoEndSessionOut(_Response):
+    end_session_url: str | None
+
+
+class TenantSsoOut(_Response):
+    organization_alias: str
+    domains: list[str]
+    enabled: bool
+    enforce: bool
+    jit_enabled: bool
+    default_role_id: uuid.UUID | None
+    verified_at: UtcDateTime | None
+
+
+class TenantSsoPut(_Request):
+    organization_alias: str = Field(min_length=2, max_length=63)
+    domains: list[str] = Field(default_factory=list, max_length=50)
+    enabled: bool = False
+    enforce: bool = False
+    jit_enabled: bool = False
+    default_role_id: uuid.UUID | None = None
+
+
+class SsoProviderOptionOut(_Response):
+    key: str
+    label: str
+
+
+class SsoSetupOut(_Response):
+    """The SSO page: settings, the DNS record to publish, and what to register at the provider."""
+
+    configured: bool
+    organization_alias: str
+    domains: list[str]
+    verified_domains: list[str]
+    txt_name_prefix: str
+    txt_value: str | None
+    enabled: bool
+    enforce: bool
+    jit_enabled: bool
+    default_role_id: uuid.UUID | None
+    verified_at: UtcDateTime | None
+    provider: str | None
+    idp_alias: str | None
+    redirect_uri: str | None
+    entity_id: str
+    providers: list[SsoProviderOptionOut]
+    synced_at: UtcDateTime | None
+    group_roles: list[SsoGroupRoleOut]
+
+
+class SsoGroupRoleOut(_Response):
+    id: uuid.UUID
+    group_name: str
+    role_id: uuid.UUID
+
+
+class SsoGroupRolePost(_Request):
+    """Phase D: members of this Keycloak organization group hold this role."""
+
+    group_name: str = Field(min_length=1, max_length=255)
+    role_id: uuid.UUID
+
+
+class SsoSyncOut(_Response):
+    skipped: str | None
+    created: int
+    disabled: int
+    granted: int
+    revoked: int
+    kept: int
+
+
+class SsoProviderPut(_Request):
+    """Phase C. ``client_secret`` goes to Keycloak and is never stored or echoed by Verity."""
+
+    provider: str = Field(pattern="^(entra|okta|google|oidc|saml)$")
+    tenant_id: str | None = Field(default=None, max_length=200)
+    okta_domain: str | None = Field(default=None, max_length=253)
+    discovery_url: str | None = Field(default=None, max_length=2000)
+    metadata_url: str | None = Field(default=None, max_length=2000)
+    client_id: str | None = Field(default=None, max_length=500)
+    client_secret: SecretStr | None = Field(default=None, max_length=2000)

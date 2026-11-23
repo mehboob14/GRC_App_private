@@ -48,10 +48,11 @@ def _executable_surface(source: str) -> str:
     return ast.unparse(tree)
 
 
-@pytest.mark.parametrize("filename", ["router.py", "service.py", "repository.py", "schemas.py"])
-def test_the_federation_seam_is_imported_by_nothing(filename: str) -> None:
-    """design.md, "The federation seam": ``user_identities`` exists so Phase 3
-    is an insert, and no router, service, or repository touches it until then."""
+@pytest.mark.parametrize("filename", ["router.py", "service.py", "schemas.py", "sso.py"])
+def test_the_federation_seam_is_reached_only_through_its_repository(filename: str) -> None:
+    """ADR-0015: SSO sign in uses ``user_identities`` now (ADR-0006 kept it unused until then).
+    Only ``IdentityRepository`` in repository.py reads or writes it; everything else goes through
+    that repository."""
     source = (_IAM_DIR / filename).read_text(encoding="utf-8")
     code = _executable_surface(source)
     assert "UserIdentity" not in code, f"{filename} imports the federation seam"
@@ -66,15 +67,38 @@ def test_the_built_in_roles_are_exactly_the_designed_set() -> None:
         "Privacy Officer",
         "Engineering Lead",
         "Business Operations/Finance Lead",
+        "Compliance Manager",
     ]
     # Admin is "every key that exists", resolved at check time — no static list.
     assert BUILT_IN_ROLE_KEYS["Admin"] is None
     # The appointments start read-only; an admin widens them in the UI.
     for name, keys in BUILT_IN_ROLE_KEYS.items():
-        if name == "Admin":
+        if name in {"Admin", "Compliance Manager"}:
             continue
         assert keys is not None
         assert all(key.endswith(":read") for key in keys), name
+
+
+def test_the_compliance_manager_runs_the_programme_but_never_administers_the_workspace() -> None:
+    """Guided onboarding D-12. Inviting can hand out Admin, ``tenant:manage`` sets the mail
+    server, and approvals belong to management: none of them is in this role."""
+    keys = set(BUILT_IN_ROLE_KEYS["Compliance Manager"] or ())
+    assert {"controls:manage", "evidence:manage", "documents:manage", "risks:manage"} <= keys
+    never = {
+        "members:invite",
+        "members:manage",
+        "members:disable",
+        "roles:manage",
+        "groups:manage",
+        "security:manage",
+        "tenant:manage",
+        "documents:approve",
+        "risks:approve",
+        "vendors:approve",
+        "tasks:approve",
+        "vulnerabilities:accept",
+    }
+    assert not keys & never
 
 
 def test_every_built_in_role_ships_a_description() -> None:

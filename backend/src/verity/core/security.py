@@ -180,8 +180,18 @@ def verify_totp(secret: str, code: str, last_counter: int | None) -> TotpVerific
 
 TOKEN_PLANES: Final = frozenset({"tenant", "provider"})
 TOKEN_TYPES: Final = frozenset(
-    {"session", "challenge", "selection", "invite", "email_verify", "password_reset"}
+    {
+        "session",
+        "challenge",
+        "selection",
+        "sso_selection",
+        "invite",
+        "email_verify",
+        "password_reset",
+    }
 )
+"""``sso_selection`` is the workspace choice after a sign in through Keycloak: the identity
+provider already did MFA, so choosing a workspace with it skips Verity's TOTP step."""
 
 _JWT_ALGORITHM: Final = "HS256"
 _REQUIRED_CLAIMS: Final = ("sub", "plane", "typ", "iat", "exp", "jti")
@@ -214,6 +224,7 @@ def _token_ttl(typ: str) -> timedelta:
         "session": timedelta(hours=auth.session_ttl_hours),
         "challenge": timedelta(minutes=auth.challenge_ttl_minutes),
         "selection": timedelta(minutes=auth.selection_ttl_minutes),
+        "sso_selection": timedelta(minutes=auth.selection_ttl_minutes),
         "invite": timedelta(days=auth.invite_ttl_days),
         "email_verify": timedelta(hours=auth.email_verify_ttl_hours),
         "password_reset": timedelta(minutes=auth.password_reset_ttl_minutes),

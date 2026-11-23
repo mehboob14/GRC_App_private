@@ -15,13 +15,16 @@ The response shapes are the frontend contract — see ``schemas.py``.
 
 from __future__ import annotations
 
+import urllib.parse
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Header, Request, status
+from fastapi import APIRouter, Depends, Header, Path, Query, Request, status
+from fastapi.responses import RedirectResponse, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from verity.core import ratelimit
+from verity.core.config import get_settings
 from verity.core.deps import (
     PlatformAdminPrincipal,
     Principal,
@@ -34,6 +37,8 @@ from verity.core.deps import (
     require,
     require_provider,
 )
+from verity.core.logging import get_logger
+from verity.modules.iam import idp_templates, sso
 from verity.modules.iam.schemas import (
     AcceptInvitationRequest,
     AcceptInvitationResponse,
@@ -71,6 +76,15 @@ from verity.modules.iam.schemas import (
     SecuritySettingsPatch,
     SelectWorkspaceResponse,
     SignupRequest,
+    SsoCompleteRequest,
+    SsoEndSessionOut,
+    SsoGroupRolePost,
+    SsoProviderPut,
+    SsoSetupOut,
+    SsoStartOut,
+    SsoStatusOut,
+    SsoSyncOut,
+    TenantSsoPut,
     UserOut,
     VerifyEmailRequest,
     WorkspaceOut,
@@ -87,6 +101,8 @@ from verity.modules.iam.service import (
     iam_auth_service,
     iam_service,
 )
+from verity.modules.iam.sso_setup import sso_setup_service
+from verity.modules.iam.sso_sync import sso_sync_service
 
 auth_router = APIRouter(prefix="/auth", tags=["auth"])
 members_router = APIRouter(prefix="/members", tags=["members"])
@@ -108,6 +124,8 @@ require_security_read = require("tenant:read")
 require_security_manage = require("security:manage")
 
 require_provider_admin_invite = require_provider("tenants:provision")
+
+logger = get_logger(__name__)
 
 
 def _login_response(outcome: AuthOutcome) -> LoginResponse:
@@ -385,6 +403,89 @@ async def logout(
     await iam_auth_service.logout(
         token=token, membership_id=principal.membership_id, tenant_id=principal.tenant_id
     )
+
+
+# -- sign in through Keycloak (ADR-0015, openspec/changes/add-keycloak-sso) -----------------
+
+
+@auth_router.get("/sso/status", response_model=SsoStatusOut, summary="Whether SSO sign in is on")
+async def sso_status() -> SsoStatusOut:
+    settings = get_settings().oidc
+    return SsoStatusOut(enabled=settings.enabled and settings.client_secret is not None)
+
+
+@auth_router.get(
+    "/sso/start",
+    response_model=SsoStartOut,
+    summary="Where to send the browser to sign in through Keycloak",
+)
+async def sso_start(
+    request: Request, email: Annotated[str | None, Query(max_length=320)] = None
+) -> SsoStartOut:
+    if email:
+        await ratelimit.limit_sign_in(request, email)
+    # A workspace with SSO on that routes this email's domain names its organization, so
+    # Keycloak opens that organization's sign in and the token carries its claim.
+    organization = await iam_auth_service.sso_organization_for(email)
+    return SsoStartOut(
+        authorize_url=await sso.authorization_url(email=email, organization=organization)
+    )
+
+
+@auth_router.get("/sso/callback", include_in_schema=False)
+async def sso_callback(
+    code: Annotated[str | None, Query(max_length=4096)] = None,
+    state: Annotated[str | None, Query(max_length=200)] = None,
+    error: Annotated[str | None, Query(max_length=200)] = None,
+) -> RedirectResponse:
+    """Keycloak sends the browser here. Validated identities are handed to the web app through a
+    one time code; failures go back with a fixed error code, never the provider's words."""
+    try:
+        identity = await sso.finish(code=code, state=state, error=error)
+        handoff = await sso.put_handoff(identity)
+    except sso.SsoFailed as exc:
+        logger.info("sso.callback_refused", code=exc.code, reason=exc.detail)
+        return RedirectResponse(sso.failure_redirect(exc.code), status_code=303)
+    return RedirectResponse(sso.handoff_redirect(handoff), status_code=303)
+
+
+@auth_router.post(
+    "/sso/complete",
+    response_model=LoginResponse,
+    summary="Claim the handoff: a session, or a workspace choice",
+)
+async def sso_complete(body: SsoCompleteRequest) -> LoginResponse:
+    identity = await sso.take_handoff(body.handoff)
+    return _login_response(await iam_auth_service.sso_sign_in(identity))
+
+
+@auth_router.post(
+    "/sso/end-session",
+    response_model=SsoEndSessionOut,
+    summary="Keycloak's sign out URL for this person, when they signed in through it",
+)
+async def sso_end_session(
+    principal: Annotated[Principal, Depends(get_current_principal)],
+) -> SsoEndSessionOut:
+    return SsoEndSessionOut(end_session_url=await sso.end_session_url(str(principal.user_id)))
+
+
+@auth_router.post(
+    "/sso/backchannel-logout",
+    include_in_schema=False,
+    status_code=status.HTTP_200_OK,
+)
+async def sso_backchannel_logout(request: Request) -> Response:
+    """Keycloak calls this when it ends a person's sign in (OpenID Connect Back-Channel Logout):
+    every Verity session they hold stops working. A bad token is a 400 with nothing else said."""
+    form = urllib.parse.parse_qs((await request.body()).decode(errors="replace"))
+    try:
+        subject = await sso.validate_logout_token((form.get("logout_token") or [""])[0])
+    except sso.SsoFailed as exc:
+        logger.info("sso.backchannel_logout_refused", reason=exc.detail)
+        return Response(status_code=status.HTTP_400_BAD_REQUEST)
+    await iam_auth_service.sso_backchannel_logout(subject)
+    return Response(status_code=status.HTTP_200_OK, headers={"Cache-Control": "no-store"})
 
 
 @auth_router.post(
@@ -836,3 +937,151 @@ async def invite_tenant_admin(
         full_name=body.full_name,
     )
     return _invite_response(result)
+
+
+async def _setup_view(session: AsyncSession, tenant_id: uuid.UUID) -> SsoSetupOut:
+    return SsoSetupOut.model_validate(await sso_setup_service.view(session, tenant_id=tenant_id))
+
+
+@security_router.get("/sso", response_model=SsoSetupOut, summary="The workspace's single sign on")
+async def get_sso(
+    _principal: Annotated[Principal, Depends(require_security_manage)],
+    context: Annotated[TenantContext, Depends(get_tenant_context)],
+    session: Annotated[AsyncSession, Depends(get_tenant_session)],
+) -> SsoSetupOut:
+    return await _setup_view(session, context.tenant_id)
+
+
+@security_router.put(
+    "/sso",
+    response_model=SsoSetupOut,
+    summary="Set the workspace's single sign on (Admin); enforcing needs a proven sign in",
+)
+async def put_sso(
+    body: TenantSsoPut,
+    principal: Annotated[Principal, Depends(require_security_manage)],
+    context: Annotated[TenantContext, Depends(get_tenant_context)],
+    session: Annotated[AsyncSession, Depends(get_tenant_session)],
+) -> SsoSetupOut:
+    assert principal.membership_id is not None  # noqa: S101 — guaranteed by the dependency
+    await iam_service.save_sso(
+        session,
+        tenant_id=context.tenant_id,
+        actor_membership_id=principal.membership_id,
+        organization_alias=body.organization_alias,
+        domains=body.domains,
+        enabled=body.enabled,
+        enforce=body.enforce,
+        jit_enabled=body.jit_enabled,
+        default_role_id=body.default_role_id,
+    )
+    return await _setup_view(session, context.tenant_id)
+
+
+@security_router.post(
+    "/sso/domains/{domain}/verify",
+    response_model=SsoSetupOut,
+    summary="Prove the workspace owns an email domain, by its DNS TXT record",
+)
+async def verify_sso_domain(
+    domain: Annotated[str, Path(max_length=253, pattern=r"^[A-Za-z0-9.-]+$")],
+    principal: Annotated[Principal, Depends(require_security_manage)],
+    context: Annotated[TenantContext, Depends(get_tenant_context)],
+    session: Annotated[AsyncSession, Depends(get_tenant_session)],
+) -> SsoSetupOut:
+    assert principal.membership_id is not None  # noqa: S101
+    await sso_setup_service.verify_domain(
+        session,
+        tenant_id=context.tenant_id,
+        actor_membership_id=principal.membership_id,
+        domain=domain,
+    )
+    return await _setup_view(session, context.tenant_id)
+
+
+@security_router.put(
+    "/sso/provider",
+    response_model=SsoSetupOut,
+    summary="Connect the workspace's identity provider through Keycloak",
+)
+async def put_sso_provider(
+    body: SsoProviderPut,
+    principal: Annotated[Principal, Depends(require_security_manage)],
+    context: Annotated[TenantContext, Depends(get_tenant_context)],
+    session: Annotated[AsyncSession, Depends(get_tenant_session)],
+) -> SsoSetupOut:
+    assert principal.membership_id is not None  # noqa: S101
+    await sso_setup_service.connect(
+        session,
+        tenant_id=context.tenant_id,
+        actor_membership_id=principal.membership_id,
+        provider=body.provider,
+        given=idp_templates.ProviderInput(
+            tenant_id=body.tenant_id,
+            okta_domain=body.okta_domain,
+            discovery_url=body.discovery_url,
+            metadata_url=body.metadata_url,
+            client_id=body.client_id,
+            client_secret=body.client_secret.get_secret_value() if body.client_secret else None,
+        ),
+    )
+    return await _setup_view(session, context.tenant_id)
+
+
+@security_router.post(
+    "/sso/groups",
+    response_model=SsoSetupOut,
+    summary="Give a Verity role to the members of a Keycloak organization group",
+)
+async def post_sso_group_role(
+    body: SsoGroupRolePost,
+    principal: Annotated[Principal, Depends(require_security_manage)],
+    context: Annotated[TenantContext, Depends(get_tenant_context)],
+    session: Annotated[AsyncSession, Depends(get_tenant_session)],
+) -> SsoSetupOut:
+    assert principal.membership_id is not None  # noqa: S101
+    await sso_sync_service.add_group_role(
+        session,
+        tenant_id=context.tenant_id,
+        actor_membership_id=principal.membership_id,
+        group_name=body.group_name,
+        role_id=body.role_id,
+    )
+    return await _setup_view(session, context.tenant_id)
+
+
+@security_router.delete(
+    "/sso/groups/{mapping_id}",
+    response_model=SsoSetupOut,
+    summary="Stop giving a role from a Keycloak group; the next sync takes it back",
+)
+async def delete_sso_group_role(
+    mapping_id: uuid.UUID,
+    principal: Annotated[Principal, Depends(require_security_manage)],
+    context: Annotated[TenantContext, Depends(get_tenant_context)],
+    session: Annotated[AsyncSession, Depends(get_tenant_session)],
+) -> SsoSetupOut:
+    assert principal.membership_id is not None  # noqa: S101
+    await sso_sync_service.remove_group_role(
+        session,
+        tenant_id=context.tenant_id,
+        actor_membership_id=principal.membership_id,
+        mapping_id=mapping_id,
+    )
+    return await _setup_view(session, context.tenant_id)
+
+
+@security_router.post(
+    "/sso/sync",
+    response_model=SsoSyncOut,
+    summary="Read the organization's members and groups from Keycloak now",
+)
+async def post_sso_sync(
+    principal: Annotated[Principal, Depends(require_security_manage)],
+    context: Annotated[TenantContext, Depends(get_tenant_context)],
+) -> SsoSyncOut:
+    assert principal.membership_id is not None  # noqa: S101
+    result = await sso_sync_service.sync_tenant(
+        context.tenant_id, actor_membership_id=principal.membership_id
+    )
+    return SsoSyncOut.model_validate(result)

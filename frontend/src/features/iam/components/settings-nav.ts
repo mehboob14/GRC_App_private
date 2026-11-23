@@ -37,7 +37,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
       { label: "MFA", to: "/settings/security/mfa" },
       { label: "Password policy", to: "/settings/security/password" },
       { label: "Authentication", to: "/settings/security/authentication", soon: true },
-      { label: "SSO", to: "/settings/security/sso", soon: true },
+      { label: "SSO", to: "/settings/security/sso" },
       // Remediation SLAs are meaningless until there are findings to age —
       // they land with the vulnerability module.
       {
@@ -59,7 +59,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
     to: "/settings/organization/profile",
     tabs: [
       { label: "Org info", to: "/settings/organization/profile" },
-      { label: "Key personnel", to: "/settings/organization/key-personnel", soon: true },
+      { label: "Who owns what", to: "/settings/organization/ownership" },
     ],
   },
   {

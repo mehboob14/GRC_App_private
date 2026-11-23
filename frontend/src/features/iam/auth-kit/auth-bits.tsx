@@ -86,10 +86,30 @@ const SSO: { label: string; mark: ReactNode }[] = [
 ];
 
 /** Identity federation arrives in a later phase: visible, honest, not clickable. */
-export function SsoOptions() {
+export function SsoOptions({
+  onSso,
+  busy = false,
+}: {
+  /** Set when single sign on is configured: the SSO button starts it. */
+  onSso?: () => void;
+  busy?: boolean;
+}) {
   return (
     <div className="grid grid-cols-3 gap-2">
-      {SSO.map((provider) => (
+      {SSO.map((provider) =>
+        provider.label === "SSO" && onSso ? (
+          <button
+            key={provider.label}
+            type="button"
+            onClick={onSso}
+            disabled={busy}
+            aria-label="Continue with your organisation's single sign on"
+            className="flex h-11 items-center justify-center gap-2 rounded-xl border border-border bg-surface-primary text-label-md text-text-primary hover:border-action-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-accent disabled:cursor-wait"
+          >
+            {provider.mark}
+            {busy ? "Opening" : provider.label}
+          </button>
+        ) : (
         <button
           key={provider.label}
           type="button"
@@ -105,7 +125,8 @@ export function SsoOptions() {
             Soon
           </span>
         </button>
-      ))}
+        ),
+      )}
     </div>
   );
 }

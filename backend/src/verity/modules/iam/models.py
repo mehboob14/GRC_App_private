@@ -30,8 +30,16 @@ import uuid
 from datetime import date, datetime
 from typing import Final
 
-from sqlalchemy import BigInteger, CheckConstraint, ForeignKey, Index, UniqueConstraint, text
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import (
+    BigInteger,
+    CheckConstraint,
+    ForeignKey,
+    Index,
+    Text,
+    UniqueConstraint,
+    text,
+)
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql.elements import conv
 
@@ -73,6 +81,9 @@ class User(UUIDPrimaryKey, Timestamped, Base):
     # When the account holder accepted the Terms & Privacy at signup — a recorded
     # fact for a compliance product, not just a client-side checkbox.
     terms_accepted_at: Mapped[datetime | None] = mapped_column(default=None)
+    # Sessions issued before this instant stop working: Keycloak's back-channel logout moves it
+    # forward (ADR-0015). A person signed in through SSO may have no credentials row.
+    sessions_revoked_at: Mapped[datetime | None] = mapped_column(default=None)
 
     __table_args__ = (status_check("users", "status", USER_STATUSES),)
 
@@ -151,6 +162,86 @@ class TenantSettings(Timestamped, Base):
     lockout_threshold: Mapped[int] = mapped_column(server_default=text("0"), default=0)
     lockout_duration_minutes: Mapped[int] = mapped_column(server_default=text("30"), default=30)
     idle_timeout_minutes: Mapped[int] = mapped_column(server_default=text("0"), default=0)
+
+
+class TenantSso(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
+    """A workspace's single sign on through Keycloak (ADR-0015, add-keycloak-sso phase B).
+
+    ``organization_alias`` names the Keycloak organization that stands for this workspace; a
+    token's ``organization`` claim is matched against it. ``domains`` route a sign in that starts
+    from an email straight to that organization. ``enforce`` turns password sign in off for the
+    workspace's members, except Admins with TOTP enrolled (break glass), and can only be set once
+    an SSO sign in through the organization has succeeded (``verified_at``), so a broken setup
+    cannot lock a workspace out. Read at sign in on the provider plane, like ``tenant_settings``.
+    """
+
+    __tablename__ = "tenant_sso"
+
+    organization_alias: Mapped[str]
+    domains: Mapped[list[str]] = mapped_column(
+        ARRAY(Text), server_default=text("'{}'"), default=list
+    )
+    enabled: Mapped[bool] = mapped_column(server_default=text("false"), default=False)
+    enforce: Mapped[bool] = mapped_column(server_default=text("false"), default=False)
+    jit_enabled: Mapped[bool] = mapped_column(server_default=text("false"), default=False)
+    default_role_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("roles.id", ondelete="SET NULL"), default=None
+    )
+    verified_at: Mapped[datetime | None] = mapped_column(default=None)
+    # Phase C: the identity provider Verity set up in Keycloak for this workspace, and the
+    # domains whose ownership a DNS TXT record proved (only those route sign in).
+    provider: Mapped[str | None] = mapped_column(default=None)
+    idp_alias: Mapped[str | None] = mapped_column(default=None)
+    verified_domains: Mapped[list[str]] = mapped_column(
+        ARRAY(Text), server_default=text("'{}'"), default=list
+    )
+    domain_token: Mapped[str] = mapped_column(
+        server_default=text("replace(gen_random_uuid()::text, '-', '')")
+    )
+    """The value the workspace publishes in a TXT record to prove it owns a domain."""
+    synced_at: Mapped[datetime | None] = mapped_column(default=None)
+    """When the directory sync last read the organization from Keycloak (phase D)."""
+
+    __table_args__ = (
+        CheckConstraint(
+            "organization_alias ~ '^[a-z0-9][a-z0-9_-]{1,62}$'",
+            name=conv("ck_tenant_sso__organization_alias_format"),
+        ),
+        CheckConstraint(
+            "provider IS NULL OR provider IN ('entra', 'okta', 'google', 'oidc', 'saml')",
+            name=conv("ck_tenant_sso__provider_valid"),
+        ),
+        UniqueConstraint("idp_alias", name="uq_tenant_sso__idp_alias"),
+        CheckConstraint(
+            "NOT enforce OR (enabled AND verified_at IS NOT NULL)",
+            name=conv("ck_tenant_sso__enforce_needs_a_verified_sign_in"),
+        ),
+        UniqueConstraint("tenant_id", name="uq_tenant_sso__tenant_id"),
+        UniqueConstraint("organization_alias", name="uq_tenant_sso__organization_alias"),
+    )
+
+
+class SsoGroupRole(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
+    """A Keycloak organization group whose members hold a Verity role (add-keycloak-sso phase D).
+
+    ``group_name`` matches the group's name, or its path when it starts with a slash. The
+    directory sync grants the role (``role_assignments.source = 'sso_group'``) and takes it back
+    when the person leaves every group mapped to it. Configuration, so it may be deleted."""
+
+    __tablename__ = "sso_group_roles"
+
+    group_name: Mapped[str]
+    role_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("roles.id", ondelete="CASCADE"))
+
+    __table_args__ = (
+        CheckConstraint(
+            "length(group_name) BETWEEN 1 AND 255",
+            name=conv("ck_sso_group_roles__group_name_length"),
+        ),
+        UniqueConstraint(
+            "tenant_id", "group_name", "role_id", name="uq_sso_group_roles__tenant_id_group_role"
+        ),
+    )
 
 
 class UserIdentity(UUIDPrimaryKey, Timestamped, Base):
@@ -317,9 +408,16 @@ class RoleAssignment(UUIDPrimaryKey, TenantScoped, Timestamped, Base):
     engagement_id: Mapped[uuid.UUID | None] = mapped_column(default=None)
     valid_from: Mapped[date | None] = mapped_column(default=None)
     valid_until: Mapped[date | None] = mapped_column(default=None)
+    # 'sso_group' when the directory sync granted it from a mapped Keycloak group; the sync
+    # removes only these, never a role an admin gave.
+    source: Mapped[str | None] = mapped_column(default=None)
 
     __table_args__ = (
         status_check("role_assignments", "assignee_type", ASSIGNEE_TYPES),
+        CheckConstraint(
+            "source IS NULL OR source = 'sso_group'",
+            name=conv("ck_role_assignments__source_valid"),
+        ),
         CheckConstraint(
             "valid_from IS NULL OR valid_until IS NULL OR valid_from <= valid_until",
             # conv: the ck naming convention would otherwise wrap this explicit

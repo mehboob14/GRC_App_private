@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -88,6 +88,33 @@ export function SignInPage() {
   const shake = () => setShakeKey((k) => k + 1);
   const focusAlert = () =>
     window.requestAnimationFrame(() => alertRef.current?.focus());
+
+  const ssoStatus = useQuery({
+    queryKey: ["sso-status"],
+    queryFn: authApi.ssoStatus,
+    staleTime: 300_000,
+    retry: false,
+  });
+  const ssoEnabled = ssoStatus.data?.enabled === true;
+  const [ssoBusy, setSsoBusy] = useState(false);
+  const [ssoFailure, setSsoFailure] = useState<ReturnType<typeof describeAuthFailure> | null>(
+    null,
+  );
+
+  // Email first: the domain tells Keycloak which organisation's sign in to open.
+  async function startSso() {
+    const ok = await form.trigger("email");
+    if (!ok) return;
+    setSsoBusy(true);
+    try {
+      const { authorize_url } = await authApi.ssoStart(form.getValues("email").trim());
+      window.location.assign(authorize_url);
+    } catch (error) {
+      setSsoBusy(false);
+      setSsoFailure(describeAuthFailure(error, "signin"));
+      focusAlert();
+    }
+  }
 
   function finishAuth(response: LoginResponse) {
     if (response.status === "authenticated") {
@@ -444,9 +471,10 @@ export function SignInPage() {
 
   const failure = loginMutation.isError
     ? describeAuthFailure(loginMutation.error, "signin")
-    : null;
+    : ssoFailure;
   const clearFailure = () => {
     if (loginMutation.isError) loginMutation.reset();
+    setSsoFailure(null);
   };
   const submit = form.handleSubmit(
     (values) => loginMutation.mutate(values),
@@ -534,7 +562,10 @@ export function SignInPage() {
       </form>
 
       <OrDivider>or continue with</OrDivider>
-      <SsoOptions />
+      <SsoOptions
+        onSso={ssoEnabled ? () => void startSso() : undefined}
+        busy={ssoBusy}
+      />
 
       <p className="mt-7 text-center text-body-md text-text-secondary">
         New to Verity?{" "}

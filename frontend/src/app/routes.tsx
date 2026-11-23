@@ -4,6 +4,8 @@ import { ComingSoonPage } from "@/app/coming-soon-page";
 import { PublicOnly, RequireAuth } from "@/app/auth-gates";
 import { ProviderPublicOnly, RequireProvider } from "@/app/provider-gates";
 import { SignInPage } from "@/features/iam/components/sign-in-page";
+import { SsoCompletePage } from "@/features/iam/components/sso-complete-page";
+import { SsoSettingsPage } from "@/features/iam/components/sso-settings-page";
 import { SignUpPage } from "@/features/iam/components/sign-up-page";
 import { MfaEnrollPage } from "@/features/iam/components/mfa-enroll-page";
 import { AcceptInvitePage } from "@/features/iam/components/accept-invite-page";
@@ -20,7 +22,18 @@ import {
   SecurityPage,
 } from "@/features/iam/components/security-page";
 import { AuditLogPage } from "@/features/audit/components/audit-log-page";
-import { QuickStartPage } from "@/features/compliance/components/quick-start-page";
+import { GetStartedPage } from "@/features/onboarding/components/get-started-page";
+import { BaselinePage } from "@/features/onboarding/components/baseline-page";
+import { OwnershipPage } from "@/features/onboarding/components/ownership-page";
+import { PlanPage } from "@/features/onboarding/components/plan-page";
+import { SetupPage } from "@/features/onboarding/components/setup-page";
+import { AssurancePage } from "@/features/compliance/components/assurance-page";
+import { DescriptionPage } from "@/features/compliance/components/description-page";
+import { Soc1GuidePage } from "@/features/compliance/components/soc1-guide-page";
+import { RegulationsPage } from "@/features/regulations/regulations-page";
+import { ObjectivesPage } from "@/features/objectives/objectives-page";
+import { SuggestionsPage } from "@/features/onboarding/components/suggestions-page";
+import { RequiredDocumentsPage } from "@/features/onboarding/components/required-documents-page";
 import { DashboardPage } from "@/features/dashboard/dashboard-page";
 import { FrameworksPage } from "@/features/compliance/components/frameworks-page";
 import { FrameworkDetailPage } from "@/features/compliance/components/framework-detail-page";
@@ -90,6 +103,7 @@ export function AppRoutes() {
     <Routes>
       <Route element={<PublicOnly />}>
         <Route path="/sign-in" element={<SignInPage />} />
+        <Route path="/sso/complete" element={<SsoCompletePage />} />
         <Route path="/sign-up" element={<SignUpPage />} />
         <Route path="/mfa/enroll" element={<MfaEnrollPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
@@ -144,7 +158,13 @@ export function AppRoutes() {
         />
         <Route element={<AppLayout />}>
           <Route index element={<Navigate to="/quick-start" replace />} />
-          <Route path="quick-start" element={<QuickStartPage />} />
+          <Route path="quick-start" element={<GetStartedPage />} />
+          <Route path="quick-start/suggestions" element={<SuggestionsPage />} />
+          <Route path="quick-start/baseline" element={<BaselinePage />} />
+          <Route path="quick-start/plan" element={<PlanPage />} />
+          <Route path="setup" element={<SetupPage />} />
+          <Route path="regulations" element={<RegulationsPage />} />
+          <Route path="guides/soc1" element={<Soc1GuidePage />} />
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="frameworks" element={<FrameworksLayout />}>
             {/* Frameworks opens on the compliance dashboard: the posture read is
@@ -158,6 +178,9 @@ export function AppRoutes() {
             <Route path="scope" element={<ScopePage />} />
             <Route path="soa" element={<StatementPage />} />
             <Route path="coverage" element={<CoveragePage />} />
+            <Route path="objectives" element={<ObjectivesPage />} />
+            <Route path="assurance" element={<AssurancePage />} />
+            <Route path="description" element={<DescriptionPage />} />
           </Route>
           {/* Detail sits outside the tab strip: it is a drill-down, not a tab. */}
           <Route
@@ -169,6 +192,7 @@ export function AppRoutes() {
           <Route path="evidence" element={<EvidencePage />} />
           <Route path="evidence/:evidenceId" element={<EvidenceDetailPage />} />
           <Route path="documents" element={<DocumentsRegisterPage />} />
+          <Route path="documents/required" element={<RequiredDocumentsPage />} />
           <Route path="documents/campaigns/:campaignId" element={<CampaignPage />} />
           <Route
             path="documents/:documentId/approvals/:tier"
@@ -264,6 +288,7 @@ export function AppRoutes() {
               <Route index element={<Navigate to="mfa" replace />} />
               <Route path="mfa" element={<SecurityPage />} />
               <Route path="password" element={<PasswordPolicyPage />} />
+              <Route path="sso" element={<SsoSettingsPage />} />
             </Route>
 
             {/* Organization — Org info now; Key personnel arrives later */}
@@ -273,6 +298,7 @@ export function AppRoutes() {
             >
               <Route index element={<Navigate to="profile" replace />} />
               <Route path="profile" element={<CompanyProfilePage />} />
+              <Route path="ownership" element={<OwnershipPage />} />
             </Route>
 
             {/* Workflow — the configurer arrives with the task engine */}

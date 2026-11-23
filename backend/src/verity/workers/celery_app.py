@@ -51,6 +51,11 @@ celery_app.conf.update(
             "task": "verity.workers.tasks.heartbeat",
             "schedule": 300.0,
         },
+        # Hourly: members and groups of each SSO workspace's Keycloak organization.
+        "sync-sso-directories": {
+            "task": "verity.workers.tasks.sync_sso_directories",
+            "schedule": 3600.0,
+        },
         # Every 15 min: warn owners/assignees of tasks breaching or due within 2 days.
         "scan-slas": {
             "task": "verity.workers.tasks.scan_slas",

@@ -1,0 +1,117 @@
+{
+  "realm": "verity",
+  "displayName": "Verity",
+  "enabled": true,
+  "organizationsEnabled": true,
+  "sslRequired": "external",
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "registrationAllowed": false,
+  "resetPasswordAllowed": true,
+  "bruteForceProtected": true,
+  "permanentLockout": false,
+  "failureFactor": 10,
+  "passwordPolicy": "length(12) and upperCase(1) and lowerCase(1) and digits(1) and notUsername",
+  "accessTokenLifespan": 300,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 43200,
+  "clients": [
+    {
+      "clientId": "verity-web",
+      "name": "Verity",
+      "description": "Verity signs people in through this realm (OIDC, confidential, authorization code with PKCE).",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "verity-web-local-dev-only",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "frontchannelLogout": false,
+      "redirectUris": [
+        "http://localhost:5173/api/v1/auth/sso/callback",
+        "http://localhost:5175/api/v1/auth/sso/callback"
+      ],
+      "webOrigins": [],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:5173/sign-in##http://localhost:5175/sign-in",
+        "backchannel.logout.session.required": "true",
+        "backchannel.logout.url": "http://localhost:5175/api/v1/auth/sso/backchannel-logout"
+      },
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "basic",
+        "profile",
+        "email",
+        "roles"
+      ],
+      "optionalClientScopes": [
+        "organization",
+        "offline_access"
+      ],
+      "protocolMappers": [
+        {
+          "name": "identity provider",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usersessionmodel-note-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.session.note": "identity_provider",
+            "claim.name": "identity_provider",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "false",
+            "introspection.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "verity-admin",
+      "name": "Verity directory and setup",
+      "description": "Service account Verity uses for the Admin API (phases C and D). Local only.",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "verity-admin-local-dev-only",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true
+    }
+  ],
+  "identityProviders": [
+    {
+      "alias": "northwind-corp",
+      "displayName": "Northwind Corp",
+      "providerId": "oidc",
+      "enabled": true,
+      "trustEmail": true,
+      "hideOnLogin": true,
+      "firstBrokerLoginFlowAlias": "first broker login",
+      "config": {
+        "issuer": "http://localhost:8180/realms/northwind-corp",
+        "authorizationUrl": "http://localhost:8180/realms/northwind-corp/protocol/openid-connect/auth",
+        "tokenUrl": "http://localhost:8180/realms/northwind-corp/protocol/openid-connect/token",
+        "userInfoUrl": "http://localhost:8180/realms/northwind-corp/protocol/openid-connect/userinfo",
+        "jwksUrl": "http://localhost:8180/realms/northwind-corp/protocol/openid-connect/certs",
+        "logoutUrl": "http://localhost:8180/realms/northwind-corp/protocol/openid-connect/logout",
+        "clientId": "keycloak-broker",
+        "clientSecret": "northwind-broker-local-dev-only",
+        "clientAuthMethod": "client_secret_post",
+        "defaultScope": "openid email profile",
+        "validateSignature": "true",
+        "useJwksUrl": "true",
+        "pkceEnabled": "true",
+        "pkceMethod": "S256",
+        "syncMode": "FORCE"
+      }
+    }
+  ]
+}

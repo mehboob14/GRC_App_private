@@ -4,6 +4,7 @@ import type {
   AcceptInvitationResponse,
   AdoptLibraryResult,
   AuditEvent,
+  AuditType,
   Control,
   ControlCreateRequest,
   ControlQuery,
@@ -18,6 +19,14 @@ import type {
   CursorPage,
   Engagement,
   EngagementPut,
+  ScopeItem,
+  ScopeItemKind,
+  Milestone,
+  EngagementCycle,
+  PeriodChange,
+  Commitment,
+  EngagementVendor,
+  ScopeSuggestion,
   Evidence,
   EvidenceLinkCreate,
   EvidenceQuery,
@@ -44,6 +53,8 @@ import type {
   SignupResponse,
   CompanyProfile,
   CompanyProfilePatch,
+  ProfileSection,
+  ProfileVersion,
   SecuritySettings,
   SecuritySettingsPatch,
   SmtpConfig,
@@ -102,6 +113,17 @@ export const authApi = {
   /** The caller's principal, read fresh from the server (not the cached copy). */
   me: () => apiFetch<SessionPrincipal>("/auth/me"),
   logout: () => apiFetch<void>("/auth/logout", { method: "POST" }),
+  /** Sign in through Keycloak (openspec/changes/add-keycloak-sso). */
+  ssoStatus: () => apiFetch<{ enabled: boolean }>("/auth/sso/status"),
+  ssoStart: (email: string) =>
+    apiFetch<{ authorize_url: string }>(`/auth/sso/start?email=${encodeURIComponent(email)}`),
+  ssoComplete: (handoff: string) =>
+    apiFetch<LoginResponse>("/auth/sso/complete", {
+      method: "POST",
+      body: JSON.stringify({ handoff }),
+    }),
+  ssoEndSession: () =>
+    apiFetch<{ end_session_url: string | null }>("/auth/sso/end-session", { method: "POST" }),
   listWorkspaces: () => apiFetch<WorkspaceSummary[]>("/auth/workspaces"),
   switchWorkspace: (membershipId: string) =>
     apiFetch<LoginResponse>("/auth/workspaces/switch", {
@@ -227,6 +249,10 @@ export const tenantApi = {
       method: "PATCH",
       body: JSON.stringify(patch),
     }),
+  getProfileQuestions: () => apiFetch<ProfileSection[]>("/tenant/profile/questions"),
+  confirmCompanyProfile: () =>
+    apiFetch<CompanyProfile>("/tenant/profile/confirm", { method: "POST" }),
+  getProfileVersions: () => apiFetch<ProfileVersion[]>("/tenant/profile/versions"),
   getSmtp: () => apiFetch<SmtpConfig>("/tenant/smtp"),
   updateSmtp: (patch: SmtpConfigUpdate) =>
     apiFetch<SmtpConfig>("/tenant/smtp", {
@@ -324,6 +350,71 @@ const frameworkQuery = (framework?: string) =>
 export const engagementApi = {
   get: (framework?: string) =>
     apiFetch<Engagement | null>(`/engagement${frameworkQuery(framework)}`),
+  scopeItems: (framework: string) =>
+    apiFetch<ScopeItem[]>(`/engagement/scope-items?framework=${encodeURIComponent(framework)}`),
+  addScopeItem: (body: { kind: ScopeItemKind; name: string }) =>
+    apiFetch<ScopeItem>("/engagement/scope-items", { method: "POST", body: JSON.stringify(body) }),
+  decideScopeItem: (id: string, framework: string, body: { in_scope: boolean; reason: string | null }) =>
+    apiFetch<{ item: ScopeItem; notices: string[] }>(
+      `/engagement/scope-items/${id}/decision?framework=${encodeURIComponent(framework)}`,
+      { method: "PUT", body: JSON.stringify(body) },
+    ),
+  milestones: (framework: string) =>
+    apiFetch<Milestone[]>(`/engagement/milestones?framework=${encodeURIComponent(framework)}`),
+  saveMilestones: (
+    framework: string,
+    milestones: { kind: string; planned_on: string | null; actual_on: string | null }[],
+  ) =>
+    apiFetch<Milestone[]>(`/engagement/milestones?framework=${encodeURIComponent(framework)}`, {
+      method: "PUT",
+      body: JSON.stringify({ milestones }),
+    }),
+  cycles: (framework: string) =>
+    apiFetch<EngagementCycle[]>(`/engagement/cycles?framework=${encodeURIComponent(framework)}`),
+  nextCycle: (framework: string, body: { name: string; audit_type: AuditType }) =>
+    apiFetch<EngagementCycle>(`/engagement/next-cycle?framework=${encodeURIComponent(framework)}`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  changes: (framework: string) =>
+    apiFetch<PeriodChange[]>(`/engagement/changes?framework=${encodeURIComponent(framework)}`),
+  vendors: (framework: string) =>
+    apiFetch<EngagementVendor[]>(`/engagement/vendors?framework=${encodeURIComponent(framework)}`),
+  setVendor: (
+    framework: string,
+    vendorId: string,
+    body: { role: "subservice" | "supplier"; method: "carve_out" | "included" | null; note: string | null },
+  ) =>
+    apiFetch<void>(`/engagement/vendors/${vendorId}?framework=${encodeURIComponent(framework)}`, {
+      method: "PUT",
+      body: JSON.stringify(body),
+    }),
+  removeVendor: (framework: string, vendorId: string, reason: string) =>
+    apiFetch<void>(
+      `/engagement/vendors/${vendorId}/remove?framework=${encodeURIComponent(framework)}`,
+      { method: "POST", body: JSON.stringify({ reason }) },
+    ),
+  scopeSuggestions: () => apiFetch<ScopeSuggestion[]>("/engagement/scope-suggestions"),
+  acceptScopeSuggestions: (refs: { ref_type: string; ref_id: string }[]) =>
+    apiFetch<{ added: number }>("/engagement/scope-suggestions/accept", {
+      method: "POST",
+      body: JSON.stringify({ refs }),
+    }),
+  commitments: () => apiFetch<Commitment[]>("/commitments"),
+  addCommitment: (body: Omit<Commitment, "id">) =>
+    apiFetch<Commitment>("/commitments", { method: "POST", body: JSON.stringify(body) }),
+  retireCommitment: (id: string, reason: string) =>
+    apiFetch<void>(`/commitments/${id}/retire`, { method: "POST", body: JSON.stringify({ reason }) }),
+  deactivateFramework: (frameworkId: string, reason: string) =>
+    apiFetch<{ controls_only_here: string[] }>(`/tenant-frameworks/${frameworkId}/deactivate`, {
+      method: "POST",
+      body: JSON.stringify({ reason }),
+    }),
+  retireScopeItem: (id: string, reason: string) =>
+    apiFetch<{ notices: string[] }>(`/engagement/scope-items/${id}/retire`, {
+      method: "POST",
+      body: JSON.stringify({ reason }),
+    }),
   put: (body: EngagementPut) =>
     apiFetch<Engagement>("/engagement", {
       method: "PUT",

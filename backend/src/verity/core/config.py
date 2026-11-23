@@ -218,6 +218,34 @@ class AuthSettings(_Section):
     against, so a used or superseded link no longer validates."""
 
 
+class OidcSettings(_Section):
+    """Sign in through the client's Keycloak (openspec/changes/add-keycloak-sso, ADR-0015).
+
+    Off by default: native sign in is unaffected until a deployment turns this on. Moving from the
+    local Keycloak to the client's is a change of these values only.
+    """
+
+    model_config = SettingsConfigDict(env_prefix="OIDC_")
+
+    enabled: bool = False
+    issuer_url: str = "http://localhost:8180/realms/verity"
+    client_id: str = "verity-web"
+    client_secret: SecretStr | None = None
+    redirect_url: str = "http://localhost:5173/api/v1/auth/sso/callback"
+    """The API callback as the browser sees it (through the web app's proxy in development)."""
+    web_url: str = "http://localhost:5173"
+    """Where the web app lives: the callback hands off to ``/sso/complete`` there."""
+    scopes: str = "openid email profile organization"
+    provider_key: str = "keycloak"
+    """The ``user_identities.provider`` value for people who sign in through this issuer."""
+    timeout_seconds: float = Field(default=10.0, gt=0)
+    admin_client_id: str = "verity-admin"
+    """Phase C: the service account Verity uses on Keycloak's Admin API to set customers up."""
+    admin_client_secret: SecretStr | None = None
+    dns_resolver_url: str = "https://cloudflare-dns.com/dns-query"
+    """DNS over HTTPS (JSON) for the TXT record that proves a workspace owns a domain."""
+
+
 class EmailSettings(_Section):
     """Outbound email over SMTP. When ``host`` (or ``from_email``) is unset the mailer
     is a no-op: local and test environments never reach for a server that isn't there,
@@ -319,7 +347,18 @@ class Settings(_Section):
     Week 1 returns that link in the invite response — decision 15 — so the base
     must be configurable per deployment."""
 
+    guided_setup: bool = False
+    """Guided onboarding 3.3: when on, self sign up adopts no framework and the admin
+    chooses frameworks in the setup flow, which adopts through the same function. Off,
+    sign up adopts the full SOC 2 library as before. Provider registration is unchanged."""
+
+    regulations_show_drafts: bool = True
+    """Guided onboarding 6.7: show country panel entries no named reviewer has signed yet,
+    marked as not legally reviewed. On by default (owner decision D-8, 2026-11-23); set
+    REGULATIONS_SHOW_DRAFTS=false to hold them back."""
+
     auth: AuthSettings = Field(default_factory=AuthSettings)
+    oidc: OidcSettings = Field(default_factory=OidcSettings)
     email: EmailSettings = Field(default_factory=EmailSettings)
     leads: LeadsSettings = Field(default_factory=LeadsSettings)
     database: DatabaseSettings = Field(default_factory=DatabaseSettings)

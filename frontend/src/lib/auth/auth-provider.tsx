@@ -84,10 +84,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Record the sign-out in the audit trail (best-effort). apiFetch reads the
     // bearer token synchronously, so this captures it before clearSession runs;
     // a failed call must never block the user from signing out.
+    // A person who signed in through Keycloak signs out there too, so the next sign in
+    // asks again. Both calls read the bearer token now, before the session is cleared.
+    const endSession = authApi
+      .ssoEndSession()
+      .then((r) => r.end_session_url)
+      .catch(() => null);
     void authApi.logout().catch(() => {});
     clearSession();
     setPrincipal(null);
     setToken(null);
+    void endSession.then((url) => {
+      if (url) window.location.assign(url);
+    });
   }, []);
 
   const value = useMemo(

@@ -42,6 +42,7 @@ from typing import Any, Final
 
 from sqlalchemy import text
 
+from verity.core.config import get_settings
 from verity.core.db import provider_session_scope, session_scope
 from verity.core.logging import get_logger
 from verity.workers.celery_app import celery_app
@@ -512,3 +513,21 @@ async def _run_connector_checks() -> dict[str, Any]:
             logger.exception("worker.run_connector_checks.tenant_failed", tenant_id=str(tenant_id))
     logger.info("worker.run_connector_checks", runs=runs)
     return {"runs": runs}
+
+
+@celery_app.task(name="verity.workers.tasks.sync_sso_directories")
+def sync_sso_directories() -> dict[str, Any]:
+    """Hourly: read each SSO workspace's Keycloak organization and apply it (add-keycloak-sso
+    phase D). Idempotent: a run with nothing new changes nothing. Keycloak unreachable means no
+    change for that workspace (fail closed)."""
+    return asyncio.run(_sync_sso_directories())
+
+
+async def _sync_sso_directories() -> dict[str, Any]:
+    from verity.modules.iam.sso_sync import sso_sync_service  # noqa: PLC0415
+
+    if not get_settings().oidc.admin_client_secret:
+        return {"synced": 0, "failed": 0, "skipped": "no Keycloak service account"}
+    result = await sso_sync_service.sync_all()
+    logger.info("worker.sync_sso_directories", **result)
+    return dict(result)

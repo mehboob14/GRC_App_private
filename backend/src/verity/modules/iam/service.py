@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import hashlib
 import re
+import secrets
 import uuid
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime
@@ -41,7 +42,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from verity.core.config import get_settings
 from verity.core.crypto import CryptoError, get_secret_box
-from verity.core.db import provider_session_scope
+from verity.core.db import provider_session_scope, session_scope
 from verity.core.deps import (
     active_role_ids,
     assignment_window_active,
@@ -72,6 +73,7 @@ from verity.core.security import (
 from verity.modules.audit.service import Actor, AuditService, System, audit_service
 from verity.modules.audit.service import Membership as MembershipActor
 from verity.modules.audit.service import PlatformAdmin as PlatformAdminActor
+from verity.modules.iam import sso
 from verity.modules.iam.exceptions import (
     AlreadyMember,
     DuplicateAssignment,
@@ -97,12 +99,15 @@ from verity.modules.iam.models import (
     RoleAssignment,
     TenantMembership,
     TenantSettings,
+    TenantSso,
     User,
 )
 from verity.modules.iam.repository import (
     GroupRepository,
+    IdentityRepository,
     MembershipRepository,
     RoleRepository,
+    SsoRepository,
     TenantSettingsRepository,
     UserRepository,
 )
@@ -193,6 +198,43 @@ BUILT_IN_ROLE_KEYS: Final[dict[str, tuple[str, ...] | None]] = {
     "Privacy Officer": ("tenant:read", "audit:read", "frameworks:read", "vendors:read"),
     "Engineering Lead": ("tenant:read", "frameworks:read", "evidence:read"),
     "Business Operations/Finance Lead": ("tenant:read", "frameworks:read", "vendors:read"),
+    # Guided onboarding D-12 (2026-11-21): runs the compliance programme without being Admin.
+    # Everything the work needs, none of the workspace administration: no member invites (an
+    # invite may hand out any role, Admin included), no roles, groups or security settings, and
+    # no ``tenant:manage`` (it also sets the outbound mail server). Approvals that management
+    # owns stay out too: documents, risk acceptance, vendor and task approvals, and accepting a
+    # vulnerability, so the person who prepares the work is not the one who signs it off.
+    "Compliance Manager": (
+        "tenant:read",
+        "audit:read",
+        "frameworks:read",
+        "controls:manage",
+        "evidence:read",
+        "evidence:manage",
+        "evidence:review",
+        "documents:read",
+        "documents:manage",
+        "documents:publish",
+        "tasks:read",
+        "tasks:manage",
+        "tasks:assign",
+        "risks:read",
+        "risks:manage",
+        "risks:configure",
+        "vendors:read",
+        "vendors:manage",
+        "vendors:assess",
+        "assets:read",
+        "assets:manage",
+        "assets:import",
+        "vulnerabilities:read",
+        "vulnerabilities:manage",
+        "connectors:read",
+        "connectors:manage",
+        "members:read",
+        "groups:read",
+        "roles:read",
+    ),
 }
 """The built-in roles seeded into every tenant, and the keys they start with.
 
@@ -226,6 +268,11 @@ BUILT_IN_ROLE_DESCRIPTIONS: Final[dict[str, str]] = {
         "Who at the company leads all of operations and/or finance (this may "
         "be the same person as other roles)."
     ),
+    "Compliance Manager": (
+        "Runs the compliance programme: frameworks, controls, evidence, documents, risks, "
+        "vendors and tasks. Cannot change people, roles or security settings, and does not "
+        "approve what management signs off."
+    ),
 }
 """Wording taken from the client's appointment screen. Seeded as the starting
 description; an admin may rewrite it, and a re-seed never overwrites an edit."""
@@ -258,6 +305,7 @@ _ASSIGNMENT_SNAPSHOT: Final = (
     "engagement_id",
     "valid_from",
     "valid_until",
+    "source",
 )
 
 
@@ -724,6 +772,22 @@ def _invite_message(to_email: str, invitee_name: str, accept_url: str) -> Outbou
     return OutboundEmail(to=to_email, subject=subject, text=text, html=html)
 
 
+_SSO_ALIAS: Final = re.compile(r"^[a-z0-9][a-z0-9_-]{1,62}$")
+_SSO_DOMAIN: Final = re.compile(
+    r"^(?=.{3,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$"
+)
+_SSO_SNAPSHOT: Final = (
+    "organization_alias",
+    "domains",
+    "verified_domains",
+    "enabled",
+    "enforce",
+    "jit_enabled",
+    "default_role_id",
+    "verified_at",
+)
+
+
 class IamAuthService:
     """Signup, login, MFA, workspaces, and invitation acceptance.
 
@@ -746,6 +810,8 @@ class IamAuthService:
         self._groups = groups or GroupRepository()
         self._roles = roles or RoleRepository()
         self._settings = TenantSettingsRepository()
+        self._identities = IdentityRepository()
+        self._sso = SsoRepository()
         self._audit = audit or audit_service
         self._mailer = mailer or get_mailer()
 
@@ -894,8 +960,10 @@ class IamAuthService:
                 # signup transaction — the gates above are now satisfied.
                 await tenancy_service.run_provisioning(session, tenant_id=tenant.id, actor=actor)
                 # Every tenant starts with the full SOC 2 control library adopted,
-                # so all 114 controls exist to scope, own and evidence from day one.
-                await _adopt_control_library(session, tenant_id=tenant.id, actor=actor)
+                # so all 114 controls exist to scope, own and evidence from day one;
+                # with guided setup on, the admin chooses frameworks there instead.
+                if not get_settings().guided_setup:
+                    await _adopt_control_library(session, tenant_id=tenant.id, actor=actor)
                 verify = (user.id, email_n)
                 outcome = EmailVerificationRequired(email=email_n)
 
@@ -1067,7 +1135,7 @@ class IamAuthService:
 
     # -- login -------------------------------------------------------------------
 
-    async def login(self, *, email: str, password: str) -> AuthOutcome:
+    async def login(self, *, email: str, password: str) -> AuthOutcome:  # noqa: PLR0912 — one branch per refusal
         """Password first, then whatever the resolved membership demands.
 
         The unknown-email path verifies against a dummy hash inside
@@ -1080,6 +1148,7 @@ class IamAuthService:
         # non-deployed environment. Production keeps the uniform message so login
         # cannot be turned into an oracle for which emails exist.
         refused: str | None = None
+        sso_only = False
         async with provider_session_scope() as session:
             user = await self._users.get_by_email(session, email_n)
             credentials = (
@@ -1124,14 +1193,23 @@ class IamAuthService:
                     # the pinned configuration. Not a separate auditable action.
                     credentials.password_hash = hash_password(password)
                 memberships = await self._active_memberships(session, user)
-                if not memberships:
+                usable = await self._password_allowed(session, user, credentials, memberships)
+                if memberships and not usable:
+                    # The password was right; every workspace of theirs signs in with SSO.
                     await self._record_attempt(
-                        session,
-                        actor=System(),
-                        tenant_id=None,
-                        outcome="no_active_membership",
+                        session, actor=System(), tenant_id=None, outcome="sso_enforced"
                     )
-                    refused = "this account has no active workspace membership"
+                    sso_only = True
+                memberships = usable
+                if not memberships:
+                    if not sso_only:
+                        await self._record_attempt(
+                            session,
+                            actor=System(),
+                            tenant_id=None,
+                            outcome="no_active_membership",
+                        )
+                        refused = "this account has no active workspace membership"
                 elif len(memberships) > 1:
                     issued = issue_token(subject=user.id, plane="tenant", typ="selection")
                     outcome = SelectionIssued(
@@ -1143,6 +1221,11 @@ class IamAuthService:
                     outcome = await self._post_password_step(
                         session, memberships[0], user, credentials
                     )
+        if sso_only:
+            raise AuthenticationRequired(
+                "Your organisation signs in with single sign on. Use the SSO button instead.",
+                detail="password sign in refused: SSO is enforced for every workspace",
+            )
         if outcome is None:
             # Uniform to the caller in EVERY environment. Distinguishing "no such
             # email" from "wrong password" is an account-enumeration oracle, and
@@ -1379,11 +1462,37 @@ class IamAuthService:
     ) -> AuthOutcome:
         """Selection token (subject: the user) plus a membership choice → the
         next step for that membership: a session, or its MFA challenge."""
-        claims = decode_token(selection_token, expected_typ="selection", expected_plane="tenant")
-        async with provider_session_scope() as session:
-            return await self._step_into_membership(
-                session, user_id=claims.subject, membership_id=membership_id
+        allowed: dict[str, list[str]] | None = None
+        try:
+            claims = decode_token(
+                selection_token, expected_typ="selection", expected_plane="tenant"
             )
+            via_sso = False
+        except InvalidToken:
+            # A choice after signing in through Keycloak: the identity provider did MFA, and only
+            # the workspaces that sign in allowed may be chosen (a workspace with SSO on takes
+            # only its own organization).
+            claims = decode_token(
+                selection_token, expected_typ="sso_selection", expected_plane="tenant"
+            )
+            via_sso = True
+            allowed = await sso.selection(str(claims.jti))
+            if allowed is None or str(membership_id) not in allowed["memberships"]:
+                raise NotFound(
+                    _WORKSPACE_UNAVAILABLE_MESSAGE,
+                    detail=f"membership {membership_id} not allowed by this SSO sign in",
+                ) from None
+        async with provider_session_scope() as session:
+            outcome = await self._step_into_membership(
+                session, user_id=claims.subject, membership_id=membership_id, via_sso=via_sso
+            )
+        if (
+            allowed is not None
+            and isinstance(outcome, SessionIssued)
+            and str(outcome.principal.tenant_id) in allowed["verify"]
+        ):
+            await self._mark_sso_verified(outcome.principal.tenant_id)
+        return outcome
 
     async def switch_workspace(
         self, *, user_id: uuid.UUID, membership_id: uuid.UUID
@@ -1397,7 +1506,12 @@ class IamAuthService:
             )
 
     async def _step_into_membership(
-        self, session: AsyncSession, *, user_id: uuid.UUID, membership_id: uuid.UUID
+        self,
+        session: AsyncSession,
+        *,
+        user_id: uuid.UUID,
+        membership_id: uuid.UUID,
+        via_sso: bool = False,
     ) -> AuthOutcome:
         membership = await self._memberships.get(session, membership_id)
         if (
@@ -1429,7 +1543,387 @@ class IamAuthService:
                 detail=f"membership {membership_id} holds no in-window role for user {user_id}",
             )
         credentials = await self._users.get_credentials(session, user.id)
+        if via_sso:
+            return await self._grant_session(session, membership, user, credentials, method="sso")
+        if not await self._password_allowed(session, user, credentials, [membership]):
+            raise AuthenticationRequired(
+                "This workspace signs in with single sign on. Sign out, then use the SSO button.",
+                detail=f"membership {membership_id}: SSO is enforced for its tenant",
+            )
         return await self._post_password_step(session, membership, user, credentials)
+
+    # -- sign in through Keycloak (ADR-0015) ---------------------------------------------
+
+    async def sso_sign_in(self, identity: sso.SsoIdentity) -> AuthOutcome:
+        """Who signed in through Keycloak, and what they get: a session, or a workspace choice.
+
+        The subject is looked up in ``user_identities`` first. An unknown subject is linked to the
+        Verity user with the same email only when the issuer says the email is verified. A workspace
+        that turned just in time provisioning on makes a person arriving through its organization a
+        member (``_provision_sso``); otherwise a membership is required: the token never grants
+        access by itself. MFA was the identity provider's job, so Verity's
+        TOTP step is skipped. Refusals are audited before they are raised.
+        """
+        provider = get_settings().oidc.provider_key
+        failure: str | None = None
+        outcome: AuthOutcome | None = None
+        signed_in: uuid.UUID | None = None
+        proved: uuid.UUID | None = None
+        async with provider_session_scope() as session:
+            # An identity provider a workspace set up through Verity is that workspace's alone: it
+            # may only sign people into that workspace, for the domains the workspace proved.
+            owner = await self._sso.for_idp(session, identity.idp) if identity.idp else None
+            domain = (identity.email or "").rpartition("@")[2]
+            if owner is not None and domain not in owner.verified_domains:
+                failure = "wrong_domain"
+            user_id = await self._identities.user_for(
+                session, provider=provider, subject=identity.subject
+            )
+            user = await self._users.get(session, user_id) if user_id else None
+            if user is None and failure is None:
+                user, failure = await self._link_sso_identity(session, identity, provider)
+            if failure in (None, "no_account"):
+                made = await self._provision_sso(
+                    session, identity, only_tenant=owner.tenant_id if owner else None
+                )
+                if made is not None:
+                    user, failure = made, None
+            if user is not None and failure is None:
+                outcome, failure, proved = await self._sso_outcome(
+                    session, user, identity, only_tenant=owner.tenant_id if owner else None
+                )
+                if failure is None:
+                    signed_in = user.id
+            if failure is not None:
+                await self._record_attempt(
+                    session, actor=System(), tenant_id=None, outcome=f"sso_{failure}"
+                )
+        if failure is not None or outcome is None:
+            raise sso.SsoFailed(failure or "token", detail=f"sso sign in refused: {failure}")
+        if signed_in is not None and identity.id_token:
+            await sso.remember_id_token(str(signed_in), identity.id_token)
+        if proved is not None:
+            await self._mark_sso_verified(proved)
+        return outcome
+
+    async def sso_organization_for(self, email: str | None) -> str | None:
+        """The Keycloak organization a sign in from this email should go to, when a workspace
+        with SSO on routes its domain."""
+        if not email or "@" not in email:
+            return None
+        domain = normalize_email(email).rsplit("@", 1)[1]
+        async with provider_session_scope() as session:
+            row = await self._sso.for_domain(session, domain)
+        return row.organization_alias if row is not None else None
+
+    async def _sso_outcome(
+        self,
+        session: AsyncSession,
+        user: User,
+        identity: sso.SsoIdentity,
+        *,
+        only_tenant: uuid.UUID | None = None,
+    ) -> tuple[AuthOutcome | None, str | None, uuid.UUID | None]:
+        """A session, or a workspace choice, and the tenant whose SSO this sign in just proved.
+
+        A workspace with SSO on accepts an SSO sign in only when the token names its Keycloak
+        organization. When the token names the organization of one of the person's workspaces,
+        that workspace gets the session without asking.
+        """
+        if user.status != USER_STATUS_ACTIVE:
+            return None, "disabled", None
+        memberships = [
+            m
+            for m in await self._active_memberships(session, user)
+            if only_tenant is None or m.tenant_id == only_tenant
+        ]
+        configured = await self._sso.for_tenants(session, [m.tenant_id for m in memberships])
+        orgs = set(identity.organizations)
+
+        def through_org(m: TenantMembership) -> bool:
+            row = configured.get(m.tenant_id)
+            return row is not None and row.enabled and row.organization_alias in orgs
+
+        def admits(m: TenantMembership) -> bool:
+            row = configured.get(m.tenant_id)
+            return row is None or not row.enabled or row.organization_alias in orgs
+
+        allowed = [m for m in memberships if admits(m)]
+        if not allowed:
+            return None, "no_workspace", None
+        matched = [m for m in allowed if through_org(m)]
+        chosen = matched or allowed
+        verify = {m.tenant_id for m in matched if configured[m.tenant_id].verified_at is None}
+        if len(chosen) > 1:
+            issued = issue_token(subject=user.id, plane="tenant", typ="sso_selection")
+            await sso.remember_selection(
+                str(issued.jti),
+                memberships=[str(m.id) for m in chosen],
+                verify=[str(t) for t in verify],
+            )
+            ids = {m.id for m in chosen}
+            return (
+                SelectionIssued(
+                    selection_token=issued.token,
+                    expires_at=issued.expires_at,
+                    workspaces=[
+                        w for w in await self._workspaces(session, user) if w.membership_id in ids
+                    ],
+                ),
+                None,
+                None,
+            )
+        membership = chosen[0]
+        credentials = await self._users.get_credentials(session, user.id)
+        granted = await self._grant_session(
+            session,
+            membership,
+            user,
+            credentials,
+            method="sso",
+            extra={
+                "issuer": identity.issuer,
+                "acr": identity.acr,
+                "amr": identity.amr,
+                "organizations": identity.organizations,
+                "identity_provider": identity.idp,
+            },
+        )
+        return granted, None, membership.tenant_id if membership.tenant_id in verify else None
+
+    async def _mark_sso_verified(self, tenant_id: uuid.UUID) -> None:
+        """The first sign in through a workspace's organization proves its SSO works; only then
+        can the workspace enforce it."""
+        async with session_scope(tenant_id) as session:
+            row = await self._sso.get(session, tenant_id)
+            if row is None or row.verified_at is not None:
+                return
+            row.verified_at = datetime.now(UTC)
+            await session.flush([row])
+            await self._audit.record(
+                session,
+                action="update",
+                object_type="tenant_sso",
+                object_id=row.id,
+                actor=System(),
+                tenant_id=tenant_id,
+                before={"verified_at": None},
+                after={"verified_at": row.verified_at.isoformat()},
+            )
+
+    async def _password_allowed(
+        self,
+        session: AsyncSession,
+        user: User,
+        credentials: Credentials | None,
+        memberships: list[TenantMembership],
+    ) -> list[TenantMembership]:
+        """The memberships a password may open. A workspace that enforces SSO keeps password
+        sign in only for its Admins with TOTP enrolled (break glass), who then always get the
+        TOTP step (``_requires_mfa``)."""
+        configured = await self._sso.for_tenants(session, [m.tenant_id for m in memberships])
+        enrolled = bool(
+            user.mfa_enabled
+            and credentials is not None
+            and credentials.mfa_secret_encrypted is not None
+        )
+        out: list[TenantMembership] = []
+        for m in memberships:
+            row = configured.get(m.tenant_id)
+            if row is None or not row.enforce or (enrolled and await self._is_admin(session, m)):
+                out.append(m)
+        return out
+
+    async def _link_sso_identity(
+        self, session: AsyncSession, identity: sso.SsoIdentity, provider: str
+    ) -> tuple[User | None, str | None]:
+        """Link a first time subject to the Verity user with its verified email."""
+        if not identity.email:
+            return None, "no_account"
+        if not identity.email_verified:
+            return None, "unverified"
+        user = await self._users.get_by_email(session, normalize_email(identity.email))
+        if user is None:
+            return None, "no_account"
+        await self._link(session, user.id, identity.subject, provider)
+        return user, None
+
+    async def _link(
+        self,
+        session: AsyncSession,
+        user_id: uuid.UUID,
+        subject: str,
+        provider: str,
+        tenant_id: uuid.UUID | None = None,
+    ) -> None:
+        """Audited globally at sign in; in the workspace's stream when provisioning for it."""
+        link, replaced = await self._identities.link(
+            session, user_id=user_id, provider=provider, provider_type="oidc", subject=subject
+        )
+        await self._audit.record(
+            session,
+            action="create" if replaced is None else "update",
+            object_type="user_identity",
+            object_id=link.id,
+            actor=System(),
+            tenant_id=tenant_id,
+            before={"subject": replaced} if replaced is not None else None,
+            after={
+                "provider": provider,
+                "issuer": get_settings().oidc.issuer_url,
+                "subject": subject,
+                "linked_by": "verified_email",
+            },
+        )
+
+    # -- lifecycle (add-keycloak-sso phase D) ----------------------------------------------
+
+    async def _provision_sso(
+        self,
+        session: AsyncSession,
+        identity: sso.SsoIdentity,
+        *,
+        only_tenant: uuid.UUID | None,
+    ) -> User | None:
+        """Just in time provisioning at sign in, into each workspace whose organization the token
+        names, that turned it on, and that proved the email's domain. The person, when anything
+        was created."""
+        if not identity.email or not identity.email_verified:
+            return None
+        domain = normalize_email(identity.email).rpartition("@")[2]
+        made: uuid.UUID | None = None
+        for row in await self._sso.for_organizations(session, identity.organizations):
+            if not (
+                row.enabled
+                and row.jit_enabled
+                and row.default_role_id is not None
+                and domain in row.verified_domains
+                and only_tenant in (None, row.tenant_id)
+                and await self._tenant_is_active(session, row.tenant_id)
+            ):
+                continue
+            membership = await self.provision_sso_member(
+                session,
+                tenant_id=row.tenant_id,
+                email=identity.email,
+                full_name=identity.name,
+                subject=identity.subject,
+                role_id=row.default_role_id,
+                actor=System(),
+            )
+            if membership is not None:
+                made = membership.user_id
+        return await self._users.get(session, made) if made is not None else None
+
+    async def provision_sso_member(  # noqa: PLR0913 — the person's facts
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        email: str,
+        full_name: str | None,
+        subject: str,
+        role_id: uuid.UUID,
+        actor: Actor,
+    ) -> TenantMembership | None:
+        """Make the person an active member with ``role_id``, creating the user and linking the
+        Keycloak subject when needed. The caller has checked that the workspace turned this on
+        and proved the email's domain, and that the email is verified. Someone already holding a
+        membership there, in any state, is left alone: a membership an admin disabled is
+        restored by an admin. Audited in the workspace's stream."""
+        provider = get_settings().oidc.provider_key
+        email_n = normalize_email(email)
+        await bind_tenant_context(session, tenant_id)
+        linked = await self._identities.user_for(session, provider=provider, subject=subject)
+        user = (
+            await self._users.get(session, linked)
+            if linked is not None
+            else await self._users.get_by_email(session, email_n)
+        )
+        if user is None:
+            user = User(
+                id=uuid7(),
+                email=email_n,
+                full_name=(full_name or "").strip() or email_n.partition("@")[0],
+                email_verified_at=datetime.now(UTC),
+            )
+            await self._users.add(session, user)
+            await self._record_create(
+                session, actor, tenant_id, "user", user.id, user, _USER_SNAPSHOT
+            )
+        elif user.status != USER_STATUS_ACTIVE:
+            return None
+        if linked is None:
+            await self._link(session, user.id, subject, provider, tenant_id)
+        role = await self._roles.get_for_tenant(session, tenant_id, role_id)
+        if role is None or await self._memberships.get_by_tenant_user(session, tenant_id, user.id):
+            return None
+        now = datetime.now(UTC)
+        membership = TenantMembership(
+            id=uuid7(),
+            tenant_id=tenant_id,
+            user_id=user.id,
+            status=MEMBERSHIP_STATUS_ACTIVE,
+            invited_at=now,
+            accepted_at=now,
+        )
+        await self._memberships.add(session, membership)
+        await self._record_create(
+            session,
+            actor,
+            tenant_id,
+            "tenant_membership",
+            membership.id,
+            membership,
+            _MEMBERSHIP_SNAPSHOT,
+        )
+        assignment = RoleAssignment(
+            id=uuid7(),
+            tenant_id=tenant_id,
+            role_id=role.id,
+            assignee_type=ASSIGNEE_TYPE_MEMBERSHIP,
+            assignee_id=membership.id,
+        )
+        await self._roles.add_assignment(session, assignment)
+        await self._record_create(
+            session,
+            actor,
+            tenant_id,
+            "role_assignment",
+            assignment.id,
+            assignment,
+            _ASSIGNMENT_SNAPSHOT,
+        )
+        return membership
+
+    async def sso_backchannel_logout(self, subject: str) -> None:
+        """Keycloak ended this person's sign in: every Verity session they hold stops working.
+
+        ponytail: one epoch per person, so a sign out at Keycloak ends their sessions on every
+        device; tie sessions to Keycloak's ``sid`` if per device sign out is ever wanted.
+        """
+        provider = get_settings().oidc.provider_key
+        async with provider_session_scope() as session:
+            user_id = await self._identities.user_for(session, provider=provider, subject=subject)
+            user = await self._users.get(session, user_id) if user_id is not None else None
+            if user is None:
+                return  # nobody in Verity: nothing to end
+            before = user.sessions_revoked_at
+            user.sessions_revoked_at = datetime.now(UTC)
+            await session.flush([user])
+            await self._audit.record(
+                session,
+                action="update",
+                object_type="user",
+                object_id=user.id,
+                actor=System(),
+                tenant_id=None,
+                before={"sessions_revoked_at": before.isoformat() if before else None},
+                after={
+                    "sessions_revoked_at": user.sessions_revoked_at.isoformat(),
+                    "reason": "sso_backchannel_logout",
+                },
+            )
 
     # -- invitations -------------------------------------------------------------------
 
@@ -1604,8 +2098,15 @@ class IamAuthService:
         """TOTP is required only when the tenant has turned it on *and* the
         membership holds the built-in Admin role. Off by default — a trial admin
         signs up with email verification alone and enables MFA later if they want."""
+        enforced = await self._sso.for_tenants(session, [membership.tenant_id])
+        if membership.tenant_id in enforced and enforced[membership.tenant_id].enforce:
+            # Only break glass Admins reach a password step in an SSO enforced workspace.
+            return True
         if not await self._settings.require_admin_mfa(session, membership.tenant_id):
             return False
+        return await self._is_admin(session, membership)
+
+    async def _is_admin(self, session: AsyncSession, membership: TenantMembership) -> bool:
         grants, group_ids = await fetch_grants_for_membership(
             session, tenant_id=membership.tenant_id, membership_id=membership.id
         )
@@ -1620,20 +2121,23 @@ class IamAuthService:
         roles = await self._roles.get_many(session, membership.tenant_id, list(role_ids))
         return any(role.built_in and role.name == ADMIN_ROLE_NAME for role in roles)
 
-    async def _grant_session(
+    async def _grant_session(  # noqa: PLR0913 — the session's facts
         self,
         session: AsyncSession,
         membership: TenantMembership,
         user: User,
-        credentials: Credentials,
+        credentials: Credentials | None,
         *,
         method: str,
+        extra: dict[str, object] | None = None,
     ) -> SessionIssued:
         """Issue the session token and write the login's audit row (decision 2:
         ``create`` on ``session``, object id = the token's ``jti``, in the
-        membership's tenant stream)."""
+        membership's tenant stream). A person who only ever signs in through Keycloak has
+        no credentials row, so there is no last sign in time to stamp."""
         issued: IssuedToken = issue_token(subject=membership.id, plane="tenant", typ="session")
-        credentials.last_login_at = datetime.now(UTC)
+        if credentials is not None:
+            credentials.last_login_at = datetime.now(UTC)
         await self._audit.record(
             session,
             action="create",
@@ -1641,7 +2145,7 @@ class IamAuthService:
             object_id=issued.jti,
             actor=MembershipActor(membership.id),
             tenant_id=membership.tenant_id,
-            after={"method": method, "plane": "tenant"},
+            after={"method": method, "plane": "tenant", **(extra or {})},
         )
         principal = await self._principal_snapshot(session, membership, user)
         workspaces = await self._workspaces(session, user)
@@ -1910,8 +2414,124 @@ class IamService:
         self._groups = groups or GroupRepository()
         self._roles = roles or RoleRepository()
         self._settings = TenantSettingsRepository()
+        self._sso = SsoRepository()
         self._audit = audit or audit_service
         self._mailer = mailer or get_mailer()
+
+    # -- single sign on through Keycloak (ADR-0015) -------------------------------
+
+    async def get_sso(self, session: AsyncSession, *, tenant_id: uuid.UUID) -> TenantSso | None:
+        return await self._sso.get(session, tenant_id)
+
+    async def save_sso(  # noqa: PLR0913 — the settings' own fields
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        actor_membership_id: uuid.UUID,
+        organization_alias: str,
+        domains: list[str],
+        enabled: bool,
+        enforce: bool,
+        jit_enabled: bool,
+        default_role_id: uuid.UUID | None,
+    ) -> TenantSso:
+        """Set the workspace's SSO. Changing the organization clears the proof that SSO works,
+        and enforcement needs that proof (a successful sign in through the organization), so a
+        mistyped alias cannot lock the workspace out. Audited."""
+        alias = organization_alias.strip().lower()
+        if not _SSO_ALIAS.fullmatch(alias):
+            raise InvalidInput(
+                "Use the organization's alias from Keycloak: lowercase letters, digits and dashes.",
+                detail=f"organization alias {alias!r}",
+            )
+        cleaned = sorted({d.strip().lower().lstrip("@") for d in domains if d.strip()})
+        bad = [d for d in cleaned if not _SSO_DOMAIN.fullmatch(d)]
+        if bad:
+            raise InvalidInput(
+                f"These are not email domains: {', '.join(bad)}.", detail=f"domains {bad!r}"
+            )
+        default_role = (
+            await self._roles.get_for_tenant(session, tenant_id, default_role_id)
+            if default_role_id is not None
+            else None
+        )
+        if default_role_id is not None and default_role is None:
+            raise InvalidInput("Choose a role from this workspace.", detail="default role")
+        if jit_enabled and default_role is None:
+            raise InvalidInput(
+                "Choose the role new people get.", detail="jit without a default role"
+            )
+        if (
+            default_role is not None
+            and default_role.built_in
+            and default_role.name == ADMIN_ROLE_NAME
+        ):
+            raise InvalidInput(
+                "New people cannot start as Admin. Choose another role.",
+                detail="default role is Admin",
+            )
+        # Other workspaces are invisible to this tenant session; ask on the provider plane.
+        async with provider_session_scope() as plane:
+            alias_taken, taken = await self._sso.claimed_elsewhere(
+                plane, tenant_id=tenant_id, alias=alias, domains=cleaned
+            )
+        if alias_taken:
+            raise Conflict(
+                "Another workspace already uses that organization.", detail=f"alias {alias}"
+            )
+        if taken:
+            raise Conflict(
+                f"Another workspace already signs in with {', '.join(taken)}.",
+                detail=f"domains {taken!r}",
+            )
+        row = await self._sso.get(session, tenant_id)
+        before = AuditService.snapshot(row, fields=_SSO_SNAPSHOT) if row else None
+        if row is None:
+            row = TenantSso(
+                id=uuid7(),
+                tenant_id=tenant_id,
+                organization_alias=alias,
+                verified_domains=[],
+                domain_token=secrets.token_hex(16),
+            )
+        elif row.organization_alias != alias:
+            row.verified_at = None  # a different organization has not been tried yet
+        row.organization_alias = alias
+        row.domains = cleaned
+        row.verified_domains = [d for d in row.verified_domains if d in cleaned]
+        row.enabled = enabled
+        row.jit_enabled = jit_enabled
+        row.default_role_id = default_role_id
+        if enforce and not (enabled and row.verified_at is not None):
+            raise InvalidInput(
+                "Sign in with SSO once to prove it works, then turn on enforcement.",
+                detail="enforce before a verified sign in",
+            )
+        row.enforce = enforce
+        await self._sso.add(session, row)
+        if row.idp_alias:
+            # Keycloak follows the switches: the identity provider is on only while SSO is on, and
+            # only proven domains still route to it.
+            from verity.modules.iam.sso_setup import sso_setup_service  # noqa: PLC0415
+
+            tenant = await tenancy_service.get_tenant(session, tenant_id)
+            await sso_setup_service.sync_routing(
+                row, tenant_display_name(tenant.legal_name, tenant.trading_name)
+            )
+        after = AuditService.snapshot(row, fields=_SSO_SNAPSHOT)
+        if after != before:
+            await self._audit.record(
+                session,
+                action="create" if before is None else "update",
+                object_type="tenant_sso",
+                object_id=row.id,
+                actor=MembershipActor(actor_membership_id),
+                tenant_id=tenant_id,
+                before=before,
+                after=after,
+            )
+        return row
 
     # -- security settings ------------------------------------------------------
 
@@ -2019,7 +2639,7 @@ class IamService:
     async def seed_built_in_roles(
         self, session: AsyncSession, *, tenant_id: uuid.UUID, actor: Actor
     ) -> dict[str, Role]:
-        """Create whichever of the five built-in roles are missing. Idempotent:
+        """Create whichever of the built-in roles are missing. Idempotent:
         runs on both the signup and the provider-registration paths (decision 14),
         and a rerun creates and audits nothing."""
         existing = {

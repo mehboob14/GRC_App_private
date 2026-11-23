@@ -337,6 +337,7 @@ def test_the_documented_planes_and_types_are_the_only_ones() -> None:
         "session",
         "challenge",
         "selection",
+        "sso_selection",
         "invite",
         "email_verify",
         "password_reset",

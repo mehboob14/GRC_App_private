@@ -1,0 +1,79 @@
+{
+  "realm": "northwind-corp",
+  "displayName": "Northwind Corp (sample customer identity provider)",
+  "enabled": true,
+  "sslRequired": "external",
+  "loginWithEmailAllowed": true,
+  "registrationAllowed": false,
+  "clients": [
+    {
+      "clientId": "keycloak-broker",
+      "name": "Verity's Keycloak",
+      "description": "The verity realm brokers sign in to this realm, as it would to a customer's Entra ID.",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "northwind-broker-local-dev-only",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": [
+        "http://localhost:8180/realms/verity/broker/*"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:8180/realms/verity/*"
+      }
+    }
+  ],
+  "groups": [
+    {
+      "name": "verity-admins"
+    },
+    {
+      "name": "engineering"
+    },
+    {
+      "name": "finance"
+    }
+  ],
+  "users": [
+    {
+      "username": "demo-iso@northwind.example",
+      "email": "demo-iso@northwind.example",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Demo",
+      "lastName": "Admin",
+      "groups": [
+        "/verity-admins"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Northwind-local-1",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "alice@northwind.example",
+      "email": "alice@northwind.example",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Alice",
+      "lastName": "Engineer",
+      "groups": [
+        "/engineering"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Northwind-local-1",
+          "temporary": false
+        }
+      ]
+    }
+  ]
+}

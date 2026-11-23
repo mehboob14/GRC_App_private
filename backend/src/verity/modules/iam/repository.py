@@ -34,10 +34,14 @@ from verity.modules.iam.models import (
     Role,
     RoleAssignment,
     RolePermission,
+    SsoGroupRole,
     TenantMembership,
     TenantSettings,
+    TenantSso,
     User,
+    UserIdentity,
 )
+from verity.shared.ids import uuid7
 
 
 class TenantSettingsRepository:
@@ -128,6 +132,180 @@ class UserRepository:
             select(Credentials).where(Credentials.user_id == user_id).with_for_update()
         )
         return result.scalar_one_or_none()
+
+
+class SsoRepository:
+    """``tenant_sso``. ``get`` and ``add`` run in a tenant session; the ``for_*`` reads run on the
+    provider plane at sign in, before any tenant is known."""
+
+    async def get(self, session: AsyncSession, tenant_id: uuid.UUID) -> TenantSso | None:
+        result = await session.execute(select(TenantSso).where(TenantSso.tenant_id == tenant_id))
+        return result.scalar_one_or_none()
+
+    async def add(self, session: AsyncSession, row: TenantSso) -> None:
+        session.add(row)
+        await session.flush([row])
+
+    async def for_tenants(
+        self, session: AsyncSession, tenant_ids: Sequence[uuid.UUID]
+    ) -> dict[uuid.UUID, TenantSso]:
+        if not tenant_ids:
+            return {}
+        result = await session.execute(
+            select(TenantSso).where(TenantSso.tenant_id.in_(list(tenant_ids)))
+        )
+        return {row.tenant_id: row for row in result.scalars()}
+
+    async def for_domain(self, session: AsyncSession, domain: str) -> TenantSso | None:
+        result = await session.execute(
+            select(TenantSso).where(
+                TenantSso.enabled.is_(True), TenantSso.verified_domains.contains([domain])
+            )
+        )
+        return result.scalars().first()
+
+    async def claimed_elsewhere(
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: uuid.UUID,
+        alias: str,
+        domains: Sequence[str],
+    ) -> tuple[bool, list[str]]:
+        """Whether another workspace already uses this organization alias, and which of these
+        domains another workspace has already proven it owns. A domain only typed in elsewhere
+        does not block anyone: otherwise anybody could squat a company's domain."""
+        others = list(
+            (
+                await session.execute(select(TenantSso).where(TenantSso.tenant_id != tenant_id))
+            ).scalars()
+        )
+        taken = sorted({d for row in others for d in row.verified_domains} & set(domains))
+        return any(row.organization_alias == alias for row in others), taken
+
+    async def verified_elsewhere(
+        self, session: AsyncSession, *, tenant_id: uuid.UUID, domain: str
+    ) -> bool:
+        result = await session.execute(
+            select(TenantSso.id).where(
+                TenantSso.tenant_id != tenant_id, TenantSso.verified_domains.contains([domain])
+            )
+        )
+        return result.first() is not None
+
+    async def for_idp(self, session: AsyncSession, idp_alias: str) -> TenantSso | None:
+        """The workspace that owns this Keycloak identity provider, if Verity set it up."""
+        result = await session.execute(select(TenantSso).where(TenantSso.idp_alias == idp_alias))
+        return result.scalar_one_or_none()
+
+    async def for_organizations(
+        self, session: AsyncSession, aliases: Sequence[str]
+    ) -> list[TenantSso]:
+        if not aliases:
+            return []
+        result = await session.execute(
+            select(TenantSso).where(TenantSso.organization_alias.in_(list(aliases)))
+        )
+        return list(result.scalars())
+
+    async def enabled_tenant_ids(self, session: AsyncSession) -> list[uuid.UUID]:
+        """Provider plane: the workspaces whose directory the sync reads."""
+        result = await session.execute(
+            select(TenantSso.tenant_id).where(TenantSso.enabled.is_(True))
+        )
+        return list(result.scalars())
+
+    # -- group to role map (phase D) ----------------------------------------------------
+
+    async def group_roles(self, session: AsyncSession, tenant_id: uuid.UUID) -> list[SsoGroupRole]:
+        result = await session.execute(
+            select(SsoGroupRole)
+            .where(SsoGroupRole.tenant_id == tenant_id)
+            .order_by(SsoGroupRole.group_name, SsoGroupRole.id)
+        )
+        return list(result.scalars())
+
+    async def get_group_role(
+        self, session: AsyncSession, tenant_id: uuid.UUID, mapping_id: uuid.UUID
+    ) -> SsoGroupRole | None:
+        result = await session.execute(
+            select(SsoGroupRole).where(
+                SsoGroupRole.tenant_id == tenant_id, SsoGroupRole.id == mapping_id
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def add_group_role(self, session: AsyncSession, row: SsoGroupRole) -> None:
+        session.add(row)
+        await session.flush([row])
+
+    async def delete_group_role(self, session: AsyncSession, row: SsoGroupRole) -> None:
+        await session.delete(row)
+        await session.flush()
+
+
+class IdentityRepository:
+    """``user_identities``: which Verity user a federated subject is (ADR-0006, ADR-0015).
+
+    The only place the seam's table is read or written; the SSO sign in reaches it through here.
+    """
+
+    async def user_for(
+        self, session: AsyncSession, *, provider: str, subject: str
+    ) -> uuid.UUID | None:
+        result = await session.execute(
+            select(UserIdentity.user_id).where(
+                UserIdentity.provider == provider, UserIdentity.external_subject_id == subject
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def link(
+        self,
+        session: AsyncSession,
+        *,
+        user_id: uuid.UUID,
+        provider: str,
+        provider_type: str,
+        subject: str,
+    ) -> tuple[UserIdentity, str | None]:
+        """Link the user to this subject, and the subject it replaces, if any: one person has
+        one link per provider, so an account re-created at the provider moves the link."""
+        existing = (
+            await session.execute(
+                select(UserIdentity).where(
+                    UserIdentity.user_id == user_id, UserIdentity.provider == provider
+                )
+            )
+        ).scalar_one_or_none()
+        if existing is not None:
+            replaced = existing.external_subject_id
+            existing.external_subject_id = subject
+            await session.flush([existing])
+            return existing, replaced
+        row = UserIdentity(
+            id=uuid7(),
+            user_id=user_id,
+            provider=provider,
+            provider_type=provider_type,
+            external_subject_id=subject,
+        )
+        session.add(row)
+        await session.flush([row])
+        return row, None
+
+    async def subjects_for(
+        self, session: AsyncSession, *, provider: str, user_ids: Sequence[uuid.UUID]
+    ) -> dict[uuid.UUID, str]:
+        """Each linked user's subject at the provider."""
+        if not user_ids:
+            return {}
+        result = await session.execute(
+            select(UserIdentity.user_id, UserIdentity.external_subject_id).where(
+                UserIdentity.provider == provider, UserIdentity.user_id.in_(list(user_ids))
+            )
+        )
+        return dict(result.tuples().all())
 
 
 class MembershipRepository:
@@ -517,10 +695,16 @@ class RoleRepository:
         tenant_id: uuid.UUID,
         *,
         require_active: bool,
+        excluding_membership_id: uuid.UUID | None = None,
     ) -> bool:
         """Whether the tenant has a membership holding the built-in Admin role —
-        the two provisioning gates of week1-review-decisions.md, decision 10."""
+        the two provisioning gates of week1-review-decisions.md, decision 10. With
+        ``excluding_membership_id``: whether one would be left without that membership."""
         membership_predicate = TenantMembership.id == RoleAssignment.assignee_id
+        if excluding_membership_id is not None:
+            membership_predicate = membership_predicate & (
+                TenantMembership.id != excluding_membership_id
+            )
         if require_active:
             membership_predicate = membership_predicate & (
                 TenantMembership.status == MEMBERSHIP_STATUS_ACTIVE
