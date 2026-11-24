@@ -172,7 +172,9 @@ Remotes: `origin` is a private GitHub repo, `gitlab` is the client's. Recipes in
    of artifact rows fully filled by a check by end of Phase 2 (93% partly), 768 provider facts checked (545 confirmed,
    83 corrected, 136 still unverified with reasons). Defects to fix first: the shared device artifact, the 16 full check
    mappings, GitHub not seeing direct pushes, the vulnerability module before scanners. Next: the 20 gating decisions
-   in `08-owner-decisions.md`, then P1 packages.
+   in `08-owner-decisions.md`, then P1 packages. Rule B was already decided (DECISIONS.md); G1 is only its refinement.
+   2026-11-24: F4 and F5 planned in detail with build and deployment: `openspec/changes/connector-runtime/`
+   (proposal, design, tasks) and `docs/adr/0016-go-collectors-beside-the-python-core.md` (Proposed); decisions R1 to R6.
 
 `commit_paths.py candidates` printed items 1 to 3 when last run; items 4 to 10 are newer.
 

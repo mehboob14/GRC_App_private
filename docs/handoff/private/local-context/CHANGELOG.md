@@ -4,6 +4,12 @@ The running record that replaces chat history. Add an entry at the top at the en
 changed, what was verified, commits if any. Keep entries short. Entries before 2026-10-11 were reconstructed from git
 history and the owner's notes; commit hashes are real, dates are the days the work landed.
 
+## 2026-11-24, connector runtime plan (Claude Code)
+- Planned the connection platform and the Go collector runtime with images, compose, secrets, deploy,
+  rollback, communication between services and who to tell: `openspec/changes/connector-runtime/` and ADR-0016
+  (Proposed). Plan only. Corrected the evidence plan: rule B was decided on 2026-11-23; G1 is now its refinement.
+- Copied the whole project to `D:\Verity_GRC_Platform` (robocopy) at the owner's request.
+
 ## 2026-11-23, evidence connectors plan (Claude Code)
 - Owner asked for R&D and a plan for every connector (identity providers first, MDM, then the rest of the
   signed phases) mapped through assessment objectives to controls and both frameworks, with credentials, UI and
