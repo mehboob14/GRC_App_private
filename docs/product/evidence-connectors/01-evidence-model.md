@@ -58,10 +58,12 @@ coverage files in [coverage/](coverage/) say, artifact by artifact, which source
   satisfied. An interview alone never satisfies.
 - A control is ready when a person says it is implemented and every applicable design and operating
   objective is satisfied.
-- **Pending owner decision (automation rule).** Rule B: a passing check may satisfy its artifact alone.
-  Rule A: a check can only take satisfaction away, so a person's evidence or an approved document is
-  always needed. Both are computed side by side. This plan assumes rule B for artifacts whose check
-  fills them `full`, and rule A for `partial`, and asks the owner to confirm (README, decisions).
+- **Automation rule (owner decision, 2026-11-23): rule B.** A passing check may satisfy its artifact
+  once a person has confirmed the population is complete (rule A, kept in the engine for comparison,
+  would let a check only take satisfaction away). Readiness switches to objectives only after the
+  independent review and the owner's sign off on the comparison report. This plan asks one refinement
+  (decision G1): a check that fills an artifact only `partial` should not satisfy it alone, only one
+  that fills it `full`.
 
 ## 1.3 Rules every new source follows
 

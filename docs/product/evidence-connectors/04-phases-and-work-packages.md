@@ -20,7 +20,7 @@ changes ([06-control-changes.md](06-control-changes.md)) and the matrix ([07-con
 
 ```mermaid
 flowchart LR
-  P0["P0 Decisions and review<br/>owner decisions, qualified review<br/>of control changes, rule A or B"]
+  P0["P0 Decisions and review<br/>owner decisions, qualified review<br/>of control changes, rule B refinement"]
   P1["P1 Foundations<br/>content truth, Verity module checks,<br/>integration platform, Go runtime"]
   P2["P2 Signed connectors<br/>identity, cloud and code, operations"]
   P2X["P2X Extension (client agreement)<br/>devices, endpoint, HR"]
@@ -31,13 +31,16 @@ flowchart LR
 
 | Phase | Packages | Gate to start |
 |---|---|---|
-| P0 | D1 owner decisions; D2 qualified review of control changes and mappings; D3 automation rule A or B | none |
+| P0 | D1 owner decisions; D2 qualified review of control changes and mappings; D3 the rule B refinement (G1: only full fills satisfy alone) | none |
 | P1 | F1 to F8 below | D1 for the decisions each package names; D2 before F2 ships |
 | P2 | C1 to C14 below | F4 and F5 (platform and runtime); F1 for the content each connector fills |
 | P2X | X1 to X8 below | The client agrees to the extension (devices, endpoint and HR are not in the signed catalogue) |
 | P3 | L1 to L6 below | Demand or the signed Phase 3; F7 before any scanner |
 
 ## 4.2 P1 Foundations
+
+F4 and F5, with their Docker images and server deployment, are planned in detail in
+`openspec/changes/connector-runtime/` (design, tasks) and `docs/adr/0016-go-collectors-beside-the-python-core.md`.
 
 | Package | What | Main sources | Done when |
 |---|---|---|---|

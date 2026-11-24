@@ -8,7 +8,8 @@ with a line naming the commit and what was verified.
 
 - [ ] D1 Owner decisions answered (`08-owner-decisions.md`)
 - [ ] D2 Qualified review of the control changes and mapping changes (`06-control-changes.md`)
-- [ ] D3 Automation rule A or B chosen (outcome engine)
+- [x] D3a Automation rule: rule B chosen by the owner on 2026-11-23 (local-context/DECISIONS.md)
+- [ ] D3b Rule B refinement: only a check that fills an artifact in full satisfies it alone (G1)
 
 ## P1 Foundations
 
