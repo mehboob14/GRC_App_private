@@ -4,6 +4,14 @@ The running record that replaces chat history. Add an entry at the top at the en
 changed, what was verified, commits if any. Keep entries short. Entries before 2026-10-11 were reconstructed from git
 history and the owner's notes; commit hashes are real, dates are the days the work landed.
 
+## 2026-11-26, MDM and device evidence plan, round 2 (Claude Code)
+- Owner asked for detailed, researched R&D and a practical plan for MDM integrations: what is collected, how it
+  maps through objectives to controls, the process, and every device type. Seven research agents (Apple platform,
+  Microsoft, Android and ChromeOS, Apple MDMs, two cross platform groups, market and audit) and three verifiers
+  wrote `docs/product/evidence-connectors/mdm/` and `openspec/changes/mdm-device-evidence/` (STATE item 10).
+  Plan only: no content JSON or code changed. Linked from 04 phases, the evidence README and round 1's strategy.
+- Earlier: drive D copy verified (88,544 files, 0 failed; re-synced 120 changed files; branch tip matched).
+
 ## 2026-11-24, connector runtime plan (Claude Code)
 - Planned the connection platform and the Go collector runtime with images, compose, secrets, deploy,
   rollback, communication between services and who to tell: `openspec/changes/connector-runtime/` and ADR-0016

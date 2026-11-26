@@ -175,6 +175,14 @@ Remotes: `origin` is a private GitHub repo, `gitlab` is the client's. Recipes in
    in `08-owner-decisions.md`, then P1 packages. Rule B was already decided (DECISIONS.md); G1 is only its refinement.
    2026-11-24: F4 and F5 planned in detail with build and deployment: `openspec/changes/connector-runtime/`
    (proposal, design, tasks) and `docs/adr/0016-go-collectors-beside-the-python-core.md` (Proposed); decisions R1 to R6.
+   2026-11-26: MDM round 2 in `docs/product/evidence-connectors/mdm/` (README, 01 device landscape, 02 device
+   dictionary v2 with privacy rules, 03 16 providers compared, 04 28 checks mapped to artifacts, objectives, controls,
+   `device-evidence-map.csv` from `mdm/tools/gen_map.py`, 05 process, 06 work packages MDM-0 to MDM-14, 07 decisions
+   D-MDM-1 to 20, 08 corrections to round 1, `research/` with 7 research files and 3 verification logs: 241 claims
+   rechecked, 210 confirmed, 22 corrected and applied, 9 unverified) and `openspec/changes/mdm-device-evidence/`.
+   Biggest findings: the enrolment channel caps evidence; screen lock is policy evidence everywhere; Apple erase
+   replies never prove a wipe; purchase programs (Apple Business, Autopilot, Knox) find never enrolled devices;
+   several read credentials reach secrets, Hexnode has no read only key; JumpCloud joins wave 1. Gate: D-DEV-1.
 
 `commit_paths.py candidates` printed items 1 to 3 when last run; items 4 to 10 are newer.
 

@@ -18,7 +18,8 @@ researched and fact checked on 2026-11-23. Nothing in it is built yet. OpenSpec 
 | [06-control-changes.md](06-control-changes.md) | Proposed control splits and additions, objective revisions, mapping changes, content defects |
 | [07-control-matrix.md](07-control-matrix.md), [.csv](07-control-matrix.csv) | Control by control: where each artifact's evidence comes from, by phase |
 | [08-owner-decisions.md](08-owner-decisions.md) | The 20 decisions that gate the first packages ([raw list of 127](08-owner-decisions-raw.md)) |
-| [mdm-and-endpoint-strategy.md](mdm-and-endpoint-strategy.md) | Devices, endpoint protection and HR: what they serve, and customers without an MDM |
+| [mdm-and-endpoint-strategy.md](mdm-and-endpoint-strategy.md) | Devices, endpoint protection and HR: what they serve, and customers without an MDM (round 1) |
+| [mdm/](mdm/README.md) | MDM and device evidence round 2: device types and channels, the device dictionary, 16 providers, 28 checks mapped to objectives and controls, the process, work packages MDM-0 to MDM-14 |
 | [connectors/](connectors/) | One document per provider: permissions, setup guide draft, collection, checks, controls, Go notes |
 | [coverage/](coverage/) | Artifact by artifact source mappings and control decisions, per family |
 | [verification/](verification/) | Fact checking logs: 768 claims checked against official documentation |

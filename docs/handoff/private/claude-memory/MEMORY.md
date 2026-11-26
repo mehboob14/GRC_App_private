@@ -56,4 +56,4 @@
 - [Verity Keycloak SSO](verity-keycloak-sso.md) — phases A to D built + verified locally 2026-11-23 (uncommitted): org per tenant, JIT, group roles, directory sync, back-channel logout; E needs owner's IdP tenants, F needs Infowise
 - [Clickable decisions](feedback-clickable-decisions.md) — ask open owner decisions as clickable multiple-choice rounds, recommended first, multi-select where fitting, audit topics separate
 - [GitHub handoff branch](feedback-github-handoff-branch.md) — since 2026-11-23 keep specs current and commit+push all Verity work to GitHub `handoff/verity-dev` (snapshot mode of commit_paths.py); never GitLab; report tip hash
-- [Verity evidence connectors plan](verity-evidence-connectors-plan.md) — 2026-11-23 plan in docs/product/evidence-connectors: every connector and control, 148 controls proposed, 127 checks, 20 gating decisions in 08; docs only
+- [Verity evidence connectors plan](verity-evidence-connectors-plan.md) — 2026-11-23 plan in docs/product/evidence-connectors (148 controls, 127 checks, 20 decisions); 11-24 connector runtime; 11-26 MDM round 2 in mdm/ (28 device checks, MDM-0..14, D-MDM-1..20); docs only

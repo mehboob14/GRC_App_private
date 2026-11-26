@@ -1,5 +1,10 @@
 # Device, endpoint and HR evidence: what it serves, the checks, and customers without an MDM
 
+> **Round 2 (2026-11-26):** device management is researched further in [mdm/](mdm/README.md): channels per
+> platform, the device dictionary v2, 16 providers, 28 checks, the process and work packages. Where the two
+> disagree, round 2 wins; the corrections are listed in [mdm/08-corrections-to-round-1.md](mdm/08-corrections-to-round-1.md).
+> Endpoint protection (EDR) and HR sections here are unchanged.
+
 Authoring rules: [AUTHORING.md](AUTHORING.md). Evidence model: [01-evidence-model.md](01-evidence-model.md).
 Connector files: [intune.md](connectors/intune.md), [microsoft-defender-endpoint.md](connectors/microsoft-defender-endpoint.md),
 [jamf-pro.md](connectors/jamf-pro.md), [kandji.md](connectors/kandji.md),

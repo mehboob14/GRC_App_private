@@ -1,0 +1,40 @@
+check,status,capability,fields_read,artifact,fill,objectives,control,coverage,soc2,iso27001
+devices.enrolled,shipped,device_management,management_state; last_check_in_at; enrolment_channel; managed_by,inventory-of-company-devices,full,EP-03.B,EP-03,partial,CC6.5; CC6.8,A.6.7; A.7.9; A.8.1; A.8.19
+devices.purchased_devices_enrolled,new,device_management,device.purchase; serial_number; last_check_in_at,inventory-of-company-devices,partial,EP-03.B,EP-03,partial,CC6.5; CC6.8,A.6.7; A.7.9; A.8.1; A.8.19
+devices.purchased_devices_enrolled,new,device_management,device.purchase; serial_number,asset-inventory,partial,LM-01.C,LM-01,partial,CC2.1; CC6.1,A.5.9
+devices.directory_devices_managed,new,device_management; identity_provider,device.directory; managed match,inventory-of-company-devices,partial,EP-03.C,EP-03,partial,CC6.5; CC6.8,A.6.7; A.7.9; A.8.1; A.8.19
+devices.enrolled_before_issue,new,device_management; hr_system,enrolled_at; first assignment; start date,inventory-of-company-devices,partial,EP-03.B,EP-03,partial,CC6.5; CC6.8,A.6.7; A.7.9; A.8.1; A.8.19
+devices.enrolled_before_issue,new,device_management; hr_system,enrolled_at; disk_encryption at first observation,device-encryption-report,partial,EP-02.C,EP-02,partial,CC6.1; CC6.5; CC6.7,A.7.9; A.7.10; A.8.1; A.8.24
+devices.staff_have_managed_device,round 1,device_management; identity_provider,assigned_user_*; assignment_confidence,inventory-of-company-devices,partial,EP-03.C,EP-03,partial,CC6.5; CC6.8,A.6.7; A.7.9; A.8.1; A.8.19
+devices.assigned_to_active_staff,round 1,device_management; identity_provider,assigned_user_*; assignment_confidence,inventory-of-company-devices,partial,EP-03.C,EP-03,partial,CC6.5; CC6.8,A.6.7; A.7.9; A.8.1; A.8.19
+devices.assigned_to_active_staff,round 1,device_management; identity_provider,assigned_user_*,asset-inventory,partial,LM-01.B,LM-01,partial,CC2.1; CC6.1,A.5.9
+devices.disk_encrypted,shipped,device_management,disk_encryption; encryption_key_protected; passcode_present,device-encryption-report,full,EP-02.B; EP-02.C,EP-02,partial,CC6.1; CC6.5; CC6.7,A.7.9; A.7.10; A.8.1; A.8.24
+devices.disk_encrypted,shipped,device_management,disk_encryption,device-baseline-report,partial,EP-03.D,EP-03,partial,CC6.5; CC6.8,A.6.7; A.7.9; A.8.1; A.8.19
+devices.recovery_key_escrowed,round 1,device_management,recovery_key_escrowed; recovery_key_escrow_source,device-encryption-report,partial,EP-02.B,EP-02,partial,CC6.1; CC6.5; CC6.7,A.7.9; A.7.10; A.8.1; A.8.24
+devices.drift_fixed_in_time,new,device_management,Verity daily history of baseline results,device-encryption-report,partial,EP-02.C,EP-02,partial,CC6.1; CC6.5; CC6.7,A.7.9; A.7.10; A.8.1; A.8.24
+devices.drift_fixed_in_time,new,device_management,Verity daily history of baseline results,device-baseline-report,partial,EP-03.D,EP-03,partial,CC6.5; CC6.8,A.6.7; A.7.9; A.8.1; A.8.19
+devices.drift_fixed_in_time,new,device_management,Verity daily history of baseline results,patch-compliance-report,partial,EP-04.D,EP-04,partial,CC6.8; CC7.1,A.8.8
+devices.drift_fixed_in_time,new,device_management,Verity daily history of baseline results,screen-lock-setting-report,partial,EP-06.D,EP-06,partial,CC6.1,A.7.7; A.8.1
+devices.screen_lock,shipped,device_management,"device.policy (passcode, screen_lock); idle_lock_seconds; passcode_present",screen-lock-setting-report,full,EP-06.B; EP-06.C,EP-06,partial,CC6.1,A.7.7; A.8.1
+devices.screen_lock,shipped,device_management,"device.policy (passcode, screen_lock)",screen-lock-setting-report,partial,EP-03.D,EP-03,partial,CC6.5; CC6.8,A.6.7; A.7.9; A.8.1; A.8.19
+devices.firewall_enabled,round 1,device_management,firewall_on; firewall_profiles,device-baseline-report,partial,EP-03.D,EP-03,partial,CC6.5; CC6.8,A.6.7; A.7.9; A.8.1; A.8.19
+devices.os_integrity,new,device_management,os_integrity sub keys,device-baseline-report,partial,EP-03.D,EP-03,partial,CC6.5; CC6.8,A.6.7; A.7.9; A.8.1; A.8.19
+devices.software_permitted,new,device_management,installed_apps; managed_apps,permitted-software-report,full,EP-03.E,EP-03,partial,CC6.5; CC6.8,A.6.7; A.7.9; A.8.1; A.8.19
+devices.byod_apps_protected,new,device_management; identity_provider,device.app_protection; device.directory,personal-device-access-report,partial,EP-03.F (proposed),EP-03,partial,CC6.5; CC6.8,A.6.7; A.7.9; A.8.1; A.8.19
+devices.os_current,shipped,device_management,os_version; os_supplemental_version; security_patch_level; os_supported_until,patch-compliance-report,partial,EP-04.C,EP-04,partial,CC6.8; CC7.1,A.8.8
+devices.os_current,shipped,device_management,os_version; security_patch_level,patch-compliance-report,partial,EP-03.D,EP-03,partial,CC6.5; CC6.8,A.6.7; A.7.9; A.8.1; A.8.19
+devices.browsers_current,new,device_management,browser_versions,patch-compliance-report,partial,EP-04.C,EP-04,partial,CC6.8; CC7.1,A.8.8
+devices.updates_automatic,new,device_management,os_update_policy_assigned; device.policy (updates),patch-compliance-report,partial,EP-04.B,EP-04,partial,CC6.8; CC7.1,A.8.8
+devices.remote_wipe,shipped,device_management,enrolment_channel; ownership; erase capability,device-wipe-capability-report,full,EP-05.B,EP-05,partial,CC6.5,A.5.11; A.7.9; A.7.14; A.8.1
+devices.activation_lock_org_controlled,new,device_management,activation_lock_type,device-wipe-capability-report,partial,EP-05.B,EP-05,partial,CC6.5,A.5.11; A.7.9; A.7.14; A.8.1
+devices.wipes_confirmed,round 1,device_management,"device.action (confirmed_by, confirming_signal)",wipe-confirmations-for-recovered-or-lost,partial,EP-05.D,EP-05,partial,CC6.5,A.5.11; A.7.9; A.7.14; A.8.1
+devices.leaver_devices_recovered,round 1,device_management; hr_system,assigned_user_*; device.action; end date,wipe-confirmations-for-recovered-or-lost,partial,EP-05.C,EP-05,partial,CC6.5,A.5.11; A.7.9; A.7.14; A.8.1
+devices.leaver_devices_recovered,round 1,device_management; hr_system,assigned_user_*; device.action; end date,completed-offboarding-records-for-leavers-in,partial,HR-05.E,HR-05,partial,CC6.2; CC6.3,A.5.11; A.6.5
+devices.leaver_devices_recovered,round 1,device_management; hr_system,assigned_user_*; device.action; end date,completed-offboarding-records-for-leavers-in,partial,"HR-03.D (artifact to add, CC5)",HR-03,partial,CC6.2; CC9.2,A.5.11; A.8.30
+devices.removable_storage_restricted,round 1,device_management,removable_storage_blocked; device.policy (removable_storage),leakage-prevention-and-sharing-settings-in,partial,DM-19.C,DM-19,partial,,A.5.14; A.7.10; A.8.12 (full)
+devices.removed_have_disposal_record,new,device_management; verity_assets,management_state history; Assets disposal record,disposal-records-or-certificates,partial,EP-08.B,EP-08,partial,C1.2; CC6.5,A.7.10; A.7.14
+endpoint.protection_active,shipped,endpoint_protection,endpoint.sensor,device-protection-agent-report,full,EP-01.B,EP-01,partial,CC6.8 (full),A.8.1; A.8.7; A.8.16
+endpoint.coverage_complete,round 1,endpoint_protection; device_management,endpoint.sensor; device match,device-protection-agent-report,partial,EP-01.B,EP-01,partial,CC6.8 (full),A.8.1; A.8.7; A.8.16
+endpoint.prevention_enabled,round 1,endpoint_protection,endpoint.sensor policy,device-protection-agent-report,partial,EP-01.B,EP-01,partial,CC6.8 (full),A.8.1; A.8.7; A.8.16
+endpoint.servers_covered,round 1,endpoint_protection; verity_assets,endpoint.sensor; asset match,asset-inventory,partial,EP-01.B,EP-01,partial,CC6.8 (full),A.8.1; A.8.7; A.8.16
+endpoint.detections_triaged,round 1,endpoint_protection,endpoint.alert,alerts-that-were-reviewed-and-acted,partial,EP-01.C,EP-01,partial,CC6.8 (full),A.8.1; A.8.7; A.8.16

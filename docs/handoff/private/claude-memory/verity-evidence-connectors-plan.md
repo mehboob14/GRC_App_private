@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: b2af17ce-bbe2-448f-8020-79779048c41f
-  modified: 2026-11-23T12:34:27.590Z
+  modified: 2026-11-26T07:06:40.442Z
 ---
 
 Owner asked (2026-11-23) for a plan, not code: every connector (Entra, Okta, Google Workspace first, MDM, then
@@ -21,6 +21,13 @@ Key results: 11 splits and 4 additions proposed (148 controls, need qualified re
 check mappings should be partial; only 3% of artifact rows get a fully filling check by end of Phase 2 (93% partly),
 so automation rule A or B matters; identity providers use two credentials behind one setup (Keycloak never holds a
 directory read credential); devices, endpoint and HR need the client's scope extension; no endpoint agent yet.
+
+2026-11-24: connector runtime (F4, F5) planned in `openspec/changes/connector-runtime/` plus ADR-0016.
+2026-11-26: MDM round 2 in `docs/product/evidence-connectors/mdm/` (01 channels per platform, 02 device
+dictionary v2 and privacy rules, 03 16 providers, 04 28 device checks mapped to objectives and controls with
+`device-evidence-map.csv`, 05 process, 06 packages MDM-0 to MDM-14, 07 decisions D-MDM-1 to 20) and
+`openspec/changes/mdm-device-evidence/`. Key: channel caps evidence, lock is policy evidence, Apple erase replies
+prove nothing, purchase programs find unenrolled devices, Hexnode has no read only key, JumpCloud in wave 1.
 
 **Why:** the owner wants agents to implement it package by package later.
 **How to apply:** before building any connector or control change, read the package in 04 and its decisions in 08;

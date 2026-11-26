@@ -77,6 +77,9 @@ section 7). The first identity provider is the pilot's; the others follow.
 
 ## 4.4 P2X Extension (needs the client's agreement)
 
+The device packages (X1 to X4, plus JumpCloud, Apple Business and wave 2) are planned in detail as MDM-0 to
+MDM-14 in [mdm/06-build-plan.md](mdm/06-build-plan.md), tracked in `openspec/changes/mdm-device-evidence/`.
+
 | Package | What |
 |---|---|
 | X1 | Intune and Defender for Endpoint on the Entra evidence app (one more consent) |
